@@ -1,6 +1,6 @@
 {
   "name": "run-analyze-optimize-skill",
-  "description": "Lightweight autonomous run-analyze-optimize loop for command-driven debugging, minimal fixes, verification, and review.",
+  "description": "Router and subskills for research, planning, execution, review, and autonomous run-analyze-optimize convergence.",
   "version": "0.1.0",
   "author": {
     "name": "JinPLu"
@@ -11,9 +11,16 @@
     "debugging",
     "verification",
     "workflow",
-    "agents"
+    "agents",
+    "planning",
+    "review"
   ],
   "skills": [
-    "./skills/run-analyze-optimize"
+    "./skills/run-analyze-optimize",
+    "./skills/run-analyze-research",
+    "./skills/run-analyze-plan",
+    "./skills/run-analyze-execute",
+    "./skills/run-analyze-review",
+    "./skills/run-analyze-goal"
   ]
 }

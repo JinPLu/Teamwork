@@ -1,9 +1,14 @@
 # Claude Code Usage
 
-This repository exposes one canonical skill:
+This repository exposes a router skill plus workflow subskills:
 
 ```text
 skills/run-analyze-optimize/SKILL.md
+skills/run-analyze-research/SKILL.md
+skills/run-analyze-plan/SKILL.md
+skills/run-analyze-execute/SKILL.md
+skills/run-analyze-review/SKILL.md
+skills/run-analyze-goal/SKILL.md
 ```
 
 Install globally:
@@ -18,5 +23,5 @@ Claude Code plugin metadata lives in:
 .claude-plugin/plugin.json
 ```
 
-When editing the skill, keep the canonical file as the only `SKILL.md` source of
-truth. Do not duplicate the full skill text into `CLAUDE.md`.
+When editing the workflow, keep the full instructions in the skill files. Do
+not duplicate skill bodies into `CLAUDE.md`.

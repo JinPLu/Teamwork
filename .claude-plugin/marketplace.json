@@ -5,14 +5,14 @@
     "name": "JinPLu"
   },
   "metadata": {
-    "description": "Autonomous run-analyze-optimize loop with Karpathy guardrails and Roundtable-lite review discipline.",
+    "description": "Router and subskills for research, planning, execution, review, and autonomous run-analyze-optimize convergence.",
     "version": "0.1.0"
   },
   "plugins": [
     {
       "name": "run-analyze-optimize-skill",
       "source": "./",
-      "description": "Run commands, diagnose root causes, make minimal fixes, verify, and review until success or blocker.",
+      "description": "Route research, planning, execution, review, and goal loops with evidence-first discipline.",
       "version": "0.1.0",
       "author": {
         "name": "JinPLu"
@@ -21,7 +21,9 @@
         "debugging",
         "verification",
         "workflow",
-        "agents"
+        "agents",
+        "planning",
+        "review"
       ],
       "category": "workflow"
     }

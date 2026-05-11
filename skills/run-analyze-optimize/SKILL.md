@@ -1,348 +1,93 @@
 ---
 name: run-analyze-optimize
 description: >-
-  Run a command or workflow, observe real evidence, diagnose root causes, and
-  iteratively improve implementation details while preserving protected
-  principles and architecture. Use for autonomous run -> analyze -> optimize
-  loops with minimal surgical edits, verification, and independent review.
+  Router for run-analyze-optimize workflows. Dispatch to research, planning,
+  execution, review, or autonomous goal convergence subskills based on the
+  user's intent while preserving evidence-first, minimal-change discipline.
 disable-model-invocation: true
 ---
 
-# Run-Analyze-Optimize
+# Run-Analyze-Optimize Router
 
-Lightweight self-iteration for coding agents. Given a command, workflow, or
-artifact target, run it, read the evidence, diagnose the root cause, make the
-smallest safe implementation change, verify, and review. Continue until the
-target is reached or a real blocker is found.
+This is the router skill for the run-analyze-optimize package. Use it to choose
+the workflow-matched subskill instead of forcing every request through one
+monolithic loop.
 
-This skill combines:
+The package preserves the original discipline:
 
-- **Karpathy guardrails**: think before coding, simplicity first, surgical
-  changes, goal-driven execution.
-- **Roundtable-lite discipline**: evidence first, role separation, independent
-  review, dissent preservation, budgeted convergence.
+- **Karpathy guardrails**: assumptions explicit, simplicity first, surgical
+  edits, goal-driven verification.
+- **Roundtable-style workflow**: role separation, multi-agent discussion when
+  useful, independent review, dissent preservation, and budgeted stopping.
+- **No full roundtable infrastructure**: do not import model registries,
+  pricing caches, dispatch scripts, or thread ledgers unless the user asks.
 
-It does **not** require agent-roundtable infrastructure, model registries,
-dispatch ledgers, pricing caches, or multiple `SKILL.md` copies.
+## Route By Intent
 
-## Use When
+| User intent | Route | Skill file |
+|---|---|---|
+| Research options, compare approaches, discuss tradeoffs, gather evidence | `run-analyze-research` | `skills/run-analyze-research/SKILL.md` |
+| Convert a chosen direction into an executable implementation plan | `run-analyze-plan` | `skills/run-analyze-plan/SKILL.md` |
+| Execute an accepted plan with minimal edits and verification | `run-analyze-execute` | `skills/run-analyze-execute/SKILL.md` |
+| plan-review: review a plan before execution | `run-analyze-review` with `mode: plan` | `skills/run-analyze-review/SKILL.md` |
+| execution-review: review diffs, artifacts, tests, and results after execution | `run-analyze-review` with `mode: execution` | `skills/run-analyze-review/SKILL.md` |
+| Iterate autonomously until verified success, budget exhaustion, or blocker | `run-analyze-goal` | `skills/run-analyze-goal/SKILL.md` |
 
-- A command/test/generation run fails and can be rerun.
-- A pipeline must produce verifiable artifacts.
-- Prompts, parsers, schema validation, retry logic, thresholds, or error
-  handling need evidence-driven iteration.
-- The user wants autonomous convergence with clear stop conditions.
+Do not create separate plan-review and execution-review subskills. The single
+`run-analyze-review` subskill has two explicit modes so reviewer orchestration
+stays shared while the rubric changes by review target.
 
-Do not use for open-ended product design, narrative decisions, UI taste
-judgment, or work with no verifiable target.
+## Routing Rules
 
-## Operating Contract
+Use the narrowest subskill that satisfies the request:
 
-- Work in English during the loop. Final reports may use the user's language.
-- Do not ask mid-loop unless credentials, destructive action, external cost, or
-  ambiguous product intent blocks safe progress.
-- Preserve the sacred boundary: principles, architecture, public contracts, and
-  user-stated constraints are protected.
-- Change only mutable implementation details needed for the observed root cause.
-- Prefer the smallest fix at the producer of the failure, not downstream cleanup.
-- Before claiming success, verify with real command output or artifact evidence
-  and run a distinct review pass.
+- If the user asks "what should we do?", "research", "compare", "discuss", or
+  "find options", route to `run-analyze-research`.
+- If the user asks for a plan, route to `run-analyze-plan`.
+- If the user gives an accepted plan or says to implement/execute, route to
+  `run-analyze-execute`.
+- If the user asks to review a proposed plan, route to
+  `run-analyze-review` with `mode: plan`.
+- If the user asks to review a diff, patch, artifacts, test result, or completed
+  execution, route to `run-analyze-review` with `mode: execution`.
+- If the user asks to "run until it passes", "iterate until convergence",
+  "keep going until done", or gives a verifiable target plus budget, route to
+  `run-analyze-goal`.
 
-## Inputs
-
-The user may provide:
-
-1. **Command**: what to run.
-2. **Expected artifacts**: files, metrics, logs, UI state, or success criteria.
-3. **Sacred boundary**: what must not change.
-4. **Budget**: max iterations, wall time, token/cost ceiling, or stop signal.
-
-If an input is missing, infer it from repository context and state the
-assumption before iteration 1.
-
-## Workflow
+When intent spans multiple stages, use the controller:
 
 ```text
-Initialize boundary
-  -> Run command
-  -> Observe logs/tests/artifacts
-  -> Diagnose root cause
-  -> Plan minimal change
-  -> Worker pass
-  -> Verify
-  -> Independent review
-  -> Decide: success / continue / blocked / budget exhausted
+research/discuss if needed
+  -> plan
+  -> review plan
+  -> execute
+  -> review execution
+  -> accept / continue / re-plan / block
 ```
 
-### 1. Initialize
+## Shared Contract
 
-Before running or editing, identify:
+All subskills follow the same contract:
 
-- Exact command and working directory.
-- Expected artifacts and verification method.
-- Relevant logs, output directories, tests, entry points, and project guidance.
-- Sacred boundary and mutable optimization scope.
-- Budget and stop rules.
+- State assumptions and sacred boundaries before committing to behavior.
+- Read direct evidence: files, diffs, logs, tests, artifacts, or command output.
+- Prefer the smallest producer-side fix over downstream cleanup.
+- Keep mutable implementation details separate from protected principles,
+  architecture, and public contracts.
+- Use independent agents when subtasks are separable or a second view reduces
+  risk; otherwise run distinct local passes.
+- Preserve dissent in the final verdict instead of smoothing it away.
+- Stop on verified success, budget exhaustion, repeated no-progress,
+  unresolvable blocker, or sacred-boundary conflict.
 
-Default budget when unspecified:
+## Output
 
-- Max 3 optimization iterations.
-- Stop after 2 consecutive iterations with no evidence delta.
-- Stop immediately on sacred-boundary conflict, destructive risk, auth failure,
-  missing credentials, or unavailable required external resources.
-
-Present a concise summary:
+After routing, report the selected subskill and why:
 
 ```text
-Sacred Boundary:
-- Principles: ...
-- Design/contracts: ...
-
-Expected Artifacts:
-- ...
-
-Optimization Scope:
-- ...
-
-Budget:
-- ...
-
-Entering iteration 1.
+Route: run-analyze-<stage>
+Reason: <one sentence tied to user intent>
+Mode: <plan | execution, only for run-analyze-review>
 ```
 
-### 2. Run and Monitor
-
-Run the command with the platform's shell tool. For long-running commands, keep
-the session id or pid and poll output/logs/artifacts.
-
-Suggested cadence:
-
-- First check: about 15 seconds.
-- Early checks: 20-30 seconds.
-- Stable progress: 45-60 seconds.
-- Never exceed 120 seconds between checks.
-
-Kill or stop a run only on clear waste signals:
-
-| Signal | Examples |
-|---|---|
-| Crash | traceback, unhandled exception, assertion failure |
-| Irrecoverable API failure | auth error, model not found, exhausted retries |
-| Resource exhaustion | OOM, disk full, container crash |
-| Poisoned state | malformed output passed to a later stage |
-| No progress | repeated identical error, no output/artifact movement after bounded stall |
-| Wrong phase | command runs a stage that should have been skipped |
-
-Do not kill only because output is slow. Confirm with logs or artifact movement.
-
-### 3. Observe
-
-Collect evidence before explaining or editing:
-
-- Exit code and terminal output.
-- Relevant log excerpts.
-- Generated artifacts and their properties.
-- Suspect source locations.
-- Delta against the previous iteration.
-
-Classify each symptom:
-
-- **Fixed**: verified by artifact or test.
-- **Improved**: measurable progress remains incomplete.
-- **Unchanged**: same failure, no meaningful delta.
-- **Regressed**: new failure introduced by the last change.
-- **New**: unrelated symptom surfaced.
-
-### 4. Diagnose
-
-Trace each unresolved symptom to the producing mechanism. Classify the fix path:
-
-- **Optimizable**: implementation detail; proceed.
-- **Sacred**: would change protected principle/design/contract; log blocker.
-- **Ambiguous**: try only if a safe implementation-level fix exists; otherwise
-  log blocker.
-
-Use independent subagents when symptoms are separable or a second view reduces
-risk. Subagent prompts must be self-contained: include evidence, paths, sacred
-boundary, and requested return format.
-
-### 5. Karpathy Gate
-
-Before editing, pass all four checks:
-
-| Check | Question |
-|---|---|
-| Think before coding | Are assumptions and ambiguity explicit? |
-| Simplicity first | Is this the minimum code that solves the observed problem? |
-| Surgical changes | Does every changed line trace to the target? |
-| Goal-driven execution | What command or artifact proves success? |
-
-If a simpler approach exists, say so and use it. If the goal is ambiguous in a
-way that affects behavior, stop and ask instead of guessing.
-
-### 6. Plan
-
-Write a precise modification plan before editing:
-
-```text
-Root cause:
-- <one sentence with file/function if known>
-
-Fix:
-1. <file/module> - <minimal change> - targets <root cause>
-
-Verification:
-- <focused command/check>
-- <broader command/check if warranted>
-
-Risk:
-- <regression risk and mitigation>
-```
-
-Reject plans that rely on downstream cleanup when the producer can be fixed.
-Reject broad refactors unless they are required by the root cause.
-
-### 7. Worker Pass
-
-Implement exactly the approved plan:
-
-- Touch only necessary files.
-- Match existing style.
-- Do not improve adjacent code, comments, or formatting.
-- Do not delete pre-existing dead code unless asked.
-- Remove only imports/variables/functions made unused by your own change.
-- If regression appears, revert or rework only the causal change.
-
-Use a separate worker subagent when the platform supports it and the task is
-well scoped. Otherwise run an explicit worker pass in the parent agent.
-
-### 8. Verify
-
-Run focused verification first. Add broader validation when shared behavior,
-public contracts, or user-facing workflows are affected.
-
-Verification requires actual command output or artifact properties. "Looks
-good" is not evidence.
-
-If verification fails, capture the failure, compare it with the prior
-iteration, and continue only with a new hypothesis or measurable progress.
-
-### 9. Review
-
-Before completion, run a distinct review pass:
-
-- Read the diff and relevant source directly.
-- Re-check expected artifacts and verification evidence.
-- Look for regressions, scope creep, missing coverage, brittle assumptions, and
-  downstream cleanup masking a producer bug.
-- Preserve dissent from independent reviewers even if it does not block.
-
-Use the strongest available reviewer model for final review. Use a cheaper
-independent reviewer for blind dissent on high-risk work.
-
-### 10. Decide
-
-Continue only when:
-
-- Expected artifacts are missing and there is a concrete optimizable root cause.
-- Verification improved but has not reached target.
-- Review found a fixable regression.
-
-Exit when:
-
-- Expected artifacts are produced, verified, and review passes.
-- Budget is exhausted.
-- Two consecutive iterations show no evidence delta.
-- Only sacred or unresolvable blockers remain.
-- The user stops the loop.
-
-## Optional Journal
-
-For non-trivial loops, create:
-
-```text
-.run-analyze-optimize/<timestamp>-<slug>/
-  RUN.md
-  ITERATIONS.md
-  BLOCKERS.md
-```
-
-For small one-iteration fixes, an in-chat summary plus the repository diff is
-enough. Do not create files merely for ceremony.
-
-## Logical Roles
-
-These are roles, not separate subskills:
-
-| Role | Purpose |
-|---|---|
-| Triage | Summarize logs/artifacts and list distinct symptoms |
-| Diagnostician | Trace root cause and classify fix path |
-| Planner | Produce minimal implementation plan |
-| Worker | Edit code according to the approved plan |
-| Reviewer | Independently review diff, evidence, and residual risk |
-| Cheap dissent | Optional second review for missed edge cases |
-
-Suggested local aliases:
-
-| Role | Alias |
-|---|---|
-| Final reviewer | `opus` |
-| Planner / worker | `sonnet` |
-| Triage / cheap dissent | `haiku` |
-
-Treat these as local model aliases. Verify current availability and pricing from
-the user's configured toolchain before making cost or benchmark claims.
-
-## Blocker Format
-
-```markdown
-## Iteration <N> - <timestamp>
-
-### <issue title>
-- Type: Sacred | Ambiguous | Unresolvable
-- Location: <file:line or command/artifact>
-- Description: <what happened>
-- Why blocked: <why it cannot be resolved autonomously>
-- Agent judgment: <what you would do if permitted>
-```
-
-## Final Report
-
-Report once on loop exit:
-
-```text
-Boundary:
-- Sacred Boundary: untouched / blocked at <issue>
-
-Artifacts:
-- <artifact>: produced / missing - <verification evidence>
-
-Changes:
-- Iteration 1: <files changed and why>
-- Iteration 2: ...
-
-Verification:
-- <commands and key results>
-
-Review:
-- <verdict, dissent, residual risk>
-
-Unresolved:
-- <blockers or none>
-
-Conclusion:
-- accept / blocked / budget exhausted / stopped
-```
-
-## Anti-Patterns
-
-| Trap | Correct approach |
-|---|---|
-| Adding full roundtable infrastructure | Use roundtable-lite roles and evidence discipline |
-| Optimizing before reading evidence | Observe first, then diagnose |
-| Fixing bad output with downstream cleanup | Fix the producer when possible |
-| Retrying without a changed hypothesis | Diagnose or stop |
-| Broad refactor for a narrow failure | Minimal origin-level change |
-| Reviewer trusts worker summary | Reviewer reads source and evidence directly |
-| Continuing after no progress | Stop at the configured stall budget |
+Then follow that subskill's instructions directly.

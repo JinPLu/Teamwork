@@ -1,47 +1,48 @@
 ---
-description: Run-analyze-optimize workflow for command-driven debugging, minimal fixes, verification, and review.
+description: Router for run-analyze-optimize research, planning, execution, review, and goal convergence.
 alwaysApply: false
 ---
 
 # Run-Analyze-Optimize
 
-Use this rule when the user asks Cursor to run a command or workflow and iterate
-until verified success or a clear blocker.
+Use this rule when the user asks Cursor for evidence-driven research, planning,
+execution, review, or autonomous iteration until verified success or a clear
+blocker.
 
-Canonical skill source:
+Canonical router:
 
 ```text
 skills/run-analyze-optimize/SKILL.md
 ```
 
-## Core Loop
+Subskills:
+
+- `run-analyze-optimize` routes by intent.
+- `run-analyze-research` investigates options and preserves dissent.
+- `run-analyze-plan` turns a selected direction into an executable plan.
+- `run-analyze-execute` implements an accepted plan with minimal edits.
+- `run-analyze-review` reviews with `mode: plan` or `mode: execution`.
+- `run-analyze-goal` controls the full autonomous convergence loop.
+
+## Router Flow
 
 ```text
-Initialize boundary
-  -> Run command
-  -> Observe logs/tests/artifacts
-  -> Diagnose root cause
-  -> Plan minimal change
-  -> Worker pass
-  -> Verify
-  -> Independent review
-  -> Decide: success / continue / blocked / budget exhausted
+research/discuss if needed
+  -> plan
+  -> review plan
+  -> execute
+  -> review execution
+  -> accept / continue / re-plan / block
 ```
 
 ## Guardrails
 
-- Think before coding: state assumptions and ambiguity.
-- Simplicity first: use the minimum code that solves the observed problem.
-- Surgical changes: every changed line must trace to the target.
-- Goal-driven execution: define the verification command or artifact property.
-- Roundtable-lite review: reviewer reads source and evidence directly.
+- State assumptions, boundaries, and verification before committing behavior.
+- Prefer simple, surgical, producer-side fixes.
+- Reviewers read evidence directly: source, diffs, logs, tests, artifacts.
+- One review subskill handles both plan and execution modes.
+- Preserve dissent and stop on verified success, budget exhaustion, repeated
+  no-progress, or sacred-boundary blockers.
 
-## Stop Conditions
-
-- Target verified and review passes.
-- Budget exhausted.
-- Two consecutive iterations have no evidence delta.
-- Only sacred or unresolvable blockers remain.
-
-Do not import full agent-roundtable infrastructure unless the user explicitly
-asks for it.
+Do not duplicate the full skill bodies here. Do not import full
+agent-roundtable infrastructure unless the user explicitly asks for it.

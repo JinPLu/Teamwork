@@ -2,7 +2,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SKILL_SRC="$ROOT/skills/run-analyze-optimize/SKILL.md"
+SKILLS=(
+  run-analyze-optimize
+  run-analyze-research
+  run-analyze-plan
+  run-analyze-execute
+  run-analyze-review
+  run-analyze-goal
+)
 
 usage() {
   cat <<'USAGE'
@@ -12,23 +19,31 @@ Usage:
   ./install.sh cursor /path/to/project
   ./install.sh all /path/to/cursor-project
 
-Installs by symlink where supported so skills/run-analyze-optimize/SKILL.md
-remains the single source of truth.
+Installs by symlink where supported so each skills/*/SKILL.md remains the
+source of truth.
 USAGE
 }
 
+install_skill_set() {
+  local root="$1"
+  local label="$2"
+  local skill dest
+
+  mkdir -p "$root"
+  for skill in "${SKILLS[@]}"; do
+    dest="$root/$skill"
+    mkdir -p "$dest"
+    ln -sf "$ROOT/skills/$skill/SKILL.md" "$dest/SKILL.md"
+  done
+  echo "Installed $label skills under: $root"
+}
+
 install_claude() {
-  local dest="$HOME/.claude/skills/run-analyze-optimize"
-  mkdir -p "$dest"
-  ln -sf "$SKILL_SRC" "$dest/SKILL.md"
-  echo "Installed Claude Code skill: $dest/SKILL.md"
+  install_skill_set "$HOME/.claude/skills" "Claude Code"
 }
 
 install_codex() {
-  local dest="$HOME/.codex/skills/run-analyze-optimize"
-  mkdir -p "$dest"
-  ln -sf "$SKILL_SRC" "$dest/SKILL.md"
-  echo "Installed Codex skill: $dest/SKILL.md"
+  install_skill_set "$HOME/.codex/skills" "Codex"
 }
 
 install_cursor() {
