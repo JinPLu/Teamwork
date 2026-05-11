@@ -4,11 +4,9 @@ This repository exposes a router skill plus workflow subskills:
 
 ```text
 skills/run-analyze-optimize/SKILL.md
-skills/run-analyze-research/SKILL.md
-skills/run-analyze-plan/SKILL.md
+skills/run-analyze-design/SKILL.md
 skills/run-analyze-execute/SKILL.md
 skills/run-analyze-review/SKILL.md
-skills/run-analyze-goal/SKILL.md
 ```
 
 Install globally:

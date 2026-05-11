@@ -4,11 +4,16 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS=(
   run-analyze-optimize
-  run-analyze-research
-  run-analyze-plan
+  run-analyze-design
   run-analyze-execute
   run-analyze-review
+)
+RETIRED_SKILLS=(
+  run-analyze-research
+  run-analyze-plan
   run-analyze-goal
+  run-analyze-plan-review
+  run-analyze-execution-review
 )
 
 usage() {
@@ -27,9 +32,23 @@ USAGE
 install_skill_set() {
   local root="$1"
   local label="$2"
-  local skill dest
+  local skill dest retired link raw_target resolved
 
   mkdir -p "$root"
+  for retired in "${RETIRED_SKILLS[@]}"; do
+    dest="$root/$retired"
+    link="$dest/SKILL.md"
+    if [[ -L "$link" ]]; then
+      raw_target="$(readlink "$link" 2>/dev/null || true)"
+      resolved="$(readlink -f "$link" 2>/dev/null || true)"
+      if [[ "$raw_target" == "$ROOT/skills/$retired/SKILL.md" || \
+            "$resolved" == "$ROOT/skills/$retired/SKILL.md" ]]; then
+        rm -f "$link"
+        rmdir "$dest" 2>/dev/null || true
+      fi
+    fi
+  done
+
   for skill in "${SKILLS[@]}"; do
     dest="$root/$skill"
     mkdir -p "$dest"

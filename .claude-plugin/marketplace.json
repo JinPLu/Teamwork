@@ -5,7 +5,7 @@
     "name": "JinPLu"
   },
   "metadata": {
-    "description": "Router and subskills for research, planning, execution, review, and autonomous run-analyze-optimize convergence.",
+    "description": "Router and compact subskills for research, planning, execution, review, and autonomous run-analyze-optimize convergence.",
     "version": "0.1.0"
   },
   "plugins": [

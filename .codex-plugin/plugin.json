@@ -1,7 +1,7 @@
 {
   "name": "run-analyze-optimize-skill",
   "version": "0.1.0",
-  "description": "Router and subskills for research, planning, execution, review, and autonomous run-analyze-optimize convergence.",
+  "description": "Router and compact subskills for research, planning, execution, review, and autonomous run-analyze-optimize convergence.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"
@@ -21,8 +21,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Run Analyze Optimize",
-    "shortDescription": "Route research, planning, execution, review, and goal loops.",
-    "longDescription": "A compact router plus subskills for command-driven debugging and artifact convergence. It combines Karpathy-style simplicity and surgical edits with Roundtable-style research, independent review, and unattended goal convergence.",
+    "shortDescription": "Route design, execution, review, and goal loops.",
+    "longDescription": "A compact router plus three stage skills for command-driven debugging and artifact convergence. It combines Karpathy-style simplicity and surgical edits with Roundtable-style research, planning, independent review, and unattended goal convergence.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -31,8 +31,7 @@
     ],
     "websiteURL": "https://github.com/JinPLu/run-analyze-optimize-skill",
     "defaultPrompt": [
-      "Research options and preserve dissent before choosing a direction.",
-      "Create and review an executable implementation plan.",
+      "Research options or create an executable implementation plan.",
       "Run tests, diagnose failures, and fix minimally.",
       "Iterate a pipeline until artifacts verify.",
       "Review plans or execution results with independent evidence reading."

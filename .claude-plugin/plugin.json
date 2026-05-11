@@ -1,6 +1,6 @@
 {
   "name": "run-analyze-optimize-skill",
-  "description": "Router and subskills for research, planning, execution, review, and autonomous run-analyze-optimize convergence.",
+  "description": "Router and compact subskills for research, planning, execution, review, and autonomous run-analyze-optimize convergence.",
   "version": "0.1.0",
   "author": {
     "name": "JinPLu"
@@ -17,10 +17,8 @@
   ],
   "skills": [
     "./skills/run-analyze-optimize",
-    "./skills/run-analyze-research",
-    "./skills/run-analyze-plan",
+    "./skills/run-analyze-design",
     "./skills/run-analyze-execute",
-    "./skills/run-analyze-review",
-    "./skills/run-analyze-goal"
+    "./skills/run-analyze-review"
   ]
 }

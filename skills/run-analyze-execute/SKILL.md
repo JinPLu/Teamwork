@@ -1,9 +1,6 @@
 ---
 name: run-analyze-execute
-description: >-
-  Use to implement an accepted run-analyze-optimize plan with minimal edits,
-  focused verification, no scope creep, failure handling, and handoff to review.
-disable-model-invocation: true
+description: Use when an accepted run/analyze/optimize plan should be implemented with minimal edits and focused verification.
 ---
 
 # Run-Analyze Execute
@@ -13,8 +10,8 @@ the plan; it does not self-declare completion.
 
 ## Preconditions
 
-- Accepted plan with root cause or goal, scope, sacred boundaries, and
-  verification.
+- Accepted plan from `run-analyze-design` with `mode: plan`, including root
+  cause or goal, scope, sacred boundaries, and verification.
 - Current workspace status is understood enough to avoid overwriting others.
 - Required files, commands, credentials, and environments are available or the
   absence is recorded as a blocker.

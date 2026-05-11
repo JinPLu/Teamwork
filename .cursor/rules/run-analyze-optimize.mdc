@@ -1,5 +1,5 @@
 ---
-description: Router for run-analyze-optimize research, planning, execution, review, and goal convergence.
+description: Router for run-analyze-optimize design, execution, review, and goal convergence.
 alwaysApply: false
 ---
 
@@ -15,14 +15,12 @@ Canonical router:
 skills/run-analyze-optimize/SKILL.md
 ```
 
-Subskills:
+Installed skills:
 
-- `run-analyze-optimize` routes by intent.
-- `run-analyze-research` investigates options and preserves dissent.
-- `run-analyze-plan` turns a selected direction into an executable plan.
+- `run-analyze-optimize` routes by intent and owns `mode: goal`.
+- `run-analyze-design` handles `mode: research` and `mode: plan`.
 - `run-analyze-execute` implements an accepted plan with minimal edits.
 - `run-analyze-review` reviews with `mode: plan` or `mode: execution`.
-- `run-analyze-goal` controls the full autonomous convergence loop.
 
 ## Router Flow
 
@@ -40,7 +38,8 @@ research/discuss if needed
 - State assumptions, boundaries, and verification before committing behavior.
 - Prefer simple, surgical, producer-side fixes.
 - Reviewers read evidence directly: source, diffs, logs, tests, artifacts.
-- One review subskill handles both plan and execution modes.
+- One design skill handles research and planning modes.
+- One review skill handles plan and execution modes.
 - Preserve dissent and stop on verified success, budget exhaustion, repeated
   no-progress, or sacred-boundary blockers.
 

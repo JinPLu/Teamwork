@@ -1,9 +1,6 @@
 ---
 name: run-analyze-review
-description: >-
-  Use for independent review in a run-analyze-optimize workflow. Supports
-  mode: plan for plan review and mode: execution for implementation review.
-disable-model-invocation: true
+description: Use when a run/analyze/optimize plan or execution result needs independent review from direct evidence.
 ---
 
 # Run-Analyze Review
