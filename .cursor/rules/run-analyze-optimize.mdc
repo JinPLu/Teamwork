@@ -1,0 +1,47 @@
+---
+description: Run-analyze-optimize workflow for command-driven debugging, minimal fixes, verification, and review.
+alwaysApply: false
+---
+
+# Run-Analyze-Optimize
+
+Use this rule when the user asks Cursor to run a command or workflow and iterate
+until verified success or a clear blocker.
+
+Canonical skill source:
+
+```text
+skills/run-analyze-optimize/SKILL.md
+```
+
+## Core Loop
+
+```text
+Initialize boundary
+  -> Run command
+  -> Observe logs/tests/artifacts
+  -> Diagnose root cause
+  -> Plan minimal change
+  -> Worker pass
+  -> Verify
+  -> Independent review
+  -> Decide: success / continue / blocked / budget exhausted
+```
+
+## Guardrails
+
+- Think before coding: state assumptions and ambiguity.
+- Simplicity first: use the minimum code that solves the observed problem.
+- Surgical changes: every changed line must trace to the target.
+- Goal-driven execution: define the verification command or artifact property.
+- Roundtable-lite review: reviewer reads source and evidence directly.
+
+## Stop Conditions
+
+- Target verified and review passes.
+- Budget exhausted.
+- Two consecutive iterations have no evidence delta.
+- Only sacred or unresolvable blockers remain.
+
+Do not import full agent-roundtable infrastructure unless the user explicitly
+asks for it.

@@ -1,0 +1,29 @@
+{
+  "name": "run-analyze-optimize-skills",
+  "id": "run-analyze-optimize-skills",
+  "owner": {
+    "name": "JinPLu"
+  },
+  "metadata": {
+    "description": "Autonomous run-analyze-optimize loop with Karpathy guardrails and Roundtable-lite review discipline.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "run-analyze-optimize-skill",
+      "source": "./",
+      "description": "Run commands, diagnose root causes, make minimal fixes, verify, and review until success or blocker.",
+      "version": "0.1.0",
+      "author": {
+        "name": "JinPLu"
+      },
+      "keywords": [
+        "debugging",
+        "verification",
+        "workflow",
+        "agents"
+      ],
+      "category": "workflow"
+    }
+  ]
+}

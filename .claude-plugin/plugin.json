@@ -1,0 +1,19 @@
+{
+  "name": "run-analyze-optimize-skill",
+  "description": "Lightweight autonomous run-analyze-optimize loop for command-driven debugging, minimal fixes, verification, and review.",
+  "version": "0.1.0",
+  "author": {
+    "name": "JinPLu"
+  },
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "debugging",
+    "verification",
+    "workflow",
+    "agents"
+  ],
+  "skills": [
+    "./skills/run-analyze-optimize"
+  ]
+}

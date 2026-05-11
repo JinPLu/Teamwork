@@ -1,0 +1,38 @@
+{
+  "name": "run-analyze-optimize-skill",
+  "version": "0.1.0",
+  "description": "Lightweight autonomous run-analyze-optimize loop for command-driven debugging, minimal fixes, verification, and review.",
+  "author": {
+    "name": "JinPLu",
+    "url": "https://github.com/JinPLu"
+  },
+  "homepage": "https://github.com/JinPLu/run-analyze-optimize-skill",
+  "repository": "https://github.com/JinPLu/run-analyze-optimize-skill",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "debugging",
+    "verification",
+    "workflow",
+    "agents"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Run Analyze Optimize",
+    "shortDescription": "Run, diagnose, minimally fix, verify, and review.",
+    "longDescription": "A compact self-iteration workflow for command-driven debugging and artifact convergence. It combines Karpathy-style simplicity and surgical edits with Roundtable-lite evidence and review discipline.",
+    "developerName": "JinPLu",
+    "category": "Productivity",
+    "capabilities": [
+      "Write",
+      "Interactive"
+    ],
+    "websiteURL": "https://github.com/JinPLu/run-analyze-optimize-skill",
+    "defaultPrompt": [
+      "Run tests, diagnose failures, and fix minimally.",
+      "Iterate a pipeline until artifacts verify.",
+      "Review the diff and preserve dissent."
+    ],
+    "brandColor": "#2563EB"
+  }
+}
