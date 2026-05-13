@@ -1,8 +1,8 @@
 ---
-description: Show run-analyze-optimize goal command help
+description: Show teamwork goal command help
 ---
 
-Run-analyze-optimize goal commands:
+Teamwork goal commands (`/rao:*` is the retained Claude runtime prefix):
 
 - `/rao:goal <objective> [--max-iterations N] [--completion-promise TEXT]` starts a Stop-hook-backed autonomous goal.
 - `/rao:status` shows the active goal.
@@ -13,4 +13,4 @@ Run-analyze-optimize goal commands:
 - `/rao:clear` deletes the active goal state.
 - `/rao:note <note>` appends context to the goal file.
 
-State is stored under `.claude/run-analyze-optimize-goals/` in the current project.
+State is stored under `.claude/teamwork-goals/` in the current project.

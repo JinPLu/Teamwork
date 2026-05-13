@@ -3,10 +3,10 @@
 This repository exposes a router skill plus workflow subskills:
 
 ```text
-skills/run-analyze-optimize/SKILL.md
-skills/run-analyze-design/SKILL.md
-skills/run-analyze-execute/SKILL.md
-skills/run-analyze-review/SKILL.md
+skills/teamwork/SKILL.md
+skills/teamwork-design/SKILL.md
+skills/teamwork-execute/SKILL.md
+skills/teamwork-review/SKILL.md
 ```
 
 Install globally:
@@ -23,7 +23,7 @@ Claude Code plugin metadata lives in:
 
 The plugin also exposes `/rao:*` commands and a Stop hook backed by
 `bin/raoctl.py`. Goal state is project-local under
-`.claude/run-analyze-optimize-goals/`.
+`.claude/teamwork-goals/`.
 
 Auto-completion requires the configured completion promise, such as
 `<promise>RAO_GOAL_COMPLETE</promise>`, plus a structured

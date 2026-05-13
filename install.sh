@@ -3,12 +3,16 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS=(
+  teamwork
+  teamwork-design
+  teamwork-execute
+  teamwork-review
+)
+RETIRED_SKILLS=(
   run-analyze-optimize
   run-analyze-design
   run-analyze-execute
   run-analyze-review
-)
-RETIRED_SKILLS=(
   run-analyze-research
   run-analyze-plan
   run-analyze-goal
@@ -76,9 +80,18 @@ install_cursor() {
 
   local rules="$project/.cursor/rules"
   mkdir -p "$rules"
-  ln -sf "$ROOT/.cursor/rules/run-analyze-optimize.mdc" \
-    "$rules/run-analyze-optimize.mdc"
-  echo "Installed Cursor rule: $rules/run-analyze-optimize.mdc"
+  if [[ -L "$rules/run-analyze-optimize.mdc" ]]; then
+    local raw_target resolved
+    raw_target="$(readlink "$rules/run-analyze-optimize.mdc" 2>/dev/null || true)"
+    resolved="$(readlink -f "$rules/run-analyze-optimize.mdc" 2>/dev/null || true)"
+    if [[ "$raw_target" == "$ROOT/.cursor/rules/run-analyze-optimize.mdc" || \
+          "$resolved" == "$ROOT/.cursor/rules/run-analyze-optimize.mdc" ]]; then
+      rm -f "$rules/run-analyze-optimize.mdc"
+    fi
+  fi
+  ln -sf "$ROOT/.cursor/rules/teamwork.mdc" \
+    "$rules/teamwork.mdc"
+  echo "Installed Cursor rule: $rules/teamwork.mdc"
 }
 
 case "${1:-}" in

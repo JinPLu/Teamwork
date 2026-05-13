@@ -1,5 +1,5 @@
 ---
-description: Manually mark the active run-analyze-optimize goal complete
+description: Manually mark the active teamwork goal complete
 ---
 
 ```bash

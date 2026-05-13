@@ -1,18 +1,18 @@
 {
-  "name": "run-analyze-optimize-skills",
-  "id": "run-analyze-optimize-skills",
+  "name": "teamwork-skills",
+  "id": "teamwork-skills",
   "owner": {
     "name": "JinPLu"
   },
   "metadata": {
-    "description": "Router and compact subskills for research, planning, execution, review, and autonomous run-analyze-optimize convergence.",
+    "description": "Coordinate coding-agent teamwork across evidence gathering, scoped execution, review, and verified completion.",
     "version": "0.1.0"
   },
   "plugins": [
     {
-      "name": "run-analyze-optimize-skill",
+      "name": "teamwork-skill",
       "source": "./",
-      "description": "Route research, planning, execution, review, and Stop-hook-backed autonomous goal loops with evidence-first discipline.",
+      "description": "Coordinate subagent research, scoped execution, independent review, and Stop-hook-backed goal loops.",
       "version": "0.1.0",
       "author": {
         "name": "JinPLu"

@@ -1,9 +1,9 @@
 ---
-name: run-analyze-design
-description: Use when a run/analyze/optimize request needs divergent research or an executable plan before implementation.
+name: teamwork-design
+description: Use when a Teamwork request needs divergent research or an executable plan before implementation.
 ---
 
-# Run-Analyze Design
+# Teamwork Design
 
 Use this subskill before implementation. It has two explicit modes:
 
@@ -25,7 +25,7 @@ direction is still uncertain, return to `mode: research`.
 
 State missing inputs as assumptions before they affect behavior. If an
 assumption would change public behavior, protected claims, data contracts, or
-architecture, stop and ask instead of guessing. In `run-analyze-optimize`
+architecture, stop and ask instead of guessing. In `teamwork`
 `mode: goal`, safe internal details should become explicit assumptions rather
 than user questions.
 

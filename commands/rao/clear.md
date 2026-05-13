@@ -1,5 +1,5 @@
 ---
-description: Clear the active run-analyze-optimize goal state
+description: Clear the active teamwork goal state
 ---
 
 ```bash

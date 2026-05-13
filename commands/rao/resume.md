@@ -1,5 +1,5 @@
 ---
-description: Resume the active run-analyze-optimize goal
+description: Resume the active teamwork goal
 ---
 
 ```bash

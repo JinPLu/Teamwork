@@ -1,5 +1,5 @@
 ---
-description: Pause the active run-analyze-optimize goal
+description: Pause the active teamwork goal
 ---
 
 ```bash

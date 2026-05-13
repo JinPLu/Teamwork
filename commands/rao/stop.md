@@ -1,5 +1,5 @@
 ---
-description: Stop the active run-analyze-optimize goal without deleting state
+description: Stop the active teamwork goal without deleting state
 ---
 
 ```bash

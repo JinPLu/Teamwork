@@ -1,9 +1,9 @@
 ---
-name: run-analyze-review
-description: Use when a run/analyze/optimize plan or execution result needs independent review from direct evidence.
+name: teamwork-review
+description: Use when a Teamwork plan or execution result needs independent review from direct evidence.
 ---
 
-# Run-Analyze Review
+# Teamwork Review
 
 Use this subskill for a distinct reviewer pass. The reviewer reads evidence
 independently and preserves dissent. Do not rely only on the planner's or

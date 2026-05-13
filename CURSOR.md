@@ -4,7 +4,7 @@ Cursor does not consume Claude/Codex skill directories directly. This repository
 therefore provides a thin project rule:
 
 ```text
-.cursor/rules/run-analyze-optimize.mdc
+.cursor/rules/teamwork.mdc
 ```
 
 Install into a Cursor project:
@@ -17,7 +17,7 @@ The Cursor rule summarizes the router and subskill names and points back to the
 router skill:
 
 ```text
-skills/run-analyze-optimize/SKILL.md
+skills/teamwork/SKILL.md
 ```
 
 Use the skill files as the behavioral source of truth, including evidence

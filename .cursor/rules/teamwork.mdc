@@ -1,9 +1,9 @@
 ---
-description: Router for run-analyze-optimize design, execution, review, and goal convergence.
+description: Router for teamwork design, execution, review, and goal convergence.
 alwaysApply: false
 ---
 
-# Run-Analyze-Optimize
+# Teamwork
 
 Use this rule when the user asks Cursor for evidence-driven research, planning,
 execution, review, or autonomous iteration until verified success or a clear
@@ -12,15 +12,15 @@ blocker.
 Canonical router:
 
 ```text
-skills/run-analyze-optimize/SKILL.md
+skills/teamwork/SKILL.md
 ```
 
 Installed skills:
 
-- `run-analyze-optimize` routes by intent and owns `mode: goal`.
-- `run-analyze-design` handles `mode: research` and `mode: plan`.
-- `run-analyze-execute` implements an accepted plan with minimal edits.
-- `run-analyze-review` reviews with `mode: plan` or `mode: execution`.
+- `teamwork` routes by intent and owns `mode: goal`.
+- `teamwork-design` handles `mode: research` and `mode: plan`.
+- `teamwork-execute` implements an accepted plan with minimal edits.
+- `teamwork-review` reviews with `mode: plan` or `mode: execution`.
 
 ## Router Flow
 

@@ -2,14 +2,18 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ROUTER="$ROOT/skills/run-analyze-optimize/SKILL.md"
+ROUTER="$ROOT/skills/teamwork/SKILL.md"
 SKILLS=(
+  teamwork
+  teamwork-design
+  teamwork-execute
+  teamwork-review
+)
+RETIRED_SKILLS=(
   run-analyze-optimize
   run-analyze-design
   run-analyze-execute
   run-analyze-review
-)
-RETIRED_SKILLS=(
   run-analyze-research
   run-analyze-plan
   run-analyze-goal
@@ -51,19 +55,19 @@ for skill in "${SKILLS[@]}"; do
   done
 done
 
-for subskill in run-analyze-design run-analyze-execute run-analyze-review; do
+for subskill in teamwork-design teamwork-execute teamwork-review; do
   grep -q "skills/$subskill/SKILL.md" "$ROUTER" || fail "router does not reference skills/$subskill/SKILL.md"
 done
 
 grep -q 'mode: goal' "$ROUTER" || fail "router must own mode: goal"
-grep -q 'mode: research' "$ROOT/skills/run-analyze-design/SKILL.md" || fail "design skill missing mode: research"
-grep -q 'mode: plan' "$ROOT/skills/run-analyze-design/SKILL.md" || fail "design skill missing mode: plan"
-grep -q 'mode: plan' "$ROOT/skills/run-analyze-review/SKILL.md" || fail "review skill missing mode: plan"
-grep -q 'mode: execution' "$ROOT/skills/run-analyze-review/SKILL.md" || fail "review skill missing mode: execution"
+grep -q 'mode: research' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill missing mode: research"
+grep -q 'mode: plan' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill missing mode: plan"
+grep -q 'mode: plan' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill missing mode: plan"
+grep -q 'mode: execution' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill missing mode: execution"
 
 [[ -f "$ROOT/.claude-plugin/plugin.json" ]] || fail "missing Claude plugin manifest"
 [[ -f "$ROOT/.codex-plugin/plugin.json" ]] || fail "missing Codex plugin manifest"
-[[ -f "$ROOT/.cursor/rules/run-analyze-optimize.mdc" ]] || fail "missing Cursor rule"
+[[ -f "$ROOT/.cursor/rules/teamwork.mdc" ]] || fail "missing Cursor rule"
 
 python3 -m json.tool "$ROOT/.claude-plugin/plugin.json" >/dev/null
 python3 -m json.tool "$ROOT/.claude-plugin/marketplace.json" >/dev/null
@@ -76,12 +80,16 @@ import sys
 
 root = pathlib.Path(sys.argv[1])
 expected = [
+    "./skills/teamwork",
+    "./skills/teamwork-design",
+    "./skills/teamwork-execute",
+    "./skills/teamwork-review",
+]
+retired = {
     "./skills/run-analyze-optimize",
     "./skills/run-analyze-design",
     "./skills/run-analyze-execute",
     "./skills/run-analyze-review",
-]
-retired = {
     "./skills/run-analyze-research",
     "./skills/run-analyze-plan",
     "./skills/run-analyze-goal",
@@ -98,7 +106,7 @@ if codex.get("skills") != "./skills/":
     raise SystemExit("FAIL: Codex manifest skills must remain ./skills/")
 PY
 
-[[ -f "$ROOT/bin/raoctl.py" ]] || fail "missing RAO runtime controller"
+[[ -f "$ROOT/bin/raoctl.py" ]] || fail "missing Teamwork runtime controller"
 [[ -f "$ROOT/hooks/hooks.json" ]] || fail "missing Claude hook definitions"
 [[ -d "$ROOT/commands/rao" ]] || fail "missing /rao command directory"
 for command in goal status pause resume stop complete clear note help; do
@@ -108,24 +116,25 @@ grep -q 'hook-stop' "$ROOT/hooks/hooks.json" || fail "hooks must include Stop co
 grep -q 'raoctl.py' "$ROOT/hooks/hooks.json" || fail "hooks must invoke raoctl.py"
 grep -q '/rao:goal' "$ROOT/README.md" || fail "README must document /rao:goal"
 grep -q 'Stop hook' "$ROOT/README.md" || fail "README must document Stop hook behavior"
-grep -q '.claude/run-analyze-optimize-goals' "$ROOT/README.md" || fail "README must document goal state path"
+grep -q '.claude/teamwork-goals' "$ROOT/README.md" || fail "README must document goal state path"
 grep -q 'RAO_GOAL_COMPLETE' "$ROOT/README.md" || fail "README must document completion promise"
 grep -q 'Codex Native Integration' "$ROUTER" || fail "router must document Codex native integration"
 grep -q 'native Codex goals' "$ROOT/CODEX.md" || fail "CODEX.md must document native Codex goals"
 grep -q 'Codex Runtime Mapping' "$ROOT/CODEX.md" || fail "CODEX.md must document Codex runtime mapping"
 grep -q 'Codex runtime' "$ROOT/README.md" || fail "README must document Codex runtime"
-grep -q 'codex review' "$ROOT/skills/run-analyze-review/SKILL.md" || fail "review skill must mention codex review"
-grep -q 'sandbox' "$ROOT/skills/run-analyze-execute/SKILL.md" || fail "execute skill must document sandbox approvals"
-grep -q 'Subagent Plan' "$ROOT/skills/run-analyze-design/SKILL.md" || fail "design skill must document subagent plan"
+grep -q 'codex review' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill must mention codex review"
+grep -q 'sandbox' "$ROOT/skills/teamwork-execute/SKILL.md" || fail "execute skill must document sandbox approvals"
+grep -q 'Subagent Plan' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must document subagent plan"
 grep -q 'MCP' "$ROOT/CODEX.md" || fail "CODEX.md must document MCP/network fallback"
 grep -q 'Evidence Interpretation Contract' "$ROUTER" || fail "router must define evidence interpretation contract"
-grep -q 'Evidence Interpretation Contract' "$ROOT/skills/run-analyze-design/SKILL.md" || fail "design skill must define evidence interpretation contract"
+grep -q 'Evidence Interpretation Contract' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must define evidence interpretation contract"
 grep -q 'Context & Cost Discipline' "$ROUTER" || fail "router must define context and cost discipline"
-grep -q 'Context & Cost Discipline' "$ROOT/skills/run-analyze-design/SKILL.md" || fail "design skill must define context and cost discipline"
+grep -q 'Context & Cost Discipline' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must define context and cost discipline"
+grep -q 'Subagent Collaboration Model' "$ROUTER" || fail "router must define subagent collaboration model"
 for term in observed inferred claimed; do
   grep -q "$term" "$ROUTER" || fail "router must mention $term evidence"
-  grep -q "$term" "$ROOT/skills/run-analyze-design/SKILL.md" || fail "design skill must mention $term evidence"
-  grep -q "$term" "$ROOT/skills/run-analyze-review/SKILL.md" || fail "review skill must mention $term evidence"
+  grep -q "$term" "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must mention $term evidence"
+  grep -q "$term" "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill must mention $term evidence"
 done
 grep -q 'at most 3 parallel' "$ROUTER" || fail "router must limit default parallel subagents"
 grep -q '<completion_audit>' "$ROUTER" || fail "router must document completion audit format"
@@ -133,8 +142,8 @@ grep -q '<completion_audit>' "$ROOT/README.md" || fail "README must document com
 grep -q 'completion_audit_detected' "$ROOT/bin/raoctl.py" || fail "runtime must gate completion on audit detection"
 grep -q 'PASSING_REVIEW_VERDICTS' "$ROOT/bin/raoctl.py" || fail "runtime must parse passing review verdicts"
 grep -q 'manual /rao:complete override' "$ROOT/bin/raoctl.py" || fail "runtime must mark manual completion override"
-grep -q 'Narrative-mislead risk' "$ROOT/skills/run-analyze-review/SKILL.md" || fail "review skill must check narrative-mislead risk"
-grep -q 'Treat executor summaries' "$ROOT/skills/run-analyze-review/SKILL.md" || fail "review skill must treat summaries as evidence only"
+grep -q 'Narrative-mislead risk' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill must check narrative-mislead risk"
+grep -q 'Treat executor summaries' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill must treat summaries as evidence only"
 
 tmp_runtime="$(mktemp -d)"
 first_stop="$tmp_runtime/first-stop.json"
@@ -239,18 +248,53 @@ python3 "$ROOT/bin/raoctl.py" status --session-id s1 --cwd "$tmp_runtime" | grep
   || fail "hook-stop must mark max-iteration stop stopped"
 rm -rf "$tmp_runtime"
 
+tmp_legacy="$(mktemp -d)"
+mkdir -p "$tmp_legacy/.claude/run-analyze-optimize-goals"
+python3 - "$tmp_legacy/.claude/run-analyze-optimize-goals/s1.goal.md" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+path.write_text("""---
+status: "active"
+session_id: "s1"
+objective: "verify legacy state migration"
+iteration: 1
+max_iterations: 2
+completion_promise: "RAO_GOAL_COMPLETE"
+created_at: "2026-05-13T00:00:00Z"
+last_hook_event: "goal_created"
+---
+
+# Objective
+
+verify legacy state migration
+
+# Notes
+
+# Iteration Log
+
+- 2026-05-13T00:00:00Z: Legacy goal created.
+""", encoding="utf-8")
+PY
+hook_json "$tmp_legacy" "legacy not done" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$tmp_legacy/legacy-stop.json"
+grep -q '"decision":"block"' "$tmp_legacy/legacy-stop.json" || fail "hook-stop must block migrated legacy active goals"
+[[ -f "$tmp_legacy/.claude/teamwork-goals/s1.goal.md" ]] || fail "legacy state must migrate to .claude/teamwork-goals"
+[[ ! -e "$tmp_legacy/.claude/run-analyze-optimize-goals/s1.goal.md" ]] || fail "legacy state file must be removed after migration"
+rm -rf "$tmp_legacy"
+
 for skill in "${SKILLS[@]}"; do
-  grep -q "$skill" "$ROOT/.cursor/rules/run-analyze-optimize.mdc" || fail "Cursor rule does not mention $skill"
+  grep -q "$skill" "$ROOT/.cursor/rules/teamwork.mdc" || fail "Cursor rule does not mention $skill"
   grep -q "$skill" "$ROOT/install.sh" || fail "install.sh does not install $skill"
   grep -q "$skill" "$ROOT/README.md" || fail "README.md does not mention $skill"
 done
 
 for retired in "${RETIRED_SKILLS[@]}"; do
-  ! grep -q "$retired" "$ROOT/.cursor/rules/run-analyze-optimize.mdc" || fail "Cursor rule mentions retired skill $retired"
+  ! grep -q "$retired" "$ROOT/.cursor/rules/teamwork.mdc" || fail "Cursor rule mentions retired skill $retired"
   ! grep -q "$retired" "$ROOT/README.md" || fail "README.md mentions retired skill $retired"
 done
 
-cursor_lines="$(wc -l < "$ROOT/.cursor/rules/run-analyze-optimize.mdc")"
+cursor_lines="$(wc -l < "$ROOT/.cursor/rules/teamwork.mdc")"
 [[ "$cursor_lines" -le 120 ]] || fail "Cursor rule is too long to be a thin summary"
 readme_lines="$(wc -l < "$ROOT/README.md")"
 [[ "$readme_lines" -le 180 ]] || fail "README is too long to remain an entrypoint summary"
@@ -261,13 +305,18 @@ trap 'rm -rf "$tmp"' EXIT
 HOME="$tmp/claude-home" "$ROOT/install.sh" claude >/dev/null
 HOME="$tmp/codex-home" "$ROOT/install.sh" codex >/dev/null
 mkdir -p "$tmp/cursor-project"
+mkdir -p "$tmp/cursor-project/.cursor/rules"
+ln -sf "$ROOT/.cursor/rules/run-analyze-optimize.mdc" "$tmp/cursor-project/.cursor/rules/run-analyze-optimize.mdc"
 HOME="$tmp/cursor-home" "$ROOT/install.sh" cursor "$tmp/cursor-project" >/dev/null
 
 for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/claude-home/.claude/skills/$skill/SKILL.md" ]] || fail "Claude install missing $skill"
   [[ -L "$tmp/codex-home/.codex/skills/$skill/SKILL.md" ]] || fail "Codex install missing $skill"
 done
-[[ -L "$tmp/cursor-project/.cursor/rules/run-analyze-optimize.mdc" ]] || fail "Cursor install missing rule"
+[[ -L "$tmp/cursor-project/.cursor/rules/teamwork.mdc" ]] || fail "Cursor install missing rule"
+[[ ! -e "$tmp/cursor-project/.cursor/rules/run-analyze-optimize.mdc" && \
+   ! -L "$tmp/cursor-project/.cursor/rules/run-analyze-optimize.mdc" ]] \
+  || fail "Cursor install did not clean retired rule symlink"
 
 for retired in "${RETIRED_SKILLS[@]}"; do
   mkdir -p "$tmp/migration-home/.codex/skills/$retired"
@@ -280,4 +329,4 @@ for retired in "${RETIRED_SKILLS[@]}"; do
     || fail "install did not clean retired symlink: $retired"
 done
 
-echo "OK: run-analyze-optimize skill package validates"
+echo "OK: Teamwork skill package validates"

@@ -1,16 +1,16 @@
 ---
-name: run-analyze-execute
-description: Use when an accepted run/analyze/optimize plan should be implemented with minimal edits and focused verification.
+name: teamwork-execute
+description: Use when an accepted Teamwork plan should be implemented with minimal edits and focused verification.
 ---
 
-# Run-Analyze Execute
+# Teamwork Execute
 
 Use this subskill only after a plan has been accepted. The executor implements
 the plan; it does not self-declare completion.
 
 ## Preconditions
 
-- Accepted plan from `run-analyze-design` with `mode: plan`, including root
+- Accepted plan from `teamwork-design` with `mode: plan`, including root
   cause or goal, scope, sacred boundaries, and verification.
 - Current workspace status is understood enough to avoid overwriting others.
 - Required files, commands, credentials, and environments are available or the

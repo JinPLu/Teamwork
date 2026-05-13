@@ -1,5 +1,5 @@
 ---
-description: Add a note to the active run-analyze-optimize goal
+description: Add a note to the active teamwork goal
 argument-hint: <note>
 ---
 

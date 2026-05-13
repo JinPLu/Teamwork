@@ -1,5 +1,5 @@
 {
-  "description": "Run-analyze-optimize hooks for project-local goal state and Stop-hook-backed autonomous continuation.",
+  "description": "Teamwork hooks for project-local goal state and Stop-hook-backed autonomous continuation.",
   "hooks": {
     "SessionStart": [
       {

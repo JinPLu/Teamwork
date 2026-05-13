@@ -1,13 +1,13 @@
 {
-  "name": "run-analyze-optimize-skill",
+  "name": "teamwork-skill",
   "version": "0.1.0",
-  "description": "Router and compact subskills for research, planning, execution, review, and autonomous run-analyze-optimize convergence.",
+  "description": "Coordinate coding-agent teamwork across evidence gathering, scoped execution, review, and verified completion.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"
   },
-  "homepage": "https://github.com/JinPLu/run-analyze-optimize-skill",
-  "repository": "https://github.com/JinPLu/run-analyze-optimize-skill",
+  "homepage": "https://github.com/JinPLu/Teamwork",
+  "repository": "https://github.com/JinPLu/Teamwork",
   "license": "MIT",
   "keywords": [
     "skills",
@@ -20,21 +20,21 @@
   ],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Run Analyze Optimize",
-    "shortDescription": "Route design, execution, review, and goal loops.",
-    "longDescription": "A compact router plus three stage skills for command-driven debugging and artifact convergence. It combines Karpathy-style simplicity and surgical edits with Roundtable-style research, planning, independent review, and unattended goal convergence.",
+    "displayName": "Teamwork",
+    "shortDescription": "Coordinate subagents from evidence to reviewed completion.",
+    "longDescription": "A compact router plus three stage skills for coding-agent collaboration. The main agent decomposes and accepts work while subagents investigate, implement scoped plans, review independently, and return condensed evidence.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
       "Write",
       "Interactive"
     ],
-    "websiteURL": "https://github.com/JinPLu/run-analyze-optimize-skill",
+    "websiteURL": "https://github.com/JinPLu/Teamwork",
     "defaultPrompt": [
-      "Research options or create an executable implementation plan.",
-      "Run tests, diagnose failures, and fix minimally.",
-      "Iterate a pipeline until artifacts verify.",
-      "Review plans or execution results with independent evidence reading."
+      "Split a coding task into evidence-gathering, planning, execution, and review tracks.",
+      "Use subagents for independent investigation or fresh-context review.",
+      "Execute an accepted plan with minimal edits and focused verification.",
+      "Review plans or execution results with direct evidence before claiming completion."
     ],
     "brandColor": "#2563EB"
   }

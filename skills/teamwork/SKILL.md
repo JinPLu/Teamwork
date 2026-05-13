@@ -1,16 +1,18 @@
 ---
-name: run-analyze-optimize
-description: Use when a request should enter an evidence-first run/analyze/optimize workflow, especially for research, planning, execution, review, or autonomous convergence.
+name: teamwork
+description: Use when a request should enter an evidence-first Teamwork workflow, especially for research, planning, execution, review, or autonomous convergence.
 ---
 
-# Run-Analyze-Optimize
+# Teamwork
 
 This is the public entrypoint and goal controller for the package. Use it to
-route a request to the narrowest stage skill, or to run a bounded autonomous
-loop when the user asks for convergence. In skill-only installs this autonomy is
-instructional within the current assistant turn; in the Claude Code plugin it is
-runtime-backed by `/rao:goal` state plus a `Stop` hook that continues incomplete
-goals across turns until success, budget exhaustion, or a hard blocker.
+coordinate main-agent ownership with subagent research, execution, review, and
+acceptance gates. Route a request to the narrowest stage skill, or run a
+bounded autonomous loop when the user asks for convergence. In skill-only
+installs this autonomy is instructional within the current assistant turn; in
+the Claude Code plugin it is runtime-backed by `/rao:goal` state plus a `Stop`
+hook that continues incomplete goals across turns until success, budget
+exhaustion, or a hard blocker.
 
 The package preserves the original discipline:
 
@@ -20,6 +22,24 @@ The package preserves the original discipline:
   useful, independent review, dissent preservation, and budgeted stopping.
 - **No full roundtable infrastructure**: do not import model registries,
   pricing caches, dispatch scripts, or thread ledgers unless the user asks.
+
+## Subagent Collaboration Model
+
+Subagents are a foundation of Teamwork, not a decorative add-on. The main agent
+owns scope, decomposition, synthesis, conflict resolution, verification, and
+final acceptance. Subagents provide bounded work products:
+
+- Explorer: read-heavy independent investigation with condensed evidence.
+- Judge: fresh-context plan review before execution.
+- Worker: implementation for an accepted plan with exact file ownership or
+  worktree isolation.
+- Reviewer: fresh-context execution review against diffs, tests, logs, and
+  artifacts.
+
+Use subagents when tracks can run independently, when fresh context reduces
+self-confirmation risk, or when splitting context lowers cost. Do not fan out
+merely for ceremony, duplicate another agent's unresolved work, or give writing
+agents overlapping file ownership.
 
 ## Evidence Interpretation Contract
 
@@ -80,19 +100,19 @@ roundtable infrastructure:
 
 | User intent | Route | Skill file |
 |---|---|---|
-| Research options, compare approaches, discuss tradeoffs, gather evidence | `run-analyze-design` with `mode: research` | `skills/run-analyze-design/SKILL.md` |
-| Convert a chosen direction into an executable implementation plan | `run-analyze-design` with `mode: plan` | `skills/run-analyze-design/SKILL.md` |
-| Execute an accepted plan with minimal edits and verification | `run-analyze-execute` | `skills/run-analyze-execute/SKILL.md` |
-| plan-review: review a plan before execution | `run-analyze-review` with `mode: plan` | `skills/run-analyze-review/SKILL.md` |
-| execution-review: review diffs, artifacts, tests, and results after execution | `run-analyze-review` with `mode: execution` | `skills/run-analyze-review/SKILL.md` |
-| Iterate autonomously until verified success, budget exhaustion, or blocker | `run-analyze-optimize` with `mode: goal` | this skill |
+| Research options, compare approaches, discuss tradeoffs, gather evidence | `teamwork-design` with `mode: research` | `skills/teamwork-design/SKILL.md` |
+| Convert a chosen direction into an executable implementation plan | `teamwork-design` with `mode: plan` | `skills/teamwork-design/SKILL.md` |
+| Execute an accepted plan with minimal edits and verification | `teamwork-execute` | `skills/teamwork-execute/SKILL.md` |
+| plan-review: review a plan before execution | `teamwork-review` with `mode: plan` | `skills/teamwork-review/SKILL.md` |
+| execution-review: review diffs, artifacts, tests, and results after execution | `teamwork-review` with `mode: execution` | `skills/teamwork-review/SKILL.md` |
+| Iterate autonomously until verified success, budget exhaustion, or blocker | `teamwork` with `mode: goal` | this skill |
 
 Do not create separate plan-review and execution-review subskills. The single
-`run-analyze-review` subskill has two explicit modes so reviewer orchestration
+`teamwork-review` subskill has two explicit modes so reviewer orchestration
 stays shared while the rubric changes by review target.
 
 Do not create separate research, plan, or goal subskills. Research and planning
-share `run-analyze-design` with hard mode boundaries; autonomous convergence is
+share `teamwork-design` with hard mode boundaries; autonomous convergence is
 the router's `mode: goal`.
 
 ## Routing Rules
@@ -100,14 +120,14 @@ the router's `mode: goal`.
 Use the narrowest subskill that satisfies the request:
 
 - If the user asks "what should we do?", "research", "compare", "discuss", or
-  "find options", route to `run-analyze-design` with `mode: research`.
-- If the user asks for a plan, route to `run-analyze-design` with `mode: plan`.
+  "find options", route to `teamwork-design` with `mode: research`.
+- If the user asks for a plan, route to `teamwork-design` with `mode: plan`.
 - If the user gives an accepted plan or says to implement/execute, route to
-  `run-analyze-execute`.
+  `teamwork-execute`.
 - If the user asks to review a proposed plan, route to
-  `run-analyze-review` with `mode: plan`.
+  `teamwork-review` with `mode: plan`.
 - If the user asks to review a diff, patch, artifacts, test result, or completed
-  execution, route to `run-analyze-review` with `mode: execution`.
+  execution, route to `teamwork-review` with `mode: execution`.
 - If the user asks to "run until it passes", "iterate until convergence",
   "keep going until done", or gives a verifiable target plus budget, stay in
   this skill and use `mode: goal`.
@@ -122,7 +142,7 @@ goal exists, create a native Codex goal with the objective and optional budget.
 If a goal already exists, continue it instead of creating another. Mark a goal
 complete only after focused verification and execution review pass. Do not use
 project-local Markdown goal files for Codex-native goal state; the
-`.claude/run-analyze-optimize-goals/` runtime is Claude-plugin-specific.
+`.claude/teamwork-goals/` runtime is Claude-plugin-specific.
 
 Default budget when unspecified:
 
@@ -144,13 +164,13 @@ Controller loop:
 1. Initialize: state goal, assumptions, sacred boundaries, mutable scope,
    verification target, and budget.
 2. Research/discuss only if causes or options are unclear: use
-   `run-analyze-design` with `mode: research`.
-3. Plan: use `run-analyze-design` with `mode: plan`.
-4. Review the plan: use `run-analyze-review` with `mode: plan`; revise until
+   `teamwork-design` with `mode: research`.
+3. Plan: use `teamwork-design` with `mode: plan`.
+4. Review the plan: use `teamwork-review` with `mode: plan`; revise until
    pass or blocked.
-5. Execute: use `run-analyze-execute` on the accepted plan.
+5. Execute: use `teamwork-execute` on the accepted plan.
 6. Verify: run focused checks first and collect real evidence.
-7. Review execution: use `run-analyze-review` with `mode: execution`.
+7. Review execution: use `teamwork-review` with `mode: execution`.
 8. Decide: accept only if verification and execution review pass; otherwise
    continue with a new hypothesis, stop at budget, or report a blocker.
 
@@ -205,7 +225,7 @@ All subskills follow the same contract:
 After routing, report the selected subskill and why:
 
 ```text
-Route: run-analyze-<stage>
+Route: teamwork-<stage>
 Reason: <one sentence tied to user intent>
 Mode: <research | plan | execution | goal, when applicable>
 ```

@@ -1,5 +1,5 @@
 ---
-description: Show the active run-analyze-optimize goal status
+description: Show the active teamwork goal status
 ---
 
 ```bash
