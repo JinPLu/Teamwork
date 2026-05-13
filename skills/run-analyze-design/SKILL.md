@@ -25,12 +25,51 @@ direction is still uncertain, return to `mode: research`.
 
 State missing inputs as assumptions before they affect behavior. If an
 assumption would change public behavior, protected claims, data contracts, or
-architecture, stop and ask instead of guessing.
+architecture, stop and ask instead of guessing. In `run-analyze-optimize`
+`mode: goal`, safe internal details should become explicit assumptions rather
+than user questions.
+
+## Evidence Interpretation Contract
+
+Treat file names, directory names, version labels such as `v2`, `latest`,
+comments, README prose, historical notes, and prior summaries as claims, not
+facts. Before using them to choose a direction or write a plan, corroborate
+them with direct evidence such as source call paths, tests, configuration,
+command output, artifact properties, or git diff.
+
+Label important findings as:
+
+- `observed`: direct evidence you inspected.
+- `inferred`: a conclusion drawn from observed evidence.
+- `claimed`: narrative, naming, or documentation text that still needs
+  corroboration.
+
+Do not let a claimed label decide scope, canonical files, version freshness, or
+completion status without at least one direct evidence cross-check.
+
+## Context & Cost Discipline
+
+- Prefer local files, diffs, logs, tests, and artifacts before MCP or web.
+- Use MCP/web only for external constraints, official/current information, or
+  user-authorized evidence not present locally.
+- Use subagents for independent read-heavy tracks by default. Give writing
+  subagents exact file slices or worktree isolation.
+- Ask subagents to return condensed evidence, confidence, dissent, and open
+  questions instead of large raw logs.
+- Default research/review fan-out is at most 3 parallel subagents unless the
+  user gives a larger budget.
 
 ## mode: research
 
 Use when the next step is unclear, the problem has multiple plausible causes,
 or option generation is useful before selecting a direction.
+
+Use Codex subagents for independent research tracks when available and useful.
+Each subagent prompt must include the exact question, scope, evidence to read,
+constraints, and return format. Do not give subagents broad permission to edit
+unless they are explicitly the worker for an accepted plan with file ownership.
+If subagents are unavailable, use separate local passes and label the
+limitation.
 
 Workflow:
 
@@ -60,7 +99,7 @@ Assumptions:
 - ...
 
 Evidence Read:
-- <path/command/artifact>: <finding>
+- <observed|inferred|claimed> <path/command/artifact>: <finding>
 
 Options:
 1. <option> - benefits, risks, verification, boundary impact
@@ -132,4 +171,9 @@ Worker Handoff:
 
 Review Handoff:
 - Check scope, diff, tests/artifacts, regressions, and acceptance criteria.
+
+Subagent Plan:
+- Judge agent: <needed | not needed because ...>
+- Worker agent: <main agent | subagent with exact scope>
+- Review agent: <main distinct pass | subagent | codex review command>
 ```

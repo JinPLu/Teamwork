@@ -12,7 +12,7 @@
     {
       "name": "run-analyze-optimize-skill",
       "source": "./",
-      "description": "Route research, planning, execution, review, and goal loops with evidence-first discipline.",
+      "description": "Route research, planning, execution, review, and Stop-hook-backed autonomous goal loops with evidence-first discipline.",
       "version": "0.1.0",
       "author": {
         "name": "JinPLu"
@@ -23,7 +23,10 @@
         "workflow",
         "agents",
         "planning",
-        "review"
+        "review",
+        "goal",
+        "hooks",
+        "autonomous"
       ],
       "category": "workflow"
     }

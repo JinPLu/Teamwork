@@ -7,7 +7,10 @@ description: Use when a request should enter an evidence-first run/analyze/optim
 
 This is the public entrypoint and goal controller for the package. Use it to
 route a request to the narrowest stage skill, or to run a bounded autonomous
-loop when the user asks for convergence.
+loop when the user asks for convergence. In skill-only installs this autonomy is
+instructional within the current assistant turn; in the Claude Code plugin it is
+runtime-backed by `/rao:goal` state plus a `Stop` hook that continues incomplete
+goals across turns until success, budget exhaustion, or a hard blocker.
 
 The package preserves the original discipline:
 
@@ -17,6 +20,61 @@ The package preserves the original discipline:
   useful, independent review, dissent preservation, and budgeted stopping.
 - **No full roundtable infrastructure**: do not import model registries,
   pricing caches, dispatch scripts, or thread ledgers unless the user asks.
+
+## Evidence Interpretation Contract
+
+Treat narrative labels as claims until verified. File names, directory names,
+`v2`, `latest`, comments, README statements, historical notes, issue text, and
+executor summaries are not facts by themselves.
+
+Classify important evidence explicitly:
+
+- `observed`: directly inspected source, diff, config, command output, test
+  result, log, or artifact.
+- `inferred`: a conclusion drawn from observed evidence.
+- `claimed`: a statement made by docs, names, comments, summaries, or users
+  that still needs corroboration before it drives a decision.
+
+For important judgments, cross-check at least one direct evidence category:
+source call path, test behavior, configuration, command output, artifact
+properties, or git diff. Do not treat a label such as `latest` or `v2` as proof
+that the referenced file is current, canonical, or active.
+
+## Context & Cost Discipline
+
+- Prefer local repository evidence before MCP, network, or web research.
+- Use MCP or web only when the task needs external tools, official/current
+  information, or user-authorized sources that are not available locally.
+- Use subagents primarily for read-heavy independent research, judge, and
+  review tracks. Writing subagents need exact file ownership or worktree
+  isolation.
+- Ask subagents for condensed evidence and verdicts, not raw log dumps.
+- Default to at most 3 parallel research/review subagents unless the user gives
+  a larger budget.
+- The main agent owns synthesis, conflict resolution, verification, and the
+  final decision even when subagents are used.
+
+## Codex Native Integration
+
+When running in Codex, use native platform capabilities instead of emulating
+roundtable infrastructure:
+
+- Use `update_plan` for visible checklist state on multi-step work.
+- Use Codex goals only for explicit autonomous convergence requests or an
+  existing active goal. Do not create a goal for ordinary research, planning,
+  review, or one-shot execution.
+- Use Codex subagents for independent research, judge, worker, or reviewer
+  tracks when multi-agent support is available. Dispatch focused prompts,
+  wait for results when they are needed, synthesize conflicts locally, and
+  close agents that are no longer needed.
+- If subagents are unavailable or the work is tightly coupled, run clearly
+  separated local passes instead of pretending the review is independent.
+- For code review of real repository diffs, `codex review --uncommitted`,
+  `--base`, or `--commit` may be used as review evidence. It is not an
+  automatic pass.
+- Respect sandbox and approval policy. Do not bypass approvals. If a required
+  command fails because of sandbox or network restrictions, request narrow
+  escalation with a concise justification.
 
 ## Route By Intent
 
@@ -59,6 +117,13 @@ Use the narrowest subskill that satisfies the request:
 Use `mode: goal` only when the user gives a goal, command, artifact target, or
 failure and wants autonomous progress to verified success or a clear stop.
 
+In Codex, if the user explicitly asks for autonomous convergence and no active
+goal exists, create a native Codex goal with the objective and optional budget.
+If a goal already exists, continue it instead of creating another. Mark a goal
+complete only after focused verification and execution review pass. Do not use
+project-local Markdown goal files for Codex-native goal state; the
+`.claude/run-analyze-optimize-goals/` runtime is Claude-plugin-specific.
+
 Default budget when unspecified:
 
 - Maximum 3 optimization iterations.
@@ -66,6 +131,13 @@ Default budget when unspecified:
 - Stop immediately on sacred-boundary conflict, destructive risk, auth failure,
   missing credentials, unavailable required resources, or ambiguous product
   intent that affects behavior.
+
+During autonomous goal mode, do not ask the user for ordinary implementation
+choices, missing non-critical details, or next-step permission. Convert safe
+missing details into explicit assumptions and continue. Ask only for destructive
+risk, auth/credentials, missing required external resources, sacred-boundary
+conflict, or ambiguity that changes public behavior, protected contracts,
+architecture, or user intent.
 
 Controller loop:
 
@@ -85,12 +157,40 @@ Controller loop:
 Goal mode does not let one executor self-declare completion. Every completion
 claim must pass execution review.
 
+Autonomous iteration discipline:
+
+- Treat the goal as concrete deliverables plus verification targets.
+- Read direct evidence before each decision; do not rely on summaries.
+- If verification fails, identify the evidence delta, choose the next smallest
+  hypothesis, and continue within budget.
+- If there is no evidence delta for 2 consecutive iterations, stop with a
+  blocker or budget/no-progress conclusion.
+- In Claude Code plugin mode, emit the configured completion promise only after
+  verification and execution review pass, and include the required structured
+  completion audit in the same final assistant message.
+
+Completion audit format for Claude Code plugin auto-completion:
+
+```text
+<completion_audit>
+<requirements_mapping>map each requirement to direct evidence</requirements_mapping>
+<verification_evidence>commands, artifacts, or inspected evidence</verification_evidence>
+<review_verdict>pass</review_verdict>
+<dissent>none or preserved dissent/residual risk</dissent>
+</completion_audit>
+```
+
+The `review_verdict` must be exactly `pass` or `pass-with-notes`. The Stop hook
+must not auto-complete on the completion promise alone.
+
 ## Shared Contract
 
 All subskills follow the same contract:
 
 - State assumptions and sacred boundaries before committing to behavior.
 - Read direct evidence: files, diffs, logs, tests, artifacts, or command output.
+- Separate `observed`, `inferred`, and `claimed` evidence before important
+  decisions.
 - Prefer the smallest producer-side fix over downstream cleanup.
 - Keep mutable implementation details separate from protected principles,
   architecture, and public contracts.
@@ -127,6 +227,16 @@ Verification:
 Review:
 - Plan review: <verdict>
 - Execution review: <verdict and dissent>
+
+Completion Audit:
+- requirements_mapping: <evidence map>
+- verification_evidence: <commands/artifacts/inspection>
+- review_verdict: <pass | pass-with-notes | revise | blocked>
+- dissent: <none or residual risk>
+
+Codex Goal State:
+- native goal created | continued | not used
+- completion marked only after verification + execution review
 
 Unresolved:
 - <none or blockers>

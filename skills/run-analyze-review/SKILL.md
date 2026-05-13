@@ -12,12 +12,26 @@ executor's summary.
 ## Shared Review Rules
 
 - Choose one mode explicitly: mode: plan or mode: execution.
-- Read primary evidence: source, diffs, logs, artifacts, tests, and user
-  constraints as relevant.
-- Separate facts from inferences.
+- Start from a fresh-context reading of the review target. Do not rely only on
+  planner, executor, tool, or previous reviewer summaries.
+- Read primary evidence: source, diffs, logs, artifacts, tests, command output,
+  and user constraints as relevant.
+- Separate `observed`, `inferred`, and `claimed` evidence. File names,
+  directory names, `v2`, `latest`, comments, README prose, historical notes,
+  and summaries are claims until corroborated.
+- Cross-check important judgments against at least one direct evidence category:
+  source call path, test behavior, configuration, command output, artifact
+  properties, or git diff.
 - Check against the goal, sacred boundaries, budget, and stop rules.
 - Preserve dissent and uncertainty, even when the final verdict is pass.
 - Do not fix issues during review unless explicitly asked; report findings.
+- For execution review in a git repository, inspect the diff directly. When a
+  separate native review is useful, `codex review --uncommitted`,
+  `codex review --base <branch>`, or `codex review --commit <sha>` may be used
+  as review evidence. Treat that output as evidence, not as an automatic pass,
+  and preserve any dissent from direct inspection.
+- Treat executor summaries, `codex review`, CI summaries, and other tool output
+  as evidence inputs, never as the final verdict by themselves.
 
 ## mode: plan
 
@@ -51,6 +65,9 @@ Check:
 - Deviations: any departure from the plan is justified by evidence.
 - Workspace hygiene: no unrelated edits, generated churn, or overwritten work
   from others.
+- Narrative-mislead risk: check whether version names, stale docs, comments, or
+  historical explanations caused the executor to edit the wrong path, trust the
+  wrong behavior, or declare completion too early.
 
 ## Verdict Format
 
@@ -59,7 +76,7 @@ Mode:
 - plan | execution
 
 Evidence Read:
-- <path/command/artifact>: <finding>
+- <observed|inferred|claimed> <path/command/artifact>: <finding>
 
 Findings:
 - [blocker|major|minor] <issue> - <evidence> - <required action>

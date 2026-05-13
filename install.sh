@@ -25,7 +25,8 @@ Usage:
   ./install.sh all /path/to/cursor-project
 
 Installs by symlink where supported so each skills/*/SKILL.md remains the
-source of truth.
+source of truth. Claude Code plugin installs should use the checked-in plugin
+manifest for commands and hooks; this script does not modify global settings.
 USAGE
 }
 

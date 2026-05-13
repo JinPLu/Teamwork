@@ -15,6 +15,12 @@ the plan; it does not self-declare completion.
 - Current workspace status is understood enough to avoid overwriting others.
 - Required files, commands, credentials, and environments are available or the
   absence is recorded as a blocker.
+- Before running commands, classify whether they are read-only,
+  workspace-writing, networked, destructive, or outside the sandbox. Use normal
+  execution for safe local commands. If sandboxing blocks a required command,
+  request escalation with a concise justification and, when appropriate, a
+  narrow reusable prefix rule. Never use `danger-full-access` or bypass
+  approvals as part of this skill.
 
 If any precondition is missing, stop and return a blocker instead of guessing.
 

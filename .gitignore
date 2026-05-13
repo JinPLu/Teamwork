@@ -1,5 +1,8 @@
 .DS_Store
 .run-analyze-optimize/
+.claude/
+__pycache__/
+*.pyc
 *.log
 tmp/
 dist/

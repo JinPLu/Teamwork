@@ -98,6 +98,147 @@ if codex.get("skills") != "./skills/":
     raise SystemExit("FAIL: Codex manifest skills must remain ./skills/")
 PY
 
+[[ -f "$ROOT/bin/raoctl.py" ]] || fail "missing RAO runtime controller"
+[[ -f "$ROOT/hooks/hooks.json" ]] || fail "missing Claude hook definitions"
+[[ -d "$ROOT/commands/rao" ]] || fail "missing /rao command directory"
+for command in goal status pause resume stop complete clear note help; do
+  [[ -f "$ROOT/commands/rao/$command.md" ]] || fail "missing /rao:$command command"
+done
+grep -q 'hook-stop' "$ROOT/hooks/hooks.json" || fail "hooks must include Stop continuation"
+grep -q 'raoctl.py' "$ROOT/hooks/hooks.json" || fail "hooks must invoke raoctl.py"
+grep -q '/rao:goal' "$ROOT/README.md" || fail "README must document /rao:goal"
+grep -q 'Stop hook' "$ROOT/README.md" || fail "README must document Stop hook behavior"
+grep -q '.claude/run-analyze-optimize-goals' "$ROOT/README.md" || fail "README must document goal state path"
+grep -q 'RAO_GOAL_COMPLETE' "$ROOT/README.md" || fail "README must document completion promise"
+grep -q 'Codex Native Integration' "$ROUTER" || fail "router must document Codex native integration"
+grep -q 'native Codex goals' "$ROOT/CODEX.md" || fail "CODEX.md must document native Codex goals"
+grep -q 'Codex Runtime Mapping' "$ROOT/CODEX.md" || fail "CODEX.md must document Codex runtime mapping"
+grep -q 'Codex runtime' "$ROOT/README.md" || fail "README must document Codex runtime"
+grep -q 'codex review' "$ROOT/skills/run-analyze-review/SKILL.md" || fail "review skill must mention codex review"
+grep -q 'sandbox' "$ROOT/skills/run-analyze-execute/SKILL.md" || fail "execute skill must document sandbox approvals"
+grep -q 'Subagent Plan' "$ROOT/skills/run-analyze-design/SKILL.md" || fail "design skill must document subagent plan"
+grep -q 'MCP' "$ROOT/CODEX.md" || fail "CODEX.md must document MCP/network fallback"
+grep -q 'Evidence Interpretation Contract' "$ROUTER" || fail "router must define evidence interpretation contract"
+grep -q 'Evidence Interpretation Contract' "$ROOT/skills/run-analyze-design/SKILL.md" || fail "design skill must define evidence interpretation contract"
+grep -q 'Context & Cost Discipline' "$ROUTER" || fail "router must define context and cost discipline"
+grep -q 'Context & Cost Discipline' "$ROOT/skills/run-analyze-design/SKILL.md" || fail "design skill must define context and cost discipline"
+for term in observed inferred claimed; do
+  grep -q "$term" "$ROUTER" || fail "router must mention $term evidence"
+  grep -q "$term" "$ROOT/skills/run-analyze-design/SKILL.md" || fail "design skill must mention $term evidence"
+  grep -q "$term" "$ROOT/skills/run-analyze-review/SKILL.md" || fail "review skill must mention $term evidence"
+done
+grep -q 'at most 3 parallel' "$ROUTER" || fail "router must limit default parallel subagents"
+grep -q '<completion_audit>' "$ROUTER" || fail "router must document completion audit format"
+grep -q '<completion_audit>' "$ROOT/README.md" || fail "README must document completion audit format"
+grep -q 'completion_audit_detected' "$ROOT/bin/raoctl.py" || fail "runtime must gate completion on audit detection"
+grep -q 'PASSING_REVIEW_VERDICTS' "$ROOT/bin/raoctl.py" || fail "runtime must parse passing review verdicts"
+grep -q 'manual /rao:complete override' "$ROOT/bin/raoctl.py" || fail "runtime must mark manual completion override"
+grep -q 'Narrative-mislead risk' "$ROOT/skills/run-analyze-review/SKILL.md" || fail "review skill must check narrative-mislead risk"
+grep -q 'Treat executor summaries' "$ROOT/skills/run-analyze-review/SKILL.md" || fail "review skill must treat summaries as evidence only"
+
+tmp_runtime="$(mktemp -d)"
+first_stop="$tmp_runtime/first-stop.json"
+promise_only_stop="$tmp_runtime/promise-only-stop.json"
+missing_requirements_stop="$tmp_runtime/missing-requirements-stop.json"
+missing_verification_stop="$tmp_runtime/missing-verification-stop.json"
+missing_dissent_stop="$tmp_runtime/missing-dissent-stop.json"
+invalid_review_stop="$tmp_runtime/invalid-review-stop.json"
+uppercase_review_stop="$tmp_runtime/uppercase-review-stop.json"
+complete_stop="$tmp_runtime/complete-stop.json"
+pass_with_notes_stop="$tmp_runtime/pass-with-notes-stop.json"
+max_stop="$tmp_runtime/max-stop.json"
+hook_json() {
+  local cwd="$1"
+  local message="$2"
+  python3 - "$cwd" "$message" <<'PY'
+import json
+import sys
+
+print(json.dumps({"session_id": "s1", "cwd": sys.argv[1], "last_assistant_message": sys.argv[2]}, separators=(",", ":")))
+PY
+}
+valid_audit='<completion_audit>
+<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
+<verification_evidence>focused smoke command passed</verification_evidence>
+<review_verdict>pass</review_verdict>
+<dissent>none</dissent>
+</completion_audit>'
+missing_verification_audit='<completion_audit>
+<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
+<review_verdict>pass</review_verdict>
+<dissent>none</dissent>
+</completion_audit>'
+missing_requirements_audit='<completion_audit>
+<verification_evidence>focused smoke command passed</verification_evidence>
+<review_verdict>pass</review_verdict>
+<dissent>none</dissent>
+</completion_audit>'
+missing_dissent_audit='<completion_audit>
+<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
+<verification_evidence>focused smoke command passed</verification_evidence>
+<review_verdict>pass</review_verdict>
+</completion_audit>'
+invalid_review_audit='<completion_audit>
+<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
+<verification_evidence>focused smoke command passed</verification_evidence>
+<review_verdict>revise</review_verdict>
+<dissent>none</dissent>
+</completion_audit>'
+uppercase_review_audit='<completion_audit>
+<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
+<verification_evidence>focused smoke command passed</verification_evidence>
+<review_verdict>PASS</review_verdict>
+<dissent>none</dissent>
+</completion_audit>'
+pass_with_notes_audit='<completion_audit>
+<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
+<verification_evidence>focused smoke command passed</verification_evidence>
+<review_verdict>pass-with-notes</review_verdict>
+<dissent>residual risk noted</dissent>
+</completion_audit>'
+python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 2 --completion-promise RAO_GOAL_COMPLETE 'verify runtime continuation' --cwd "$tmp_runtime" >/dev/null
+hook_json "$tmp_runtime" "not done" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$first_stop"
+grep -q '"decision":"block"' "$first_stop" || fail "hook-stop must block incomplete active goals"
+python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 3 --completion-promise RAO_GOAL_COMPLETE 'verify promise-only block' --cwd "$tmp_runtime" >/dev/null
+hook_json "$tmp_runtime" "<promise>RAO_GOAL_COMPLETE</promise>" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$promise_only_stop"
+grep -q '"decision":"block"' "$promise_only_stop" || fail "hook-stop must block completion promise without audit"
+python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 3 --completion-promise RAO_GOAL_COMPLETE 'verify missing audit verification block' --cwd "$tmp_runtime" >/dev/null
+hook_json "$tmp_runtime" "<promise>RAO_GOAL_COMPLETE</promise>
+$missing_verification_audit" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$missing_verification_stop"
+grep -q '"decision":"block"' "$missing_verification_stop" || fail "hook-stop must block audit missing verification evidence"
+python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 3 --completion-promise RAO_GOAL_COMPLETE 'verify missing audit requirements block' --cwd "$tmp_runtime" >/dev/null
+hook_json "$tmp_runtime" "<promise>RAO_GOAL_COMPLETE</promise>
+$missing_requirements_audit" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$missing_requirements_stop"
+grep -q '"decision":"block"' "$missing_requirements_stop" || fail "hook-stop must block audit missing requirements mapping"
+python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 3 --completion-promise RAO_GOAL_COMPLETE 'verify missing audit dissent block' --cwd "$tmp_runtime" >/dev/null
+hook_json "$tmp_runtime" "<promise>RAO_GOAL_COMPLETE</promise>
+$missing_dissent_audit" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$missing_dissent_stop"
+grep -q '"decision":"block"' "$missing_dissent_stop" || fail "hook-stop must block audit missing dissent"
+python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 3 --completion-promise RAO_GOAL_COMPLETE 'verify invalid review block' --cwd "$tmp_runtime" >/dev/null
+hook_json "$tmp_runtime" "<promise>RAO_GOAL_COMPLETE</promise>
+$invalid_review_audit" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$invalid_review_stop"
+grep -q '"decision":"block"' "$invalid_review_stop" || fail "hook-stop must block audit without passing review verdict"
+python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 3 --completion-promise RAO_GOAL_COMPLETE 'verify uppercase review block' --cwd "$tmp_runtime" >/dev/null
+hook_json "$tmp_runtime" "<promise>RAO_GOAL_COMPLETE</promise>
+$uppercase_review_audit" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$uppercase_review_stop"
+grep -q '"decision":"block"' "$uppercase_review_stop" || fail "hook-stop must require exact lowercase review verdict"
+python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 3 --completion-promise RAO_GOAL_COMPLETE 'verify audited completion' --cwd "$tmp_runtime" >/dev/null
+hook_json "$tmp_runtime" "<promise>RAO_GOAL_COMPLETE</promise>
+$valid_audit" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$complete_stop"
+[[ ! -s "$complete_stop" ]] || fail "hook-stop must allow audited completion promise to stop"
+python3 "$ROOT/bin/raoctl.py" status --session-id s1 --cwd "$tmp_runtime" | grep -q '^Status: complete$' \
+  || fail "hook-stop must mark audited completion complete"
+python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 3 --completion-promise RAO_GOAL_COMPLETE 'verify pass-with-notes audited completion' --cwd "$tmp_runtime" >/dev/null
+hook_json "$tmp_runtime" "<promise>RAO_GOAL_COMPLETE</promise>
+$pass_with_notes_audit" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$pass_with_notes_stop"
+[[ ! -s "$pass_with_notes_stop" ]] || fail "hook-stop must allow pass-with-notes audited completion"
+python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 1 --completion-promise RAO_GOAL_COMPLETE 'verify max iteration stop' --cwd "$tmp_runtime" >/dev/null
+hook_json "$tmp_runtime" "still not done" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$max_stop"
+[[ ! -s "$max_stop" ]] || fail "hook-stop must allow stop at max iterations"
+python3 "$ROOT/bin/raoctl.py" status --session-id s1 --cwd "$tmp_runtime" | grep -q '^Status: stopped$' \
+  || fail "hook-stop must mark max-iteration stop stopped"
+rm -rf "$tmp_runtime"
+
 for skill in "${SKILLS[@]}"; do
   grep -q "$skill" "$ROOT/.cursor/rules/run-analyze-optimize.mdc" || fail "Cursor rule does not mention $skill"
   grep -q "$skill" "$ROOT/install.sh" || fail "install.sh does not install $skill"
@@ -111,6 +252,8 @@ done
 
 cursor_lines="$(wc -l < "$ROOT/.cursor/rules/run-analyze-optimize.mdc")"
 [[ "$cursor_lines" -le 120 ]] || fail "Cursor rule is too long to be a thin summary"
+readme_lines="$(wc -l < "$ROOT/README.md")"
+[[ "$readme_lines" -le 180 ]] || fail "README is too long to remain an entrypoint summary"
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT

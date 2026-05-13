@@ -13,12 +13,17 @@
     "workflow",
     "agents",
     "planning",
-    "review"
+    "review",
+    "goal",
+    "hooks",
+    "autonomous"
   ],
   "skills": [
     "./skills/run-analyze-optimize",
     "./skills/run-analyze-design",
     "./skills/run-analyze-execute",
     "./skills/run-analyze-review"
-  ]
+  ],
+  "commands": "./commands",
+  "hooks": "./hooks/hooks.json"
 }

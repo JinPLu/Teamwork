@@ -20,4 +20,7 @@ router skill:
 skills/run-analyze-optimize/SKILL.md
 ```
 
+Use the skill files as the behavioral source of truth, including evidence
+classification, review discipline, and cost/subagent constraints.
+
 Do not duplicate full skill bodies into Cursor-specific docs or rules.
