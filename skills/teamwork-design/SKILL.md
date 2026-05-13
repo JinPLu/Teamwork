@@ -118,17 +118,45 @@ Recommendation:
 Use after research or diagnosis has selected a direction. The output is a plan
 that a worker can execute without expanding scope.
 
+### Plan Detail Tiers
+
+- Lightweight change: a chat-visible plan is enough only when the change is
+  narrow, low-risk, does not materially alter public behavior or architecture,
+  and can be proven with focused checks. Still include verification and final
+  review.
+- Non-lightweight change: write or update a durable Markdown plan artifact
+  before execution. Default path:
+
+  ```text
+  docs/teamwork/plans/YYYY-MM-DD-<slug>.md
+  ```
+
+- High-risk, cross-module, ambiguous, or long-running work: the artifact must
+  use checkbox tasks, exact paths, test-first or verification-first steps,
+  necessary code snippets, expected command output or artifact properties, and
+  explicit worker/reviewer handoffs.
+
+The durable artifact is the execution and review source of truth. `update_plan`
+may mirror progress as a transient checklist, but it must not be the only plan
+for non-lightweight work.
+
 Workflow:
 
 1. Restate the root cause or goal in one sentence.
-2. Define scope: in scope, out of scope, and sacred boundaries.
-3. Identify the smallest producer-side change that can satisfy the goal.
-4. Break work into ordered, executable steps with exact paths when known.
-5. Design focused verification first; add broader checks only when shared
+2. Classify the detail tier and either name the durable plan artifact path or
+   explain why a chat-visible plan is sufficient for lightweight work.
+3. Map each requirement or acceptance criterion to evidence already read or to
+   the exact verification that will prove it.
+4. Define scope: in scope, out of scope, and sacred boundaries.
+5. Identify the smallest producer-side change that can satisfy the goal.
+6. Break work into ordered, executable steps with exact paths when known.
+7. Design focused verification first; add broader checks only when shared
    behavior, public contracts, or user-visible workflows are affected.
-6. List risks, rollback/rework strategy, and evidence that would invalidate the
-   plan.
-7. Prepare separate handoffs for worker execution and reviewer checks.
+8. List expected verification results, risks, rollback/rework strategy, and
+   evidence that would invalidate the plan.
+9. Avoid unresolved placeholders, ellipses as tasks, and generic testing or
+   edge-case instructions; each step must be executable or explicitly blocked.
+10. Prepare separate handoffs for worker execution and reviewer checks.
 
 Plan quality gates:
 
@@ -137,6 +165,8 @@ Plan quality gates:
 - Evidence-driven: the plan identifies what will prove success.
 - Boundary-safe: no step changes protected contracts or principles.
 - Budget-aware: include stop conditions for no progress, blocker, or budget.
+- Durable when needed: non-lightweight work has a Markdown artifact at
+  `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 
 Output:
 
@@ -144,8 +174,18 @@ Output:
 Mode:
 - plan
 
+Plan Artifact:
+- Path: docs/teamwork/plans/YYYY-MM-DD-<slug>.md | chat-only because <why lightweight>
+- Durable source of truth: <yes | no, lightweight rationale>
+
 Root Cause / Goal:
 - ...
+
+Requirements Mapping:
+- <requirement or acceptance criterion>: <observed evidence or verification that will prove it>
+
+Evidence Read:
+- <observed|inferred|claimed> <path/command/artifact>: <finding>
 
 Scope:
 - In: ...
@@ -153,12 +193,13 @@ Scope:
 - Sacred boundaries: ...
 
 Implementation Steps:
-1. <path/component> - <minimal change> - <why>
-2. ...
+- [ ] 1. <path/component> - <minimal change> - <why>
+- [ ] 2. ...
 
 Verification:
 - Focused: <command/artifact/check>
 - Broader: <command/check or not needed because ...>
+- Expected Results: <exact passing output, artifact property, or behavioral state>
 
 Risks:
 - <risk> - <mitigation>

@@ -122,6 +122,26 @@ grep -q 'Codex Native Integration' "$ROUTER" || fail "router must document Codex
 grep -q 'native Codex goals' "$ROOT/CODEX.md" || fail "CODEX.md must document native Codex goals"
 grep -q 'Codex Runtime Mapping' "$ROOT/CODEX.md" || fail "CODEX.md must document Codex runtime mapping"
 grep -q 'Codex runtime' "$ROOT/README.md" || fail "README must document Codex runtime"
+grep -q 'durable Markdown plan artifact' "$ROUTER" || fail "router must define durable Markdown plan artifacts"
+grep -q 'transient UI-only checklist' "$ROUTER" || fail "router must mark update_plan as transient UI-only"
+grep -q 'docs/teamwork/plans/YYYY-MM-DD-<slug>.md' "$ROOT/skills/teamwork-design/SKILL.md" \
+  || fail "design skill must define the durable plan path"
+grep -q 'Requirements Mapping' "$ROOT/skills/teamwork-design/SKILL.md" \
+  || fail "design skill must require requirements mapping in plan artifacts"
+grep -q 'Expected Results' "$ROOT/skills/teamwork-design/SKILL.md" \
+  || fail "design skill must require expected verification results"
+grep -q 'must return `revise` or `blocked`' "$ROOT/skills/teamwork-review/SKILL.md" \
+  || fail "review skill must hard-fail missing or weak plan artifacts"
+grep -q 'requirements-to-evidence mapping' "$ROOT/skills/teamwork-review/SKILL.md" \
+  || fail "review skill must check requirements-to-evidence mapping"
+grep -q 'docs/teamwork/plans/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" \
+  || fail "README must document durable plan artifact path"
+grep -q 'durable Markdown plan artifacts' "$ROOT/CODEX.md" \
+  || fail "CODEX.md must document durable Markdown plan artifacts"
+grep -q 'It is not Codex' "$ROOT/CODEX.md" \
+  || fail "CODEX.md must distinguish plan artifacts from Codex goal state"
+grep -q 'goal state and not Claude `.claude/teamwork-goals/` runtime state' "$ROOT/CODEX.md" \
+  || fail "CODEX.md must distinguish plan artifacts from Claude goal runtime"
 grep -q 'codex review' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill must mention codex review"
 grep -q 'sandbox' "$ROOT/skills/teamwork-execute/SKILL.md" || fail "execute skill must document sandbox approvals"
 grep -q 'Subagent Plan' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must document subagent plan"

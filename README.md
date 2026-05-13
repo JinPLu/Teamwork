@@ -34,6 +34,21 @@ research -> plan -> plan review -> execute -> execution review -> accept / itera
 | 执行已接受计划 | `teamwork-execute` |
 | 审计划、审 diff / artifact / 验证结果 | `teamwork-review` |
 
+## 持久计划 artifact
+
+Codex 的原生 plan / `update_plan` 是可见进度状态，不是持久执行依据。非小改默认写入
+durable Markdown plan artifact：
+
+```text
+docs/teamwork/plans/YYYY-MM-DD-<slug>.md
+```
+
+计划文件应包含目标、需求映射、已读证据、范围边界、实施步骤、验证命令、预期结果、
+风险、停止条件、worker handoff 和 review handoff。小修可以使用聊天计划，但仍要有
+明确验证和最终 review。这个 Markdown artifact 是普通仓库文件，可被 Cursor、Claude
+Code 和 Codex 共同 review / 编辑 / 执行；它不是 Codex goal，也不是 Claude
+`.claude/teamwork-goals/` runtime 状态。
+
 ## 用法
 
 让 router 自动选择阶段：
@@ -88,8 +103,9 @@ cd Teamwork
 
 ## Codex runtime
 
-Codex 使用同一组 skill，但不使用 Claude 的 Markdown goal 后端。需要可见计划时用
-原生 plan；只有用户明确要求自主收敛或已有 active goal 时才用原生 Codex goal。
+Codex 使用同一组 skill，但不使用 Claude 的 Markdown goal 后端。需要可见进度时用
+原生 plan / `update_plan`；非小改需要上面的 Markdown 计划文件作为 durable artifact。
+只有用户明确要求自主收敛或已有 active goal 时才用原生 Codex goal。
 subagents 用于独立 research、judge、worker、review track；`codex review` 可以作为
 审查证据，但不能自动代表通过。
 

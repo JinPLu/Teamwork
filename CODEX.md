@@ -27,7 +27,8 @@ evidence to verify, not as facts or final verdicts by themselves.
 
 ## Codex Runtime Mapping
 
-- Planning/checklists: use `update_plan` for visible multi-step state.
+- Planning/checklists: use `update_plan` only as visible, transient UI state.
+  It is not the durable execution or review artifact for non-lightweight work.
 - Autonomous convergence: use native Codex goals only when explicitly
   requested, or continue an active goal. Ordinary research, planning, review,
   and one-shot execution do not need a goal.
@@ -43,6 +44,26 @@ evidence to verify, not as facts or final verdicts by themselves.
   required; prefer primary sources.
 - Sandbox: request escalation only for required blocked commands, with narrow
   justification and prefix rule where appropriate. Do not bypass approvals.
+
+## Durable Plan Artifacts
+
+For non-lightweight changes, use durable Markdown plan artifacts.
+`teamwork-design` with `mode: plan` should write the artifact at:
+
+```text
+docs/teamwork/plans/YYYY-MM-DD-<slug>.md
+```
+
+Use that file as the shared execution and review source of truth. It should map
+requirements to evidence, name exact files and steps, define focused
+verification with expected results, and include worker and reviewer handoffs.
+Small, low-risk edits may use a chat-visible plan, but still need focused
+verification and final review.
+
+This Markdown artifact is ordinary repository documentation. It is not Codex
+goal state and not Claude `.claude/teamwork-goals/` runtime state. Native
+Codex goals are only for explicit autonomous convergence, while Claude
+`.claude/teamwork-goals/` files belong to the `/rao:*` Stop-hook runtime.
 
 ## External Information Policy
 

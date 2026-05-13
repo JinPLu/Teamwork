@@ -39,16 +39,34 @@ Review an implementation plan before execution.
 
 Check:
 
+- Durable plan artifact: non-lightweight work has a Markdown plan artifact path,
+  normally `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`, and the review reads it
+  directly instead of relying on `update_plan`, chat summaries, or executor
+  claims.
 - Scope: every step traces to the stated goal or root cause.
 - Assumptions: missing inputs are explicit and safe.
 - Feasibility: files, commands, environments, and dependencies are plausible.
+- Requirements-to-evidence mapping: each requirement or acceptance criterion
+  maps to observed evidence or a verification step that will prove it.
 - Sacred boundaries: no protected contracts, architecture, claims, or user
   constraints are changed.
 - Verification design: focused checks prove the goal; broader checks are
-  included when warranted.
+  included when warranted, with expected results stated.
 - Risk: regressions, rollback/rework path, and stop rules are identified.
 - Simplicity: no broad refactor, abstraction, or downstream cleanup unless
   required by evidence.
+
+Hard gates:
+
+- For non-lightweight work, a missing durable plan artifact, a plan that relies
+  only on transient `update_plan` or chat state, or a plan whose artifact cannot
+  be read must return `revise` or `blocked`.
+- A plan with unresolved placeholders, ellipses as executable steps, vague
+  testing instructions, missing requirements-to-evidence mapping, missing
+  verification design, missing expected results, or missing worker/reviewer
+  handoffs must return `revise` or `blocked`.
+- A plan that changes protected contracts, architecture, or public behavior
+  without explicit scope and verification must return `blocked`.
 
 ## mode: execution
 
@@ -63,6 +81,9 @@ Check:
 - Regressions: look for broken contracts, hidden behavior changes, brittle
   assumptions, and cleanup masking producer bugs.
 - Deviations: any departure from the plan is justified by evidence.
+- Plan conformance: for non-lightweight work, compare the diff and verification
+  against the accepted durable plan artifact; unexplained drift from that plan
+  must return `revise` or `blocked`.
 - Workspace hygiene: no unrelated edits, generated churn, or overwritten work
   from others.
 - Narrative-mislead risk: check whether version names, stale docs, comments, or

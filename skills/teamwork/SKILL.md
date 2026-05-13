@@ -74,12 +74,42 @@ that the referenced file is current, canonical, or active.
 - The main agent owns synthesis, conflict resolution, verification, and the
   final decision even when subagents are used.
 
+## Durable Plan Artifacts
+
+`update_plan` and other visible plan widgets are transient UI-only checklist
+state. They help show progress during a turn, but they are not the execution
+specification, review target, or durable evidence for non-lightweight work.
+
+A durable Markdown plan artifact is a normal repository Markdown file. For
+non-lightweight changes, default to:
+
+```text
+docs/teamwork/plans/YYYY-MM-DD-<slug>.md
+```
+
+Use `teamwork-design` with `mode: plan` to create or update that artifact
+before execution. The artifact is shared across Cursor, Claude Code, and Codex
+because it is plain Markdown in the repo, not Codex native goal state and not
+Claude `.claude/teamwork-goals/` runtime state.
+
+Lightweight changes may use a chat-visible plan when the scope is narrow, does
+not materially change public behavior or architecture, and can be verified with
+focused checks. They still require explicit verification and a final review
+pass. Non-lightweight changes require a durable plan artifact before execution.
+High-risk, cross-module, or long-running work needs checkbox tasks, exact paths,
+test-first or verification-first steps, expected results, stop rules, and
+worker/reviewer handoffs.
+
 ## Codex Native Integration
 
 When running in Codex, use native platform capabilities instead of emulating
 roundtable infrastructure:
 
-- Use `update_plan` for visible checklist state on multi-step work.
+- Use `update_plan` only as a transient UI-only checklist for visible progress.
+  It must not be the only execution plan or review artifact for
+  non-lightweight work.
+- Use durable Markdown plan artifacts for non-lightweight execution plans, with
+  the default path `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 - Use Codex goals only for explicit autonomous convergence requests or an
   existing active goal. Do not create a goal for ordinary research, planning,
   review, or one-shot execution.
