@@ -1,19 +1,16 @@
 # Run-Analyze-Optimize Skill
 
-Lightweight run/analyze/optimize workflow package for Claude Code, Codex, and
-Cursor. The source of truth is the four skills under `skills/`; platform docs
-only explain installation and runtime entrypoints.
+一个面向 Claude Code、Codex 和 Cursor 的轻量 run / analyze / optimize 工作流包。
+行为规则以 `skills/` 下的四个 skill 为准；平台文档只说明安装和运行入口。
 
-## Why Use It
+## 优势
 
-- Evidence-first: decisions must trace to files, diffs, logs, tests, artifacts,
-  or command output.
-- Role-separated: research, plan, execute, and review stay as distinct passes.
-- Lightweight: no model registry, pricing cache, dispatch platform, or ledger.
-- Runtime-aware: Codex uses native goals/subagents; Claude can use `/rao:*` plus
-  a Stop hook for bounded continuation.
+- 证据优先：结论必须能追溯到源码、diff、日志、测试、产物或命令输出。
+- 角色分离：research、plan、execute、review 是独立步骤，避免执行者自宣完成。
+- 轻量可装：不引入 model registry、pricing cache、dispatch 平台或 thread ledger。
+- 运行时适配：Codex 使用原生 goal / subagent；Claude 可用 `/rao:*` 和 Stop hook 续跑。
 
-## Topology
+## 拓扑
 
 ```text
 skills/run-analyze-optimize/SKILL.md  # router + mode: goal
@@ -22,18 +19,18 @@ skills/run-analyze-execute/SKILL.md   # accepted-plan execution
 skills/run-analyze-review/SKILL.md    # mode: plan | mode: execution
 ```
 
-`run-analyze-optimize` routes by user intent:
+`run-analyze-optimize` 会按意图路由：
 
-| Intent | Route |
+| 你要做什么 | 路由 |
 |---|---|
-| Research options, causes, or tradeoffs | `run-analyze-design` with `mode: research` |
-| Turn a chosen direction into worker steps | `run-analyze-design` with `mode: plan` |
-| Execute an accepted plan | `run-analyze-execute` |
-| Review a plan | `run-analyze-review` with `mode: plan` |
-| Review a diff, artifact, or execution result | `run-analyze-review` with `mode: execution` |
-| Iterate to verified success or a blocker | `run-analyze-optimize` with `mode: goal` |
+| 调研方案、原因或取舍 | `run-analyze-design` with `mode: research` |
+| 把选定方向写成执行计划 | `run-analyze-design` with `mode: plan` |
+| 执行已接受计划 | `run-analyze-execute` |
+| 审计划 | `run-analyze-review` with `mode: plan` |
+| 审 diff、产物或执行结果 | `run-analyze-review` with `mode: execution` |
+| 迭代到验证通过或明确阻塞 | `run-analyze-optimize` with `mode: goal` |
 
-## Install
+## 安装
 
 Claude skills:
 
@@ -53,51 +50,53 @@ Cursor project rule:
 ./install.sh cursor /path/to/project
 ```
 
-All entrypoints:
+全部入口：
 
 ```bash
 ./install.sh all /path/to/cursor-project
 ```
 
-The installer installs the current four skills and removes only known retired
-symlinks that point back to this repository.
+安装脚本会安装当前四个 skill，并只清理指回本仓库的已知旧版 symlink。
 
-## Usage
+## 用法
 
-Route a task through the workflow:
+让 router 自动选择阶段：
 
 ```text
-run-analyze-optimize: research why pytest X fails, propose options, then write a plan
+run-analyze-optimize: 调研 pytest X 为什么失败，给出方案，然后写成执行计划
 ```
 
-Execute an accepted plan:
+执行已接受计划：
 
 ```text
-run-analyze-execute: implement the accepted plan with minimal edits and run the focused verification
+run-analyze-execute: 按已接受计划实现，只做必要改动并运行 focused verification
 ```
 
-Review a completed execution:
+审查执行结果：
 
 ```text
-run-analyze-review mode: execution: review this diff and verification evidence
+run-analyze-review mode: execution: 审查这个 diff 和验证证据
 ```
 
-Run a Claude goal with bounded continuation:
+Claude 中启动有界续跑目标：
 
 ```text
-/rao:goal fix pytest X, max 3 iterations, stop on no progress --max-iterations 3
+/rao:goal 修复 pytest X，最多 3 轮，无进展就停 --max-iterations 3
 ```
 
 ## Codex runtime
 
-Codex uses the same four skills as the stable entrypoint. Use native Codex
-plans, goals, subagents, MCP, sandbox approvals, and `codex review` as described
-in `CODEX.md`; do not use the Claude `/rao:*` Markdown goal runtime as the Codex
-goal backend.
+Codex 使用同一组四个 skill。需要可见计划时用原生 plan；只有用户明确要求自主收敛
+或已有 active goal 时才用原生 Codex goal。独立 research / judge / worker / review
+track 可以用 Codex subagent；真实 git diff 可把 `codex review` 作为审查证据，但不能
+当作自动通过。
+
+不要把 Claude 的 `.claude/run-analyze-optimize-goals/` Markdown goal runtime 当作
+Codex 后端。
 
 ## Claude `/rao:*` runtime
 
-Claude Code plugin installs can manage a project-local autonomous goal:
+Claude Code plugin 可管理项目本地 goal：
 
 ```text
 /rao:goal <objective> [--max-iterations N] [--completion-promise TEXT]
@@ -110,21 +109,20 @@ Claude Code plugin installs can manage a project-local autonomous goal:
 /rao:note <note>
 ```
 
-State lives at:
+状态文件位置：
 
 ```text
 .claude/run-analyze-optimize-goals/
 ```
 
-The `Stop hook` continues active goals until verified completion, max
-iterations, user stop, or a hard blocker. The default completion promise is:
+`Stop hook` 会在 goal 未完成且未达到轮数上限时阻止停止，并把 continuation prompt
+注入下一轮。默认 completion promise 是：
 
 ```text
 <promise>RAO_GOAL_COMPLETE</promise>
 ```
 
-Auto-completion requires both that exact promise and this structured completion
-audit in the final assistant message:
+自动完成必须同时包含精确 promise 和结构化 completion audit：
 
 ```text
 <completion_audit>
@@ -135,21 +133,20 @@ audit in the final assistant message:
 </completion_audit>
 ```
 
-`review_verdict` must be `pass` or `pass-with-notes`. A promise without the
-audit is blocked unless max iterations have already been reached. `/rao:complete`
-is a manual override and is logged as manual completion.
+`review_verdict` 只能是 `pass` 或 `pass-with-notes`。只有 promise、没有 audit 时不会
+自动 complete，除非已经达到最大轮数。`/rao:complete` 是人工 override，并会记录为
+manual completion。
 
-## Validate
+## 验证
 
 ```bash
 ./scripts/validate.sh
 ```
 
-Validation checks skill topology and frontmatter, manifests, installer smoke,
-Cursor rule size, Claude command/hook presence, Stop-hook completion gating,
-and required thin-doc references.
+验证内容包括 skill 拓扑、frontmatter、manifest、临时安装 smoke、Cursor rule 长度、
+Claude command / hook 存在性、Stop-hook completion gate，以及 thin-doc 必要引用。
 
-## Publish
+## 发布
 
 ```bash
 git remote add origin git@github.com:<owner>/run-analyze-optimize-skill.git
