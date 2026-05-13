@@ -310,13 +310,29 @@ ln -sf "$ROOT/.cursor/rules/run-analyze-optimize.mdc" "$tmp/cursor-project/.curs
 HOME="$tmp/cursor-home" "$ROOT/install.sh" cursor "$tmp/cursor-project" >/dev/null
 
 for skill in "${SKILLS[@]}"; do
-  [[ -L "$tmp/claude-home/.claude/skills/$skill/SKILL.md" ]] || fail "Claude install missing $skill"
-  [[ -L "$tmp/codex-home/.codex/skills/$skill/SKILL.md" ]] || fail "Codex install missing $skill"
+  [[ -f "$tmp/claude-home/.claude/skills/$skill/SKILL.md" && \
+     ! -L "$tmp/claude-home/.claude/skills/$skill/SKILL.md" ]] \
+    || fail "Claude default install must copy $skill"
+  [[ -f "$tmp/codex-home/.codex/skills/$skill/SKILL.md" && \
+     ! -L "$tmp/codex-home/.codex/skills/$skill/SKILL.md" ]] \
+    || fail "Codex default install must copy $skill"
+  grep -q "^name: $skill$" "$tmp/claude-home/.claude/skills/$skill/SKILL.md" \
+    || fail "Claude copied skill has wrong name: $skill"
+  grep -q "^name: $skill$" "$tmp/codex-home/.codex/skills/$skill/SKILL.md" \
+    || fail "Codex copied skill has wrong name: $skill"
 done
-[[ -L "$tmp/cursor-project/.cursor/rules/teamwork.mdc" ]] || fail "Cursor install missing rule"
+[[ -f "$tmp/cursor-project/.cursor/rules/teamwork.mdc" && \
+   ! -L "$tmp/cursor-project/.cursor/rules/teamwork.mdc" ]] \
+  || fail "Cursor default install must copy rule"
 [[ ! -e "$tmp/cursor-project/.cursor/rules/run-analyze-optimize.mdc" && \
    ! -L "$tmp/cursor-project/.cursor/rules/run-analyze-optimize.mdc" ]] \
   || fail "Cursor install did not clean retired rule symlink"
+
+HOME="$tmp/link-home" "$ROOT/install.sh" --link codex >/dev/null
+for skill in "${SKILLS[@]}"; do
+  [[ -L "$tmp/link-home/.codex/skills/$skill/SKILL.md" ]] \
+    || fail "--link install must symlink $skill"
+done
 
 for retired in "${RETIRED_SKILLS[@]}"; do
   mkdir -p "$tmp/migration-home/.codex/skills/$retired"
@@ -327,6 +343,18 @@ for retired in "${RETIRED_SKILLS[@]}"; do
   [[ ! -e "$tmp/migration-home/.codex/skills/$retired/SKILL.md" && \
      ! -L "$tmp/migration-home/.codex/skills/$retired/SKILL.md" ]] \
     || fail "install did not clean retired symlink: $retired"
+done
+
+for retired in "${RETIRED_SKILLS[@]}"; do
+  mkdir -p "$tmp/copy-migration-home/.codex/skills/$retired"
+  printf -- "---\nname: %s\ndescription: Use when retired.\n---\n" "$retired" \
+    > "$tmp/copy-migration-home/.codex/skills/$retired/SKILL.md"
+done
+HOME="$tmp/copy-migration-home" "$ROOT/install.sh" codex >/dev/null
+for retired in "${RETIRED_SKILLS[@]}"; do
+  [[ ! -e "$tmp/copy-migration-home/.codex/skills/$retired/SKILL.md" && \
+     ! -L "$tmp/copy-migration-home/.codex/skills/$retired/SKILL.md" ]] \
+    || fail "install did not clean retired copied skill: $retired"
 done
 
 echo "OK: Teamwork skill package validates"

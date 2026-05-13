@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INSTALL_MODE="${TEAMWORK_INSTALL_MODE:-copy}"
 SKILLS=(
   teamwork
   teamwork-design
@@ -23,43 +24,85 @@ RETIRED_SKILLS=(
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh claude
-  ./install.sh codex
-  ./install.sh cursor /path/to/project
-  ./install.sh all /path/to/cursor-project
+  ./install.sh [--copy|--link] claude
+  ./install.sh [--copy|--link] codex
+  ./install.sh [--copy|--link] cursor /path/to/project
+  ./install.sh [--copy|--link] all /path/to/cursor-project
 
-Installs by symlink where supported so each skills/*/SKILL.md remains the
-source of truth. Claude Code plugin installs should use the checked-in plugin
-manifest for commands and hooks; this script does not modify global settings.
+Default mode is --copy, which installs standalone files so the skills keep
+working if this repository moves or is deleted. Use --link for local
+development when you want installed skills to track edits in this checkout.
+
+Claude Code plugin installs should use the checked-in plugin manifest for
+commands and hooks; this script does not modify global settings.
 USAGE
+}
+
+remove_retired_skill() {
+  local root="$1"
+  local retired="$2"
+  local dest="$root/$retired"
+  local link="$dest/SKILL.md"
+  local raw_target resolved entry_count
+
+  [[ -e "$link" || -L "$link" ]] || return 0
+
+  if [[ -L "$link" ]]; then
+    raw_target="$(readlink "$link" 2>/dev/null || true)"
+    resolved="$(readlink -f "$link" 2>/dev/null || true)"
+    if [[ "$raw_target" == */skills/"$retired"/SKILL.md || \
+          "$resolved" == */skills/"$retired"/SKILL.md ]]; then
+      rm -f "$link"
+      rmdir "$dest" 2>/dev/null || true
+    fi
+    return 0
+  fi
+
+  [[ -f "$link" ]] || return 0
+  grep -q "^name: $retired$" "$link" || return 0
+  entry_count="$(find "$dest" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')"
+  if [[ "$entry_count" == "1" ]]; then
+    rm -f "$link"
+    rmdir "$dest" 2>/dev/null || true
+  fi
+}
+
+install_file() {
+  local source="$1"
+  local dest="$2"
+
+  mkdir -p "$(dirname "$dest")"
+  rm -f "$dest"
+  case "$INSTALL_MODE" in
+    copy)
+      cp "$source" "$dest"
+      ;;
+    link)
+      ln -sf "$source" "$dest"
+      ;;
+    *)
+      echo "Unknown install mode: $INSTALL_MODE" >&2
+      usage
+      exit 2
+      ;;
+  esac
 }
 
 install_skill_set() {
   local root="$1"
   local label="$2"
-  local skill dest retired link raw_target resolved
+  local skill dest retired
 
   mkdir -p "$root"
   for retired in "${RETIRED_SKILLS[@]}"; do
-    dest="$root/$retired"
-    link="$dest/SKILL.md"
-    if [[ -L "$link" ]]; then
-      raw_target="$(readlink "$link" 2>/dev/null || true)"
-      resolved="$(readlink -f "$link" 2>/dev/null || true)"
-      if [[ "$raw_target" == "$ROOT/skills/$retired/SKILL.md" || \
-            "$resolved" == "$ROOT/skills/$retired/SKILL.md" ]]; then
-        rm -f "$link"
-        rmdir "$dest" 2>/dev/null || true
-      fi
-    fi
+    remove_retired_skill "$root" "$retired"
   done
 
   for skill in "${SKILLS[@]}"; do
     dest="$root/$skill"
-    mkdir -p "$dest"
-    ln -sf "$ROOT/skills/$skill/SKILL.md" "$dest/SKILL.md"
+    install_file "$ROOT/skills/$skill/SKILL.md" "$dest/SKILL.md"
   done
-  echo "Installed $label skills under: $root"
+  echo "Installed $label skills under: $root ($INSTALL_MODE)"
 }
 
 install_claude() {
@@ -88,11 +131,24 @@ install_cursor() {
           "$resolved" == "$ROOT/.cursor/rules/run-analyze-optimize.mdc" ]]; then
       rm -f "$rules/run-analyze-optimize.mdc"
     fi
+  elif [[ -f "$rules/run-analyze-optimize.mdc" ]] && \
+       grep -q 'run-analyze-optimize\|Run-Analyze-Optimize' "$rules/run-analyze-optimize.mdc"; then
+    rm -f "$rules/run-analyze-optimize.mdc"
   fi
-  ln -sf "$ROOT/.cursor/rules/teamwork.mdc" \
-    "$rules/teamwork.mdc"
-  echo "Installed Cursor rule: $rules/teamwork.mdc"
+  install_file "$ROOT/.cursor/rules/teamwork.mdc" "$rules/teamwork.mdc"
+  echo "Installed Cursor rule: $rules/teamwork.mdc ($INSTALL_MODE)"
 }
+
+case "${1:-}" in
+  --copy)
+    INSTALL_MODE="copy"
+    shift
+    ;;
+  --link)
+    INSTALL_MODE="link"
+    shift
+    ;;
+esac
 
 case "${1:-}" in
   claude)

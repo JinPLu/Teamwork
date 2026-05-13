@@ -62,6 +62,13 @@ Claude 中启动有界续跑目标：
 
 ## 安装
 
+普通用户从 GitHub clone 后直接复制安装：
+
+```bash
+git clone https://github.com/JinPLu/Teamwork.git
+cd Teamwork
+```
+
 ```bash
 ./install.sh claude
 ./install.sh codex
@@ -69,7 +76,15 @@ Claude 中启动有界续跑目标：
 ./install.sh all /path/to/cursor-project
 ```
 
-安装脚本会安装四个 skill，并清理指回本仓库的旧版 symlink。
+默认是复制安装，安装后的 skill 不依赖这个仓库路径。开发本仓库时如果希望本地修改
+立即反映到已安装 skill，可以显式使用 symlink 模式：
+
+```bash
+./install.sh --link codex
+./install.sh --link claude
+```
+
+安装脚本会安装四个 skill，并清理旧 `run-analyze-*` 安装。
 
 ## Codex runtime
 
