@@ -164,8 +164,12 @@ Workflow:
    evidence that would invalidate the plan.
 9. Avoid unresolved placeholders, ellipses as tasks, and generic testing or
    edge-case instructions; each step must be executable or explicitly blocked.
-10. Define Subagent Routing: role, task scope, model tier, parallel or serial
-    ordering, and why each role is needed or skipped.
+10. Define Subagent Routing: conceptual role, task scope, Teamwork model tier,
+    context strategy, parallel or serial ordering, and why each role is needed
+    or skipped.
+    Codex native dispatch fields are derived at dispatch time from the router
+    mapping; include them in a plan only when a non-default native override is
+    itself part of the decision.
 11. Prepare separate handoffs for worker execution and reviewer checks.
 
 Plan quality gates:
@@ -178,8 +182,13 @@ Plan quality gates:
 - Durable always: every plan has a Markdown artifact at
   `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 - Routing-aware: every plan includes Subagent Routing with role, task scope,
-  model tier, parallel or serial ordering, and why each role is needed or
-  skipped. A plan without Subagent Routing is incomplete.
+  Teamwork model tier, context strategy, parallel or serial ordering, and why
+  each role is needed or skipped. A plan without Subagent Routing is
+  incomplete.
+- Codex-aware: ordinary plans use conceptual routing. Native dispatch fields
+  are derived from `skills/teamwork/SKILL.md` when dispatching; write them in a
+  plan only when a non-default native override is itself part of the routing
+  decision.
 
 Output:
 
@@ -227,9 +236,9 @@ Review Handoff:
 - Check scope, diff, tests/artifacts, regressions, and acceptance criteria.
 
 Subagent Routing:
-- Explorer: <needed | skipped> | scope: <evidence track> | model tier: <fast | standard> | <parallel | serial> | why: <...>
-- Designer: <needed | skipped> | scope: <requirements/architecture/product behavior> | model tier: <high reasoning> | <parallel | serial> | why: <...>
-- Judge: <needed | skipped> | scope: <plan review> | model tier: <high reasoning> | <serial before execution> | why: <...>
-- Worker: <main agent | subagent> | scope: <exact files or modules> | model tier: <fast | standard> | <serial or parallel with non-overlapping ownership> | why: <...>
-- Reviewer: <main distinct pass | subagent | codex review command> | scope: <diff, artifacts, tests, regressions> | model tier: <high reasoning> | <serial after verification> | why: <...>
+- Explorer: <needed | skipped> | scope: <evidence track> | tier: <fast | standard> | context: <targeted handoff | full-history inheritance> | order: <parallel | serial> | why: <...>
+- Designer: <needed | skipped> | scope: <requirements/architecture/product behavior> | tier: <high reasoning> | context: <targeted handoff | full-history inheritance> | order: <parallel | serial> | why: <...>
+- Judge: <needed | skipped> | scope: <plan review> | tier: <high reasoning> | context: <targeted handoff | full-history inheritance> | order: <serial before execution> | why: <...>
+- Worker: <main agent | subagent> | scope: <exact files or modules> | tier: <fast | standard> | context: <targeted handoff | full-history inheritance> | order: <serial or parallel with non-overlapping ownership> | why: <...>
+- Reviewer: <main distinct pass | subagent | codex review command> | scope: <diff, artifacts, tests, regressions> | tier: <high reasoning> | context: <targeted handoff | full-history inheritance> | order: <serial after verification> | why: <...>
 ```

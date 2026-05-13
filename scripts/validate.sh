@@ -157,21 +157,86 @@ grep -q 'goal state and not Claude `.claude/teamwork-goals/` runtime state' "$RO
 grep -q 'codex review' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill must mention codex review"
 grep -q 'sandbox' "$ROOT/skills/teamwork-execute/SKILL.md" || fail "execute skill must document sandbox approvals"
 grep -q 'Subagent Routing Policy' "$ROUTER" || fail "router must define subagent routing policy"
+grep -q 'Codex Dispatch Mapping' "$ROUTER" || fail "router must define Codex dispatch mapping"
 grep -q 'Designer' "$ROUTER" || fail "router must define Designer subagent role"
 grep -q 'model tier' "$ROUTER" || fail "router must document model tier routing"
 grep -q '`fast`' "$ROUTER" || fail "router must document fast routing tier"
 grep -q '`standard`' "$ROUTER" || fail "router must document standard routing tier"
 grep -q 'high reasoning' "$ROUTER" || fail "router must document high reasoning routing tier"
+grep -q '`fast` -> `reasoning_effort:"low"`' "$ROUTER" \
+  || fail "router must map fast tier to low Codex reasoning effort"
+grep -q '`standard` -> `reasoning_effort:"medium"`' "$ROUTER" \
+  || fail "router must map standard tier to medium Codex reasoning effort"
+grep -q '`high reasoning` -> `reasoning_effort:"high"`' "$ROUTER" \
+  || fail "router must map high reasoning tier to high Codex reasoning effort"
+grep -q 'reasoning_effort:"xhigh"' "$ROUTER" \
+  || fail "router must document xhigh only for explicitly high-risk final gates"
+grep -q 'Explorer -> `agent_type:"explorer"`' "$ROUTER" \
+  || fail "router must map Explorer to Codex explorer agent type"
+grep -q 'Worker -> `agent_type:"worker"`' "$ROUTER" \
+  || fail "router must map Worker to Codex worker agent type"
+grep -q 'Designer -> `agent_type:"default"`' "$ROUTER" \
+  || fail "router must map Designer to Codex default agent type"
+grep -q 'Judge -> `agent_type:"default"`' "$ROUTER" \
+  || fail "router must map Judge to Codex default agent type"
+grep -q 'Reviewer -> `agent_type:"default"`' "$ROUTER" \
+  || fail "router must map Reviewer to Codex default agent type"
+grep -q 'Full-history fork inheritance' "$ROUTER" \
+  || fail "router must document fork_context:true inheritance"
+grep -q 'use `fork_context:false` or omit `fork_context`' "$ROUTER" \
+  || fail "router must document fork_context:false explicit routing"
+grep -q 'Omit `agent_type`, `model`, and' "$ROUTER" \
+  || fail "router must require omitting override fields on full-history forks"
 grep -q 'Subagent Routing' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must document subagent routing"
 grep -q 'model tier' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must require model tier in subagent routing"
+grep -q 'context strategy' "$ROOT/skills/teamwork-design/SKILL.md" \
+  || fail "design skill must require context strategy in subagent routing"
+grep -q 'Codex native dispatch fields are derived at dispatch time from the router' "$ROOT/skills/teamwork-design/SKILL.md" \
+  || fail "design skill must derive native Codex fields at dispatch time"
+if grep -q 'Codex `agent_type`' "$ROOT/skills/teamwork-design/SKILL.md"; then
+  fail "design skill must not require Codex agent_type in ordinary routing entries"
+fi
+if grep -q '`fork_context`:' "$ROOT/skills/teamwork-design/SKILL.md"; then
+  fail "design skill must not require fork_context in ordinary routing entries"
+fi
+if grep -q '`reasoning_effort`:' "$ROOT/skills/teamwork-design/SKILL.md"; then
+  fail "design skill must not require reasoning_effort in ordinary routing entries"
+fi
+if grep -q 'xhigh' "$ROOT/skills/teamwork-design/SKILL.md"; then
+  fail "design skill must not list xhigh as a normal plan-template option"
+fi
 grep -q 'Workers execute the accepted plan' "$ROOT/skills/teamwork-execute/SKILL.md" \
   || fail "execute skill must keep Worker execution boundary"
 grep -q 'do not reopen product behavior' "$ROOT/skills/teamwork-execute/SKILL.md" \
   || fail "execute skill must block design reopening during execution"
+grep -q 'Do not combine `fork_context:true` with `agent_type`, `model`, or' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  || fail "execute skill must reject full-history fork plus override fields"
+grep -q 'Do not use nonexistent Codex agent types' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  || fail "execute skill must reject nonexistent Codex agent types"
 grep -q 'Routing conformance' "$ROOT/skills/teamwork-review/SKILL.md" \
   || fail "review skill must check routing conformance"
 grep -q 'underpowered tier' "$ROOT/skills/teamwork-review/SKILL.md" \
   || fail "review skill must block underpowered high-risk routing"
+grep -q 'explicitly includes native dispatch fields and combines' "$ROOT/skills/teamwork-review/SKILL.md" \
+  || fail "review skill must inspect explicit native dispatch fields"
+grep -q '`fork_context:true` with `agent_type`, `model`, or' "$ROOT/skills/teamwork-review/SKILL.md" \
+  || fail "review skill must reject full-history fork plus override fields"
+grep -q 'nonexistent native agent types' "$ROOT/skills/teamwork-review/SKILL.md" \
+  || fail "review skill must reject nonexistent Codex agent types"
+grep -q 'Derive native Codex fields' "$ROOT/CODEX.md" \
+  || fail "CODEX.md must document native Codex field derivation"
+grep -q 'skills/teamwork/SKILL.md' "$ROOT/CODEX.md" \
+  || fail "CODEX.md must point to router for native Codex dispatch mapping"
+grep -q 'Ordinary plans should record conceptual role, scope' "$ROOT/README.md" \
+  || fail "README must keep Codex dispatch guidance concise and conceptual"
+if grep -R -E 'agent_type:"(judge|reviewer|designer)"|agent_type: "(judge|reviewer|designer)"' \
+  "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/README.md" >/dev/null; then
+  fail "Codex docs must not use nonexistent judge/reviewer/designer agent_type values"
+fi
+if grep -R -i -E 'full-history fork (with|plus) overrides is valid|fork_context:true .*overrides are valid' \
+  "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/README.md" >/dev/null; then
+  fail "Codex docs must not endorse full-history fork plus override routing"
+fi
 grep -q 'review_verdict: <pass | pass-with-notes>' "$ROUTER" \
   || fail "goal completion audit must only allow passing review verdicts"
 ! grep -q 'review_verdict: <pass | pass-with-notes | revise | blocked>' "$ROUTER" \

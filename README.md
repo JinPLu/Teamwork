@@ -82,6 +82,11 @@ Teamwork 按角色和能力层级路由 subagents，而不是写死模型 ID：`
 多文件执行或中等综合，`high reasoning` 用于设计、Judge、最终 review 和安全 /
 回归边界。
 
+Codex dispatch details are derived from the router mapping in
+`skills/teamwork/SKILL.md`. Ordinary plans should record conceptual role, scope,
+tier, context strategy, order, and why; include native Codex fields only when a
+non-default native override is itself part of the decision.
+
 ## Plan Artifacts
 
 Codex 的 native plan / `update_plan` 只是可见进度状态，不是持久执行依据。

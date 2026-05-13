@@ -33,8 +33,23 @@ unsettled requirements, architecture, public behavior, or cross-module design
 choices, stop and return to `teamwork-design` instead of expanding scope.
 
 Delegated Worker prompts must include exact file ownership, allowed modification
-range, model tier, verification expectation, and a reminder that other agents
-or the main agent may own different files.
+range, Teamwork model tier, context strategy, verification expectation, and a
+reminder that other agents or the main agent may own different files. Codex
+native dispatch fields are derived from the router mapping unless a
+non-default native override is itself part of the handoff.
+
+In Codex, check native fields immediately before delegated dispatch and reject
+illegal or misleading routing:
+
+- Do not combine `fork_context:true` with `agent_type`, `model`, or
+  `reasoning_effort`; full-history forks inherit the parent type, model, and
+  effort.
+- Do not use nonexistent Codex agent types such as `judge`, `reviewer`, or
+  `designer`. Use `agent_type:"default"` and state the conceptual Teamwork role
+  in the prompt for Designer, Judge, and Reviewer passes.
+- Do not claim `high reasoning` routing when the agent is a full-history fork
+  from a lower-effort parent. Use `fork_context:false` or omit `fork_context`
+  with `reasoning_effort:"high"` when explicit high reasoning is required.
 
 1. Re-read the accepted plan, Subagent Routing, and relevant source.
 2. State the files you intend to touch.

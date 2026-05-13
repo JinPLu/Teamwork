@@ -40,6 +40,10 @@ evidence to verify, not as facts or final verdicts by themselves.
   `fast` for scoped evidence or mechanical edits, `standard` for multi-file
   work or moderate synthesis, and `high reasoning` for Designer, Judge,
   Reviewer, risky tradeoffs, and final acceptance gates.
+- Codex dispatch mapping: ordinary Teamwork plans record conceptual role,
+  scope, tier, context strategy, order, and why. Derive native Codex fields
+  from `skills/teamwork/SKILL.md` at dispatch time, and write native fields in a
+  plan only when a non-default override is itself part of the decision.
 - Review: use `codex review --uncommitted`, `--base`, or `--commit` when a real
   git diff exists and a separate native review is useful. Treat the result as
   evidence, not automatic approval.

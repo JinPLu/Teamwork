@@ -74,6 +74,46 @@ Goal mode uses the same routing policy inside each iteration. Do not increase
 model tier or agent count for ceremony; increase it only when ambiguity, risk,
 or cross-module reasoning requires it.
 
+## Codex Dispatch Mapping
+
+When running in Codex, map Teamwork's conceptual routing onto real
+`spawn_agent` fields. Keep Teamwork capability tiers model-ID agnostic; the
+Codex mapping selects reasoning effort, not a fixed `gpt-*` model:
+
+- `fast` -> `reasoning_effort:"low"`.
+- `standard` -> `reasoning_effort:"medium"`.
+- `high reasoning` -> `reasoning_effort:"high"`.
+- `xhigh` is not a normal Teamwork tier. Use `reasoning_effort:"xhigh"` only
+  for explicitly high-risk final gates where extra reasoning depth is worth the
+  cost, such as safety/security acceptance or unusually fragile regression
+  review.
+
+Map conceptual Teamwork roles to Codex agent types this way:
+
+- Explorer -> `agent_type:"explorer"`.
+- Worker -> `agent_type:"worker"`.
+- Designer -> `agent_type:"default"` with "Act as a Teamwork Designer" in the
+  prompt.
+- Judge -> `agent_type:"default"` with "Act as a Teamwork Judge" in the prompt.
+- Reviewer -> `agent_type:"default"` with "Act as a Teamwork Reviewer" in the
+  prompt.
+
+Codex has no `judge`, `reviewer`, or `designer` agent type. Those are Teamwork
+conceptual roles, not native Codex `agent_type` values.
+
+Context controls whether overrides are legal:
+
+- Full-history fork inheritance: use `fork_context:true` only when the subagent
+  needs exactly the same context as the parent. Omit `agent_type`, `model`, and
+  `reasoning_effort`; the fork inherits the parent agent type, model, and
+  effort.
+- Explicit routing: use `fork_context:false` or omit `fork_context` when a role,
+  model, or reasoning-effort override is required. Pass the required context in
+  the prompt or `items`.
+- Do not claim a subagent used `high reasoning` if it was a full-history fork
+  from a lower-effort parent. Either dispatch a non-fork subagent with
+  `reasoning_effort:"high"` or state that the inherited effort was used.
+
 ## Evidence Interpretation Contract
 
 Treat narrative labels as claims until verified. File names, directory names,

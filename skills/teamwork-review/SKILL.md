@@ -54,10 +54,12 @@ Check:
 - Risk: regressions, rollback/rework path, and stop rules are identified.
 - Simplicity: no broad refactor, abstraction, or downstream cleanup unless
   required by evidence.
-- Subagent Routing: every plan includes role, task scope, model tier, parallel
-  or serial ordering, and why each role is needed or skipped. Design work
-  should not be assigned to Worker, and high-risk plan or execution review
-  should not use a low-capability tier.
+- Subagent Routing: every plan includes role, task scope, Teamwork model tier,
+  context strategy, parallel or serial ordering, and why each role is needed or
+  skipped. Conceptual routing must be specific enough for execution to derive
+  native dispatch fields from the router mapping. Design work should not be
+  assigned to Worker, and high-risk plan or execution review should not use a
+  low-capability tier.
 
 Hard gates:
 
@@ -70,6 +72,11 @@ Hard gates:
   handoffs must return `revise` or `blocked`.
 - A plan missing Subagent Routing, or routing design work to Worker, or using
   an underpowered tier for high-risk review, must return `revise` or `blocked`.
+- A Codex plan that explicitly includes native dispatch fields and combines
+  `fork_context:true` with `agent_type`, `model`, or `reasoning_effort`; uses
+  nonexistent native agent types such as `judge`, `reviewer`, or `designer`;
+  or claims high-reasoning routing that would actually inherit a lower parent
+  effort must return `revise` or `blocked`.
 - A plan that changes protected contracts, architecture, or public behavior
   without explicit scope and verification must return `blocked`.
 
@@ -89,9 +96,13 @@ Check:
 - Plan conformance: for non-lightweight work, compare the diff and verification
   against the accepted durable plan artifact; unexplained drift from that plan
   must return `revise` or `blocked`.
-- Routing conformance: compare the actual agent roles and model tier choices to
-  the accepted routing; unexplained drift from the routing must return
-  `revise` or `blocked`.
+- Routing conformance: compare the actual agent roles, Teamwork model tier
+  choices, context strategy, and ordering to the accepted routing; unexplained
+  drift from the routing must return `revise` or `blocked`.
+- Codex dispatch validity: when execution evidence or the accepted plan
+  includes native dispatch fields, reject full-history fork plus override
+  fields, nonexistent native agent types, or inherited lower-effort routing
+  while claiming explicit high reasoning.
 - Workspace hygiene: no unrelated edits, generated churn, or overwritten work
   from others.
 - Narrative-mislead risk: check whether version names, stale docs, comments, or
