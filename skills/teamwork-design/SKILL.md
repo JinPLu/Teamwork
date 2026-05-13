@@ -54,6 +54,10 @@ completion status without at least one direct evidence cross-check.
   user-authorized evidence not present locally.
 - Use subagents for independent read-heavy tracks by default. Give writing
   subagents exact file slices or worktree isolation.
+- Use a Designer pass with `high reasoning` when the uncertainty is about
+  requirements, architecture, cross-module plans, or product behavior. Use
+  Explorer for evidence collection; use Designer for option framing and
+  tradeoffs.
 - Ask subagents to return condensed evidence, confidence, dissent, and open
   questions instead of large raw logs.
 - Default research/review fan-out is at most 3 parallel subagents unless the
@@ -70,6 +74,11 @@ constraints, and return format. Do not give subagents broad permission to edit
 unless they are explicitly the worker for an accepted plan with file ownership.
 If subagents are unavailable, use separate local passes and label the
 limitation.
+
+If the research question includes ambiguous requirements, architecture choices,
+cross-module design, or product behavior, consider a Designer with
+`high reasoning` before planning. Do not substitute a Worker for unresolved
+design work; Workers execute accepted plans.
 
 Workflow:
 
@@ -156,7 +165,9 @@ Workflow:
    evidence that would invalidate the plan.
 9. Avoid unresolved placeholders, ellipses as tasks, and generic testing or
    edge-case instructions; each step must be executable or explicitly blocked.
-10. Prepare separate handoffs for worker execution and reviewer checks.
+10. Define Subagent Routing: role, task scope, model tier, parallel or serial
+    ordering, and why each role is needed or skipped.
+11. Prepare separate handoffs for worker execution and reviewer checks.
 
 Plan quality gates:
 
@@ -167,6 +178,10 @@ Plan quality gates:
 - Budget-aware: include stop conditions for no progress, blocker, or budget.
 - Durable when needed: non-lightweight work has a Markdown artifact at
   `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
+- Routing-aware: non-lightweight plans include Subagent Routing with role,
+  task scope, model tier, parallel or serial ordering, and why each role is
+  needed or skipped. A non-lightweight plan without Subagent Routing is
+  incomplete.
 
 Output:
 
@@ -213,8 +228,10 @@ Worker Handoff:
 Review Handoff:
 - Check scope, diff, tests/artifacts, regressions, and acceptance criteria.
 
-Subagent Plan:
-- Judge agent: <needed | not needed because ...>
-- Worker agent: <main agent | subagent with exact scope>
-- Review agent: <main distinct pass | subagent | codex review command>
+Subagent Routing:
+- Explorer: <needed | skipped> | scope: <evidence track> | model tier: <fast | standard> | <parallel | serial> | why: <...>
+- Designer: <needed | skipped> | scope: <requirements/architecture/product behavior> | model tier: <high reasoning> | <parallel | serial> | why: <...>
+- Judge: <needed | skipped> | scope: <plan review> | model tier: <high reasoning> | <serial before execution> | why: <...>
+- Worker: <main agent | subagent> | scope: <exact files or modules> | model tier: <fast | standard> | <serial or parallel with non-overlapping ownership> | why: <...>
+- Reviewer: <main distinct pass | subagent | codex review command> | scope: <diff, artifacts, tests, regressions> | model tier: <high reasoning> | <serial after verification> | why: <...>
 ```

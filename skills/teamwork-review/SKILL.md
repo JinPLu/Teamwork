@@ -55,6 +55,10 @@ Check:
 - Risk: regressions, rollback/rework path, and stop rules are identified.
 - Simplicity: no broad refactor, abstraction, or downstream cleanup unless
   required by evidence.
+- Subagent Routing: non-lightweight plans include role, task scope, model tier,
+  parallel or serial ordering, and why each role is needed or skipped. Design
+  work should not be assigned to Worker, and high-risk plan or execution review
+  should not use a low-capability tier.
 
 Hard gates:
 
@@ -65,6 +69,9 @@ Hard gates:
   testing instructions, missing requirements-to-evidence mapping, missing
   verification design, missing expected results, or missing worker/reviewer
   handoffs must return `revise` or `blocked`.
+- A non-lightweight plan missing Subagent Routing, or routing design work to
+  Worker, or using an underpowered tier for high-risk review, must return
+  `revise` or `blocked`.
 - A plan that changes protected contracts, architecture, or public behavior
   without explicit scope and verification must return `blocked`.
 
@@ -84,6 +91,9 @@ Check:
 - Plan conformance: for non-lightweight work, compare the diff and verification
   against the accepted durable plan artifact; unexplained drift from that plan
   must return `revise` or `blocked`.
+- Routing conformance: compare the actual agent roles and model tier choices to
+  the accepted routing; unexplained drift from the routing must return
+  `revise` or `blocked`.
 - Workspace hygiene: no unrelated edits, generated churn, or overwritten work
   from others.
 - Narrative-mislead risk: check whether version names, stale docs, comments, or

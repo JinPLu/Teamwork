@@ -11,7 +11,8 @@ the plan; it does not self-declare completion.
 ## Preconditions
 
 - Accepted plan from `teamwork-design` with `mode: plan`, including root
-  cause or goal, scope, sacred boundaries, and verification.
+  cause or goal, scope, sacred boundaries, verification, and Subagent Routing
+  for non-lightweight work.
 - Current workspace status is understood enough to avoid overwriting others.
 - Required files, commands, credentials, and environments are available or the
   absence is recorded as a blocker.
@@ -26,7 +27,16 @@ If any precondition is missing, stop and return a blocker instead of guessing.
 
 ## Worker Pass
 
-1. Re-read the accepted plan and relevant source.
+Workers execute the accepted plan. They do not reopen product behavior,
+architecture, or requirements design during execution. If execution uncovers
+unsettled requirements, architecture, public behavior, or cross-module design
+choices, stop and return to `teamwork-design` instead of expanding scope.
+
+Delegated Worker prompts must include exact file ownership, allowed modification
+range, model tier, verification expectation, and a reminder that other agents
+or the main agent may own different files.
+
+1. Re-read the accepted plan, Subagent Routing, and relevant source.
 2. State the files you intend to touch.
 3. Make only the planned edits, matching existing style.
 4. Keep changes minimal and producer-side. Avoid unrelated cleanup, formatting,

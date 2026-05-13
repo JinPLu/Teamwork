@@ -30,6 +30,8 @@ owns scope, decomposition, synthesis, conflict resolution, verification, and
 final acceptance. Subagents provide bounded work products:
 
 - Explorer: read-heavy independent investigation with condensed evidence.
+- Designer: ambiguous requirements, architecture tradeoffs, cross-module
+  solution design, and product behavior choices before execution planning.
 - Judge: fresh-context plan review before execution.
 - Worker: implementation for an accepted plan with exact file ownership or
   worktree isolation.
@@ -40,6 +42,37 @@ Use subagents when tracks can run independently, when fresh context reduces
 self-confirmation risk, or when splitting context lowers cost. Do not fan out
 merely for ceremony, duplicate another agent's unresolved work, or give writing
 agents overlapping file ownership.
+
+## Subagent Routing Policy
+
+Subagent role choice and model tier choice are part of routing. Use capability
+tiers rather than fixed model IDs so Claude Code, Codex, and Cursor can map the
+request to the best available local model:
+
+- `fast`: scoped evidence collection, low-risk mechanical edits, and concise
+  documentation cleanup where ambiguity is low.
+- `standard`: moderate reasoning, multi-file implementation, or investigation
+  that needs synthesis but not high-stakes judgment.
+- `high reasoning`: ambiguous requirements, architecture tradeoffs, high-risk
+  plan review, final acceptance, regression analysis, or safety/security
+  boundary checks.
+
+The main agent is the controller. It chooses the route, verifies evidence,
+resolves conflicts, and makes the final decision. Subagents return evidence,
+patches, and recommendations; they do not automatically pass their own work.
+
+| Task shape | Role | Model tier | Routing note |
+|---|---|---|---|
+| Evidence collection or multi-path code research | Explorer | `fast` or `standard` | Use parallel tracks when scopes are independent; raise to `standard` when synthesis is non-trivial. |
+| Ambiguous requirements, architecture design, cross-module plans, or product behavior design | Designer | `high reasoning` | Use before planning; do not route unresolved design work to Worker. |
+| Plan review or high-risk tradeoff review | Judge | `high reasoning` | Use before execution when the plan is non-lightweight, risky, or ambiguous. |
+| Small mechanical implementation or documentation cleanup | Worker | `fast` | Require exact file ownership and accepted scope. |
+| Multi-file implementation or public/shared behavior change | Worker, then Reviewer | Worker: `standard`; Reviewer: `high reasoning` | Keep Worker execution bounded by the accepted plan and require fresh-context review. |
+| Final acceptance, regression risk, or safety boundary review | Reviewer | `high reasoning` | Treat verification output and diffs as evidence, not automatic approval. |
+
+Goal mode uses the same routing policy inside each iteration. Do not increase
+model tier or agent count for ceremony; increase it only when ambiguity, risk,
+or cross-module reasoning requires it.
 
 ## Evidence Interpretation Contract
 
@@ -65,8 +98,8 @@ that the referenced file is current, canonical, or active.
 - Prefer local repository evidence before MCP, network, or web research.
 - Use MCP or web only when the task needs external tools, official/current
   information, or user-authorized sources that are not available locally.
-- Use subagents primarily for read-heavy independent research, judge, and
-  review tracks. Writing subagents need exact file ownership or worktree
+- Use subagents primarily for read-heavy independent research, design, judge,
+  and review tracks. Writing subagents need exact file ownership or worktree
   isolation.
 - Ask subagents for condensed evidence and verdicts, not raw log dumps.
 - Default to at most 3 parallel research/review subagents unless the user gives
@@ -113,8 +146,8 @@ roundtable infrastructure:
 - Use Codex goals only for explicit autonomous convergence requests or an
   existing active goal. Do not create a goal for ordinary research, planning,
   review, or one-shot execution.
-- Use Codex subagents for independent research, judge, worker, or reviewer
-  tracks when multi-agent support is available. Dispatch focused prompts,
+- Use Codex subagents for independent Explorer, Designer, Judge, Worker, or
+  Reviewer tracks when multi-agent support is available. Dispatch focused prompts,
   wait for results when they are needed, synthesize conflicts locally, and
   close agents that are no longer needed.
 - If subagents are unavailable or the work is tightly coupled, run clearly
@@ -281,7 +314,7 @@ Review:
 Completion Audit:
 - requirements_mapping: <evidence map>
 - verification_evidence: <commands/artifacts/inspection>
-- review_verdict: <pass | pass-with-notes | revise | blocked>
+- review_verdict: <pass | pass-with-notes>
 - dissent: <none or residual risk>
 
 Codex Goal State:

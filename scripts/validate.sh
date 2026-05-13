@@ -144,7 +144,26 @@ grep -q 'goal state and not Claude `.claude/teamwork-goals/` runtime state' "$RO
   || fail "CODEX.md must distinguish plan artifacts from Claude goal runtime"
 grep -q 'codex review' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill must mention codex review"
 grep -q 'sandbox' "$ROOT/skills/teamwork-execute/SKILL.md" || fail "execute skill must document sandbox approvals"
-grep -q 'Subagent Plan' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must document subagent plan"
+grep -q 'Subagent Routing Policy' "$ROUTER" || fail "router must define subagent routing policy"
+grep -q 'Designer' "$ROUTER" || fail "router must define Designer subagent role"
+grep -q 'model tier' "$ROUTER" || fail "router must document model tier routing"
+grep -q '`fast`' "$ROUTER" || fail "router must document fast routing tier"
+grep -q '`standard`' "$ROUTER" || fail "router must document standard routing tier"
+grep -q 'high reasoning' "$ROUTER" || fail "router must document high reasoning routing tier"
+grep -q 'Subagent Routing' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must document subagent routing"
+grep -q 'model tier' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must require model tier in subagent routing"
+grep -q 'Workers execute the accepted plan' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  || fail "execute skill must keep Worker execution boundary"
+grep -q 'do not reopen product behavior' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  || fail "execute skill must block design reopening during execution"
+grep -q 'Routing conformance' "$ROOT/skills/teamwork-review/SKILL.md" \
+  || fail "review skill must check routing conformance"
+grep -q 'underpowered tier' "$ROOT/skills/teamwork-review/SKILL.md" \
+  || fail "review skill must block underpowered high-risk routing"
+grep -q 'review_verdict: <pass | pass-with-notes>' "$ROUTER" \
+  || fail "goal completion audit must only allow passing review verdicts"
+! grep -q 'review_verdict: <pass | pass-with-notes | revise | blocked>' "$ROUTER" \
+  || fail "goal completion audit must not list non-passing review verdicts"
 grep -q 'MCP' "$ROOT/CODEX.md" || fail "CODEX.md must document MCP/network fallback"
 grep -q 'Evidence Interpretation Contract' "$ROUTER" || fail "router must define evidence interpretation contract"
 grep -q 'Evidence Interpretation Contract' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must define evidence interpretation contract"

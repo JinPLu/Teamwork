@@ -1,71 +1,45 @@
 # Teamwork
 
 Teamwork 是一个面向 Claude Code、Codex 和 Cursor 的轻量 agent 协作工作流。
-它把“一个 agent 从头做到尾”改成“主 agent 统筹，subagents 分工”：主 agent
-负责拆分、调度、综合和验收；subagents 负责独立调研、范围明确的执行、fresh-context
-复查和证据回传。
+它把一次性长上下文执行拆成清晰阶段：调研、计划、执行、复查和验收。
 
-它主要解决四类问题：
+核心原则：
 
-- 上下文过长：把独立调研、执行和复查分给 subagents，主 agent 只保留结论和证据。
-- 局部自证：执行者不能自宣完成，必须经过独立 review 和验证证据。
-- 叙述误导：文件名、版本号、注释、README、历史说明都只是 claim，需要源码、diff、
-  测试、日志或 artifact 交叉验证。
-- 自动循环失控：goal mode 有预算、Stop hook、completion audit 和明确阻塞条件。
+- 主 agent 负责范围、调度、综合、验证和最终判断。
+- subagents 负责独立调研、明确范围的执行、fresh-context review 和证据回传。
+- 重要结论必须区分 `observed`、`inferred`、`claimed`。
+- 执行者不能自宣完成；完成前必须有验证和 review。
 
-## 核心优势
+## Quick Start
 
-- Subagent-first：调研、计划、执行、复查、验收都围绕合理使用 subagents 设计。
-- Evidence-first：重要结论区分 `observed`、`inferred`、`claimed`。
-- Review-gated：完成声明必须映射需求、验证证据、review verdict 和 dissent。
-- 轻量：不引入 model registry、pricing cache、dispatch 平台或 thread ledger。
-- 兼容：Codex 用原生 plan / goal / subagent；Claude 保留 `/rao:*` runtime。
+安装：
 
-## 工作流
-
-```text
-research -> plan -> plan review -> execute -> execution review -> accept / iterate / block
+```bash
+git clone https://github.com/JinPLu/Teamwork.git
+cd Teamwork
+./install.sh codex
 ```
 
-| 场景 | 使用 |
-|---|---|
-| 自动路由、目标续跑 | `teamwork` |
-| 调研方案、写执行计划 | `teamwork-design` |
-| 执行已接受计划 | `teamwork-execute` |
-| 审计划、审 diff / artifact / 验证结果 | `teamwork-review` |
+其他平台：
 
-## 持久计划 artifact
-
-Codex 的原生 plan / `update_plan` 是可见进度状态，不是持久执行依据。非小改默认写入
-durable Markdown plan artifact：
-
-```text
-docs/teamwork/plans/YYYY-MM-DD-<slug>.md
+```bash
+./install.sh claude
+./install.sh cursor /path/to/project
+./install.sh all /path/to/cursor-project
 ```
 
-计划文件应包含目标、需求映射、已读证据、范围边界、实施步骤、验证命令、预期结果、
-风险、停止条件、worker handoff 和 review handoff。小修可以使用聊天计划，但仍要有
-明确验证和最终 review。这个 Markdown artifact 是普通仓库文件，可被 Cursor、Claude
-Code 和 Codex 共同 review / 编辑 / 执行；它不是 Codex goal，也不是 Claude
-`.claude/teamwork-goals/` runtime 状态。
+开发本仓库时如果希望已安装 skill 直接跟随本地修改，可用 symlink 模式：
 
-## 用法
+```bash
+./install.sh --link codex
+./install.sh --link claude
+```
 
-让 router 自动选择阶段：
+常用调用：
 
 ```text
 teamwork: 调研 pytest X 为什么失败，给出方案，然后写成执行计划
-```
-
-执行已接受计划：
-
-```text
 teamwork-execute: 按已接受计划实现，只做必要改动并运行 focused verification
-```
-
-审查执行结果：
-
-```text
 teamwork-review mode: execution: 审查这个 diff 和验证证据
 ```
 
@@ -75,54 +49,71 @@ Claude 中启动有界续跑目标：
 /rao:goal 修复 pytest X，最多 3 轮，无进展就停 --max-iterations 3
 ```
 
-## 安装
-
-普通用户从 GitHub clone 后直接复制安装：
+验证仓库：
 
 ```bash
-git clone https://github.com/JinPLu/Teamwork.git
-cd Teamwork
+./scripts/validate.sh
 ```
 
-```bash
-./install.sh claude
-./install.sh codex
-./install.sh cursor /path/to/project
-./install.sh all /path/to/cursor-project
-```
-
-默认是复制安装，安装后的 skill 不依赖这个仓库路径。开发本仓库时如果希望本地修改
-立即反映到已安装 skill，可以显式使用 symlink 模式：
-
-```bash
-./install.sh --link codex
-./install.sh --link claude
-```
-
-安装脚本会安装四个 skill，并清理旧 `run-analyze-*` 安装。
-
-## Codex runtime
-
-Codex 使用同一组 skill，但不使用 Claude 的 Markdown goal 后端。需要可见进度时用
-原生 plan / `update_plan`；非小改需要上面的 Markdown 计划文件作为 durable artifact。
-只有用户明确要求自主收敛或已有 active goal 时才用原生 Codex goal。
-subagents 用于独立 research、judge、worker、review track；`codex review` 可以作为
-审查证据，但不能自动代表通过。
-
-## Claude `/rao:*` runtime
-
-`/rao:*` 是 Teamwork 保留的 Claude 兼容命令前缀。状态文件在：
+## Workflow
 
 ```text
-.claude/teamwork-goals/
+research -> plan -> plan review -> execute -> execution review -> accept / iterate / block
 ```
 
-`Stop hook` 会在 goal 未完成且未达到最大轮数时阻止停止，并注入下一轮 continuation
-prompt。默认 completion promise 是：
+| 场景 | Skill |
+|---|---|
+| 自动路由、目标续跑 | `teamwork` |
+| 调研方案、写执行计划 | `teamwork-design` |
+| 执行已接受计划 | `teamwork-execute` |
+| 审计划、审 diff / artifact / 验证结果 | `teamwork-review` |
+
+`teamwork` 是 router。它按用户意图进入 research、plan、execute、review 或 goal mode。
+默认优先本地文件、diff、日志、测试和 artifact；只有外部约束确实需要时才用 MCP 或
+网络信息。
+
+## Subagent Routing
+
+Teamwork 按角色和能力层级路由 subagents，而不是写死模型 ID：`Explorer` 收集证据，
+`Designer` 处理需求含糊、架构和跨模块设计，`Judge` 审计划，`Worker` 执行已接受
+范围，`Reviewer` 做最终复查。`fast` 适合低风险证据和机械改动，`standard` 适合
+多文件执行或中等综合，`high reasoning` 用于设计、Judge、最终 review 和安全 /
+回归边界。
+
+## Plan Artifacts
+
+Codex 的 native plan / `update_plan` 只是可见进度状态，不是持久执行依据。
+
+轻量改动可以使用聊天计划，但仍要有明确验证和最终 review。非小改默认写入 durable
+Markdown plan artifact：
 
 ```text
-<promise>RAO_GOAL_COMPLETE</promise>
+docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 ```
+
+计划文件应覆盖目标、需求映射、已读证据、范围边界、实施步骤、验证命令、预期结果、
+风险、停止条件、worker handoff 和 review handoff。
+
+这个 Markdown artifact 是普通仓库文件，可被 Cursor、Claude Code 和 Codex 共同
+编辑、执行和 review；它不是 Codex goal，也不是 Claude `.claude/teamwork-goals/`
+runtime 状态。
+
+## Platform Notes
+
+**Codex runtime**
+
+- 使用 native plan / `update_plan` 展示进度。
+- 只有用户明确要求自主收敛或已有 active goal 时才用 native Codex goal。
+- 使用 Codex subagents 承担独立 Explorer、Designer、Judge、Worker、Reviewer track。
+- `codex review` 可以作为审查证据，但不能自动代表通过。
+
+**Claude `/rao:*` runtime**
+
+- `/rao:*` 是 Teamwork 保留的 Claude 兼容命令前缀。
+- goal 状态文件在 `.claude/teamwork-goals/`。
+- `Stop hook` 会在 goal 未完成且未达到最大轮数时阻止停止，并注入下一轮 continuation
+  prompt。
+- 默认 completion promise 是 `<promise>RAO_GOAL_COMPLETE</promise>`。
 
 自动完成必须同时包含 promise 和结构化 audit：
 
@@ -138,11 +129,24 @@ prompt。默认 completion promise 是：
 `review_verdict` 只能是 `pass` 或 `pass-with-notes`。`/rao:complete` 是人工 override，
 会记录为 manual completion。
 
-## 验证
+**Cursor**
 
-```bash
-./scripts/validate.sh
+Cursor 只安装薄规则入口，指向同一组 Teamwork skills，不复制完整 runtime。
+
+## Repository
+
+核心文件：
+
+```text
+skills/teamwork/SKILL.md
+skills/teamwork-design/SKILL.md
+skills/teamwork-execute/SKILL.md
+skills/teamwork-review/SKILL.md
+commands/rao/*.md
+hooks/hooks.json
+bin/raoctl.py
 ```
 
-验证覆盖 skill 拓扑、frontmatter、manifest、临时安装 smoke、Cursor rule 长度、
-Claude command / hook 存在性，以及 Stop-hook completion gate。
+`./scripts/validate.sh` 会检查 skill 拓扑、frontmatter、manifest、临时安装 smoke、
+Cursor rule 长度、Claude command / hook 存在性、持久计划说明和 Stop-hook
+completion gate。

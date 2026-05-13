@@ -32,9 +32,13 @@ evidence to verify, not as facts or final verdicts by themselves.
 - Autonomous convergence: use native Codex goals only when explicitly
   requested, or continue an active goal. Ordinary research, planning, review,
   and one-shot execution do not need a goal.
-- Subagents: use Codex multi-agent support for independent research, judge,
-  worker, and review tracks. The main agent owns synthesis, conflict
-  resolution, and the final recommendation.
+- Subagents: use Codex multi-agent support for independent Explorer, Designer,
+  Judge, Worker, and Reviewer tracks. The main agent owns synthesis,
+  conflict resolution, and the final recommendation.
+- Subagent model routing: choose by capability tier, not fixed model ID. Use
+  `fast` for scoped evidence or mechanical edits, `standard` for multi-file
+  work or moderate synthesis, and `high reasoning` for Designer, Judge,
+  Reviewer, risky tradeoffs, and final acceptance gates.
 - Review: use `codex review --uncommitted`, `--base`, or `--commit` when a real
   git diff exists and a separate native review is useful. Treat the result as
   evidence, not automatic approval.
