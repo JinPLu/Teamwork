@@ -39,10 +39,9 @@ Review an implementation plan before execution.
 
 Check:
 
-- Durable plan artifact: non-lightweight work has a Markdown plan artifact path,
-  normally `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`, and the review reads it
-  directly instead of relying on `update_plan`, chat summaries, or executor
-  claims.
+- Durable plan artifact: every plan has a Markdown plan artifact path, normally
+  `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`, and the review reads it directly
+  instead of relying on `update_plan`, chat summaries, or executor claims.
 - Scope: every step traces to the stated goal or root cause.
 - Assumptions: missing inputs are explicit and safe.
 - Feasibility: files, commands, environments, and dependencies are plausible.
@@ -55,23 +54,22 @@ Check:
 - Risk: regressions, rollback/rework path, and stop rules are identified.
 - Simplicity: no broad refactor, abstraction, or downstream cleanup unless
   required by evidence.
-- Subagent Routing: non-lightweight plans include role, task scope, model tier,
-  parallel or serial ordering, and why each role is needed or skipped. Design
-  work should not be assigned to Worker, and high-risk plan or execution review
+- Subagent Routing: every plan includes role, task scope, model tier, parallel
+  or serial ordering, and why each role is needed or skipped. Design work
+  should not be assigned to Worker, and high-risk plan or execution review
   should not use a low-capability tier.
 
 Hard gates:
 
-- For non-lightweight work, a missing durable plan artifact, a plan that relies
-  only on transient `update_plan` or chat state, or a plan whose artifact cannot
-  be read must return `revise` or `blocked`.
+- A missing durable plan artifact, a plan that relies only on transient
+  `update_plan` or chat state, or a plan whose artifact cannot be read must
+  return `revise` or `blocked`.
 - A plan with unresolved placeholders, ellipses as executable steps, vague
   testing instructions, missing requirements-to-evidence mapping, missing
   verification design, missing expected results, or missing worker/reviewer
   handoffs must return `revise` or `blocked`.
-- A non-lightweight plan missing Subagent Routing, or routing design work to
-  Worker, or using an underpowered tier for high-risk review, must return
-  `revise` or `blocked`.
+- A plan missing Subagent Routing, or routing design work to Worker, or using
+  an underpowered tier for high-risk review, must return `revise` or `blocked`.
 - A plan that changes protected contracts, architecture, or public behavior
   without explicit scope and verification must return `blocked`.
 

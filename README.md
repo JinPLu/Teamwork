@@ -86,8 +86,8 @@ Teamwork 按角色和能力层级路由 subagents，而不是写死模型 ID：`
 
 Codex 的 native plan / `update_plan` 只是可见进度状态，不是持久执行依据。
 
-轻量改动可以使用聊天计划，但仍要有明确验证和最终 review。非小改默认写入 durable
-Markdown plan artifact：
+所有 `teamwork-design mode: plan` 都必须写入 durable Markdown plan artifact，
+包括轻量改动、低风险改动和单文件改动：
 
 ```text
 docs/teamwork/plans/YYYY-MM-DD-<slug>.md

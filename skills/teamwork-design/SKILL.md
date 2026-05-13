@@ -127,33 +127,32 @@ Recommendation:
 Use after research or diagnosis has selected a direction. The output is a plan
 that a worker can execute without expanding scope.
 
-### Plan Detail Tiers
+### Plan Artifact Requirement
 
-- Lightweight change: a chat-visible plan is enough only when the change is
-  narrow, low-risk, does not materially alter public behavior or architecture,
-  and can be proven with focused checks. Still include verification and final
-  review.
-- Non-lightweight change: write or update a durable Markdown plan artifact
-  before execution. Default path:
+All plans must be written to a durable Markdown plan artifact before execution,
+including lightweight, low-risk, and single-file changes. Default path:
 
-  ```text
-  docs/teamwork/plans/YYYY-MM-DD-<slug>.md
-  ```
+```text
+docs/teamwork/plans/YYYY-MM-DD-<slug>.md
+```
 
+- Lightweight changes may use a concise artifact, but they still need the
+  artifact path, scope, implementation steps, focused verification, expected
+  results, and final review handoff.
 - High-risk, cross-module, ambiguous, or long-running work: the artifact must
   use checkbox tasks, exact paths, test-first or verification-first steps,
   necessary code snippets, expected command output or artifact properties, and
   explicit worker/reviewer handoffs.
 
 The durable artifact is the execution and review source of truth. `update_plan`
-may mirror progress as a transient checklist, but it must not be the only plan
-for non-lightweight work.
+may mirror progress as a transient checklist, but it must never be the only
+plan.
 
 Workflow:
 
 1. Restate the root cause or goal in one sentence.
-2. Classify the detail tier and either name the durable plan artifact path or
-   explain why a chat-visible plan is sufficient for lightweight work.
+2. Classify the detail tier and write or update the durable plan artifact.
+   Report its path.
 3. Map each requirement or acceptance criterion to evidence already read or to
    the exact verification that will prove it.
 4. Define scope: in scope, out of scope, and sacred boundaries.
@@ -176,12 +175,11 @@ Plan quality gates:
 - Evidence-driven: the plan identifies what will prove success.
 - Boundary-safe: no step changes protected contracts or principles.
 - Budget-aware: include stop conditions for no progress, blocker, or budget.
-- Durable when needed: non-lightweight work has a Markdown artifact at
+- Durable always: every plan has a Markdown artifact at
   `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
-- Routing-aware: non-lightweight plans include Subagent Routing with role,
-  task scope, model tier, parallel or serial ordering, and why each role is
-  needed or skipped. A non-lightweight plan without Subagent Routing is
-  incomplete.
+- Routing-aware: every plan includes Subagent Routing with role, task scope,
+  model tier, parallel or serial ordering, and why each role is needed or
+  skipped. A plan without Subagent Routing is incomplete.
 
 Output:
 
@@ -190,8 +188,8 @@ Mode:
 - plan
 
 Plan Artifact:
-- Path: docs/teamwork/plans/YYYY-MM-DD-<slug>.md | chat-only because <why lightweight>
-- Durable source of truth: <yes | no, lightweight rationale>
+- Path: docs/teamwork/plans/YYYY-MM-DD-<slug>.md
+- Durable source of truth: yes
 
 Root Cause / Goal:
 - ...
