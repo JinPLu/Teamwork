@@ -9,14 +9,16 @@ Use this rule when the user asks Cursor for evidence-driven research, planning,
 execution, review, or autonomous iteration until verified success or a clear
 blocker.
 
-Canonical router:
+Automatic entry and canonical router:
 
 ```text
+skills/using-teamwork/SKILL.md
 skills/teamwork/SKILL.md
 ```
 
 Installed skills:
 
+- `using-teamwork` triggers at the start of normal coding, research, planning, implementation, or review work and routes to the narrowest Teamwork stage.
 - `teamwork` routes by intent and owns `mode: goal`.
 - `teamwork-design` handles `mode: research` and `mode: plan`.
 - `teamwork-execute` implements an accepted plan with minimal edits.

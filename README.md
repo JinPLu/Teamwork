@@ -38,6 +38,7 @@ cd Teamwork
 常用调用：
 
 ```text
+using-teamwork: 自动判断普通 Codex coding / research / review 请求是否需要 Teamwork
 teamwork: 调研 pytest X 为什么失败，给出方案，然后写成执行计划
 teamwork-execute: 按已接受计划实现，只做必要改动并运行 focused verification
 teamwork-review mode: execution: 审查这个 diff 和验证证据
@@ -63,12 +64,13 @@ research -> plan -> plan review -> execute -> execution review -> accept / itera
 
 | 场景 | Skill |
 |---|---|
+| 普通 Codex coding / research / review 请求的自动入口 | `using-teamwork` |
 | 自动路由、目标续跑 | `teamwork` |
 | 调研方案、写执行计划 | `teamwork-design` |
 | 执行已接受计划 | `teamwork-execute` |
 | 审计划、审 diff / artifact / 验证结果 | `teamwork-review` |
 
-`teamwork` 是 router。它按用户意图进入 research、plan、execute、review 或 goal mode。
+`using-teamwork` 是轻量入口，用于让 Codex 在普通 coding / research / review 请求开始时先做 Teamwork 路由判断。`teamwork` 是 router。它按用户意图进入 research、plan、execute、review 或 goal mode。
 默认优先本地文件、diff、日志、测试和 artifact；只有外部约束确实需要时才用 MCP 或
 网络信息。
 
@@ -138,6 +140,7 @@ Cursor 只安装薄规则入口，指向同一组 Teamwork skills，不复制完
 核心文件：
 
 ```text
+skills/using-teamwork/SKILL.md
 skills/teamwork/SKILL.md
 skills/teamwork-design/SKILL.md
 skills/teamwork-execute/SKILL.md

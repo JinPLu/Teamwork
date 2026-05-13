@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ROUTER="$ROOT/skills/teamwork/SKILL.md"
 SKILLS=(
+  using-teamwork
   teamwork
   teamwork-design
   teamwork-execute
@@ -80,6 +81,7 @@ import sys
 
 root = pathlib.Path(sys.argv[1])
 expected = [
+    "./skills/using-teamwork",
     "./skills/teamwork",
     "./skills/teamwork-design",
     "./skills/teamwork-execute",

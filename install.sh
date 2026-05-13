@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_MODE="${TEAMWORK_INSTALL_MODE:-copy}"
 SKILLS=(
+  using-teamwork
   teamwork
   teamwork-design
   teamwork-execute

@@ -1,8 +1,9 @@
 # Codex Usage
 
-This repository exposes a router skill plus workflow subskills:
+This repository exposes an automatic entry skill, a router skill, and workflow subskills:
 
 ```text
+skills/using-teamwork/SKILL.md
 skills/teamwork/SKILL.md
 skills/teamwork-design/SKILL.md
 skills/teamwork-execute/SKILL.md
