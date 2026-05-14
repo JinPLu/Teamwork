@@ -5,6 +5,7 @@ This repository exposes an automatic entry skill, a router skill, and workflow s
 ```text
 skills/using-teamwork/SKILL.md
 skills/teamwork/SKILL.md
+skills/teamwork-goal/SKILL.md
 skills/teamwork-design/SKILL.md
 skills/teamwork-execute/SKILL.md
 skills/teamwork-review/SKILL.md
@@ -32,7 +33,8 @@ evidence to verify, not as facts or final verdicts by themselves.
   It is not the durable execution or review artifact for any plan.
 - Autonomous convergence: use native Codex goals only when explicitly
   requested, or continue an active goal. Ordinary research, planning, review,
-  and one-shot execution do not need a goal.
+  and one-shot execution do not need a goal. Use `teamwork-goal` for the
+  autonomous loop.
 - Subagents: use Codex multi-agent support for independent Explorer, Designer,
   Judge, Worker, and Reviewer tracks. The main agent owns synthesis,
   conflict resolution, and the final recommendation.
@@ -71,7 +73,10 @@ Small, low-risk edits may use a concise artifact, but not a chat-only plan.
 This Markdown artifact is ordinary repository documentation. It is not Codex
 goal state and not Claude `.claude/teamwork-goals/` runtime state. Native
 Codex goals are only for explicit autonomous convergence, while Claude
-`.claude/teamwork-goals/` files belong to the `/rao:*` Stop-hook runtime.
+`.claude/teamwork-goals/` files belong to the `/teamwork:*` Stop-hook runtime
+with `/rao:*` retained as a compatibility prefix. Goal runtime state may record
+`active_plan_artifact`, but the Markdown plan file remains the execution and
+review source of truth.
 
 ## External Information Policy
 

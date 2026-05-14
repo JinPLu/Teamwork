@@ -25,7 +25,7 @@ direction is still uncertain, return to `mode: research`.
 
 State missing inputs as assumptions before they affect behavior. If an
 assumption would change public behavior, protected claims, data contracts, or
-architecture, stop and ask instead of guessing. In `teamwork`
+architecture, stop and ask instead of guessing. In `teamwork-goal`
 `mode: goal`, safe internal details should become explicit assumptions rather
 than user questions.
 
@@ -200,7 +200,7 @@ Plan Artifact:
 - Path: docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 - Durable source of truth: yes
 
-Root Cause / Goal:
+Goal:
 - ...
 
 Requirements Mapping:

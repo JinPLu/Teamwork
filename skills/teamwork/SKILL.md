@@ -5,14 +5,10 @@ description: Use when a request should enter an evidence-first Teamwork workflow
 
 # Teamwork
 
-This is the public entrypoint and goal controller for the package. Use it to
-coordinate main-agent ownership with subagent research, execution, review, and
-acceptance gates. Route a request to the narrowest stage skill, or run a
-bounded autonomous loop when the user asks for convergence. In skill-only
-installs this autonomy is instructional within the current assistant turn; in
-the Claude Code plugin it is runtime-backed by `/rao:goal` state plus a `Stop`
-hook that continues incomplete goals across turns until success, budget
-exhaustion, or a hard blocker.
+This is the public router for the package. Use it to coordinate main-agent
+ownership with subagent research, execution, review, and acceptance gates.
+Route each request to the narrowest stage skill. Autonomous convergence is
+handled by the dedicated `teamwork-goal` subskill.
 
 The package preserves the original discipline:
 
@@ -70,9 +66,9 @@ patches, and recommendations; they do not automatically pass their own work.
 | Multi-file implementation or public/shared behavior change | Worker, then Reviewer | Worker: `standard`; Reviewer: `high reasoning` | Keep Worker execution bounded by the accepted plan and require fresh-context review. |
 | Final acceptance, regression risk, or safety boundary review | Reviewer | `high reasoning` | Treat verification output and diffs as evidence, not automatic approval. |
 
-Goal mode uses the same routing policy inside each iteration. Do not increase
-model tier or agent count for ceremony; increase it only when ambiguity, risk,
-or cross-module reasoning requires it.
+`teamwork-goal` uses the same routing policy inside each iteration. Do not
+increase model tier or agent count for ceremony; increase it only when
+ambiguity, risk, or cross-module reasoning requires it.
 
 ## Codex Dispatch Mapping
 
@@ -206,15 +202,15 @@ roundtable infrastructure:
 | Execute an accepted plan with minimal edits and verification | `teamwork-execute` | `skills/teamwork-execute/SKILL.md` |
 | plan-review: review a plan before execution | `teamwork-review` with `mode: plan` | `skills/teamwork-review/SKILL.md` |
 | execution-review: review diffs, artifacts, tests, and results after execution | `teamwork-review` with `mode: execution` | `skills/teamwork-review/SKILL.md` |
-| Iterate autonomously until verified success, budget exhaustion, or blocker | `teamwork` with `mode: goal` | this skill |
+| Iterate autonomously until verified success, budget exhaustion, or blocker | `teamwork-goal` with `mode: goal` | `skills/teamwork-goal/SKILL.md` |
 
 Do not create separate plan-review and execution-review subskills. The single
 `teamwork-review` subskill has two explicit modes so reviewer orchestration
 stays shared while the rubric changes by review target.
 
-Do not create separate research, plan, or goal subskills. Research and planning
-share `teamwork-design` with hard mode boundaries; autonomous convergence is
-the router's `mode: goal`.
+Do not create separate research or plan subskills. Research and planning share
+`teamwork-design` with hard mode boundaries; autonomous convergence belongs to
+the dedicated `teamwork-goal` subskill.
 
 ## Routing Rules
 
@@ -230,79 +226,8 @@ Use the narrowest subskill that satisfies the request:
 - If the user asks to review a diff, patch, artifacts, test result, or completed
   execution, route to `teamwork-review` with `mode: execution`.
 - If the user asks to "run until it passes", "iterate until convergence",
-  "keep going until done", or gives a verifiable target plus budget, stay in
-  this skill and use `mode: goal`.
-
-## Goal Mode
-
-Use `mode: goal` only when the user gives a goal, command, artifact target, or
-failure and wants autonomous progress to verified success or a clear stop.
-
-In Codex, if the user explicitly asks for autonomous convergence and no active
-goal exists, create a native Codex goal with the objective and optional budget.
-If a goal already exists, continue it instead of creating another. Mark a goal
-complete only after focused verification and execution review pass. Do not use
-project-local Markdown goal files for Codex-native goal state; the
-`.claude/teamwork-goals/` runtime is Claude-plugin-specific.
-
-Default budget when unspecified:
-
-- Maximum 3 optimization iterations.
-- Stop after 2 consecutive iterations with no evidence delta.
-- Stop immediately on sacred-boundary conflict, destructive risk, auth failure,
-  missing credentials, unavailable required resources, or ambiguous product
-  intent that affects behavior.
-
-During autonomous goal mode, do not ask the user for ordinary implementation
-choices, missing non-critical details, or next-step permission. Convert safe
-missing details into explicit assumptions and continue. Ask only for destructive
-risk, auth/credentials, missing required external resources, sacred-boundary
-conflict, or ambiguity that changes public behavior, protected contracts,
-architecture, or user intent.
-
-Controller loop:
-
-1. Initialize: state goal, assumptions, sacred boundaries, mutable scope,
-   verification target, and budget.
-2. Research/discuss only if causes or options are unclear: use
-   `teamwork-design` with `mode: research`.
-3. Plan: use `teamwork-design` with `mode: plan`.
-4. Review the plan: use `teamwork-review` with `mode: plan`; revise until
-   pass or blocked.
-5. Execute: use `teamwork-execute` on the accepted plan.
-6. Verify: run focused checks first and collect real evidence.
-7. Review execution: use `teamwork-review` with `mode: execution`.
-8. Decide: accept only if verification and execution review pass; otherwise
-   continue with a new hypothesis, stop at budget, or report a blocker.
-
-Goal mode does not let one executor self-declare completion. Every completion
-claim must pass execution review.
-
-Autonomous iteration discipline:
-
-- Treat the goal as concrete deliverables plus verification targets.
-- Read direct evidence before each decision; do not rely on summaries.
-- If verification fails, identify the evidence delta, choose the next smallest
-  hypothesis, and continue within budget.
-- If there is no evidence delta for 2 consecutive iterations, stop with a
-  blocker or budget/no-progress conclusion.
-- In Claude Code plugin mode, emit the configured completion promise only after
-  verification and execution review pass, and include the required structured
-  completion audit in the same final assistant message.
-
-Completion audit format for Claude Code plugin auto-completion:
-
-```text
-<completion_audit>
-<requirements_mapping>map each requirement to direct evidence</requirements_mapping>
-<verification_evidence>commands, artifacts, or inspected evidence</verification_evidence>
-<review_verdict>pass</review_verdict>
-<dissent>none or preserved dissent/residual risk</dissent>
-</completion_audit>
-```
-
-The `review_verdict` must be exactly `pass` or `pass-with-notes`. The Stop hook
-must not auto-complete on the completion promise alone.
+  "keep going until done", or gives a verifiable target plus budget, route to
+  `teamwork-goal` with `mode: goal`.
 
 ## Shared Contract
 
@@ -332,36 +257,3 @@ Mode: <research | plan | execution | goal, when applicable>
 ```
 
 Then follow that subskill's instructions directly.
-
-For `mode: goal`, end with:
-
-```text
-Goal:
-- ...
-
-Iterations:
-- <n>: research/plan/execute/review summary
-
-Verification:
-- <command/artifact/check>: <result>
-
-Review:
-- Plan review: <verdict>
-- Execution review: <verdict and dissent>
-
-Completion Audit:
-- requirements_mapping: <evidence map>
-- verification_evidence: <commands/artifacts/inspection>
-- review_verdict: <pass | pass-with-notes>
-- dissent: <none or residual risk>
-
-Codex Goal State:
-- native goal created | continued | not used
-- completion marked only after verification + execution review
-
-Unresolved:
-- <none or blockers>
-
-Conclusion:
-- accept | blocked | budget exhausted | stopped
-```

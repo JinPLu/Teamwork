@@ -6,6 +6,7 @@ INSTALL_MODE="${TEAMWORK_INSTALL_MODE:-copy}"
 SKILLS=(
   using-teamwork
   teamwork
+  teamwork-goal
   teamwork-design
   teamwork-execute
   teamwork-review

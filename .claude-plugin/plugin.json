@@ -21,6 +21,7 @@
   "skills": [
     "./skills/using-teamwork",
     "./skills/teamwork",
+    "./skills/teamwork-goal",
     "./skills/teamwork-design",
     "./skills/teamwork-execute",
     "./skills/teamwork-review"

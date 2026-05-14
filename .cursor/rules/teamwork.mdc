@@ -19,7 +19,8 @@ skills/teamwork/SKILL.md
 Installed skills:
 
 - `using-teamwork` triggers at the start of normal coding, research, planning, implementation, or review work and routes to the narrowest Teamwork stage.
-- `teamwork` routes by intent and owns `mode: goal`.
+- `teamwork` routes by intent.
+- `teamwork-goal` owns `mode: goal` for autonomous convergence.
 - `teamwork-design` handles `mode: research` and `mode: plan`.
 - `teamwork-execute` implements an accepted plan with minimal edits.
 - `teamwork-review` reviews with `mode: plan` or `mode: execution`.

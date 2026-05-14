@@ -13,6 +13,11 @@ the plan; it does not self-declare completion.
 - Accepted plan from `teamwork-design` with `mode: plan`, including root
   cause or goal, scope, sacred boundaries, verification, and Subagent Routing
   for non-lightweight work.
+- A durable Markdown plan artifact path is provided and the artifact is
+  readable. `update_plan`, chat history, executor summaries, or an implied
+  newest file are not acceptable substitutes. If the artifact path is missing
+  or unreadable, stop before execution and return to `teamwork-design` with
+  `mode: plan` to create or repair the artifact.
 - Current workspace status is understood enough to avoid overwriting others.
 - Required files, commands, credentials, and environments are available or the
   absence is recorded as a blocker.
@@ -32,11 +37,12 @@ architecture, or requirements design during execution. If execution uncovers
 unsettled requirements, architecture, public behavior, or cross-module design
 choices, stop and return to `teamwork-design` instead of expanding scope.
 
-Delegated Worker prompts must include exact file ownership, allowed modification
-range, Teamwork model tier, context strategy, verification expectation, and a
-reminder that other agents or the main agent may own different files. Codex
-native dispatch fields are derived from the router mapping unless a
-non-default native override is itself part of the handoff.
+Delegated Worker prompts must include the durable plan artifact path, exact
+file ownership, allowed modification range, Teamwork model tier, context
+strategy, verification expectation, and a reminder that other agents or the
+main agent may own different files. Codex native dispatch fields are derived
+from the router mapping unless a non-default native override is itself part of
+the handoff.
 
 In Codex, check native fields immediately before delegated dispatch and reject
 illegal or misleading routing:
@@ -51,7 +57,8 @@ illegal or misleading routing:
   from a lower-effort parent. Use `fork_context:false` or omit `fork_context`
   with `reasoning_effort:"high"` when explicit high reasoning is required.
 
-1. Re-read the accepted plan, Subagent Routing, and relevant source.
+1. Re-read the accepted durable plan artifact, Subagent Routing, and relevant
+   source.
 2. State the files you intend to touch.
 3. Make only the planned edits, matching existing style.
 4. Keep changes minimal and producer-side. Avoid unrelated cleanup, formatting,
@@ -83,6 +90,9 @@ illegal or misleading routing:
 ```text
 Implemented:
 - <path>: <change and plan step>
+
+Plan Artifact:
+- <docs/teamwork/plans/YYYY-MM-DD-<slug>.md>
 
 Verification:
 - <command/check>: <result>

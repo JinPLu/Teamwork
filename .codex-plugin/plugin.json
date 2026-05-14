@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Coordinate subagents from evidence to reviewed completion.",
-    "longDescription": "A compact router plus three stage skills for coding-agent collaboration. The main agent decomposes and accepts work while subagents investigate, implement scoped plans, review independently, and return condensed evidence.",
+    "longDescription": "A compact router plus dedicated stage skills for coding-agent collaboration and autonomous goal convergence. The main agent decomposes and accepts work while subagents investigate, implement scoped plans, review independently, and return condensed evidence.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [

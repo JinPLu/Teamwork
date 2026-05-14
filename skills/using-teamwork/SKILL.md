@@ -30,7 +30,7 @@ workflow value, or requests where the user explicitly says not to use it.
 - Use `teamwork-execute` when an accepted Teamwork plan should be implemented.
 - Use `teamwork-review` with `mode: execution` before claiming a non-trivial
   implementation is complete.
-- Use `teamwork` with `mode: goal` only when the user asks for autonomous
+- Use `teamwork-goal` with `mode: goal` only when the user asks for autonomous
   convergence, such as running until a verifiable target passes or a budget is
   exhausted.
 
