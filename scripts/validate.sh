@@ -34,6 +34,16 @@ expected_skill_dirs="$(printf '%s\n' "${SKILLS[@]}" | sort)"
 actual_skill_dirs="$(find "$ROOT/skills" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)"
 [[ "$actual_skill_dirs" == "$expected_skill_dirs" ]] || fail "skills/ must contain exactly: ${SKILLS[*]}"
 
+if git -C "$ROOT" ls-files 'docs/teamwork/plans/*' 'docs/teamwork/research/*' 'docs/superpowers/*' | grep -q .; then
+  fail "local workflow artifacts under docs/teamwork/{plans,research}/ or docs/superpowers/ must not be tracked"
+fi
+grep -q '^docs/teamwork/plans/$' "$ROOT/.gitignore" \
+  || fail ".gitignore must ignore local Teamwork plan artifacts"
+grep -q '^docs/teamwork/research/$' "$ROOT/.gitignore" \
+  || fail ".gitignore must ignore local Teamwork research artifacts"
+grep -q '^docs/superpowers/$' "$ROOT/.gitignore" \
+  || fail ".gitignore must ignore local superpowers artifacts"
+
 for retired in "${RETIRED_SKILLS[@]}"; do
   [[ ! -d "$ROOT/skills/$retired" ]] || fail "retired skill directory still exists: skills/$retired"
 done
