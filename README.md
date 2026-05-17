@@ -1,16 +1,17 @@
 # Teamwork
 
-Teamwork 是一个面向 Claude Code、Codex 和 Cursor 的轻量工作习惯层。默认不替代平台原生能力；简单、低风险任务继续走 native flow，只有在调研、计划、执行、复查、验收或自主收敛能明显提升质量时才升级到 Teamwork。
+Teamwork 是给 Claude Code、Codex 和 Cursor 共用的一组工作流 skills。它不是替代原生 coding agent 的框架，而是在任务需要证据、计划、分工、复查或自主收敛时，把这些步骤变成明确、可验证、可交接的流程。
 
-核心原则：
-- 原生能力优先；Teamwork 只在它增加证据、协作、review 或 goal 收敛价值时介入。
-- subagents 只用于独立调研、隔离执行或 fresh-context review，不做仪式化 fan-out。
-- 轻量工作可以用 native checklist；高风险、跨 agent、跨轮次或 goal mode 使用 durable artifact。
-- 重要结论必须区分 `observed`、`inferred`、`claimed`；执行者不能自宣完成。
+最重要的判断：
+
+- 简单、低风险、单步任务继续走 native flow。
+- 需要读文件、日志、diff、外部信息后才能判断方向时，先走 research。
+- 多步骤、含糊、高风险、跨 agent、跨轮次或 goal mode，必须把范围、证据、验证和停止条件说清楚。
+- 执行者不能自宣完成；完成要靠验证结果和 review 证据。
 
 ## Quick Start
 
-安装：
+安装到 Codex：
 
 ```bash
 git clone https://github.com/JinPLu/Teamwork.git
@@ -18,7 +19,7 @@ cd Teamwork
 ./install.sh codex
 ```
 
-其他平台：
+其他安装方式：
 
 ```bash
 ./install.sh claude
@@ -28,112 +29,128 @@ cd Teamwork
 ./install.sh --link claude
 ```
 
-常用调用：
-
-```text
-using-teamwork: 自动判断普通 Codex coding / research / review 请求是否需要 Teamwork
-teamwork-research: 调研 pytest X 为什么失败，落盘 research artifact
-teamwork-plan: 基于 research artifact 写成执行计划
-teamwork-goal: 自主续跑到验证通过、预算耗尽或明确 blocker
-teamwork-execute: 按已接受计划实现，只做必要改动并运行 focused verification
-teamwork-review mode: execution: 审查这个 diff 和验证证据
-```
-
-Claude 中启动有界续跑目标：
-
-```text
-/teamwork:goal 修复 pytest X，最多 3 轮，无进展就停 --max-iterations 3
-/teamwork:plan docs/teamwork/plans/2026-05-14-fix-pytest-x.md
-```
-
 验证仓库：
 
 ```bash
 ./scripts/validate.sh
 ```
 
+Claude Code 中启动一个有界自主目标：
+
+```text
+/teamwork:goal 修复 pytest X，最多 3 轮，无进展就停 --max-iterations 3
+/teamwork:plan docs/teamwork/plans/2026-05-14-fix-pytest-x.md
+```
+
+`/rao:goal` 等 `/rao:*` 命令仍是兼容别名。
+
+## Skill Map
+
+当前只有七个 active skills，职责按阶段拆开：
+
+| Skill | 什么时候用 | 主要产物 |
+|---|---|---|
+| `using-teamwork` | 普通 coding / debugging / research / review 请求开始时，先判断是否需要升级到 Teamwork | native flow 或具体 Teamwork stage |
+| `teamwork` | 公共 router；定义证据规则、activation tiers、subagent 角色、Codex dispatch mapping | 路由决策和共享行为契约 |
+| `teamwork-research` | 需要收集证据、比较方案、排查原因、刷新旧假设 | `docs/teamwork/research/YYYY-MM-DD-<slug>.md` |
+| `teamwork-plan` | 把已选方向变成可执行计划，或任务多步/有风险/用户要求计划 | lightweight checklist 或 durable plan |
+| `teamwork-execute` | 执行已接受计划 | 最小必要改动和 focused verification |
+| `teamwork-review` | 审计划或审执行结果 | `mode: plan` 或 `mode: execution` verdict |
+| `teamwork-goal` | 用户要求持续迭代直到通过、预算耗尽或明确 blocker | durable plan anchor、checkpoint、completion audit |
+
+不要把七个 skill 看成每次都要跑一遍。它们是按需要调用的阶段：能 native 解决就 native；只有 Teamwork 能提升正确性时才升级。
+
 ## Workflow
+
+常见完整链路是：
 
 ```text
 research -> plan -> plan review -> execute -> execution review -> accept / iterate / block
 ```
 
-| 场景 | Skill |
+但这是高风险或 artifact-backed 任务的形态，不是所有任务的最低门槛。
+
+| 任务形态 | 推荐流程 |
 |---|---|
-| 普通 Codex coding / research / review 请求的自动入口 | `using-teamwork` |
-| 自动路由 | `teamwork` |
-| 目标续跑、自主收敛 | `teamwork-goal` |
-| 调研、外部搜索、方案比较、刷新证据 | `teamwork-research` |
-| 把选定方向或 research artifact 写成执行计划 | `teamwork-plan` |
-| 执行已接受计划 | `teamwork-execute` |
-| 审计划、审 diff / artifact / 验证结果 | `teamwork-review` |
+| 简单、明确、低风险 | native flow；必要时用简短 checklist |
+| 需要证据或方案比较 | `teamwork-research`，然后再决定是否 plan |
+| 多步骤但边界清楚 | `teamwork-plan` 的 lightweight plan，执行后 focused verification 和 review pass |
+| 高风险、跨 agent、跨轮次、含糊或显式要求仓库计划 | durable plan artifact + plan review + bounded execution + execution review |
+| 自主续跑到目标达成 | `teamwork-goal`，必须有 durable plan anchor、checkpoint 和 completion audit |
 
-`using-teamwork` 是轻量入口，用于让 Codex 或 Claude Code 在普通 coding / research / review 请求开始时先做 Teamwork 路由判断。native/simple work can continue normally; escalate to Teamwork when evidence, planning, review, or autonomous convergence adds value. `teamwork` 是 router，目标续跑路由到 `teamwork-goal`。默认优先本地文件、diff、日志、测试和 artifact；只有外部约束确实需要时才用 MCP 或网络信息。
+## Artifacts
 
-## Subagent Routing
+Teamwork 的持久产物是普通 Markdown 文件，方便 Claude Code、Codex、Cursor 共用。
 
-Teamwork 按角色和能力层级路由 subagents，而不是写死模型 ID：`Explorer` 收集证据，
-`Designer` 处理需求含糊、架构和跨模块设计，`Judge` 审计划，`Worker` 执行已接受
-范围，`Reviewer` 做最终复查。`fast` 适合低风险证据和机械改动，`standard` 适合
-多文件执行或中等综合，`high reasoning` 用于设计、Judge、最终 review 和安全 /
-回归边界。
-
-Codex dispatch details are derived from the router mapping in
-`skills/teamwork/SKILL.md`. Ordinary plans should record conceptual role, scope,
-tier, context strategy, order, and why; include native Codex fields only when a
-non-default native override is itself part of the decision.
-
-## Plan Artifacts
-
-Codex 的 native plan / `update_plan` 只是可见进度状态，不是持久执行依据。
-
-所有需要跨 agent、跨轮次、高风险、含糊或显式要求仓库计划的 `teamwork-plan` 都必须写入 durable Markdown plan artifact。轻量、低风险、单 agent 的 bounded work 可以使用 chat/native checklist，只要明确范围、步骤、验证和停止条件。
-
-调研如果会被后续 plan、execute、review 或 goal iteration 依赖，应先由 `teamwork-research` 落盘为 research artifact：
+Research artifact：
 
 ```text
 docs/teamwork/research/YYYY-MM-DD-<slug>.md
 ```
 
+Durable plan artifact：
+
 ```text
 docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 ```
 
-计划文件应覆盖目标、需求映射、已读证据、范围边界、实施步骤、验证命令、预期结果、
-风险、停止条件、worker handoff 和 review handoff；如果使用 subagents，还要记录路由。
+`teamwork-plan` 使用最轻但足够正确的计划形式。轻量、低风险、单 agent 的 bounded work 可以只用 chat/native checklist；跨 agent、跨轮次、高风险、含糊、public/shared behavior 变化、显式 repository plan、以及所有 goal mode，都使用 durable Markdown plan artifact。
 
-这个 Markdown artifact 是普通仓库文件，可被 Cursor、Claude Code 和 Codex 共同
-编辑、执行和 review；它不是 Codex goal，也不是 Claude `.claude/teamwork-goals/`
-runtime 状态。
+Plan artifact 应覆盖目标、需求到证据的映射、已读证据、范围边界、实施步骤、验证命令、预期结果、风险、停止条件、worker handoff 和 review handoff。它不是 Codex goal state，也不是 Claude `.claude/teamwork-goals/` runtime state。
 
-Goal 续跑必须记录当前计划锚点。Claude runtime 使用 `/teamwork:plan <path>`
-把 `active_plan_artifact` 和 `active_plan_artifact_sha256` 写入
-`.claude/teamwork-goals/`；后续 continuation、Worker、Reviewer 和 completion
-audit 都对照这同一个 Markdown plan artifact。
+重要证据要区分：
 
-## Platform Notes
+- `observed`: 直接读到的源码、diff、配置、日志、命令输出、测试结果或 artifact。
+- `inferred`: 从 observed evidence 推出的结论。
+- `claimed`: README、文件名、注释、历史说明、工具摘要或用户叙述里的说法，尚未被直接证据确认。
 
-**Codex runtime**
+## Subagents
 
-- 使用 native plan / `update_plan` 展示进度。
-- 只有用户明确要求自主收敛或已有 active goal 时才用 native Codex goal。
-- 使用 Codex subagents 承担独立 Explorer、Designer、Judge、Worker、Reviewer track。
-- `codex review` 可以作为审查证据，但不能自动代表通过。
+Subagents 是加速独立取证、隔离执行、fresh-context review 的工具，不是仪式。主 agent 负责拆解、综合、冲突解决、验证和最终接受。
 
-**Claude `/teamwork:*` runtime**
+Teamwork 的概念角色：
 
-- `/teamwork:*` 是 Teamwork 的主 Claude 命令前缀。
-- `/rao:*` 保留为兼容命令前缀，例如 `/rao:goal` 等价于
-  `/teamwork:goal`。
-- goal 状态文件在 `.claude/teamwork-goals/`。
-- `Stop hook` 会在 goal 未完成且未达到最大轮数时阻止停止，并注入下一轮 continuation
-  prompt。
-- `/teamwork:checkpoint` 记录 plan review、execution review、verification
-  result 和 evidence delta。自动完成必须使用当前 plan SHA 的 checkpoint。
-- 连续两次 `--evidence-delta no-progress` 会停止 goal。
-- 默认 completion promise 是 `<promise>RAO_GOAL_COMPLETE</promise>`。
+| Role | 用途 |
+|---|---|
+| Explorer | 独立读文件、日志、测试、artifact，返回压缩证据 |
+| Designer | 处理含糊需求、架构取舍、跨模块方案 |
+| Judge | 执行前审计划 |
+| Worker | 按已接受计划实现，必须有明确文件或职责边界 |
+| Reviewer | 执行后审 diff、验证证据、回归风险和残留分歧 |
 
-自动完成必须同时包含 promise 和结构化 audit：
+模型层级用能力描述，不写死模型 ID：`fast` 用于低风险证据和机械改动，`standard` 用于中等综合或多文件执行，`high reasoning` 用于设计、Judge、最终 review、安全或回归边界。
+
+## Codex Runtime
+
+Codex runtime 使用原生能力，不模拟一套额外调度系统：
+
+- `update_plan` 只是 transient UI-only checklist，不是 durable execution 或 review artifact。
+- native Codex goals 只用于用户明确要求自主收敛，或已有 active goal 的情况。
+- Codex subagents 只用于独立 Explorer、Designer、Judge、Worker、Reviewer track。
+- `codex review --uncommitted`、`--base` 或 `--commit` 可以作为审查证据，但不能自动代表通过。
+- sandbox 或网络限制阻塞必要命令时，按 Codex 权限模型请求窄范围 escalation。
+
+Codex dispatch details are derived from the router mapping in `skills/teamwork/SKILL.md`. Ordinary plans should record conceptual role, scope, tier, context strategy, order, and why; include native Codex fields only when a non-default native override is itself part of the decision.
+
+## Claude Runtime
+
+Claude Code 插件提供 `/teamwork:*` 命令；`/rao:*` 保留为兼容前缀，状态文件存放在：
+
+```text
+.claude/teamwork-goals/
+```
+
+核心命令：
+
+```text
+/teamwork:goal <objective> [--max-iterations N] [--completion-promise TEXT]
+/teamwork:plan <docs/teamwork/plans/...md>
+/teamwork:checkpoint --plan-review-verdict <pass|pass-with-notes|revise|blocked> --execution-review-verdict <pass|pass-with-notes|revise|blocked> --verification-command <command> --verification-result <pass|fail> --evidence-delta <progress|no-progress>
+```
+
+其他命令包括 `/teamwork:status`、`pause`、`resume`、`stop`、`complete`、`clear` 和 `note`。Stop hook 会在 goal 未完成且未达到最大轮数时阻止停止，并注入下一轮 continuation prompt。连续两次 `--evidence-delta no-progress` 会停止 goal。默认 completion promise 是 `RAO_GOAL_COMPLETE`。
+
+自动完成必须同时包含 promise 和结构化 audit；只出现 promise 不会被视为 verified completion。
 
 ```text
 <completion_audit>
@@ -147,33 +164,10 @@ audit 都对照这同一个 Markdown plan artifact。
 </completion_audit>
 ```
 
-`plan_review_verdict` 和 `execution_review_verdict` 只能是 `pass` 或
-`pass-with-notes`，`plan_artifact` 和 `plan_artifact_sha256` 必须匹配 runtime
-记录的 active plan。`/teamwork:complete` 和 `/rao:complete` 是人工 override，
-status 会显示 manual completion is not automatically verified。
+`plan_review_verdict` 和 `execution_review_verdict` 只能是 `pass` 或 `pass-with-notes`。`/teamwork:complete` 和 `/rao:complete` 是人工 override，不等同于自动验证通过。
 
-**Cursor**
+## Cursor
 
-Cursor 只安装薄规则入口，指向同一组 Teamwork skills，不复制完整 runtime。
+Cursor 只安装薄规则入口 `.cursor/rules/teamwork.mdc`，指向同一组 Teamwork skills，不复制完整 Claude runtime。
 
-## Repository
-
-核心文件：
-
-```text
-skills/using-teamwork/SKILL.md
-skills/teamwork/SKILL.md
-skills/teamwork-goal/SKILL.md
-skills/teamwork-research/SKILL.md
-skills/teamwork-plan/SKILL.md
-skills/teamwork-execute/SKILL.md
-skills/teamwork-review/SKILL.md
-commands/teamwork/*.md
-commands/rao/*.md
-hooks/hooks.json
-bin/raoctl.py
-```
-
-`./scripts/validate.sh` 会检查 skill 拓扑、frontmatter、manifest、临时安装 smoke、
-Cursor rule 长度、Claude command / hook 存在性、持久计划说明和 Stop-hook
-completion gate。
+当修改 workflow 行为时，优先更新对应 `skills/*/SKILL.md`。README 只负责帮助读者快速理解当前 skill 体系和入口，不复制完整 skill body。
