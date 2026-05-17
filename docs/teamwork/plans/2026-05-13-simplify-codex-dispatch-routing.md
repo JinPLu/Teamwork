@@ -50,21 +50,21 @@ at dispatch time unless a native override is itself part of the decision.
 
 ## Implementation Steps
 
-- [ ] 1. Add this durable plan artifact as the execution and review source of
+- [x] 1. Add this durable plan artifact as the execution and review source of
   truth.
-- [ ] 2. Keep detailed Codex dispatch mapping centralized in
+- [x] 2. Keep detailed Codex dispatch mapping centralized in
   `skills/teamwork/SKILL.md`.
-- [ ] 3. Simplify `skills/teamwork-design/SKILL.md` routing requirements and
+- [x] 3. Simplify `skills/teamwork-design/SKILL.md` routing requirements and
   template to conceptual routing fields.
-- [ ] 4. Update `skills/teamwork-review/SKILL.md` so plan review checks
+- [x] 4. Update `skills/teamwork-review/SKILL.md` so plan review checks
   conceptual routing sufficiency, while native-field checks apply to explicit
   native fields or actual dispatch evidence.
-- [ ] 5. Update `skills/teamwork-execute/SKILL.md` so Worker handoffs require
+- [x] 5. Update `skills/teamwork-execute/SKILL.md` so Worker handoffs require
   file ownership, tier, context strategy, and verification; native Codex fields
   are checked immediately before delegated dispatch.
-- [ ] 6. Shorten `CODEX.md` and `README.md` Codex dispatch prose to point to
+- [x] 6. Shorten `CODEX.md` and `README.md` Codex dispatch prose to point to
   the router mapping.
-- [ ] 7. Adjust `scripts/validate.sh` to remove mandatory design-template
+- [x] 7. Adjust `scripts/validate.sh` to remove mandatory design-template
   native-field greps and add regression checks against reintroducing the long
   native-field template or normal `xhigh` design option.
 

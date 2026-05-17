@@ -56,18 +56,18 @@ Out of scope:
 
 ## Implementation Steps
 
-- [ ] 1. Judge this plan against the current diff and scope before editing.
-- [ ] 2. Update `AGENTS.md` from stale `run-analyze-optimize` wording to
+- [x] 1. Judge this plan against the current diff and scope before editing.
+- [x] 2. Update `AGENTS.md` from stale `run-analyze-optimize` wording to
   current Teamwork structure, commands, and installed skill count.
-- [ ] 3. Update `skills/teamwork-design/SKILL.md` so the plan output template
+- [x] 3. Update `skills/teamwork-design/SKILL.md` so the plan output template
   uses `Goal` as the durable artifact section name.
-- [ ] 4. Add focused validation checks that catch stale `AGENTS.md` naming and
+- [x] 4. Add focused validation checks that catch stale `AGENTS.md` naming and
   the exact `Goal` plan-template heading.
-- [ ] 5. Run `./scripts/validate.sh`, `python3 -m py_compile bin/raoctl.py`,
+- [x] 5. Run `./scripts/validate.sh`, `python3 -m py_compile bin/raoctl.py`,
   and `git diff --check`.
-- [ ] 6. Perform a distinct execution review pass over the diff and
+- [x] 6. Perform a distinct execution review pass over the diff and
   verification evidence.
-- [ ] 7. Stage only in-scope files, commit with a concise imperative message,
+- [x] 7. Stage only in-scope files, commit with a concise imperative message,
   push `main` to `origin`, and verify branch status.
 
 ## Verification

@@ -1,13 +1,13 @@
 ---
 name: teamwork-review
-description: Use when a Teamwork plan or execution result needs independent review from direct evidence.
+description: Use when reviewing a proposed plan before execution, or reviewing completed implementation before claiming it is done — invoke for high-risk, multi-file, artifact-backed, or goal-mode work even when you wrote the plan yourself.
 ---
 
 # Teamwork Review
 
-Use this subskill for a distinct reviewer pass. The reviewer reads evidence
-independently and preserves dissent. Do not rely only on the planner's or
-executor's summary.
+Use this subskill for a distinct reviewer pass when review adds value. The
+reviewer reads evidence independently and preserves dissent. Do not rely only on
+the planner's or executor's summary.
 
 ## Shared Review Rules
 
@@ -35,11 +35,15 @@ executor's summary.
 
 ## mode: plan
 
-Review an implementation plan before execution.
+Review an implementation plan before execution. First classify the plan target
+as lightweight or durable artifact. Lightweight plans are reviewed for scope,
+feasibility, verification, and ambiguity. Durable artifact plans are additionally
+reviewed against artifact completeness and handoff requirements.
 
 Check:
 
-- Durable plan artifact: every plan has a Markdown plan artifact path, normally
+- Plan source: lightweight plans may live in chat/native checklist state;
+  durable-required plans have a Markdown artifact path, normally
   `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`, and the review reads it directly
   instead of relying on `update_plan`, chat summaries, or executor claims.
 - Scope: every step traces to the stated goal or root cause.
@@ -47,6 +51,9 @@ Check:
 - Feasibility: files, commands, environments, and dependencies are plausible.
 - Requirements-to-evidence mapping: each requirement or acceptance criterion
   maps to observed evidence or a verification step that will prove it.
+- Research grounding: when the plan depends on external behavior, upstream bugs,
+  current CLI/API behavior, or ambiguous architecture claims, it references a
+  readable research artifact or explicitly states why local evidence is enough.
 - Sacred boundaries: no protected contracts, architecture, claims, or user
   constraints are changed.
 - Verification design: focused checks prove the goal; broader checks are
@@ -54,24 +61,30 @@ Check:
 - Risk: regressions, rollback/rework path, and stop rules are identified.
 - Simplicity: no broad refactor, abstraction, or downstream cleanup unless
   required by evidence.
-- Subagent Routing: every plan includes role, task scope, Teamwork model tier,
-  context strategy, parallel or serial ordering, and why each role is needed or
-  skipped. Conceptual routing must be specific enough for execution to derive
-  native dispatch fields from the router mapping. Design work should not be
-  assigned to Worker, and high-risk plan or execution review should not use a
-  low-capability tier.
+- Subagent Routing: if subagents are used, the plan includes role, task scope,
+  Teamwork model tier, context strategy, parallel or serial ordering,
+  independence from other tracks, and why each role is needed. Conceptual
+  routing must be specific enough for execution to derive native dispatch
+  fields from the router mapping. Design work should not be assigned to Worker,
+  and high-risk plan or execution review should not use a low-capability tier.
+  If subagents are intentionally skipped for durable, delegated, high-risk, or
+  goal-mode work, the plan explains why main-agent continuity is sufficient.
 
 Hard gates:
 
-- A missing durable plan artifact, a plan that relies only on transient
-  `update_plan` or chat state, or a plan whose artifact cannot be read must
-  return `revise` or `blocked`.
+- For durable-required work, a missing or unreadable plan artifact must return
+  `revise` or `blocked`. For lightweight work, absence of a repository artifact
+  is not a finding by itself; return `revise` only if scope, steps,
+  verification, expected result, or stop condition are unclear.
 - A plan with unresolved placeholders, ellipses as executable steps, vague
   testing instructions, missing requirements-to-evidence mapping, missing
   verification design, missing expected results, or missing worker/reviewer
-  handoffs must return `revise` or `blocked`.
-- A plan missing Subagent Routing, or routing design work to Worker, or using
-  an underpowered tier for high-risk review, must return `revise` or `blocked`.
+  handoffs for durable-required work must return `revise` or `blocked`.
+- If subagents are used, missing or misleading routing must return `revise` or
+  `blocked`. If subagents are intentionally skipped for durable, delegated,
+  high-risk, or goal-mode work, verify that the plan explains why main-agent
+  continuity is sufficient. Lightweight plans without subagents do not need a
+  skip rationale.
 - A Codex plan that explicitly includes native dispatch fields and combines
   `fork_context:true` with `agent_type`, `model`, or `reasoning_effort`; uses
   nonexistent native agent types such as `judge`, `reviewer`, or `designer`;
@@ -82,7 +95,8 @@ Hard gates:
 
 ## mode: execution
 
-Review completed implementation before any completion claim.
+Review completed implementation before any high-risk, artifact-backed, or
+goal-mode completion claim.
 
 Check:
 
@@ -93,16 +107,16 @@ Check:
 - Regressions: look for broken contracts, hidden behavior changes, brittle
   assumptions, and cleanup masking producer bugs.
 - Deviations: any departure from the plan is justified by evidence.
-- Plan conformance: for non-lightweight work, compare the diff and verification
-  against the accepted durable plan artifact; unexplained drift from that plan
-  must return `revise` or `blocked`.
-- Routing conformance: compare the actual agent roles, Teamwork model tier
-  choices, context strategy, and ordering to the accepted routing; unexplained
-  drift from the routing must return `revise` or `blocked`.
-- Codex dispatch validity: when execution evidence or the accepted plan
-  includes native dispatch fields, reject full-history fork plus override
-  fields, nonexistent native agent types, or inherited lower-effort routing
-  while claiming explicit high reasoning.
+- Plan conformance: for artifact-backed or goal-mode work, compare the diff and
+  verification against the accepted durable plan artifact. For lightweight work,
+  compare against the accepted chat/native plan and user request.
+- Routing conformance: when subagents were used, compare the actual agent roles,
+  Teamwork model tier choices, context strategy, and ordering to the accepted
+  routing; unexplained drift from the routing must return `revise` or `blocked`.
+- Codex dispatch validity: when execution evidence or the accepted plan includes
+  native dispatch fields, reject full-history fork plus override fields,
+  nonexistent native agent types, or inherited lower-effort routing while
+  claiming explicit high reasoning.
 - Workspace hygiene: no unrelated edits, generated churn, or overwritten work
   from others.
 - Narrative-mislead risk: check whether version names, stale docs, comments, or

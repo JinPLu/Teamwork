@@ -7,7 +7,8 @@ alwaysApply: false
 
 Use this rule when the user asks Cursor for evidence-driven research, planning,
 execution, review, or autonomous iteration until verified success or a clear
-blocker.
+blocker. Native/simple work can continue normally; escalate to Teamwork when
+evidence, planning, review, or autonomous convergence adds value.
 
 Automatic entry and canonical router:
 
@@ -21,7 +22,8 @@ Installed skills:
 - `using-teamwork` triggers at the start of normal coding, research, planning, implementation, or review work and routes to the narrowest Teamwork stage.
 - `teamwork` routes by intent.
 - `teamwork-goal` owns `mode: goal` for autonomous convergence.
-- `teamwork-design` handles `mode: research` and `mode: plan`.
+- `teamwork-research` handles evidence gathering, option comparison, external research, and research refresh.
+- `teamwork-plan` handles mode: plan and converts selected directions or research artifacts into executable implementation plans.
 - `teamwork-execute` implements an accepted plan with minimal edits.
 - `teamwork-review` reviews with `mode: plan` or `mode: execution`.
 
@@ -38,11 +40,13 @@ research/discuss if needed
 
 ## Guardrails
 
-- State assumptions, boundaries, and verification before committing behavior.
+- State assumptions, boundaries, and verification before committing behavior when they matter.
+- Prefer native/simple flow for low-risk work; use durable artifacts for goal-mode, cross-agent, cross-turn, high-risk, or ambiguous work.
 - Prefer simple, surgical, producer-side fixes.
 - Reviewers read evidence directly: source, diffs, logs, tests, artifacts.
-- One design skill handles research and planning modes.
+- Research and planning are separate skills; research artifacts feed executable plans.
 - One review skill handles plan and execution modes.
+- Subagents are optional and should be used only when independent context, isolated execution, or fresh review improves the result.
 - Preserve dissent and stop on verified success, budget exhaustion, repeated
   no-progress, or sacred-boundary blockers.
 

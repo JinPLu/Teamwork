@@ -25,11 +25,11 @@ Commit and push the all-plans-must-persist workflow update to `origin/main`.
 
 ## Implementation Steps
 
-- [ ] Run validation before commit.
-- [ ] Stage only in-scope files.
-- [ ] Commit with a concise imperative message.
-- [ ] Push `main` to `origin`.
-- [ ] Verify the working tree and branch status.
+- [x] Run validation before commit.
+- [x] Stage only in-scope files.
+- [x] Commit with a concise imperative message.
+- [x] Push `main` to `origin`.
+- [x] Verify the working tree and branch status.
 
 ## Verification
 

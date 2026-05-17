@@ -1,44 +1,84 @@
 ---
 name: using-teamwork
-description: Use when starting any coding, debugging, research, planning, implementation, or review conversation - establishes automatic Teamwork routing before normal work begins.
+description: Use when starting any coding, debugging, research, planning, implementation, or review conversation — invoke before multi-step or non-trivial work to decide whether a Teamwork stage would improve the outcome. When in doubt, invoke this skill first.
 ---
 
 # Using Teamwork
 
-Use this lightweight router at the start of normal Codex work. Its purpose is
-to make Teamwork automatic without loading the larger stage skills until the
-request shape is known.
+Use this lightweight preference router at the start of normal coding-agent work.
+Its purpose is to decide whether Teamwork adds value for this request without
+blocking Claude Code or Codex from using their native strengths.
 
 ## Rule
 
-Before answering or acting on coding, debugging, repository research,
-experimental analysis, implementation planning, code modification,
-verification, or review requests, decide whether a Teamwork stage applies.
-If a stage applies, invoke the narrowest Teamwork skill before continuing.
+Before answering or acting on any multi-step or non-trivial request, ask: does a
+Teamwork stage apply here? A stage applies when **any** of these are true:
 
-Do not use Teamwork for purely casual chat, simple factual answers with no
-workflow value, or requests where the user explicitly says not to use it.
+- Answering correctly requires reading files, diffs, logs, or external sources
+  before choosing an approach → `teamwork-research`
+- The task has multiple steps where a wrong first move wastes significant effort,
+  or the user asks for a plan → `teamwork-plan`
+- An accepted plan exists and needs to be implemented → `teamwork-execute`
+- A plan or completed implementation needs a reviewer check → `teamwork-review`
+- The user asks to run until it passes, iterate until done, or converge on a
+  verifiable target → `teamwork-goal`
 
-## Route
+If any applies, invoke the narrowest matching skill before continuing. Do not
+substitute native tools for the skill just because the task seems manageable.
 
-- Use `teamwork-design` with `mode: research` when the next step is evidence
-  gathering, option comparison, root-cause investigation, or tradeoff analysis.
-- Use `teamwork-design` with `mode: plan` when the user asks for a plan or a
-  non-lightweight change needs an executable plan before editing.
-- Use `teamwork-review` with `mode: plan` when reviewing a proposed plan before
-  implementation.
-- Use `teamwork-execute` when an accepted Teamwork plan should be implemented.
-- Use `teamwork-review` with `mode: execution` before claiming a non-trivial
-  implementation is complete.
-- Use `teamwork-goal` with `mode: goal` only when the user asks for autonomous
-  convergence, such as running until a verifiable target passes or a budget is
-  exhausted.
+## Default: Native Flow First
+
+Simple, single-step, directly answerable tasks stay in native flow. Do not
+create durable plans, invoke subagents, or add review passes when they would
+only add ceremony.
+
+**Simple**: single-file lookup, quick factual answer, trivial one-liner, or a
+small isolated change with an obvious correct action.
+
+**Not simple**: multiple files or steps, uncertain scope, downstream
+dependencies, high-risk changes, or results the user will build on later.
+
+## Behavior Check
+
+Before routing or staying native for non-trivial work, answer four questions:
+
+1. What assumption could change the behavior, scope, contract, or verification?
+2. What is the smallest sufficient path that solves the user's actual goal?
+3. What exact files, claims, or decisions are in scope, and what is out of
+   scope?
+4. What concrete check, artifact, or observation will prove the work succeeded?
+
+If these answers are unclear, route to `teamwork-research` or `teamwork-plan`.
+If they are obvious and the work is simple, continue in native flow without
+adding Teamwork ceremony.
+
+## Routing Quick Reference
+
+| User signal | Invoke |
+|---|---|
+| "research X", "why is X failing", "what options do we have", "investigate" | `teamwork-research` |
+| "make a plan", "plan before we code", complex multi-step change | `teamwork-plan` |
+| "implement the plan", "execute", accepted plan in context | `teamwork-execute` |
+| "review this plan", "review the diff", "is this correct" | `teamwork-review` |
+| "run until it passes", "keep going", "iterate until done", verifiable target + budget | `teamwork-goal` |
+
+## Don't Rationalize
+
+These thoughts mean a stage skill likely applies:
+
+| Thought | What it usually means |
+|---|---|
+| "I already know the answer" | Verify first when correctness depends on files, logs, external behavior, or current state. |
+| "This is just a small change" | Check whether it is truly simple; if scope or verification is unclear, plan first. |
+| "I'll figure out the plan as I go" | That's when scope creep happens. |
+| "Review feels redundant here" | High-risk work needs it most. |
+| "native flow is fine for this" | Check the criteria above first. |
 
 ## Discipline
 
-Teamwork is evidence-first and scoped. Prefer local repository evidence before
-external sources. Use subagents only when independent tracks make the result
-faster or more reliable, and keep the main agent responsible for synthesis,
-verification, conflict resolution, and final acceptance.
+Prefer local repository evidence before external sources. Keep assumptions
+explicit, choose simple and surgical changes, verify against the user's goal,
+and keep the main agent responsible for synthesis, verification, and final
+acceptance.
 
-If no Teamwork stage applies, continue normally and keep the response concise.
+If no stage applies after checking the criteria above, continue normally.

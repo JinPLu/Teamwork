@@ -1,29 +1,70 @@
 ---
 name: teamwork
-description: Use when a request should enter an evidence-first Teamwork workflow, especially for research, planning, execution, review, or autonomous convergence.
+description: Use when routing a multi-step or evidence-sensitive request through the Teamwork workflow — maps user intent to the right stage skill and defines shared contracts for evidence, subagents, and durable plans.
 ---
 
 # Teamwork
 
-This is the public router for the package. Use it to coordinate main-agent
-ownership with subagent research, execution, review, and acceptance gates.
-Route each request to the narrowest stage skill. Autonomous convergence is
+This is the public router for the package. Use it as a workflow-preference layer
+on top of Claude Code, Codex, or Cursor: preserve the platform's native coding
+capability, then add Teamwork discipline only when evidence, coordination,
+review, or autonomous convergence improves the result. Autonomous convergence is
 handled by the dedicated `teamwork-goal` subskill.
 
 The package preserves the original discipline:
 
-- **Karpathy guardrails**: assumptions explicit, simplicity first, surgical
-  edits, goal-driven verification.
+- **Behavior guardrails**: assumptions explicit, simplicity first, surgical
+  scope, goal-driven verification, and evidence over confidence.
 - **Roundtable-style workflow**: role separation, multi-agent discussion when
   useful, independent review, dissent preservation, and budgeted stopping.
 - **No full roundtable infrastructure**: do not import model registries,
   pricing caches, dispatch scripts, or thread ledgers unless the user asks.
 
+## Behavior Guardrails
+
+Apply these guardrails whenever a Teamwork stage is active. For native-flow
+tasks, use them as a quick mental check without adding ceremony.
+
+- **Assumptions before action**: state assumptions that affect behavior, scope,
+  verification, public contracts, data contracts, architecture, protected
+  claims, or user constraints. If a risky assumption would change one of those
+  boundaries, stop and ask or route to research instead of guessing.
+- **Simplicity first**: choose the smallest sufficient path that solves the
+  user's goal. Do not add speculative abstraction, configurability, new
+  workflow stages, or broad refactors unless direct evidence shows they are
+  needed.
+- **Surgical scope**: every planned change, edit, or recommendation must trace
+  to the goal. Avoid opportunistic cleanup, formatting churn, neighboring
+  refactors, and rewrites. Remove only code or instructions made unused by the
+  current change.
+- **Goal-driven verification**: translate the task into a concrete success
+  condition before declaring it done. For bugs, observe or reproduce the failure
+  before fixing when feasible. Run focused verification first, broaden only when
+  shared or public behavior is touched, and report any verification gap.
+- **Evidence over confidence**: confidence is not evidence. Treat names,
+  comments, README prose, summaries, labels such as `latest` or `v2`, and tool
+  summaries as claims until corroborated by source, diff, tests, logs, command
+  output, artifacts, or primary external evidence.
+
+## Activation Tiers
+
+| Tier | Use when | Planning | Review | Subagents |
+|---|---|---|---|---|
+| Native flow | Simple, local, low-risk work | None or native task list | Normal verification | Not needed |
+| Lightweight Teamwork | Multi-step but bounded work | Concise chat/native checklist | Distinct self-review or focused review | Optional |
+| Durable artifact | Cross-agent, cross-turn, high-risk, ambiguous, or explicitly planned work | Markdown artifact under `docs/teamwork/plans/` | Plan/execution review against artifact | Optional but documented if used |
+| Goal mode | Explicit autonomous convergence | Mandatory durable artifact and runtime plan anchor | Mandatory passing review/checkpoint | As useful within budget |
+
+Durable artifacts are mandatory for goal mode and high-risk or cross-agent work,
+but native flow remains the default for simple Claude Code tasks.
+
 ## Subagent Collaboration Model
 
-Subagents are a foundation of Teamwork, not a decorative add-on. The main agent
-owns scope, decomposition, synthesis, conflict resolution, verification, and
-final acceptance. Subagents provide bounded work products:
+Subagents are a tool for independent context, parallel evidence collection,
+isolated execution, or fresh review. They are not required for every Teamwork
+request. The main agent owns scope, decomposition, synthesis, conflict
+resolution, verification, and final acceptance. Subagents provide bounded work
+products:
 
 - Explorer: read-heavy independent investigation with condensed evidence.
 - Designer: ambiguous requirements, architecture tradeoffs, cross-module
@@ -34,16 +75,20 @@ final acceptance. Subagents provide bounded work products:
 - Reviewer: fresh-context execution review against diffs, tests, logs, and
   artifacts.
 
-Use subagents when tracks can run independently, when fresh context reduces
-self-confirmation risk, or when splitting context lowers cost. Do not fan out
-merely for ceremony, duplicate another agent's unresolved work, or give writing
-agents overlapping file ownership.
+Fan out only after decomposing the work into independent tracks whose results
+can be produced in parallel without blocking the main agent's immediate next
+step. Good fan-out has a specific question, bounded evidence scope, expected
+return format, and non-overlapping write ownership when edits are allowed. Do
+not fan out merely for ceremony, duplicate another agent's unresolved work,
+delegate the critical-path blocker, or give writing agents overlapping files.
+Keep the work local when continuity matters more than independent context or
+when coordination overhead exceeds the value of parallelism.
 
 ## Subagent Routing Policy
 
-Subagent role choice and model tier choice are part of routing. Use capability
-tiers rather than fixed model IDs so Claude Code, Codex, and Cursor can map the
-request to the best available local model:
+Subagent role choice and model tier choice are part of routing when subagents are
+used. Use capability tiers rather than fixed model IDs so Claude Code, Codex,
+and Cursor can map the request to the best available local model:
 
 - `fast`: scoped evidence collection, low-risk mechanical edits, and concise
   documentation cleanup where ambiguity is low.
@@ -71,6 +116,10 @@ increase model tier or agent count for ceremony; increase it only when
 ambiguity, risk, or cross-module reasoning requires it.
 
 ## Codex Dispatch Mapping
+
+This section applies only when running in Codex or writing Codex-facing plans.
+Claude Code should use its native Agent/Subagent tools and permissions model;
+do not translate Codex dispatch fields into Claude Code instructions.
 
 When running in Codex, map Teamwork's conceptual routing onto real
 `spawn_agent` fields. Keep Teamwork capability tiers model-ID agnostic; the
@@ -134,8 +183,9 @@ that the referenced file is current, canonical, or active.
 - Prefer local repository evidence before MCP, network, or web research.
 - Use MCP or web only when the task needs external tools, official/current
   information, or user-authorized sources that are not available locally.
-- Use subagents primarily for read-heavy independent research, design, judge,
-  and review tracks. Writing subagents need exact file ownership or worktree
+- Fan out subagents only for independent read-heavy research, design, judge, or
+  review tracks that improve reliability or speed without blocking the main
+  agent's next step. Writing subagents need exact file ownership or worktree
   isolation.
 - Ask subagents for condensed evidence and verdicts, not raw log dumps.
 - Default to at most 3 parallel research/review subagents unless the user gives
@@ -147,26 +197,23 @@ that the referenced file is current, canonical, or active.
 
 `update_plan` and other visible plan widgets are transient UI-only checklist
 state. They help show progress during a turn, but they are not the execution
-specification, review target, or durable evidence for any plan.
+specification, review target, or durable evidence for artifact-backed plans.
 
-A durable Markdown plan artifact is a normal repository Markdown file. Every
-Teamwork planning pass must create or update one before execution, including
-lightweight, low-risk, and single-file changes. Default path:
+A durable Markdown plan artifact is required for cross-agent execution,
+cross-turn work, high-risk or ambiguous changes, and all goal-mode execution.
+Default path:
 
 ```text
 docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 ```
 
-Use `teamwork-design` with `mode: plan` to create or update that artifact
-before execution. The artifact is shared across Cursor, Claude Code, and Codex
-because it is plain Markdown in the repo, not Codex native goal state and not
-Claude `.claude/teamwork-goals/` runtime state.
+For lightweight work, a concise chat plan or native task list is enough when it
+captures scope, verification, and stop conditions. Do not create repository plan
+files merely for ceremony.
 
-Lightweight changes may use a concise artifact, but they still require explicit
-scope, implementation steps, focused verification, expected results, and final
-review handoff. High-risk, cross-module, or long-running work needs checkbox
-tasks, exact paths, test-first or verification-first steps, expected results,
-stop rules, and worker/reviewer handoffs.
+The durable artifact is shared across Cursor, Claude Code, and Codex because it
+is plain Markdown in the repo, not Codex native goal state and not Claude
+`.claude/teamwork-goals/` runtime state.
 
 ## Codex Native Integration
 
@@ -174,16 +221,19 @@ When running in Codex, use native platform capabilities instead of emulating
 roundtable infrastructure:
 
 - Use `update_plan` only as a transient UI-only checklist for visible progress.
-  It must not be the only execution plan or review artifact.
-- Use durable Markdown plan artifacts for all execution plans, with the default
-  path `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
+  It must not be the only execution plan or review artifact when a durable
+  artifact is required.
+- Use durable Markdown plan artifacts for goal-mode, cross-agent, cross-turn,
+  high-risk, or ambiguous execution plans, with the default path
+  `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 - Use Codex goals only for explicit autonomous convergence requests or an
   existing active goal. Do not create a goal for ordinary research, planning,
   review, or one-shot execution.
 - Use Codex subagents for independent Explorer, Designer, Judge, Worker, or
-  Reviewer tracks when multi-agent support is available. Dispatch focused prompts,
-  wait for results when they are needed, synthesize conflicts locally, and
-  close agents that are no longer needed.
+  Reviewer tracks only when the track can run in parallel or fresh context
+  materially improves the result. Dispatch focused prompts, continue local
+  non-overlapping work while they run, wait only when blocked on their result,
+  synthesize conflicts locally, and close agents that are no longer needed.
 - If subagents are unavailable or the work is tightly coupled, run clearly
   separated local passes instead of pretending the review is independent.
 - For code review of real repository diffs, `codex review --uncommitted`,
@@ -197,8 +247,8 @@ roundtable infrastructure:
 
 | User intent | Route | Skill file |
 |---|---|---|
-| Research options, compare approaches, discuss tradeoffs, gather evidence | `teamwork-design` with `mode: research` | `skills/teamwork-design/SKILL.md` |
-| Convert a chosen direction into an executable implementation plan | `teamwork-design` with `mode: plan` | `skills/teamwork-design/SKILL.md` |
+| Research options, compare approaches, discuss tradeoffs, gather evidence | `teamwork-research` | `skills/teamwork-research/SKILL.md` |
+| Convert a chosen direction into an executable implementation plan | `teamwork-plan` | `skills/teamwork-plan/SKILL.md` |
 | Execute an accepted plan with minimal edits and verification | `teamwork-execute` | `skills/teamwork-execute/SKILL.md` |
 | plan-review: review a plan before execution | `teamwork-review` with `mode: plan` | `skills/teamwork-review/SKILL.md` |
 | execution-review: review diffs, artifacts, tests, and results after execution | `teamwork-review` with `mode: execution` | `skills/teamwork-review/SKILL.md` |
@@ -208,17 +258,20 @@ Do not create separate plan-review and execution-review subskills. The single
 `teamwork-review` subskill has two explicit modes so reviewer orchestration
 stays shared while the rubric changes by review target.
 
-Do not create separate research or plan subskills. Research and planning share
-`teamwork-design` with hard mode boundaries; autonomous convergence belongs to
-the dedicated `teamwork-goal` subskill.
+Research and planning are separate subskills. `teamwork-research` owns evidence
+and research artifacts; `teamwork-plan` owns executable implementation plans.
+Autonomous convergence belongs to the dedicated `teamwork-goal` subskill.
 
 ## Routing Rules
 
-Use the narrowest subskill that satisfies the request:
+Use the narrowest subskill that adds value:
 
+- If the task is simple, local, low-risk, or answerable directly, stay in native
+  flow and continue normally.
 - If the user asks "what should we do?", "research", "compare", "discuss", or
-  "find options", route to `teamwork-design` with `mode: research`.
-- If the user asks for a plan, route to `teamwork-design` with `mode: plan`.
+  "find options", route to `teamwork-research`.
+- If the user asks for a plan, or the work is complex enough that a plan reduces
+  risk, route to `teamwork-plan`.
 - If the user gives an accepted plan or says to implement/execute, route to
   `teamwork-execute`.
 - If the user asks to review a proposed plan, route to
@@ -231,24 +284,27 @@ Use the narrowest subskill that satisfies the request:
 
 ## Shared Contract
 
-All subskills follow the same contract:
+All Teamwork stages follow the same contract:
 
-- State assumptions and sacred boundaries before committing to behavior.
+- Apply the Behavior Guardrails before stage-specific steps.
+- State assumptions and sacred boundaries before committing to behavior when
+  they affect the work.
 - Read direct evidence: files, diffs, logs, tests, artifacts, or command output.
 - Separate `observed`, `inferred`, and `claimed` evidence before important
   decisions.
 - Prefer the smallest producer-side fix over downstream cleanup.
 - Keep mutable implementation details separate from protected principles,
   architecture, and public contracts.
-- Use independent agents when subtasks are separable or a second view reduces
-  risk; otherwise run distinct local passes.
+- Use independent agents only when subtasks are separable, non-overlapping, and
+  useful in parallel or when a second view reduces real risk; otherwise run
+  distinct local passes.
 - Preserve dissent in the final verdict instead of smoothing it away.
 - Stop on verified success, budget exhaustion, repeated no-progress,
   unresolvable blocker, or sacred-boundary conflict.
 
 ## Route Output
 
-After routing, report the selected subskill and why:
+When routing to a Teamwork stage, report the selected subskill and why:
 
 ```text
 Route: teamwork-<stage>
@@ -256,4 +312,4 @@ Reason: <one sentence tied to user intent>
 Mode: <research | plan | execution | goal, when applicable>
 ```
 
-Then follow that subskill's instructions directly.
+For native-flow tasks, do not emit a route banner; continue normally.

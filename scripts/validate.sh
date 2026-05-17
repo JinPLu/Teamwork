@@ -7,11 +7,13 @@ SKILLS=(
   using-teamwork
   teamwork
   teamwork-goal
-  teamwork-design
+  teamwork-research
+  teamwork-plan
   teamwork-execute
   teamwork-review
 )
 RETIRED_SKILLS=(
+  teamwork-design
   run-analyze-optimize
   run-analyze-design
   run-analyze-execute
@@ -57,7 +59,7 @@ for skill in "${SKILLS[@]}"; do
   done
 done
 
-for subskill in teamwork-goal teamwork-design teamwork-execute teamwork-review; do
+for subskill in teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review; do
   grep -q "skills/$subskill/SKILL.md" "$ROUTER" || fail "router does not reference skills/$subskill/SKILL.md"
 done
 
@@ -65,8 +67,11 @@ grep -q 'teamwork-goal' "$ROUTER" || fail "router must route goal requests to te
 ! grep -q 'Do not create separate research, plan, or goal subskills' "$ROUTER" \
   || fail "router must not forbid the dedicated goal subskill"
 grep -q 'mode: goal' "$ROOT/skills/teamwork-goal/SKILL.md" || fail "goal skill missing mode: goal"
-grep -q 'mode: research' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill missing mode: research"
-grep -q 'mode: plan' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill missing mode: plan"
+grep -q 'Research Artifact Requirement' "$ROOT/skills/teamwork-research/SKILL.md" || fail "research skill must require research artifacts"
+grep -q 'Research Refresh Triggers' "$ROOT/skills/teamwork-research/SKILL.md" || fail "research skill must define refresh triggers"
+grep -q 'docs/teamwork/research/YYYY-MM-DD-<slug>.md' "$ROOT/skills/teamwork-research/SKILL.md" || fail "research skill must define research artifact path"
+grep -q 'Use the lightest planning form that preserves correctness' "$ROOT/skills/teamwork-plan/SKILL.md" || fail "plan skill must support lightweight and durable planning tiers"
+grep -q 'docs/teamwork/plans/YYYY-MM-DD-<slug>.md' "$ROOT/skills/teamwork-plan/SKILL.md" || fail "plan skill must define durable plan path"
 grep -q 'mode: plan' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill missing mode: plan"
 grep -q 'mode: execution' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill missing mode: execution"
 
@@ -88,11 +93,13 @@ expected = [
     "./skills/using-teamwork",
     "./skills/teamwork",
     "./skills/teamwork-goal",
-    "./skills/teamwork-design",
+    "./skills/teamwork-research",
+    "./skills/teamwork-plan",
     "./skills/teamwork-execute",
     "./skills/teamwork-review",
 ]
 retired = {
+    "./skills/teamwork-design",
     "./skills/run-analyze-optimize",
     "./skills/run-analyze-design",
     "./skills/run-analyze-execute",
@@ -120,7 +127,7 @@ grep -q 'This repository packages the Teamwork workflow' "$ROOT/AGENTS.md" \
   || fail "AGENTS.md must describe the Teamwork package"
 grep -q 'commands/teamwork/\*.md' "$ROOT/AGENTS.md" \
   || fail "AGENTS.md must document /teamwork command files"
-grep -q 'six Teamwork skills' "$ROOT/AGENTS.md" \
+grep -q 'seven Teamwork skills' "$ROOT/AGENTS.md" \
   || fail "AGENTS.md must document the current skill count"
 ! grep -q 'packages the run-analyze-optimize workflow' "$ROOT/AGENTS.md" \
   || fail "AGENTS.md must not describe run-analyze-optimize as the active package"
@@ -145,32 +152,36 @@ grep -q 'Codex Runtime Mapping' "$ROOT/CODEX.md" || fail "CODEX.md must document
 grep -q 'Codex runtime' "$ROOT/README.md" || fail "README must document Codex runtime"
 grep -q 'durable Markdown plan artifact' "$ROUTER" || fail "router must define durable Markdown plan artifacts"
 grep -q 'transient UI-only checklist' "$ROUTER" || fail "router must mark update_plan as transient UI-only"
-grep -q 'Teamwork planning pass must create or update one before execution' "$ROUTER" \
-  || fail "router must require all plans to be durable artifacts"
-grep -q 'docs/teamwork/plans/YYYY-MM-DD-<slug>.md' "$ROOT/skills/teamwork-design/SKILL.md" \
-  || fail "design skill must define the durable plan path"
-grep -q 'All plans must be written to a durable Markdown plan artifact' "$ROOT/skills/teamwork-design/SKILL.md" \
-  || fail "design skill must require all plans to be durable artifacts"
-! grep -q 'chat-visible plan is enough' "$ROOT/skills/teamwork-design/SKILL.md" \
-  || fail "design skill must not allow chat-only lightweight plans"
-grep -q 'Requirements Mapping' "$ROOT/skills/teamwork-design/SKILL.md" \
-  || fail "design skill must require requirements mapping in plan artifacts"
-grep -q '^Goal:$' "$ROOT/skills/teamwork-design/SKILL.md" \
-  || fail "design plan output template must include a Goal section"
-grep -q 'Expected Results' "$ROOT/skills/teamwork-design/SKILL.md" \
-  || fail "design skill must require expected verification results"
+grep -q 'native flow remains the default for simple Claude Code tasks' "$ROUTER" \
+  || fail "router must preserve native Claude Code flow for simple tasks"
+grep -q 'docs/teamwork/plans/YYYY-MM-DD-<slug>.md' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  || fail "plan skill must define the durable plan path"
+grep -q 'Use the lightest planning form that preserves correctness' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  || fail "plan skill must support lightweight and durable planning tiers"
+grep -q 'Lightweight plan' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  || fail "plan skill must define lightweight planning"
+grep -q 'Durable artifact plan' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  || fail "plan skill must define durable artifact planning"
+grep -q 'Requirements Mapping' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  || fail "plan skill must require requirements mapping in plan artifacts"
+grep -q '^Goal:$' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  || fail "plan output template must include a Goal section"
+grep -q 'Expected Results' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  || fail "plan skill must require expected verification results"
 grep -q 'must return `revise` or `blocked`' "$ROOT/skills/teamwork-review/SKILL.md" \
-  || fail "review skill must hard-fail missing or weak plan artifacts"
-grep -q 'every plan has a Markdown plan artifact path' "$ROOT/skills/teamwork-review/SKILL.md" \
-  || fail "review skill must require artifacts for every plan"
+  || fail "review skill must hard-fail weak durable-required plans"
+grep -q 'For durable-required work' "$ROOT/skills/teamwork-review/SKILL.md" \
+  || fail "review skill must distinguish lightweight and durable plan gates"
 grep -q 'requirements-to-evidence mapping' "$ROOT/skills/teamwork-review/SKILL.md" \
   || fail "review skill must check requirements-to-evidence mapping"
 grep -q 'docs/teamwork/plans/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" \
   || fail "README must document durable plan artifact path"
 grep -q 'durable Markdown plan artifacts' "$ROOT/CODEX.md" \
   || fail "CODEX.md must document durable Markdown plan artifacts"
-grep -q 'For every Teamwork planning pass' "$ROOT/CODEX.md" \
-  || fail "CODEX.md must require all plans to be durable artifacts"
+grep -q 'Use durable Markdown plan artifacts for cross-agent execution' "$ROOT/CODEX.md" \
+  || fail "CODEX.md must require durable artifacts for cross-agent/high-risk work"
+grep -q 'Small, low-risk edits may use a' "$ROOT/CODEX.md" \
+  || fail "CODEX.md must allow lightweight planning for bounded low-risk work"
 grep -q 'It is not Codex' "$ROOT/CODEX.md" \
   || fail "CODEX.md must distinguish plan artifacts from Codex goal state"
 grep -q 'goal state and not Claude `.claude/teamwork-goals/` runtime state' "$ROOT/CODEX.md" \
@@ -214,23 +225,25 @@ grep -q 'use `fork_context:false` or omit `fork_context`' "$ROUTER" \
   || fail "router must document fork_context:false explicit routing"
 grep -q 'Omit `agent_type`, `model`, and' "$ROUTER" \
   || fail "router must require omitting override fields on full-history forks"
-grep -q 'Subagent Routing' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must document subagent routing"
-grep -q 'model tier' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must require model tier in subagent routing"
-grep -q 'context strategy' "$ROOT/skills/teamwork-design/SKILL.md" \
-  || fail "design skill must require context strategy in subagent routing"
-grep -q 'Codex native dispatch fields are derived at dispatch time from the router' "$ROOT/skills/teamwork-design/SKILL.md" \
-  || fail "design skill must derive native Codex fields at dispatch time"
-if grep -q 'Codex `agent_type`' "$ROOT/skills/teamwork-design/SKILL.md"; then
-  fail "design skill must not require Codex agent_type in ordinary routing entries"
+grep -q 'Subagent Routing' "$ROOT/skills/teamwork-plan/SKILL.md" || fail "plan skill must document subagent routing"
+grep -q 'if subagents are used' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  || fail "plan skill must make subagent routing conditional"
+grep -q 'model tier' "$ROOT/skills/teamwork-plan/SKILL.md" || fail "plan skill must require model tier in subagent routing"
+grep -q 'context strategy' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  || fail "plan skill must require context strategy in subagent routing"
+grep -q 'Codex native dispatch fields are derived at dispatch time from the router' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  || fail "plan skill must derive native Codex fields at dispatch time"
+if grep -q 'Codex `agent_type`' "$ROOT/skills/teamwork-plan/SKILL.md"; then
+  fail "plan skill must not require Codex agent_type in ordinary routing entries"
 fi
-if grep -q '`fork_context`:' "$ROOT/skills/teamwork-design/SKILL.md"; then
-  fail "design skill must not require fork_context in ordinary routing entries"
+if grep -q '`fork_context`:' "$ROOT/skills/teamwork-plan/SKILL.md"; then
+  fail "plan skill must not require fork_context in ordinary routing entries"
 fi
-if grep -q '`reasoning_effort`:' "$ROOT/skills/teamwork-design/SKILL.md"; then
-  fail "design skill must not require reasoning_effort in ordinary routing entries"
+if grep -q '`reasoning_effort`:' "$ROOT/skills/teamwork-plan/SKILL.md"; then
+  fail "plan skill must not require reasoning_effort in ordinary routing entries"
 fi
-if grep -q 'xhigh' "$ROOT/skills/teamwork-design/SKILL.md"; then
-  fail "design skill must not list xhigh as a normal plan-template option"
+if grep -q 'xhigh' "$ROOT/skills/teamwork-plan/SKILL.md"; then
+  fail "plan skill must not list xhigh as a normal plan-template option"
 fi
 grep -q 'Workers execute the accepted plan' "$ROOT/skills/teamwork-execute/SKILL.md" \
   || fail "execute skill must keep Worker execution boundary"
@@ -242,7 +255,9 @@ grep -q 'Do not use nonexistent Codex agent types' "$ROOT/skills/teamwork-execut
   || fail "execute skill must reject nonexistent Codex agent types"
 grep -q 'Routing conformance' "$ROOT/skills/teamwork-review/SKILL.md" \
   || fail "review skill must check routing conformance"
-grep -q 'underpowered tier' "$ROOT/skills/teamwork-review/SKILL.md" \
+grep -q 'If subagents are used' "$ROOT/skills/teamwork-review/SKILL.md" \
+  || fail "review skill must review subagent routing only when used"
+grep -q 'low-capability tier' "$ROOT/skills/teamwork-review/SKILL.md" \
   || fail "review skill must block underpowered high-risk routing"
 grep -q 'explicitly includes native dispatch fields and combines' "$ROOT/skills/teamwork-review/SKILL.md" \
   || fail "review skill must inspect explicit native dispatch fields"
@@ -272,13 +287,16 @@ grep -q 'execution_review_verdict: <pass | pass-with-notes>' "$ROOT/skills/teamw
   || fail "goal completion audit must not list non-passing review verdicts"
 grep -q 'MCP' "$ROOT/CODEX.md" || fail "CODEX.md must document MCP/network fallback"
 grep -q 'Evidence Interpretation Contract' "$ROUTER" || fail "router must define evidence interpretation contract"
-grep -q 'Evidence Interpretation Contract' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must define evidence interpretation contract"
+grep -q 'Evidence Interpretation Contract' "$ROOT/skills/teamwork-research/SKILL.md" || fail "research skill must define evidence interpretation contract"
+grep -q 'Evidence Interpretation Contract' "$ROOT/skills/teamwork-plan/SKILL.md" || fail "plan skill must define evidence interpretation contract"
 grep -q 'Context & Cost Discipline' "$ROUTER" || fail "router must define context and cost discipline"
-grep -q 'Context & Cost Discipline' "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must define context and cost discipline"
+grep -q 'Context & Cost Discipline' "$ROOT/skills/teamwork-research/SKILL.md" || fail "research skill must define context and cost discipline"
+grep -q 'Context & Cost Discipline' "$ROOT/skills/teamwork-plan/SKILL.md" || fail "plan skill must define context and cost discipline"
 grep -q 'Subagent Collaboration Model' "$ROUTER" || fail "router must define subagent collaboration model"
 for term in observed inferred claimed; do
   grep -q "$term" "$ROUTER" || fail "router must mention $term evidence"
-  grep -q "$term" "$ROOT/skills/teamwork-design/SKILL.md" || fail "design skill must mention $term evidence"
+  grep -q "$term" "$ROOT/skills/teamwork-research/SKILL.md" || fail "research skill must mention $term evidence"
+  grep -q "$term" "$ROOT/skills/teamwork-plan/SKILL.md" || fail "plan skill must mention $term evidence"
   grep -q "$term" "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill must mention $term evidence"
 done
 grep -q 'at most 3 parallel' "$ROUTER" || fail "router must limit default parallel subagents"

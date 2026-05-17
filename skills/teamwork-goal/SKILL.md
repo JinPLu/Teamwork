@@ -1,6 +1,6 @@
 ---
 name: teamwork-goal
-description: Use when a Teamwork request should iterate autonomously until verified success, budget exhaustion, or a hard blocker.
+description: Use when the user asks to run until it passes, iterate until done, keep going until convergence, or gives a verifiable target with a budget — autonomous goal mode with Stop-hook continuation.
 ---
 
 # Teamwork Goal
@@ -9,6 +9,10 @@ Use this subskill for `mode: goal` only when the user gives a goal, command,
 artifact target, or failure and wants autonomous progress to verified success
 or a clear stop. Ordinary research, planning, review, or one-shot execution
 must use the narrower Teamwork stage skill instead.
+
+Goal mode is intentionally stricter than normal Teamwork. The durable plan,
+checkpoint, and completion-audit requirements below are runtime safeguards for
+autonomous continuation, not requirements for ordinary Claude Code tasks.
 
 The goal controller owns iteration and acceptance. It does not let one
 executor self-declare completion. Every completion claim must be anchored to a
@@ -41,9 +45,8 @@ artifact before execution:
 docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 ```
 
-If no readable plan artifact exists, first route to `teamwork-design` with
-`mode: plan` and write one. In Claude Code plugin mode, record the selected
-artifact in goal state with:
+If no readable plan artifact exists, first route to `teamwork-plan` and write
+one. In Claude Code plugin mode, record the selected artifact in goal state with:
 
 ```bash
 raoctl.py plan docs/teamwork/plans/YYYY-MM-DD-<slug>.md
@@ -74,10 +77,10 @@ review, and checkpoint recording before automatic completion.
 
 1. Initialize: state objective, assumptions, sacred boundaries, mutable scope,
    verification target, budget, and current `active_plan_artifact`.
-2. Research only if causes or options are unclear: use `teamwork-design` with
-   `mode: research`.
-3. Plan: use `teamwork-design` with `mode: plan`; ensure the plan artifact is
-   readable and recorded as `active_plan_artifact` in Claude runtime state.
+2. Research only if causes or options are unclear, or refresh research when
+   execution becomes locally self-confirming: use `teamwork-research`.
+3. Plan: use `teamwork-plan`; ensure the plan artifact is readable and recorded
+   as `active_plan_artifact` in Claude runtime state when goal execution changes files.
 4. Review the plan: use `teamwork-review` with `mode: plan`; revise until pass
    or blocked.
 5. Execute: use `teamwork-execute` on the accepted durable plan artifact.

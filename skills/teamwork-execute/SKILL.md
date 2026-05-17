@@ -1,6 +1,6 @@
 ---
 name: teamwork-execute
-description: Use when an accepted Teamwork plan should be implemented with minimal edits and focused verification.
+description: Use when implementing an accepted plan — keeps execution bounded to planned steps, prevents scope creep during coding, and ensures focused verification runs before claiming completion.
 ---
 
 # Teamwork Execute
@@ -10,14 +10,16 @@ the plan; it does not self-declare completion.
 
 ## Preconditions
 
-- Accepted plan from `teamwork-design` with `mode: plan`, including root
-  cause or goal, scope, sacred boundaries, verification, and Subagent Routing
-  for non-lightweight work.
-- A durable Markdown plan artifact path is provided and the artifact is
-  readable. `update_plan`, chat history, executor summaries, or an implied
-  newest file are not acceptable substitutes. If the artifact path is missing
-  or unreadable, stop before execution and return to `teamwork-design` with
-  `mode: plan` to create or repair the artifact.
+- Accepted lightweight plan or durable artifact plan. A durable Markdown plan
+  artifact path is required for goal mode, cross-agent execution, cross-turn
+  work, high-risk or ambiguous changes, and any plan that explicitly created an
+  artifact. For bounded low-risk work, the accepted chat/native checklist is an
+  acceptable execution source.
+- When a durable Markdown plan artifact path is required, it must be provided
+  and readable before execution begins.
+- If a durable artifact path is provided, re-read it before editing and treat it
+  as the execution source of truth. Do not infer the active plan from the newest
+  file, chat history, or summaries.
 - Current workspace status is understood enough to avoid overwriting others.
 - Required files, commands, credentials, and environments are available or the
   absence is recorded as a blocker.
@@ -35,14 +37,15 @@ If any precondition is missing, stop and return a blocker instead of guessing.
 Workers execute the accepted plan. They do not reopen product behavior,
 architecture, or requirements design during execution. If execution uncovers
 unsettled requirements, architecture, public behavior, or cross-module design
-choices, stop and return to `teamwork-design` instead of expanding scope.
+choices, or external evidence gaps, stop and return to `teamwork-research` or
+`teamwork-plan` instead of expanding scope.
 
-Delegated Worker prompts must include the durable plan artifact path, exact
-file ownership, allowed modification range, Teamwork model tier, context
-strategy, verification expectation, and a reminder that other agents or the
-main agent may own different files. Codex native dispatch fields are derived
-from the router mapping unless a non-default native override is itself part of
-the handoff.
+Delegated Worker prompts must include the accepted plan source, exact file
+ownership, allowed modification range, Teamwork model tier when relevant,
+context strategy, verification expectation, and a reminder not to expand scope.
+For artifact-backed work, include the durable plan artifact path. Codex native
+dispatch fields are derived from the router mapping unless a non-default native
+override is itself part of the handoff.
 
 In Codex, check native fields immediately before delegated dispatch and reject
 illegal or misleading routing:
@@ -57,8 +60,8 @@ illegal or misleading routing:
   from a lower-effort parent. Use `fork_context:false` or omit `fork_context`
   with `reasoning_effort:"high"` when explicit high reasoning is required.
 
-1. Re-read the accepted durable plan artifact, Subagent Routing, and relevant
-   source.
+1. Re-read the accepted plan source and relevant source files. For durable
+   plans, also re-read the artifact and Subagent Routing when present.
 2. State the files you intend to touch.
 3. Make only the planned edits, matching existing style.
 4. Keep changes minimal and producer-side. Avoid unrelated cleanup, formatting,
@@ -91,8 +94,8 @@ illegal or misleading routing:
 Implemented:
 - <path>: <change and plan step>
 
-Plan Artifact:
-- <docs/teamwork/plans/YYYY-MM-DD-<slug>.md>
+Plan Source:
+- <lightweight accepted plan | docs/teamwork/plans/YYYY-MM-DD-<slug>.md>
 
 Verification:
 - <command/check>: <result>

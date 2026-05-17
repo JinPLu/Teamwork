@@ -19,6 +19,8 @@ router skill:
 ```text
 skills/teamwork/SKILL.md
 skills/teamwork-goal/SKILL.md
+skills/teamwork-research/SKILL.md
+skills/teamwork-plan/SKILL.md
 ```
 
 Use the skill files as the behavioral source of truth, including evidence

@@ -7,11 +7,13 @@ SKILLS=(
   using-teamwork
   teamwork
   teamwork-goal
-  teamwork-design
+  teamwork-research
+  teamwork-plan
   teamwork-execute
   teamwork-review
 )
 RETIRED_SKILLS=(
+  teamwork-design
   run-analyze-optimize
   run-analyze-design
   run-analyze-execute

@@ -6,7 +6,8 @@ This repository exposes an automatic entry skill, a router skill, and workflow s
 skills/using-teamwork/SKILL.md
 skills/teamwork/SKILL.md
 skills/teamwork-goal/SKILL.md
-skills/teamwork-design/SKILL.md
+skills/teamwork-research/SKILL.md
+skills/teamwork-plan/SKILL.md
 skills/teamwork-execute/SKILL.md
 skills/teamwork-review/SKILL.md
 ```
@@ -56,19 +57,33 @@ evidence to verify, not as facts or final verdicts by themselves.
 - Sandbox: request escalation only for required blocked commands, with narrow
   justification and prefix rule where appropriate. Do not bypass approvals.
 
+Codex dispatch details are Codex-only. Do not copy native Codex fields such as
+`agent_type`, `fork_context`, or `reasoning_effort` into Claude Code
+instructions; Claude Code should use its native Agent/Subagent tools and
+permission model.
+
 ## Durable Plan Artifacts
 
-For every Teamwork planning pass, use durable Markdown plan artifacts.
-`teamwork-design` with `mode: plan` must write or update the artifact at:
+For Teamwork planning passes, use the lightest planning form that preserves
+correctness. Bounded low-risk single-agent work may use a concise chat/native
+checklist with scope, steps, verification, expected result, and stop condition.
+Use durable Markdown plan artifacts for cross-agent execution, cross-turn work,
+high-risk or ambiguous changes, public/shared behavior changes, explicit user
+requests for a repository plan, and all goal-mode execution. For non-trivial
+research, use durable research artifacts under `docs/teamwork/research/` before
+planning so later passes can reuse the same evidence instead of re-searching.
+Default plan path:
 
 ```text
 docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 ```
 
-Use that file as the shared execution and review source of truth. It should map
-requirements to evidence, name exact files and steps, define focused
-verification with expected results, and include worker and reviewer handoffs.
-Small, low-risk edits may use a concise artifact, but not a chat-only plan.
+Use artifact files as the shared execution and review source of truth when a
+durable plan is required. They should map requirements to evidence, name exact
+files and steps, define focused verification with expected results, and include
+worker and reviewer handoffs. When subagents are used, record conceptual role,
+scope, tier, context strategy, order, and why. Small, low-risk edits may use a
+concise chat/native plan instead of a repository artifact.
 
 This Markdown artifact is ordinary repository documentation. It is not Codex
 goal state and not Claude `.claude/teamwork-goals/` runtime state. Native
