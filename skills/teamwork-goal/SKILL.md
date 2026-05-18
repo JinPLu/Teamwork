@@ -1,6 +1,6 @@
 ---
 name: teamwork-goal
-description: Use when the user asks to run until it passes, iterate until done, keep going until convergence, or gives a verifiable target with a budget — autonomous goal mode with Stop-hook continuation.
+description: Use when the user asks to run until it passes, iterate until done, keep going until convergence, or gives a verifiable target with a budget — autonomous goal mode using Codex native goals or Claude Stop-hook continuation.
 ---
 
 # Teamwork Goal
@@ -11,8 +11,10 @@ or a clear stop. Ordinary research, planning, review, or one-shot execution
 must use the narrower Teamwork stage skill instead.
 
 Goal mode is intentionally stricter than normal Teamwork. The durable plan,
-checkpoint, and completion-audit requirements below are runtime safeguards for
-autonomous continuation, not requirements for ordinary Claude Code tasks.
+verification, review, and checkpoint/audit requirements below are safeguards for
+autonomous continuation, not requirements for ordinary one-shot tasks. In Codex,
+goal mode is protocol-backed through native Codex goals and explicit artifacts;
+in Claude Code plugin mode, it is Stop-hook-backed through `raoctl.py`.
 
 The goal controller owns iteration and acceptance. It does not let one
 executor self-declare completion. Every completion claim must be anchored to a
@@ -35,6 +37,11 @@ If a goal is active, continue it rather than creating a second goal. Ask the
 user only for destructive risk, auth/credentials, missing required external
 resources, sacred-boundary conflict, or ambiguity that changes public behavior,
 protected contracts, architecture, or user intent.
+
+Codex should not emulate Claude Stop hooks. Use native Codex goal state only
+when the user explicitly asks for autonomous convergence or when a goal is
+already active; otherwise use the narrower research, plan, execute, or review
+stage.
 
 ## Plan Anchor Requirement
 
@@ -79,6 +86,8 @@ review, and checkpoint recording before automatic completion.
    verification target, budget, and current `active_plan_artifact`.
 2. Research only if causes or options are unclear, or refresh research when
    execution becomes locally self-confirming: use `teamwork-research`.
+   After one focused fix or prompt change with no evidence delta, return to
+   research and external calibration before making another local guess.
 3. Plan: use `teamwork-plan`; ensure the plan artifact is readable and recorded
    as `active_plan_artifact` in Claude runtime state when goal execution changes files.
 4. Review the plan: use `teamwork-review` with `mode: plan`; revise until pass
@@ -108,6 +117,8 @@ raoctl.py checkpoint \
 - Keep the plan artifact path visible in worker and reviewer handoffs.
 - If verification fails, identify the evidence delta, choose the next smallest
   hypothesis, and continue within budget.
+- If one focused fix or prompt change produces no evidence delta, refresh
+  research before another local implementation attempt.
 - If there is no evidence delta for 2 consecutive iterations, stop with a
   blocker or budget/no-progress conclusion.
 - In Codex, create a native goal only when the user explicitly asks for

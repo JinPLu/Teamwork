@@ -6,8 +6,10 @@ description: Use when starting any coding, debugging, research, planning, implem
 # Using Teamwork
 
 Use this lightweight preference router at the start of normal coding-agent work.
-Its purpose is to decide whether Teamwork adds value for this request without
-blocking Claude Code or Codex from using their native strengths.
+Its purpose is to decide whether Teamwork adds value without blocking the host
+agent from using native strengths. In Codex, that means using native planning
+UI, subagents, goals, sandbox approvals, and reviews instead of emulating
+Claude hook behavior.
 
 ## Rule
 
@@ -25,6 +27,19 @@ Teamwork stage apply here? A stage applies when **any** of these are true:
 
 If any applies, invoke the narrowest matching skill before continuing. Do not
 substitute native tools for the skill just because the task seems manageable.
+
+## Codex Runtime Fit
+
+When running in Codex:
+
+- Keep simple tasks native.
+- Use `update_plan` only for visible progress; it is not the durable plan.
+- Use Codex subagents only for independent evidence, scoped Worker execution,
+  or fresh-context review that materially improves the work.
+- Use native Codex goals only for explicit autonomous convergence requests or
+  an already active goal.
+- Use sandbox escalation only when a required command is blocked; do not bypass
+  approvals.
 
 ## Default: Native Flow First
 
@@ -76,9 +91,10 @@ These thoughts mean a stage skill likely applies:
 
 ## Discipline
 
-Prefer local repository evidence before external sources. Keep assumptions
-explicit, choose simple and surgical changes, verify against the user's goal,
-and keep the main agent responsible for synthesis, verification, and final
-acceptance.
+Start from local repository evidence, then use external calibration for
+non-trivial research where current platform, dependency, model, prompt, or
+upstream behavior could affect the answer. Keep assumptions explicit, choose
+simple and surgical changes, verify against the user's goal, and keep the main
+agent responsible for synthesis, verification, and final acceptance.
 
 If no stage applies after checking the criteria above, continue normally.

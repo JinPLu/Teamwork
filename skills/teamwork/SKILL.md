@@ -180,9 +180,16 @@ that the referenced file is current, canonical, or active.
 
 ## Context & Cost Discipline
 
-- Prefer local repository evidence before MCP, network, or web research.
-- Use MCP or web only when the task needs external tools, official/current
-  information, or user-authorized sources that are not available locally.
+- Use local repository evidence first to establish the actual project state,
+  active code paths, current progress, and mainline constraints.
+- For non-trivial research, use external calibration as part of the evidence
+  process, not merely as a last-resort fallback. Use MCP or web when model or
+  prompt work, VLM/video understanding, platform APIs, dependencies, upstream
+  bugs, performance, unfamiliar frameworks, or repeated failures could affect
+  the answer.
+- Prefer official/current primary sources, papers, release notes, and upstream
+  issue threads. If external access is unavailable, record that limitation
+  instead of silently relying on local guesses.
 - Fan out subagents only for independent read-heavy research, design, judge, or
   review tracks that improve reliability or speed without blocking the main
   agent's next step. Writing subagents need exact file ownership or worktree
@@ -218,7 +225,7 @@ is plain Markdown in the repo, not Codex native goal state and not Claude
 ## Codex Native Integration
 
 When running in Codex, use native platform capabilities instead of emulating
-roundtable infrastructure:
+roundtable infrastructure or Claude Stop-hook behavior:
 
 - Use `update_plan` only as a transient UI-only checklist for visible progress.
   It must not be the only execution plan or review artifact when a durable

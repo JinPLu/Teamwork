@@ -302,6 +302,16 @@ grep -q 'Evidence Interpretation Contract' "$ROOT/skills/teamwork-plan/SKILL.md"
 grep -q 'Context & Cost Discipline' "$ROUTER" || fail "router must define context and cost discipline"
 grep -q 'Context & Cost Discipline' "$ROOT/skills/teamwork-research/SKILL.md" || fail "research skill must define context and cost discipline"
 grep -q 'Context & Cost Discipline' "$ROOT/skills/teamwork-plan/SKILL.md" || fail "plan skill must define context and cost discipline"
+grep -q 'external calibration' "$ROOT/skills/teamwork-research/SKILL.md" \
+  || fail "research skill must require external calibration"
+grep -q 'Search existing research artifacts' "$ROOT/skills/teamwork-research/SKILL.md" \
+  || fail "research skill must reuse existing research artifacts"
+grep -q 'no evidence delta' "$ROOT/skills/teamwork-research/SKILL.md" \
+  || fail "research skill must break local no-progress loops"
+grep -q 'Research calibration' "$ROOT/README.md" \
+  || fail "README must document research calibration"
+grep -q 'Research calibration' "$ROOT/CODEX.md" \
+  || fail "CODEX.md must document research calibration"
 grep -q 'Subagent Collaboration Model' "$ROUTER" || fail "router must define subagent collaboration model"
 for term in observed inferred claimed; do
   grep -q "$term" "$ROUTER" || fail "router must mention $term evidence"

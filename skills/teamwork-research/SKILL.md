@@ -7,6 +7,8 @@ description: Use when the next step is evidence gathering, root-cause investigat
 
 Use this subskill when the next step is evidence gathering, option comparison,
 root-cause investigation, external research, or refreshing stale assumptions.
+Research first establishes the local project reality and mainline from direct
+evidence, then uses external calibration to avoid local trial-and-error loops.
 Research may recommend a direction, but executable implementation planning
 belongs to `teamwork-plan`.
 
@@ -45,14 +47,19 @@ completion status without at least one direct evidence cross-check.
 
 ## Context & Cost Discipline
 
-- Prefer local files, diffs, logs, tests, and artifacts before MCP or web when
-  local evidence can answer the question.
-- Use web, GitHub issues, official docs, release notes, or MCP-backed sources
-  when current external behavior may affect the answer: platform APIs, CLI
-  behavior, third-party libraries, version-sensitive errors, upstream bugs, or
-  unfamiliar framework constraints. Prefer official docs and primary issue
-  threads. If web or MCP access is unavailable, record that limitation in the
-  artifact.
+- Start with local files, diffs, logs, tests, artifacts, and prior research
+  artifacts to understand the actual project state, active code paths, current
+  progress, and mainline constraints.
+- For non-trivial research, add external calibration instead of treating it as a
+  last-resort fallback. Use web, GitHub issues, official docs, release notes,
+  papers, or MCP-backed sources when model/prompt work, VLM/video
+  understanding, platform APIs, CLI behavior, third-party libraries,
+  version-sensitive errors, upstream bugs, performance, unfamiliar frameworks,
+  or repeated failures could affect the answer.
+- Prefer official docs, primary issue threads, papers, release notes, and other
+  primary sources. If web, MCP, credentials, or network access is unavailable,
+  record that limitation in the artifact and clearly mark external evidence as
+  missing rather than silently relying on local guesses.
 - Fan out subagents only after splitting the research into independent tracks
   that can run in parallel without blocking the main agent's immediate next
   step. Each track needs a specific question, evidence scope, return format, and
@@ -78,24 +85,34 @@ review, or goal iteration will need it. If in doubt, write the artifact.
 
 Do not output the handoff block until the file exists at the expected path.
 
+Before starting new research, search existing `docs/teamwork/research/`
+artifacts for the same topic. Reuse, update, or explicitly cite the existing
+artifact when it remains applicable; create a new artifact when the topic,
+evidence, or recommendation has materially changed. Research artifacts are
+working memory: maintain them so later planning, execution, review, and goal
+iterations do not repeat the same searches.
+
 ## Workflow
 
 1. Define the research question and success criteria.
-2. Split the topic into independent tracks when useful: symptoms, source paths,
-   artifacts, external constraints, alternative designs, upstream reports.
-3. Assign each useful track a role or pass. Each pass reads primary evidence
+2. Search existing research artifacts for reusable evidence, stale assumptions,
+   or prior recommendations on the same topic.
+3. Split the topic into independent tracks when useful: project mainline,
+   symptoms, source paths, artifacts, external constraints, alternative designs,
+   upstream reports, papers, or current best practices.
+4. Assign each useful track a role or pass. Each pass reads primary evidence
    directly and returns findings, confidence, and open questions.
-4. Search external sources when current platform behavior, upstream bugs,
-   version-sensitive APIs, or unfamiliar ecosystem constraints could matter.
-5. Generate options before committing. Prefer simple, local, producer-side
+5. Search external sources for non-trivial work where outside behavior,
+   prior art, or current field practice could prevent local dead-end attempts.
+6. Generate options before committing. Prefer simple, local, producer-side
    fixes over broad rewrites or downstream cleanup.
-6. Compare options against the goal, sacred boundaries, verification path, and
+7. Compare options against the goal, sacred boundaries, verification path, and
    budget.
-7. Preserve dissent. Label minority findings as blocker, warning, or follow-up.
-8. Write the research artifact to `docs/teamwork/research/YYYY-MM-DD-<slug>.md`
+8. Preserve dissent. Label minority findings as blocker, warning, or follow-up.
+9. Write or update the research artifact at `docs/teamwork/research/YYYY-MM-DD-<slug>.md`
    using the Write tool. Do this before outputting the handoff block. Confirm
    the file exists at the expected path.
-9. Stop when a direction is selected, evidence is insufficient, budget is
+10. Stop when a direction is selected, evidence is insufficient, budget is
    exhausted, or only protected/ambiguous decisions remain.
 
 ## Research Artifact Template
@@ -108,6 +125,8 @@ Do not output the handoff block until the file exists at the expected path.
 ## Local Evidence
 
 ## External Evidence
+
+## Prior Research Reused
 
 ## Options
 
@@ -123,6 +142,8 @@ Do not output the handoff block until the file exists at the expected path.
 During execution or goal iteration, route back to `teamwork-research` when:
 
 - verification produces no evidence delta after a focused fix;
+- one focused fix or prompt change has already produced no evidence delta and
+  the next move would otherwise be another local guess;
 - reviewer dissent says the executor is reinforcing the same assumption;
 - the error may be upstream, version-specific, environment-specific, or already
   discussed in GitHub issues;
