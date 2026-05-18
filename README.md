@@ -1,5 +1,7 @@
 # Teamwork
 
+![Teamwork workflow banner](assets/teamwork-hero.png)
+
 Teamwork 是一组给 Claude Code、Codex 和 Cursor 用的 workflow skills。它不替代 coding agent；它让 agent 在容易跑偏的任务里按证据、计划、执行边界、验证和复查推进。
 
 一句话：**先弄清楚，再动手；执行有边界，完成要有证据。**
