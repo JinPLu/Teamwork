@@ -1,6 +1,6 @@
 ---
 name: teamwork
-description: Use when routing a multi-step or evidence-sensitive request through the Teamwork workflow — maps user intent to the right stage skill and defines shared contracts for evidence, subagents, and durable plans.
+description: Use when routing a multi-step or evidence-sensitive request through the Teamwork workflow — maps user intent to the right stage skill and defines shared contracts for evidence, subagents, progress anchors, and artifacts.
 ---
 
 # Teamwork
@@ -10,6 +10,12 @@ on top of Claude Code, Codex, or Cursor: preserve the platform's native coding
 capability, then add Teamwork discipline only when evidence, coordination,
 review, or autonomous convergence improves the result. Autonomous convergence is
 handled by the dedicated `teamwork-goal` subskill.
+
+In Codex, treat Teamwork as a thin progress layer over native planning,
+subagents, reviews, goals, sandbox approvals, and skills. Do not make the main
+thread maintain long process ledgers. Anchor the current work to the smallest
+state that lets the next decision move forward: active objective, accepted plan
+or execution memo, verification target, and review result when needed.
 
 The package preserves the original discipline:
 
@@ -58,13 +64,23 @@ tasks, use them as a quick mental check without adding ceremony.
 Durable artifacts are mandatory for goal mode and high-risk or cross-agent work,
 but native flow remains the default for simple Claude Code tasks.
 
+Use artifact directories by purpose:
+
+- `docs/teamwork/research/`: reusable investigation findings.
+- `docs/teamwork/plans/`: execution memo and active plan anchor.
+- `docs/teamwork/reports/`: final task conclusion for non-trivial, cross-turn,
+  cross-agent, goal-mode, or explicitly requested work.
+
+Do not create artifacts just to record every thought. Reports are conclusions,
+not a second checkpoint system.
+
 ## Subagent Collaboration Model
 
 Subagents are a tool for independent context, parallel evidence collection,
 isolated execution, or fresh review. They are not required for every Teamwork
 request. The main agent owns scope, decomposition, synthesis, conflict
-resolution, verification, and final acceptance. Subagents provide bounded work
-products:
+resolution, verification, progress anchoring, and final acceptance. Subagents
+provide bounded work products:
 
 - Explorer: read-heavy independent investigation with condensed evidence.
 - Designer: ambiguous requirements, architecture tradeoffs, cross-module
@@ -75,11 +91,15 @@ products:
 - Reviewer: fresh-context execution review against diffs, tests, logs, and
   artifacts.
 
-Fan out only after decomposing the work into independent tracks whose results
-can be produced in parallel without blocking the main agent's immediate next
-step. Good fan-out has a specific question, bounded evidence scope, expected
-return format, and non-overlapping write ownership when edits are allowed. Do
-not fan out merely for ceremony, duplicate another agent's unresolved work,
+For non-lightweight work, first split the next decision into independent tracks.
+Fan out when 2 or more tracks can run without blocking the main agent's
+immediate next step. Good fan-out has a specific question, bounded evidence
+scope, expected return format, and non-overlapping write ownership when edits
+are allowed. Dispatch useful Explorers, Workers, or Reviewers early, then keep
+working locally on non-overlapping tasks. Wait only when the next local step
+depends on a subagent result.
+
+Do not fan out merely for ceremony, duplicate another agent's unresolved work,
 delegate the critical-path blocker, or give writing agents overlapping files.
 Keep the work local when continuity matters more than independent context or
 when coordination overhead exceeds the value of parallelism.
@@ -200,7 +220,7 @@ that the referenced file is current, canonical, or active.
 - The main agent owns synthesis, conflict resolution, verification, and the
   final decision even when subagents are used.
 
-## Durable Plan Artifacts
+## Progress Anchors And Artifacts
 
 `update_plan` and other visible plan widgets are transient UI-only checklist
 state. They help show progress during a turn, but they are not the execution
@@ -208,7 +228,8 @@ specification, review target, or durable evidence for artifact-backed plans.
 
 A durable Markdown plan artifact is required for cross-agent execution,
 cross-turn work, high-risk or ambiguous changes, and all goal-mode execution.
-Default path:
+Use it as an execution memo: concise objective, scope, steps, verification,
+stop rules, and handoffs. Default path:
 
 ```text
 docs/teamwork/plans/YYYY-MM-DD-<slug>.md
@@ -221,6 +242,12 @@ files merely for ceremony.
 The durable artifact is shared across Cursor, Claude Code, and Codex because it
 is plain Markdown in the repo, not Codex native goal state and not Claude
 `.claude/teamwork-goals/` runtime state.
+
+Write a final report only when the result itself needs to be reusable later:
+
+```text
+docs/teamwork/reports/YYYY-MM-DD-<slug>.md
+```
 
 ## Codex Native Integration
 

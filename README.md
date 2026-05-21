@@ -24,7 +24,8 @@ Teamwork 的目标是把这些风险变成明确的 workflow gate。
 |---|---|
 | Evidence first | 重要判断先读直接证据，并区分 `observed`、`inferred`、`claimed`。 |
 | Research calibration | Research 先理解本地真实主线，再用外部主源校准方向，避免本地反复试错。 |
-| Durable memory | 非平凡调研写入 `docs/teamwork/research/`，后续计划和迭代不用重复搜索。 |
+| Progress anchor | 主线程锚定目标、执行备忘录、验证和复查结果，而不是维护长流水账。 |
+| Targeted artifacts | `research/` 存可复用调研，`plans/` 存执行备忘录，`reports/` 存任务结论。 |
 | Plan before edits | 代码修改前先有计划；非轻量、高风险、跨模块或含糊任务先 review plan。 |
 | Bounded execution | Worker 只做计划内改动；发现需求、架构或外部证据缺口就停回 research/plan。 |
 | Review before done | 完成必须有验证和复查；工具输出、总结、文件名或 README 说法都不是最终 verdict。 |
@@ -50,7 +51,7 @@ Skill entrypoints: `using-teamwork`, `teamwork`, `teamwork-research`, `teamwork-
 Teamwork 在 Codex 里是 **Codex-native, not hook-emulated**：
 
 - `update_plan` 只是临时进度条，不是 durable plan。
-- Codex subagents 用来做独立 Explorer、Worker 或 fresh-context review；Designer/Judge/Reviewer 是提示词角色，不是原生 `agent_type`。
+- Codex subagents 用来做独立 Explorer、Worker 或 fresh-context review；非轻量任务先拆独立轨道，主线程继续做不重叠工作。
 - Native Codex goals 只在你明确要求自主收敛或已有 active goal 时使用。
 - Sandbox、网络和权限按 Codex approval 模型走，不绕过。
 - Durable artifacts 是跨 turn、跨 agent 的事实锚点，不是 Codex goal state。
@@ -99,9 +100,17 @@ Durable plan artifacts:
 docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 ```
 
-Research artifacts are maintained working memory: search existing files first, update or cite them when still relevant, and record local evidence, external sources, options, recommendation, dissent, and refresh triggers.
+Final reports:
 
-Plan artifacts map requirements to evidence, name scope boundaries, list executable steps, define focused verification and expected results, and include worker/reviewer handoffs.
+```text
+docs/teamwork/reports/YYYY-MM-DD-<slug>.md
+```
+
+Research artifacts are reusable investigation memory: search existing files first, update or cite them when still relevant, and record local evidence, external sources, options, recommendation, dissent, and refresh triggers.
+
+Plan artifacts are execution memos: name scope boundaries, list executable steps, define focused verification and expected results, and include worker/reviewer handoffs. Larger plans may also map requirements to evidence, risks, and subagent routing.
+
+Reports are conclusions, not process logs. Use them for non-trivial, cross-agent, cross-turn, goal-mode, or explicitly requested summaries.
 
 These artifacts are ignored by default, together with `docs/superpowers/`. Force-add only when a specific artifact is intentionally part of a PR.
 

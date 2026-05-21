@@ -42,9 +42,12 @@ research/discuss if needed
 
 - State assumptions, boundaries, and verification before committing behavior when they matter.
 - Prefer native/simple flow for low-risk work; use durable artifacts for goal-mode, cross-agent, cross-turn, high-risk, or ambiguous work.
+- Keep progress anchored to the active objective, execution memo, verification, and review result; do not turn reports into process logs.
 - Prefer simple, surgical, producer-side fixes.
 - Reviewers read evidence directly: source, diffs, logs, tests, artifacts.
 - Research and planning are separate skills; research artifacts feed executable plans.
+- Artifact roles: `research/` for investigation, `plans/` for execution memos,
+  and `reports/` for final conclusions.
 - One review skill handles plan and execution modes.
 - Subagents are optional and should be used only when independent context, isolated execution, or fresh review improves the result.
 - Preserve dissent and stop on verified success, budget exhaustion, repeated

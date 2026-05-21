@@ -34,13 +34,15 @@ expected_skill_dirs="$(printf '%s\n' "${SKILLS[@]}" | sort)"
 actual_skill_dirs="$(find "$ROOT/skills" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)"
 [[ "$actual_skill_dirs" == "$expected_skill_dirs" ]] || fail "skills/ must contain exactly: ${SKILLS[*]}"
 
-if git -C "$ROOT" ls-files 'docs/teamwork/plans/*' 'docs/teamwork/research/*' 'docs/superpowers/*' | grep -q .; then
-  fail "local workflow artifacts under docs/teamwork/{plans,research}/ or docs/superpowers/ must not be tracked"
+if git -C "$ROOT" ls-files 'docs/teamwork/plans/*' 'docs/teamwork/research/*' 'docs/teamwork/reports/*' 'docs/superpowers/*' | grep -q .; then
+  fail "local workflow artifacts under docs/teamwork/{plans,research,reports}/ or docs/superpowers/ must not be tracked"
 fi
 grep -q '^docs/teamwork/plans/$' "$ROOT/.gitignore" \
   || fail ".gitignore must ignore local Teamwork plan artifacts"
 grep -q '^docs/teamwork/research/$' "$ROOT/.gitignore" \
   || fail ".gitignore must ignore local Teamwork research artifacts"
+grep -q '^docs/teamwork/reports/$' "$ROOT/.gitignore" \
+  || fail ".gitignore must ignore local Teamwork report artifacts"
 grep -q '^docs/superpowers/$' "$ROOT/.gitignore" \
   || fail ".gitignore must ignore local superpowers artifacts"
 
@@ -78,6 +80,7 @@ grep -q 'teamwork-goal' "$ROUTER" || fail "router must route goal requests to te
   || fail "router must not forbid the dedicated goal subskill"
 grep -q 'mode: goal' "$ROOT/skills/teamwork-goal/SKILL.md" || fail "goal skill missing mode: goal"
 grep -q 'Research Artifact Requirement' "$ROOT/skills/teamwork-research/SKILL.md" || fail "research skill must require research artifacts"
+grep -q 'when findings will be reused' "$ROOT/skills/teamwork-research/SKILL.md" || fail "research artifacts must be targeted to reusable findings"
 grep -q 'Research Refresh Triggers' "$ROOT/skills/teamwork-research/SKILL.md" || fail "research skill must define refresh triggers"
 grep -q 'docs/teamwork/research/YYYY-MM-DD-<slug>.md' "$ROOT/skills/teamwork-research/SKILL.md" || fail "research skill must define research artifact path"
 grep -q 'Use the lightest planning form that preserves correctness' "$ROOT/skills/teamwork-plan/SKILL.md" || fail "plan skill must support lightweight and durable planning tiers"
@@ -156,11 +159,16 @@ grep -q '/rao:goal' "$ROOT/README.md" || fail "README must document /rao:goal co
 grep -q 'Stop hook' "$ROOT/README.md" || fail "README must document Stop hook behavior"
 grep -q '.claude/teamwork-goals' "$ROOT/README.md" || fail "README must document goal state path"
 grep -q 'RAO_GOAL_COMPLETE' "$ROOT/README.md" || fail "README must document completion promise"
+grep -q 'docs/teamwork/reports/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" \
+  || fail "README must document report artifact path"
 grep -q 'Codex Native Integration' "$ROUTER" || fail "router must document Codex native integration"
 grep -q 'native Codex goals' "$ROOT/CODEX.md" || fail "CODEX.md must document native Codex goals"
 grep -q 'Codex Runtime Mapping' "$ROOT/CODEX.md" || fail "CODEX.md must document Codex runtime mapping"
 grep -q 'Codex runtime' "$ROOT/README.md" || fail "README must document Codex runtime"
 grep -q 'durable Markdown plan artifact' "$ROUTER" || fail "router must define durable Markdown plan artifacts"
+grep -q 'Progress Anchors And Artifacts' "$ROUTER" || fail "router must define progress anchors and artifacts"
+grep -q 'docs/teamwork/reports/YYYY-MM-DD-<slug>.md' "$ROUTER" \
+  || fail "router must define report artifact path"
 grep -q 'transient UI-only checklist' "$ROUTER" || fail "router must mark update_plan as transient UI-only"
 grep -q 'native flow remains the default for simple Claude Code tasks' "$ROUTER" \
   || fail "router must preserve native Claude Code flow for simple tasks"
@@ -178,6 +186,8 @@ grep -q '^Goal:$' "$ROOT/skills/teamwork-plan/SKILL.md" \
   || fail "plan output template must include a Goal section"
 grep -q 'Expected Results' "$ROOT/skills/teamwork-plan/SKILL.md" \
   || fail "plan skill must require expected verification results"
+grep -q 'compact execution memo' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  || fail "plan skill must support compact execution memos"
 grep -q 'must return `revise` or `blocked`' "$ROOT/skills/teamwork-review/SKILL.md" \
   || fail "review skill must hard-fail weak durable-required plans"
 grep -q 'For durable-required work' "$ROOT/skills/teamwork-review/SKILL.md" \
@@ -190,6 +200,8 @@ grep -q 'durable Markdown plan artifacts' "$ROOT/CODEX.md" \
   || fail "CODEX.md must document durable Markdown plan artifacts"
 grep -q 'Use durable Markdown plan artifacts for cross-agent execution' "$ROOT/CODEX.md" \
   || fail "CODEX.md must require durable artifacts for cross-agent/high-risk work"
+grep -q 'docs/teamwork/reports/YYYY-MM-DD-<slug>.md' "$ROOT/CODEX.md" \
+  || fail "CODEX.md must document report artifact path"
 grep -q 'Small, low-risk edits may use a' "$ROOT/CODEX.md" \
   || fail "CODEX.md must allow lightweight planning for bounded low-risk work"
 grep -q 'It is not Codex' "$ROOT/CODEX.md" \
@@ -257,6 +269,8 @@ if grep -q 'xhigh' "$ROOT/skills/teamwork-plan/SKILL.md"; then
 fi
 grep -q 'Workers execute the accepted plan' "$ROOT/skills/teamwork-execute/SKILL.md" \
   || fail "execute skill must keep Worker execution boundary"
+grep -q 'disjoint file ownership' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  || fail "execute skill must require disjoint Worker ownership"
 grep -q 'do not reopen product behavior' "$ROOT/skills/teamwork-execute/SKILL.md" \
   || fail "execute skill must block design reopening during execution"
 grep -q 'Do not combine `fork_context:true` with `agent_type`, `model`, or' "$ROOT/skills/teamwork-execute/SKILL.md" \
@@ -265,6 +279,8 @@ grep -q 'Do not use nonexistent Codex agent types' "$ROOT/skills/teamwork-execut
   || fail "execute skill must reject nonexistent Codex agent types"
 grep -q 'Routing conformance' "$ROOT/skills/teamwork-review/SKILL.md" \
   || fail "review skill must check routing conformance"
+grep -q 'fresh-context review' "$ROOT/skills/teamwork-review/SKILL.md" \
+  || fail "review skill must prefer fresh-context review for non-trivial execution"
 grep -q 'If subagents are used' "$ROOT/skills/teamwork-review/SKILL.md" \
   || fail "review skill must review subagent routing only when used"
 grep -q 'low-capability tier' "$ROOT/skills/teamwork-review/SKILL.md" \
@@ -313,6 +329,8 @@ grep -q 'Research calibration' "$ROOT/README.md" \
 grep -q 'Research calibration' "$ROOT/CODEX.md" \
   || fail "CODEX.md must document research calibration"
 grep -q 'Subagent Collaboration Model' "$ROUTER" || fail "router must define subagent collaboration model"
+grep -q 'separable evidence questions' "$ROOT/skills/teamwork-research/SKILL.md" \
+  || fail "research skill must prefer parallel Explorer tracks when separable"
 for term in observed inferred claimed; do
   grep -q "$term" "$ROUTER" || fail "router must mention $term evidence"
   grep -q "$term" "$ROOT/skills/teamwork-research/SKILL.md" || fail "research skill must mention $term evidence"
@@ -325,12 +343,15 @@ grep -q '<completion_audit>' "$ROOT/README.md" || fail "README must document com
 grep -q 'completion_audit_detected' "$ROOT/bin/raoctl.py" || fail "runtime must gate completion on audit detection"
 grep -q 'active_plan_artifact' "$ROOT/bin/raoctl.py" || fail "runtime must store active_plan_artifact"
 grep -q 'active_plan_artifact_sha256' "$ROOT/bin/raoctl.py" || fail "runtime must store active_plan_artifact_sha256"
+grep -q 'COMPACT_PLAN_REQUIRED_SECTIONS' "$ROOT/bin/raoctl.py" || fail "runtime must accept compact execution memos"
 grep -q 'command_plan' "$ROOT/bin/raoctl.py" || fail "runtime must expose a plan command"
 grep -q 'command_checkpoint' "$ROOT/bin/raoctl.py" || fail "runtime must expose a checkpoint command"
 grep -q 'PASSING_REVIEW_VERDICTS' "$ROOT/bin/raoctl.py" || fail "runtime must parse passing review verdicts"
 grep -q 'manual /rao:complete override' "$ROOT/bin/raoctl.py" || fail "runtime must mark manual completion override"
 grep -q 'Narrative-mislead risk' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill must check narrative-mislead risk"
 grep -q 'Treat executor summaries' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill must treat summaries as evidence only"
+! grep -q 'teamwork-design` mode: plan' "$ROOT/bin/raoctl.py" \
+  || fail "runtime continuation prompt must not mention retired teamwork-design skill"
 
 tmp_runtime="$(mktemp -d)"
 first_stop="$tmp_runtime/first-stop.json"
@@ -417,6 +438,47 @@ Reviewer checks runtime smoke evidence.
 ## Subagent Routing
 
 - Worker: main agent | scope: smoke fixture | tier: standard | context: local | order: serial | why: compact.
+""", encoding="utf-8")
+PY
+}
+write_compact_plan() {
+  local path="$1"
+  python3 - "$path" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+path.parent.mkdir(parents=True, exist_ok=True)
+path.write_text("""# Runtime Compact Memo
+
+## Goal
+
+Validate the compact execution memo path.
+
+## Scope
+
+- Validate compact plan linting only.
+
+## Implementation Steps
+
+1. Record the compact memo.
+
+## Verification
+
+- Command: runtime compact smoke command.
+- Expected Results: command exits with status 0.
+
+## Stop Rules
+
+- Stop on failed smoke evidence.
+
+## Worker Handoff
+
+Worker executes the compact fixture only.
+
+## Review Handoff
+
+Reviewer checks compact smoke evidence.
 """, encoding="utf-8")
 PY
 }
@@ -523,6 +585,7 @@ uppercase_review_audit='<completion_audit>
 python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 2 --completion-promise RAO_GOAL_COMPLETE 'verify runtime continuation' --cwd "$tmp_runtime" >/dev/null
 mkdir -p "$tmp_runtime/docs/teamwork/plans"
 write_valid_plan "$tmp_runtime/docs/teamwork/plans/runtime-smoke.md"
+write_compact_plan "$tmp_runtime/docs/teamwork/plans/compact-smoke.md"
 printf '# Weak plan\n\n## Goal\n\nTBD\n' > "$tmp_runtime/docs/teamwork/plans/weak.md"
 printf '# Wrong path plan\n' > "$tmp_runtime/runtime-smoke.md"
 ! python3 "$ROOT/bin/raoctl.py" plan --session-id s1 --cwd "$tmp_runtime" docs/teamwork/plans/missing.md >/dev/null 2>&1 \
@@ -533,6 +596,8 @@ printf '# Wrong path plan\n' > "$tmp_runtime/runtime-smoke.md"
   || fail "plan command must reject project-external artifacts"
 ! python3 "$ROOT/bin/raoctl.py" plan --session-id s1 --cwd "$tmp_runtime" docs/teamwork/plans/weak.md >/dev/null 2>&1 \
   || fail "plan command must reject weak plan artifacts"
+python3 "$ROOT/bin/raoctl.py" plan --session-id s1 --cwd "$tmp_runtime" docs/teamwork/plans/compact-smoke.md >/dev/null \
+  || fail "plan command must accept compact execution memo artifacts"
 python3 "$ROOT/bin/raoctl.py" plan --session-id s1 --cwd "$tmp_runtime" docs/teamwork/plans/runtime-smoke.md >/dev/null
 smoke_sha="$(plan_sha "$tmp_runtime/docs/teamwork/plans/runtime-smoke.md")"
 python3 "$ROOT/bin/raoctl.py" status --session-id s1 --cwd "$tmp_runtime" | grep -q '^Active plan artifact: docs/teamwork/plans/runtime-smoke.md$' \

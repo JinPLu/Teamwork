@@ -60,10 +60,11 @@ completion status without at least one direct evidence cross-check.
   primary sources. If web, MCP, credentials, or network access is unavailable,
   record that limitation in the artifact and clearly mark external evidence as
   missing rather than silently relying on local guesses.
-- Fan out subagents only after splitting the research into independent tracks
-  that can run in parallel without blocking the main agent's immediate next
-  step. Each track needs a specific question, evidence scope, return format, and
-  confidence/dissent request.
+- Fan out subagents after splitting research into independent tracks that can
+  run in parallel without blocking the main agent's immediate next step. When 2
+  or more separable evidence questions exist, prefer parallel Explorer tracks
+  and keep the main agent focused on synthesis and the next non-overlapping
+  decision.
 - Ask subagents to return condensed evidence, confidence, dissent, and open
   questions instead of large raw logs.
 - Default research fan-out is at most 3 parallel subagents unless the user gives
@@ -72,18 +73,19 @@ completion status without at least one direct evidence cross-check.
 
 ## Research Artifact Requirement
 
-Always write a durable research artifact to disk before handing off to planning
-or reporting completion:
+Write a durable research artifact when findings will be reused, feed a durable
+plan, support goal-mode iteration, or justify a non-trivial recommendation:
 
 ```text
 docs/teamwork/research/YYYY-MM-DD-<slug>.md
 ```
 
-Use the Write tool to create the file. The only exception is a single direct
-lookup whose entire finding fits in one line and no later plan, execution,
-review, or goal iteration will need it. If in doubt, write the artifact.
+For a single-turn lookup, lightweight diagnosis, or evidence that is fully
+captured in the immediate answer and will not be reused, cite the evidence in
+the response instead of writing a file. If reuse is likely, write the artifact.
 
-Do not output the handoff block until the file exists at the expected path.
+When an artifact is required, do not output the handoff block until the file
+exists at the expected path.
 
 Before starting new research, search existing `docs/teamwork/research/`
 artifacts for the same topic. Reuse, update, or explicitly cite the existing
@@ -110,8 +112,8 @@ iterations do not repeat the same searches.
    budget.
 8. Preserve dissent. Label minority findings as blocker, warning, or follow-up.
 9. Write or update the research artifact at `docs/teamwork/research/YYYY-MM-DD-<slug>.md`
-   using the Write tool. Do this before outputting the handoff block. Confirm
-   the file exists at the expected path.
+   when the artifact requirement applies. Confirm the file exists before
+   outputting an artifact-backed handoff.
 10. Stop when a direction is selected, evidence is insufficient, budget is
    exhausted, or only protected/ambiguous decisions remain.
 

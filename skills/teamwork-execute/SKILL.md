@@ -43,7 +43,8 @@ choices, or external evidence gaps, stop and return to `teamwork-research` or
 Delegated Worker prompts must include the accepted plan source, exact file
 ownership, allowed modification range, Teamwork model tier when relevant,
 context strategy, verification expectation, and a reminder not to expand scope.
-For artifact-backed work, include the durable plan artifact path. Codex native
+Writing Workers must have disjoint file ownership or worktree isolation. For
+artifact-backed work, include the durable plan artifact path. Codex native
 dispatch fields are derived from the router mapping unless a non-default native
 override is itself part of the handoff.
 

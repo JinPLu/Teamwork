@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Teamwork packages an evidence-first agent collaboration workflow for Claude Code, Codex, and Cursor. It splits larger coding-agent work into research, durable planning, scoped execution, fresh-context review, and verified completion.
+Teamwork packages an evidence-first agent collaboration workflow for Claude Code, Codex, and Cursor. It splits larger coding-agent work into research, durable planning, scoped execution, fresh-context review, and verified completion while keeping progress anchored to the active objective, execution memo, verification, and review result.
 
 The behavioral source of truth is the skill set under `skills/`. Keep detailed workflow instructions in the relevant `SKILL.md` files; do not duplicate full skill bodies into platform docs or rules.
 
@@ -26,8 +26,8 @@ For runtime-controller focused checks, the relevant smoke tests are embedded in 
 - `skills/using-teamwork/SKILL.md` is the automatic entry skill for ordinary coding, research, planning, implementation, or review work.
 - `skills/teamwork/SKILL.md` is the public router. It maps user intent to the narrowest stage skill and defines shared evidence, subagent, routing, and durable-plan contracts.
 - `skills/teamwork-goal/SKILL.md` owns autonomous convergence mode (`mode: goal`) for bounded iteration until verified success, budget exhaustion, repeated no-progress, or blocker.
-- `skills/teamwork-research/SKILL.md` handles local project evidence, mainline understanding, external calibration, options, maintained research artifacts under `docs/teamwork/research/YYYY-MM-DD-<slug>.md`, and research refresh.
-- `skills/teamwork-plan/SKILL.md` converts a selected direction or research artifact into a lightweight or durable execution plan. Durable Markdown artifacts under `docs/teamwork/plans/YYYY-MM-DD-<slug>.md` are required for goal-mode, high-risk, cross-agent, cross-turn, ambiguous, or explicitly requested repository plans.
+- `skills/teamwork-research/SKILL.md` handles local project evidence, mainline understanding, external calibration, options, reusable research artifacts under `docs/teamwork/research/YYYY-MM-DD-<slug>.md`, and research refresh.
+- `skills/teamwork-plan/SKILL.md` converts a selected direction or research artifact into a lightweight or durable execution memo. Durable Markdown artifacts under `docs/teamwork/plans/YYYY-MM-DD-<slug>.md` are required for goal-mode, high-risk, cross-agent, cross-turn, ambiguous, or explicitly requested repository plans.
 - `skills/teamwork-execute/SKILL.md` executes an accepted durable plan with minimal edits and focused verification; it should not reopen product behavior or architecture decisions.
 - `skills/teamwork-review/SKILL.md` handles plan review (`mode: plan`) and execution review (`mode: execution`) against direct evidence.
 - `commands/teamwork/*.md` provides Claude `/teamwork:*` slash commands. `commands/rao/*.md` preserves compatibility aliases.
@@ -42,8 +42,8 @@ For runtime-controller focused checks, the relevant smoke tests are embedded in 
 - For non-trivial research, use external calibration from official docs, papers, release notes, upstream issues, or other primary sources when current platform, model, dependency, upstream, or field practice could affect the answer. Do not keep making local guesses after a focused fix has no evidence delta.
 - Important findings should distinguish `observed`, `inferred`, and `claimed` evidence, matching the router and review skill contracts.
 - Main agent owns scope, synthesis, conflict resolution, verification, and final acceptance. Subagents provide bounded evidence, implementation, or review products and do not automatically pass their own work.
-- Default research/review fan-out is at most 3 parallel subagents unless the user gives a larger budget.
-- For Teamwork plans, `update_plan` or task widgets are transient progress only. Use concise chat/native checklists for bounded low-risk work; use durable Markdown plan artifacts for goal-mode, high-risk, cross-agent, cross-turn, ambiguous, or explicitly requested repository plans. Use and maintain durable research artifacts under `docs/teamwork/research/` for non-trivial research so later plan, execute, review, or goal iterations do not repeat the same investigation.
+- Default research/review fan-out is at most 3 parallel subagents unless the user gives a larger budget. For non-lightweight work, split independent tracks first and dispatch useful subagents early while the main agent continues non-overlapping work.
+- For Teamwork plans, `update_plan` or task widgets are transient progress only. Use concise chat/native checklists for bounded low-risk work; use durable Markdown plan artifacts for goal-mode, high-risk, cross-agent, cross-turn, ambiguous, or explicitly requested repository plans. Use research artifacts under `docs/teamwork/research/` when findings will be reused, and final reports under `docs/teamwork/reports/` only for non-trivial conclusions.
 - Claude goal auto-completion requires the configured completion promise such as `<promise>RAO_GOAL_COMPLETE</promise>` and a structured `<completion_audit>` in the same final assistant message. The audit must include a `plan_artifact` and SHA matching runtime state. `/teamwork:complete` and `/rao:complete` are manual overrides and are logged as not automatically verified.
 
 ## Platform Notes
@@ -54,11 +54,11 @@ For runtime-controller focused checks, the relevant smoke tests are embedded in 
 
 ## Plan Artifact Format
 
-Durable plan artifacts live under `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`. The `raoctl.py plan` command validates that the artifact exists under `docs/teamwork/plans/` (paths outside this directory are rejected) and contains all of the following H2 sections:
+Durable plan artifacts live under `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`. The `raoctl.py plan` command validates that the artifact exists under `docs/teamwork/plans/` (paths outside this directory are rejected) and contains either the compact execution memo sections or the legacy full sections.
 
-`Goal`, `Requirements Mapping`, `Evidence Read`, `Scope`, `Implementation Steps`, `Verification`, `Risks`, `Stop Rules`, `Worker Handoff`, `Review Handoff`, `Subagent Routing`
+Compact sections: `Goal`, `Scope`, `Implementation Steps`, `Verification`, `Stop Rules`, `Worker Handoff`, `Review Handoff`
 
-Missing any section causes `raoctl.py plan` to reject the artifact.
+Legacy full sections add `Requirements Mapping`, `Evidence Read`, `Risks`, and `Subagent Routing`. Missing compact sections causes `raoctl.py plan` to reject the artifact.
 
 ## Style and Maintenance
 

@@ -32,6 +32,9 @@ the planner's or executor's summary.
   and preserve any dissent from direct inspection.
 - Treat executor summaries, `codex review`, CI summaries, and other tool output
   as evidence inputs, never as the final verdict by themselves.
+- For non-trivial execution in Codex, prefer fresh-context review when
+  available. If no separate subagent is practical, run a distinct local review
+  pass and say it was local.
 
 ## mode: plan
 
@@ -67,6 +70,8 @@ Check:
   routing must be specific enough for execution to derive native dispatch
   fields from the router mapping. Design work should not be assigned to Worker,
   and high-risk plan or execution review should not use a low-capability tier.
+  For non-lightweight plans, the routing should identify independent tracks or
+  explain why there is no useful parallel track.
   If subagents are intentionally skipped for durable, delegated, high-risk, or
   goal-mode work, the plan explains why main-agent continuity is sufficient.
 

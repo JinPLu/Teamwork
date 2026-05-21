@@ -8,8 +8,10 @@ description: Use when starting any coding, debugging, research, planning, implem
 Use this lightweight preference router at the start of normal coding-agent work.
 Its purpose is to decide whether Teamwork adds value without blocking the host
 agent from using native strengths. In Codex, that means using native planning
-UI, subagents, goals, sandbox approvals, and reviews instead of emulating
-Claude hook behavior.
+  UI, subagents, goals, sandbox approvals, and reviews instead of emulating
+  Claude hook behavior. Keep progress anchored to the active objective, plan or
+  execution memo, verification target, and review result instead of maintaining
+  long process state in the main thread.
 
 ## Rule
 
@@ -34,8 +36,10 @@ When running in Codex:
 
 - Keep simple tasks native.
 - Use `update_plan` only for visible progress; it is not the durable plan.
-- Use Codex subagents only for independent evidence, scoped Worker execution,
-  or fresh-context review that materially improves the work.
+- Use Codex subagents for independent evidence, scoped Worker execution, or
+  fresh-context review. For non-lightweight work, split independent tracks
+  first and dispatch useful subagents early while the main thread continues
+  non-overlapping work.
 - Use native Codex goals only for explicit autonomous convergence requests or
   an already active goal.
 - Use sandbox escalation only when a required command is blocked; do not bypass
@@ -61,7 +65,8 @@ Before routing or staying native for non-trivial work, answer four questions:
 2. What is the smallest sufficient path that solves the user's actual goal?
 3. What exact files, claims, or decisions are in scope, and what is out of
    scope?
-4. What concrete check, artifact, or observation will prove the work succeeded?
+4. What progress anchor, concrete check, artifact, or observation will prove
+   the work succeeded?
 
 If these answers are unclear, route to `teamwork-research` or `teamwork-plan`.
 If they are obvious and the work is simple, continue in native flow without

@@ -13,8 +13,8 @@ must use the narrower Teamwork stage skill instead.
 Goal mode is intentionally stricter than normal Teamwork. The durable plan,
 verification, review, and checkpoint/audit requirements below are safeguards for
 autonomous continuation, not requirements for ordinary one-shot tasks. In Codex,
-goal mode is protocol-backed through native Codex goals and explicit artifacts;
-in Claude Code plugin mode, it is Stop-hook-backed through `raoctl.py`.
+goal mode is protocol-backed through native Codex goals and explicit progress
+anchors; in Claude Code plugin mode, it is Stop-hook-backed through `raoctl.py`.
 
 The goal controller owns iteration and acceptance. It does not let one
 executor self-declare completion. Every completion claim must be anchored to a
@@ -109,6 +109,9 @@ raoctl.py checkpoint \
 
 9. Decide: accept only if verification and execution review pass; otherwise
    continue with a new hypothesis, stop at budget, or report a blocker.
+10. For non-trivial completed goals, write or update a concise final report at
+    `docs/teamwork/reports/YYYY-MM-DD-<slug>.md` when the conclusion needs to
+    be reused outside the current conversation.
 
 ## Autonomous Discipline
 

@@ -48,6 +48,15 @@ PLAN_REQUIRED_SECTIONS = (
     "Review Handoff",
     "Subagent Routing",
 )
+COMPACT_PLAN_REQUIRED_SECTIONS = (
+    "Goal",
+    "Scope",
+    "Implementation Steps",
+    "Verification",
+    "Stop Rules",
+    "Worker Handoff",
+    "Review Handoff",
+)
 
 
 class RaoError(Exception):
@@ -348,9 +357,13 @@ def markdown_sections(text: str) -> dict[str, str]:
 def lint_plan_artifact(path: Path) -> None:
     text = path.read_text(encoding="utf-8")
     sections = markdown_sections(text)
-    missing = [section for section in PLAN_REQUIRED_SECTIONS if not sections.get(section)]
-    if missing:
-        raise RaoError(f"plan artifact is missing required non-empty section(s): {', '.join(missing)}")
+    legacy_missing = [section for section in PLAN_REQUIRED_SECTIONS if not sections.get(section)]
+    compact_missing = [section for section in COMPACT_PLAN_REQUIRED_SECTIONS if not sections.get(section)]
+    if legacy_missing and compact_missing:
+        raise RaoError(
+            "plan artifact is missing required non-empty section(s): "
+            + ", ".join(compact_missing)
+        )
     verification = sections["Verification"]
     if "Expected" not in verification:
         raise RaoError("plan artifact Verification section must include expected results")
@@ -477,7 +490,7 @@ Goal state:
 Do not ask the user during autonomous iteration unless blocked by destructive risk, auth/credentials, missing required external resources, sacred-boundary conflict, or an ambiguity that changes public behavior/contracts.
 
 Before stopping, audit completion against direct evidence:
-- Read the active plan artifact first. If it is not set or unreadable, create or repair a durable plan with `teamwork-design` mode: plan, then record it in goal state before execution.
+- Read the active plan artifact first. If it is not set or unreadable, create or repair a durable plan with `teamwork-plan` mode: plan, then record it in goal state before execution.
 - Map each explicit requirement, command, artifact, test, and deliverable to evidence.
 - Run or inspect the focused verification before judging success.
 - If verification fails, form the next hypothesis and continue within budget.

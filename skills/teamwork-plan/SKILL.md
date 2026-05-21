@@ -82,9 +82,9 @@ Default durable artifact path:
 docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 ```
 
-The durable artifact is the execution and review source of truth when it exists.
-`update_plan` may mirror progress as a transient checklist, but it must never be
-the only plan for durable-required work.
+The durable artifact is an execution memo and review source of truth when it
+exists. `update_plan` may mirror progress as a transient checklist, but it must
+never be the only plan for durable-required work.
 
 ## Workflow
 
@@ -108,8 +108,9 @@ the only plan for durable-required work.
 11. Define Subagent Routing when subagents are used, or when the plan is
     durable, delegated, high-risk, or goal-mode: conceptual role, task scope,
     Teamwork model tier, context strategy, parallel or serial ordering, and why
-    each role is needed. For lightweight plans with no subagents, omit the
-    routing section instead of explaining ceremony away.
+    each role is needed. For non-lightweight plans, explicitly identify
+    independent tracks or state why no useful parallel track exists. For
+    lightweight plans with no subagents, omit the routing section.
     Codex native dispatch fields are derived at dispatch time from the router
     mapping; include them in a plan only when a non-default native override is
     itself part of the decision.
@@ -191,4 +192,7 @@ Subagent Routing:
 
 For lightweight plans, keep the output compact while still including Goal,
 Scope, Steps, Verification, Stop Rules, and Review Need. For durable artifact
-plans, include all sections above in the artifact.
+plans, use a compact execution memo with Goal, Scope, Implementation Steps,
+Verification, Stop Rules, and Worker/Review handoffs. Add Requirements Mapping,
+Evidence Read, Risks, and Subagent Routing when they are needed for high-risk,
+cross-agent, cross-turn, or goal-mode work.
