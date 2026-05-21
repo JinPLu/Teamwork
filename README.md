@@ -52,6 +52,7 @@ Teamwork 在 Codex 里是 **Codex-native, not hook-emulated**：
 
 - `update_plan` 只是临时进度条，不是 durable plan。
 - Codex subagents 用来做独立 Explorer、Worker 或 fresh-context review；非轻量任务先拆独立轨道，主线程继续做不重叠工作。
+- Teamwork 激活后，视为用户已授权对独立的非轻量轨道自动分配 subagent；不需要等用户额外说 “fan out”。
 - Native Codex goals 只在你明确要求自主收敛或已有 active goal 时使用。
 - Sandbox、网络和权限按 Codex approval 模型走，不绕过。
 - Durable artifacts 是跨 turn、跨 agent 的事实锚点，不是 Codex goal state。

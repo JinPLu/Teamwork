@@ -26,6 +26,11 @@ summaries, and tool output as evidence to verify, not facts by themselves.
   Explorer/Worker/Reviewer agents early, and keep the main thread on
   non-overlapping work. Explorer and Worker map to native agent types; Designer,
   Judge, and Reviewer are `default` agents with role-specific prompts.
+- Automatic delegation: when Teamwork is active, the user has granted standing
+  authorization for automatic subagent delegation on independent
+  non-lightweight tracks. Do not wait for the phrase "fan out"; only ask when a
+  dispatch needs new credentials, destructive actions, unclear write ownership,
+  or another approval-gated capability.
 - Model routing: use capability tiers, not fixed model IDs. `fast` maps to low
   reasoning, `standard` to medium, and `high reasoning` to high.
 - Goals: use native Codex goals only when explicitly requested or when

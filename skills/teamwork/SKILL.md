@@ -91,6 +91,12 @@ provide bounded work products:
 - Reviewer: fresh-context execution review against diffs, tests, logs, and
   artifacts.
 
+When Teamwork is active, treat the user as granting standing authorization for
+automatic subagent delegation on independent non-lightweight tracks. Do not ask
+for extra "fan out" confirmation. Ask only when dispatch would need new
+credentials, destructive actions, unclear write ownership, or another
+approval-gated capability.
+
 For non-lightweight work, first split the next decision into independent tracks.
 Fan out when 2 or more tracks can run without blocking the main agent's
 immediate next step. Good fan-out has a specific question, bounded evidence

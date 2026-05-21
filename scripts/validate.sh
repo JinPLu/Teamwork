@@ -172,6 +172,20 @@ grep -q 'docs/teamwork/reports/YYYY-MM-DD-<slug>.md' "$ROUTER" \
 grep -q 'transient UI-only checklist' "$ROUTER" || fail "router must mark update_plan as transient UI-only"
 grep -q 'native flow remains the default for simple Claude Code tasks' "$ROUTER" \
   || fail "router must preserve native Claude Code flow for simple tasks"
+grep -q 'automatic subagent delegation' "$ROOT/skills/teamwork/SKILL.md" \
+  || fail "router must authorize automatic subagent delegation on non-lightweight tracks"
+grep -q 'extra "fan out" confirmation' "$ROOT/skills/teamwork/SKILL.md" \
+  || fail "router must not require explicit fan-out confirmation"
+grep -q 'automatic subagent delegation' "$ROOT/skills/using-teamwork/SKILL.md" \
+  || fail "entry skill must authorize automatic subagent delegation"
+grep -q 'Teamwork 激活后，视为用户已授权对独立的非轻量轨道自动分配 subagent' "$ROOT/README.md" \
+  || fail "README must document automatic delegation"
+grep -q 'automatic subagent delegation' "$ROOT/CODEX.md" \
+  || fail "CODEX.md must document automatic delegation"
+grep -q 'standing authorization for automatic subagent delegation' "$ROOT/AGENTS.md" \
+  || fail "AGENTS.md must document automatic delegation"
+grep -q 'standing authorization for automatic subagent delegation' "$ROOT/CLAUDE.md" \
+  || fail "CLAUDE.md must document automatic delegation"
 grep -q 'docs/teamwork/plans/YYYY-MM-DD-<slug>.md' "$ROOT/skills/teamwork-plan/SKILL.md" \
   || fail "plan skill must define the durable plan path"
 grep -q 'Use the lightest planning form that preserves correctness' "$ROOT/skills/teamwork-plan/SKILL.md" \
