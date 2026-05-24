@@ -52,8 +52,9 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 7. Choose the smallest producer-side change.
 8. Write ordered implementation steps with exact paths when known.
 9. Define focused verification, Expected Results, risks, and stop rules.
-10. Define Subagent Routing for durable, delegated, high-risk, or goal-mode
-   work; otherwise state why main-agent continuity is sufficient.
+10. Define Subagent Routing for durable, delegated, high-risk, goal-mode, or
+    2+ independent-track work; otherwise state why main-agent continuity is
+    cheaper or safer.
 11. Add Worker Handoff and Review Handoff when durable/delegated/high-risk.
 12. Codex native dispatch fields are derived at dispatch time from the accepted
     routing policy.

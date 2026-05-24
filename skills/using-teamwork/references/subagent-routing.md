@@ -22,16 +22,19 @@ routing. Do not load it for simple native-flow work.
 - `high reasoning`: ambiguous requirements, high-risk plan review, final
   acceptance, regression analysis, or safety/security boundaries.
 
-Default to at most 3 parallel research/review subagents. The main agent owns
-synthesis, conflict resolution, verification, and final acceptance.
+Default to at most 3 parallel research/review subagents. When 2 or more
+independent tracks exist, dispatch by default and keep only condensed evidence
+in the main context. If not dispatching, state why local execution is cheaper
+or safer. The main agent owns synthesis, conflict resolution, verification, and
+final acceptance.
 
 ## Parallel Execution
 
-For non-lightweight implementation, prefer Worker subagents when planned work
-has disjoint file ownership or independent components. The plan should name
-each track, owned paths, allowed edits, verification expectation, and merge
-order. Dispatch Workers early and keep the main thread on orchestration,
-integration, verification, and review.
+For non-lightweight implementation, dispatch Worker subagents by default when
+planned work has disjoint file ownership or independent components. The plan
+should name each track, owned paths, allowed edits, verification expectation,
+and merge order. Dispatch Workers early and keep the main thread on
+orchestration, integration, verification, and review.
 
 Use local main-thread execution instead when the edit is small, tightly coupled,
 requires one continuous mental model, has unclear ownership, or would cause

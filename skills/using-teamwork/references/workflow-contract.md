@@ -42,7 +42,8 @@ properties, git diff, or primary external evidence.
   raw subagent transcripts into the main context; ask for condensed evidence,
   confidence, dissent, and open questions.
 - Default to at most 3 parallel research or review subagents unless the user
-  gives a larger budget.
+  gives a larger budget. Independent-track default dispatch preserves context
+  by keeping raw work outside the main thread.
 
 ## Workflow Pattern Selection
 
@@ -50,7 +51,7 @@ Choose the smallest workflow pattern that preserves correctness:
 
 - Fixed sequence with clear steps: use a lightweight plan.
 - Distinct categories of work: route by stage instead of forcing one loop.
-- Independent evidence questions: use parallel Explorer tracks when useful.
+- Independent evidence questions: default to parallel Explorer tracks.
 - Unpredictable multi-file implementation: use an orchestrator/Worker pattern
   with disjoint ownership or worktree isolation.
 - Clear acceptance plus retry need: use a review or goal loop with explicit
@@ -87,12 +88,12 @@ Subagents provide independent context, parallel evidence, isolated execution, or
 fresh review. The main agent owns scope, synthesis, conflict resolution,
 verification, and final acceptance.
 
-Subagent authorization is Proposal/Plan Routed. An accepted Goal Proposal or
-durable plan with Subagent Routing authorizes the listed independent tracks.
-Ask again when dispatch needs credentials, destructive actions, unclear write
-ownership, or another approval-gated capability.
+Subagent authorization is Proposal/Plan Routed. An accepted Goal Proposal,
+durable plan with Subagent Routing, or explicit user request authorizes listed
+independent tracks. Ask again when dispatch needs credentials, destructive
+actions, unclear write ownership, or another approval-gated capability.
 
-For non-lightweight work, split independent tracks first. Use subagents when 2
-or more tracks can run without blocking the next local step; keep work local
-when continuity, tight coupling, or overlapping ownership makes delegation
-unsafe.
+For non-lightweight work, split independent tracks first. When 2 or more tracks
+can run without blocking the next local step, dispatch subagents by default. If
+you keep work local, state the reason: tight coupling, overlapping ownership,
+small scope, unavailable tool, or higher context cost than benefit.

@@ -16,7 +16,7 @@ Teamwork 是一个 **Codex-only skill package**。Codex native capabilities are 
 | 更好的原生 goals | 不清晰的自主任务先生成聊天窗口里的 `Goal Proposal`。用户确认后，用其中的 `Native Codex Goal Text` 创建 Codex 原生 goal。失败尝试会回到 research + plan adequacy，而不是过早 block。 |
 | Artifact memory | `research/`、`plans/`、`reports/` 保存可复用证据、执行 memo、滚动尝试、验证、review 和 routing 决策，避免重复调查或把聊天上下文撑大。 |
 | 检索头 | Durable artifacts 以 type、status、updated date、search keys、abstract 和 linked artifacts 开头，方便未来 agent 先定位正确记忆，再做全文搜索。 |
-| Subagent routing | Goal proposals 和 durable plans 只在并行上下文有价值时命名 Explorer、Worker、Reviewer tracks。轻量任务不会强制委派。 |
+| Subagent routing | Goal proposals 和 durable plans 为 2+ 独立 tracks 默认命名 Explorer、Worker、Reviewer；轻量或强耦合任务说明不委派理由。 |
 
 ## Skill Map
 
@@ -37,7 +37,7 @@ Teamwork 是一个 **Codex-only skill package**。Codex native capabilities are 
 |---|---|
 | Native goal | 自主目标和生命周期的 source of truth。Teamwork 在 `create_goal` 前设计 goal、证据、scope、retry policy 和 acceptance checks。 |
 | `update_plan` | 只表示可见进度。它不是 durable execution spec、review target 或 completion proof。 |
-| Subagents | 由已接受的 Goal Proposal 或 durable plan 中的 Subagent Routing 授权。用于独立证据、scoped Worker execution 和 fresh-context review。 |
+| Subagents | 由已接受的 Goal Proposal、durable plan Subagent Routing 或用户明确请求授权。2+ 独立 tracks 默认分发，除非本地执行更便宜或更安全。 |
 | Review | Codex review 输出可以作为证据，但完成判断仍必须映射到 requirements、diff、tests、artifacts 和 acceptance criteria。 |
 | Sandbox/permissions | 使用 Codex 原生 approval 和 sandbox model。Teamwork 只要求 boundaries 和 risks 明确。 |
 | Automations/heartbeat | 使用 Codex 原生 automation 或 thread heartbeat 处理 recurring checks 或 later continuation。不要把 schedule 写进 Teamwork artifacts。 |

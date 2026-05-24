@@ -338,6 +338,18 @@ grep_required '`high reasoning` -> `reasoning_effort:"high"`' "$ROOT/skills/usin
   "subagent routing reference must map high reasoning tier"
 grep_required 'Do not combine' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
   "subagent routing reference must reject invalid full-history routing"
+grep_required 'Independent-track default dispatch' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must define independent-track default dispatch"
+grep_required 'dispatch by default' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
+  "subagent routing reference must default-dispatch independent tracks"
+grep_required 'Default to parallel Explorer subagents' "$ROOT/skills/teamwork-research/SKILL.md" \
+  "research skill must default-dispatch independent Explorer tracks"
+grep_required '2+ independent-track work' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan skill must route independent tracks for subagent planning"
+grep_required 'dispatch parallel Worker subagents by default' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  "execute skill must default-dispatch independent Worker tracks"
+grep_required 'Default to fresh-context review' "$ROOT/skills/teamwork-review/SKILL.md" \
+  "review skill must default to fresh-context review for non-trivial execution"
 grep_required 'Research + Plan Adequacy Gate' "$ROOT/skills/using-teamwork/references/goal-iteration.md" \
   "goal iteration reference must define failure gate"
 grep_required 'Research Reuse' "$ROOT/skills/using-teamwork/references/goal-iteration.md" \

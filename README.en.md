@@ -16,7 +16,7 @@ Simple tasks stay native. Use Teamwork only when evidence, planning, review, del
 | Better native goals | Unclear autonomous requests first get a chat-window `Goal Proposal`. After human approval, its `Native Codex Goal Text` is used with Codex native goal state. Failed attempts return to research + plan adequacy instead of early block. |
 | Artifact memory | `research/`, `plans/`, and `reports/` preserve reusable evidence, execution memos, rolling attempts, verification, review, and routing decisions so work does not repeat or bloat the chat context. |
 | Retrieval headers | Durable artifacts start with type, status, updated date, search keys, abstract, and linked artifacts so future agents can find the right memory before full-text search. |
-| Subagent routing | Goal proposals and durable plans name Explorer, Worker, and Reviewer tracks when parallel context helps. Lightweight tasks do not force delegation. |
+| Subagent routing | Goal proposals and durable plans name Explorer, Worker, and Reviewer tracks by default for 2+ independent tracks. Lightweight or tightly coupled tasks state why they stay local. |
 
 ## Skill Map
 
@@ -37,7 +37,7 @@ Simple tasks stay native. Use Teamwork only when evidence, planning, review, del
 |---|---|
 | Native goal | Source of truth for autonomous target and lifecycle. Teamwork designs the goal, evidence, scope, retry policy, and acceptance checks before `create_goal`. |
 | `update_plan` | Visible progress only. It is not a durable execution spec, review target, or completion proof. |
-| Subagents | Authorized by accepted Goal Proposal or durable plan Subagent Routing. Use for independent evidence, scoped Worker execution, and fresh-context review. |
+| Subagents | Authorized by accepted Goal Proposal, durable plan Subagent Routing, or explicit user request. Dispatch by default for 2+ independent tracks unless local execution is cheaper or safer. |
 | Review | Codex review output can be evidence, but completion still maps to requirements, diff, tests, artifacts, and acceptance criteria. |
 | Sandbox/permissions | Use Codex native approval and sandbox model. Teamwork only requires boundaries and risks to be explicit. |
 | Automations/heartbeat | Use native Codex automation or thread heartbeat for recurring checks or later continuation. Do not encode schedules in Teamwork artifacts. |

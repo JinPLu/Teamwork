@@ -45,10 +45,10 @@ edits, verification, model tier when relevant, context strategy, and no scope
 expansion. Writing Workers need disjoint files or worktree isolation. For
 artifact-backed work, include the durable plan path.
 
-For non-lightweight execution, prefer parallel Worker subagents when the plan
-names independent tracks with disjoint file ownership. Dispatch early, keep the
-main thread on orchestration/integration, and wait only when the next merge or
-verification step depends on the result. If no useful parallel Worker track
+For non-lightweight execution, dispatch parallel Worker subagents by default
+when the plan names independent tracks with disjoint file ownership. Dispatch
+early, keep the main thread on orchestration/integration, and wait only when
+merge or verification depends on the result. If no useful parallel Worker track
 exists, preserve the plan's main-agent continuity rationale.
 
 ## Codex Routing Checks

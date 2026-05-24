@@ -37,8 +37,8 @@ Choose one disposition: reuse, update, or new.
 3. Split separable evidence questions into tracks such as local source,
    symptoms, artifacts, external constraints, alternatives, upstream reports,
    papers, or current best practices.
-4. Use parallel Explorer subagents when 2+ tracks can run independently;
-   otherwise keep the pass local.
+4. Default to parallel Explorer subagents when 2+ tracks can run independently;
+   otherwise state why local research is cheaper or safer.
 5. Read primary local evidence first; label key findings `observed`,
    `inferred`, or `claimed`.
 6. Use external calibration when current platform, dependency, model, API,

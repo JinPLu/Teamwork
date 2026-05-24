@@ -22,8 +22,8 @@ Read only as needed:
 ## Shared Rules
 
 - Choose `mode: plan` or `mode: execution`.
-- Prefer fresh-context review for non-trivial execution; otherwise run a
-  distinct local review pass and say it was local.
+- Default to fresh-context review for non-trivial execution; otherwise run a
+  distinct local review pass and say why local review is cheaper or safer.
 - Inspect primary evidence: source, diff, logs, tests, command output,
   artifacts, research, plan, and user constraints.
 - Label important evidence `observed`, `inferred`, or `claimed`.
