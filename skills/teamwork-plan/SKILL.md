@@ -51,13 +51,16 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
    verification that will prove it.
 6. Define in-scope, out-of-scope, and protected boundaries.
 7. Choose the smallest producer-side change.
-8. Write ordered implementation steps with exact paths when known.
-9. Define focused verification, Expected Results, risks, and stop rules.
-10. For 2+ independent-track work, define lightweight `Dispatch:` or durable
-    `Subagent Routing`; otherwise state why main-agent continuity is cheaper or
-    safer.
-11. Add Worker Handoff and Review Handoff when durable/delegated/high-risk.
-12. Codex native dispatch fields are derived at dispatch time from the accepted
+8. Run the Parallelization Gate before implementation steps: split independent
+   tracks first, or state why main-agent continuity is cheaper or safer.
+9. For 2+ independent-track work, define lightweight `Dispatch:` or durable
+   `Subagent Routing` with ownership, allowed edits, verification, merge order,
+   and cap/batch rationale.
+10. Write ordered implementation steps from the routing decision with exact
+    paths when known.
+11. Define focused verification, Expected Results, risks, and stop rules.
+12. Add Worker Handoff and Review Handoff when durable/delegated/high-risk.
+13. Codex native dispatch fields are derived at dispatch time from the accepted
     routing policy.
 
 ## Quality Gates
@@ -65,7 +68,9 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 - Every planned file traces to the goal.
 - No broad refactor, abstraction, formatting churn, or downstream cleanup
   unless required by evidence.
+- Non-lightweight plans evaluate split before implementation steps.
 - Verification has concrete commands, artifacts, checks, or expected behavior.
+- `Dispatch: none` requires a continuity rationale.
 - Durable plans have no `<...>`, `TODO`, `TBD`, or ellipsis tasks.
 - Goal-mode durable plans include all sections required by `plan-output.md`,
   including Search Keys and Abstract.

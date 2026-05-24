@@ -36,8 +36,9 @@ Read only as needed:
 Use `review-checks.md` to check scope, assumptions, requirements-to-evidence
 mapping, research grounding, verification design, risks, handoffs, and subagent
 routing. Return `revise` or `blocked` for missing durable artifacts,
-placeholders, vague verification, missing handoffs, unsafe routing, or protected
-contract changes outside scope.
+placeholders, vague verification, missing handoffs, unsafe routing, missing Parallelization Gate,
+serializing 2+ independent tracks without rationale, or protected contract
+changes outside scope.
 
 ## mode: execution
 

@@ -18,12 +18,16 @@ Check:
   Results are present.
 - Risks, stop rules, Worker Handoff, Review Handoff, and Subagent Routing are
   adequate.
+- Parallelization Gate appears before steps; 2+ independent tracks are routed,
+  or `Dispatch: none` gives a continuity rationale.
 
 Return `revise` or `blocked` when:
 
 - a required durable artifact is missing or unreadable;
 - placeholders, ellipsis tasks, vague tests, missing Expected Results, or
   missing handoffs remain;
+- a non-lightweight plan skips split before implementation steps or serializes
+  independent tracks without rationale;
 - routing uses invalid Codex fields, nonexistent agent types, or misleading
   inherited reasoning effort;
 - protected contracts, architecture, or public behavior change outside scope.

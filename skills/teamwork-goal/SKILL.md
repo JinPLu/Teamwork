@@ -30,7 +30,8 @@ complete target with constraints and done evidence.
 
 The approved `Native Codex Goal Text` is what goes into native Codex goal
 state. The proposal is not `update_plan`, not a durable plan, and not a
-completion claim.
+completion claim. Proposal `Subagent Routing` is initial only; `teamwork-plan`
+must rerun the Parallelization Gate.
 
 ## Inputs
 

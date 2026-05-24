@@ -42,7 +42,8 @@ and final acceptance.
 
 For non-lightweight implementation, dispatch Worker subagents by default when
 planned work has disjoint file ownership or independent components and passes
-Dispatch Economics. The plan should name each track, owned paths, allowed
+Dispatch Economics. Evaluate the split before implementation steps. The plan
+should name each track, owned paths, allowed
 edits, verification expectation, and merge order. Dispatch Workers early and
 keep the main thread on orchestration, integration, verification, and review.
 

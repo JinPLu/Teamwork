@@ -94,7 +94,7 @@ with Subagent Routing authorizes listed independent tracks. Ask again when
 dispatch needs credentials, destructive actions, unclear write ownership, or
 another approval-gated capability.
 
-For non-lightweight work, split independent tracks first. Dispatch when it
+For non-lightweight work, split before implementation steps. Dispatch when it
 improves cost, elapsed time, or quality. If you keep work local, state the
 reason: tight coupling, overlapping ownership, small scope, unavailable tool,
 or higher context cost than benefit.

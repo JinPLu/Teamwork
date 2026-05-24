@@ -282,6 +282,12 @@ grep_required 'Requirements Mapping' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must require requirements mapping"
 grep_required 'Search Keys' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must reference artifact header details"
+grep_required 'Parallelization Gate' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan skill must define the parallelization gate"
+grep_required 'split before implementation steps' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan skill must split before implementation steps"
+grep_required '`Dispatch: none` requires a continuity rationale' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan skill must require rationale for serial continuity"
 grep_required 'Abstract' "$ROOT/skills/using-teamwork/references/plan-output.md" \
   "plan output reference must include Abstract"
 grep_required 'Durable Plan Sections' "$ROOT/skills/using-teamwork/references/plan-output.md" \
@@ -292,6 +298,8 @@ grep_required 'codex review' "$ROOT/skills/teamwork-review/SKILL.md" \
   "review skill must mention codex review as evidence"
 grep_required 'Routing conformance' "$ROOT/skills/teamwork-review/SKILL.md" \
   "review skill must check routing conformance"
+grep_required 'missing Parallelization Gate' "$ROOT/skills/teamwork-review/SKILL.md" \
+  "review skill must reject plans without the parallelization gate"
 grep_required 'Execution Review' "$ROOT/skills/using-teamwork/references/review-checks.md" \
   "review checks reference must include execution review"
 grep_required 'sandbox' "$ROOT/skills/teamwork-execute/SKILL.md" \
@@ -340,6 +348,8 @@ grep_required 'Do not combine' "$ROOT/skills/using-teamwork/references/subagent-
   "subagent routing reference must reject invalid full-history routing"
 grep_required 'accepted lightweight plan with a Dispatch line' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must authorize lightweight Dispatch"
+grep_required 'split before implementation steps' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must require split before implementation steps"
 grep_required 'Explorer/Reviewer: default max 3' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
   "subagent routing reference must cap Explorer/Reviewer"
 grep_required 'Worker: no fixed numeric cap' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
@@ -352,6 +362,8 @@ grep_required 'batch or worktree isolation' "$ROOT/skills/using-teamwork/referen
   "subagent routing reference must define Worker batching or worktree isolation"
 grep_required 'local execution is cheaper or safer' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
   "subagent routing reference must preserve local execution escape hatch"
+grep_required 'Evaluate the split before implementation steps' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
+  "subagent routing reference must place split before implementation steps"
 grep_required 'Default to parallel Explorer subagents' "$ROOT/skills/teamwork-research/SKILL.md" \
   "research skill must default-dispatch independent Explorer tracks"
 grep_required 'lightweight `Dispatch:`' "$ROOT/skills/teamwork-plan/SKILL.md" \
@@ -362,8 +374,14 @@ grep_required 'Before dispatching more than 3 Workers' "$ROOT/skills/teamwork-ex
   "execute skill must require >3 Worker integration plan"
 grep_required 'Default to fresh-context review' "$ROOT/skills/teamwork-review/SKILL.md" \
   "review skill must default to fresh-context review for non-trivial execution"
-grep_required 'Dispatch: none | Explorer/Worker/Reviewer tracks, ownership, cap/batch reason' "$ROOT/skills/using-teamwork/references/plan-output.md" \
+grep_required 'Dispatch: none with rationale | Explorer/Worker/Reviewer tracks, ownership, cap/batch reason' "$ROOT/skills/using-teamwork/references/plan-output.md" \
   "lightweight plan template must include Dispatch line"
+grep_required '`Dispatch: none` requires rationale' "$ROOT/skills/using-teamwork/references/plan-output.md" \
+  "plan output reference must require rationale for serial continuity"
+grep_required 'Parallelization Gate appears before steps' "$ROOT/skills/using-teamwork/references/review-checks.md" \
+  "review checks must enforce routing before steps"
+grep_required 'serializes' "$ROOT/skills/using-teamwork/references/review-checks.md" \
+  "review checks must reject serializing independent tracks without rationale"
 grep_required 'Research + Plan Adequacy Gate' "$ROOT/skills/using-teamwork/references/goal-iteration.md" \
   "goal iteration reference must define failure gate"
 grep_required 'Research Reuse' "$ROOT/skills/using-teamwork/references/goal-iteration.md" \
