@@ -1,48 +1,50 @@
 # Teamwork
 
+[English](README.en.md)
+
 ![Teamwork workflow banner](assets/teamwork-hero.png)
 
-Teamwork is a **Codex-only skill package**. Codex native capabilities are the execution substrate: native goals, `update_plan`, subagents, review, sandbox approvals, automations, MCP, and plugins still do the work. Teamwork adds the collaboration policy that makes complex coding-agent work more reliable: evidence first, reusable artifacts, explicit subagent routing, reviewed execution, and goal iteration that does not stop early.
+Teamwork 是一个 **Codex-only skill package**。Codex native capabilities are the execution substrate：原生 goal、`update_plan`、subagents、review、sandbox approvals、automations、MCP 和 plugins 仍然负责实际执行。Teamwork 只补上一层协作策略，让复杂 coding-agent 工作更可靠：证据优先、可复用 artifacts、明确的 subagent routing、经过 review 的执行，以及不会过早停止的 goal iteration。
 
-Simple tasks stay native. Use Teamwork only when evidence, planning, review, delegation, or autonomous convergence materially improves correctness.
+简单任务继续走 Codex native flow。只有当证据、规划、审查、委派或自主收敛能明显提升正确性时，才启用 Teamwork。
 
-## Core Advantages
+## 核心优势
 
-| Advantage | What Teamwork Adds |
+| 优势 | Teamwork 增加什么 |
 |---|---|
-| Evidence first | Important claims must come from source, diffs, logs, tests, artifacts, or primary external sources. File names, README prose, comments, stale summaries, and `latest` labels are treated as claims until corroborated. |
-| Better native goals | Unclear autonomous requests first get a chat-window `Goal Proposal`. After human approval, its `Native Codex Goal Text` is used with Codex native goal state. Failed attempts return to research + plan adequacy instead of early block. |
-| Artifact memory | `research/`, `plans/`, and `reports/` preserve reusable evidence, execution memos, rolling attempts, verification, review, and routing decisions so work does not repeat or bloat the chat context. |
-| Retrieval headers | Durable artifacts start with type, status, updated date, search keys, abstract, and linked artifacts so future agents can find the right memory before full-text search. |
-| Subagent routing | Goal proposals and durable plans name Explorer, Worker, and Reviewer tracks when parallel context helps. Lightweight tasks do not force delegation. |
+| 证据优先 | 关键结论必须来自源码、diff、日志、测试、artifacts 或 primary external sources。文件名、README、注释、历史摘要和 `latest` 标签都先视为 claim，直到被直接证据确认。 |
+| 更好的原生 goals | 不清晰的自主任务先生成聊天窗口里的 `Goal Proposal`。用户确认后，用其中的 `Native Codex Goal Text` 创建 Codex 原生 goal。失败尝试会回到 research + plan adequacy，而不是过早 block。 |
+| Artifact memory | `research/`、`plans/`、`reports/` 保存可复用证据、执行 memo、滚动尝试、验证、review 和 routing 决策，避免重复调查或把聊天上下文撑大。 |
+| 检索头 | Durable artifacts 以 type、status、updated date、search keys、abstract 和 linked artifacts 开头，方便未来 agent 先定位正确记忆，再做全文搜索。 |
+| Subagent routing | Goal proposals 和 durable plans 只在并行上下文有价值时命名 Explorer、Worker、Reviewer tracks。轻量任务不会强制委派。 |
 
 ## Skill Map
 
-`using-teamwork` is the automatic entrypoint and `teamwork` is the router.
+`using-teamwork` 是自动入口，`teamwork` 是 router。
 
-| User Intent | Skill | Output |
+| 用户意图 | Skill | 输出 |
 |---|---|---|
-| Investigate causes, compare options, refresh stale assumptions | `teamwork-research` | Direct evidence, external calibration, reusable research artifact when warranted |
-| Plan a non-trivial change before editing | `teamwork-plan` | Lightweight checklist or durable execution memo |
-| Execute an accepted plan | `teamwork-execute` | Minimal scoped edits and focused verification |
-| Review a plan, diff, artifact, or result | `teamwork-review` | Evidence-based verdict with dissent and required fixes |
-| Iterate until a verifiable target is reached | `teamwork-goal` | Goal Proposal, native goal handoff, iteration loop, rolling report when needed |
+| 调查原因、比较方案、刷新过期假设 | `teamwork-research` | 直接证据、外部校准，以及必要时的 reusable research artifact |
+| 编辑前规划非平凡改动 | `teamwork-plan` | 轻量 checklist 或 durable execution memo |
+| 执行已接受的计划 | `teamwork-execute` | 最小范围改动和 focused verification |
+| 审查计划、diff、artifact 或结果 | `teamwork-review` | 基于证据的 verdict，保留 dissent 和 required fixes |
+| 持续迭代直到达到可验证目标 | `teamwork-goal` | Goal Proposal、native goal handoff、iteration loop，以及必要时的 rolling report |
 
 ## Codex Native Policy Map
 
-| Codex Capability | Teamwork Policy |
+| Codex 能力 | Teamwork 策略 |
 |---|---|
-| Native goal | Source of truth for autonomous target and lifecycle. Teamwork designs the goal, evidence, scope, retry policy, and acceptance checks before `create_goal`. |
-| `update_plan` | Visible progress only. It is not a durable execution spec, review target, or completion proof. |
-| Subagents | Authorized by accepted Goal Proposal or durable plan Subagent Routing. Use for independent evidence, scoped Worker execution, and fresh-context review. |
-| Review | Codex review output can be evidence, but completion still maps to requirements, diff, tests, artifacts, and acceptance criteria. |
-| Sandbox/permissions | Use Codex native approval and sandbox model. Teamwork only requires boundaries and risks to be explicit. |
-| Automations/heartbeat | Use native Codex automation or thread heartbeat for recurring checks or later continuation. Do not encode schedules in Teamwork artifacts. |
-| MCP/plugins | Prefer native Codex tools and connectors. Teamwork requires sources and limitations to be recorded when they affect decisions. |
+| Native goal | 自主目标和生命周期的 source of truth。Teamwork 在 `create_goal` 前设计 goal、证据、scope、retry policy 和 acceptance checks。 |
+| `update_plan` | 只表示可见进度。它不是 durable execution spec、review target 或 completion proof。 |
+| Subagents | 由已接受的 Goal Proposal 或 durable plan 中的 Subagent Routing 授权。用于独立证据、scoped Worker execution 和 fresh-context review。 |
+| Review | Codex review 输出可以作为证据，但完成判断仍必须映射到 requirements、diff、tests、artifacts 和 acceptance criteria。 |
+| Sandbox/permissions | 使用 Codex 原生 approval 和 sandbox model。Teamwork 只要求 boundaries 和 risks 明确。 |
+| Automations/heartbeat | 使用 Codex 原生 automation 或 thread heartbeat 处理 recurring checks 或 later continuation。不要把 schedule 写进 Teamwork artifacts。 |
+| MCP/plugins | 优先使用 Codex 原生 tools 和 connectors。若 source limits 影响决策，需要记录限制。 |
 
 ## Goal Proposal
 
-For unclear autonomous work, Teamwork returns this in chat before creating a native Codex goal:
+对不清晰的自主任务，Teamwork 会先在聊天里返回这个结构，再创建 Codex 原生 goal：
 
 ```text
 Goal Proposal:
@@ -58,11 +60,11 @@ Goal Proposal:
 - Native Codex Goal Text: <concise text prepared for create_goal>
 ```
 
-The proposal is a human review gate. The approved `Native Codex Goal Text` is what should be written into native Codex goal state.
+这个 proposal 是人工 review gate。被批准的 `Native Codex Goal Text` 才会写入 Codex 原生 goal state。
 
 ## Artifacts
 
-Artifacts are evidence memory, not a replacement for native Codex goal state. Create them only when they reduce repeated work or anchor cross-turn, cross-agent, high-risk, ambiguous, public/shared, explicitly planned, or goal-mode work.
+Artifacts 是证据记忆，不替代 Codex 原生 goal state。只有当它们能减少重复工作，或需要锚定 cross-turn、cross-agent、high-risk、ambiguous、public/shared、explicitly planned、goal-mode 工作时才创建。
 
 ```text
 docs/teamwork/research/YYYY-MM-DD-<slug>.md
@@ -70,41 +72,38 @@ docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 ```
 
-| Directory | Role | Review Question |
+| 目录 | 角色 | Review 问题 |
 |---|---|---|
-| `research/` | Reusable investigation and external calibration | What evidence was read, and which findings are observed/inferred/claimed? |
-| `plans/` | Execution memo and review source of truth | Are goal, scope, steps, verification, risks, handoffs, and routing clear? |
-| `reports/` | Goal rolling memory and durable conclusions | What was tried, verified, reviewed, reused, and routed? |
+| `research/` | 可复用调查和外部校准 | 读了什么证据？哪些 finding 是 observed / inferred / claimed？ |
+| `plans/` | 执行 memo 和 review source of truth | goal、scope、steps、verification、risks、handoffs、routing 是否清楚？ |
+| `reports/` | Goal rolling memory 和 durable conclusions | 尝试了什么、验证了什么、审查了什么、复用了什么、如何 routing？ |
 
-Every durable artifact begins with `Artifact Type`, `Status`, `Last Updated`,
-`Search Keys`, `Abstract`, and `Linked Artifacts`. The abstract helps retrieval;
-completion still requires direct evidence from commands, diffs, tests,
-artifacts, or inspected behavior.
+每个 durable artifact 都以 `Artifact Type`、`Status`、`Last Updated`、`Search Keys`、`Abstract` 和 `Linked Artifacts` 开头。`Abstract` 只帮助检索；完成判断仍然需要 commands、diffs、tests、artifacts 或 inspected behavior 等直接证据。
 
-These directories are gitignored unless the user intentionally asks to publish a specific artifact.
+这些目录默认被 gitignore，除非用户明确要求发布某个具体 artifact。
 
-## Install
+## 安装
 
 ```bash
 ./install.sh
 ```
 
-Equivalent explicit form:
+显式写法等价：
 
 ```bash
 ./install.sh codex
 ```
 
-Use `--link` during local development:
+本地开发时使用 symlink：
 
 ```bash
 ./install.sh --link
 ```
 
-Validate this repository:
+验证仓库：
 
 ```bash
 ./scripts/validate.sh
 ```
 
-Behavior lives in `skills/*/SKILL.md`; `README.md` and `CODEX.md` are concise runtime summaries.
+行为定义在 `skills/*/SKILL.md`；`README.md` 和 `CODEX.md` 只是简洁的运行时说明。

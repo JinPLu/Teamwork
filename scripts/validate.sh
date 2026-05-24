@@ -113,17 +113,28 @@ grep_required 'Codex native capabilities are the execution substrate' "$ROOT/REA
   "README must explain native Codex augmentation"
 grep_required 'Native Codex Goal Text' "$ROOT/README.md" \
   "README must document native goal text handoff"
+grep_required '\[English\](README.en.md)' "$ROOT/README.md" \
+  "default README must link to English README"
 grep_required 'docs/teamwork/research/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" \
   "README must document research artifact path"
 grep_required 'docs/teamwork/plans/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" \
   "README must document plan artifact path"
 grep_required 'docs/teamwork/reports/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" \
   "README must document report artifact path"
+[[ -f "$ROOT/README.en.md" ]] || fail "missing English README"
+git -C "$ROOT" ls-files --error-unmatch "README.en.md" >/dev/null 2>&1 \
+  || fail "README.en.md must be tracked by git"
+grep_required '\[中文\](README.md)' "$ROOT/README.en.md" \
+  "English README must link to default Chinese README"
+grep_required 'Codex-only' "$ROOT/README.en.md" "English README must state Codex-only positioning"
+grep_required 'Codex native capabilities are the execution substrate' "$ROOT/README.en.md" \
+  "English README must explain native Codex augmentation"
 grep_required 'Codex-only skill package' "$ROOT/AGENTS.md" \
   "AGENTS.md must describe the Codex-only package"
 grep_required 'Codex native capabilities' "$ROOT/CODEX.md" \
   "CODEX.md must document native Codex capability policy"
 [[ "$(wc -l < "$ROOT/README.md")" -le 170 ]] || fail "README should stay concise"
+[[ "$(wc -l < "$ROOT/README.en.md")" -le 175 ]] || fail "English README should stay concise"
 
 grep_required 'Codex-native augmentation layer' "$ROUTER" \
   "router must define Teamwork as Codex-native augmentation"
