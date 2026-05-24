@@ -10,6 +10,10 @@ direction has selected a direction. Prefer reading the research artifact when
 one exists before planning. The output is a plan that a worker can execute
 without expanding scope.
 
+For durable artifact triggers and placeholder hygiene, read
+`skills/teamwork/references/artifact-protocol.md`. For goal failure replanning,
+read `skills/teamwork/references/goal-iteration.md`.
+
 ## Shared Inputs
 
 - Goal, failure, or decision to resolve.
@@ -109,13 +113,25 @@ never be the only plan for durable-required work.
     durable, delegated, high-risk, or goal-mode: conceptual role, task scope,
     Teamwork model tier, context strategy, parallel or serial ordering, and why
     each role is needed. For non-lightweight plans, explicitly identify
-    independent tracks or state why no useful parallel track exists. For
-    lightweight plans with no subagents, omit the routing section.
+    independent tracks, including parallel Worker tracks with disjoint file
+    ownership, or state why no useful parallel track exists. For lightweight
+    plans with no subagents, omit the routing section.
     Codex native dispatch fields are derived at dispatch time from the router
     mapping; include them in a plan only when a non-default native override is
     itself part of the decision.
 12. Prepare separate handoffs for worker execution and reviewer checks when the
     plan is durable, delegated, or high-risk.
+
+## Goal Plan Revision
+
+When goal verification fails, acceptance cannot be judged, execution review
+returns `revise`/`blocked`, evidence delta is `no-progress`, or execution
+reports a plan mismatch, do not merely retry the old plan. Read the refreshed
+research, failed verification, execution review, rolling report, and current
+plan. Revise or replace the durable plan when the failure shows missing
+evidence, a stale assumption, wrong scope, over-strict blocker, or invalid stop
+rule. Record what changed and why, then require plan review again before
+execution resumes.
 
 ## Plan Quality Gates
 
@@ -130,9 +146,13 @@ never be the only plan for durable-required work.
 - Durable when warranted: goal-mode, high-risk, cross-agent, cross-turn,
   ambiguous, public/shared behavior, and explicitly requested repository plans
   use `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
+- Goal-aware: failed goal iterations revise the durable plan only after
+  research checks plan adequacy; a changed plan must be re-reviewed and
+  re-recorded before retry.
 - Routing-aware: if subagents are used, name role, task scope, Teamwork model tier,
   context strategy, parallel or serial ordering, and why. If subagents are
-  skipped, state why main-agent continuity is sufficient.
+  skipped for non-lightweight execution, state why main-agent continuity is
+  sufficient despite potential parallel Worker tracks.
 - Codex-aware: ordinary plans use conceptual routing. Native dispatch fields
   are derived from `skills/teamwork/SKILL.md` when dispatching; write them in a
   plan only when a non-default native override is itself part of the routing
@@ -187,7 +207,7 @@ Review Handoff:
 - Check scope, diff, tests/artifacts, regressions, and acceptance criteria.
 
 Subagent Routing:
-- <if subagents are used, list role, scope, model tier, context strategy, order, independence from other tracks, and why; for durable/delegated/high-risk/goal-mode plans with no subagents, state main-agent continuity is sufficient>
+- <if subagents are used, list role, scope, model tier, context strategy, order, independence from other tracks, owned paths, and why; for durable/delegated/high-risk/goal-mode plans with no subagents, state main-agent continuity is sufficient and why parallel Worker tracks would not help>
 ```
 
 For lightweight plans, keep the output compact while still including Goal,

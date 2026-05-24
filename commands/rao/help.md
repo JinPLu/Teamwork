@@ -4,9 +4,9 @@ description: Show teamwork goal command help
 
 Teamwork goal commands:
 
-- `/teamwork:goal <objective> [--max-iterations N] [--completion-promise TEXT]` starts a Stop-hook-backed autonomous goal.
+- `/teamwork:goal 达成 <目标>，用 <可验证证据> 验收...` starts a Stop-hook-backed autonomous goal.
 - `/teamwork:plan <docs/teamwork/plans/...md>` records the active durable plan artifact.
-- `/teamwork:checkpoint --plan-review-verdict <pass|pass-with-notes|revise|blocked> --execution-review-verdict <pass|pass-with-notes|revise|blocked> --verification-command <command> --verification-result <pass|fail> --evidence-delta <progress|no-progress>` records review and verification state for the active plan SHA.
+- `/teamwork:checkpoint --plan-review-verdict <pass|pass-with-notes|revise|blocked> --execution-review-verdict <pass|pass-with-notes|revise|blocked> --verification-command <command> --verification-result <pass|fail> --evidence-delta <progress|no-progress> [--attempt TEXT] [--changes TEXT] [--research-plan-decision TEXT] [--next-step TEXT]` records review, verification, and rolling report state for the active plan SHA.
 - `/teamwork:status` shows the active goal.
 - `/teamwork:pause` pauses continuation.
 - `/teamwork:resume` resumes continuation.
@@ -17,9 +17,9 @@ Teamwork goal commands:
 
 `/rao:*` remains available as a compatibility prefix:
 
-- `/rao:goal <objective> [--max-iterations N] [--completion-promise TEXT]` starts a Stop-hook-backed autonomous goal.
+- `/rao:goal 达成 <目标>，用 <可验证证据> 验收...` starts a Stop-hook-backed autonomous goal.
 - `/rao:plan <docs/teamwork/plans/...md>` records the active durable plan artifact.
-- `/rao:checkpoint --plan-review-verdict <pass|pass-with-notes|revise|blocked> --execution-review-verdict <pass|pass-with-notes|revise|blocked> --verification-command <command> --verification-result <pass|fail> --evidence-delta <progress|no-progress>` records review and verification state for the active plan SHA.
+- `/rao:checkpoint --plan-review-verdict <pass|pass-with-notes|revise|blocked> --execution-review-verdict <pass|pass-with-notes|revise|blocked> --verification-command <command> --verification-result <pass|fail> --evidence-delta <progress|no-progress> [--attempt TEXT] [--changes TEXT] [--research-plan-decision TEXT] [--next-step TEXT]` records review, verification, and rolling report state for the active plan SHA.
 - `/rao:status` shows the active goal.
 - `/rao:pause` pauses continuation.
 - `/rao:resume` resumes continuation.

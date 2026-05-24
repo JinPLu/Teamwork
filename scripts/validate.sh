@@ -31,7 +31,7 @@ fail() {
 }
 
 expected_skill_dirs="$(printf '%s\n' "${SKILLS[@]}" | sort)"
-actual_skill_dirs="$(find "$ROOT/skills" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort)"
+actual_skill_dirs="$(find "$ROOT/skills" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)"
 [[ "$actual_skill_dirs" == "$expected_skill_dirs" ]] || fail "skills/ must contain exactly: ${SKILLS[*]}"
 
 if git -C "$ROOT" ls-files 'docs/teamwork/plans/*' 'docs/teamwork/research/*' 'docs/teamwork/reports/*' 'docs/superpowers/*' | grep -q .; then
@@ -73,6 +73,13 @@ done
 
 for subskill in teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review; do
   grep -q "skills/$subskill/SKILL.md" "$ROUTER" || fail "router does not reference skills/$subskill/SKILL.md"
+done
+
+for reference in artifact-protocol goal-iteration subagent-routing; do
+  ref_file="$ROOT/skills/teamwork/references/$reference.md"
+  [[ -f "$ref_file" ]] || fail "missing skills/teamwork/references/$reference.md"
+  git -C "$ROOT" ls-files --error-unmatch "skills/teamwork/references/$reference.md" >/dev/null 2>&1 \
+    || fail "skills/teamwork/references/$reference.md is not tracked by git"
 done
 
 grep -q 'teamwork-goal' "$ROUTER" || fail "router must route goal requests to teamwork-goal"
@@ -231,35 +238,31 @@ grep -q 'active_plan_artifact' "$ROOT/skills/teamwork-goal/SKILL.md" \
 grep -q '<plan_artifact>' "$ROOT/skills/teamwork-goal/SKILL.md" \
   || fail "goal skill must document plan_artifact completion audit field"
 grep -q 'Subagent Routing Policy' "$ROUTER" || fail "router must define subagent routing policy"
-grep -q 'Codex Dispatch Mapping' "$ROUTER" || fail "router must define Codex dispatch mapping"
-grep -q 'Designer' "$ROUTER" || fail "router must define Designer subagent role"
+grep -q 'Codex Dispatch Mapping' "$ROOT/skills/teamwork/references/subagent-routing.md" || fail "subagent routing reference must define Codex dispatch mapping"
+grep -q 'Designer' "$ROOT/skills/teamwork/references/subagent-routing.md" || fail "subagent routing reference must define Designer subagent role"
 grep -q 'model tier' "$ROUTER" || fail "router must document model tier routing"
-grep -q '`fast`' "$ROUTER" || fail "router must document fast routing tier"
-grep -q '`standard`' "$ROUTER" || fail "router must document standard routing tier"
+grep -q '`fast`' "$ROOT/skills/teamwork/references/subagent-routing.md" || fail "subagent routing reference must document fast routing tier"
+grep -q '`standard`' "$ROOT/skills/teamwork/references/subagent-routing.md" || fail "subagent routing reference must document standard routing tier"
 grep -q 'high reasoning' "$ROUTER" || fail "router must document high reasoning routing tier"
-grep -q '`fast` -> `reasoning_effort:"low"`' "$ROUTER" \
+grep -q '`fast` -> `reasoning_effort:"low"`' "$ROOT/skills/teamwork/references/subagent-routing.md" \
   || fail "router must map fast tier to low Codex reasoning effort"
-grep -q '`standard` -> `reasoning_effort:"medium"`' "$ROUTER" \
+grep -q '`standard` -> `reasoning_effort:"medium"`' "$ROOT/skills/teamwork/references/subagent-routing.md" \
   || fail "router must map standard tier to medium Codex reasoning effort"
-grep -q '`high reasoning` -> `reasoning_effort:"high"`' "$ROUTER" \
+grep -q '`high reasoning` -> `reasoning_effort:"high"`' "$ROOT/skills/teamwork/references/subagent-routing.md" \
   || fail "router must map high reasoning tier to high Codex reasoning effort"
-grep -q 'reasoning_effort:"xhigh"' "$ROUTER" \
+grep -q 'reasoning_effort:"xhigh"' "$ROOT/skills/teamwork/references/subagent-routing.md" \
   || fail "router must document xhigh only for explicitly high-risk final gates"
-grep -q 'Explorer -> `agent_type:"explorer"`' "$ROUTER" \
+grep -q 'Explorer -> `agent_type:"explorer"`' "$ROOT/skills/teamwork/references/subagent-routing.md" \
   || fail "router must map Explorer to Codex explorer agent type"
-grep -q 'Worker -> `agent_type:"worker"`' "$ROUTER" \
+grep -q 'Worker -> `agent_type:"worker"`' "$ROOT/skills/teamwork/references/subagent-routing.md" \
   || fail "router must map Worker to Codex worker agent type"
-grep -q 'Designer -> `agent_type:"default"`' "$ROUTER" \
+grep -q 'Designer, Judge, Reviewer -> `agent_type:"default"`' "$ROOT/skills/teamwork/references/subagent-routing.md" \
   || fail "router must map Designer to Codex default agent type"
-grep -q 'Judge -> `agent_type:"default"`' "$ROUTER" \
-  || fail "router must map Judge to Codex default agent type"
-grep -q 'Reviewer -> `agent_type:"default"`' "$ROUTER" \
-  || fail "router must map Reviewer to Codex default agent type"
-grep -q 'Full-history fork inheritance' "$ROUTER" \
+grep -q 'Full-history forks inherit' "$ROOT/skills/teamwork/references/subagent-routing.md" \
   || fail "router must document fork_context:true inheritance"
-grep -q 'use `fork_context:false` or omit `fork_context`' "$ROUTER" \
+grep -q '`fork_context:false` or omit `fork_context`' "$ROOT/skills/teamwork/references/subagent-routing.md" \
   || fail "router must document fork_context:false explicit routing"
-grep -q 'Omit `agent_type`, `model`, and' "$ROUTER" \
+grep -q 'Do not combine' "$ROOT/skills/teamwork/references/subagent-routing.md" \
   || fail "router must require omitting override fields on full-history forks"
 grep -q 'Subagent Routing' "$ROOT/skills/teamwork-plan/SKILL.md" || fail "plan skill must document subagent routing"
 grep -q 'if subagents are used' "$ROOT/skills/teamwork-plan/SKILL.md" \
@@ -364,6 +367,22 @@ grep -q 'PASSING_REVIEW_VERDICTS' "$ROOT/bin/raoctl.py" || fail "runtime must pa
 grep -q 'manual /rao:complete override' "$ROOT/bin/raoctl.py" || fail "runtime must mark manual completion override"
 grep -q 'Narrative-mislead risk' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill must check narrative-mislead risk"
 grep -q 'Treat executor summaries' "$ROOT/skills/teamwork-review/SKILL.md" || fail "review skill must treat summaries as evidence only"
+grep -q 'Research + Plan Adequacy Gate' "$ROOT/skills/teamwork-goal/SKILL.md" \
+  || fail "goal skill must define Research + Plan Adequacy Gate"
+grep -q 'rolling report' "$ROOT/skills/teamwork-goal/SKILL.md" \
+  || fail "goal skill must require rolling report"
+grep -q '达成 <目标>' "$ROOT/skills/teamwork-goal/SKILL.md" \
+  || fail "goal skill must document goal input contract"
+grep -q 'full-text research retrieval' "$ROOT/skills/teamwork-research/SKILL.md" \
+  || fail "research skill must define full-text retrieval"
+grep -q 'Goal Plan Revision' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  || fail "plan skill must define goal plan revision"
+grep -q 'parallel Worker' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  || fail "execute skill must prefer parallel Worker subagents when useful"
+grep -q 'active_report_artifact' "$ROOT/bin/raoctl.py" \
+  || fail "runtime must store active_report_artifact"
+grep -q 'append_goal_report_row' "$ROOT/bin/raoctl.py" \
+  || fail "runtime must append goal report rows"
 ! grep -q 'teamwork-design` mode: plan' "$ROOT/bin/raoctl.py" \
   || fail "runtime continuation prompt must not mention retired teamwork-design skill"
 
@@ -703,10 +722,16 @@ grep -q '"decision":"block"' "$review_revise_stop" || fail "hook-stop must block
 python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 3 --completion-promise RAO_GOAL_COMPLETE 'verify audited completion' --cwd "$tmp_runtime" >/dev/null
 python3 "$ROOT/bin/raoctl.py" plan --session-id s1 --cwd "$tmp_runtime" docs/teamwork/plans/runtime-smoke.md >/dev/null
 python3 "$ROOT/bin/raoctl.py" checkpoint-raw --session-id s1 --cwd "$tmp_runtime" >/dev/null <<'CHECKPOINT_RAW_ARGS'
---plan-review-verdict pass --execution-review-verdict pass --verification-command "runtime smoke command && echo ok" --verification-result pass --evidence-delta progress
+--plan-review-verdict pass --execution-review-verdict pass --verification-command "runtime smoke command && echo ok" --verification-result pass --evidence-delta progress --attempt "runtime smoke attempt" --changes "runtime smoke changes" --research-plan-decision "accept active plan" --next-step "complete after audit"
 CHECKPOINT_RAW_ARGS
 python3 "$ROOT/bin/raoctl.py" status --session-id s1 --cwd "$tmp_runtime" | grep -q '^Verification command: runtime smoke command && echo ok$' \
   || fail "checkpoint-raw must preserve shell-like verification command text"
+python3 "$ROOT/bin/raoctl.py" status --session-id s1 --cwd "$tmp_runtime" | grep -q '^Active report artifact: docs/teamwork/reports/' \
+  || fail "checkpoint must record active report artifact"
+grep -R -q 'runtime smoke attempt' "$tmp_runtime/docs/teamwork/reports" \
+  || fail "checkpoint must append rolling report attempt"
+grep -R -q 'Research / Plan Decision' "$tmp_runtime/docs/teamwork/reports" \
+  || fail "checkpoint rolling report must include table header"
 hook_json "$tmp_runtime" "<promise>RAO_GOAL_COMPLETE</promise>
 $valid_audit" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$complete_stop"
 [[ ! -s "$complete_stop" ]] || fail "hook-stop must allow audited completion promise to stop"
@@ -817,6 +842,10 @@ for skill in "${SKILLS[@]}"; do
   grep -q "^name: $skill$" "$tmp/codex-home/.codex/skills/$skill/SKILL.md" \
     || fail "Codex copied skill has wrong name: $skill"
 done
+[[ -f "$tmp/claude-home/.claude/skills/teamwork/references/artifact-protocol.md" ]] \
+  || fail "Claude default install must copy teamwork references"
+[[ -f "$tmp/codex-home/.codex/skills/teamwork/references/artifact-protocol.md" ]] \
+  || fail "Codex default install must copy teamwork references"
 [[ -f "$tmp/cursor-project/.cursor/rules/teamwork.mdc" && \
    ! -L "$tmp/cursor-project/.cursor/rules/teamwork.mdc" ]] \
   || fail "Cursor default install must copy rule"
@@ -826,7 +855,7 @@ done
 
 HOME="$tmp/link-home" "$ROOT/install.sh" --link codex >/dev/null
 for skill in "${SKILLS[@]}"; do
-  [[ -L "$tmp/link-home/.codex/skills/$skill/SKILL.md" ]] \
+  [[ -L "$tmp/link-home/.codex/skills/$skill" ]] \
     || fail "--link install must symlink $skill"
 done
 

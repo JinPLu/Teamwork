@@ -49,6 +49,16 @@ remove_retired_skill() {
   local link="$dest/SKILL.md"
   local raw_target resolved entry_count
 
+  if [[ -L "$dest" ]]; then
+    raw_target="$(readlink "$dest" 2>/dev/null || true)"
+    resolved="$(readlink -f "$dest" 2>/dev/null || true)"
+    if [[ "$raw_target" == */skills/"$retired" || \
+          "$resolved" == */skills/"$retired" ]]; then
+      rm -f "$dest"
+    fi
+    return 0
+  fi
+
   [[ -e "$link" || -L "$link" ]] || return 0
 
   if [[ -L "$link" ]]; then
@@ -92,6 +102,27 @@ install_file() {
   esac
 }
 
+install_skill_dir() {
+  local source="$1"
+  local dest="$2"
+
+  rm -rf "$dest"
+  mkdir -p "$(dirname "$dest")"
+  case "$INSTALL_MODE" in
+    copy)
+      cp -R "$source" "$dest"
+      ;;
+    link)
+      ln -sfn "$source" "$dest"
+      ;;
+    *)
+      echo "Unknown install mode: $INSTALL_MODE" >&2
+      usage
+      exit 2
+      ;;
+  esac
+}
+
 install_skill_set() {
   local root="$1"
   local label="$2"
@@ -104,7 +135,7 @@ install_skill_set() {
 
   for skill in "${SKILLS[@]}"; do
     dest="$root/$skill"
-    install_file "$ROOT/skills/$skill/SKILL.md" "$dest/SKILL.md"
+    install_skill_dir "$ROOT/skills/$skill" "$dest"
   done
   echo "Installed $label skills under: $root ($INSTALL_MODE)"
 }

@@ -71,8 +71,9 @@ Use artifact directories by purpose:
 - `docs/teamwork/reports/`: final task conclusion for non-trivial, cross-turn,
   cross-agent, goal-mode, or explicitly requested work.
 
-Do not create artifacts just to record every thought. Reports are conclusions,
-not a second checkpoint system.
+Do not create artifacts just to record every thought. For artifact triggers,
+full-text research retrieval, and goal rolling reports, read
+`skills/teamwork/references/artifact-protocol.md`.
 
 ## Subagent Collaboration Model
 
@@ -112,78 +113,13 @@ when coordination overhead exceeds the value of parallelism.
 
 ## Subagent Routing Policy
 
-Subagent role choice and model tier choice are part of routing when subagents are
-used. Use capability tiers rather than fixed model IDs so Claude Code, Codex,
-and Cursor can map the request to the best available local model:
-
-- `fast`: scoped evidence collection, low-risk mechanical edits, and concise
-  documentation cleanup where ambiguity is low.
-- `standard`: moderate reasoning, multi-file implementation, or investigation
-  that needs synthesis but not high-stakes judgment.
-- `high reasoning`: ambiguous requirements, architecture tradeoffs, high-risk
-  plan review, final acceptance, regression analysis, or safety/security
-  boundary checks.
-
-The main agent is the controller. It chooses the route, verifies evidence,
-resolves conflicts, and makes the final decision. Subagents return evidence,
-patches, and recommendations; they do not automatically pass their own work.
-
-| Task shape | Role | Model tier | Routing note |
-|---|---|---|---|
-| Evidence collection or multi-path code research | Explorer | `fast` or `standard` | Use parallel tracks when scopes are independent; raise to `standard` when synthesis is non-trivial. |
-| Ambiguous requirements, architecture design, cross-module plans, or product behavior design | Designer | `high reasoning` | Use before planning; do not route unresolved design work to Worker. |
-| Plan review or high-risk tradeoff review | Judge | `high reasoning` | Use before execution when the plan is non-lightweight, risky, or ambiguous. |
-| Small mechanical implementation or documentation cleanup | Worker | `fast` | Require exact file ownership and accepted scope. |
-| Multi-file implementation or public/shared behavior change | Worker, then Reviewer | Worker: `standard`; Reviewer: `high reasoning` | Keep Worker execution bounded by the accepted plan and require fresh-context review. |
-| Final acceptance, regression risk, or safety boundary review | Reviewer | `high reasoning` | Treat verification output and diffs as evidence, not automatic approval. |
-
-`teamwork-goal` uses the same routing policy inside each iteration. Do not
-increase model tier or agent count for ceremony; increase it only when
-ambiguity, risk, or cross-module reasoning requires it.
-
-## Codex Dispatch Mapping
-
-This section applies only when running in Codex or writing Codex-facing plans.
-Claude Code should use its native Agent/Subagent tools and permissions model;
-do not translate Codex dispatch fields into Claude Code instructions.
-
-When running in Codex, map Teamwork's conceptual routing onto real
-`spawn_agent` fields. Keep Teamwork capability tiers model-ID agnostic; the
-Codex mapping selects reasoning effort, not a fixed `gpt-*` model:
-
-- `fast` -> `reasoning_effort:"low"`.
-- `standard` -> `reasoning_effort:"medium"`.
-- `high reasoning` -> `reasoning_effort:"high"`.
-- `xhigh` is not a normal Teamwork tier. Use `reasoning_effort:"xhigh"` only
-  for explicitly high-risk final gates where extra reasoning depth is worth the
-  cost, such as safety/security acceptance or unusually fragile regression
-  review.
-
-Map conceptual Teamwork roles to Codex agent types this way:
-
-- Explorer -> `agent_type:"explorer"`.
-- Worker -> `agent_type:"worker"`.
-- Designer -> `agent_type:"default"` with "Act as a Teamwork Designer" in the
-  prompt.
-- Judge -> `agent_type:"default"` with "Act as a Teamwork Judge" in the prompt.
-- Reviewer -> `agent_type:"default"` with "Act as a Teamwork Reviewer" in the
-  prompt.
-
-Codex has no `judge`, `reviewer`, or `designer` agent type. Those are Teamwork
-conceptual roles, not native Codex `agent_type` values.
-
-Context controls whether overrides are legal:
-
-- Full-history fork inheritance: use `fork_context:true` only when the subagent
-  needs exactly the same context as the parent. Omit `agent_type`, `model`, and
-  `reasoning_effort`; the fork inherits the parent agent type, model, and
-  effort.
-- Explicit routing: use `fork_context:false` or omit `fork_context` when a role,
-  model, or reasoning-effort override is required. Pass the required context in
-  the prompt or `items`.
-- Do not claim a subagent used `high reasoning` if it was a full-history fork
-  from a lower-effort parent. Either dispatch a non-fork subagent with
-  `reasoning_effort:"high"` or state that the inherited effort was used.
+Use subagents only when independent context, parallel evidence, isolated
+execution, or fresh review improves correctness or speed. Name the conceptual
+role, scope, model tier, context strategy, order, and why. `fast`, `standard`,
+and `high reasoning` are capability tiers, not fixed model IDs. For detailed
+role mapping, Codex Dispatch Mapping, `fork_context:true` limits, and the fact
+that Designer/Judge/Reviewer are conceptual roles, read
+`skills/teamwork/references/subagent-routing.md`.
 
 ## Evidence Interpretation Contract
 
@@ -249,7 +185,8 @@ The durable artifact is shared across Cursor, Claude Code, and Codex because it
 is plain Markdown in the repo, not Codex native goal state and not Claude
 `.claude/teamwork-goals/` runtime state.
 
-Write a final report only when the result itself needs to be reusable later:
+Write a final report only when the result itself needs to be reusable later.
+Goal mode additionally keeps a rolling report for every iteration:
 
 ```text
 docs/teamwork/reports/YYYY-MM-DD-<slug>.md

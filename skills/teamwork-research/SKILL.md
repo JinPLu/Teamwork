@@ -12,6 +12,10 @@ evidence, then uses external calibration to avoid local trial-and-error loops.
 Research may recommend a direction, but executable implementation planning
 belongs to `teamwork-plan`.
 
+For artifact triggers, the full-text research retrieval protocol, and
+reuse/update/new decisions, read
+`skills/teamwork/references/artifact-protocol.md`.
+
 ## Shared Inputs
 
 - Goal, failure, or decision to resolve.
@@ -74,7 +78,9 @@ completion status without at least one direct evidence cross-check.
 ## Research Artifact Requirement
 
 Write a durable research artifact when findings will be reused, feed a durable
-plan, support goal-mode iteration, or justify a non-trivial recommendation:
+plan, support goal-mode iteration or failure analysis, use external
+calibration, refresh assumptions after repeated failure, or justify a
+non-trivial recommendation:
 
 ```text
 docs/teamwork/research/YYYY-MM-DD-<slug>.md
@@ -87,18 +93,20 @@ the response instead of writing a file. If reuse is likely, write the artifact.
 When an artifact is required, do not output the handoff block until the file
 exists at the expected path.
 
-Before starting new research, search existing `docs/teamwork/research/`
-artifacts for the same topic. Reuse, update, or explicitly cite the existing
-artifact when it remains applicable; create a new artifact when the topic,
-evidence, or recommendation has materially changed. Research artifacts are
-working memory: maintain them so later planning, execution, review, and goal
-iterations do not repeat the same searches.
+Before starting new non-trivial research, run the full-text research retrieval
+protocol against `docs/teamwork/research/`. Search with goal words, exact error
+text, component paths, dependency/model/API names, external entity names, and
+historical slug candidates. If matches exist, choose and report one disposition:
+reuse and cite, update the prior artifact, or create a new artifact with the
+reason prior work no longer applies. Research artifacts are working memory:
+maintain them so later planning, execution, review, and goal iterations do not
+repeat the same searches.
 
 ## Workflow
 
 1. Define the research question and success criteria.
-2. Search existing research artifacts for reusable evidence, stale assumptions,
-   or prior recommendations on the same topic.
+2. Search existing research artifacts with the full-text research retrieval
+   protocol for reusable evidence, stale assumptions, or prior recommendations.
 3. Split the topic into independent tracks when useful: project mainline,
    symptoms, source paths, artifacts, external constraints, alternative designs,
    upstream reports, papers, or current best practices.
@@ -116,6 +124,16 @@ iterations do not repeat the same searches.
    outputting an artifact-backed handoff.
 10. Stop when a direction is selected, evidence is insufficient, budget is
    exhausted, or only protected/ambiguous decisions remain.
+
+## Goal Failure Research
+
+In goal mode, use research after failed verification, failed acceptance,
+`no-progress`, execution-review `revise`/`blocked`, or a plan mismatch. Read the
+failed verification, execution review, current durable plan, rolling report,
+and relevant research artifacts before choosing the next action. Decide whether
+the failure is a research gap, plan insufficiency, wrong scope, over-strict
+blocker, implementation deviation, or true blocker. If the plan can be improved,
+handoff to `teamwork-plan` with the new evidence and required plan revision.
 
 ## Research Artifact Template
 
@@ -146,6 +164,8 @@ During execution or goal iteration, route back to `teamwork-research` when:
 - verification produces no evidence delta after a focused fix;
 - one focused fix or prompt change has already produced no evidence delta and
   the next move would otherwise be another local guess;
+- goal execution cannot be accepted until the current plan is checked against
+  failure evidence;
 - reviewer dissent says the executor is reinforcing the same assumption;
 - the error may be upstream, version-specific, environment-specific, or already
   discussed in GitHub issues;

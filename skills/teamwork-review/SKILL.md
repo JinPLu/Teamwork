@@ -9,6 +9,10 @@ Use this subskill for a distinct reviewer pass when review adds value. The
 reviewer reads evidence independently and preserves dissent. Do not rely only on
 the planner's or executor's summary.
 
+For detailed subagent routing checks, read
+`skills/teamwork/references/subagent-routing.md`. For goal-mode failure
+handling, read `skills/teamwork/references/goal-iteration.md`.
+
 ## Shared Review Rules
 
 - Choose one mode explicitly: mode: plan or mode: execution.
@@ -118,6 +122,9 @@ Check:
 - Routing conformance: when subagents were used, compare the actual agent roles,
   Teamwork model tier choices, context strategy, and ordering to the accepted
   routing; unexplained drift from the routing must return `revise` or `blocked`.
+- Parallel execution fit: for non-lightweight work, check whether the plan and
+  execution used disjoint Worker subagents when independent tracks were
+  available, or justified main-agent continuity when they were skipped.
 - Codex dispatch validity: when execution evidence or the accepted plan includes
   native dispatch fields, reject full-history fork plus override fields,
   nonexistent native agent types, or inherited lower-effort routing while
@@ -127,6 +134,9 @@ Check:
 - Narrative-mislead risk: check whether version names, stale docs, comments, or
   historical explanations caused the executor to edit the wrong path, trust the
   wrong behavior, or declare completion too early.
+- Goal failure routing: when goal-mode execution cannot be accepted, state
+  whether the next action is research refresh, plan revision, implementation
+  correction, or true blocker. Do not let a failed review become blind retry.
 
 ## Verdict Format
 

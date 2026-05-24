@@ -65,7 +65,9 @@ docs/teamwork/research/YYYY-MM-DD-<slug>.md
 ```
 
 Use final reports only for non-trivial conclusions that should survive the
-conversation:
+conversation. In goal mode, keep one rolling Markdown table report per goal so
+failed attempts, evidence deltas, review verdicts, and plan revisions remain
+searchable:
 
 ```text
 docs/teamwork/reports/YYYY-MM-DD-<slug>.md
@@ -75,6 +77,10 @@ Small, low-risk edits may use a concise chat/native plan instead of a
 repository artifact.
 
 It is not Codex goal state and not Claude `.claude/teamwork-goals/` runtime state. The Markdown plan remains the shared execution and review source of truth.
+
+For failed goal iterations, refresh research and check whether the active plan
+was under-informed, stale, wrong-scope, or over-strict before retrying. Revise
+and re-review the durable plan when new evidence changes the path.
 
 ## External Information Policy
 

@@ -35,6 +35,7 @@ REVIEW_VERDICTS = PASSING_REVIEW_VERDICTS | {"revise", "blocked"}
 VERIFICATION_RESULTS = {"pass", "fail"}
 EVIDENCE_DELTAS = {"progress", "no-progress"}
 PLAN_DIR = Path("docs/teamwork/plans")
+REPORT_DIR = Path("docs/teamwork/reports")
 PLAN_REQUIRED_SECTIONS = (
     "Goal",
     "Requirements Mapping",
@@ -96,6 +97,10 @@ class GoalState:
     @property
     def active_plan_artifact_sha256(self) -> str:
         return str(self.meta.get("active_plan_artifact_sha256") or "").strip()
+
+    @property
+    def active_report_artifact(self) -> str:
+        return str(self.meta.get("active_report_artifact") or "").strip()
 
     @property
     def last_checkpoint_plan_artifact_sha256(self) -> str:
@@ -172,6 +177,7 @@ def save_state(state: GoalState) -> None:
         "completion_promise",
         "active_plan_artifact",
         "active_plan_artifact_sha256",
+        "active_report_artifact",
         "plan_recorded_at",
         "last_checkpoint_plan_artifact_sha256",
         "last_checkpoint_at",
@@ -316,6 +322,81 @@ def file_sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def slugify(text: str, fallback: str = "goal") -> str:
+    lowered = text.lower()
+    slug = re.sub(r"[^a-z0-9]+", "-", lowered).strip("-")
+    return slug[:64].strip("-") or fallback
+
+
+def markdown_table_cell(text: str) -> str:
+    value = str(text or "").strip() or "not provided"
+    value = value.replace("\n", "<br>")
+    return value.replace("|", "\\|")
+
+
+def report_artifact_for_state(state: GoalState) -> str:
+    if state.active_report_artifact:
+        return state.active_report_artifact
+    date = utc_now()[:10]
+    return (REPORT_DIR / f"{date}-{slugify(state.objective)}.md").as_posix()
+
+
+def append_goal_report_row(
+    cwd: Path,
+    state: GoalState,
+    *,
+    attempt: str,
+    changes: str,
+    verification_command: str,
+    verification_result: str,
+    evidence_delta: str,
+    plan_review: str,
+    execution_review: str,
+    research_plan_decision: str,
+    next_step: str,
+) -> str:
+    artifact = report_artifact_for_state(state)
+    full_path = cwd / artifact
+    try:
+        relative = full_path.resolve().relative_to(cwd)
+    except ValueError as exc:
+        raise RaoError("report artifact must be inside the current project") from exc
+    if relative.parent != REPORT_DIR or full_path.suffix != ".md":
+        raise RaoError("report artifact must be under docs/teamwork/reports/*.md")
+    full_path.parent.mkdir(parents=True, exist_ok=True)
+    if not full_path.exists():
+        title = state.objective or "Teamwork Goal"
+        full_path.write_text(
+            f"# {title} Goal Report\n\n"
+            "| Iteration | Plan Artifact | Hypothesis / Attempt | Changes | Verification | Evidence Delta | Review Verdict | Research / Plan Decision | Next Step / Stop Reason |\n"
+            "|---|---|---|---|---|---|---|---|---|\n",
+            encoding="utf-8",
+        )
+    review = f"plan={plan_review}; execution={execution_review}"
+    verification = f"{verification_command}: {verification_result}"
+    row = (
+        "| "
+        + " | ".join(
+            markdown_table_cell(value)
+            for value in [
+                state.iteration,
+                state.active_plan_artifact,
+                attempt,
+                changes,
+                verification,
+                evidence_delta,
+                review,
+                research_plan_decision,
+                next_step,
+            ]
+        )
+        + " |\n"
+    )
+    with full_path.open("a", encoding="utf-8") as handle:
+        handle.write(row)
+    return relative.as_posix()
 
 
 def clear_checkpoint_fields(state: GoalState) -> None:
@@ -479,6 +560,7 @@ Goal state:
 - Iterations remaining after this continuation: {remaining}
 - Active plan artifact: {active_plan}
 - Active plan artifact SHA-256: {active_sha}
+- Active report artifact: {state.active_report_artifact or "not set"}
 - Last checkpoint plan SHA-256: {checkpoint_sha}
 - Plan review verdict: {state.meta.get("last_plan_review_verdict") or "not set"}
 - Execution review verdict: {state.meta.get("last_execution_review_verdict") or "not set"}
@@ -491,9 +573,11 @@ Do not ask the user during autonomous iteration unless blocked by destructive ri
 
 Before stopping, audit completion against direct evidence:
 - Read the active plan artifact first. If it is not set or unreadable, create or repair a durable plan with `teamwork-plan` mode: plan, then record it in goal state before execution.
+- Read the active report artifact when set. If verification failed or review did not pass, refresh research and check whether the active plan was under-informed, stale, wrong-scope, or over-strict before retrying.
 - Map each explicit requirement, command, artifact, test, and deliverable to evidence.
 - Run or inspect the focused verification before judging success.
-- If verification fails, form the next hypothesis and continue within budget.
+- If verification fails, use the Research + Plan Adequacy Gate before another implementation attempt.
+- After verification/review, record a checkpoint with attempt, changes, research-plan decision, and next step so the rolling report stays current.
 - Emit the completion promise only after verification and execution review pass.
 - The final message must include both the completion promise and this structured
   completion audit:
@@ -532,12 +616,13 @@ def context_for_state(state: GoalState, source: str) -> str:
 - Max iterations: {max_label}
 - Active plan artifact: {active_plan}
 - Active plan artifact SHA-256: {active_sha}
+- Active report artifact: {state.active_report_artifact or "not set"}
 - Verification result: {state.meta.get("last_verification_result") or "not set"}
 - Review verdicts: plan={state.meta.get("last_plan_review_verdict") or "not set"}, execution={state.meta.get("last_execution_review_verdict") or "not set"}
 - No progress count: {state.no_progress_count}
 - Completion promise: <promise>{state.completion_promise}</promise>
 
-Use the `teamwork-goal` skill with mode: goal. Continue autonomously until verified success, budget exhaustion, or a hard blocker. Read the active plan artifact before execution; if it is not set or unreadable, create or repair a durable plan and record it with the plan command. When complete, output the completion promise plus a structured <completion_audit> block with plan_artifact, plan_artifact_sha256, plan_review_verdict, execution_review_verdict, requirements_mapping, verification_evidence, and dissent.
+Use the `teamwork-goal` skill with mode: goal. Continue autonomously until verified success, budget exhaustion, or a hard blocker. Read the active plan artifact before execution; if it is not set or unreadable, create or repair a durable plan and record it with the plan command. If verification or review fails, refresh research and check plan adequacy before retry. Record checkpoints with rolling report fields after verification/review. When complete, output the completion promise plus a structured <completion_audit> block with plan_artifact, plan_artifact_sha256, plan_review_verdict, execution_review_verdict, requirements_mapping, verification_evidence, and dissent.
 """
 
 
@@ -633,6 +718,7 @@ def command_status(args: argparse.Namespace) -> int:
         f"Max iterations: {max_label}\n"
         f"Active plan artifact: {state.active_plan_artifact or 'not set'}\n"
         f"Active plan artifact SHA-256: {state.active_plan_artifact_sha256 or 'not set'}\n"
+        f"Active report artifact: {state.active_report_artifact or 'not set'}\n"
         f"Last checkpoint plan SHA-256: {state.last_checkpoint_plan_artifact_sha256 or 'not set'}\n"
         f"Plan review verdict: {state.meta.get('last_plan_review_verdict') or 'not set'}\n"
         f"Execution review verdict: {state.meta.get('last_execution_review_verdict') or 'not set'}\n"
@@ -788,13 +874,27 @@ def command_checkpoint(args: argparse.Namespace) -> int:
     else:
         state.meta["no_progress_count"] = state.no_progress_count + 1
     state.meta["last_hook_event"] = "checkpoint_recorded"
+    report_artifact = append_goal_report_row(
+        cwd,
+        state,
+        attempt=getattr(args, "attempt", "") or "",
+        changes=getattr(args, "changes", "") or "",
+        verification_command=verification_command,
+        verification_result=verification_result,
+        evidence_delta=evidence_delta,
+        plan_review=plan_review,
+        execution_review=execution_review,
+        research_plan_decision=getattr(args, "research_plan_decision", "") or "",
+        next_step=getattr(args, "next_step", "") or "",
+    )
+    state.meta["active_report_artifact"] = report_artifact
     append_section_entry(
         state,
         "Iteration Log",
         f"- {now}: Checkpoint recorded for {state.active_plan_artifact_sha256}; "
         f"plan_review={plan_review}, execution_review={execution_review}, "
         f"verification={verification_result}, evidence_delta={evidence_delta}, "
-        f"no_progress_count={state.no_progress_count}.",
+        f"no_progress_count={state.no_progress_count}, report={report_artifact}.",
     )
     stopped_for_no_progress = state.no_progress_count >= 2
     if stopped_for_no_progress:
@@ -807,6 +907,7 @@ def command_checkpoint(args: argparse.Namespace) -> int:
     print(f"Execution review verdict: {execution_review}")
     print(f"Verification result: {verification_result}")
     print(f"Evidence delta: {evidence_delta}")
+    print(f"Report artifact: {report_artifact}")
     print(f"No progress count: {state.no_progress_count}")
     if stopped_for_no_progress:
         print("Goal stopped after 2 consecutive no-progress checkpoints.")
@@ -820,6 +921,10 @@ def parse_checkpoint_raw_arguments(raw: str) -> argparse.Namespace:
     parser.add_argument("--verification-command", required=True)
     parser.add_argument("--verification-result", required=True)
     parser.add_argument("--evidence-delta", required=True)
+    parser.add_argument("--attempt", default="")
+    parser.add_argument("--changes", default="")
+    parser.add_argument("--research-plan-decision", default="")
+    parser.add_argument("--next-step", default="")
     return parser.parse_args(shlex.split(raw))
 
 
@@ -993,6 +1098,10 @@ def build_parser() -> argparse.ArgumentParser:
     checkpoint.add_argument("--verification-command", required=True)
     checkpoint.add_argument("--verification-result", required=True)
     checkpoint.add_argument("--evidence-delta", required=True)
+    checkpoint.add_argument("--attempt", default="")
+    checkpoint.add_argument("--changes", default="")
+    checkpoint.add_argument("--research-plan-decision", default="")
+    checkpoint.add_argument("--next-step", default="")
     checkpoint.set_defaults(func=command_checkpoint)
 
     checkpoint_raw = subparsers.add_parser("checkpoint-raw")

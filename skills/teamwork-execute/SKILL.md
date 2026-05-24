@@ -8,6 +8,12 @@ description: Use when implementing an accepted plan — keeps execution bounded 
 Use this subskill only after a plan has been accepted. The executor implements
 the plan; it does not self-declare completion.
 
+For goal-mode failure recovery, read
+`skills/teamwork/references/goal-iteration.md` before turning a failed
+verification into another attempt.
+For parallel Worker dispatch and Codex routing constraints, read
+`skills/teamwork/references/subagent-routing.md`.
+
 ## Preconditions
 
 - Accepted lightweight plan or durable artifact plan. A durable Markdown plan
@@ -48,6 +54,13 @@ artifact-backed work, include the durable plan artifact path. Codex native
 dispatch fields are derived from the router mapping unless a non-default native
 override is itself part of the handoff.
 
+For non-lightweight execution, prefer parallel Worker subagents when the plan
+names independent tracks with disjoint file ownership. Dispatch those Workers
+early, keep the main thread on orchestration and integration, and wait only when
+the next merge or verification step depends on their results. If the plan does
+not identify useful parallel tracks, keep execution local and preserve the plan
+skip rationale.
+
 In Codex, check native fields immediately before delegated dispatch and reject
 illegal or misleading routing:
 
@@ -86,6 +99,8 @@ illegal or misleading routing:
 - On a plan mismatch: stop and request replanning.
 - On a test failure caused by your edit: rework only the causal change.
 - On unrelated failures: record them with evidence and avoid masking them.
+- In goal mode, failed verification, plan mismatch, or acceptance uncertainty
+  returns to the Research + Plan Adequacy Gate instead of blind retry.
 - On sacred-boundary conflict, destructive risk, missing credentials, or budget
   exhaustion: stop and report a blocker.
 

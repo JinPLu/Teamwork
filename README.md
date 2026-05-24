@@ -82,10 +82,10 @@ research artifact -> durable plan -> plan review -> scoped worker -> verificatio
 **Goal mode**
 
 ```text
-durable plan -> execute -> verify -> review -> checkpoint -> accept / iterate / block
+retrieve memory -> research/plan -> review -> execute -> verify -> review -> report row -> accept / revise plan / block
 ```
 
-Default budget is 3 iterations. One focused fix with no evidence delta should refresh research before another local guess; repeated no-progress stops the run.
+Default budget is 3 iterations. Failed verification refreshes research and checks whether the plan was under-informed, stale, wrong-scope, or over-strict before retry; repeated no-progress stops the run.
 
 ## Artifacts
 
@@ -107,11 +107,11 @@ Final reports:
 docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 ```
 
-Research artifacts are reusable investigation memory: search existing files first, update or cite them when still relevant, and record local evidence, external sources, options, recommendation, dissent, and refresh triggers.
+Research artifacts are reusable investigation memory: use full-text search over old research first, update or cite still-relevant files, and record local evidence, external sources, recommendation, dissent, and refresh triggers.
 
 Plan artifacts are execution memos: name scope boundaries, list executable steps, define focused verification and expected results, and include worker/reviewer handoffs. Larger plans may also map requirements to evidence, risks, and subagent routing.
 
-Reports are conclusions, not process logs. Use them for non-trivial, cross-agent, cross-turn, goal-mode, or explicitly requested summaries.
+Reports are conclusions plus goal rolling memory. Goal mode keeps one Markdown table report per goal; ordinary tasks write reports only for non-trivial, reusable summaries.
 
 These artifacts are ignored by default, together with `docs/superpowers/`. Force-add only when a specific artifact is intentionally part of a PR.
 
