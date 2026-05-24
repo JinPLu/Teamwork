@@ -20,14 +20,15 @@ Teamwork 是一个 **Codex-only skill package**。Codex native capabilities are 
 
 ## Skill Map
 
-`using-teamwork` 是自动入口，`teamwork` 是 router。
+`using-teamwork` 是自动入口和 router。
 
 | 用户意图 | Skill | 输出 |
 |---|---|---|
 | 调查原因、比较方案、刷新过期假设 | `teamwork-research` | 直接证据、外部校准，以及必要时的 reusable research artifact |
-| 编辑前规划非平凡改动 | `teamwork-plan` | 轻量 checklist 或 durable execution memo |
-| 执行已接受的计划 | `teamwork-execute` | 最小范围改动和 focused verification |
+| 规划或准备非平凡改动 | `teamwork-plan` | 轻量 checklist 或 durable execution memo |
+| 执行已接受、批准、继续或恢复的计划 | `teamwork-execute` | 最小范围改动和 focused verification |
 | 审查计划、diff、artifact 或结果 | `teamwork-review` | 基于证据的 verdict，保留 dissent 和 required fixes |
+| 更新版本、发布元数据或 skill 拓扑 | `teamwork-update` | 同步 `VERSION`、manifest、文档、安装和验证 |
 | 持续迭代直到达到可验证目标 | `teamwork-goal` | Goal Proposal、native goal handoff、iteration loop，以及必要时的 rolling report |
 
 ## Codex Native Policy Map
@@ -41,6 +42,8 @@ Teamwork 是一个 **Codex-only skill package**。Codex native capabilities are 
 | Sandbox/permissions | 使用 Codex 原生 approval 和 sandbox model。Teamwork 只要求 boundaries 和 risks 明确。 |
 | Automations/heartbeat | 使用 Codex 原生 automation 或 thread heartbeat 处理 recurring checks 或 later continuation。不要把 schedule 写进 Teamwork artifacts。 |
 | MCP/plugins | 优先使用 Codex 原生 tools 和 connectors。若 source limits 影响决策，需要记录限制。 |
+
+包版本以 `VERSION` 为 source of truth，并且必须和 `.codex-plugin/plugin.json` 中的 `version` 保持一致。版本、发布元数据或 skill surface 更新走 `teamwork-update`。
 
 ## Goal Proposal
 

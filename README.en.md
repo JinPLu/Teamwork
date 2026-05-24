@@ -20,14 +20,15 @@ Simple tasks stay native. Use Teamwork only when evidence, planning, review, del
 
 ## Skill Map
 
-`using-teamwork` is the automatic entrypoint and `teamwork` is the router.
+`using-teamwork` is the automatic entrypoint and router.
 
 | User Intent | Skill | Output |
 |---|---|---|
 | Investigate causes, compare options, refresh stale assumptions | `teamwork-research` | Direct evidence, external calibration, reusable research artifact when warranted |
-| Plan a non-trivial change before editing | `teamwork-plan` | Lightweight checklist or durable execution memo |
-| Execute an accepted plan | `teamwork-execute` | Minimal scoped edits and focused verification |
+| Plan or prepare a non-trivial change | `teamwork-plan` | Lightweight checklist or durable execution memo |
+| Execute an accepted, approved, continued, or resumed plan | `teamwork-execute` | Minimal scoped edits and focused verification |
 | Review a plan, diff, artifact, or result | `teamwork-review` | Evidence-based verdict with dissent and required fixes |
+| Update version, release metadata, or skill topology | `teamwork-update` | Synchronized `VERSION`, manifest, docs, install, and validation |
 | Iterate until a verifiable target is reached | `teamwork-goal` | Goal Proposal, native goal handoff, iteration loop, rolling report when needed |
 
 ## Codex Native Policy Map
@@ -41,6 +42,10 @@ Simple tasks stay native. Use Teamwork only when evidence, planning, review, del
 | Sandbox/permissions | Use Codex native approval and sandbox model. Teamwork only requires boundaries and risks to be explicit. |
 | Automations/heartbeat | Use native Codex automation or thread heartbeat for recurring checks or later continuation. Do not encode schedules in Teamwork artifacts. |
 | MCP/plugins | Prefer native Codex tools and connectors. Teamwork requires sources and limitations to be recorded when they affect decisions. |
+
+Package version uses `VERSION` as the source of truth and must match
+`.codex-plugin/plugin.json`. Version, release metadata, or skill surface updates
+use `teamwork-update`.
 
 ## Goal Proposal
 

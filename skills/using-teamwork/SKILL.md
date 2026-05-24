@@ -1,56 +1,74 @@
 ---
 name: using-teamwork
-description: Use when starting coding, debugging, research, planning, implementation, or review work where the task may be non-trivial, evidence-sensitive, cross-turn, cross-agent, high-risk, or goal-directed.
+description: Use when starting any coding-agent task including coding, debugging, implementation, planning, review, evidence gathering, accepted-plan execution, package updates, or goal-directed work.
 ---
 
 # Using Teamwork
 
-Use this lightweight entrypoint to decide whether Teamwork adds value. Keep
-simple work native; route only when evidence, planning, review, delegation, or
-autonomous convergence materially improves correctness.
+Teamwork is a Codex-native augmentation layer. Codex native capabilities do the
+work; Teamwork adds routing, evidence discipline, review, durable memory,
+subagent policy, version hygiene, and goal convergence only when useful.
+
+This entrypoint is broad because discovery reads frontmatter before this body.
+After loading, keep simple work native; route only when Teamwork adds value.
+
+## References
+
+Load only what applies:
+
+- `skills/using-teamwork/references/workflow-contract.md`: Evidence Interpretation Contract (`observed`, `inferred`, `claimed`), Context & Cost Discipline, Codex Native Policy Map, Subagent Collaboration Model, Default to at most 3 parallel subagents, and Proposal/Plan Routed authorization.
+- `skills/using-teamwork/references/artifact-protocol.md`: durable memory.
+- `skills/using-teamwork/references/subagent-routing.md`: subagent dispatch.
+- `skills/using-teamwork/references/goal-iteration.md`: goal loop and
+  `Goal Proposal`.
+- `skills/using-teamwork/references/plan-output.md`: plan output templates.
+- `skills/using-teamwork/references/review-checks.md`: review checklists.
 
 ## Route Check
 
-Use the narrowest matching stage:
+| Signal | Route | Skill file |
+|---|---|---|
+| Need evidence before choosing | `teamwork-research` | `skills/teamwork-research/SKILL.md` |
+| Need a plan before non-trivial edits | `teamwork-plan` | `skills/teamwork-plan/SKILL.md` |
+| Accepted plan/checklist needs edits | `teamwork-execute` | `skills/teamwork-execute/SKILL.md` |
+| Plan, diff, or result needs scrutiny | `teamwork-review` | `skills/teamwork-review/SKILL.md` |
+| Version, release, installer, or skill topology update | `teamwork-update` | `skills/teamwork-update/SKILL.md` |
+| Iterate until verified success, budget, or blocker | `teamwork-goal` | `skills/teamwork-goal/SKILL.md` |
 
-| Signal | Route |
-|---|---|
-| Needs file, diff, log, artifact, or external evidence before choosing | `teamwork-research` |
-| User asks for a plan, or first move affects scope/contract/verification | `teamwork-plan` |
-| Accepted plan exists and needs implementation | `teamwork-execute` |
-| Plan or completed work needs independent scrutiny | `teamwork-review` |
-| User wants iteration until verified success, budget exhaustion, or blocker | `teamwork-goal` |
+If none applies, continue without a route banner.
 
-If none applies, continue normally without a route banner.
+## Automatic Stage Selection
 
-For goal-directed requests, route to `teamwork-goal` for a chat-only `Goal
-Proposal` first when the objective, done evidence, scope, or stop rules are not
-already explicit. Create or continue native Codex goal state only after the
-user accepts that proposal, unless an active goal already exists.
+Do not wait for the user to name a Teamwork skill when intent is clear.
+
+- Planning: "plan", "design", "figure out", non-trivial "implement/fix/add/change".
+- Execution: "go ahead", "execute", "continue", "resume", "do it".
+- Review: "review", "check", "validate", "look over the diff".
+- Update: "version", "release", "changelog", "update Teamwork", "bump".
+- Goal: "keep going", "until it passes", "iterate until done", budget.
+
+For autonomous convergence, route to `teamwork-goal` for a chat-only
+`Goal Proposal` before changing native Codex goal state unless an active goal
+already exists.
 
 ## Native Default
 
-Native flow is correct for single-step lookups, quick factual answers, trivial
-one-liners, and small isolated edits with obvious verification. Do not create
-artifacts, subagents, durable plans, or review passes for ceremony.
+Native flow is correct for quick factual answers, one-liners, and small
+isolated edits with obvious verification. Do not create artifacts, subagents,
+durable plans, or review passes for ceremony.
 
-Before staying native for non-trivial work, answer:
+Before staying native for non-trivial work, confirm the behavior/scope
+assumption, smallest path, boundaries, and success check. If unclear, route to
+`teamwork-research` or `teamwork-plan`.
 
-1. What assumption could change behavior, scope, contract, or verification?
-2. What is the smallest sufficient path?
-3. What is in scope and out of scope?
-4. What concrete check proves success?
+## Route Output
 
-If those answers are unclear, route to `teamwork-research` or `teamwork-plan`.
+For Teamwork routing, report:
 
-## Codex Fit
+```text
+Route: teamwork-<stage>
+Reason: <one sentence tied to intent>
+Mode: <research | plan | execution | review | update | goal>
+```
 
-- Codex native capabilities are the substrate; Teamwork strengthens their use
-  with evidence, artifacts, routing, review, and failure-iteration policy.
-- `update_plan` is visible progress only, not a durable plan.
-- Use native Codex goals only for explicit autonomous convergence or an active
-  goal.
-- Use Codex subagents for independent evidence, scoped Worker execution, or
-  fresh-context review when an accepted Goal Proposal or durable plan includes
-  Subagent Routing, or when the user explicitly asks.
-- Do not bypass sandbox or approval policy.
+For native-flow tasks, do not emit a route banner.

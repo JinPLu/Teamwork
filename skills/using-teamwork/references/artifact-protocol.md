@@ -74,6 +74,13 @@ goal-mode reports when applicable:
 Goal-mode failure analysis must also search `docs/teamwork/reports/` for prior
 attempts before repeating a hypothesis.
 
+## Research Artifact Sections
+
+After the Retrieval Header, research artifacts should stay compact and include:
+question, assumptions, local evidence, external evidence when used, options,
+recommendation, dissent/risks, refresh triggers, and handoff target. Prefer
+summaries plus citations over pasted logs.
+
 ## Artifact Hygiene
 
 Durable artifacts must not contain executable placeholders such as `<...>`,

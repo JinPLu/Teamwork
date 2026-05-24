@@ -2,14 +2,14 @@
 
 ## Project Structure & Module Organization
 
-This repository packages Teamwork as a **Codex-only skill package**. The source of truth is under `skills/`: `using-teamwork` is the automatic entrypoint, `teamwork` is the router, `teamwork-goal` owns native-goal collaboration and convergence, `teamwork-research` owns evidence gathering, `teamwork-plan` owns executable planning, and `teamwork-execute` plus `teamwork-review` define execution and review workflows. Native Codex capabilities remain the execution substrate; Teamwork adds evidence discipline, artifact memory, subagent routing, review gates, and failure iteration policy.
+This repository packages Teamwork as a **Codex-only skill package**. The source of truth is under `skills/`: `using-teamwork` is the automatic entrypoint and router, `teamwork-goal` owns native-goal collaboration and convergence, `teamwork-research` owns evidence gathering, `teamwork-plan` owns executable planning, `teamwork-execute` plus `teamwork-review` define execution and review workflows, and `teamwork-update` owns version and package update hygiene. Native Codex capabilities remain the execution substrate; Teamwork adds evidence discipline, artifact memory, subagent routing, review gates, and failure iteration policy.
 
 Platform metadata lives in `.codex-plugin/`. User-facing runtime notes live in `README.md` and `CODEX.md`. Artifact roles are `docs/teamwork/research/` for investigation, `docs/teamwork/plans/` for execution memos, and `docs/teamwork/reports/` for task conclusions plus goal rolling attempt tables.
 
 ## Build, Test, and Development Commands
 
 - `./scripts/validate.sh`: required repository verification for skill topology, frontmatter, Codex manifest, artifact ignore rules, installer smoke, and Codex-only contract checks.
-- `./install.sh`: installs the seven Teamwork skills into `~/.codex/skills`.
+- `./install.sh`: installs the Teamwork skill set into `~/.codex/skills`.
 - `./install.sh --link`: installs symlinks for local development.
 
 ## Coding Style & Naming Conventions

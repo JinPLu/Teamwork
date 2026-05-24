@@ -17,6 +17,29 @@ artifact. A valid goal can still be natural language, but the controller should
 extract: objective, verification evidence, boundaries, allowed tools/files, and
 stop rules.
 
+## Goal Proposal
+
+Return this chat-only proposal before native `create_goal` when objective,
+verification, scope, or stop rules are unclear:
+
+```text
+Goal Proposal:
+- Objective: <one-sentence target>
+- Done Evidence: <commands, files, artifacts, or observable acceptance checks>
+- Scope: <allowed files, behavior, or systems>
+- Non-goals: <explicit exclusions>
+- Constraints: <permissions, compatibility, cost/time, protected boundaries>
+- Iteration Budget: <default 3 if unspecified, or user-specified>
+- Retry Policy: <failed verification returns to research + plan adequacy>
+- Artifacts: <none | suggested research/plan/report paths and why>
+- Subagent Routing: <tracks to split, or why main-agent continuity is better>
+- Native Codex Goal Text: <concise target prepared for create_goal>
+```
+
+The proposal is not a durable plan artifact, not `update_plan`, and not a
+completion claim. After approval, call `create_goal` with the approved `Native
+Codex Goal Text`.
+
 ## Controller Loop
 
 Use this loop for autonomous convergence:
@@ -86,3 +109,20 @@ Linked Artifacts: related research or plan paths, or none
 
 The report is cross-turn memory. It does not replace the durable plan, research
 artifact, native goal state, review verdict, or direct verification evidence.
+
+## Goal Output
+
+```text
+Route: teamwork-goal
+Reason: <one sentence tied to autonomous convergence>
+Mode: goal
+Native Codex Goal: proposed | created | continued | completed | not used
+Active Plan Artifact: <docs/teamwork/plans/YYYY-MM-DD-<slug>.md | none>
+Rolling Report: <docs/teamwork/reports/YYYY-MM-DD-<slug>.md | none>
+Iterations: <n and short summary>
+Verification: <command/artifact/check and result>
+Review: <plan/execution verdicts>
+Completion Evidence: <requirement-to-evidence map>
+Unresolved: <none or blockers>
+Conclusion: accept | blocked | budget exhausted | stopped
+```

@@ -9,125 +9,54 @@ Research establishes project reality from direct evidence, adds external
 calibration when useful, compares options, and hands a selected direction to
 `teamwork-plan`. It does not produce executable implementation plans.
 
-Read first:
+Read only as needed:
 
-- `skills/teamwork/references/workflow-contract.md` for the Evidence Interpretation Contract and Context & Cost Discipline.
-- `skills/teamwork/references/artifact-protocol.md` for artifact retrieval,
-  artifact triggers, and reuse/update/new decisions.
-- `skills/teamwork/references/goal-iteration.md` only for goal-mode failure
+- `skills/using-teamwork/references/workflow-contract.md` for evidence and
+  context discipline.
+- `skills/using-teamwork/references/artifact-protocol.md` for artifact
+  triggers, retrieval, templates, and reuse/update/new decisions.
+- `skills/using-teamwork/references/goal-iteration.md` for goal-mode failure
   analysis.
 
 ## Research Artifact Requirement
 
-Write or update a research artifact when findings will be reused, feed a
-durable plan, support goal-mode iteration or failure analysis, use external
-calibration, refresh assumptions after repeated failure, or justify a
-non-trivial recommendation:
+Write or update `docs/teamwork/research/YYYY-MM-DD-<slug>.md` when findings
+will be reused, feed a durable plan, support goal-mode iteration, use external
+calibration, refresh failed assumptions, or justify a non-trivial
+recommendation. For lightweight one-turn lookup, cite evidence in chat.
 
-```text
-docs/teamwork/research/YYYY-MM-DD-<slug>.md
-```
-
-For a lightweight one-turn lookup, cite evidence in the response instead.
-
-Before new non-trivial research, Search existing research artifacts with goal
-words, exact errors, component paths, model/API/dependency names, external
-entities, and old artifact slugs. Choose one disposition: reuse, update, or new.
+Search existing research artifacts before new non-trivial research with goal
+words, exact errors, paths, model/API/dependency names, external entities, and
+old slugs. Use the Retrieval Header fields including Search Keys and Abstract.
+Choose one disposition: reuse, update, or new.
 
 ## Workflow
 
 1. Define the research question and success criteria.
-2. Retrieve prior research and record the reuse/update/new disposition.
-3. Split separable evidence questions into tracks such as local mainline,
-   symptoms, source paths, artifacts, external constraints, alternatives,
-   upstream reports, papers, or current best practices.
-4. Prefer parallel Explorer subagents when 2 or more tracks can run without
-   blocking the next local step; otherwise keep the pass local.
-5. Read primary local evidence first. Label important findings as `observed`,
+2. Retrieve prior research and record disposition.
+3. Split separable evidence questions into tracks such as local source,
+   symptoms, artifacts, external constraints, alternatives, upstream reports,
+   papers, or current best practices.
+4. Use parallel Explorer subagents when 2+ tracks can run independently;
+   otherwise keep the pass local.
+5. Read primary local evidence first; label key findings `observed`,
    `inferred`, or `claimed`.
-6. Use external calibration for non-trivial work where platform, dependency,
-   model, prompt, upstream, performance, unfamiliar frameworks, or repeated
-   failures could affect the answer.
-7. Generate options before recommending. Prefer simple producer-side fixes over
-   rewrites or downstream cleanup.
-8. Preserve dissent and unresolved risks.
-9. Write/update the artifact when required and confirm it exists before an
-   artifact-backed handoff.
-10. Stop when a direction is selected, evidence is insufficient, budget is
-    exhausted, or a protected/ambiguous decision remains.
+6. Use external calibration when current platform, dependency, model, API,
+   upstream behavior, performance, unfamiliar frameworks, or repeated failures
+   could affect the answer.
+7. Generate options before recommending; prefer simple producer-side fixes.
+8. Preserve dissent, risks, and protected/ambiguous decisions.
+9. Write/update required artifact and confirm it exists before handoff.
 
 ## Research Refresh Triggers
 
-Route back to research when:
+Route back to research when verification has no evidence delta, reviewer
+dissent says the same assumption is reinforced, the issue may be
+version/environment/upstream-specific, local evidence contradicts claims,
+implementation broadens without evidence, or the active plan is invalidated.
 
-- verification produces no evidence delta after a focused fix;
-- one focused fix or prompt change already produced no evidence delta;
-- goal execution cannot be accepted until the current plan is checked against
-  failure evidence;
-- reviewer dissent says the executor is reinforcing the same assumption;
-- the issue may be upstream, version-specific, environment-specific, or already
-  discussed in primary sources;
-- local evidence contradicts docs, names, comments, or prior summaries;
-- implementation is becoming broader without new evidence;
-- the active plan is invalidated by new facts.
+## Handoff
 
-## Research Artifact Template
-
-```text
-# <Topic> Research
-
-Artifact Type: research
-Status: active | superseded | accepted | blocked
-Last Updated: YYYY-MM-DD
-Search Keys: exact errors, commands, paths, components, dependencies, model/API names, issue/PR IDs, user terms
-Abstract: 2-4 sentences covering the research question, selected conclusion, and applicability boundary.
-Linked Artifacts: related plan or report paths, or none
-
-## Research Question
-## Local Evidence
-## External Evidence
-## Prior Research Reused
-## Options
-## Recommendation
-## Dissent / Unresolved
-## Refresh Triggers
-```
-
-## Handoff to Plan
-
-```text
-Mode:
-- research
-
-Research Artifact:
-- docs/teamwork/research/YYYY-MM-DD-<slug>.md | none
-
-Research Question:
-- ...
-
-Assumptions:
-- ...
-
-Local Evidence:
-- <observed|inferred|claimed> <path/command/artifact>: <finding>
-
-External Evidence:
-- <observed|inferred|claimed> <url/source>: <finding or unavailable because ...>
-
-Options:
-1. <option> - benefit, risk, verification, boundary impact
-
-Recommendation:
-- <selected direction or blocked>
-- Why this is the simplest sufficient path
-
-Dissent / Unresolved:
-- ...
-
-Refresh Triggers:
-- ...
-
-Plan Handoff:
-- Route: teamwork-plan
-- Research artifact: <path | none>
-```
+Return mode, research artifact path or none, question, assumptions, local and
+external evidence, options, recommendation, dissent, refresh triggers, and
+`Route: teamwork-plan`.

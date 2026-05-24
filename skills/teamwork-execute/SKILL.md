@@ -1,35 +1,35 @@
 ---
 name: teamwork-execute
-description: Use when an accepted Teamwork plan is ready for bounded implementation and focused verification.
+description: Use when a user says go ahead, proceed, do it, implement this plan, continue, or resume an accepted plan or approved checklist.
 ---
 
 # Teamwork Execute
 
-Use this stage only after a plan has been accepted. Execution implements the
-plan; it does not self-declare completion.
+Use this stage after a plan has been accepted, approved, resumed, or the user
+asks to execute a prior Teamwork checklist. Execution implements the plan; it
+does not self-declare completion.
 
 Read shared rules only as needed:
 
-- `skills/teamwork/references/workflow-contract.md` for progress anchors,
-  evidence labels, context discipline, and the Subagent Collaboration Model.
-- `skills/teamwork/references/subagent-routing.md` for Worker dispatch and
-  Codex routing constraints.
-- `skills/teamwork/references/goal-iteration.md` when a failed goal attempt
-  may require research or plan revision.
+- `skills/using-teamwork/references/workflow-contract.md` for progress
+  anchors, evidence labels, context discipline, and the Subagent Collaboration
+  Model.
+- `skills/using-teamwork/references/subagent-routing.md` for Worker dispatch
+  and Codex routing constraints.
+- `skills/using-teamwork/references/goal-iteration.md` when a failed goal
+  attempt may require research or plan revision.
 
 ## Preconditions
 
 - Accepted lightweight plan or durable artifact plan.
-- A durable Markdown plan artifact path is required for goal-mode, cross-agent,
-  cross-turn, high-risk, ambiguous, or explicitly artifact-backed work.
+- Durable plan path is required for goal-mode, cross-agent, cross-turn,
+  high-risk, ambiguous, or explicitly artifact-backed work.
 - If a durable artifact exists, re-read it before editing and treat it as the
   execution source of truth.
 - Workspace status is understood enough to avoid overwriting other work.
-- Required files, commands, credentials, and environments are available, or the
-  missing item is reported as a blocker.
-- Command safety is classified before execution: read-only, workspace-writing,
-  networked, destructive, or outside sandbox. Follow the active sandbox and
-  approval model; do not bypass it.
+- Required files, commands, credentials, and environments are available.
+- Classify command safety: read-only, workspace-writing, networked,
+  destructive, or outside sandbox. Follow active sandbox approvals.
 
 If a precondition is missing, stop and report a blocker.
 
@@ -40,11 +40,10 @@ architecture, requirements, or scope during execution. If new evidence changes
 those decisions, stop and route back to `teamwork-research` or
 `teamwork-plan`.
 
-Delegated Worker prompts must include the plan source, exact file ownership,
-allowed edits, verification expectation, model tier when relevant, context
-strategy, and the instruction not to expand scope. Writing Workers need
-disjoint file ownership or worktree isolation. For artifact-backed work, include
-the durable Markdown plan artifact path.
+Delegated Worker prompts must include plan source, file ownership, allowed
+edits, verification, model tier when relevant, context strategy, and no scope
+expansion. Writing Workers need disjoint files or worktree isolation. For
+artifact-backed work, include the durable plan path.
 
 For non-lightweight execution, prefer parallel Worker subagents when the plan
 names independent tracks with disjoint file ownership. Dispatch early, keep the
@@ -54,7 +53,7 @@ exists, preserve the plan's main-agent continuity rationale.
 
 ## Codex Routing Checks
 
-Before delegated dispatch, validate native fields against the router:
+Before delegated dispatch, validate native fields against route policy:
 
 - Do not combine `fork_context:true` with `agent_type`, `model`, or
   `reasoning_effort`; full-history forks inherit the parent type, model, and

@@ -56,6 +56,14 @@ Choose the smallest workflow pattern that preserves correctness:
 - Clear acceptance plus retry need: use a review or goal loop with explicit
   verification and stop rules.
 
+## Codex Native Policy Map
+
+Native Codex capabilities remain the execution substrate. Use native tools for
+editing, shell, MCP/app access, sandbox approvals, `update_plan`, goals,
+subagents, automations, review commands, and verification. Teamwork adds route
+policy, evidence requirements, durable artifacts, and acceptance gates; it does
+not replace native state or tool semantics.
+
 ## Progress Anchors And Artifacts
 
 `update_plan` and task widgets are transient UI-only checklist state. They are
