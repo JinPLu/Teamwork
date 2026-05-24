@@ -236,8 +236,8 @@ grep_required 'Context & Cost Discipline' "$ENTRYPOINT" \
   "entrypoint/router must define context and cost discipline"
 grep_required 'Subagent Collaboration Model' "$ENTRYPOINT" \
   "entrypoint/router must define subagent collaboration model"
-grep_required 'Default to at most' "$ENTRYPOINT" \
-  "entrypoint/router must limit default parallel subagents"
+grep_required 'Dispatch Economics' "$ENTRYPOINT" \
+  "entrypoint/router must point to dispatch economics"
 grep_required 'Workflow Pattern Selection' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must define workflow pattern selection"
 grep_required 'Codex Native Policy Map' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
@@ -338,18 +338,32 @@ grep_required '`high reasoning` -> `reasoning_effort:"high"`' "$ROOT/skills/usin
   "subagent routing reference must map high reasoning tier"
 grep_required 'Do not combine' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
   "subagent routing reference must reject invalid full-history routing"
-grep_required 'Independent-track default dispatch' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
-  "workflow contract must define independent-track default dispatch"
-grep_required 'dispatch by default' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
-  "subagent routing reference must default-dispatch independent tracks"
+grep_required 'accepted lightweight plan with a Dispatch line' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must authorize lightweight Dispatch"
+grep_required 'Explorer/Reviewer: default max 3' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
+  "subagent routing reference must cap Explorer/Reviewer"
+grep_required 'Worker: no fixed numeric cap' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
+  "subagent routing reference must not hard-cap Workers"
+grep_required 'Before dispatching more than 3 Workers' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
+  "subagent routing reference must require >3 Worker rationale"
+grep_required 'ownership map' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
+  "subagent routing reference must require Worker ownership map"
+grep_required 'batch or worktree isolation' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
+  "subagent routing reference must define Worker batching or worktree isolation"
+grep_required 'local execution is cheaper or safer' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
+  "subagent routing reference must preserve local execution escape hatch"
 grep_required 'Default to parallel Explorer subagents' "$ROOT/skills/teamwork-research/SKILL.md" \
   "research skill must default-dispatch independent Explorer tracks"
-grep_required '2+ independent-track work' "$ROOT/skills/teamwork-plan/SKILL.md" \
-  "plan skill must route independent tracks for subagent planning"
+grep_required 'lightweight `Dispatch:`' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan skill must support lightweight Dispatch"
 grep_required 'dispatch parallel Worker subagents by default' "$ROOT/skills/teamwork-execute/SKILL.md" \
   "execute skill must default-dispatch independent Worker tracks"
+grep_required 'Before dispatching more than 3 Workers' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  "execute skill must require >3 Worker integration plan"
 grep_required 'Default to fresh-context review' "$ROOT/skills/teamwork-review/SKILL.md" \
   "review skill must default to fresh-context review for non-trivial execution"
+grep_required 'Dispatch: none | Explorer/Worker/Reviewer tracks, ownership, cap/batch reason' "$ROOT/skills/using-teamwork/references/plan-output.md" \
+  "lightweight plan template must include Dispatch line"
 grep_required 'Research + Plan Adequacy Gate' "$ROOT/skills/using-teamwork/references/goal-iteration.md" \
   "goal iteration reference must define failure gate"
 grep_required 'Research Reuse' "$ROOT/skills/using-teamwork/references/goal-iteration.md" \

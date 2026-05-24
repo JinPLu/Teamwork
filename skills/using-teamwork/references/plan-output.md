@@ -14,6 +14,7 @@ Goal: <one sentence>
 Scope: In <...>; Out <...>; Protected <...>
 Steps:
 - [ ] <path/component> - <minimal change> - <why>
+Dispatch: none | Explorer/Worker/Reviewer tracks, ownership, cap/batch reason
 Verification:
 - Focused: <command/artifact/check>
 - Broader: <command/check or not needed because ...>
@@ -67,4 +68,5 @@ Linked Artifacts: related research or report paths, or none
 
 Goal-mode durable plans must include every durable section. Ordinary durable
 plans may stay concise but must preserve goal, scope, steps, verification,
-risks, stop rules, handoffs, and routing rationale.
+risks, stop rules, handoffs, and routing rationale. Use durable Subagent
+Routing for complex, cross-turn, high-risk, or long-running delegation.

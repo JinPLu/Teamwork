@@ -42,7 +42,8 @@ contract changes outside scope.
 ## mode: execution
 
 Use `review-checks.md` to check diff scope, artifacts, tests, regressions, plan
-conformance, Routing conformance, workspace hygiene, and next failure route.
+conformance, Routing conformance, dispatch economics, workspace hygiene, and
+next failure route.
 
 ## Verdict Format
 

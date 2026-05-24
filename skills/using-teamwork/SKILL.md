@@ -16,9 +16,9 @@ After loading, keep simple work native; route only when Teamwork adds value.
 
 Load only what applies:
 
-- `skills/using-teamwork/references/workflow-contract.md`: Evidence Interpretation Contract (`observed`, `inferred`, `claimed`), Context & Cost Discipline, Codex Native Policy Map, Subagent Collaboration Model, Default to at most 3 parallel subagents, and Proposal/Plan Routed authorization.
+- `skills/using-teamwork/references/workflow-contract.md`: Evidence Interpretation Contract (`observed`, `inferred`, `claimed`), Context & Cost Discipline, Codex Native Policy Map, Subagent Collaboration Model, Dispatch Economics, and Proposal/Plan Routed authorization.
 - `skills/using-teamwork/references/artifact-protocol.md`: durable memory.
-- `skills/using-teamwork/references/subagent-routing.md`: independent-track default dispatch.
+- `skills/using-teamwork/references/subagent-routing.md`: role-specific dispatch economics.
 - `skills/using-teamwork/references/goal-iteration.md`: goal loop and
   `Goal Proposal`.
 - `skills/using-teamwork/references/plan-output.md`: plan output templates.

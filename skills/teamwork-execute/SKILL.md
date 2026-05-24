@@ -22,8 +22,9 @@ Read shared rules only as needed:
 ## Preconditions
 
 - Accepted lightweight plan or durable artifact plan.
-- Durable plan path is required for goal-mode, cross-agent, cross-turn,
-  high-risk, ambiguous, or explicitly artifact-backed work.
+- Durable plan path is required for goal-mode, cross-turn, high-risk,
+  ambiguous, long-running delegation, complex Worker fan-out, or explicitly
+  artifact-backed work.
 - If a durable artifact exists, re-read it before editing and treat it as the
   execution source of truth.
 - Workspace status is understood enough to avoid overwriting other work.
@@ -46,10 +47,10 @@ expansion. Writing Workers need disjoint files or worktree isolation. For
 artifact-backed work, include the durable plan path.
 
 For non-lightweight execution, dispatch parallel Worker subagents by default
-when the plan names independent tracks with disjoint file ownership. Dispatch
-early, keep the main thread on orchestration/integration, and wait only when
-merge or verification depends on the result. If no useful parallel Worker track
-exists, preserve the plan's main-agent continuity rationale.
+when the plan names independent tracks with disjoint file ownership and passes
+Dispatch Economics. Before dispatching more than 3 Workers, state ownership,
+integration order, verification, and why parallel beats serial. If no useful
+parallel Worker track exists, preserve the continuity rationale.
 
 ## Codex Routing Checks
 

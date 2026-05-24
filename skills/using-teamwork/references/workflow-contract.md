@@ -41,9 +41,9 @@ properties, git diff, or primary external evidence.
 - Load references only when their condition applies. Do not paste large logs or
   raw subagent transcripts into the main context; ask for condensed evidence,
   confidence, dissent, and open questions.
-- Default to at most 3 parallel research or review subagents unless the user
-  gives a larger budget. Independent-track default dispatch preserves context
-  by keeping raw work outside the main thread.
+- Use role-specific Dispatch Economics. Explorer/Reviewer tracks are capped by
+  context cost; Worker tracks are capped by ownership clarity, integration
+  cost, and verification shape.
 
 ## Workflow Pattern Selection
 
@@ -88,12 +88,13 @@ Subagents provide independent context, parallel evidence, isolated execution, or
 fresh review. The main agent owns scope, synthesis, conflict resolution,
 verification, and final acceptance.
 
-Subagent authorization is Proposal/Plan Routed. An accepted Goal Proposal,
-durable plan with Subagent Routing, or explicit user request authorizes listed
-independent tracks. Ask again when dispatch needs credentials, destructive
-actions, unclear write ownership, or another approval-gated capability.
+Subagent authorization is Proposal/Plan Routed. Explicit user request, accepted
+Goal Proposal, accepted lightweight plan with a Dispatch line, or durable plan
+with Subagent Routing authorizes listed independent tracks. Ask again when
+dispatch needs credentials, destructive actions, unclear write ownership, or
+another approval-gated capability.
 
-For non-lightweight work, split independent tracks first. When 2 or more tracks
-can run without blocking the next local step, dispatch subagents by default. If
-you keep work local, state the reason: tight coupling, overlapping ownership,
-small scope, unavailable tool, or higher context cost than benefit.
+For non-lightweight work, split independent tracks first. Dispatch when it
+improves cost, elapsed time, or quality. If you keep work local, state the
+reason: tight coupling, overlapping ownership, small scope, unavailable tool,
+or higher context cost than benefit.
