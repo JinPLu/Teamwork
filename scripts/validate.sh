@@ -75,11 +75,16 @@ for subskill in teamwork-goal teamwork-research teamwork-plan teamwork-execute t
   grep -q "skills/$subskill/SKILL.md" "$ROUTER" || fail "router does not reference skills/$subskill/SKILL.md"
 done
 
-for reference in artifact-protocol goal-iteration subagent-routing; do
+for reference in artifact-protocol goal-iteration subagent-routing workflow-contract; do
   ref_file="$ROOT/skills/teamwork/references/$reference.md"
   [[ -f "$ref_file" ]] || fail "missing skills/teamwork/references/$reference.md"
   git -C "$ROOT" ls-files --error-unmatch "skills/teamwork/references/$reference.md" >/dev/null 2>&1 \
     || fail "skills/teamwork/references/$reference.md is not tracked by git"
+done
+
+for skill in teamwork teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review; do
+  grep -q 'skills/teamwork/references/workflow-contract.md' "$ROOT/skills/$skill/SKILL.md" \
+    || fail "$skill must reference shared workflow contract"
 done
 
 grep -q 'teamwork-goal' "$ROUTER" || fail "router must route goal requests to teamwork-goal"
@@ -159,6 +164,14 @@ done
 for command in goal status pause resume stop complete clear note help plan checkpoint; do
   [[ -f "$ROOT/commands/rao/$command.md" ]] || fail "missing /rao:$command command"
 done
+grep -q -- '--research-disposition <none|reuse|update|new>' "$ROOT/commands/teamwork/checkpoint.md" \
+  || fail "/teamwork:checkpoint must document research disposition"
+grep -q -- '--research-disposition <none|reuse|update|new>' "$ROOT/commands/rao/checkpoint.md" \
+  || fail "/rao:checkpoint must document research disposition"
+grep -q -- '--agent-routing-decision <text>' "$ROOT/commands/teamwork/help.md" \
+  || fail "/teamwork help must document agent routing checkpoint field"
+grep -q -- '--agent-routing-decision <text>' "$ROOT/commands/rao/help.md" \
+  || fail "/rao help must document agent routing checkpoint field"
 grep -q 'hook-stop' "$ROOT/hooks/hooks.json" || fail "hooks must include Stop continuation"
 grep -q 'raoctl.py' "$ROOT/hooks/hooks.json" || fail "hooks must invoke raoctl.py"
 grep -q '/teamwork:goal' "$ROOT/README.md" || fail "README must document /teamwork:goal"
@@ -360,7 +373,8 @@ grep -q '<completion_audit>' "$ROOT/README.md" || fail "README must document com
 grep -q 'completion_audit_detected' "$ROOT/bin/raoctl.py" || fail "runtime must gate completion on audit detection"
 grep -q 'active_plan_artifact' "$ROOT/bin/raoctl.py" || fail "runtime must store active_plan_artifact"
 grep -q 'active_plan_artifact_sha256' "$ROOT/bin/raoctl.py" || fail "runtime must store active_plan_artifact_sha256"
-grep -q 'COMPACT_PLAN_REQUIRED_SECTIONS' "$ROOT/bin/raoctl.py" || fail "runtime must accept compact execution memos"
+! grep -q 'COMPACT_PLAN_REQUIRED_SECTIONS' "$ROOT/bin/raoctl.py" \
+  || fail "runtime must not accept compact memos as recorded goal plans"
 grep -q 'command_plan' "$ROOT/bin/raoctl.py" || fail "runtime must expose a plan command"
 grep -q 'command_checkpoint' "$ROOT/bin/raoctl.py" || fail "runtime must expose a checkpoint command"
 grep -q 'PASSING_REVIEW_VERDICTS' "$ROOT/bin/raoctl.py" || fail "runtime must parse passing review verdicts"
@@ -383,6 +397,12 @@ grep -q 'active_report_artifact' "$ROOT/bin/raoctl.py" \
   || fail "runtime must store active_report_artifact"
 grep -q 'append_goal_report_row' "$ROOT/bin/raoctl.py" \
   || fail "runtime must append goal report rows"
+grep -q 'RESEARCH_DISPOSITIONS' "$ROOT/bin/raoctl.py" \
+  || fail "runtime must validate research reuse disposition"
+grep -q 'last_agent_routing_decision' "$ROOT/bin/raoctl.py" \
+  || fail "runtime must store agent routing decisions"
+grep -q 'audit_field_has_specific_evidence' "$ROOT/bin/raoctl.py" \
+  || fail "runtime must lint completion audit evidence specificity"
 ! grep -q 'teamwork-design` mode: plan' "$ROOT/bin/raoctl.py" \
   || fail "runtime continuation prompt must not mention retired teamwork-design skill"
 
@@ -398,6 +418,7 @@ wrong_plan_stop="$tmp_runtime/wrong-plan-stop.json"
 wrong_sha_stop="$tmp_runtime/wrong-sha-stop.json"
 hash_mismatch_stop="$tmp_runtime/hash-mismatch-stop.json"
 missing_checkpoint_stop="$tmp_runtime/missing-checkpoint-stop.json"
+generic_audit_stop="$tmp_runtime/generic-audit-stop.json"
 verification_fail_stop="$tmp_runtime/verification-fail-stop.json"
 review_revise_stop="$tmp_runtime/review-revise-stop.json"
 invalid_review_stop="$tmp_runtime/invalid-review-stop.json"
@@ -530,7 +551,10 @@ record_checkpoint() {
     --execution-review-verdict "${3:-pass}" \
     --verification-command "runtime smoke command" \
     --verification-result "${4:-pass}" \
-    --evidence-delta "${5:-progress}" >/dev/null
+    --evidence-delta "${5:-progress}" \
+    --research-disposition "${6:-reuse}" \
+    --research-artifacts-read "${7:-docs/teamwork/research/runtime-smoke.md}" \
+    --agent-routing-decision "${8:-main-agent continuity; no parallel Worker track for runtime smoke}" >/dev/null
 }
 audit_block() {
   local sha="$1"
@@ -542,18 +566,27 @@ audit_block() {
 <plan_artifact_sha256>$sha</plan_artifact_sha256>
 <plan_review_verdict>$plan_review</plan_review_verdict>
 <execution_review_verdict>$execution_review</execution_review_verdict>
-<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
-<verification_evidence>focused smoke command passed</verification_evidence>
+<requirements_mapping>Runtime smoke requirement -> docs/teamwork/plans/runtime-smoke.md and command \`runtime smoke command && echo ok\`.</requirements_mapping>
+<verification_evidence>Command \`runtime smoke command && echo ok\` exited 0; report artifact docs/teamwork/reports/runtime-smoke.md updated.</verification_evidence>
 <dissent>none</dissent>
 </completion_audit>
 EOF
 }
+generic_audit='<completion_audit>
+<plan_artifact>docs/teamwork/plans/runtime-smoke.md</plan_artifact>
+<plan_artifact_sha256>missing</plan_artifact_sha256>
+<plan_review_verdict>pass</plan_review_verdict>
+<execution_review_verdict>pass</execution_review_verdict>
+<requirements_mapping>mapped</requirements_mapping>
+<verification_evidence>passed</verification_evidence>
+<dissent>none</dissent>
+</completion_audit>'
 missing_verification_audit='<completion_audit>
 <plan_artifact>docs/teamwork/plans/runtime-smoke.md</plan_artifact>
 <plan_artifact_sha256>missing</plan_artifact_sha256>
 <plan_review_verdict>pass</plan_review_verdict>
 <execution_review_verdict>pass</execution_review_verdict>
-<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
+<requirements_mapping>Runtime smoke requirement -> docs/teamwork/plans/runtime-smoke.md and command `runtime smoke command`.</requirements_mapping>
 <dissent>none</dissent>
 </completion_audit>'
 missing_requirements_audit='<completion_audit>
@@ -561,7 +594,7 @@ missing_requirements_audit='<completion_audit>
 <plan_artifact_sha256>missing</plan_artifact_sha256>
 <plan_review_verdict>pass</plan_review_verdict>
 <execution_review_verdict>pass</execution_review_verdict>
-<verification_evidence>focused smoke command passed</verification_evidence>
+<verification_evidence>Command `runtime smoke command` exited 0 for docs/teamwork/plans/runtime-smoke.md.</verification_evidence>
 <dissent>none</dissent>
 </completion_audit>'
 missing_dissent_audit='<completion_audit>
@@ -569,23 +602,23 @@ missing_dissent_audit='<completion_audit>
 <plan_artifact_sha256>missing</plan_artifact_sha256>
 <plan_review_verdict>pass</plan_review_verdict>
 <execution_review_verdict>pass</execution_review_verdict>
-<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
-<verification_evidence>focused smoke command passed</verification_evidence>
+<requirements_mapping>Runtime smoke requirement -> docs/teamwork/plans/runtime-smoke.md and command `runtime smoke command`.</requirements_mapping>
+<verification_evidence>Command `runtime smoke command` exited 0 for docs/teamwork/plans/runtime-smoke.md.</verification_evidence>
 </completion_audit>'
 missing_plan_audit='<completion_audit>
 <plan_artifact_sha256>missing</plan_artifact_sha256>
 <plan_review_verdict>pass</plan_review_verdict>
 <execution_review_verdict>pass</execution_review_verdict>
-<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
-<verification_evidence>focused smoke command passed</verification_evidence>
+<requirements_mapping>Runtime smoke requirement -> docs/teamwork/plans/runtime-smoke.md and command `runtime smoke command`.</requirements_mapping>
+<verification_evidence>Command `runtime smoke command` exited 0 for docs/teamwork/plans/runtime-smoke.md.</verification_evidence>
 <dissent>none</dissent>
 </completion_audit>'
 missing_sha_audit='<completion_audit>
 <plan_artifact>docs/teamwork/plans/runtime-smoke.md</plan_artifact>
 <plan_review_verdict>pass</plan_review_verdict>
 <execution_review_verdict>pass</execution_review_verdict>
-<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
-<verification_evidence>focused smoke command passed</verification_evidence>
+<requirements_mapping>Runtime smoke requirement -> docs/teamwork/plans/runtime-smoke.md and command `runtime smoke command`.</requirements_mapping>
+<verification_evidence>Command `runtime smoke command` exited 0 for docs/teamwork/plans/runtime-smoke.md.</verification_evidence>
 <dissent>none</dissent>
 </completion_audit>'
 wrong_plan_audit='<completion_audit>
@@ -593,8 +626,8 @@ wrong_plan_audit='<completion_audit>
 <plan_artifact_sha256>missing</plan_artifact_sha256>
 <plan_review_verdict>pass</plan_review_verdict>
 <execution_review_verdict>pass</execution_review_verdict>
-<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
-<verification_evidence>focused smoke command passed</verification_evidence>
+<requirements_mapping>Runtime smoke requirement -> docs/teamwork/plans/runtime-smoke.md and command `runtime smoke command`.</requirements_mapping>
+<verification_evidence>Command `runtime smoke command` exited 0 for docs/teamwork/plans/runtime-smoke.md.</verification_evidence>
 <dissent>none</dissent>
 </completion_audit>'
 invalid_review_audit='<completion_audit>
@@ -602,8 +635,8 @@ invalid_review_audit='<completion_audit>
 <plan_artifact_sha256>missing</plan_artifact_sha256>
 <plan_review_verdict>revise</plan_review_verdict>
 <execution_review_verdict>pass</execution_review_verdict>
-<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
-<verification_evidence>focused smoke command passed</verification_evidence>
+<requirements_mapping>Runtime smoke requirement -> docs/teamwork/plans/runtime-smoke.md and command `runtime smoke command`.</requirements_mapping>
+<verification_evidence>Command `runtime smoke command` exited 0 for docs/teamwork/plans/runtime-smoke.md.</verification_evidence>
 <dissent>none</dissent>
 </completion_audit>'
 uppercase_review_audit='<completion_audit>
@@ -611,8 +644,8 @@ uppercase_review_audit='<completion_audit>
 <plan_artifact_sha256>missing</plan_artifact_sha256>
 <plan_review_verdict>PASS</plan_review_verdict>
 <execution_review_verdict>pass</execution_review_verdict>
-<requirements_mapping>objective mapped to focused validation evidence</requirements_mapping>
-<verification_evidence>focused smoke command passed</verification_evidence>
+<requirements_mapping>Runtime smoke requirement -> docs/teamwork/plans/runtime-smoke.md and command `runtime smoke command`.</requirements_mapping>
+<verification_evidence>Command `runtime smoke command` exited 0 for docs/teamwork/plans/runtime-smoke.md.</verification_evidence>
 <dissent>none</dissent>
 </completion_audit>'
 python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 2 --completion-promise RAO_GOAL_COMPLETE 'verify runtime continuation' --cwd "$tmp_runtime" >/dev/null
@@ -629,8 +662,8 @@ printf '# Wrong path plan\n' > "$tmp_runtime/runtime-smoke.md"
   || fail "plan command must reject project-external artifacts"
 ! python3 "$ROOT/bin/raoctl.py" plan --session-id s1 --cwd "$tmp_runtime" docs/teamwork/plans/weak.md >/dev/null 2>&1 \
   || fail "plan command must reject weak plan artifacts"
-python3 "$ROOT/bin/raoctl.py" plan --session-id s1 --cwd "$tmp_runtime" docs/teamwork/plans/compact-smoke.md >/dev/null \
-  || fail "plan command must accept compact execution memo artifacts"
+! python3 "$ROOT/bin/raoctl.py" plan --session-id s1 --cwd "$tmp_runtime" docs/teamwork/plans/compact-smoke.md >/dev/null 2>&1 \
+  || fail "plan command must reject compact memos as recorded goal plans"
 python3 "$ROOT/bin/raoctl.py" plan --session-id s1 --cwd "$tmp_runtime" docs/teamwork/plans/runtime-smoke.md >/dev/null
 smoke_sha="$(plan_sha "$tmp_runtime/docs/teamwork/plans/runtime-smoke.md")"
 python3 "$ROOT/bin/raoctl.py" status --session-id s1 --cwd "$tmp_runtime" | grep -q '^Active plan artifact: docs/teamwork/plans/runtime-smoke.md$' \
@@ -706,6 +739,12 @@ valid_audit="$(audit_block "$smoke_sha")"
 hook_json "$tmp_runtime" "<promise>RAO_GOAL_COMPLETE</promise>
 $valid_audit" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$missing_checkpoint_stop"
 grep -q '"decision":"block"' "$missing_checkpoint_stop" || fail "hook-stop must block audited completion without checkpoint"
+python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 3 --completion-promise RAO_GOAL_COMPLETE 'verify generic audit block' --cwd "$tmp_runtime" >/dev/null
+python3 "$ROOT/bin/raoctl.py" plan --session-id s1 --cwd "$tmp_runtime" docs/teamwork/plans/runtime-smoke.md >/dev/null
+record_checkpoint "$tmp_runtime" pass pass pass progress
+hook_json "$tmp_runtime" "<promise>RAO_GOAL_COMPLETE</promise>
+$generic_audit" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$generic_audit_stop"
+grep -q '"decision":"block"' "$generic_audit_stop" || fail "hook-stop must block generic audit evidence"
 python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 3 --completion-promise RAO_GOAL_COMPLETE 'verify verification fail block' --cwd "$tmp_runtime" >/dev/null
 python3 "$ROOT/bin/raoctl.py" plan --session-id s1 --cwd "$tmp_runtime" docs/teamwork/plans/runtime-smoke.md >/dev/null
 record_checkpoint "$tmp_runtime" pass pass fail progress
@@ -722,8 +761,15 @@ grep -q '"decision":"block"' "$review_revise_stop" || fail "hook-stop must block
 python3 "$ROOT/bin/raoctl.py" goal --session-id s1 --max-iterations 3 --completion-promise RAO_GOAL_COMPLETE 'verify audited completion' --cwd "$tmp_runtime" >/dev/null
 python3 "$ROOT/bin/raoctl.py" plan --session-id s1 --cwd "$tmp_runtime" docs/teamwork/plans/runtime-smoke.md >/dev/null
 python3 "$ROOT/bin/raoctl.py" checkpoint-raw --session-id s1 --cwd "$tmp_runtime" >/dev/null <<'CHECKPOINT_RAW_ARGS'
---plan-review-verdict pass --execution-review-verdict pass --verification-command "runtime smoke command && echo ok" --verification-result pass --evidence-delta progress --attempt "runtime smoke attempt" --changes "runtime smoke changes" --research-plan-decision "accept active plan" --next-step "complete after audit"
+--plan-review-verdict pass --execution-review-verdict pass --verification-command "runtime smoke command && echo ok" --verification-result pass --evidence-delta progress --research-disposition reuse --research-artifacts-read "docs/teamwork/research/runtime-smoke.md" --agent-routing-decision "main-agent continuity; no parallel Worker track for runtime smoke" --attempt "runtime smoke attempt" --changes "runtime smoke changes" --research-plan-decision "accept active plan" --next-step "complete after audit"
 CHECKPOINT_RAW_ARGS
+! python3 "$ROOT/bin/raoctl.py" checkpoint --session-id s1 --cwd "$tmp_runtime" \
+  --plan-review-verdict pass \
+  --execution-review-verdict pass \
+  --verification-command "runtime smoke command" \
+  --verification-result pass \
+  --evidence-delta progress >/dev/null 2>&1 \
+  || fail "checkpoint must require research and agent routing fields"
 python3 "$ROOT/bin/raoctl.py" status --session-id s1 --cwd "$tmp_runtime" | grep -q '^Verification command: runtime smoke command && echo ok$' \
   || fail "checkpoint-raw must preserve shell-like verification command text"
 python3 "$ROOT/bin/raoctl.py" status --session-id s1 --cwd "$tmp_runtime" | grep -q '^Active report artifact: docs/teamwork/reports/' \
@@ -732,6 +778,12 @@ grep -R -q 'runtime smoke attempt' "$tmp_runtime/docs/teamwork/reports" \
   || fail "checkpoint must append rolling report attempt"
 grep -R -q 'Research / Plan Decision' "$tmp_runtime/docs/teamwork/reports" \
   || fail "checkpoint rolling report must include table header"
+grep -R -q 'Research Reuse' "$tmp_runtime/docs/teamwork/reports" \
+  || fail "checkpoint rolling report must include research reuse header"
+grep -R -q 'docs/teamwork/research/runtime-smoke.md' "$tmp_runtime/docs/teamwork/reports" \
+  || fail "checkpoint rolling report must include research artifacts read"
+grep -R -q 'main-agent continuity; no parallel Worker track' "$tmp_runtime/docs/teamwork/reports" \
+  || fail "checkpoint rolling report must include agent routing decision"
 hook_json "$tmp_runtime" "<promise>RAO_GOAL_COMPLETE</promise>
 $valid_audit" | python3 "$ROOT/bin/raoctl.py" hook-stop > "$complete_stop"
 [[ ! -s "$complete_stop" ]] || fail "hook-stop must allow audited completion promise to stop"
@@ -752,7 +804,10 @@ python3 "$ROOT/bin/raoctl.py" checkpoint --session-id s1 --cwd "$tmp_runtime" \
   --execution-review-verdict pass \
   --verification-command "runtime smoke command" \
   --verification-result pass \
-  --evidence-delta no-progress > "$no_progress_stop"
+  --evidence-delta no-progress \
+  --research-disposition none \
+  --research-artifacts-read "none needed; focused retry used existing plan evidence" \
+  --agent-routing-decision "main-agent continuity; no parallel Worker track for runtime smoke" > "$no_progress_stop"
 grep -q 'Goal stopped after 2 consecutive no-progress checkpoints' "$no_progress_stop" \
   || fail "checkpoint must report no-progress stop"
 python3 "$ROOT/bin/raoctl.py" status --session-id s1 --cwd "$tmp_runtime" | grep -q '^Status: stopped$' \

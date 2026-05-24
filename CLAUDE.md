@@ -45,7 +45,8 @@ For runtime-controller focused checks, the relevant smoke tests are embedded in 
 - Default research/review fan-out is at most 3 parallel subagents unless the user gives a larger budget. For non-lightweight work, split independent tracks first and dispatch useful subagents early while the main agent continues non-overlapping work. When Teamwork is active, treat the user as granting standing authorization for automatic subagent delegation on independent non-lightweight tracks.
 - For Teamwork plans, `update_plan` or task widgets are transient progress only. Use concise chat/native checklists for bounded low-risk work; use durable Markdown plan artifacts for goal-mode, high-risk, cross-agent, cross-turn, ambiguous, or explicitly requested repository plans. Use research artifacts under `docs/teamwork/research/` when findings will be reused, and reports under `docs/teamwork/reports/` for non-trivial conclusions plus goal rolling attempt tables.
 - In goal mode, failed verification or failed review should refresh research and check whether the plan was under-informed, stale, wrong-scope, or over-strict before retrying. Revise, re-record, and re-review the durable plan when new evidence changes the path.
-- Claude goal auto-completion requires the configured completion promise such as `<promise>RAO_GOAL_COMPLETE</promise>` and a structured `<completion_audit>` in the same final assistant message. The audit must include a `plan_artifact` and SHA matching runtime state. `/teamwork:complete` and `/rao:complete` are manual overrides and are logged as not automatically verified.
+- Claude goal checkpoints require review verdicts, verification, research disposition, artifacts read, and agent routing decision so reports expose research reuse and subagent routing choices.
+- Claude goal auto-completion requires the configured completion promise such as `<promise>RAO_GOAL_COMPLETE</promise>` and a structured `<completion_audit>` in the same final assistant message. The audit must include a `plan_artifact` and SHA matching runtime state plus concrete requirement and verification evidence. `/teamwork:complete` and `/rao:complete` are manual overrides and are logged as not automatically verified.
 
 ## Platform Notes
 
@@ -55,11 +56,11 @@ For runtime-controller focused checks, the relevant smoke tests are embedded in 
 
 ## Plan Artifact Format
 
-Durable plan artifacts live under `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`. The `raoctl.py plan` command validates that the artifact exists under `docs/teamwork/plans/` (paths outside this directory are rejected) and contains either the compact execution memo sections or the legacy full sections.
+Durable plan artifacts live under `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`. The `raoctl.py plan` command validates that the artifact exists under `docs/teamwork/plans/` (paths outside this directory are rejected) and contains the full goal-runtime sections.
 
-Compact sections: `Goal`, `Scope`, `Implementation Steps`, `Verification`, `Stop Rules`, `Worker Handoff`, `Review Handoff`
+Required sections: `Goal`, `Requirements Mapping`, `Evidence Read`, `Scope`, `Implementation Steps`, `Verification`, `Risks`, `Stop Rules`, `Worker Handoff`, `Review Handoff`, `Subagent Routing`
 
-Legacy full sections add `Requirements Mapping`, `Evidence Read`, `Risks`, and `Subagent Routing`. Missing compact sections causes `raoctl.py plan` to reject the artifact.
+Compact execution memos remain allowed as ordinary non-runtime documentation, but active Claude goal plans must use the full section set. Missing full sections causes `raoctl.py plan` to reject the artifact.
 
 ## Style and Maintenance
 

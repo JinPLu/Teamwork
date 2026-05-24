@@ -34,6 +34,7 @@ PASSING_REVIEW_VERDICTS = {"pass", "pass-with-notes"}
 REVIEW_VERDICTS = PASSING_REVIEW_VERDICTS | {"revise", "blocked"}
 VERIFICATION_RESULTS = {"pass", "fail"}
 EVIDENCE_DELTAS = {"progress", "no-progress"}
+RESEARCH_DISPOSITIONS = {"none", "reuse", "update", "new"}
 PLAN_DIR = Path("docs/teamwork/plans")
 REPORT_DIR = Path("docs/teamwork/reports")
 PLAN_REQUIRED_SECTIONS = (
@@ -49,15 +50,7 @@ PLAN_REQUIRED_SECTIONS = (
     "Review Handoff",
     "Subagent Routing",
 )
-COMPACT_PLAN_REQUIRED_SECTIONS = (
-    "Goal",
-    "Scope",
-    "Implementation Steps",
-    "Verification",
-    "Stop Rules",
-    "Worker Handoff",
-    "Review Handoff",
-)
+GENERIC_AUDIT_VALUES = {"mapped", "passed", "done", "ok", "none"}
 
 
 class RaoError(Exception):
@@ -186,6 +179,9 @@ def save_state(state: GoalState) -> None:
         "last_verification_command",
         "last_verification_result",
         "last_evidence_delta",
+        "last_research_disposition",
+        "last_research_artifacts_read",
+        "last_agent_routing_decision",
         "no_progress_count",
         "manual_completion_unverified",
         "created_at",
@@ -352,6 +348,9 @@ def append_goal_report_row(
     verification_command: str,
     verification_result: str,
     evidence_delta: str,
+    research_disposition: str,
+    research_artifacts_read: str,
+    agent_routing_decision: str,
     plan_review: str,
     execution_review: str,
     research_plan_decision: str,
@@ -370,8 +369,8 @@ def append_goal_report_row(
         title = state.objective or "Teamwork Goal"
         full_path.write_text(
             f"# {title} Goal Report\n\n"
-            "| Iteration | Plan Artifact | Hypothesis / Attempt | Changes | Verification | Evidence Delta | Review Verdict | Research / Plan Decision | Next Step / Stop Reason |\n"
-            "|---|---|---|---|---|---|---|---|---|\n",
+            "| Iteration | Plan Artifact | Hypothesis / Attempt | Changes | Verification | Evidence Delta | Review Verdict | Research Reuse | Artifacts Read | Agent Routing | Research / Plan Decision | Next Step / Stop Reason |\n"
+            "|---|---|---|---|---|---|---|---|---|---|---|---|\n",
             encoding="utf-8",
         )
     review = f"plan={plan_review}; execution={execution_review}"
@@ -388,6 +387,9 @@ def append_goal_report_row(
                 verification,
                 evidence_delta,
                 review,
+                research_disposition,
+                research_artifacts_read,
+                agent_routing_decision,
                 research_plan_decision,
                 next_step,
             ]
@@ -408,6 +410,9 @@ def clear_checkpoint_fields(state: GoalState) -> None:
         "last_verification_command",
         "last_verification_result",
         "last_evidence_delta",
+        "last_research_disposition",
+        "last_research_artifacts_read",
+        "last_agent_routing_decision",
     ):
         state.meta.pop(key, None)
     state.meta["no_progress_count"] = 0
@@ -438,12 +443,11 @@ def markdown_sections(text: str) -> dict[str, str]:
 def lint_plan_artifact(path: Path) -> None:
     text = path.read_text(encoding="utf-8")
     sections = markdown_sections(text)
-    legacy_missing = [section for section in PLAN_REQUIRED_SECTIONS if not sections.get(section)]
-    compact_missing = [section for section in COMPACT_PLAN_REQUIRED_SECTIONS if not sections.get(section)]
-    if legacy_missing and compact_missing:
+    missing = [section for section in PLAN_REQUIRED_SECTIONS if not sections.get(section)]
+    if missing:
         raise RaoError(
             "plan artifact is missing required non-empty section(s): "
-            + ", ".join(compact_missing)
+            + ", ".join(missing)
         )
     verification = sections["Verification"]
     if "Expected" not in verification:
@@ -501,6 +505,22 @@ def completion_checkpoint_passes(state: GoalState) -> bool:
     )
 
 
+def audit_field_has_specific_evidence(value: str) -> bool:
+    normalized = normalized_field(value)
+    lowered = normalized.lower().strip(" .")
+    if lowered in GENERIC_AUDIT_VALUES or len(normalized) < 20:
+        return False
+    evidence_patterns = (
+        r"`[^`]+`",
+        r"\b(command|artifact|file|path|diff|test|verification|requirement)\b",
+        r"\b(pytest|python3?|npm|pnpm|yarn|rg|git|bash|sh)\b",
+        r"(?:^|\s)(?:\.?/)?[\w./-]+(?:\.md|\.py|\.sh|\.json|\.toml|\.yaml|\.yml|\.ts|\.tsx|\.js|\.jsx)\b",
+        r"->",
+        r"\brequirement\b[^:]{0,80}:",
+    )
+    return any(re.search(pattern, normalized, flags=re.IGNORECASE) for pattern in evidence_patterns)
+
+
 def completion_audit_detected(message: str, state: GoalState) -> bool:
     expected_plan_artifact = state.active_plan_artifact
     expected_sha = state.active_plan_artifact_sha256
@@ -519,6 +539,10 @@ def completion_audit_detected(message: str, state: GoalState) -> bool:
         if not value:
             return False
         fields[tag] = value
+    if not audit_field_has_specific_evidence(fields["requirements_mapping"]):
+        return False
+    if not audit_field_has_specific_evidence(fields["verification_evidence"]):
+        return False
     return (
         fields["plan_artifact"] == expected_plan_artifact
         and fields["plan_artifact_sha256"] == expected_sha
@@ -566,6 +590,9 @@ Goal state:
 - Execution review verdict: {state.meta.get("last_execution_review_verdict") or "not set"}
 - Verification result: {state.meta.get("last_verification_result") or "not set"}
 - Evidence delta: {state.meta.get("last_evidence_delta") or "not set"}
+- Research disposition: {state.meta.get("last_research_disposition") or "not set"}
+- Research artifacts read: {state.meta.get("last_research_artifacts_read") or "not set"}
+- Agent routing decision: {state.meta.get("last_agent_routing_decision") or "not set"}
 - No progress count: {state.no_progress_count}
 - Completion promise: <promise>{state.completion_promise}</promise>
 
@@ -577,7 +604,7 @@ Before stopping, audit completion against direct evidence:
 - Map each explicit requirement, command, artifact, test, and deliverable to evidence.
 - Run or inspect the focused verification before judging success.
 - If verification fails, use the Research + Plan Adequacy Gate before another implementation attempt.
-- After verification/review, record a checkpoint with attempt, changes, research-plan decision, and next step so the rolling report stays current.
+- After verification/review, record a checkpoint with attempt, changes, research disposition, artifacts read, agent routing decision, research-plan decision, and next step so the rolling report stays current.
 - Emit the completion promise only after verification and execution review pass.
 - The final message must include both the completion promise and this structured
   completion audit:
@@ -587,8 +614,8 @@ Before stopping, audit completion against direct evidence:
 <plan_artifact_sha256>{active_sha}</plan_artifact_sha256>
 <plan_review_verdict>pass</plan_review_verdict>
 <execution_review_verdict>pass</execution_review_verdict>
-<requirements_mapping>map each requirement to direct evidence</requirements_mapping>
-<verification_evidence>commands, artifacts, or inspected evidence</verification_evidence>
+<requirements_mapping>map each requirement to direct evidence with paths, commands, or artifacts</requirements_mapping>
+<verification_evidence>commands, artifacts, or inspected evidence with concrete references</verification_evidence>
 <dissent>none or preserved dissent/residual risk</dissent>
 </completion_audit>
 
@@ -619,10 +646,13 @@ def context_for_state(state: GoalState, source: str) -> str:
 - Active report artifact: {state.active_report_artifact or "not set"}
 - Verification result: {state.meta.get("last_verification_result") or "not set"}
 - Review verdicts: plan={state.meta.get("last_plan_review_verdict") or "not set"}, execution={state.meta.get("last_execution_review_verdict") or "not set"}
+- Research disposition: {state.meta.get("last_research_disposition") or "not set"}
+- Research artifacts read: {state.meta.get("last_research_artifacts_read") or "not set"}
+- Agent routing decision: {state.meta.get("last_agent_routing_decision") or "not set"}
 - No progress count: {state.no_progress_count}
 - Completion promise: <promise>{state.completion_promise}</promise>
 
-Use the `teamwork-goal` skill with mode: goal. Continue autonomously until verified success, budget exhaustion, or a hard blocker. Read the active plan artifact before execution; if it is not set or unreadable, create or repair a durable plan and record it with the plan command. If verification or review fails, refresh research and check plan adequacy before retry. Record checkpoints with rolling report fields after verification/review. When complete, output the completion promise plus a structured <completion_audit> block with plan_artifact, plan_artifact_sha256, plan_review_verdict, execution_review_verdict, requirements_mapping, verification_evidence, and dissent.
+Use the `teamwork-goal` skill with mode: goal. Continue autonomously until verified success, budget exhaustion, or a hard blocker. Read the active plan artifact before execution; if it is not set or unreadable, create or repair a durable plan and record it with the plan command. If verification or review fails, refresh research and check plan adequacy before retry. Record checkpoints with rolling report fields after verification/review, including research reuse and agent routing decisions. When complete, output the completion promise plus a structured <completion_audit> block with plan_artifact, plan_artifact_sha256, plan_review_verdict, execution_review_verdict, requirements_mapping, verification_evidence, and dissent.
 """
 
 
@@ -725,6 +755,9 @@ def command_status(args: argparse.Namespace) -> int:
         f"Verification command: {state.meta.get('last_verification_command') or 'not set'}\n"
         f"Verification result: {state.meta.get('last_verification_result') or 'not set'}\n"
         f"Evidence delta: {state.meta.get('last_evidence_delta') or 'not set'}\n"
+        f"Research disposition: {state.meta.get('last_research_disposition') or 'not set'}\n"
+        f"Research artifacts read: {state.meta.get('last_research_artifacts_read') or 'not set'}\n"
+        f"Agent routing decision: {state.meta.get('last_agent_routing_decision') or 'not set'}\n"
         f"No progress count: {state.no_progress_count}\n"
         f"Manual completion: {'not automatically verified' if state.meta.get('manual_completion_unverified') == 'true' else 'no'}\n"
         f"Completion promise: <promise>{state.completion_promise}</promise>\n"
@@ -857,9 +890,16 @@ def command_checkpoint(args: argparse.Namespace) -> int:
     execution_review = require_enum("--execution-review-verdict", args.execution_review_verdict, REVIEW_VERDICTS)
     verification_result = require_enum("--verification-result", args.verification_result, VERIFICATION_RESULTS)
     evidence_delta = require_enum("--evidence-delta", args.evidence_delta, EVIDENCE_DELTAS)
+    research_disposition = require_enum("--research-disposition", args.research_disposition, RESEARCH_DISPOSITIONS)
     verification_command = (args.verification_command or "").strip()
     if not verification_command:
         raise RaoError("--verification-command must not be empty")
+    research_artifacts_read = (args.research_artifacts_read or "").strip()
+    if not research_artifacts_read:
+        raise RaoError("--research-artifacts-read must not be empty")
+    agent_routing_decision = (args.agent_routing_decision or "").strip()
+    if not agent_routing_decision:
+        raise RaoError("--agent-routing-decision must not be empty")
 
     now = utc_now()
     state.meta["last_checkpoint_plan_artifact_sha256"] = state.active_plan_artifact_sha256
@@ -869,6 +909,9 @@ def command_checkpoint(args: argparse.Namespace) -> int:
     state.meta["last_verification_command"] = verification_command
     state.meta["last_verification_result"] = verification_result
     state.meta["last_evidence_delta"] = evidence_delta
+    state.meta["last_research_disposition"] = research_disposition
+    state.meta["last_research_artifacts_read"] = research_artifacts_read
+    state.meta["last_agent_routing_decision"] = agent_routing_decision
     if evidence_delta == "progress":
         state.meta["no_progress_count"] = 0
     else:
@@ -882,6 +925,9 @@ def command_checkpoint(args: argparse.Namespace) -> int:
         verification_command=verification_command,
         verification_result=verification_result,
         evidence_delta=evidence_delta,
+        research_disposition=research_disposition,
+        research_artifacts_read=research_artifacts_read,
+        agent_routing_decision=agent_routing_decision,
         plan_review=plan_review,
         execution_review=execution_review,
         research_plan_decision=getattr(args, "research_plan_decision", "") or "",
@@ -894,6 +940,9 @@ def command_checkpoint(args: argparse.Namespace) -> int:
         f"- {now}: Checkpoint recorded for {state.active_plan_artifact_sha256}; "
         f"plan_review={plan_review}, execution_review={execution_review}, "
         f"verification={verification_result}, evidence_delta={evidence_delta}, "
+        f"research_disposition={research_disposition}, "
+        f"research_artifacts_read={research_artifacts_read}, "
+        f"agent_routing_decision={agent_routing_decision}, "
         f"no_progress_count={state.no_progress_count}, report={report_artifact}.",
     )
     stopped_for_no_progress = state.no_progress_count >= 2
@@ -907,6 +956,9 @@ def command_checkpoint(args: argparse.Namespace) -> int:
     print(f"Execution review verdict: {execution_review}")
     print(f"Verification result: {verification_result}")
     print(f"Evidence delta: {evidence_delta}")
+    print(f"Research disposition: {research_disposition}")
+    print(f"Research artifacts read: {research_artifacts_read}")
+    print(f"Agent routing decision: {agent_routing_decision}")
     print(f"Report artifact: {report_artifact}")
     print(f"No progress count: {state.no_progress_count}")
     if stopped_for_no_progress:
@@ -921,6 +973,9 @@ def parse_checkpoint_raw_arguments(raw: str) -> argparse.Namespace:
     parser.add_argument("--verification-command", required=True)
     parser.add_argument("--verification-result", required=True)
     parser.add_argument("--evidence-delta", required=True)
+    parser.add_argument("--research-disposition", required=True)
+    parser.add_argument("--research-artifacts-read", required=True)
+    parser.add_argument("--agent-routing-decision", required=True)
     parser.add_argument("--attempt", default="")
     parser.add_argument("--changes", default="")
     parser.add_argument("--research-plan-decision", default="")
@@ -1098,6 +1153,9 @@ def build_parser() -> argparse.ArgumentParser:
     checkpoint.add_argument("--verification-command", required=True)
     checkpoint.add_argument("--verification-result", required=True)
     checkpoint.add_argument("--evidence-delta", required=True)
+    checkpoint.add_argument("--research-disposition", required=True)
+    checkpoint.add_argument("--research-artifacts-read", required=True)
+    checkpoint.add_argument("--agent-routing-decision", required=True)
     checkpoint.add_argument("--attempt", default="")
     checkpoint.add_argument("--changes", default="")
     checkpoint.add_argument("--research-plan-decision", default="")

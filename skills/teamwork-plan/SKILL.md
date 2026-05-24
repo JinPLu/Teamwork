@@ -1,164 +1,120 @@
 ---
 name: teamwork-plan
-description: Use when a multi-step or risky change needs an executable plan before implementation, or when the user asks for a plan — invoke before writing code to keep scope and verification explicit.
+description: Use when selected evidence or a user request requires a lightweight or durable execution plan before edits.
 ---
 
 # Teamwork Plan
 
-Use this subskill after `teamwork-research`, direct diagnosis, or explicit user
-direction has selected a direction. Prefer reading the research artifact when
-one exists before planning. The output is a plan that a worker can execute
-without expanding scope.
+Use this stage after research, diagnosis, or user direction has selected a
+direction. The plan must let a worker execute without reopening scope.
 
-For durable artifact triggers and placeholder hygiene, read
-`skills/teamwork/references/artifact-protocol.md`. For goal failure replanning,
-read `skills/teamwork/references/goal-iteration.md`.
+Read shared rules only as needed:
 
-## Shared Inputs
+- `skills/teamwork/references/workflow-contract.md` for the Evidence
+  Interpretation Contract, Context & Cost Discipline, Progress Anchors And
+  Artifacts, and Subagent Collaboration Model.
+- `skills/teamwork/references/artifact-protocol.md` for durable artifact
+  triggers and placeholder hygiene.
+- `skills/teamwork/references/goal-iteration.md` for Goal Plan Revision after
+  failed autonomous attempts.
+
+## Inputs
 
 - Goal, failure, or decision to resolve.
-- Research artifact path when prior research exists, normally
-  `docs/teamwork/research/YYYY-MM-DD-<slug>.md`.
-- Known evidence: command output, logs, artifacts, diffs, source locations.
-- Sacred boundaries: principles, contracts, architecture, user constraints.
-- Mutable scope: exact areas that may change.
-- Verification target: command, artifact, metric, or acceptance criteria.
-- Budget and stop rules.
+- Evidence already read: source, logs, tests, diffs, artifacts, commands, or a
+  `docs/teamwork/research/YYYY-MM-DD-<slug>.md` research artifact.
+- Scope boundaries, sacred boundaries, verification target, budget, and stop
+  rules.
 
-If the plan depends on current external behavior, unfamiliar API details,
-upstream errors, or ambiguous product/architecture choices and no research
-artifact exists, stop and route to `teamwork-research` before planning.
+If the plan depends on current external behavior, unfamiliar APIs, upstream
+bugs, or ambiguous architecture and no adequate evidence exists, route to
+`teamwork-research` before planning.
 
-State missing inputs as assumptions before they affect behavior. If an
-assumption would change public behavior, protected claims, data contracts, or
-architecture, stop and ask instead of guessing. In `teamwork-goal`
-`mode: goal`, safe internal details should become explicit assumptions rather
-than user questions.
+## Evidence And Context
 
-## Evidence Interpretation Contract
+Apply the shared Evidence Interpretation Contract: label important inputs as
+`observed`, `inferred`, or `claimed`. Treat names, comments, README prose,
+version labels, and prior summaries as claims until corroborated by direct
+evidence.
 
-Treat file names, directory names, version labels such as `v2`, `latest`,
-comments, README prose, historical notes, and prior summaries as claims, not
-facts. Before using them to choose a plan, corroborate them with direct evidence
-such as source call paths, tests, configuration, command output, artifact
-properties, git diff, or a readable research artifact.
-
-Label important findings as:
-
-- `observed`: direct evidence you inspected.
-- `inferred`: a conclusion drawn from observed evidence.
-- `claimed`: narrative, naming, or documentation text that still needs
-  corroboration.
-
-Do not let a claimed label decide scope, canonical files, version freshness, or
-completion status without at least one direct evidence cross-check.
-
-## Context & Cost Discipline
-
-- Prefer local files, diffs, logs, tests, artifacts, and existing research
-  artifacts before new MCP or web research.
-- Route back to `teamwork-research` when external constraints or stale
-  assumptions need investigation before planning.
-- Fan out subagents only when planning needs independent evidence, design,
-  judge, or review tracks that can run in parallel without blocking the main
-  agent's immediate next step. Each track needs a specific question, scope,
-  return format, and non-overlapping write ownership if edits are allowed.
-- Ask subagents to return condensed evidence, confidence, dissent, and open
-  questions instead of large raw logs.
-- Default planning fan-out is at most 3 parallel subagents unless the user gives
-  a larger budget. Do not fan out when main-agent continuity is cheaper and
-  safer than coordination.
+Apply Context & Cost Discipline: prefer local evidence and existing research
+artifacts before new external research; fan out only for independent questions
+that materially improve the plan.
 
 ## Planning Detail Tiers
 
-Use the lightest planning form that preserves correctness:
+Use the lightest planning form that preserves correctness.
 
-- Lightweight plan: concise chat/native checklist for simple, bounded,
-  single-agent work. Must include scope, steps, focused verification, expected
-  result, and stop condition.
-- Durable artifact plan: required for cross-agent execution, cross-turn work,
-  high-risk or ambiguous changes, public/shared behavior changes, explicit user
-  requests for a repository plan, and all `teamwork-goal` execution.
+- Lightweight plan: concise chat/native checklist for bounded low-risk
+  single-agent work. Include goal, scope, steps, focused verification, Expected
+  Results, and stop condition.
+- Durable artifact plan: required for goal-mode, cross-agent, cross-turn,
+  high-risk, ambiguous, public/shared behavior, and explicit repository-plan
+  requests.
 
-Default durable artifact path:
+Default durable path:
 
 ```text
 docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 ```
 
-The durable artifact is an execution memo and review source of truth when it
-exists. `update_plan` may mirror progress as a transient checklist, but it must
-never be the only plan for durable-required work.
+`update_plan` may mirror progress, but it is a transient UI-only checklist and
+is not the durable source of truth.
+
+For goal-mode runtime, the active plan recorded by `raoctl.py plan` must contain
+all durable sections below. A compact execution memo is only a non-runtime
+documentation form for ordinary work; it is not accepted as an active goal plan.
 
 ## Workflow
 
 1. Restate the root cause or goal in one sentence.
-2. Read the research artifact if one exists. If required external or ambiguous
-   evidence is missing, route to `teamwork-research` before planning.
-3. Classify the detail tier. Use a lightweight plan for bounded low-risk work;
-   write or update the durable plan artifact when the durable triggers apply.
-   Report the chosen tier and artifact path when one exists.
-4. Map each requirement or acceptance criterion to evidence already read or to
-   the exact verification that will prove it.
-5. Define scope: in scope, out of scope, and sacred boundaries.
-6. Identify the smallest producer-side change that can satisfy the goal.
-7. Break work into ordered, executable steps with exact paths when known.
-8. Design focused verification first; add broader checks only when shared
-   behavior, public contracts, or user-visible workflows are affected.
-9. List expected verification results, risks, rollback/rework strategy, and
-   evidence that would invalidate the plan.
-10. Avoid unresolved placeholders, ellipses as tasks, and generic testing or
-    edge-case instructions; each step must be executable or explicitly blocked.
-11. Define Subagent Routing when subagents are used, or when the plan is
-    durable, delegated, high-risk, or goal-mode: conceptual role, task scope,
-    Teamwork model tier, context strategy, parallel or serial ordering, and why
-    each role is needed. For non-lightweight plans, explicitly identify
-    independent tracks, including parallel Worker tracks with disjoint file
-    ownership, or state why no useful parallel track exists. For lightweight
-    plans with no subagents, omit the routing section.
+2. Read prior research or direct evidence. If required evidence is missing,
+   route to `teamwork-research`.
+3. Choose lightweight or durable artifact planning and name the artifact path
+   when one exists.
+4. Build a Requirements Mapping from each requirement or acceptance criterion
+   to observed evidence or verification that will prove it.
+5. Define in-scope, out-of-scope, and sacred boundaries.
+6. Select the smallest producer-side change that can satisfy the goal.
+7. Write ordered implementation steps with exact paths when known.
+8. Define focused verification first, broader verification only when warranted,
+   and Expected Results for each check.
+9. Name risks, stop rules, and evidence that would invalidate the plan.
+10. Define Subagent Routing if subagents are used, or when the plan is durable,
+    delegated, high-risk, or goal-mode. Include conceptual role, task scope,
+    model tier, context strategy, order, independence, owned paths, and why.
+    For non-lightweight plans with no subagents, state why main-agent
+    continuity is sufficient and why parallel Worker tracks would not help.
     Codex native dispatch fields are derived at dispatch time from the router
-    mapping; include them in a plan only when a non-default native override is
-    itself part of the decision.
-12. Prepare separate handoffs for worker execution and reviewer checks when the
-    plan is durable, delegated, or high-risk.
+    mapping; include native overrides only when they are part of the routing
+    decision.
+11. Add Worker Handoff and Review Handoff for durable, delegated, high-risk, or
+    goal-mode work.
 
 ## Goal Plan Revision
 
-When goal verification fails, acceptance cannot be judged, execution review
-returns `revise`/`blocked`, evidence delta is `no-progress`, or execution
-reports a plan mismatch, do not merely retry the old plan. Read the refreshed
-research, failed verification, execution review, rolling report, and current
-plan. Revise or replace the durable plan when the failure shows missing
-evidence, a stale assumption, wrong scope, over-strict blocker, or invalid stop
-rule. Record what changed and why, then require plan review again before
-execution resumes.
+When goal verification fails, review returns `revise` or `blocked`, evidence
+delta is `no-progress`, acceptance cannot be judged, or execution reports a
+plan mismatch, do not retry blindly. Read refreshed research, failed
+verification, execution review, rolling report, and current plan. Revise or
+replace the durable plan when evidence shows missing research, a stale
+assumption, wrong scope, invalid stop rule, or over-strict blocker. Record the
+changed plan again and require plan review before execution resumes.
 
-## Plan Quality Gates
+## Quality Gates
 
-- Simplicity first: no abstraction or refactor unless required by evidence.
-- Surgical edits: every planned file must trace to the goal.
-- Evidence-driven: the plan identifies what will prove success.
-- Research-grounded: plans depending on external behavior, upstream bugs,
-  current CLI/API behavior, or ambiguous architecture claims cite a readable
-  research artifact or state why local evidence is enough.
-- Boundary-safe: no step changes protected contracts or principles.
-- Budget-aware: include stop conditions for no progress, blocker, or budget.
-- Durable when warranted: goal-mode, high-risk, cross-agent, cross-turn,
-  ambiguous, public/shared behavior, and explicitly requested repository plans
-  use `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
-- Goal-aware: failed goal iterations revise the durable plan only after
-  research checks plan adequacy; a changed plan must be re-reviewed and
-  re-recorded before retry.
-- Routing-aware: if subagents are used, name role, task scope, Teamwork model tier,
-  context strategy, parallel or serial ordering, and why. If subagents are
-  skipped for non-lightweight execution, state why main-agent continuity is
-  sufficient despite potential parallel Worker tracks.
-- Codex-aware: ordinary plans use conceptual routing. Native dispatch fields
-  are derived from `skills/teamwork/SKILL.md` when dispatching; write them in a
-  plan only when a non-default native override is itself part of the routing
-  decision.
+- Every planned file traces to the goal.
+- No broad refactor, abstraction, cleanup, or downstream behavior change unless
+  required by evidence.
+- Requirements Mapping is concrete enough for review.
+- Verification has commands, artifacts, or checks plus Expected Results.
+- Durable plans have no `<...>`, `TODO`, `TBD`, or ellipsis tasks.
+- Goal-mode plans include all runtime-required sections and can be recorded
+  with `raoctl.py plan`.
+- If subagents are used, routing is specific; if skipped for non-lightweight
+  work, the skip rationale is explicit.
 
-Output:
+## Output
 
 ```text
 Mode:
@@ -175,7 +131,7 @@ Goal:
 - ...
 
 Requirements Mapping:
-- <requirement or acceptance criterion>: <observed evidence or verification that will prove it>
+- <requirement>: <observed evidence or verification that will prove it>
 
 Evidence Read:
 - <observed|inferred|claimed> <path/command/artifact/research>: <finding>
@@ -187,12 +143,11 @@ Scope:
 
 Implementation Steps:
 - [ ] 1. <path/component> - <minimal change> - <why>
-- [ ] 2. ...
 
 Verification:
 - Focused: <command/artifact/check>
 - Broader: <command/check or not needed because ...>
-- Expected Results: <exact passing output, artifact property, or behavioral state>
+- Expected Results: <exact passing output, artifact property, or behavior>
 
 Risks:
 - <risk> - <mitigation>
@@ -207,12 +162,10 @@ Review Handoff:
 - Check scope, diff, tests/artifacts, regressions, and acceptance criteria.
 
 Subagent Routing:
-- <if subagents are used, list role, scope, model tier, context strategy, order, independence from other tracks, owned paths, and why; for durable/delegated/high-risk/goal-mode plans with no subagents, state main-agent continuity is sufficient and why parallel Worker tracks would not help>
+- <role, scope, model tier, context strategy, order, independence, owned paths, and why; or main-agent continuity rationale>
 ```
 
-For lightweight plans, keep the output compact while still including Goal,
-Scope, Steps, Verification, Stop Rules, and Review Need. For durable artifact
-plans, use a compact execution memo with Goal, Scope, Implementation Steps,
-Verification, Stop Rules, and Worker/Review handoffs. Add Requirements Mapping,
-Evidence Read, Risks, and Subagent Routing when they are needed for high-risk,
-cross-agent, cross-turn, or goal-mode work.
+For lightweight plans, keep the output compact while preserving Goal, Scope,
+Steps, Verification, Expected Results, Stop Rules, and Review Need. For durable
+goal-runtime plans, keep the memo compact but include every section in the
+template.

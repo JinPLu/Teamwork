@@ -109,9 +109,9 @@ docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 
 Research artifacts are reusable investigation memory: use full-text search over old research first, update or cite still-relevant files, and record local evidence, external sources, recommendation, dissent, and refresh triggers.
 
-Plan artifacts are execution memos: name scope boundaries, list executable steps, define focused verification and expected results, and include worker/reviewer handoffs. Larger plans may also map requirements to evidence, risks, and subagent routing.
+Plan artifacts are execution memos: name scope boundaries, executable steps, focused verification, expected results, and worker/reviewer handoffs. Goal runtime plans also require requirements mapping, evidence read, risks, and subagent routing.
 
-Reports are conclusions plus goal rolling memory. Goal mode keeps one Markdown table report per goal; ordinary tasks write reports only for non-trivial, reusable summaries.
+Reports are conclusions plus goal rolling memory. Goal rows include research reuse, artifacts read, and agent routing so reviewers can see whether research or subagents were repeated or skipped.
 
 These artifacts are ignored by default, together with `docs/superpowers/`. Force-add only when a specific artifact is intentionally part of a PR.
 
@@ -130,12 +130,12 @@ Claude bounded goal example:
 ```text
 /teamwork:goal 修复 pytest X，最多 3 轮，无进展就停 --max-iterations 3
 /teamwork:plan docs/teamwork/plans/2026-05-14-fix-pytest-x.md
-/teamwork:checkpoint --plan-review-verdict pass --execution-review-verdict pass --verification-command "pytest X" --verification-result pass --evidence-delta progress
+/teamwork:checkpoint --plan-review-verdict pass --execution-review-verdict pass --verification-command "pytest X" --verification-result pass --evidence-delta progress --research-disposition reuse --research-artifacts-read "docs/teamwork/research/2026-05-14-fix-pytest-x.md" --agent-routing-decision "main-agent continuity; no useful parallel Worker track"
 ```
 
 Claude Stop hook continues an unfinished goal until completion, max iterations, pause/stop, blocker, or repeated no-progress. The default completion promise is `RAO_GOAL_COMPLETE`.
 
-Automatic Claude completion requires the promise and a structured audit:
+Automatic Claude completion requires the promise and a structured audit with concrete commands, paths, artifacts, or requirement-to-evidence mapping:
 
 ```text
 <completion_audit>

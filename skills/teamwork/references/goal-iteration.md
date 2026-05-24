@@ -65,9 +65,10 @@ docs/teamwork/reports/YYYY-MM-DD-<goal-slug>.md
 ```
 
 Append one Markdown table row after each verification/execution-review cycle.
+The checkpoint command writes the same fields in Claude runtime state.
 
-| Iteration | Plan Artifact | Hypothesis / Attempt | Changes | Verification | Evidence Delta | Review Verdict | Research / Plan Decision | Next Step / Stop Reason |
-|---|---|---|---|---|---|---|---|---|
+| Iteration | Plan Artifact | Hypothesis / Attempt | Changes | Verification | Evidence Delta | Review Verdict | Research Reuse | Artifacts Read | Agent Routing | Research / Plan Decision | Next Step / Stop Reason |
+|---|---|---|---|---|---|---|---|---|---|---|---|
 
 The report is cross-turn memory. It does not replace the durable plan, research
 artifact, checkpoint, completion audit, or direct verification evidence.

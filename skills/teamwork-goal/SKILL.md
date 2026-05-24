@@ -1,116 +1,87 @@
 ---
 name: teamwork-goal
-description: Use when the user asks to run until it passes, iterate until done, keep going until convergence, or gives a verifiable target with a budget — autonomous goal mode using Codex native goals or Claude Stop-hook continuation.
+description: Use when the user asks to run until it passes, iterate until done, keep going until convergence, or gives a verifiable target with a budget.
 ---
 
 # Teamwork Goal
 
-Use this subskill for `mode: goal` only when the user gives a goal, command,
-artifact target, or failure and wants autonomous progress to verified success
-or a clear stop. Ordinary research, planning, review, or one-shot execution
-must use the narrower Teamwork stage skill instead.
+Use this stage for `mode: goal` when the user wants autonomous progress to
+verified success, budget exhaustion, repeated no-progress, or a hard blocker.
+Ordinary one-shot research, planning, execution, or review should use the
+narrower Teamwork stage.
 
-Goal mode is intentionally stricter than normal Teamwork. The durable plan,
-verification, review, and checkpoint/audit requirements below are safeguards for
-autonomous continuation, not requirements for ordinary one-shot tasks. In Codex,
-goal mode is protocol-backed through native Codex goals and explicit progress
-anchors; in Claude Code plugin mode, it is Stop-hook-backed through `raoctl.py`.
+Goal mode is stricter than normal Teamwork. Every completion claim must be
+anchored to a durable plan artifact, direct verification, execution review, and
+checkpoint/audit evidence. Codex uses native goal state; Claude Code uses
+`raoctl.py` Stop-hook state.
 
-For the detailed goal input contract, Research + Plan Adequacy Gate, and
-rolling report table, read `skills/teamwork/references/goal-iteration.md`.
+Read shared references only as needed:
 
-The goal controller owns iteration and acceptance. It does not let one
-executor self-declare completion. Every completion claim must be anchored to a
-durable plan artifact, focused verification, and execution review.
+- `skills/teamwork/references/workflow-contract.md` for evidence, context,
+  progress anchors, and subagent collaboration.
+- `skills/teamwork/references/goal-iteration.md` for the goal input contract,
+  Research + Plan Adequacy Gate, and rolling report table.
+- `skills/teamwork/references/artifact-protocol.md` for artifact retrieval and
+  hygiene.
 
 ## Inputs
 
-- Goal objective, explicit deliverables, or failing command/artifact target.
-- Verification evidence that proves success. Recommended user-facing shape:
+- Objective, deliverable, failing command, or artifact target.
+- Verification evidence that proves success. Recommended shape:
   `/teamwork:goal 达成 <目标>，用 <可验证证据> 验收，保持 <限制条件> 不破坏，只允许使用 <输入/工具/文件边界>，每轮根据 <下一步判断规则> 决策。`
-  Angle brackets are prompt guidance only; do not leave `<...>` placeholders in
-  artifacts.
-- Budget: max iterations, stop rules, and completion promise when provided.
-- Sacred boundaries and mutable scope.
-- Active plan artifact when one already exists.
+- Budget, stop rules, allowed tools/files, sacred boundaries, and mutable scope.
+- Existing `active_plan_artifact` or report artifact if present.
 - Runtime state:
   - Codex: native Codex goal state when explicitly requested or already active.
-  - Claude Code plugin: `.claude/teamwork-goals/*.goal.md`, including
+  - Claude: `.claude/teamwork-goals/*.goal.md`, including
     `active_plan_artifact`, `active_plan_artifact_sha256`, checkpoint review
-    verdicts, verification result, evidence delta, and `no_progress_count`
-    when set.
+    verdicts, verification result, evidence delta, research disposition,
+    artifacts read, agent routing decision, and `no_progress_count`.
 
-If a goal is active, continue it rather than creating a second goal. Ask the
-user only for destructive risk, auth/credentials, missing required external
-resources, sacred-boundary conflict, or ambiguity that changes public behavior,
-protected contracts, architecture, or user intent.
-
-Codex should not emulate Claude Stop hooks. Use native Codex goal state only
-when the user explicitly asks for autonomous convergence or when a goal is
-already active; otherwise use the narrower research, plan, execute, or review
-stage.
+Ask the user only for destructive risk, auth/credentials, missing required
+external resources, sacred-boundary conflict, or ambiguity that changes public
+behavior, protected contracts, architecture, or user intent.
 
 ## Plan Anchor Requirement
 
-Every goal iteration that can execute changes must use a durable Markdown plan
-artifact before execution:
+Every executable goal iteration needs a durable Markdown plan artifact:
 
 ```text
 docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 ```
 
-If no readable plan artifact exists, first route to `teamwork-plan` and write
-one. In Claude Code plugin mode, record the selected artifact in goal state with:
+If no readable plan exists, create one through `teamwork-plan`. In Claude
+runtime, record it with:
 
 ```bash
 raoctl.py plan docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 ```
 
-The recorded `active_plan_artifact` is the shared anchor for continuation,
-Worker execution, execution review, and completion audit. Do not infer the
-active plan from the newest file in `docs/teamwork/plans`, chat history,
-`update_plan`, or a summary.
+The recorded `active_plan_artifact` and SHA are the shared anchor for
+continuation, Worker execution, execution review, checkpointing, and completion
+audit. Do not infer the plan from newest files, chat history, `update_plan`, or
+summaries. If the plan changes, record it again and repeat plan review,
+execution review, and checkpointing.
 
-When a new iteration needs a materially different plan, create or update the
-durable plan artifact first, then update `active_plan_artifact` before
-execution continues.
-
-Claude runtime records the plan file SHA-256 at plan-record time. If the file
-changes afterward, record the plan again and repeat plan review, execution
-review, and checkpoint recording before automatic completion.
-
-## Default Budget
-
-- Maximum 3 optimization iterations when unspecified.
-- Stop after 2 consecutive iterations with no evidence delta.
-- Stop immediately on sacred-boundary conflict, destructive risk, auth failure,
-  missing credentials, unavailable required resources, or ambiguous product
-  intent that affects behavior.
+Claude runtime now accepts only full goal plans with these sections: Goal,
+Requirements Mapping, Evidence Read, Scope, Implementation Steps, Verification,
+Risks, Stop Rules, Worker Handoff, Review Handoff, and Subagent Routing.
 
 ## Controller Loop
 
-1. Initialize: state objective, assumptions, sacred boundaries, mutable scope,
-   verification target, budget, current `active_plan_artifact`, and current
-   report artifact if present.
-2. Retrieve prior memory: search relevant `docs/teamwork/research/` artifacts
-   and the current `docs/teamwork/reports/` rolling report before repeating an
-   old hypothesis.
-3. Research if causes or options are unclear, or refresh research when
-   execution becomes locally self-confirming: use `teamwork-research`.
-   After one focused fix or prompt change with no evidence delta, enter the
-   Research + Plan Adequacy Gate before another local guess.
-4. Plan: use `teamwork-plan`; ensure the plan artifact is readable and recorded
-   as `active_plan_artifact` in Claude runtime state when goal execution changes files.
-5. Review the plan: use `teamwork-review` with `mode: plan`; revise until pass
-   or blocked.
-6. Execute: use `teamwork-execute` on the accepted durable plan artifact.
-7. Verify: run focused checks first and collect real evidence.
-8. Review execution: use `teamwork-review` with `mode: execution`, comparing
-   diff and verification against `active_plan_artifact`.
-9. Append the goal rolling report row under
-   `docs/teamwork/reports/YYYY-MM-DD-<slug>.md`. In Claude runtime, prefer the
-   checkpoint command fields that write this row.
-10. In Claude runtime, record the checkpoint:
+1. Initialize objective, assumptions, boundaries, verification target, budget,
+   active plan, and active report.
+2. Retrieve prior research and report rows before repeating a hypothesis.
+3. Research or refresh research when causes/options are unclear, external
+   assumptions matter, or a focused attempt has no evidence delta.
+4. Plan through `teamwork-plan`; record the durable plan in Claude runtime.
+5. Review the plan with `teamwork-review` mode: plan.
+6. Execute the accepted plan through `teamwork-execute`.
+7. Verify with focused evidence first.
+8. Review execution with `teamwork-review` mode: execution.
+9. Append the rolling report row under
+   `docs/teamwork/reports/YYYY-MM-DD-<slug>.md`.
+10. Record the checkpoint in Claude runtime:
 
 ```bash
 raoctl.py checkpoint \
@@ -119,54 +90,43 @@ raoctl.py checkpoint \
   --verification-command "focused verification command" \
   --verification-result pass \
   --evidence-delta progress \
+  --research-disposition reuse \
+  --research-artifacts-read "docs/teamwork/research/YYYY-MM-DD-<slug>.md" \
+  --agent-routing-decision "main-agent continuity; no useful parallel Worker track" \
   --attempt "hypothesis or attempt" \
   --changes "files or behavior changed" \
-  --research-plan-decision "accept plan or refresh research/plan" \
+  --research-plan-decision "accept active plan" \
   --next-step "accept, retry, or stop reason"
 ```
 
-11. Decide: accept only if verification and execution review pass. If
-    verification fails, acceptance cannot be judged, review returns
-    `revise`/`blocked`, evidence delta is `no-progress`, or a plan mismatch is
-    reported, enter the Research + Plan Adequacy Gate. Stop only for true
-    blockers or budget exhaustion.
+11. Accept only when verification passes and execution review passes. Otherwise
+    enter the Research + Plan Adequacy Gate.
 
 ## Research + Plan Adequacy Gate
 
-Before retrying after failure, read the failed verification, execution review,
-current durable plan, rolling report, and relevant research. Decide whether the
-plan lacked evidence, held a stale assumption, chose the wrong scope, blocked
-too aggressively, or whether execution deviated from a valid plan. If research
-or plan revision can resolve the issue, update research, revise or replace the
-durable plan, record the plan again, repeat plan review, then retry within
-budget. Treat only missing credentials/resources, destructive risk,
-sacred-boundary conflict, budget exhaustion, or unresolved user intent/public
-contract ambiguity as true blockers.
+Enter this gate after failed verification, `revise`/`blocked` review, acceptance
+uncertainty, `no-progress`, or plan mismatch. Read failed verification, current
+plan and SHA, execution review, rolling report, and relevant research. Decide
+whether the issue is research gap, plan insufficiency, wrong scope, over-strict
+stop rule, implementation deviation, or true blocker. Refresh research, revise
+or replace the durable plan, record the plan again, and repeat plan review when
+new evidence changes the path.
 
-## Autonomous Discipline
+## Completion Rules
 
-- Treat the goal as concrete deliverables plus verification targets.
-- Read direct evidence before each decision; do not rely on summaries.
-- Keep the plan artifact path visible in worker and reviewer handoffs.
-- If verification fails, identify the evidence delta, run the Research + Plan
-  Adequacy Gate, then continue only with refreshed research/plan evidence.
-- If one focused fix or prompt change produces no evidence delta, refresh
-  research before another local implementation attempt.
-- Append a rolling report row after every verification/review cycle. The report
-  is memory, not completion proof.
-- If there is no evidence delta for 2 consecutive iterations, stop with a
-  blocker or budget/no-progress conclusion.
-- In Codex, create a native goal only when the user explicitly asks for
-  autonomous convergence and no active goal exists. Mark it complete only after
-  focused verification and execution review pass.
-- In Claude Code plugin mode, emit the configured completion promise only after
-  verification and execution review pass, and include the required structured
-  completion audit in the same final assistant message.
+- Default budget is 3 iterations when unspecified.
+- Stop after 2 consecutive `no-progress` checkpoints.
+- Stop immediately on sacred-boundary conflict, destructive risk, auth failure,
+  missing required resources, or public-contract/user-intent ambiguity.
+- A rolling report is memory, not completion proof.
+- In Codex, mark the native goal complete only after focused verification and
+  execution review pass.
+- In Claude, emit the completion promise only after passing checkpoint state and
+  include the structured completion audit in the same final assistant message.
 
 ## Completion Audit
 
-Claude Code plugin auto-completion requires the configured completion promise
-and this structured audit in the same final assistant message:
+Claude auto-completion requires the configured promise and this audit:
 
 ```text
 <completion_audit>
@@ -174,19 +134,16 @@ and this structured audit in the same final assistant message:
 <plan_artifact_sha256>recorded sha256</plan_artifact_sha256>
 <plan_review_verdict>pass</plan_review_verdict>
 <execution_review_verdict>pass</execution_review_verdict>
-<requirements_mapping>map each requirement to direct evidence</requirements_mapping>
-<verification_evidence>commands, artifacts, or inspected evidence</verification_evidence>
+<requirements_mapping>requirement -> command/path/artifact evidence</requirements_mapping>
+<verification_evidence>commands, artifacts, paths, or inspected evidence</verification_evidence>
 <dissent>none or preserved dissent/residual risk</dissent>
 </completion_audit>
 ```
 
 The `plan_review_verdict` and `execution_review_verdict` must each be exactly
-`pass` or `pass-with-notes`. The `plan_artifact` and
-`plan_artifact_sha256` must match runtime state. The runtime checkpoint must be
-current for that SHA, verification result must be `pass`, and both stored
-review verdicts must be passing. The Stop hook must not auto-complete on the
-completion promise alone, on an audit without matching plan identity, without
-a current checkpoint, or on non-passing review or verification state.
+`pass` or `pass-with-notes`; the runtime also lints
+`requirements_mapping` and `verification_evidence` for concrete paths,
+commands, artifacts, or requirement-to-evidence mappings.
 
 ## Output
 
@@ -219,7 +176,7 @@ Completion Audit:
 - plan_artifact_sha256: <sha256>
 - plan_review_verdict: <pass | pass-with-notes>
 - execution_review_verdict: <pass | pass-with-notes>
-- requirements_mapping: <evidence map>
+- requirements_mapping: <requirement-to-evidence map with paths/commands/artifacts>
 - verification_evidence: <commands/artifacts/inspection>
 - dissent: <none or residual risk>
 

@@ -50,7 +50,9 @@ instructions.
 Use durable Markdown plan artifacts for cross-agent execution, cross-turn work,
 high-risk or ambiguous changes, public/shared behavior changes, explicit
 repository plans, and all goal-mode execution. Treat them as compact execution
-memos, not process logs.
+memos, not process logs. Goal runtime plans require full sections, including
+requirements mapping, evidence read, risks, worker/reviewer handoff, and
+subagent routing.
 
 ```text
 docs/teamwork/plans/YYYY-MM-DD-<slug>.md
@@ -66,8 +68,8 @@ docs/teamwork/research/YYYY-MM-DD-<slug>.md
 
 Use final reports only for non-trivial conclusions that should survive the
 conversation. In goal mode, keep one rolling Markdown table report per goal so
-failed attempts, evidence deltas, review verdicts, and plan revisions remain
-searchable:
+failed attempts, evidence deltas, review verdicts, research reuse, artifacts
+read, agent routing, and plan revisions remain searchable:
 
 ```text
 docs/teamwork/reports/YYYY-MM-DD-<slug>.md
