@@ -39,7 +39,8 @@ Read direct evidence before deciding:
 - current durable plan and plan SHA;
 - execution review findings and deviations;
 - current rolling report rows;
-- relevant research artifacts from the full-text retrieval protocol.
+- relevant research, plan, and report artifacts from the artifact retrieval
+  protocol.
 
 Classify the failure:
 
@@ -66,7 +67,19 @@ Each goal keeps one report:
 docs/teamwork/reports/YYYY-MM-DD-<goal-slug>.md
 ```
 
-Append one Markdown table row after each verification/execution-review cycle.
+Start the report with a retrieval header, then append one Markdown table row
+after each verification/execution-review cycle.
+
+```text
+Artifact Type: report
+Status: active | accepted | blocked | budget-exhausted
+Last Updated: YYYY-MM-DD
+Search Keys: exact errors, commands, paths, components, dependencies, model/API
+names, issue/PR IDs, user terms
+Abstract: 2-4 sentences covering the goal, current outcome, and applicability
+boundary. This summary helps retrieval; it is not completion evidence.
+Linked Artifacts: related research or plan paths, or none
+```
 
 | Iteration | Plan Artifact | Hypothesis / Attempt | Changes | Verification | Evidence Delta | Review Verdict | Research Reuse | Artifacts Read | Agent Routing | Research / Plan Decision | Next Step / Stop Reason |
 |---|---|---|---|---|---|---|---|---|---|---|---|

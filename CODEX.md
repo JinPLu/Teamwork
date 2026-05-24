@@ -32,6 +32,11 @@ docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 ```
 
+Every durable artifact starts with a retrieval header: `Artifact Type`,
+`Status`, `Last Updated`, `Search Keys`, `Abstract`, and `Linked Artifacts`.
+Search these headers first, then full text across research, plans, and reports.
+The abstract is a retrieval aid, not completion proof.
+
 Use them for goal-mode, failed iteration, cross-agent execution, cross-turn work, high-risk or ambiguous changes, public/shared behavior, external calibration, and explicit repository-plan requests. Small low-risk edits can stay in native Codex chat/progress.
 
 For failed goal iterations, refresh research and check whether the active plan was under-informed, stale, wrong-scope, over-strict, or deviated from during execution before retrying. Revise and review the durable plan when new evidence changes the path.

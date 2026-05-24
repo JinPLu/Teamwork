@@ -129,6 +129,14 @@ Plan Tier:
 - <lightweight | durable artifact>
 - Artifact Path: <docs/teamwork/plans/YYYY-MM-DD-<slug>.md | none>
 
+Durable Artifact Header:
+- Artifact Type: plan
+- Status: active | superseded | accepted | blocked
+- Last Updated: YYYY-MM-DD
+- Search Keys: exact errors, commands, paths, components, dependencies, model/API names, issue/PR IDs, user terms
+- Abstract: 2-4 sentences covering the goal, selected implementation direction, and applicability boundary.
+- Linked Artifacts: related research or report paths, or none
+
 Goal:
 - ...
 

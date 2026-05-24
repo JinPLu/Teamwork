@@ -13,6 +13,7 @@ Simple tasks stay native. Use Teamwork only when evidence, planning, review, del
 | Evidence first | Important claims must come from source, diffs, logs, tests, artifacts, or primary external sources. File names, README prose, comments, stale summaries, and `latest` labels are treated as claims until corroborated. |
 | Better native goals | Unclear autonomous requests first get a chat-window `Goal Proposal`. After human approval, its `Native Codex Goal Text` is used with Codex native goal state. Failed attempts return to research + plan adequacy instead of early block. |
 | Artifact memory | `research/`, `plans/`, and `reports/` preserve reusable evidence, execution memos, rolling attempts, verification, review, and routing decisions so work does not repeat or bloat the chat context. |
+| Retrieval headers | Durable artifacts start with type, status, updated date, search keys, abstract, and linked artifacts so future agents can find the right memory before full-text search. |
 | Subagent routing | Goal proposals and durable plans name Explorer, Worker, and Reviewer tracks when parallel context helps. Lightweight tasks do not force delegation. |
 
 ## Skill Map
@@ -74,6 +75,11 @@ docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 | `research/` | Reusable investigation and external calibration | What evidence was read, and which findings are observed/inferred/claimed? |
 | `plans/` | Execution memo and review source of truth | Are goal, scope, steps, verification, risks, handoffs, and routing clear? |
 | `reports/` | Goal rolling memory and durable conclusions | What was tried, verified, reviewed, reused, and routed? |
+
+Every durable artifact begins with `Artifact Type`, `Status`, `Last Updated`,
+`Search Keys`, `Abstract`, and `Linked Artifacts`. The abstract helps retrieval;
+completion still requires direct evidence from commands, diffs, tests,
+artifacts, or inspected behavior.
 
 These directories are gitignored unless the user intentionally asks to publish a specific artifact.
 

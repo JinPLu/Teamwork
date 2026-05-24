@@ -12,7 +12,8 @@ calibration when useful, compares options, and hands a selected direction to
 Read first:
 
 - `skills/teamwork/references/workflow-contract.md` for the Evidence Interpretation Contract and Context & Cost Discipline.
-- `skills/teamwork/references/artifact-protocol.md` for full-text research retrieval, artifact triggers, and reuse/update/new decisions.
+- `skills/teamwork/references/artifact-protocol.md` for artifact retrieval,
+  artifact triggers, and reuse/update/new decisions.
 - `skills/teamwork/references/goal-iteration.md` only for goal-mode failure
   analysis.
 
@@ -74,6 +75,13 @@ Route back to research when:
 
 ```text
 # <Topic> Research
+
+Artifact Type: research
+Status: active | superseded | accepted | blocked
+Last Updated: YYYY-MM-DD
+Search Keys: exact errors, commands, paths, components, dependencies, model/API names, issue/PR IDs, user terms
+Abstract: 2-4 sentences covering the research question, selected conclusion, and applicability boundary.
+Linked Artifacts: related plan or report paths, or none
 
 ## Research Question
 ## Local Evidence

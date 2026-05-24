@@ -141,6 +141,8 @@ grep_required 'Subagent Collaboration Model' "$ROUTER" \
   "router must define subagent collaboration model"
 grep_required 'Default to at most' "$ROUTER" \
   "router must limit default parallel subagents"
+grep_required 'Workflow Pattern Selection' "$ROOT/skills/teamwork/references/workflow-contract.md" \
+  "workflow contract must define workflow pattern selection"
 
 grep_required 'Goal Proposal Before Native Goal' "$ROOT/skills/teamwork-goal/SKILL.md" \
   "goal skill must require goal proposal before native goal creation"
@@ -161,12 +163,20 @@ grep_required 'Search existing research artifacts' "$ROOT/skills/teamwork-resear
   "research skill must reuse existing research artifacts"
 grep_required 'Research Refresh Triggers' "$ROOT/skills/teamwork-research/SKILL.md" \
   "research skill must define refresh triggers"
+grep_required 'Search Keys' "$ROOT/skills/teamwork-research/SKILL.md" \
+  "research artifact template must include Search Keys"
+grep_required 'Abstract' "$ROOT/skills/teamwork-research/SKILL.md" \
+  "research artifact template must include Abstract"
 grep_required 'Use the lightest planning form that preserves correctness' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must support lightweight and durable planning tiers"
 grep_required 'Goal-mode durable plans' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must define Codex goal durable plans"
 grep_required 'Requirements Mapping' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must require requirements mapping"
+grep_required 'Search Keys' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan artifact template must include Search Keys"
+grep_required 'Abstract' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan artifact template must include Abstract"
 grep_required 'Codex native dispatch fields are derived at dispatch time from the router' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must derive native dispatch fields at dispatch time"
 grep_required 'codex review' "$ROOT/skills/teamwork-review/SKILL.md" \
@@ -203,6 +213,18 @@ grep_required 'Research + Plan Adequacy Gate' "$ROOT/skills/teamwork/references/
   "goal iteration reference must define failure gate"
 grep_required 'Research Reuse' "$ROOT/skills/teamwork/references/goal-iteration.md" \
   "goal iteration reference must include research reuse in rolling report"
+grep_required 'Search Keys' "$ROOT/skills/teamwork/references/goal-iteration.md" \
+  "report template must include Search Keys"
+grep_required 'Abstract' "$ROOT/skills/teamwork/references/goal-iteration.md" \
+  "report template must include Abstract"
+grep_required 'Retrieval Header' "$ROOT/skills/teamwork/references/artifact-protocol.md" \
+  "artifact protocol must define Retrieval Header"
+grep_required 'docs/teamwork/{research,plans,reports}/' "$ROOT/skills/teamwork/references/artifact-protocol.md" \
+  "artifact retrieval must cover research, plans, and reports"
+grep_required 'Search Keys' "$ROOT/skills/teamwork/references/artifact-protocol.md" \
+  "artifact protocol must define Search Keys"
+grep_required 'Abstract' "$ROOT/skills/teamwork/references/artifact-protocol.md" \
+  "artifact protocol must define Abstract"
 
 if git -C "$ROOT" grep -n -E 'Claude|Cursor|raoctl|RAO|Stop hook|/rao:|/teamwork:|\.claude|\.cursor|claude-plugin' \
   -- ':!scripts/validate.sh' >/tmp/teamwork-retired-grep.$$; then

@@ -22,10 +22,29 @@ Write or update `docs/teamwork/reports/YYYY-MM-DD-<slug>.md` for goal-mode
 rolling attempts and for non-trivial conclusions that should survive the
 conversation. Do not write reports for ordinary lightweight tasks.
 
-## Full-Text Research Retrieval
+## Retrieval Header
 
-Before new non-trivial research, search existing `docs/teamwork/research/`
-with all useful keys available from the task:
+Start every durable artifact with a compact retrieval header before the body:
+
+```text
+Artifact Type: research | plan | report
+Status: active | superseded | accepted | blocked | budget-exhausted
+Last Updated: YYYY-MM-DD
+Search Keys: exact errors, commands, paths, components, dependencies, model/API
+names, issue/PR IDs, user terms
+Abstract: 2-4 sentences covering the problem, conclusion, and applicability
+boundary. This summary helps retrieval; it is not completion evidence.
+Linked Artifacts: related research, plan, or report paths, or none
+```
+
+Use concrete values. Do not use YAML frontmatter for artifacts; reserve YAML
+frontmatter for skill metadata only.
+
+## Artifact Retrieval
+
+Before new non-trivial research, plan creation, or goal failure analysis,
+search existing `docs/teamwork/{research,plans,reports}/` with all useful keys
+available from the task:
 
 - goal words and likely slug words;
 - exact error messages, commands, failing tests, log fragments, or status text;
@@ -33,10 +52,11 @@ with all useful keys available from the task:
   external entity names;
 - old plan/report paths, issue IDs, PR names, experiment names, and user terms.
 
-Use repository search first, for example:
+Search retrieval headers and `Search Keys` first, then fall back to full-text
+search. Use repository search, for example:
 
 ```bash
-rg -n "<goal|error|component|dependency|external-name>" docs/teamwork/research
+rg -n "^(Artifact Type|Status|Search Keys|Abstract|Linked Artifacts):|<goal|error|component|dependency|external-name>" docs/teamwork/{research,plans,reports} 2>/dev/null || true
 ```
 
 If no directory exists, record that no prior research was available. Choose

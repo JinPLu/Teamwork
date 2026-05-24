@@ -44,6 +44,18 @@ properties, git diff, or primary external evidence.
 - Default to at most 3 parallel research or review subagents unless the user
   gives a larger budget.
 
+## Workflow Pattern Selection
+
+Choose the smallest workflow pattern that preserves correctness:
+
+- Fixed sequence with clear steps: use a lightweight plan.
+- Distinct categories of work: route by stage instead of forcing one loop.
+- Independent evidence questions: use parallel Explorer tracks when useful.
+- Unpredictable multi-file implementation: use an orchestrator/Worker pattern
+  with disjoint ownership or worktree isolation.
+- Clear acceptance plus retry need: use a review or goal loop with explicit
+  verification and stop rules.
+
 ## Progress Anchors And Artifacts
 
 `update_plan` and task widgets are transient UI-only checklist state. They are
