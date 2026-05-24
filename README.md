@@ -2,130 +2,119 @@
 
 ![Teamwork workflow banner](assets/teamwork-hero.png)
 
-Teamwork 是一组给 Claude Code、Codex 和 Cursor 用的 workflow skills。它不替代 coding agent；它让 agent 在容易跑偏的任务里按证据、计划、执行边界、验证和复查推进。
+Teamwork 是给 Claude Code、Codex 和 Cursor 使用的一组 workflow skills。它不替代 coding agent，而是在任务容易跑偏时加入证据、计划、执行边界、复查和收敛机制。
 
-一句话：**先弄清楚，再动手；执行有边界，完成要有证据。**
+一句话：**先弄清楚，再动手；执行有边界，完成有证据。**
 
 ## Why
 
-Coding agent 常见的问题不是不会写代码，而是太快进入错误方向：
+Agent 写代码常见失败点不是“不会写”，而是太早相信假设：
 
-- 没读代码、diff、日志、测试，就先假设原因。
-- 在本地反复试错，没查外部资料、论文、issue 或官方文档校准方向。
-- 把“小改动”做成隐性重构。
+- 没读代码、diff、日志、测试，就先判断原因。
+- 在本地反复试错，没有用官方文档、论文、issue 或 release notes 校准。
+- 把小改动做成隐性重构。
 - 调研、计划、实现、复查混在一起，执行者自己宣布完成。
-- 多 agent 并行时没有所有权，互相覆盖或重复工作。
+- 多 agent 并行时没有所有权，导致重复研究、互相覆盖或漏验证。
 
-Teamwork 的目标是把这些风险变成明确的 workflow gate。
+Teamwork 把这些风险变成轻量但明确的 workflow gate。
 
-## Core Ideas
+## Skill Map
 
-| Idea | Meaning |
-|---|---|
-| Evidence first | 重要判断先读直接证据，并区分 `observed`、`inferred`、`claimed`。 |
-| Research calibration | Research 先理解本地真实主线，再用外部主源校准方向，避免本地反复试错。 |
-| Progress anchor | 主线程锚定目标、执行备忘录、验证和复查结果，而不是维护长流水账。 |
-| Targeted artifacts | `research/` 存可复用调研，`plans/` 存执行备忘录，`reports/` 存任务结论。 |
-| Plan before edits | 代码修改前先有计划；非轻量、高风险、跨模块或含糊任务先 review plan。 |
-| Bounded execution | Worker 只做计划内改动；发现需求、架构或外部证据缺口就停回 research/plan。 |
-| Review before done | 完成必须有验证和复查；工具输出、总结、文件名或 README 说法都不是最终 verdict。 |
+你不需要记 skill 名，按自然语言说即可。`using-teamwork` 是入口，`teamwork` 是 router，其他 stage 只在对应任务需要时启用。
 
-## How You Trigger It
-
-你不需要记 skill 名。按人话说即可：
-
-| You say | Teamwork does |
-|---|---|
-| “研究这个失败原因” / “看看有什么方案” | `teamwork-research`: 本地取证、外部校准、写 research artifact。 |
-| “先给计划” / “这个改动怎么做” | `teamwork-plan`: 把方向变成可执行计划和验证标准。 |
-| “执行这个计划” | `teamwork-execute`: 按计划最小改动，先跑 focused verification。 |
-| “review 这个计划 / diff / 结果” | `teamwork-review`: 独立检查范围、证据、验证和回归风险。 |
-| “跑到通过为止” / “继续迭代直到收敛” | `teamwork-goal`: 预算内自主迭代到验证通过、无进展或 blocker。 |
-
-普通、明确、低风险的一步任务继续走 native flow。Teamwork 只在证据、计划、复查、并行或收敛能提升正确性时介入。
+| 你想做什么 | Teamwork 用什么 | 产出 |
+|---|---|---|
+| “查一下原因 / 比较方案 / 研究这个失败” | `teamwork-research` | 直接证据、外部校准、可复用 research artifact |
+| “先给计划 / 这个改动怎么做” | `teamwork-plan` | 轻量计划或 durable execution memo |
+| “执行这个计划” | `teamwork-execute` | 计划内最小改动和 focused verification |
+| “review 计划 / diff / 结果” | `teamwork-review` | 独立 verdict、dissent、回归风险 |
+| “跑到通过为止 / 继续迭代直到收敛” | `teamwork-goal` | 有预算的自主循环、rolling report、completion audit |
 
 Skill entrypoints: `using-teamwork`, `teamwork`, `teamwork-research`, `teamwork-plan`, `teamwork-execute`, `teamwork-review`, `teamwork-goal`.
 
-## Codex runtime
+## How It Decides
 
-Teamwork 在 Codex 里是 **Codex-native, not hook-emulated**：
+```mermaid
+flowchart LR
+  A["User request"] --> B{"Simple and low risk?"}
+  B -->|yes| C["Native flow"]
+  B -->|no| D{"Need evidence first?"}
+  D -->|yes| R["teamwork-research"]
+  D -->|no| P{"Need plan or scope gate?"}
+  P -->|yes| PL["teamwork-plan"]
+  P -->|accepted plan| E["teamwork-execute"]
+  E --> V["verification"]
+  V --> RV["teamwork-review"]
+  RV --> OK{"Done?"}
+  OK -->|yes| Done["accept with evidence"]
+  OK -->|no| R
+  A --> G{"Autonomous target?"}
+  G -->|yes| Goal["teamwork-goal loop"]
+```
 
-- `update_plan` 只是临时进度条，不是 durable plan。
-- Codex subagents 用来做独立 Explorer、Worker 或 fresh-context review；非轻量任务先拆独立轨道，主线程继续做不重叠工作。
-- Teamwork 激活后，视为用户已授权对独立的非轻量轨道自动分配 subagent；不需要等用户额外说 “fan out”。
-- Native Codex goals 只在你明确要求自主收敛或已有 active goal 时使用。
-- Sandbox、网络和权限按 Codex approval 模型走，不绕过。
-- Durable artifacts 是跨 turn、跨 agent 的事实锚点，不是 Codex goal state。
+普通、明确、低风险的一步任务继续走 native flow。Teamwork 只在证据、计划、复查、并行或自主收敛能提高正确性时介入。
 
-Ordinary plans should record conceptual role, scope, tier, context strategy, order, and why; native Codex fields are derived from `skills/teamwork/SKILL.md` only when dispatching.
+## Core Advantages
+
+| Advantage | What changes in practice |
+|---|---|
+| Evidence first | 重要判断区分 `observed`、`inferred`、`claimed`；文件名、README、总结和版本号不直接当事实。 |
+| Research calibration | 先读本地真实主线，再用官方文档、论文、release notes、upstream issue 等外部主源校准。 |
+| Short entry, strong references | stage skill 保持短；共享规则集中在 `skills/teamwork/references/workflow-contract.md`。 |
+| Durable anchors only when useful | 简单任务不写 artifact；跨 turn、跨 agent、高风险、goal-mode 才写 durable memo。 |
+| Bounded execution | Worker 只做计划内改动；发现需求、架构或外部证据缺口就回 research/plan。 |
+| Review before done | 完成前看 diff、测试、artifact 和验收映射；工具输出只是证据，不是最终 verdict。 |
+| Subagent where it helps | 非轻量任务优先拆独立轨道，避免重复 research，并用所有权限制并行 Worker。 |
 
 ## Typical Flows
 
-**Small edit**
+| 场景 | 推荐流程 |
+|---|---|
+| 小而明确的改动 | native/brief plan -> edit -> focused check -> self-review |
+| 非轻量 bug | research local mainline -> external calibration -> plan -> execute -> review |
+| 高风险或跨 agent | research artifact -> durable plan -> plan review -> scoped Worker -> verification -> execution review |
+| 自主收敛 | retrieve memory -> research/plan -> review -> execute -> verify -> review -> report row -> accept/revise/block |
 
-```text
-brief plan -> user approval -> execute -> focused check -> self-review
-```
-
-**Non-trivial bug or prompt/model work**
-
-```text
-research local mainline -> external calibration -> research artifact -> plan -> execute -> review
-```
-
-**Cross-agent or high-risk work**
-
-```text
-research artifact -> durable plan -> plan review -> scoped worker -> verification -> execution review
-```
-
-**Goal mode**
-
-```text
-retrieve memory -> research/plan -> review -> execute -> verify -> review -> report row -> accept / revise plan / block
-```
-
-Default budget is 3 iterations. Failed verification refreshes research and checks whether the plan was under-informed, stale, wrong-scope, or over-strict before retry; repeated no-progress stops the run.
+Research calibration 的目标是避免“本地猜两轮再说”。如果一次 focused fix 没有 evidence delta，就应该刷新 research 或检查 plan adequacy。
 
 ## Artifacts
 
-Research artifacts:
+Teamwork 的文件只在需要跨 turn、跨 agent 或人工复查时落盘：
 
 ```text
 docs/teamwork/research/YYYY-MM-DD-<slug>.md
-```
-
-Durable plan artifacts:
-
-```text
 docs/teamwork/plans/YYYY-MM-DD-<slug>.md
-```
-
-Final reports:
-
-```text
 docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 ```
 
-Research artifacts are reusable investigation memory: use full-text search over old research first, update or cite still-relevant files, and record local evidence, external sources, recommendation, dissent, and refresh triggers.
+| Artifact | 什么时候写 | 应包含 |
+|---|---|---|
+| `research/` | 结论会复用、喂给计划、goal 失败分析、外部校准 | local evidence、external sources、recommendation、dissent、refresh triggers |
+| `plans/` | goal-mode、跨 agent、跨 turn、高风险、含糊、显式要求仓库计划 | scope、requirements mapping、steps、verification、risks、handoff、Subagent Routing |
+| `reports/` | goal rolling memory 或非轻量结论 | attempts、verification、review verdict、research reuse、artifacts read、agent routing |
 
-Plan artifacts are execution memos: name scope boundaries, executable steps, focused verification, expected results, and worker/reviewer handoffs. Goal runtime plans also require requirements mapping, evidence read, risks, and subagent routing.
+这些目录默认 gitignored，避免把本地过程产物误提交。Force-add only when a specific artifact is intentionally part of a PR.
 
-Reports are conclusions plus goal rolling memory. Goal rows include research reuse, artifacts read, and agent routing so reviewers can see whether research or subagents were repeated or skipped.
+## Codex Runtime
 
-These artifacts are ignored by default, together with `docs/superpowers/`. Force-add only when a specific artifact is intentionally part of a PR.
+Codex runtime 是 **native, not hook-emulated**：
 
-## Platform Notes
+- `update_plan` 是临时 UI 进度，不是 durable plan。
+- Codex native goals 只用于显式自主收敛或已有 active goal。
+- Codex subagents 用于独立 Explorer、scoped Worker、fresh-context Reviewer。
+- Teamwork 激活后，视为用户已授权对独立的非轻量轨道自动分配 subagent；不需要额外 “fan out” 确认。
+- Ordinary plans should record conceptual role, scope, tier, context strategy, order, and why; native Codex fields are derived from `skills/teamwork/SKILL.md` only when dispatching.
+- Sandbox、网络和权限按 Codex approval model 走，不绕过。
 
-Codex uses native plan/subagent/goal/sandbox capabilities. It does not run the Claude Stop hook.
+## Claude Commands
 
-Claude Code uses `/teamwork:*`; `/rao:*` remains as a compatibility prefix, so `/rao:goal` still works. Claude goal state is project-local under:
+Claude Code 使用 `/teamwork:*`；`/rao:*` 保留为兼容别名，所以 `/rao:goal` 仍可用。状态文件在：
 
 ```text
 .claude/teamwork-goals/
 ```
 
-Claude bounded goal example:
+常用命令：
 
 ```text
 /teamwork:goal 修复 pytest X，最多 3 轮，无进展就停 --max-iterations 3
@@ -133,9 +122,9 @@ Claude bounded goal example:
 /teamwork:checkpoint --plan-review-verdict pass --execution-review-verdict pass --verification-command "pytest X" --verification-result pass --evidence-delta progress --research-disposition reuse --research-artifacts-read "docs/teamwork/research/2026-05-14-fix-pytest-x.md" --agent-routing-decision "main-agent continuity; no useful parallel Worker track"
 ```
 
-Claude Stop hook continues an unfinished goal until completion, max iterations, pause/stop, blocker, or repeated no-progress. The default completion promise is `RAO_GOAL_COMPLETE`.
+Stop hook 会继续未完成 goal，直到完成、达到 max iterations、pause/stop、blocker 或连续 no-progress。默认 completion promise 是 `RAO_GOAL_COMPLETE`。
 
-Automatic Claude completion requires the promise and a structured audit with concrete commands, paths, artifacts, or requirement-to-evidence mapping:
+自动完成需要 promise 和结构化 audit；`requirements_mapping` 与 `verification_evidence` 必须写具体命令、路径、artifact 或 requirement-to-evidence 映射：
 
 ```text
 <completion_audit>
@@ -143,15 +132,13 @@ Automatic Claude completion requires the promise and a structured audit with con
 <plan_artifact_sha256>recorded sha256</plan_artifact_sha256>
 <plan_review_verdict>pass</plan_review_verdict>
 <execution_review_verdict>pass</execution_review_verdict>
-<requirements_mapping>map requirements to direct evidence</requirements_mapping>
+<requirements_mapping>requirement -> command/path/artifact evidence</requirements_mapping>
 <verification_evidence>commands, artifacts, or inspected evidence</verification_evidence>
 <dissent>none or preserved dissent/residual risk</dissent>
 </completion_audit>
 ```
 
-`/teamwork:complete` and `/rao:complete` are manual overrides, not automatically verified completion.
-
-Cursor installs one thin rule at `.cursor/rules/teamwork.mdc` and points back to the same skill files.
+`/teamwork:complete` 和 `/rao:complete` 是手动 override，不代表自动验证通过。
 
 ## Install
 
