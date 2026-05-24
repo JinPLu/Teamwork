@@ -2,86 +2,53 @@
 
 ![Teamwork workflow banner](assets/teamwork-hero.png)
 
-Teamwork 是给 Claude Code、Codex 和 Cursor 使用的一组 workflow skills。它不替代 coding agent，而是在任务容易跑偏时加入证据、计划、执行边界、复查和收敛机制。
+Teamwork 是给 Claude Code、Codex 和 Cursor 使用的 workflow skill package。它的目标不是增加流程感，而是在复杂任务里让 agent **先拿证据、复用调研、维护可复查文件、正确使用 subagent，并在 goal 未达成时继续迭代而不是早停**。
 
-一句话：**先弄清楚，再动手；执行有边界，完成有证据。**
-
-## Why
-
-Teamwork 最新的动机不是“给 agent 加流程”，而是把复杂任务里的协作成本降下来：入口要短，规则要集中，关键判断要有证据，跨 turn 或跨 agent 的状态要能被人复查。
-
-| Need | Why it matters | Teamwork answer |
-|---|---|---|
-| Keep simple work fast | 大多数小任务不需要 ceremony | native flow 仍是默认；只有证据、计划、复查、并行或收敛有价值时才激活 |
-| Avoid context bloat | 长 skill、长日志、重复规则会吞掉模型上下文 | stage skill 保持短，共享规则放进 references，按需读取 |
-| Reuse hard-won research | 重复调研会浪费时间，也容易忘记旧证据和失败尝试 | `research/` 和 `reports/` 记录可复查证据、刷新点、attempt 和 no-progress |
-| Use subagents deliberately | 并行只有在问题可拆、所有权清楚时才有收益 | 非轻量任务先拆独立轨道，再给 Explorer、Worker、Reviewer 明确范围和交付 |
-| Make completion auditable | “看起来完成了”不等于验收通过 | plan、verification、review、checkpoint、completion audit 都指向具体命令、路径或 artifact |
-
-结果是：简单任务不被打扰；复杂任务有短入口、强引用、硬约束和可评测结果。
-
-## Skill Map
-
-你不需要记 skill 名，按自然语言说即可。`using-teamwork` 是入口，`teamwork` 是 router，其他 stage 只在对应任务需要时启用。
-
-| 你想做什么 | Teamwork 用什么 | 产出 |
-|---|---|---|
-| “查一下原因 / 比较方案 / 研究这个失败” | `teamwork-research` | 直接证据、外部校准、可复用 research artifact |
-| “先给计划 / 这个改动怎么做” | `teamwork-plan` | 轻量计划或 durable execution memo |
-| “执行这个计划” | `teamwork-execute` | 计划内最小改动和 focused verification |
-| “review 计划 / diff / 结果” | `teamwork-review` | 独立 verdict、dissent、回归风险 |
-| “跑到通过为止 / 继续迭代直到收敛” | `teamwork-goal` | 有预算的自主循环、rolling report、completion audit |
-
-Skill entrypoints: `using-teamwork`, `teamwork`, `teamwork-research`, `teamwork-plan`, `teamwork-execute`, `teamwork-review`, `teamwork-goal`.
-
-## How It Decides
-
-```mermaid
-flowchart LR
-  A["User request"] --> B{"Simple and low risk?"}
-  B -->|yes| C["Native flow"]
-  B -->|no| D{"Need evidence first?"}
-  D -->|yes| R["teamwork-research"]
-  D -->|no| P{"Need plan or scope gate?"}
-  P -->|yes| PL["teamwork-plan"]
-  P -->|accepted plan| E["teamwork-execute"]
-  E --> V["verification"]
-  V --> RV["teamwork-review"]
-  RV --> OK{"Done?"}
-  OK -->|yes| Done["accept with evidence"]
-  OK -->|no| R
-  A --> G{"Autonomous target?"}
-  G -->|yes| Goal["teamwork-goal loop"]
-```
-
-普通、明确、低风险的一步任务继续走 native flow。Teamwork 只在证据、计划、复查、并行或自主收敛能提高正确性时介入。
+简单任务继续 native flow；只有证据、计划、复查、并行或自主收敛能提高正确性时才进入 Teamwork。
 
 ## Core Advantages
 
-| Advantage | What changes in practice |
+| 核心优势 | 具体约束 |
 |---|---|
-| Evidence first | 重要判断区分 `observed`、`inferred`、`claimed`；文件名、README、总结和版本号不直接当事实。 |
-| Research calibration | 先读本地真实主线，再用官方文档、论文、release notes、upstream issue 等外部主源校准。 |
-| Short entry, strong references | stage skill 保持短；共享规则集中在 `skills/teamwork/references/workflow-contract.md`。 |
-| Durable anchors only when useful | 简单任务不写 artifact；跨 turn、跨 agent、高风险、goal-mode 才写 durable memo。 |
-| Bounded execution | Worker 只做计划内改动；发现需求、架构或外部证据缺口就回 research/plan。 |
-| Review before done | 完成前看 diff、测试、artifact 和验收映射；工具输出只是证据，不是最终 verdict。 |
-| Subagent where it helps | 非轻量任务优先拆独立轨道，避免重复 research，并用所有权限制并行 Worker。 |
+| Evidence and research first | 重要判断必须来自代码、diff、日志、测试、artifact 或外部主源；不要只看文件名、README、注释、旧总结、`latest`/`v2` 这类过期叙述就下结论。Research calibration 先读本地真实主线，再用官方文档、论文、release notes、upstream issue 等校准。 |
+| Goal should not stop early | `teamwork-goal` 未达成目标时不要轻易 block。失败、no-progress、review 不通过或验收不清楚时，先回到 research + plan adequacy：刷新证据、检查计划是否欠调研/过期/范围错/stop rule 过严，再重写计划继续迭代。 |
+| Artifacts prevent repeated work | `docs/teamwork/research/`、`docs/teamwork/plans/`、`docs/teamwork/reports/` 是跨 turn、跨 agent 的事实锚点。它们减少重复 research 和上下文膨胀，也让人类能复查 evidence、attempt、verification、review 和 routing decision。 |
+| Better subagent use | 非轻量任务先拆独立轨道，再给 Explorer、Worker、Reviewer 明确范围、所有权、模型 tier、context strategy 和交付格式。并行是为了节省关键路径和获得 fresh context，不是为了仪式感。 |
 
-## Typical Flows
+## Skill Map
 
-| 场景 | 推荐流程 |
-|---|---|
-| 小而明确的改动 | native/brief plan -> edit -> focused check -> self-review |
-| 非轻量 bug | research local mainline -> external calibration -> plan -> execute -> review |
-| 高风险或跨 agent | research artifact -> durable plan -> plan review -> scoped Worker -> verification -> execution review |
-| 自主收敛 | retrieve memory -> research/plan -> review -> execute -> verify -> review -> report row -> accept/revise/block |
+`using-teamwork` 是入口，`teamwork` 是 router。你不用记 skill 名，按自然语言说即可。
 
-Research calibration 的目标是避免“本地猜两轮再说”。如果一次 focused fix 没有 evidence delta，就应该刷新 research 或检查 plan adequacy。
+| 你说 | 触发 | 结果 |
+|---|---|---|
+| “查原因 / 比较方案 / 研究失败” | `teamwork-research` | 直接证据、外部校准、可复用 research artifact |
+| “先给计划 / 这个改动怎么做” | `teamwork-plan` | 轻量计划或 durable execution memo |
+| “执行这个计划” | `teamwork-execute` | 计划内最小改动和 focused verification |
+| “review 计划 / diff / 结果” | `teamwork-review` | 独立 verdict、dissent、回归风险 |
+| “跑到通过为止 / 继续迭代直到收敛” | `teamwork-goal` | 预算内自主循环、rolling report、completion audit |
+
+Skill entrypoints: `using-teamwork`, `teamwork`, `teamwork-research`, `teamwork-plan`, `teamwork-execute`, `teamwork-review`, `teamwork-goal`.
+
+## Workflow
+
+```mermaid
+flowchart LR
+  A["Request"] --> B{"Simple, clear, low-risk?"}
+  B -->|yes| N["Native flow"]
+  B -->|no| R["Research / evidence"]
+  R --> P["Plan"]
+  P --> E["Execute"]
+  E --> V["Verify"]
+  V --> C["Review"]
+  C -->|pass| D["Done with evidence"]
+  C -->|fail or unclear| R
+  A -->|run until done| G["Goal loop"]
+  G --> R
+```
 
 ## Artifacts
 
-Teamwork 的文件只在需要跨 turn、跨 agent 或人工复查时落盘：
+只在需要跨 turn、跨 agent、goal-mode 或人工复查时落盘；简单任务不要写 artifact。
 
 ```text
 docs/teamwork/research/YYYY-MM-DD-<slug>.md
@@ -89,28 +56,29 @@ docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 ```
 
-| Artifact | 什么时候写 | 应包含 |
+| 目录 | 用途 | 必须方便复查的问题 |
 |---|---|---|
-| `research/` | 结论会复用、喂给计划、goal 失败分析、外部校准 | local evidence、external sources、recommendation、dissent、refresh triggers |
-| `plans/` | goal-mode、跨 agent、跨 turn、高风险、含糊、显式要求仓库计划 | scope、requirements mapping、steps、verification、risks、handoff、Subagent Routing |
-| `reports/` | goal rolling memory 或非轻量结论 | attempts、verification、review verdict、research reuse、artifacts read、agent routing |
+| `research/` | 可复用调研、失败分析、外部校准 | 读了什么证据？哪些结论是 observed/inferred/claimed？什么时候需要 refresh？ |
+| `plans/` | 执行备忘录和 review source of truth | 目标、范围、步骤、验证、风险、Worker/Review handoff、Subagent Routing 是否清楚？ |
+| `reports/` | goal rolling memory 和非轻量结论 | 尝试了什么？验证结果如何？是否复用 research？读了哪些 artifact？为什么使用或跳过 subagent？ |
 
-这些目录默认 gitignored，避免把本地过程产物误提交。Force-add only when a specific artifact is intentionally part of a PR.
+这些目录默认 gitignored。只有当某个 artifact 本身是 PR 内容时才 force-add。
 
-## Codex Runtime
+## Runtime Notes
 
-Codex runtime 是 **native, not hook-emulated**：
+### Codex runtime
+
+Codex 使用原生能力，不模拟 Claude hook：
 
 - `update_plan` 是临时 UI 进度，不是 durable plan。
 - Codex native goals 只用于显式自主收敛或已有 active goal。
 - Codex subagents 用于独立 Explorer、scoped Worker、fresh-context Reviewer。
 - Teamwork 激活后，视为用户已授权对独立的非轻量轨道自动分配 subagent；不需要额外 “fan out” 确认。
 - Ordinary plans should record conceptual role, scope, tier, context strategy, order, and why; native Codex fields are derived from `skills/teamwork/SKILL.md` only when dispatching.
-- Sandbox、网络和权限按 Codex approval model 走，不绕过。
 
-## Claude Commands
+### Claude commands
 
-Claude Code 使用 `/teamwork:*`；`/rao:*` 保留为兼容别名，所以 `/rao:goal` 仍可用。状态文件在：
+Claude Code 使用 `/teamwork:*`；`/rao:*` 是兼容别名，所以 `/rao:goal` 仍可用。状态文件在：
 
 ```text
 .claude/teamwork-goals/
@@ -124,7 +92,7 @@ Claude Code 使用 `/teamwork:*`；`/rao:*` 保留为兼容别名，所以 `/rao
 /teamwork:checkpoint --plan-review-verdict pass --execution-review-verdict pass --verification-command "pytest X" --verification-result pass --evidence-delta progress --research-disposition reuse --research-artifacts-read "docs/teamwork/research/2026-05-14-fix-pytest-x.md" --agent-routing-decision "main-agent continuity; no useful parallel Worker track"
 ```
 
-Stop hook 会继续未完成 goal，直到完成、达到 max iterations、pause/stop、blocker 或连续 no-progress。默认 completion promise 是 `RAO_GOAL_COMPLETE`。
+Stop hook 会继续未完成 goal，直到完成、达到 max iterations、pause/stop、真 blocker 或连续 no-progress。默认 completion promise 是 `RAO_GOAL_COMPLETE`。
 
 自动完成需要 promise 和结构化 audit；`requirements_mapping` 与 `verification_evidence` 必须写具体命令、路径、artifact 或 requirement-to-evidence 映射：
 
