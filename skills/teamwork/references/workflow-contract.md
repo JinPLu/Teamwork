@@ -59,7 +59,7 @@ goal-mode work:
 
 Do not create artifacts for ordinary native-flow work or to record every
 thought. Search existing research artifacts before starting new non-trivial
-research and record reuse/update/new disposition when goal-mode checkpointing.
+research and record reuse/update/new disposition in goal-mode reports.
 
 ## Subagent Collaboration Model
 
@@ -67,11 +67,10 @@ Subagents provide independent context, parallel evidence, isolated execution, or
 fresh review. The main agent owns scope, synthesis, conflict resolution,
 verification, and final acceptance.
 
-When Teamwork is active, the user has granted standing authorization for
-automatic subagent delegation on independent non-lightweight tracks. Do not ask
-for extra "fan out" confirmation unless dispatch needs credentials,
-destructive actions, unclear write ownership, or another approval-gated
-capability.
+Subagent authorization is Proposal/Plan Routed. An accepted Goal Proposal or
+durable plan with Subagent Routing authorizes the listed independent tracks.
+Ask again when dispatch needs credentials, destructive actions, unclear write
+ownership, or another approval-gated capability.
 
 For non-lightweight work, split independent tracks first. Use subagents when 2
 or more tracks can run without blocking the next local step; keep work local

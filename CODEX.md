@@ -1,101 +1,48 @@
 # Codex Usage
 
-Teamwork in Codex is a workflow layer over native Codex capabilities. It does
-not emulate Claude hooks or create a separate agent framework.
+Teamwork is a Codex-native augmentation layer. Codex native capabilities remain the substrate: goals, `update_plan`, subagents, review, sandbox approvals, automations, MCP, and plugins. Teamwork defines when and how those capabilities should be combined for evidence-heavy, reviewed, delegated, or autonomous work.
 
 Install:
 
 ```bash
-./install.sh codex
+./install.sh
 ```
 
-The behavior contract lives in `skills/`. Treat names, comments, README claims,
-summaries, and tool output as evidence to verify, not facts by themselves.
+The behavior contract lives in `skills/`. Treat names, comments, README claims, summaries, and tool output as evidence to verify, not facts by themselves.
 
-## Codex Runtime Mapping
+## Native Capability Policy
 
-- Planning: use `update_plan` only as visible transient progress. It is not a
-  durable execution or review artifact. Anchor work to the active objective,
-  execution memo, verification target, and review result.
-- Research calibration: first establish the local project mainline from repo evidence, then
-  use external calibration from official docs, papers, release notes, upstream
-  issues, or other primary sources when outside knowledge can prevent local
-  dead-end attempts.
-- Subagents: use Codex multi-agent support for independent work. For
-  non-lightweight tasks, split independent tracks first, dispatch useful
-  Explorer/Worker/Reviewer agents early, and keep the main thread on
-  non-overlapping work. Explorer and Worker map to native agent types; Designer,
-  Judge, and Reviewer are `default` agents with role-specific prompts.
-- Automatic delegation: when Teamwork is active, the user has granted standing
-  authorization for automatic subagent delegation on independent
-  non-lightweight tracks. Do not wait for the phrase "fan out"; only ask when a
-  dispatch needs new credentials, destructive actions, unclear write ownership,
-  or another approval-gated capability.
-- Model routing: use capability tiers, not fixed model IDs. `fast` maps to low
-  reasoning, `standard` to medium, and `high reasoning` to high.
-- Goals: use native Codex goals only when explicitly requested or when
-  continuing an active goal. Ordinary research, planning, review, and one-shot
-  execution do not need a goal.
-- Review: `codex review --uncommitted`, `--base`, or `--commit` can be evidence
-  for real diffs, never automatic approval.
-- Sandbox: request approval for required blocked commands with narrow
-  justification. Do not bypass permissions.
+- Goals: native Codex goal state is the source of truth for autonomous target and lifecycle. For unclear targets, first return a chat-window `Goal Proposal`; after human approval or edits, call `create_goal` with the `Native Codex Goal Text`.
+- Planning: `update_plan` is visible transient progress. Durable execution memory lives in `docs/teamwork/plans/` only when artifact triggers apply.
+- Subagents: dispatch only when an accepted Goal Proposal or durable plan includes Subagent Routing, or when the user explicitly asks. Use Explorer for independent evidence, Worker for scoped implementation, and default-type Reviewer/Judge prompts for fresh review.
+- Review: `codex review --uncommitted`, `--base`, or `--commit` can support a verdict. Completion still requires direct mapping to requirements, diffs, tests, artifacts, or acceptance evidence.
+- Sandbox and permissions: use Codex native approval flows. Teamwork should identify destructive risk, credentials, unclear ownership, or protected boundaries before dispatch or execution.
+- Automations and heartbeats: use Codex native automation/thread heartbeat for recurring checks or later continuation. Teamwork artifacts do not store schedules.
+- MCP and plugins: prefer native Codex tools and connectors. Record source limits when unavailable access affects research or acceptance.
 
-Derive native Codex fields from `skills/teamwork/SKILL.md` at dispatch time.
-Do not copy `agent_type`, `fork_context`, or `reasoning_effort` into Claude
-instructions.
+## Evidence And Artifacts
 
-## Artifacts
+Use repo files, logs, tests, diffs, artifacts, and prior Teamwork artifacts before new research. Use external calibration from official docs, papers, release notes, upstream issues, or other primary sources when current platform, model, dependency, API, or field practice can affect the result.
 
-Use durable Markdown plan artifacts for cross-agent execution, cross-turn work,
-high-risk or ambiguous changes, public/shared behavior changes, explicit
-repository plans, and all goal-mode execution. Treat them as compact execution
-memos, not process logs. Goal runtime plans require full sections, including
-requirements mapping, evidence read, risks, worker/reviewer handoff, and
-subagent routing.
-
-```text
-docs/teamwork/plans/YYYY-MM-DD-<slug>.md
-```
-
-For non-trivial research, search existing artifacts before re-searching. Update
-or cite applicable files and record both local evidence and external
-calibration sources.
+Artifacts are evidence memory:
 
 ```text
 docs/teamwork/research/YYYY-MM-DD-<slug>.md
-```
-
-Use final reports only for non-trivial conclusions that should survive the
-conversation. In goal mode, keep one rolling Markdown table report per goal so
-failed attempts, evidence deltas, review verdicts, research reuse, artifacts
-read, agent routing, and plan revisions remain searchable:
-
-```text
+docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 ```
 
-Small, low-risk edits may use a concise chat/native plan instead of a
-repository artifact.
+Use them for goal-mode, failed iteration, cross-agent execution, cross-turn work, high-risk or ambiguous changes, public/shared behavior, external calibration, and explicit repository-plan requests. Small low-risk edits can stay in native Codex chat/progress.
 
-It is not Codex goal state and not Claude `.claude/teamwork-goals/` runtime state. The Markdown plan remains the shared execution and review source of truth.
+For failed goal iterations, refresh research and check whether the active plan was under-informed, stale, wrong-scope, over-strict, or deviated from during execution before retrying. Revise and review the durable plan when new evidence changes the path.
 
-For failed goal iterations, refresh research and check whether the active plan
-was under-informed, stale, wrong-scope, or over-strict before retrying. Revise
-and re-review the durable plan when new evidence changes the path.
+## Subagent Mapping
 
-## External Information Policy
+Derive native Codex dispatch fields from `skills/teamwork/references/subagent-routing.md` at dispatch time:
 
-1. Use repo files, logs, tests, artifacts, and prior research to understand
-   project reality and current progress.
-2. Use MCP before generic network access when a relevant server exists.
-3. Use web or other external sources for non-trivial research where current
-   platform, model, dependency, upstream, or field practice could affect the
-   answer.
-4. If web, MCP, credentials, or filesystem access require approval, request it
-   through Codex. Do not mine local proxy or token files unless explicitly
-   authorized.
-5. If access is unavailable, record the limitation in the research artifact and
-   continue only to the local-evidence boundary.
+- Explorer -> `agent_type:"explorer"`.
+- Worker -> `agent_type:"worker"`.
+- Designer, Judge, Reviewer -> `agent_type:"default"` with the conceptual role in the prompt.
+- `fast`, `standard`, and `high reasoning` map to low, medium, and high reasoning effort.
 
-When editing workflow behavior, update the relevant `skills/*/SKILL.md` first.
+Do not encode native dispatch fields in ordinary plans unless they are part of the routing decision.

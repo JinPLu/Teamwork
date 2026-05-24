@@ -5,9 +5,10 @@ description: Use when routing multi-step, evidence-sensitive, high-risk, cross-a
 
 # Teamwork
 
-Teamwork is a workflow-preference layer over Claude Code, Codex, and Cursor. It
-adds evidence discipline, scoped planning, bounded execution, fresh review, and
-goal-mode convergence only when those gates improve the result.
+Teamwork is a Codex-native augmentation layer. Codex native capabilities are the
+execution substrate; Teamwork adds evidence discipline, goal design, scoped
+planning, bounded execution, fresh review, artifact memory, subagent routing,
+and goal-mode convergence policy only when those gates improve the result.
 
 Shared rules live in references and are loaded only when needed:
 
@@ -24,12 +25,12 @@ Shared rules live in references and are loaded only when needed:
 
 | Tier | Use when | Planning | Review | Subagents |
 |---|---|---|---|---|
-| Native flow | Simple, local, low-risk work | None or native task list | Normal verification | Not needed |
+| Native flow | Simple, local, low-risk work | None or native `update_plan` | Normal verification | Not needed |
 | Lightweight Teamwork | Multi-step but bounded work | Concise chat/native checklist | Distinct self-review or focused review | Optional |
 | Durable artifact | Cross-agent, cross-turn, high-risk, ambiguous, public/shared, or explicitly planned work | durable Markdown plan artifact | Plan/execution review against artifact | Documented if used or skipped |
-| Goal mode | Explicit autonomous convergence | Mandatory durable artifact and runtime plan anchor | Mandatory passing review/checkpoint | As useful within budget |
+| Goal mode | Explicit autonomous convergence | Native goal plus durable memory when triggers apply | Passing verification and review | Proposal/Plan Routed |
 
-native flow remains the default for simple Claude Code tasks.
+native flow remains the default for simple Codex tasks.
 
 Durable artifacts use:
 
@@ -57,6 +58,11 @@ Use the narrowest subskill that adds value:
 
 Do not create separate plan-review and execution-review subskills.
 
+If a goal request is not already well formed, `teamwork-goal` first returns a
+chat-only `Goal Proposal` for human review. Native Codex goal state is created
+or revised only after the human accepts or edits that proposal, unless an
+active goal already exists.
+
 ## Shared Contract
 
 When a Teamwork stage is active, first read
@@ -66,28 +72,35 @@ canonical files, or completion without direct corroboration.
 
 Use subagents only when independent context, parallel evidence, isolated
 execution, or fresh review improves correctness or speed. For non-lightweight
-work, split the next decision into independent tracks first. Default to at most 3 parallel research/review subagents unless the user gives a larger budget.
+work, split the next decision into independent tracks first. Default to at most
+3 parallel research/review subagents unless the user gives a larger budget.
 
-When Teamwork is active, treat the user as granting standing authorization for
-automatic subagent delegation on independent non-lightweight tracks. Do not ask
-for extra "fan out" confirmation unless dispatch needs credentials,
-destructive actions, unclear write ownership, or another approval-gated
-capability.
+Subagent authorization is Proposal/Plan Routed: an accepted Goal Proposal or
+durable plan with Subagent Routing authorizes those independent tracks. Ask
+again when dispatch needs credentials, destructive actions, unclear write
+ownership, or another approval-gated capability.
 
-## Codex Native Integration
+## Codex Native Policy Map
 
-- Use Codex native planning, subagents, reviews, goals, sandbox approvals, and
-  skills; do not emulate Claude Stop hooks.
-- Use native Codex goals only for explicit autonomous convergence or an active
-  goal.
-- Derive native dispatch fields from
+- Native goal: Codex goal state is the source of truth for autonomous target and
+  lifecycle. Teamwork designs objective, done evidence, scope, retry policy,
+  artifact needs, and routing before `create_goal`.
+- `update_plan`: transient UI progress only, not a durable execution spec,
+  review target, or completion proof.
+- Subagents: derive native dispatch fields from
   `skills/teamwork/references/subagent-routing.md` at dispatch time. Ordinary
   plans record conceptual role, scope, model tier, context strategy, order, and
   why.
+- Review: `codex review --uncommitted`, `--base`, or `--commit` can be review
+  evidence, not an automatic pass.
+- Sandbox and permissions: use Codex native approval flows; Teamwork records
+  risk, boundary, and ownership decisions.
+- Automations and heartbeats: use native Codex automation/thread heartbeat for
+  recurring checks or later continuation, not Teamwork artifacts.
+- MCP and plugins: prefer native Codex tools and connectors; record source
+  limits when they affect evidence or acceptance.
 - `fast`, `standard`, and `high reasoning` are capability tiers. `xhigh` is only
   for explicitly high-risk final gates where cost is justified.
-- `codex review --uncommitted`, `--base`, or `--commit` can be review evidence,
-  not an automatic pass.
 
 ## Route Output
 

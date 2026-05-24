@@ -1,8 +1,6 @@
 .DS_Store
 .run-analyze-optimize/
-.claude/
 .codex/
-.agents/
 __pycache__/
 *.pyc
 *.log

@@ -61,9 +61,9 @@ docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 `update_plan` may mirror progress, but it is a transient UI-only checklist and
 is not the durable source of truth.
 
-For goal-mode runtime, the active plan recorded by `raoctl.py plan` must contain
-all durable sections below. A compact execution memo is only a non-runtime
-documentation form for ordinary work; it is not accepted as an active goal plan.
+Goal-mode durable plans must contain all durable sections below. A compact
+execution memo is only for ordinary non-goal work; it is not enough for
+non-lightweight autonomous convergence.
 
 ## Workflow
 
@@ -109,8 +109,10 @@ changed plan again and require plan review before execution resumes.
 - Requirements Mapping is concrete enough for review.
 - Verification has commands, artifacts, or checks plus Expected Results.
 - Durable plans have no `<...>`, `TODO`, `TBD`, or ellipsis tasks.
-- Goal-mode plans include all runtime-required sections and can be recorded
-  with `raoctl.py plan`.
+- Goal-mode durable plans include all required sections for execution and
+  review: Goal, Requirements Mapping, Evidence Read, Scope, Implementation
+  Steps, Verification, Risks, Stop Rules, Worker Handoff, Review Handoff, and
+  Subagent Routing.
 - If subagents are used, routing is specific; if skipped for non-lightweight
   work, the skip rationale is explicit.
 
@@ -167,5 +169,5 @@ Subagent Routing:
 
 For lightweight plans, keep the output compact while preserving Goal, Scope,
 Steps, Verification, Expected Results, Stop Rules, and Review Need. For durable
-goal-runtime plans, keep the memo compact but include every section in the
+goal-mode plans, keep the memo compact but include every section in the
 template.

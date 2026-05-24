@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_MODE="${TEAMWORK_INSTALL_MODE:-copy}"
+DEST_ROOT="$HOME/.codex/skills"
 SKILLS=(
   using-teamwork
   teamwork
@@ -28,32 +29,25 @@ RETIRED_SKILLS=(
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] claude
-  ./install.sh [--copy|--link] codex
-  ./install.sh [--copy|--link] cursor /path/to/project
-  ./install.sh [--copy|--link] all /path/to/cursor-project
+  ./install.sh [--copy|--link] [codex]
 
-Default mode is --copy, which installs standalone files so the skills keep
-working if this repository moves or is deleted. Use --link for local
-development when you want installed skills to track edits in this checkout.
+Installs the seven Teamwork skills into ~/.codex/skills.
 
-Claude Code plugin installs should use the checked-in plugin manifest for
-commands and hooks; this script does not modify global settings.
+Default mode is --copy, which installs standalone skill files. Use --link for
+local development when installed skills should track this checkout.
 USAGE
 }
 
 remove_retired_skill() {
-  local root="$1"
-  local retired="$2"
-  local dest="$root/$retired"
+  local retired="$1"
+  local dest="$DEST_ROOT/$retired"
   local link="$dest/SKILL.md"
   local raw_target resolved entry_count
 
   if [[ -L "$dest" ]]; then
     raw_target="$(readlink "$dest" 2>/dev/null || true)"
     resolved="$(readlink -f "$dest" 2>/dev/null || true)"
-    if [[ "$raw_target" == */skills/"$retired" || \
-          "$resolved" == */skills/"$retired" ]]; then
+    if [[ "$raw_target" == */skills/"$retired" || "$resolved" == */skills/"$retired" ]]; then
       rm -f "$dest"
     fi
     return 0
@@ -64,8 +58,7 @@ remove_retired_skill() {
   if [[ -L "$link" ]]; then
     raw_target="$(readlink "$link" 2>/dev/null || true)"
     resolved="$(readlink -f "$link" 2>/dev/null || true)"
-    if [[ "$raw_target" == */skills/"$retired"/SKILL.md || \
-          "$resolved" == */skills/"$retired"/SKILL.md ]]; then
+    if [[ "$raw_target" == */skills/"$retired"/SKILL.md || "$resolved" == */skills/"$retired"/SKILL.md ]]; then
       rm -f "$link"
       rmdir "$dest" 2>/dev/null || true
     fi
@@ -79,27 +72,6 @@ remove_retired_skill() {
     rm -f "$link"
     rmdir "$dest" 2>/dev/null || true
   fi
-}
-
-install_file() {
-  local source="$1"
-  local dest="$2"
-
-  mkdir -p "$(dirname "$dest")"
-  rm -f "$dest"
-  case "$INSTALL_MODE" in
-    copy)
-      cp "$source" "$dest"
-      ;;
-    link)
-      ln -sf "$source" "$dest"
-      ;;
-    *)
-      echo "Unknown install mode: $INSTALL_MODE" >&2
-      usage
-      exit 2
-      ;;
-  esac
 }
 
 install_skill_dir() {
@@ -123,57 +95,6 @@ install_skill_dir() {
   esac
 }
 
-install_skill_set() {
-  local root="$1"
-  local label="$2"
-  local skill dest retired
-
-  mkdir -p "$root"
-  for retired in "${RETIRED_SKILLS[@]}"; do
-    remove_retired_skill "$root" "$retired"
-  done
-
-  for skill in "${SKILLS[@]}"; do
-    dest="$root/$skill"
-    install_skill_dir "$ROOT/skills/$skill" "$dest"
-  done
-  echo "Installed $label skills under: $root ($INSTALL_MODE)"
-}
-
-install_claude() {
-  install_skill_set "$HOME/.claude/skills" "Claude Code"
-}
-
-install_codex() {
-  install_skill_set "$HOME/.codex/skills" "Codex"
-}
-
-install_cursor() {
-  local project="${1:-}"
-  if [[ -z "$project" ]]; then
-    echo "Cursor install requires a project path." >&2
-    usage
-    exit 2
-  fi
-
-  local rules="$project/.cursor/rules"
-  mkdir -p "$rules"
-  if [[ -L "$rules/run-analyze-optimize.mdc" ]]; then
-    local raw_target resolved
-    raw_target="$(readlink "$rules/run-analyze-optimize.mdc" 2>/dev/null || true)"
-    resolved="$(readlink -f "$rules/run-analyze-optimize.mdc" 2>/dev/null || true)"
-    if [[ "$raw_target" == "$ROOT/.cursor/rules/run-analyze-optimize.mdc" || \
-          "$resolved" == "$ROOT/.cursor/rules/run-analyze-optimize.mdc" ]]; then
-      rm -f "$rules/run-analyze-optimize.mdc"
-    fi
-  elif [[ -f "$rules/run-analyze-optimize.mdc" ]] && \
-       grep -q 'run-analyze-optimize\|Run-Analyze-Optimize' "$rules/run-analyze-optimize.mdc"; then
-    rm -f "$rules/run-analyze-optimize.mdc"
-  fi
-  install_file "$ROOT/.cursor/rules/teamwork.mdc" "$rules/teamwork.mdc"
-  echo "Installed Cursor rule: $rules/teamwork.mdc ($INSTALL_MODE)"
-}
-
 case "${1:-}" in
   --copy)
     INSTALL_MODE="copy"
@@ -185,23 +106,22 @@ case "${1:-}" in
     ;;
 esac
 
-case "${1:-}" in
-  claude)
-    install_claude
-    ;;
-  codex)
-    install_codex
-    ;;
-  cursor)
-    install_cursor "${2:-}"
-    ;;
-  all)
-    install_claude
-    install_codex
-    install_cursor "${2:-}"
+case "${1:-codex}" in
+  ""|codex)
     ;;
   *)
     usage
     exit 2
     ;;
 esac
+
+mkdir -p "$DEST_ROOT"
+for retired in "${RETIRED_SKILLS[@]}"; do
+  remove_retired_skill "$retired"
+done
+
+for skill in "${SKILLS[@]}"; do
+  install_skill_dir "$ROOT/skills/$skill" "$DEST_ROOT/$skill"
+done
+
+echo "Installed Codex skills under: $DEST_ROOT ($INSTALL_MODE)"

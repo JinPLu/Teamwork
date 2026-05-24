@@ -41,7 +41,7 @@ rg -n "<goal|error|component|dependency|external-name>" docs/teamwork/research
 
 If no directory exists, record that no prior research was available. Choose
 exactly one disposition before continuing, and carry that disposition into
-goal-mode checkpointing when applicable:
+goal-mode reports when applicable:
 
 - **none**: no research artifact is needed for this lightweight or purely local
   decision; state the local evidence boundary instead;

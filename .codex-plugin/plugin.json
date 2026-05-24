@@ -1,7 +1,7 @@
 {
   "name": "teamwork-skill",
   "version": "0.1.0",
-  "description": "Coordinate coding-agent teamwork across evidence gathering, scoped execution, review, and verified completion.",
+  "description": "Codex-only skills for evidence-first planning, execution, review, subagent routing, and native goal convergence.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"
@@ -21,8 +21,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Teamwork",
-    "shortDescription": "Coordinate subagents from evidence to reviewed completion.",
-    "longDescription": "A compact router plus dedicated stage skills for coding-agent collaboration and autonomous goal convergence. The main agent decomposes and accepts work while subagents investigate, implement scoped plans, review independently, and return condensed evidence.",
+    "shortDescription": "Strengthen Codex goals, plans, subagents, and review with evidence-first workflow policy.",
+    "longDescription": "A Codex-only router plus dedicated stage skills for evidence gathering, goal proposal, durable artifact memory, scoped execution, subagent routing, fresh review, and autonomous goal convergence on top of Codex native capabilities.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -31,10 +31,10 @@
     ],
     "websiteURL": "https://github.com/JinPLu/Teamwork",
     "defaultPrompt": [
+      "Design a Codex native goal with evidence, scope, retry policy, artifacts, and subagent routing.",
       "Split a coding task into evidence-gathering, planning, execution, and review tracks.",
-      "Use subagents for independent investigation or fresh-context review.",
-      "Execute an accepted plan with minimal edits and focused verification.",
-      "Review plans or execution results with direct evidence before claiming completion."
+      "Use subagents for independent investigation, scoped Worker execution, or fresh-context review.",
+      "Map completion claims to direct evidence before accepting the result."
     ],
     "brandColor": "#2563EB"
   }

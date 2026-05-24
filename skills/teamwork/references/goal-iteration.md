@@ -7,7 +7,9 @@ Use this reference only for `teamwork-goal` or goal failure recovery.
 Recommended user-facing shape:
 
 ```text
-/teamwork:goal 达成 <目标>，用 <可验证证据> 验收，保持 <限制条件> 不破坏，只允许使用 <输入/工具/文件边界>，每轮根据 <下一步判断规则> 决策。
+Achieve <target>; accept only with <verifiable evidence>; preserve
+<constraints>; restrict scope to <files/tools/boundaries>; choose each next
+iteration from <decision rule>.
 ```
 
 The angle brackets are prompt guidance only. Replace them before writing any
@@ -65,10 +67,9 @@ docs/teamwork/reports/YYYY-MM-DD-<goal-slug>.md
 ```
 
 Append one Markdown table row after each verification/execution-review cycle.
-The checkpoint command writes the same fields in Claude runtime state.
 
 | Iteration | Plan Artifact | Hypothesis / Attempt | Changes | Verification | Evidence Delta | Review Verdict | Research Reuse | Artifacts Read | Agent Routing | Research / Plan Decision | Next Step / Stop Reason |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 
 The report is cross-turn memory. It does not replace the durable plan, research
-artifact, checkpoint, completion audit, or direct verification evidence.
+artifact, native goal state, review verdict, or direct verification evidence.

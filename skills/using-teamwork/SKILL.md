@@ -23,6 +23,11 @@ Use the narrowest matching stage:
 
 If none applies, continue normally without a route banner.
 
+For goal-directed requests, route to `teamwork-goal` for a chat-only `Goal
+Proposal` first when the objective, done evidence, scope, or stop rules are not
+already explicit. Create or continue native Codex goal state only after the
+user accepts that proposal, unless an active goal already exists.
+
 ## Native Default
 
 Native flow is correct for single-step lookups, quick factual answers, trivial
@@ -40,13 +45,12 @@ If those answers are unclear, route to `teamwork-research` or `teamwork-plan`.
 
 ## Codex Fit
 
+- Codex native capabilities are the substrate; Teamwork strengthens their use
+  with evidence, artifacts, routing, review, and failure-iteration policy.
 - `update_plan` is visible progress only, not a durable plan.
 - Use native Codex goals only for explicit autonomous convergence or an active
   goal.
 - Use Codex subagents for independent evidence, scoped Worker execution, or
-  fresh-context review when non-lightweight tracks can run independently.
-- When Teamwork is active, standing authorization for automatic subagent delegation
-  applies to independent non-lightweight tracks; ask only for
-  credentials, destructive actions, unclear write ownership, or approval-gated
-  capabilities.
+  fresh-context review when an accepted Goal Proposal or durable plan includes
+  Subagent Routing, or when the user explicitly asks.
 - Do not bypass sandbox or approval policy.
