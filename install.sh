@@ -49,7 +49,7 @@ retired_copy_is_plugin_owned() {
     case "$rel" in
       SKILL.md)
         ;;
-      references|references/artifact-protocol.md|references/goal-iteration.md|references/subagent-routing.md|references/workflow-contract.md|references/plan-output.md|references/review-checks.md)
+      references|references/artifact-protocol.md|references/goal-iteration.md|references/dispatch-policy.md|references/subagent-prompt-contract.md|references/subagent-packets.md|references/subagent-routing.md|references/workflow-contract.md|references/plan-output.md|references/review-checks.md)
         [[ "$retired" == "teamwork" ]] || return 1
         ;;
       *)

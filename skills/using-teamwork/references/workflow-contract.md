@@ -44,6 +44,10 @@ properties, git diff, or primary external evidence.
 - Use role-specific Dispatch Economics. Explorer/Reviewer tracks are capped by
   context cost; Worker tracks are capped by ownership clarity, integration
   cost, and verification shape.
+- Treat subagent dispatch as the default substrate for non-lightweight
+  Teamwork work. The main agent remains the orchestrator and keeps raw
+  evidence, implementation detail, and fresh review outside the main context
+  whenever an independent track exists.
 
 ## Workflow Pattern Selection
 
@@ -52,8 +56,10 @@ Choose the smallest workflow pattern that preserves correctness:
 - Fixed sequence with clear steps: use a lightweight plan.
 - Distinct categories of work: route by stage instead of forcing one loop.
 - Independent evidence questions: default to parallel Explorer tracks.
-- Unpredictable multi-file implementation: use an orchestrator/Worker pattern
-  with disjoint ownership or worktree isolation.
+- Ambiguous design or high-risk plan quality: use Designer or Judge prompts
+  before execution.
+- Unpredictable or multi-file implementation: use an orchestrator/Worker
+  pattern with disjoint ownership or worktree isolation.
 - Clear acceptance plus retry need: use a review or goal loop with explicit
   verification and stop rules.
 
@@ -85,16 +91,23 @@ research and record reuse/update/new disposition in goal-mode reports.
 ## Subagent Collaboration Model
 
 Subagents provide independent context, parallel evidence, isolated execution, or
-fresh review. The main agent owns scope, synthesis, conflict resolution,
-verification, and final acceptance.
+fresh review. The main agent is the orchestrator: it owns scope, synthesis,
+conflict resolution, integration, final verification, and final acceptance.
 
-Subagent authorization is Proposal/Plan Routed. Explicit user request, accepted
-Goal Proposal, accepted lightweight plan with a Dispatch line, or durable plan
-with Subagent Routing authorizes listed independent tracks. Ask again when
-dispatch needs credentials, destructive actions, unclear write ownership, or
-another approval-gated capability.
+Subagent authorization is Stage-Routed Proactive Dispatch. Once a Teamwork
+stage is active, that stage may dispatch non-destructive Explorer, Designer,
+Judge, Worker, or Reviewer tracks that fit the stage contract. A plan's
+`Dispatch:` or durable `Subagent Routing` is routing guidance, not the only
+authorization source. The execution stage must re-evaluate the split from the
+accepted plan, source ownership, and current workspace evidence before editing.
 
-For non-lightweight work, split before implementation steps. Dispatch when it
-improves cost, elapsed time, or quality. If you keep work local, state the
-reason: tight coupling, overlapping ownership, small scope, unavailable tool,
-or higher context cost than benefit.
+Ask again only when dispatch needs credentials, destructive actions, unclear
+write ownership, protected-boundary changes, unavailable tools, or another
+approval-gated capability. Otherwise, dispatch proactively when an independent
+track can improve cost, elapsed time, context isolation, or quality.
+
+For non-lightweight work, split before implementation steps and record either
+the chosen subagent tracks or the continuity rationale. If you keep work local,
+state the reason: tight coupling, overlapping ownership, small scope,
+unavailable tool, urgent critical-path dependency, or higher context cost than
+benefit.

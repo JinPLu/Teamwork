@@ -12,7 +12,7 @@ Research Artifact: <path | none>
 Plan Tier: lightweight
 Goal: <one sentence>
 Scope: In <...>; Out <...>; Protected <...>
-Dispatch: none with rationale | Explorer/Worker/Reviewer tracks, ownership, cap/batch reason
+Dispatch Guidance: none with rationale | Explorer/Designer/Judge/Worker/Reviewer tracks, ownership, context strategy, cap/batch reason
 Steps:
 - [ ] <path/component> - <minimal change> - <why>
 Verification:
@@ -51,7 +51,10 @@ Linked Artifacts: related research or report paths, or none
 - Out: ...
 - Protected boundaries: ...
 ## Subagent Routing
-- <role, scope, model tier, context strategy, order, independence, owned paths, why; or `none` with continuity rationale>
+- Expected: <role, scope, model tier, context strategy, order, independence, owned paths, why; or `none` with continuity rationale>
+- Execution may re-run the split and record Actual Dispatch Log.
+## Subagent Prompt Packets
+- <role>: <mission, source, owned scope, allowed actions, forbidden actions, escalation triggers, required output schema>
 ## Implementation Steps
 - [ ] 1. <path/component> - <minimal change> - <why>
 ## Verification
@@ -64,10 +67,14 @@ Linked Artifacts: related research or report paths, or none
 - Execute only the steps above. Do not add adjacent cleanup.
 ## Review Handoff
 - Check scope, diff, tests/artifacts, regressions, and acceptance criteria.
+## Actual Dispatch Log
+- <filled during execution/review when subagents are used; role, native fields, context strategy, ownership, prompt packet, returned packet, status>
 ```
 
 Goal-mode durable plans must include every durable section. Ordinary durable
 plans may stay concise but must preserve goal, scope, steps, verification,
 risks, stop rules, handoffs, and routing rationale. Use durable Subagent
 Routing for complex, cross-turn, high-risk, or long-running delegation.
-`Dispatch: none` requires rationale, and routing must appear before steps.
+`Dispatch Guidance: none` requires rationale, and routing must appear before
+steps. Actual dispatch is a stage decision recorded during execution or review;
+the plan is not the only authorization source.

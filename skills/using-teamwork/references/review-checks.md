@@ -16,10 +16,12 @@ Check:
   ambiguous architecture cite evidence or explain why local evidence is enough.
 - Verification: focused checks, broader checks when warranted, and Expected
   Results are present.
-- Risks, stop rules, Worker Handoff, Review Handoff, and Subagent Routing are
-  adequate.
-- Parallelization Gate appears before steps; 2+ independent tracks are routed,
-  or `Dispatch: none` gives a continuity rationale.
+- Risks, stop rules, Worker Handoff, Review Handoff, Subagent Routing, and
+  Subagent Prompt Packets are adequate.
+- Parallelization Gate appears before steps; 2+ independent tracks have
+  Dispatch Guidance, or `Dispatch Guidance: none` gives a continuity rationale.
+- Prompt contract, context strategy, Required Output Schema, and escalation
+  triggers are present for delegated non-lightweight work.
 
 Return `revise` or `blocked` when:
 
@@ -28,6 +30,8 @@ Return `revise` or `blocked` when:
   missing handoffs remain;
 - a non-lightweight plan skips split before implementation steps or serializes
   independent tracks without rationale;
+- delegated work lacks prompt packets, output schema, ownership, or escalation
+  triggers;
 - routing uses invalid Codex fields, nonexistent agent types, or misleading
   inherited reasoning effort;
 - protected contracts, architecture, or public behavior change outside scope.
@@ -43,8 +47,13 @@ Check:
   bugs.
 - Diff and verification conform to the accepted lightweight plan or durable
   artifact.
-- Actual subagent roles, model tier, context strategy, order, and file ownership
-  match accepted routing when subagents were used.
+- Actual Dispatch Log records subagent roles, native fields, model tier,
+  context strategy, prompt packets, returned packets, order, and file ownership
+  when subagents were used.
+- Worker Completion Packet and Reviewer Verdict Packet map implementation,
+  verification, deviations, routing conformance, and residual risk to evidence.
+- Stage-Routed Proactive Dispatch was evaluated even when the plan did not
+  explicitly name every subagent track.
 - Workspace has no unrelated edits, generated churn, or overwritten work.
 - Version names, stale docs, comments, or summaries did not steer execution to
   wrong scope or early completion.

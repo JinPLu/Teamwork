@@ -6,74 +6,65 @@ description: Use when asked to plan, implement, fix, add, change, refactor, or m
 # Teamwork Plan
 
 Use after research, diagnosis, or user direction selects a path. Also use
-before non-trivial implementation when no accepted plan exists. The plan must
-let a worker execute without reopening scope.
+before non-trivial implementation when no accepted plan exists. The plan lets a
+worker execute without reopening scope.
 
 Read only as needed:
 
-- `skills/using-teamwork/references/workflow-contract.md` for evidence,
-  context, artifacts, and subagent policy.
-- `skills/using-teamwork/references/artifact-protocol.md` for durable artifact
-  triggers and hygiene.
-- `skills/using-teamwork/references/plan-output.md` for plan templates.
-- `skills/using-teamwork/references/goal-iteration.md` for failed goal-plan
-  revision.
+- `skills/using-teamwork/references/workflow-contract.md` for evidence, artifacts, and boundaries.
+- `skills/using-teamwork/references/dispatch-policy.md` for Designer/Judge and Dispatch Guidance.
+- `skills/using-teamwork/references/subagent-prompt-contract.md` before delegated prompt packets.
+- `skills/using-teamwork/references/plan-output.md` for durable or complete handoff templates.
+- `skills/using-teamwork/references/artifact-protocol.md` for durable plan triggers.
+- `skills/using-teamwork/references/goal-iteration.md` for failed goal-plan revision.
 
 ## Inputs
 
-- Goal, failure, or decision to resolve.
-- Evidence read: source, logs, tests, diffs, artifacts, commands, or research.
-- Scope boundaries, protected boundaries, verification target, budget, and stop
-  rules.
-
-If the plan depends on external behavior, unfamiliar APIs, upstream bugs, or
-ambiguous architecture without evidence, route to `teamwork-research`.
+Goal, evidence, scope, protected boundaries, verification target, budget, and
+stop rules. If external behavior, unfamiliar APIs, upstream bugs, or ambiguous
+architecture lack evidence, route to `teamwork-research`.
 
 ## Planning Tiers
 
 Use the lightest planning form that preserves correctness.
 
-- Lightweight plan: bounded low-risk work; include goal, scope, steps, focused
-  verification, Expected Results, stop condition, and review need.
+- Lightweight plan: bounded low-risk work; include goal, scope, Dispatch
+  Guidance, steps, verification, Expected Results, stop condition, review need.
+  Use lightweight `Dispatch Guidance:` for expected subagent routing or serial
+  rationale.
 - Durable plan: required for goal-mode, cross-turn, high-risk, ambiguous,
-  public/shared behavior, long-running delegation, complex Worker fan-out, or
-  explicit repository-plan requests.
+  public/shared behavior, long delegation, complex Worker fan-out, or explicit
+  repository-plan requests.
 
 Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 
 ## Workflow
 
-1. Restate goal or root cause.
-2. Read direct evidence or prior research.
-3. Label key evidence as `observed`, `inferred`, or `claimed`.
-4. Choose lightweight or durable planning and name the artifact path if any.
-5. Build Requirements Mapping from each requirement to evidence or
-   verification that will prove it.
-6. Define in-scope, out-of-scope, and protected boundaries.
-7. Choose the smallest producer-side change.
-8. Run the Parallelization Gate before implementation steps: split independent
-   tracks first, or state why main-agent continuity is cheaper or safer.
-9. For 2+ independent-track work, define lightweight `Dispatch:` or durable
-   `Subagent Routing` with ownership, allowed edits, verification, merge order,
-   and cap/batch rationale.
-10. Write ordered implementation steps from the routing decision with exact
-    paths when known.
-11. Define focused verification, Expected Results, risks, and stop rules.
-12. Add Worker Handoff and Review Handoff when durable/delegated/high-risk.
-13. Codex native dispatch fields are derived at dispatch time from the accepted
-    routing policy.
+1. Restate goal/root cause and label evidence `observed`, `inferred`, or
+   `claimed`.
+2. Build Requirements Mapping from each requirement to evidence or
+   verification.
+3. Define in/out/protected scope and choose the smallest producer-side change.
+4. Run the Parallelization Gate before implementation steps: split before implementation steps or state why main-agent continuity is cheaper or safer.
+5. Use Designer for ambiguous choices and Judge for high-risk, durable,
+   delegated, or goal-mode plans when fresh context is cheaper than rework.
+6. Write `Dispatch Guidance:` or durable `Subagent Routing`; guidance helps
+   execution but is not the only dispatch authorization.
+7. Add Subagent Prompt Packets only for delegated roles.
+8. Write ordered steps, verification, Expected Results, risks, stop rules, and
+   handoffs.
 
 ## Quality Gates
 
 - Every planned file traces to the goal.
 - No broad refactor, abstraction, formatting churn, or downstream cleanup
-  unless required by evidence.
-- Non-lightweight plans evaluate split before implementation steps.
-- Verification has concrete commands, artifacts, checks, or expected behavior.
-- `Dispatch: none` requires a continuity rationale.
-- Durable plans have no `<...>`, `TODO`, `TBD`, or ellipsis tasks.
-- Goal-mode durable plans include all sections required by `plan-output.md`,
-  including Search Keys and Abstract.
+  unless evidence requires it.
+- `Dispatch Guidance: none` requires a continuity rationale.
+- Delegated plans name prompt contract, context strategy, ownership, and
+  Required Output Schema.
+- Goal-mode durable plans include Search Keys and Abstract.
+- Codex native dispatch fields are derived at dispatch time from the active
+  stage decision, not copied blindly from plan prose.
 
 ## Output
 

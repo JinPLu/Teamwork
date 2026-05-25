@@ -32,7 +32,7 @@ Goal Proposal:
 - Iteration Budget: <default 3 if unspecified, or user-specified>
 - Retry Policy: <failed verification returns to research + plan adequacy>
 - Artifacts: <none | suggested research/plan/report paths and why>
-- Subagent Routing: <tracks to split, or why main-agent continuity is better>
+- Suggested Subagent Routing: <tracks to split, or why main-agent continuity is better>
 - Native Codex Goal Text: <concise target prepared for create_goal>
 ```
 

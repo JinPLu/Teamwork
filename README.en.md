@@ -4,9 +4,9 @@
 
 ![Teamwork workflow banner](assets/teamwork-hero.png)
 
-Teamwork is a **Codex-only skill package**. Codex native capabilities are the execution substrate: native goals, `update_plan`, subagents, review, sandbox approvals, automations, MCP, and plugins still do the work. Teamwork adds the collaboration policy that makes complex coding-agent work more reliable: evidence first, reusable artifacts, explicit subagent routing, reviewed execution, and goal iteration that does not stop early.
+Teamwork is a **Codex-only skill package**. Codex native capabilities are the execution substrate: native goals, `update_plan`, subagents, review, sandbox approvals, automations, MCP, and plugins still do the work. Teamwork adds the collaboration policy that makes complex coding-agent work more reliable: evidence first, reusable artifacts, stage-routed proactive dispatch, reviewed execution, and goal iteration that does not stop early.
 
-Simple tasks stay native. Use Teamwork only when evidence, planning, review, delegation, or autonomous convergence materially improves correctness.
+After Teamwork activates, the main agent acts as the orchestrator. Simple tasks still stay in Codex native flow; non-lightweight research, plan, execute, review, and goal work proactively evaluates subagent dispatch instead of waiting for user or plan authorization.
 
 ## Core Advantages
 
@@ -16,11 +16,11 @@ Simple tasks stay native. Use Teamwork only when evidence, planning, review, del
 | Better native goals | Unclear autonomous requests first get a chat-window `Goal Proposal`. After human approval, its `Native Codex Goal Text` is used with Codex native goal state. Failed attempts return to research + plan adequacy instead of early block. |
 | Artifact memory | `research/`, `plans/`, and `reports/` preserve reusable evidence, execution memos, rolling attempts, verification, review, and routing decisions so work does not repeat or bloat the chat context. |
 | Retrieval headers | Durable artifacts start with type, status, updated date, search keys, abstract, and linked artifacts so future agents can find the right memory before full-text search. |
-| Subagent routing | Lightweight plans can use `Dispatch:`; durable plans use `Subagent Routing`. Explorer/Reviewer default max 3; Worker scales by ownership, integration cost, and verification. |
+| Stage-routed dispatch | Teamwork uses subagent-first orchestration after activation. Research / plan / execute / review / goal stages proactively evaluate Explorer, Designer, Judge, Worker, or Reviewer dispatch for non-lightweight work; plan routing is guidance and forecasting, not the sole authorization source. |
 
 ## Skill Map
 
-`using-teamwork` is the automatic entrypoint and router.
+`using-teamwork` is the automatic lean entrypoint and router. Stage skills stay lightweight and load only the references needed for the active stage; subagent detail is progressively disclosed through focused references instead of one large `subagent-routing` reference.
 
 | User Intent | Skill | Output |
 |---|---|---|
@@ -31,13 +31,15 @@ Simple tasks stay native. Use Teamwork only when evidence, planning, review, del
 | Update version, release metadata, or skill topology | `teamwork-update` | Synchronized `VERSION`, manifest, docs, install, and validation |
 | Iterate until a verifiable target is reached | `teamwork-goal` | Goal Proposal, native goal handoff, iteration loop, rolling report when needed |
 
+Subagent references are split by responsibility: `dispatch-policy` defines when to dispatch plus caps/economics and native Codex dispatch-field mapping, `subagent-prompt-contract` defines prompt shape, and `subagent-packets` defines Worker / Reviewer handoff packets. Plan `Dispatch Guidance:` is advice; the active stage still owns actual dispatch through stage-routed proactive dispatch.
+
 ## Codex Native Policy Map
 
 | Codex Capability | Teamwork Policy |
 |---|---|
 | Native goal | Source of truth for autonomous target and lifecycle. Teamwork designs the goal, evidence, scope, retry policy, and acceptance checks before `create_goal`. |
 | `update_plan` | Visible progress only. It is not a durable execution spec, review target, or completion proof. |
-| Subagents | Authorized by user request, accepted Goal Proposal, lightweight `Dispatch:`, or durable `Subagent Routing`. Explorer/Reviewer default max 3; Worker has no fixed cap, but >3 requires ownership, integration, and verification rationale. |
+| Subagents | Stage-routed proactive dispatch. After Teamwork activates, the main agent is the orchestrator; non-lightweight research, plan, execute, review, and goal work proactively evaluates and dispatches subagents. Plan `Dispatch Guidance:` or `Subagent Routing` is guidance, not the only authorization. Explorer/Reviewer default max 3; Worker has no fixed cap, but >3 requires ownership, integration, and verification rationale. |
 | Review | Codex review output can be evidence, but completion still maps to requirements, diff, tests, artifacts, and acceptance criteria. |
 | Sandbox/permissions | Use Codex native approval and sandbox model. Teamwork only requires boundaries and risks to be explicit. |
 | Automations/heartbeat | Use native Codex automation or thread heartbeat for recurring checks or later continuation. Do not encode schedules in Teamwork artifacts. |
@@ -61,7 +63,7 @@ Goal Proposal:
 - Iteration Budget: <default 3 if unspecified, or user-specified>
 - Retry Policy: <failed verification returns to research + plan adequacy>
 - Artifacts: <none | suggested research/plan/report paths and why>
-- Subagent Routing: <tracks to split, or why main-agent continuity is better>
+- Subagent Routing: <suggested tracks to split, or why main-agent continuity is better>
 - Native Codex Goal Text: <concise text prepared for create_goal>
 ```
 
@@ -80,8 +82,8 @@ docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 | Directory | Role | Review Question |
 |---|---|---|
 | `research/` | Reusable investigation and external calibration | What evidence was read, and which findings are observed/inferred/claimed? |
-| `plans/` | Execution memo and review source of truth | Are goal, scope, steps, verification, risks, handoffs, and routing clear? |
-| `reports/` | Goal rolling memory and durable conclusions | What was tried, verified, reviewed, reused, and routed? |
+| `plans/` | Execution memo and review source of truth | Are goal, scope, steps, verification, risks, handoffs, and routing guidance clear? |
+| `reports/` | Goal rolling memory and durable conclusions | What was tried, verified, reviewed, reused, and actually dispatched? |
 
 Every durable artifact begins with `Artifact Type`, `Status`, `Last Updated`,
 `Search Keys`, `Abstract`, and `Linked Artifacts`. The abstract helps retrieval;

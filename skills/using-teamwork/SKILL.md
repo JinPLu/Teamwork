@@ -6,40 +6,42 @@ description: Use when starting any coding-agent task including coding, debugging
 # Using Teamwork
 
 Teamwork is a Codex-native augmentation layer. Codex native capabilities do the
-work; Teamwork adds routing, evidence discipline, review, durable memory,
-subagent policy, version hygiene, and goal convergence only when useful.
+work; Teamwork adds evidence discipline, stage routing, proactive dispatch,
+review, durable memory, version hygiene, and goal convergence when useful.
 
-This entrypoint is broad because discovery reads frontmatter before this body.
-After loading, keep simple work native; route only when Teamwork adds value.
+Keep simple work native. Route only when Teamwork changes the outcome.
 
 ## References
 
 Load only what applies:
 
-- `skills/using-teamwork/references/workflow-contract.md`: Evidence Interpretation Contract (`observed`, `inferred`, `claimed`), Context & Cost Discipline, Codex Native Policy Map, Subagent Collaboration Model, Dispatch Economics, and Proposal/Plan Routed authorization.
-- `skills/using-teamwork/references/artifact-protocol.md`: durable memory.
-- `skills/using-teamwork/references/subagent-routing.md`: role-specific dispatch economics.
-- `skills/using-teamwork/references/goal-iteration.md`: goal loop and
-  `Goal Proposal`.
-- `skills/using-teamwork/references/plan-output.md`: plan output templates.
-- `skills/using-teamwork/references/review-checks.md`: review checklists.
+- `references/workflow-contract.md`: Evidence Interpretation Contract
+  (`observed`, `inferred`, `claimed`), Codex Native Policy Map,
+  Context & Cost Discipline, Subagent Collaboration Model.
+- `references/dispatch-policy.md`: Dispatch Economics, roles,
+  Stage-Routed Proactive Dispatch, Codex mapping.
+- `references/subagent-prompt-contract.md`: Context Strategies and prompt
+  fields.
+- `references/subagent-packets.md`: packet schemas and Actual Dispatch Log.
+- `references/artifact-protocol.md`: durable memory.
+- `references/goal-iteration.md`: `Goal Proposal` and retry loop.
+- `references/plan-output.md`: plan templates.
+- `references/review-checks.md`: review gates.
 
 ## Route Check
 
-| Signal | Route | Skill file |
-|---|---|---|
-| Need evidence before choosing | `teamwork-research` | `skills/teamwork-research/SKILL.md` |
-| Need a plan before non-trivial edits | `teamwork-plan` | `skills/teamwork-plan/SKILL.md` |
-| Accepted plan/checklist needs edits | `teamwork-execute` | `skills/teamwork-execute/SKILL.md` |
-| Plan, diff, or result needs scrutiny | `teamwork-review` | `skills/teamwork-review/SKILL.md` |
-| Version, release, installer, or skill topology update | `teamwork-update` | `skills/teamwork-update/SKILL.md` |
-| Iterate until verified success, budget, or blocker | `teamwork-goal` | `skills/teamwork-goal/SKILL.md` |
-
-If none applies, continue without a route banner.
+| Signal | Route |
+|---|---|
+| Need evidence before choosing | `skills/teamwork-research/SKILL.md` |
+| Need a plan before non-trivial edits | `skills/teamwork-plan/SKILL.md` |
+| Accepted plan/checklist needs edits | `skills/teamwork-execute/SKILL.md` |
+| Plan, diff, or result needs scrutiny | `skills/teamwork-review/SKILL.md` |
+| Version, release, installer, or topology update | `skills/teamwork-update/SKILL.md` |
+| Iterate until verified success, budget, or blocker | `skills/teamwork-goal/SKILL.md` |
 
 ## Automatic Stage Selection
 
-Do not wait for the user to name a Teamwork skill when intent is clear.
+Do not wait for the user to name a Teamwork skill when intent is clear; discovery reads frontmatter before route filtering.
 
 - Planning: "plan", "design", "figure out", non-trivial "implement/fix/add/change".
 - Execution: "go ahead", "execute", "continue", "resume", "do it".
@@ -53,13 +55,17 @@ already exists.
 
 ## Native Default
 
-Native flow is correct for quick factual answers, one-liners, and small
-isolated edits with obvious verification. Do not create artifacts, subagents,
-durable plans, or review passes for ceremony.
+Native flow is correct for quick factual answers, one-liners, and small edits
+with obvious verification. Do not create artifacts, subagents, durable plans,
+or review passes for ceremony.
 
-Before staying native for non-trivial work, confirm the behavior/scope
-assumption, smallest path, boundaries, and success check. If unclear, route to
-`teamwork-research` or `teamwork-plan`.
+Before staying native for non-trivial work, state the scope assumption, smallest
+path, boundaries, and success check. If unclear, route to research or plan.
+
+When a Teamwork stage is active, the main agent is orchestrator. For
+non-lightweight work, apply Stage-Routed Proactive Dispatch before serial work.
+Plans may suggest routing; stage dispatch need not wait for every subagent
+track to be named.
 
 ## Route Output
 

@@ -1,6 +1,6 @@
 # Codex Usage
 
-Teamwork is a Codex-native augmentation layer. Codex native capabilities remain the substrate: goals, `update_plan`, subagents, review, sandbox approvals, automations, MCP, and plugins. Teamwork defines when and how those capabilities should be combined for evidence-heavy, reviewed, delegated, or autonomous work.
+Teamwork is a Codex-native augmentation layer. Codex native capabilities remain the substrate: goals, `update_plan`, subagents, review, sandbox approvals, automations, MCP, and plugins. Teamwork defines when and how those capabilities should be combined for evidence-heavy, reviewed, delegated, or autonomous work. After Teamwork activates, the main agent acts as the orchestrator: simple tasks can stay native, while non-lightweight research, plan, execute, review, and goal work proactively evaluates subagent dispatch.
 
 Install:
 
@@ -8,13 +8,13 @@ Install:
 ./install.sh
 ```
 
-The behavior contract lives in `skills/`. `using-teamwork` is the automatic entrypoint and router. It is intentionally broad so it can load for coding-agent work and then choose native flow or a Teamwork route. `VERSION` is the package version source of truth and must match `.codex-plugin/plugin.json`. Treat names, comments, README claims, summaries, and tool output as evidence to verify, not facts by themselves.
+The behavior contract lives in `skills/`. `using-teamwork` is the automatic lean entrypoint and router. It is intentionally broad so it can load for coding-agent work and then choose native flow or a Teamwork route. Stage skills stay lightweight and load focused references only as needed; subagent detail is split across `dispatch-policy`, `subagent-prompt-contract`, and `subagent-packets` instead of one large routing reference. `VERSION` is the package version source of truth and must match `.codex-plugin/plugin.json`. Treat names, comments, README claims, summaries, and tool output as evidence to verify, not facts by themselves.
 
 ## Native Capability Policy
 
 - Goals: native Codex goal state is the source of truth for autonomous target and lifecycle. For unclear targets, first return a chat-window `Goal Proposal`; after human approval or edits, call `create_goal` with the `Native Codex Goal Text`.
-- Planning and execution: route non-trivial implementation requests to `teamwork-plan` before edits when no accepted plan exists. Route accepted, approved, resumed, or continued plans to `teamwork-execute` for bounded edits and focused verification. `update_plan` is visible transient progress. Durable execution memory lives in `docs/teamwork/plans/` only when artifact triggers apply.
-- Subagents: user requests, accepted Goal Proposals, lightweight `Dispatch:`, or durable `Subagent Routing` authorize listed tracks. Explorer/Reviewer default max 3. Worker has no fixed cap; >3 Workers require ownership map, integration order, verification plan, and a rationale that parallel is cheaper than serial. Use default-type Reviewer/Judge prompts for fresh review.
+- Planning and execution: route non-trivial implementation requests to `teamwork-plan` before edits when no accepted plan exists. Plan `Dispatch Guidance:` or durable `Subagent Routing` is routing guidance, not the only dispatch authorization. Route accepted, approved, resumed, or continued plans to `teamwork-execute` for bounded edits, focused verification, and a record of actual dispatch used. `update_plan` is visible transient progress. Durable execution memory lives in `docs/teamwork/plans/` only when artifact triggers apply.
+- Subagents: use stage-routed proactive dispatch. After Teamwork activates, the main agent is the orchestrator; non-lightweight research, plan, execute, review, and goal stages evaluate and dispatch Explorer, Designer, Judge, Worker, or Reviewer subagents when parallel evidence gathering, design scrutiny, implementation, or review is cheaper or safer than serial main-agent work. Explorer/Reviewer default max 3. Worker has no fixed cap; >3 Workers require ownership map, integration order, verification plan, and a rationale that parallel is cheaper than serial. Use default-type Reviewer/Judge prompts for fresh review.
 - Review: `codex review --uncommitted`, `--base`, or `--commit` can support a verdict. Completion still requires direct mapping to requirements, diffs, tests, artifacts, or acceptance evidence.
 - Sandbox and permissions: use Codex native approval flows. Teamwork should identify destructive risk, credentials, unclear ownership, or protected boundaries before dispatch or execution.
 - Automations and heartbeats: use Codex native automation/thread heartbeat for recurring checks or later continuation. Teamwork artifacts do not store schedules.
@@ -38,17 +38,17 @@ Every durable artifact starts with a retrieval header: `Artifact Type`,
 Search these headers first, then full text across research, plans, and reports.
 The abstract is a retrieval aid, not completion proof.
 
-Use them for goal-mode, failed iteration, cross-agent execution, cross-turn work, high-risk or ambiguous changes, public/shared behavior, external calibration, and explicit repository-plan requests. Small low-risk edits can stay in native Codex chat/progress.
+Use them for goal-mode, failed iteration, cross-agent execution, cross-turn work, high-risk or ambiguous changes, public/shared behavior, external calibration, and explicit repository-plan requests. Execution or report artifacts should record the actual dispatch decision and subagents used, including why main-agent continuity was chosen when no dispatch happened. Small low-risk edits can stay in native Codex chat/progress.
 
 For failed goal iterations, refresh research and check whether the active plan was under-informed, stale, wrong-scope, over-strict, or deviated from during execution before retrying. Revise and review the durable plan when new evidence changes the path.
 
 ## Subagent Mapping
 
-Derive native Codex dispatch fields from `skills/using-teamwork/references/subagent-routing.md` at dispatch time:
+Use focused subagent references at dispatch time: `skills/using-teamwork/references/dispatch-policy.md` for when to dispatch, cap/economics rules, and native Codex dispatch fields; `skills/using-teamwork/references/subagent-prompt-contract.md` for prompt shape; and `skills/using-teamwork/references/subagent-packets.md` for Worker / Reviewer handoff packets. Plan `Dispatch Guidance:` is advisory; the active stage owns the actual dispatch decision and should record what it did when execution/report artifacts are warranted:
 
 - Explorer -> `agent_type:"explorer"`.
 - Worker -> `agent_type:"worker"`.
 - Designer, Judge, Reviewer -> `agent_type:"default"` with the conceptual role in the prompt.
 - `fast`, `standard`, and `high reasoning` map to low, medium, and high reasoning effort.
 
-Do not encode native dispatch fields in ordinary plans unless they are part of the routing decision.
+Do not encode native dispatch fields in ordinary plans unless they are part of the routing guidance. Preserve native flow for simple tasks where orchestration overhead would not improve correctness.
