@@ -24,6 +24,7 @@ After Teamwork activates, the main agent acts as the orchestrator. Simple tasks 
 
 | User Intent | Skill | Output |
 |---|---|---|
+| Initialize or slim project agent rules | `teamwork-init` | Project rule layering, MCP/CodeGraph boundaries, appendix, and artifact integration plan |
 | Investigate causes, compare options, refresh stale assumptions | `teamwork-research` | Direct evidence, external calibration, reusable research artifact when warranted |
 | Plan or prepare a non-trivial change | `teamwork-plan` | Lightweight checklist or durable execution memo |
 | Execute an accepted, approved, continued, or resumed plan | `teamwork-execute` | Minimal scoped edits and focused verification |
@@ -44,6 +45,7 @@ Subagent references are split by responsibility: `dispatch-policy` defines when 
 | Sandbox/permissions | Use Codex native approval and sandbox model. Teamwork only requires boundaries and risks to be explicit. |
 | Automations/heartbeat | Use native Codex automation or thread heartbeat for recurring checks or later continuation. Do not encode schedules in Teamwork artifacts. |
 | MCP/plugins | Prefer native Codex tools and connectors. Teamwork requires sources and limitations to be recorded when they affect decisions. |
+| Project instructions | `teamwork-init` initializes or slims `AGENTS.md`, `CODEX.md`, and `CLAUDE.md`, migrating reusable workflow into Teamwork while leaving project facts in the project. |
 
 Package version uses `VERSION` as the source of truth and must match
 `.codex-plugin/plugin.json`. Version, release metadata, or skill surface updates

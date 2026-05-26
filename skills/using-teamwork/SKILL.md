@@ -13,8 +13,6 @@ Keep simple work native. Route only when Teamwork changes the outcome.
 
 ## References
 
-Load only what applies:
-
 - `references/workflow-contract.md`: Evidence Interpretation Contract
   (`observed`, `inferred`, `claimed`), Codex Native Policy Map,
   Context & Cost Discipline, Subagent Collaboration Model.
@@ -27,12 +25,14 @@ Load only what applies:
 - `references/goal-iteration.md`: `Goal Proposal` and retry loop.
 - `references/plan-output.md`: plan templates.
 - `references/review-checks.md`: review gates.
+- `references/project-init.md`: instruction layering and MCP/search policy.
 
 ## Route Check
 
 | Signal | Route |
 |---|---|
 | Need evidence before choosing | `skills/teamwork-research/SKILL.md` |
+| Initialize/slim project instructions or migrate workflow rules | `skills/teamwork-init/SKILL.md` |
 | Need a plan before non-trivial edits | `skills/teamwork-plan/SKILL.md` |
 | Accepted plan/checklist needs edits | `skills/teamwork-execute/SKILL.md` |
 | Plan, diff, or result needs scrutiny | `skills/teamwork-review/SKILL.md` |
@@ -44,14 +44,14 @@ Load only what applies:
 Do not wait for the user to name a Teamwork skill when intent is clear; discovery reads frontmatter before route filtering.
 
 - Planning: "plan", "design", "figure out", non-trivial "implement/fix/add/change".
+- Init: "init", "initialize", "AGENTS", "CODEX", "CLAUDE", "slim instructions", "workflow rules".
 - Execution: "go ahead", "execute", "continue", "resume", "do it".
 - Review: "review", "check", "validate", "look over the diff".
 - Update: "version", "release", "changelog", "update Teamwork", "bump".
 - Goal: "keep going", "until it passes", "iterate until done", budget.
 
-For autonomous convergence, route to `teamwork-goal` for a chat-only
-`Goal Proposal` before changing native Codex goal state unless an active goal
-already exists.
+For autonomous convergence, route to `teamwork-goal` for a chat-only `Goal
+Proposal` before changing native Codex goal state unless an active goal exists.
 
 ## Native Default
 

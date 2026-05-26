@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Codex-only skills for evidence-first planning, execution, review, subagent routing, and native goal convergence.",
   "author": {
     "name": "JinPLu",
@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Strengthen Codex goals, plans, subagents, and review with evidence-first workflow policy.",
-    "longDescription": "A Codex-only broad entrypoint plus dedicated stage skills for evidence gathering, goal proposal, durable artifact memory, scoped execution, subagent routing, fresh review, package updates, and autonomous goal convergence on top of Codex native capabilities.",
+    "longDescription": "A Codex-only broad entrypoint plus dedicated stage skills for project instruction initialization, evidence gathering, goal proposal, durable artifact memory, scoped execution, subagent routing, fresh review, package updates, and autonomous goal convergence on top of Codex native capabilities.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -32,6 +32,7 @@
     "websiteURL": "https://github.com/JinPLu/Teamwork",
     "defaultPrompt": [
       "Design a Codex native goal with evidence, scope, retry policy, artifacts, and subagent routing.",
+      "Initialize or slim project AGENTS/CODEX/CLAUDE rules while preserving local evidence boundaries.",
       "Split a coding task into evidence-gathering, planning, execution, and review tracks.",
       "Use subagents for independent investigation, scoped Worker execution, or fresh-context review.",
       "Map completion claims to direct evidence before accepting the result.",

@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENTRYPOINT="$ROOT/skills/using-teamwork/SKILL.md"
 SKILLS=(
   using-teamwork
+  teamwork-init
   teamwork-goal
   teamwork-research
   teamwork-plan
@@ -140,11 +141,11 @@ for skill in "${SKILLS[@]}"; do
   done
 done
 
-for subskill in teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review teamwork-update; do
+for subskill in teamwork-init teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review teamwork-update; do
   grep_required "skills/$subskill/SKILL.md" "$ENTRYPOINT" "entrypoint/router does not reference skills/$subskill/SKILL.md"
 done
 
-for reference in artifact-protocol goal-iteration dispatch-policy subagent-prompt-contract subagent-packets subagent-routing workflow-contract plan-output review-checks; do
+for reference in artifact-protocol goal-iteration dispatch-policy subagent-prompt-contract subagent-packets subagent-routing workflow-contract plan-output review-checks project-init; do
   ref_file="$ROOT/skills/using-teamwork/references/$reference.md"
   [[ -f "$ref_file" ]] || fail "missing skills/using-teamwork/references/$reference.md"
   git_known_or_worktree_addition "skills/using-teamwork/references/$reference.md" \
@@ -153,7 +154,7 @@ done
 
 grep_required 'references/workflow-contract.md' "$ROOT/skills/using-teamwork/SKILL.md" \
   "using-teamwork must reference shared workflow contract"
-for skill in teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review; do
+for skill in teamwork-init teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review; do
   grep_absent '`references/' \
     "$skill must not use sibling-local reference paths" \
     "$ROOT/skills/$skill/SKILL.md"
@@ -164,7 +165,7 @@ for skill in teamwork-goal teamwork-research teamwork-plan teamwork-execute team
     "$skill must reference shared workflow contract"
 done
 
-for skill in using-teamwork teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review; do
+for skill in using-teamwork teamwork-init teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review; do
   grep_required 'references/workflow-contract.md' "$ROOT/skills/$skill/SKILL.md" \
     "$skill must reference shared workflow contract"
 done
@@ -194,6 +195,8 @@ grep_required 'Native Codex Goal Text' "$ROOT/README.md" \
   "README must document native goal text handoff"
 grep_required 'teamwork-update' "$ROOT/README.md" \
   "README must document teamwork-update"
+grep_required 'teamwork-init' "$ROOT/README.md" \
+  "README must document teamwork-init"
 grep_required 'VERSION' "$ROOT/README.md" \
   "README must document package version source"
 grep_required '\[English\](README.en.md)' "$ROOT/README.md" \
@@ -214,20 +217,28 @@ grep_required 'Codex native capabilities are the execution substrate' "$ROOT/REA
   "English README must explain native Codex augmentation"
 grep_required 'teamwork-update' "$ROOT/README.en.md" \
   "English README must document teamwork-update"
+grep_required 'teamwork-init' "$ROOT/README.en.md" \
+  "English README must document teamwork-init"
 grep_required 'VERSION' "$ROOT/README.en.md" \
   "English README must document package version source"
 grep_required 'Codex-only skill package' "$ROOT/AGENTS.md" \
   "AGENTS.md must describe the Codex-only package"
 grep_required 'teamwork-update' "$ROOT/AGENTS.md" \
   "AGENTS.md must document update skill ownership"
+grep_required 'teamwork-init' "$ROOT/AGENTS.md" \
+  "AGENTS.md must document init skill ownership"
 grep_required 'Codex native capabilities' "$ROOT/CODEX.md" \
   "CODEX.md must document native Codex capability policy"
 grep_required 'VERSION' "$ROOT/CODEX.md" \
   "CODEX.md must document package version source"
+grep_required 'teamwork-init' "$ROOT/CODEX.md" \
+  "CODEX.md must document teamwork-init"
 [[ "$(wc -l < "$ROOT/README.md")" -le 170 ]] || fail "README should stay concise"
 [[ "$(wc -l < "$ROOT/README.en.md")" -le 175 ]] || fail "English README should stay concise"
 line_count_max "$ROOT/skills/using-teamwork/SKILL.md" 80 "using-teamwork should stay concise"
 word_count_max "$ROOT/skills/using-teamwork/SKILL.md" 450 "using-teamwork should stay concise"
+line_count_max "$ROOT/skills/teamwork-init/SKILL.md" 100 "teamwork-init should stay concise"
+word_count_max "$ROOT/skills/teamwork-init/SKILL.md" 600 "teamwork-init should stay concise"
 line_count_max "$ROOT/skills/teamwork-plan/SKILL.md" 120 "teamwork-plan should stay concise"
 word_count_max "$ROOT/skills/teamwork-plan/SKILL.md" 650 "teamwork-plan should stay concise"
 line_count_max "$ROOT/skills/teamwork-goal/SKILL.md" 120 "teamwork-goal should stay concise"
@@ -248,6 +259,8 @@ line_count_max "$ROOT/skills/using-teamwork/references/subagent-packets.md" 110 
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-packets.md" 350 "subagent packet reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-routing.md" 25 "compatibility routing index should stay small"
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-routing.md" 120 "compatibility routing index should stay small"
+line_count_max "$ROOT/skills/using-teamwork/references/project-init.md" 95 "project init reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/project-init.md" 650 "project init reference should stay focused"
 for skill in "${SKILLS[@]}"; do
   fenced_block_line_count_max "$ROOT/skills/$skill/SKILL.md" 20 "$skill must not embed large fenced templates"
 done
@@ -356,6 +369,20 @@ grep_required 'Do not wait for the user to name a Teamwork skill' "$ROOT/skills/
   "using-teamwork must not require manual skill invocation"
 grep_required 'teamwork-update' "$ROOT/skills/using-teamwork/SKILL.md" \
   "using-teamwork must route package update work"
+grep_required 'teamwork-init' "$ROOT/skills/using-teamwork/SKILL.md" \
+  "using-teamwork must route project initialization work"
+grep_required 'Project Rule Layering' "$ROOT/skills/using-teamwork/references/project-init.md" \
+  "project init reference must define project rule layering"
+grep_required 'CodeGraph' "$ROOT/skills/using-teamwork/references/project-init.md" \
+  "project init reference must define CodeGraph policy"
+grep_required 'docs/teamwork' "$ROOT/skills/using-teamwork/references/project-init.md" \
+  "project init reference must define Teamwork artifact placement"
+grep_required 'context-cache' "$ROOT/skills/using-teamwork/references/project-init.md" \
+  "project init reference must define context-cache policy"
+grep_required 'current task progress' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must forbid current task progress in instructions"
+grep_required 'project-init.md' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must link project init reference"
 grep_required 'VERSION is the package version source of truth' "$ROOT/skills/teamwork-update/SKILL.md" \
   "update skill must define VERSION as source of truth"
 grep_required '.codex-plugin/plugin.json' "$ROOT/skills/teamwork-update/SKILL.md" \
@@ -549,7 +576,7 @@ trap 'rm -rf "$tmp"' EXIT
 retired_teamwork_dir="$tmp/home/.codex/skills/teamwork"
 mkdir -p "$retired_teamwork_dir/references"
 printf '%s\n' '---' 'name: teamwork' 'description: Use when selecting a Teamwork stage.' '---' > "$retired_teamwork_dir/SKILL.md"
-for reference in artifact-protocol goal-iteration dispatch-policy subagent-prompt-contract subagent-packets subagent-routing workflow-contract plan-output review-checks; do
+for reference in artifact-protocol goal-iteration dispatch-policy subagent-prompt-contract subagent-packets subagent-routing workflow-contract plan-output review-checks project-init; do
   printf '%s\n' "retired $reference" > "$retired_teamwork_dir/references/$reference.md"
 done
 HOME="$tmp/home" "$ROOT/install.sh" >/dev/null

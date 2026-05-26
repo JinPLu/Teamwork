@@ -6,6 +6,7 @@ INSTALL_MODE="${TEAMWORK_INSTALL_MODE:-copy}"
 DEST_ROOT="$HOME/.codex/skills"
 SKILLS=(
   using-teamwork
+  teamwork-init
   teamwork-goal
   teamwork-research
   teamwork-plan
@@ -49,7 +50,7 @@ retired_copy_is_plugin_owned() {
     case "$rel" in
       SKILL.md)
         ;;
-      references|references/artifact-protocol.md|references/goal-iteration.md|references/dispatch-policy.md|references/subagent-prompt-contract.md|references/subagent-packets.md|references/subagent-routing.md|references/workflow-contract.md|references/plan-output.md|references/review-checks.md)
+      references|references/artifact-protocol.md|references/goal-iteration.md|references/dispatch-policy.md|references/subagent-prompt-contract.md|references/subagent-packets.md|references/subagent-routing.md|references/workflow-contract.md|references/plan-output.md|references/review-checks.md|references/project-init.md)
         [[ "$retired" == "teamwork" ]] || return 1
         ;;
       *)
