@@ -13,7 +13,8 @@ wait for the user, `Goal Proposal`, `Dispatch Guidance:`, or durable
 - Research: Explorer tracks for 2+ separable evidence questions.
 - Plan: Designer for ambiguous choices; Judge for high-risk or delegated plans.
 - Execute: Worker split from accepted steps, files, components, and ownership.
-- Review: Reviewer for non-trivial execution, high-risk diffs, or acceptance.
+- Review: fresh-context Reviewer for non-trivial execution, high-risk diffs, or
+  acceptance; same-context self-review cannot accept non-lightweight work.
 - Goal: rerun the stage dispatch decision on each failed attempt.
 
 Plans record expected routing. Execution records actual dispatch. Review checks
@@ -37,7 +38,9 @@ both.
   order, verification, and why parallel is cheaper than serial.
 - Use batch or worktree isolation when ownership is uncertain, tracks are many,
   verification is shared, or merge cost may dominate.
-- If not dispatching, state why local execution is cheaper or safer.
+- If not dispatching, state why local execution is cheaper or safer. For
+  non-lightweight review, unavailable tools or explicit user opt-out are the
+  only acceptable reasons to skip a fresh Reviewer; mark acceptance unreviewed.
 
 ## Role Profiles
 

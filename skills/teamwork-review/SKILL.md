@@ -21,8 +21,10 @@ Read only as needed:
 ## Shared Rules
 
 - Choose `mode: plan` or `mode: execution`.
-- Default to fresh-context Reviewer subagents for non-trivial execution;
-  otherwise state why local review is cheaper or safer.
+- Default to fresh-context Reviewer subagents for non-lightweight plan/execution
+  acceptance. Same-context self-review is not acceptance.
+- Local review is allowed only for lightweight work, unavailable subagent tools,
+  or explicit user opt-out; label any non-lightweight verdict as unreviewed.
 - Inspect source, diff, logs, tests, command output, artifacts, research, plan,
   and user constraints.
 - Label important evidence `observed`, `inferred`, or `claimed`.

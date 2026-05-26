@@ -12,11 +12,11 @@ After Teamwork activates, the main agent acts as the orchestrator. Simple tasks 
 
 | Advantage | What Teamwork Adds |
 |---|---|
-| Evidence first | Important claims must come from source, diffs, logs, tests, artifacts, or primary external sources. File names, README prose, comments, stale summaries, and `latest` labels are treated as claims until corroborated. |
+| Evidence first | Important claims must come from source, diffs, logs, tests, artifacts, or primary external sources. File names, README prose, comments, stale summaries, and `latest` labels are claims; `implement/fix` routes to research first when root/source/API/failure/evidence/risk is unclear. |
 | Better native goals | Unclear autonomous requests first get a chat-window `Goal Proposal`. After human approval, its `Native Codex Goal Text` is used with Codex native goal state. Failed attempts return to research + plan adequacy instead of early block. |
 | Artifact memory | `research/`, `plans/`, and `reports/` preserve reusable evidence, execution memos, rolling attempts, verification, review, and routing decisions so work does not repeat or bloat the chat context. |
 | Retrieval headers | Durable artifacts start with type, status, updated date, search keys, abstract, and linked artifacts so future agents can find the right memory before full-text search. |
-| Stage-routed dispatch | Teamwork uses subagent-first orchestration after activation. Research / plan / execute / review / goal stages proactively evaluate Explorer, Designer, Judge, Worker, or Reviewer dispatch for non-lightweight work; plan routing is guidance and forecasting, not the sole authorization source. |
+| Stage-routed dispatch | Teamwork uses subagent-first orchestration after activation. Research / plan / execute / review / goal stages proactively evaluate Explorer, Designer, Judge, Worker, or Reviewer dispatch for non-lightweight work; non-lightweight acceptance needs a fresh Reviewer, and self-review is not acceptance. |
 
 ## Skill Map
 
@@ -40,7 +40,7 @@ Subagent references are split by responsibility: `dispatch-policy` defines when 
 |---|---|
 | Native goal | Source of truth for autonomous target and lifecycle. Teamwork designs the goal, evidence, scope, retry policy, and acceptance checks before `create_goal`. |
 | `update_plan` | Visible progress only. It is not a durable execution spec, review target, or completion proof. |
-| Subagents | Stage-routed proactive dispatch. After Teamwork activates, the main agent is the orchestrator; non-lightweight research, plan, execute, review, and goal work proactively evaluates and dispatches subagents. Plan `Dispatch Guidance:` or `Subagent Routing` is guidance, not the only authorization. Explorer/Reviewer default max 3; Worker has no fixed cap, but >3 requires ownership, integration, and verification rationale. Model policy prefers fewer, stronger models: Explorer may drop to `cheap-fast` only for narrow read-only evidence work, Judge/Reviewer default to `frontier`, Worker defaults to `coding` or inherited, and high-risk or public-behavior work does not use cheap-fast. |
+| Subagents | Stage-routed proactive dispatch. After Teamwork activates, the main agent is the orchestrator; non-lightweight research, plan, execute, review, and goal work proactively evaluates and dispatches subagents. Plan `Dispatch Guidance:` or `Subagent Routing` is guidance, not the only authorization. Explorer/Reviewer default max 3; Worker has no fixed cap. Non-lightweight review may skip a fresh Reviewer only when subagents are unavailable or the user opts out, and must be labeled `unreviewed`. Model policy prefers fewer, stronger models: Explorer may use `cheap-fast` for narrow read-only work, Judge/Reviewer default to `frontier`, Worker defaults to `coding` or inherited. |
 | Review | Codex review output can be evidence, but completion still maps to requirements, diff, tests, artifacts, and acceptance criteria. |
 | Sandbox/permissions | Use Codex native approval and sandbox model. Teamwork only requires boundaries and risks to be explicit. |
 | Automations/heartbeat | Use native Codex automation or thread heartbeat for recurring checks or later continuation. Do not encode schedules in Teamwork artifacts. |

@@ -53,6 +53,9 @@ properties, git diff, or primary external evidence.
 
 Choose the smallest workflow pattern that preserves correctness:
 
+- Treat work as non-lightweight when it is multi-file, unfamiliar, ambiguous,
+  repeated-failure, public/shared behavior, protected-boundary, cross-turn,
+  delegated, or completion acceptance work.
 - Fixed sequence with clear steps: use a lightweight plan.
 - Distinct categories of work: route by stage instead of forcing one loop.
 - Independent evidence questions: default to parallel Explorer tracks.
@@ -93,6 +96,12 @@ research and record reuse/update/new disposition in goal-mode reports.
 Subagents provide independent context, parallel evidence, isolated execution, or
 fresh review. The main agent is the orchestrator: it owns scope, synthesis,
 conflict resolution, integration, final verification, and final acceptance.
+
+Same-context self-review is not acceptance for non-lightweight work. A fresh
+Reviewer subagent is required before claiming non-lightweight execution is
+complete, reviewed, or accepted. If subagents are unavailable or explicitly
+forbidden, report the work as verified-but-unreviewed and name the residual
+risk instead of presenting it as accepted.
 
 Subagent authorization is Stage-Routed Proactive Dispatch. Once a Teamwork
 stage is active, that stage may dispatch non-destructive Explorer, Designer,

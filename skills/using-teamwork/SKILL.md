@@ -43,15 +43,15 @@ Keep simple work native. Route only when Teamwork changes the outcome.
 
 Do not wait for the user to name a Teamwork skill when intent is clear; discovery reads frontmatter before route filtering.
 
-- Planning: "plan", "design", "figure out", non-trivial "implement/fix/add/change".
+- Planning: "plan", "design", "figure out", non-trivial "implement/fix/add/change" after evidence; unclear root/source/API/failure/evidence/risk routes research first.
 - Init: "init", "initialize", "AGENTS", "CODEX", "CLAUDE", "slim instructions", "workflow rules".
 - Execution: "go ahead", "execute", "continue", "resume", "do it".
 - Review: "review", "check", "validate", "look over the diff".
 - Update: "version", "release", "changelog", "update Teamwork", "bump".
 - Goal: "keep going", "until it passes", "iterate until done", budget.
 
-For autonomous convergence, route to `teamwork-goal` for a chat-only `Goal
-Proposal` before changing native Codex goal state unless an active goal exists.
+For autonomous convergence, route to `teamwork-goal` for chat-only `Goal
+Proposal` before native goal state unless an active goal exists.
 
 ## Native Default
 
@@ -59,13 +59,13 @@ Native flow is correct for quick factual answers, one-liners, and small edits
 with obvious verification. Do not create artifacts, subagents, durable plans,
 or review passes for ceremony.
 
-Before staying native for non-trivial work, state the scope assumption, smallest
-path, boundaries, and success check. If unclear, route to research or plan.
+Before staying native for non-trivial work, state scope, path, boundaries, and
+success check. If unclear, route to research.
 
-When a Teamwork stage is active, the main agent is orchestrator. For
-non-lightweight work, apply Stage-Routed Proactive Dispatch before serial work.
-Plans may suggest routing; stage dispatch need not wait for every subagent
-track to be named.
+When Teamwork is active, the main agent orchestrates. For non-lightweight work,
+apply Stage-Routed Proactive Dispatch before serial work; acceptance needs a
+fresh Reviewer, not self-review. Plans may suggest routing; stage dispatch need not
+wait for named tracks.
 
 ## Route Output
 

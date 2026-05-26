@@ -47,6 +47,13 @@ Artifacts include Search Keys and Abstract for future retrieval.
 8. Synthesize options, preserve dissent, recommend the smallest producer-side
    path, and write/update any required artifact.
 
+## Hidden Research Gate
+
+Do not skip research merely because the user asked to implement. Route here
+before planning or execution when root cause, source of truth, current API
+behavior, prior failure, acceptance evidence, or risk is unclear. If skipping,
+state the direct observed evidence that makes research unnecessary.
+
 ## Research Refresh Triggers
 
 Route back to research when verification has no evidence delta, reviewer

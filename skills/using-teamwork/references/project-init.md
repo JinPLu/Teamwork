@@ -33,6 +33,27 @@ setup, cleanup, or migration into Teamwork.
 - Appendix navigation: long directory trees, path tables, command catalogs, and
   environment matrices. Keep out of always-loaded instructions.
 
+## Collaboration Backbone Audit
+
+Audit project instructions for these reusable human-agent work habits. For each
+item, mark `keep` for project-specific acceptance details, `migrate` for generic
+workflow duplicated from Teamwork, or `add` when the habit is missing:
+
+- Context first: check whether agents must identify structure, entry points,
+  commands, relevant files, and unknowns before edits.
+- Plan gate: check whether non-trivial, multi-file, unfamiliar, research, or
+  experiment work requires scope confirmation, affected modules, 3-7 steps,
+  verification, and likely failure points.
+- Research gate: check whether papers, repos, APIs, results, and current
+  practice require primary-source evidence and risk listing before claims or
+  implementation.
+- Execution shape: check whether edits stay in small producer-side steps tied
+  to accepted scope.
+- Completion evidence: check whether final replies name changed files, why they
+  changed, verification run, unverified gaps, and human confirmations needed.
+- Handoff hygiene: check whether long sessions or task switches require a
+  one-sentence `/new` handoff with task, changed files, state, and cautions.
+
 ## MCP And Search Policy
 
 - CodeGraph is the structural code source for symbol lookup, architecture
@@ -65,6 +86,7 @@ Return either a compact chat recommendation or a plan:
 - files to keep slim;
 - files to move into appendix or Teamwork artifacts;
 - portable rules to migrate into Teamwork;
+- collaboration backbone `keep` / `migrate` / `add` decisions;
 - project-local rules that must remain;
 - verification commands and expected scope checks;
 - unresolved decisions that require human confirmation.

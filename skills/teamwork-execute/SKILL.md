@@ -69,3 +69,6 @@ or budget exhaustion is a blocker.
 
 Return implemented paths, plan source, verification, Actual Dispatch Log or
 continuity rationale, deviations, failures/blockers, and review request.
+Execution cannot accept its own work. For non-lightweight work, request a
+fresh-context Reviewer subagent before any completion claim; if subagents are
+unavailable or the user forbids them, report that acceptance is unreviewed.

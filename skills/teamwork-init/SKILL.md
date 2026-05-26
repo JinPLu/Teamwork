@@ -9,6 +9,12 @@ Use for project-level agent workflow setup, instruction slimming, and migration
 of portable process rules into Teamwork. This stage prepares a project to use
 Teamwork without bloating project instructions.
 
+The purpose is to create a reliable human-agent collaboration workflow, not to
+turn project instructions into a long project encyclopedia. Distill local good
+practice into reusable Teamwork rules, then leave each project with only the
+facts, evidence sources, boundaries, and acceptance checks needed to apply
+those rules safely.
+
 Read only as needed:
 
 - `skills/using-teamwork/references/workflow-contract.md` for evidence,
@@ -20,21 +26,26 @@ Read only as needed:
 
 ## Workflow
 
-1. Inspect root and repo-local instruction files such as `AGENTS.md`,
-   `CODEX.md`, `CLAUDE.md`, `GEMINI.md`, README guidance, and existing
-   `docs/teamwork/` artifacts.
+1. Inspect the real project context first: root and repo-local instruction
+   files such as `AGENTS.md`, `CODEX.md`, `CLAUDE.md`, `GEMINI.md`, README
+   guidance, existing `docs/teamwork/` artifacts, and any user-provided local
+   plans or source documents.
 2. Classify content as portable workflow, project fact, current state,
    appendix navigation, or durable artifact memory.
-3. Keep portable workflow in Teamwork skills or references. Keep project facts,
-   evidence sources, remote/local boundaries, and protected actions in project
-   instructions.
-4. Move long path maps, command inventories, and historical navigation to
+3. Apply the Collaboration Backbone Audit from `project-init.md`. For each
+   reusable workflow habit, mark `keep`, `migrate`, or `add`: read context
+   before edits, plan before complex work, confirm scope, implement in small
+   steps, run focused verification, report residual gaps, and produce `/new`
+   handoff summaries when switching tasks.
+4. Keep project facts, evidence sources, remote/local boundaries, protected
+   actions, and domain-specific acceptance checks in project instructions.
+5. Move long path maps, command inventories, and historical navigation to
    appendix docs that are explicitly read on demand.
-5. Preserve volatile experiment numbers, current task progress, temporary
+6. Preserve volatile experiment numbers, current task progress, temporary
    conclusions, and chat summaries outside `AGENTS.md`; use reviewed project
    evidence docs or Teamwork artifacts only when their triggers apply.
-6. Return a slim rules plan with changed files, migration rationale,
-   verification, and any human decisions.
+7. Return a slim rules plan with changed files, collaboration audit decisions,
+   migration rationale, verification, and any human decisions.
 
 ## Artifact Decision
 
