@@ -8,24 +8,13 @@ description: Use when starting any coding-agent task including coding, debugging
 Teamwork is a Codex-native augmentation layer. Codex native capabilities do the
 work; Teamwork adds evidence discipline, stage routing, proactive dispatch,
 review, durable memory, version hygiene, and goal convergence when useful.
+Evidence labels are observed, inferred, or claimed.
 
 Keep simple work native. Route only when Teamwork changes the outcome.
 
 ## References
 
-- `references/workflow-contract.md`: Evidence Interpretation Contract
-  (`observed`, `inferred`, `claimed`), Codex Native Policy Map,
-  Context & Cost Discipline, Subagent Collaboration Model.
-- `references/dispatch-policy.md`: Dispatch Economics, roles,
-  Stage-Routed Proactive Dispatch, Codex mapping.
-- `references/subagent-prompt-contract.md`: Context Strategies and prompt
-  fields.
-- `references/subagent-packets.md`: packet schemas and Actual Dispatch Log.
-- `references/artifact-protocol.md`: durable memory.
-- `references/goal-iteration.md`: `Goal Proposal` and retry loop.
-- `references/plan-output.md`: plan templates.
-- `references/review-checks.md`: review gates.
-- `references/project-init.md`: instruction layering and MCP/search policy.
+Load only focused references. `references/workflow-contract.md` owns Evidence Interpretation Contract, Codex Native Policy Map, Context & Cost Discipline, and Subagent Collaboration Model; dispatch policy owns Dispatch Economics.
 
 ## Route Check
 
@@ -50,8 +39,8 @@ Do not wait for the user to name a Teamwork skill when intent is clear; discover
 - Update: "version", "release", "changelog", "update Teamwork", "bump".
 - Goal: "keep going", "until it passes", "iterate until done", budget.
 
-For autonomous convergence, route to `teamwork-goal` for chat-only `Goal
-Proposal` before native goal state unless an active goal exists.
+For autonomous convergence, route to `teamwork-goal` for chat-only `Goal Proposal`
+before native goal state unless an active goal exists.
 
 ## Native Default
 
@@ -66,6 +55,10 @@ When Teamwork is active, the main agent orchestrates. For non-lightweight work,
 apply Stage-Routed Proactive Dispatch before serial work; acceptance needs a
 fresh Reviewer, not self-review. Plans may suggest routing; stage dispatch need not
 wait for named tracks.
+
+Before treating subagents as unavailable, use the Subagent Tool Discovery Gate.
+Skipped required dispatch needs `Dispatch Exception:`; non-lightweight
+acceptance without a fresh Reviewer remains `unreviewed`.
 
 ## Route Output
 

@@ -45,9 +45,12 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 2. Build Requirements Mapping from each requirement to evidence or
    verification.
 3. Define in/out/protected scope and choose the smallest producer-side change.
-4. Run the Parallelization Gate before implementation steps: split before implementation steps or state why main-agent continuity is cheaper or safer.
-5. Use Designer for ambiguous choices and Judge for high-risk, durable,
-   delegated, or goal-mode plans when fresh context is cheaper than rework.
+4. Run the Parallelization Gate before implementation steps: split before implementation steps, apply the Subagent Tool Discovery Gate, or emit
+   `Dispatch Exception:` with the allowed reason.
+5. Use Designer for ambiguous choices unless observed evidence already fixes
+   the decision. Use a fresh-context Judge before delivering high-risk,
+   durable, delegated, or goal-mode plans; if unavailable after discovery or
+   explicitly opted out, label the plan `unreviewed`.
 6. Write `Dispatch Guidance:` or durable `Subagent Routing`; guidance helps
    execution but is not the only dispatch authorization.
 7. Add Subagent Prompt Packets only for delegated roles.
@@ -60,6 +63,8 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 - No broad refactor, abstraction, formatting churn, or downstream cleanup
   unless evidence requires it.
 - `Dispatch Guidance: none` requires a continuity rationale.
+- Durable/high-risk/ambiguous plans require Judge verdict or an explicit
+  `Dispatch Exception:` and `unreviewed` label.
 - Delegated plans name prompt contract, context strategy, ownership, and
   Required Output Schema.
 - Goal-mode durable plans include Search Keys and Abstract.

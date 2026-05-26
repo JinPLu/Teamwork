@@ -20,6 +20,12 @@ Check:
   Subagent Prompt Packets are adequate.
 - Parallelization Gate appears before steps; 2+ independent tracks have
   Dispatch Guidance, or `Dispatch Guidance: none` gives a continuity rationale.
+- Required subagent dispatch either happened, records explicit user opt-out, or
+  records discovery-proven unavailability after the Subagent Tool Discovery
+  Gate.
+- Durable, high-risk, public/shared, or ambiguous plans have a Judge/fresh
+  Reviewer verdict before acceptance, or are explicitly labeled `unreviewed`
+  with residual risk.
 - Prompt contract, context strategy, Required Output Schema, and escalation
   triggers are present for delegated non-lightweight work.
 
@@ -30,6 +36,8 @@ Return `revise` or `blocked` when:
   missing handoffs remain;
 - a non-lightweight plan skips split before implementation steps or serializes
   independent tracks without rationale;
+- required subagent dispatch or fresh-context plan review is missing and no
+  valid discovery/user-opt-out exception is recorded;
 - delegated work lacks prompt packets, output schema, ownership, or escalation
   triggers;
 - routing uses invalid Codex fields, nonexistent agent types, or misleading
@@ -54,6 +62,7 @@ Check:
   verification, deviations, routing conformance, and residual risk to evidence.
 - Stage-Routed Proactive Dispatch was evaluated even when the plan did not
   explicitly name every subagent track.
+- Subagent Tool Discovery Gate ran before any unavailable-tool exception.
 - Workspace has no unrelated edits, generated churn, or overwritten work.
 - Version names, stale docs, comments, or summaries did not steer execution to
   wrong scope or early completion.

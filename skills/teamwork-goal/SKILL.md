@@ -46,8 +46,10 @@ architecture, contracts, or user intent.
 1. Initialize target, assumptions, boundaries, verification, budget, goal,
    durable plan, and report if needed.
 2. Retrieve prior research/report rows before repeating a hypothesis.
-3. Research unclear causes/options; use Explorer packets for independent tracks.
-4. Plan through `teamwork-plan`; use Designer/Judge when risk warrants.
+3. Research unclear causes/options; use Explorer packets for independent
+   tracks after the Subagent Tool Discovery Gate.
+4. Plan through `teamwork-plan`; use Designer/Judge when risk warrants, and
+   keep durable/high-risk plans unreviewed unless Judge verdict exists.
 5. Execute through `teamwork-execute`; dispatch Workers when ownership splits.
 6. Verify, then review through `teamwork-review`.
 7. Accept only when verification and execution review pass; otherwise enter the

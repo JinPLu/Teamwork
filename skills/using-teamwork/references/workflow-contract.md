@@ -48,6 +48,9 @@ properties, git diff, or primary external evidence.
   Teamwork work. The main agent remains the orchestrator and keeps raw
   evidence, implementation detail, and fresh review outside the main context
   whenever an independent track exists.
+- Missing currently active subagent tools is not enough to stay local. If
+  `tool_search` is available, discover `spawn_agent` before recording an
+  unavailable-tool exception.
 
 ## Workflow Pattern Selection
 
