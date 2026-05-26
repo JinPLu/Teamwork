@@ -31,7 +31,7 @@ After Teamwork activates, the main agent acts as the orchestrator. Simple tasks 
 | Update version, release metadata, or skill topology | `teamwork-update` | Synchronized `VERSION`, manifest, docs, install, and validation |
 | Iterate until a verifiable target is reached | `teamwork-goal` | Goal Proposal, native goal handoff, iteration loop, rolling report when needed |
 
-Subagent references are split by responsibility: `dispatch-policy` defines when to dispatch plus caps/economics and native Codex dispatch-field mapping, `subagent-prompt-contract` defines prompt shape, and `subagent-packets` defines Worker / Reviewer handoff packets. Plan `Dispatch Guidance:` is advice; the active stage still owns actual dispatch through stage-routed proactive dispatch.
+Subagent references are split by responsibility: `dispatch-policy` defines when to dispatch, caps/economics, native Codex dispatch fields, and role-specific model class; `subagent-prompt-contract` defines prompt shape plus `Native Fields`; and `subagent-packets` defines Worker / Reviewer handoff packets. Plan `Dispatch Guidance:` is advice; the active stage still owns actual dispatch through stage-routed proactive dispatch.
 
 ## Codex Native Policy Map
 
@@ -39,7 +39,7 @@ Subagent references are split by responsibility: `dispatch-policy` defines when 
 |---|---|
 | Native goal | Source of truth for autonomous target and lifecycle. Teamwork designs the goal, evidence, scope, retry policy, and acceptance checks before `create_goal`. |
 | `update_plan` | Visible progress only. It is not a durable execution spec, review target, or completion proof. |
-| Subagents | Stage-routed proactive dispatch. After Teamwork activates, the main agent is the orchestrator; non-lightweight research, plan, execute, review, and goal work proactively evaluates and dispatches subagents. Plan `Dispatch Guidance:` or `Subagent Routing` is guidance, not the only authorization. Explorer/Reviewer default max 3; Worker has no fixed cap, but >3 requires ownership, integration, and verification rationale. |
+| Subagents | Stage-routed proactive dispatch. After Teamwork activates, the main agent is the orchestrator; non-lightweight research, plan, execute, review, and goal work proactively evaluates and dispatches subagents. Plan `Dispatch Guidance:` or `Subagent Routing` is guidance, not the only authorization. Explorer/Reviewer default max 3; Worker has no fixed cap, but >3 requires ownership, integration, and verification rationale. Model policy prefers fewer, stronger models: Explorer may drop to `cheap-fast` only for narrow read-only evidence work, Judge/Reviewer default to `frontier`, Worker defaults to `coding` or inherited, and high-risk or public-behavior work does not use cheap-fast. |
 | Review | Codex review output can be evidence, but completion still maps to requirements, diff, tests, artifacts, and acceptance criteria. |
 | Sandbox/permissions | Use Codex native approval and sandbox model. Teamwork only requires boundaries and risks to be explicit. |
 | Automations/heartbeat | Use native Codex automation or thread heartbeat for recurring checks or later continuation. Do not encode schedules in Teamwork artifacts. |

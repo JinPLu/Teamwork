@@ -240,8 +240,8 @@ line_count_max "$ROOT/skills/teamwork-execute/SKILL.md" 120 "teamwork-execute sh
 word_count_max "$ROOT/skills/teamwork-execute/SKILL.md" 650 "teamwork-execute should stay concise"
 line_count_max "$ROOT/skills/teamwork-update/SKILL.md" 80 "teamwork-update should stay concise"
 word_count_max "$ROOT/skills/teamwork-update/SKILL.md" 400 "teamwork-update should stay concise"
-line_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 70 "dispatch policy reference should stay focused"
-word_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 450 "dispatch policy reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 105 "dispatch policy reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 700 "dispatch policy reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" 70 "subagent prompt contract should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" 450 "subagent prompt contract should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-packets.md" 110 "subagent packet reference should stay focused"
@@ -386,6 +386,24 @@ grep_required '`high reasoning` -> `reasoning_effort:"high"`' "$ROOT/skills/usin
   "dispatch policy reference must map high reasoning tier"
 grep_required 'Do not combine' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must reject invalid full-history routing"
+grep_required 'Role Profiles' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy reference must define role profiles"
+grep_required 'model class `balanced` by default' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Explorer profile must avoid weak default models"
+grep_required 'model class `frontier`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Judge/Reviewer profiles must require frontier model class"
+grep_required 'Codex Model Mapping' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy reference must define Codex model mapping"
+grep_required '`cheap-fast` -> `gpt-5.4-mini`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "model mapping must define cheap-fast model"
+grep_required '`balanced` -> `gpt-5.4`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "model mapping must define balanced model"
+grep_required '`coding` -> `gpt-5.3-codex`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "model mapping must define coding model"
+grep_required '`frontier` -> `gpt-5.5`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "model mapping must define frontier model"
+grep_required 'Do not use `cheap-fast` for Judge, Reviewer' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy must forbid cheap-fast for Judge and Reviewer"
 grep_required 'routing guidance, not the only' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must treat plan routing as guidance"
 grep_required 'split before implementation steps' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
@@ -426,6 +444,10 @@ grep_required 'Subagent Prompt Contract' "$ROOT/skills/using-teamwork/references
   "subagent prompt contract must define subagent prompt contract"
 grep_required 'Conceptual Role: Explorer, Designer, Judge, Worker, or Reviewer' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require conceptual role"
+grep_required 'Native Fields: `agent_type`, `model` or `model: inherited`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+  "subagent prompt contract must require native fields"
+grep_required 'Never imply a stronger model than the' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+  "subagent prompt contract must prevent misleading model claims"
 grep_required 'Context Strategy: one value from `Context Strategies`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require context strategy"
 grep_required 'Required Output Schema: matching packet from `subagent-packets.md`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
@@ -446,6 +468,8 @@ grep_required 'Result Packets' "$ROOT/skills/using-teamwork/references/subagent-
   "subagent packets reference must define packet shapes"
 grep_required 'Explorer Result Packet' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
   "subagent packets reference must define Explorer result packet"
+grep_required 'Native Fields:' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+  "subagent packets must record native fields"
 grep_required 'Designer Decision Packet' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
   "subagent packets reference must define Designer decision packet"
 grep_required 'Judge Plan Review Packet' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \

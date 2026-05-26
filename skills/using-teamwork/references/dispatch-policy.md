@@ -39,6 +39,32 @@ both.
   verification is shared, or merge cost may dominate.
 - If not dispatching, state why local execution is cheaper or safer.
 
+## Role Profiles
+
+Use model class as the stable policy and translate it through Codex Model
+Mapping at dispatch time. Prefer fewer, stronger models over fragile cheap
+defaults.
+
+- Explorer: `agent_type:"explorer"`, model class `balanced` by default; may use
+  `cheap-fast` only for narrow read-only questions with directly checkable
+  evidence; `reasoning_effort:"low"` or `"medium"`;
+  context `condensed-evidence-only`.
+- Designer: `agent_type:"default"`, model class `balanced`; use `frontier` for
+  architecture, public behavior, data contracts, or unfamiliar APIs;
+  `reasoning_effort:"medium"` or `"high"`; read-only.
+- Judge: `agent_type:"default"`, model class `frontier`;
+  `reasoning_effort:"high"`; context `fresh-context-review`; read-only.
+- Worker: `agent_type:"worker"`, model class `coding` or `inherited`; use
+  `frontier` for cross-module, high-risk, security, or public behavior changes;
+  `reasoning_effort:"medium"` or `"high"`; context `owned-files-only`.
+- Reviewer: `agent_type:"default"`, model class `frontier`; use `balanced` only
+  for small mechanical diffs with complete verification; `reasoning_effort:"high"`;
+  context `fresh-context-review`; read-only.
+
+Do not use `cheap-fast` for Judge, Reviewer, architecture Designer, public
+behavior changes, failed-goal adequacy decisions, or non-mechanical Worker
+implementation.
+
 ## Codex Mapping
 
 - Explorer -> `agent_type:"explorer"`.
@@ -47,6 +73,16 @@ both.
 - `fast` -> `reasoning_effort:"low"`.
 - `standard` -> `reasoning_effort:"medium"`.
 - `high reasoning` -> `reasoning_effort:"high"`.
+
+## Codex Model Mapping
+
+- `cheap-fast` -> `gpt-5.4-mini`; only when output is read-only, narrow, and
+  directly verifiable.
+- `balanced` -> `gpt-5.4`.
+- `coding` -> `gpt-5.3-codex` or inherited when the parent is already a strong
+  coding model.
+- `frontier` -> `gpt-5.5`.
+- `inherited` -> omit `model`; record that inheritance is intentional.
 
 Do not combine `fork_context:true` with `agent_type`, `model`, or
 `reasoning_effort`; full-history forks inherit parent routing. Codex has no

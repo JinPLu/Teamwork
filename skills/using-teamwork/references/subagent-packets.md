@@ -8,6 +8,7 @@ Explorer Result Packet:
 
 ```text
 Role: Explorer
+Native Fields:
 Question:
 Files / Commands Read:
 Observed:
@@ -23,6 +24,7 @@ Designer Decision Packet:
 
 ```text
 Role: Designer
+Native Fields:
 Decision:
 Options:
 Recommendation:
@@ -36,6 +38,7 @@ Judge Plan Review Packet:
 
 ```text
 Role: Judge
+Native Fields:
 Verdict: accept | revise | blocked
 Plan Source:
 Evidence Adequacy:
@@ -49,6 +52,7 @@ Worker Completion Packet:
 
 ```text
 Role: Worker
+Native Fields:
 Status: done | done_with_concerns | blocked | needs_context
 Plan Source:
 Owned Scope:
@@ -63,6 +67,7 @@ Reviewer Verdict Packet:
 
 ```text
 Role: Reviewer
+Native Fields:
 Verdict: accept | revise | blocked
 Review Target:
 Acceptance Mapping:

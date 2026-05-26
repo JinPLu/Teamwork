@@ -20,6 +20,8 @@ Use when preparing a delegated prompt. For dispatch decisions read
 Every delegated prompt includes:
 
 - Conceptual Role: Explorer, Designer, Judge, Worker, or Reviewer.
+- Native Fields: `agent_type`, `model` or `model: inherited`,
+  `reasoning_effort`, and `fork_context`.
 - Mission: one concrete question, decision, implementation slice, or review.
 - Source: plan, research, report, diff, command output, or file paths.
 - Inputs: exact files, commands, evidence, assumptions, and acceptance target.
@@ -34,12 +36,16 @@ Every delegated prompt includes:
   changes public behavior, architecture, or contracts.
 - Required Output Schema: matching packet from `subagent-packets.md`.
 
+If `model` is omitted, write `model: inherited` and why inheritance is safer
+than an explicit Role Profile model. Never imply a stronger model than the
+Native Fields request.
+
 ## Role Templates
 
 ```text
-Explorer: answer <evidence question>; read-only; output Explorer Result Packet.
-Designer: compare <decision options>; read-only; output Designer Decision Packet.
-Judge: review <plan> readiness; read-only; output Judge Plan Review Packet.
-Worker: implement <owned slice>; write only owned scope; output Worker Completion Packet.
-Reviewer: review <target> against criteria; read-only; output Reviewer Verdict Packet.
+Explorer: native fields <agent_type/model/effort/fork>; answer <evidence question>; read-only; output Explorer Result Packet.
+Designer: native fields <agent_type/model/effort/fork>; compare <decision options>; read-only; output Designer Decision Packet.
+Judge: native fields <agent_type/model/effort/fork>; review <plan> readiness; read-only; output Judge Plan Review Packet.
+Worker: native fields <agent_type/model/effort/fork>; implement <owned slice>; write only owned scope; output Worker Completion Packet.
+Reviewer: native fields <agent_type/model/effort/fork>; review <target> against criteria; read-only; output Reviewer Verdict Packet.
 ```

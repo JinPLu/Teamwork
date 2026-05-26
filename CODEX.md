@@ -44,11 +44,12 @@ For failed goal iterations, refresh research and check whether the active plan w
 
 ## Subagent Mapping
 
-Use focused subagent references at dispatch time: `skills/using-teamwork/references/dispatch-policy.md` for when to dispatch, cap/economics rules, and native Codex dispatch fields; `skills/using-teamwork/references/subagent-prompt-contract.md` for prompt shape; and `skills/using-teamwork/references/subagent-packets.md` for Worker / Reviewer handoff packets. Plan `Dispatch Guidance:` is advisory; the active stage owns the actual dispatch decision and should record what it did when execution/report artifacts are warranted:
+Use focused subagent references at dispatch time: `skills/using-teamwork/references/dispatch-policy.md` for when to dispatch, cap/economics rules, native Codex dispatch fields, and role-specific model classes; `skills/using-teamwork/references/subagent-prompt-contract.md` for prompt shape and `Native Fields`; and `skills/using-teamwork/references/subagent-packets.md` for Worker / Reviewer handoff packets. Plan `Dispatch Guidance:` is advisory; the active stage owns the actual dispatch decision and should record what it did when execution/report artifacts are warranted:
 
 - Explorer -> `agent_type:"explorer"`.
 - Worker -> `agent_type:"worker"`.
 - Designer, Judge, Reviewer -> `agent_type:"default"` with the conceptual role in the prompt.
 - `fast`, `standard`, and `high reasoning` map to low, medium, and high reasoning effort.
+- Model policy prefers fewer, stronger models: Explorer may use `cheap-fast` only for narrow read-only evidence work; Judge/Reviewer default to `frontier`; Worker defaults to `coding` or inherited; high-risk, public-behavior, or adequacy-gate work does not use `cheap-fast`.
 
 Do not encode native dispatch fields in ordinary plans unless they are part of the routing guidance. Preserve native flow for simple tasks where orchestration overhead would not improve correctness.

@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Codex-only skills for evidence-first planning, execution, review, subagent routing, and native goal convergence.",
   "author": {
     "name": "JinPLu",
