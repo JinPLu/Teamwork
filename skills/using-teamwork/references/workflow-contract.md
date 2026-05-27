@@ -50,7 +50,8 @@ properties, git diff, or primary external evidence.
   whenever an independent track exists.
 - Missing currently active subagent tools is not enough to stay local. On
   Codex, if `tool_search` is available, discover `spawn_agent` before recording
-  an unavailable-tool exception. On Cursor, use the `Task` tool when present.
+  an unavailable-tool exception. On Cursor or Claude Code, use the `Task` tool
+  when present.
 
 ## Workflow Pattern Selection
 
@@ -87,11 +88,19 @@ Use native tools for editing, shell, MCP/app access, permissions, `Task`
 subagents, browser automation, and verification. Goal-mode convergence stays in
 chat unless the user explicitly uses another native goal surface.
 
+### Claude Code
+
+Use native tools for editing, shell, MCP/app access, permissions, `Task`
+subagents (user-defined under `~/.claude/agents/`, fallback `general-purpose`),
+TodoWrite progress, and verification. Goal-mode has no native goal surface; use
+a chat-only `Goal Proposal` plus a rolling report under `docs/teamwork/reports/`
+as durable goal state.
+
 ## Progress Anchors And Artifacts
 
-Visible progress tools (Codex `update_plan`, Cursor TodoWrite, chat checklist)
-are transient UI-only state. They are not durable execution specs, review
-targets, or completion evidence.
+Visible progress tools (Codex `update_plan`, Cursor TodoWrite, Claude Code
+TodoWrite, chat checklist) are transient UI-only state. They are not durable
+execution specs, review targets, or completion evidence.
 
 Use artifacts only when they will reduce repeated work or anchor cross-turn,
 cross-agent, high-risk, ambiguous, public/shared, explicitly planned, or

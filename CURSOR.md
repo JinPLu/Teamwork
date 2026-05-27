@@ -10,16 +10,31 @@ autonomous work.
 
 ```bash
 ./install.sh cursor
+# or refresh every platform:
+./install.sh all
+```
+
+Project-local skills (clone-and-use in this repo):
+
+```bash
+./install.sh project
 ```
 
 Local development with symlinks:
 
 ```bash
 ./install.sh --link cursor
+./install.sh --link all
+./install.sh --link project
 ```
 
-Skills install to `~/.cursor/skills/`. Behavior lives in `skills/`; this file is
-a concise runtime summary.
+Skills install to `~/.cursor/skills/` (global) or `.cursor/skills/` (project).
+Behavior lives in `skills/`; this file is a concise runtime summary.
+
+**Discovery**: Cursor sessions should load Teamwork from `~/.cursor/skills/` or
+the project `.cursor/skills/`. Stale copies under `~/.claude/skills/` (especially
+the retired `teamwork` umbrella skill) can preempt routing; run `./install.sh all`
+after upgrades.
 
 ## Subagent Dispatch
 
@@ -33,9 +48,11 @@ platform-neutral. At dispatch time, translate them through Cursor mapping in
 - Reviewer -> `subagent_type:"code-reviewer"`
 - Designer/Judge -> `subagent_type:"generalPurpose"` with role in prompt
 
-Model classes map to Cursor `Task` models such as `composer-2.5-fast`,
-`gpt-5.5-medium`, and `claude-opus-4-7-thinking-high`.
-Use only models listed in the active `Task` tool schema.
+Model classes map to Cursor `Task` models: `composer-2.5-fast` only for
+opt-in `cheap-fast`, `gpt-5.5-medium` for `balanced` and `coding` when listed,
+and `claude-opus-4-7-thinking-high` for `frontier`. Use only models listed in
+the active `Task` tool schema; if `gpt-5.5-medium` is unavailable, choose the
+strongest non-frontier model rather than collapsing normal work to fast.
 
 ## Goal Mode
 

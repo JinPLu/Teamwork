@@ -2,16 +2,20 @@
 
 ## Project Structure & Module Organization
 
-This repository packages Teamwork as a **Codex + Cursor skill package**. The source of truth is under `skills/`: `using-teamwork` is the automatic entrypoint and router, `teamwork-init` owns project instruction setup and slimming, `teamwork-goal` owns native-goal collaboration and convergence, `teamwork-research` owns evidence gathering, `teamwork-plan` owns executable planning, `teamwork-execute` plus `teamwork-review` define execution and review workflows, and `teamwork-update` owns version and package update hygiene. Native platform capabilities remain the execution substrate; Teamwork adds evidence discipline, artifact memory, subagent routing, review gates, and failure iteration policy.
+This repository packages Teamwork as a **Codex + Cursor + Claude Code skill package**. The source of truth is under `skills/`: `using-teamwork` is the automatic entrypoint and router, `teamwork-init` owns project instruction setup and slimming, `teamwork-goal` owns native-goal collaboration and convergence, `teamwork-research` owns evidence gathering, `teamwork-plan` owns executable planning, `teamwork-execute` plus `teamwork-review` define execution and review workflows, and `teamwork-update` owns version and package update hygiene. Native platform capabilities remain the execution substrate; Teamwork adds evidence discipline, artifact memory, subagent routing, review gates, and failure iteration policy.
 
-Platform metadata lives in `.codex-plugin/`. User-facing runtime notes live in `README.md`, `CODEX.md`, and `CURSOR.md`. Artifact roles are `docs/teamwork/research/` for investigation, `docs/teamwork/plans/` for execution memos, and `docs/teamwork/reports/` for task conclusions plus goal rolling attempt tables.
+Platform metadata lives in `.codex-plugin/` and `.claude-plugin/`. User-facing runtime notes live in `README.md`, `CODEX.md`, `CURSOR.md`, and `CLAUDE.md`. Artifact roles are `docs/teamwork/research/` for investigation, `docs/teamwork/plans/` for execution memos, and `docs/teamwork/reports/` for task conclusions plus goal rolling attempt tables.
 
 ## Build, Test, and Development Commands
 
-- `./scripts/validate.sh`: required repository verification for skill topology, frontmatter, Codex manifest, artifact ignore rules, installer smoke, and platform contract checks.
+- `./scripts/validate.sh`: required repository verification for skill topology, frontmatter, Codex and Claude Code manifests, artifact ignore rules, installer smoke, and platform contract checks.
 - `./install.sh codex`: installs the Teamwork skill set into `~/.codex/skills`.
 - `./install.sh cursor`: installs the Teamwork skill set into `~/.cursor/skills`.
-- `./install.sh --link`: installs symlinks for local development.
+- `./install.sh claude`: installs the Teamwork skill set into `~/.claude/skills`.
+- `./install.sh all`: installs skills to codex, cursor, and claude home directories.
+- `./install.sh project`: installs project `.cursor/skills/` and `.claude/agents/`.
+- `./install.sh claude-agents`: installs Teamwork subagents into `~/.claude/agents/`.
+- `./install.sh --link`: installs symlinks for local development (combine with any target).
 
 ## Coding Style & Naming Conventions
 
@@ -23,7 +27,7 @@ There is no separate test suite directory; `scripts/validate.sh` is the required
 
 ## Commit & Pull Request Guidelines
 
-Keep commits scoped to one logical change. Pull requests should describe workflow impact, changed skill or runtime entrypoints, validation output, and any compatibility risk for existing Codex or Cursor installs.
+Keep commits scoped to one logical change. Pull requests should describe workflow impact, changed skill or runtime entrypoints, validation output, and any compatibility risk for existing Codex, Cursor, or Claude Code installs.
 
 ## Agent-Specific Instructions
 

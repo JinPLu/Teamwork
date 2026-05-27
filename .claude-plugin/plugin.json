@@ -1,0 +1,43 @@
+{
+  "name": "teamwork-skill",
+  "version": "0.12.0",
+  "description": "Claude Code skills for evidence-first planning, execution, review, subagent routing, and durable goal convergence.",
+  "author": {
+    "name": "JinPLu",
+    "url": "https://github.com/JinPLu"
+  },
+  "homepage": "https://github.com/JinPLu/Teamwork",
+  "repository": "https://github.com/JinPLu/Teamwork",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "debugging",
+    "verification",
+    "workflow",
+    "agents",
+    "planning",
+    "review"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Teamwork",
+    "shortDescription": "Strengthen Claude Code Task subagents, plans, and review with evidence-first workflow policy.",
+    "longDescription": "A Claude Code broad entrypoint plus dedicated stage skills for project instruction initialization, evidence gathering, goal proposal, durable artifact memory, scoped execution, Task subagent routing, fresh review, package updates, and autonomous goal convergence on top of Claude Code native capabilities.",
+    "developerName": "JinPLu",
+    "category": "Productivity",
+    "capabilities": [
+      "Write",
+      "Interactive"
+    ],
+    "websiteURL": "https://github.com/JinPLu/Teamwork",
+    "defaultPrompt": [
+      "Design a goal with evidence, scope, retry policy, artifacts, and Task subagent routing.",
+      "Initialize or slim project AGENTS/CLAUDE rules while preserving local evidence boundaries.",
+      "Split a coding task into evidence-gathering, planning, execution, and review tracks.",
+      "Use Task subagents for independent investigation, scoped Worker execution, or fresh-context review.",
+      "Map completion claims to direct evidence before accepting the result.",
+      "Update Teamwork version metadata and validate the installed skill surface."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

@@ -14,6 +14,8 @@ Platform goal surface is the source of truth for autonomous lifecycle:
 - Codex: native goal state; after approval call `create_goal` with the Goal Text.
 - Cursor: no native goal; initialize a rolling report as durable goal state and
   drive the controller loop from chat.
+- Claude Code: no native goal; initialize a rolling report as durable goal
+  state and drive the controller loop from chat, same as Cursor.
 
 Teamwork-goal adds goal design, evidence, durable memory when needed, plan
 adequacy, verification, and review.
@@ -70,8 +72,8 @@ architecture, contracts, or user intent.
 - Stop immediately on destructive risk, auth failure, missing resources,
   protected-boundary conflict, or user-intent ambiguity.
 - Mark the platform goal surface complete only after focused verification and
-  execution review pass: Codex native goal complete, or Cursor report
-  `Status: accepted`.
+  execution review pass: Codex native goal complete, or Cursor / Claude Code
+  rolling report `Status: accepted`.
 
 ## Output
 

@@ -6,6 +6,8 @@ Install:
 
 ```bash
 ./install.sh
+# or refresh every platform:
+./install.sh all
 ```
 
 The behavior contract lives in `skills/`. `using-teamwork` is the automatic lean entrypoint and router. It is intentionally broad so it can load for coding-agent work and then choose native flow or a Teamwork route. `teamwork-init` owns project instruction setup and slimming. Stage skills stay lightweight and load focused references only as needed; subagent detail is split across `dispatch-policy`, `subagent-prompt-contract`, and `subagent-packets` instead of one large routing reference. `VERSION` is the package version source of truth and must match `.codex-plugin/plugin.json`. Treat names, comments, README claims, summaries, and tool output as evidence to verify, not facts by themselves.
@@ -51,6 +53,6 @@ Use focused subagent references at dispatch time: `skills/using-teamwork/referen
 - Worker -> `agent_type:"worker"`.
 - Designer, Judge, Reviewer -> `agent_type:"default"` with the conceptual role in the prompt.
 - `fast`, `standard`, and `high reasoning` map to low, medium, and high reasoning effort.
-- Model policy prefers fewer, stronger models: Explorer may use `cheap-fast` only for narrow read-only evidence work; Judge/Reviewer default to `frontier`; Worker defaults to `coding` or inherited; high-risk, public-behavior, or adequacy-gate work does not use `cheap-fast`.
+- Model policy prefers fewer, stronger models: bounded Codex subagents should pin the Role Profile model instead of inheriting by accident. Explorer defaults to `balanced` and escalates to `frontier` for broad or risky evidence; Judge/Reviewer default to `frontier`; Worker defaults to `coding` and escalates to `frontier` for cross-module, security, public-behavior, or high-risk work. `cheap-fast` is opt-in only for trivial read-only work under explicit latency or quota pressure.
 
 Do not encode native dispatch fields in ordinary plans unless they are part of the routing guidance. Preserve native flow for simple tasks where orchestration overhead would not improve correctness.

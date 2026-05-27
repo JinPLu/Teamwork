@@ -14,3 +14,7 @@ docs/teamwork/plans/
 docs/teamwork/research/
 docs/teamwork/reports/
 docs/superpowers/
+
+# Local project symlinks/copies from ./install.sh project
+.cursor/
+.claude/

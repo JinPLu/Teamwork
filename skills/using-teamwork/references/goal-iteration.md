@@ -42,6 +42,8 @@ completion claim. After approval:
 - Codex: call `create_goal` with the approved Goal Text.
 - Cursor: initialize `docs/teamwork/reports/YYYY-MM-DD-<goal-slug>.md` with
   `Status: active` and put the Goal Text in the report Abstract.
+- Claude Code: same as Cursor — no native goal surface; initialize the rolling
+  report with `Status: active` and the Goal Text in the Abstract.
 
 ## Controller Loop
 
@@ -120,7 +122,7 @@ Route: teamwork-goal
 Reason: <one sentence tied to autonomous convergence>
 Mode: goal
 Platform Goal Surface: codex-native: proposed | created | continued | completed | not used
-  or cursor-report: initialized | active | accepted | blocked | budget-exhausted
+  or cursor-report | claude-report: initialized | active | accepted | blocked | budget-exhausted
 Active Plan Artifact: <docs/teamwork/plans/YYYY-MM-DD-<slug>.md | none>
 Rolling Report: <docs/teamwork/reports/YYYY-MM-DD-<slug>.md | none>
 Iterations: <n and short summary>

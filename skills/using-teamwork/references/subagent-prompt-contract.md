@@ -12,10 +12,13 @@ Use when preparing a delegated prompt. For dispatch decisions read
   rules, and no parent reasoning.
 - `full-history-fork`: only when the side task needs nearly all parent context
   and explicit routing overrides are not needed. Codex: `fork_context:true`.
-  Cursor: `Task` with `resume:"self"`.
+  Cursor: `Task` with `resume:"self"`. Claude Code: not directly supported;
+  pass condensed context inline instead.
 - `explicit-non-inheriting-dispatch`: when role, model tier, or reasoning must
   differ from the parent. Codex: override `agent_type`, `model`, or
-  `reasoning_effort`. Cursor: override `subagent_type` or `model`.
+  `reasoning_effort`. Cursor: override `subagent_type` or `model`. Claude
+  Code: choose a `subagent_type` whose agent definition has the desired model
+  and tool scope.
 
 ## Required Fields
 
@@ -24,7 +27,8 @@ Every delegated prompt includes:
 - Conceptual Role: Explorer, Designer, Judge, Worker, or Reviewer.
 - Native Fields: platform dispatch fields from `dispatch-policy.md` — on Codex
   `agent_type`, `model` or `model: inherited`, `reasoning_effort`, and
-  `fork_context`; on Cursor `subagent_type`, `model` or `model: inherited`.
+  `fork_context`; on Cursor `subagent_type`, `model` or `model: inherited`;
+  on Claude Code `subagent_type` (model lives on the agent definition).
 - Mission: one concrete question, decision, implementation slice, or review.
 - Source: plan, research, report, diff, command output, or file paths.
 - Inputs: exact files, commands, evidence, assumptions, and acceptance target.
@@ -40,8 +44,9 @@ Every delegated prompt includes:
 - Required Output Schema: matching packet from `subagent-packets.md`.
 
 If `model` is omitted, write `model: inherited` and why inheritance is safer
-than an explicit Role Profile model. Never imply a stronger model than the
-Native Fields request.
+than an explicit Role Profile model. If `model` is pinned, write the model
+class and reason for the override. Never imply a stronger model than the Native
+Fields request.
 
 ## Role Templates
 

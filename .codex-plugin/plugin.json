@@ -1,7 +1,7 @@
 {
   "name": "teamwork-skill",
-  "version": "0.11.0",
-  "description": "Codex-only skills for evidence-first planning, execution, review, subagent routing, and native goal convergence.",
+  "version": "0.12.0",
+  "description": "Codex skills (also installable on Cursor and Claude Code) for evidence-first planning, execution, review, subagent routing, and native goal convergence.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"
@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Strengthen Codex goals, plans, subagents, and review with evidence-first workflow policy.",
-    "longDescription": "A Codex-only broad entrypoint plus dedicated stage skills for project instruction initialization, evidence gathering, goal proposal, durable artifact memory, scoped execution, subagent routing, fresh review, package updates, and autonomous goal convergence on top of Codex native capabilities.",
+    "longDescription": "A Codex broad entrypoint plus dedicated stage skills for project instruction initialization, evidence gathering, goal proposal, durable artifact memory, scoped execution, subagent routing, fresh review, package updates, and autonomous goal convergence on top of Codex native capabilities. The same skill set installs on Cursor and Claude Code via ./install.sh cursor or ./install.sh claude.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [

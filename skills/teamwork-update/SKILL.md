@@ -11,7 +11,8 @@ behavior, installed skill surface, release metadata, or update notes.
 ## Version Source
 
 - VERSION is the package version source of truth.
-- `.codex-plugin/plugin.json` must use the same version.
+- `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` must use the
+  same version.
 - Skill frontmatter must stay limited to `name` and `description`; do not add
   per-skill version metadata there.
 - Use semantic versioning:
@@ -24,17 +25,20 @@ behavior, installed skill surface, release metadata, or update notes.
 
 ## Workflow
 
-1. Inspect `VERSION`, `.codex-plugin/plugin.json`, `install.sh`,
-   `scripts/validate.sh`, README files, and affected `skills/*/SKILL.md`.
+1. Inspect `VERSION`, `.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`,
+   `install.sh`, `scripts/validate.sh`, README files, and affected
+   `skills/*/SKILL.md`.
 2. Choose the smallest justified semver bump and record why.
-3. Update `VERSION` and `.codex-plugin/plugin.json` together.
-4. Update README/CODEX/CURSOR/AGENTS only for user-visible changes.
+3. Update `VERSION`, `.codex-plugin/plugin.json`, and `.claude-plugin/plugin.json`
+   together.
+4. Update README/CODEX/CURSOR/CLAUDE/AGENTS only for user-visible changes.
 5. Keep skill prose concise; move shared policy into references instead of
    repeating it across stage skills.
 6. Check `SKILL.md` line/word budgets when editing skills.
 7. Run `./scripts/validate.sh`.
-8. Run `./install.sh` when the installed local skills should reflect the
-   package update.
+8. Run `./install.sh all` and `./install.sh claude-agents` when installed local
+   skills or Claude agents should reflect the package update; use
+   `./install.sh project` in checkouts that rely on project-local discovery.
 
 ## Update Checklist
 

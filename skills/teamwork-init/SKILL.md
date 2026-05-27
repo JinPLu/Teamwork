@@ -1,6 +1,6 @@
 ---
 name: teamwork-init
-description: Use when initializing, auditing, or slimming project agent instructions; integrating Teamwork artifacts, MCP/CodeGraph policy, AGENTS/CODEX/CLAUDE rules, or migrating reusable workflow rules into Teamwork.
+description: Use when initializing, auditing, or slimming project agent instructions; integrating Teamwork artifacts, MCP/CodeGraph policy, AGENTS/CODEX/CURSOR/CLAUDE rules, or migrating reusable workflow rules into Teamwork.
 ---
 
 # Teamwork Init

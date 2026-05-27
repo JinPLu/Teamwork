@@ -25,11 +25,12 @@ both.
 
 Before serializing a second independent track, delivering a durable/high-risk
 plan, or accepting non-lightweight work: use the active platform subagent tool
-(`spawn_agent` on Codex, `Task` on Cursor); on Codex, if `tool_search` exists,
-search `multi-agent spawn_agent` before claiming unavailability. Only failed
-discovery proves unavailable tools. Omit `model` normally so subagents inherit
-the parent; record conceptual role, model class, native fields, and intentional
-inheritance.
+(`spawn_agent` on Codex, `Task` on Cursor or Claude Code); on Codex, if
+`tool_search` exists, search `multi-agent spawn_agent` before claiming
+unavailability. Only failed discovery proves unavailable tools. For bounded
+Codex role dispatch, set an explicit Role Profile model; use `inherited` only
+for full-history forks, parent-model continuity, or explicit user model intent.
+Record conceptual role, model class, native fields, and the pin/inherit reason.
 When required dispatch is skipped, write:
 
 ```text
@@ -67,8 +68,10 @@ Use model class as the stable policy and translate it through the active
 platform Model Mapping at dispatch time. Prefer fewer, stronger models over
 fragile cheap defaults.
 
-- Explorer: model class `balanced` by default; `cheap-fast` only for narrow
-  read-only evidence; reasoning `fast` or `standard`; context
+- Explorer: model class `balanced` by default; use `frontier` for broad,
+  ambiguous, unfamiliar, or high-risk evidence. `cheap-fast` is opt-in only for
+  trivial read-only evidence under explicit latency/quota pressure; reasoning
+  `fast` or `standard`; context
   `condensed-evidence-only`.
 - Designer: `balanced`; use `frontier` for architecture, public behavior, data
   contracts, or unfamiliar APIs; reasoning `standard` or `high`; read-only.
@@ -77,18 +80,22 @@ fragile cheap defaults.
 - Worker: `coding` or `inherited`; use `frontier` for cross-module, high-risk,
   security, or public behavior changes; reasoning `standard` or `high`; context
   `owned-files-only`.
-- Reviewer: model class `frontier`, reasoning `high`; context
-  `fresh-context-review`; read-only.
+- Reviewer: model class `frontier` by default, reasoning `high`; use
+  `balanced` only for low-risk mechanical diffs; context `fresh-context-review`;
+  read-only.
 
-Do not use `cheap-fast` for Judge, Reviewer, architecture Designer, public
-behavior changes, failed-goal adequacy decisions, or non-mechanical Worker
-implementation.
+Do not use `cheap-fast` for normal Pro/20x Codex workflows, Judge, Reviewer,
+architecture Designer, public behavior changes, failed-goal adequacy decisions,
+or non-mechanical Worker implementation.
 
 ## Platform Dispatch Fields
 
 - Codex: `agent_type`, `model`, `reasoning_effort`, `fork_context`.
 - Cursor: `subagent_type`, `model`; no `reasoning_effort` or `fork_context`.
-- Both platforms: conceptual role, model class, and context strategy stay the
+- Claude Code: `subagent_type` (matches a user-defined agent name under
+  `~/.claude/agents/` or `general-purpose`); `model` is fixed on the agent
+  definition, not per-`Task`-call.
+- All platforms: conceptual role, model class, and context strategy stay the
   same; only native field translation changes.
 
 ## Codex Mapping
@@ -102,11 +109,14 @@ implementation.
 
 ## Codex Model Mapping
 
-- `cheap-fast` -> `gpt-5.4-mini`; only read-only, narrow, verifiable output.
+- `cheap-fast` -> `gpt-5.4-mini`; opt-in only for trivial read-only,
+  verifiable output under explicit latency/quota pressure.
 - `balanced` -> `gpt-5.4`.
-- `coding` -> `gpt-5.3-codex` or inherited from a strong coding parent.
+- `coding` -> `gpt-5.3-codex`; use `frontier` when task risk or breadth
+  matters more than credit efficiency.
 - `frontier` -> `gpt-5.5`.
-- `inherited` -> omit `model`; record that inheritance is intentional.
+- `inherited` -> omit `model`; record why inheritance beats the Role Profile
+  model.
 
 Do not combine `fork_context:true` with `agent_type`, `model`, or
 `reasoning_effort`; full-history forks inherit parent routing. Codex has no
@@ -141,10 +151,54 @@ native `judge`, `reviewer`, or `designer` agent types.
 Use only models listed in the active `Task` tool schema; prefer the latest
 version when the user did not request a specific model.
 
-- `cheap-fast` -> `composer-2.5-fast`; only read-only, narrow, verifiable output.
-- `balanced` -> `gpt-5.5-medium` or `claude-4.6-sonnet-medium-thinking`.
-- `coding` -> `composer-2.5-fast` or inherited from a strong coding parent.
+- `cheap-fast` -> `composer-2.5-fast`; opt-in only for trivial read-only,
+  verifiable output under explicit latency/quota pressure.
+- `balanced` -> `gpt-5.5-medium` when listed; otherwise use the strongest
+  non-frontier model listed in the active schema.
+- `coding` -> `gpt-5.5-medium` when listed; otherwise use the strongest coding
+  or non-frontier model listed in the active schema.
 - `frontier` -> `claude-opus-4-7-thinking-high`.
 - `inherited` -> omit `model`; record that inheritance is intentional.
+
+## Claude Code Mapping
+
+Claude Code subagents are user-defined under `~/.claude/agents/`. Map
+conceptual roles to the agent `name` referenced by `Task`'s `subagent_type`.
+When a specialized agent is not configured, fall back to `general-purpose` and
+state the conceptual role in the prompt.
+
+- Explorer -> `subagent_type:"explore"` if defined, else `general-purpose`.
+- Worker -> `subagent_type:"general-purpose"` or a user-defined `worker` agent.
+- Reviewer -> `subagent_type:"code-reviewer"` if defined, else
+  `general-purpose` with Reviewer role in the prompt.
+- Designer, Judge -> `subagent_type:"general-purpose"` with role in prompt.
+- Claude Code has no native `judge`, `reviewer`, or `designer` agent types out
+  of the box; users may define them.
+
+## Claude Code Task Parameters
+
+- `subagent_type` -> matches an agent name in `~/.claude/agents/` (user scope)
+  or `.claude/agents/` (project scope), or the built-in `general-purpose`.
+- `description` -> short user-visible label.
+- `prompt` -> full task prompt including Native Fields, Owned Scope, and
+  Required Output Schema.
+- Model and tool allowlist are set on the agent definition, not per-`Task`
+  call; mention model class in the prompt but do not encode it as a Task
+  parameter.
+
+## Claude Code Model Mapping
+
+Claude Code agent definitions set `model` in agent frontmatter (or inherit
+from the session default). Translate model classes at agent-definition time;
+the dispatch call itself only references the agent name.
+
+- `cheap-fast` -> `claude-haiku` (latest); only read-only, narrow, verifiable
+  output.
+- `balanced` -> `claude-sonnet` (latest).
+- `coding` -> `claude-sonnet` (latest) or inherited from a strong coding
+  parent.
+- `frontier` -> `claude-opus` (latest).
+- `inherited` -> omit `model` in agent frontmatter; record that inheritance is
+  intentional.
 
 Evaluate the split before implementation steps. Do not wait for a proposal or plan to explicitly name every track; stage contracts authorize dispatch when economics and ownership are clear.

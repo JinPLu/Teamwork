@@ -5,10 +5,9 @@ description: Use when starting any coding-agent task including coding, debugging
 
 # Using Teamwork
 
-Teamwork is a platform-native augmentation layer. Codex or Cursor native
-capabilities do the work; Teamwork adds evidence discipline, stage routing,
-proactive dispatch, review, durable memory, version hygiene, and goal
-convergence when useful.
+Teamwork is a platform-native augmentation layer. Native Codex, Cursor, or
+Claude Code capabilities do the work; Teamwork adds evidence discipline, stage
+routing, proactive dispatch, review, durable memory, and goal convergence.
 Evidence labels are observed, inferred, or claimed.
 
 Keep simple work native. Route only when Teamwork changes the outcome.
@@ -58,7 +57,7 @@ fresh Reviewer, not self-review. Plans may suggest routing; stage dispatch need 
 wait for named tracks.
 
 Before treating subagents as unavailable, use the Subagent Tool Discovery Gate
-(`spawn_agent` on Codex, `Task` on Cursor).
+(`spawn_agent` on Codex, `Task` on Cursor or Claude Code).
 Skipped required dispatch needs `Dispatch Exception:`; non-lightweight
 acceptance without a fresh Reviewer remains `unreviewed`.
 
