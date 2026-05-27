@@ -11,7 +11,8 @@ implements the plan; it does not self-declare completion.
 Read only as needed:
 
 - `skills/using-teamwork/references/workflow-contract.md` for evidence, progress anchors, boundaries.
-- `skills/using-teamwork/references/dispatch-policy.md` for Worker split and Codex mapping.
+- `skills/using-teamwork/references/dispatch-policy.md` for Worker split and
+  platform mapping.
 - `skills/using-teamwork/references/subagent-prompt-contract.md` before Worker prompts.
 - `skills/using-teamwork/references/subagent-packets.md` for Worker Completion Packet and Actual
   Dispatch Log.

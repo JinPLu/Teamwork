@@ -19,7 +19,7 @@ stop rules.
 
 ## Goal Proposal
 
-Return this chat-only proposal before native `create_goal` when objective,
+Return this chat-only proposal before platform goal handoff when objective,
 verification, scope, or stop rules are unclear:
 
 ```text
@@ -33,12 +33,15 @@ Goal Proposal:
 - Retry Policy: <failed verification returns to research + plan adequacy>
 - Artifacts: <none | suggested research/plan/report paths and why>
 - Suggested Subagent Routing: <tracks to split, or why main-agent continuity is better>
-- Native Codex Goal Text: <concise target prepared for create_goal>
+- Goal Text: <concise target for platform goal handoff>
 ```
 
-The proposal is not a durable plan artifact, not `update_plan`, and not a
-completion claim. After approval, call `create_goal` with the approved `Native
-Codex Goal Text`.
+The proposal is not a durable plan artifact, not visible progress UI, and not a
+completion claim. After approval:
+
+- Codex: call `create_goal` with the approved Goal Text.
+- Cursor: initialize `docs/teamwork/reports/YYYY-MM-DD-<goal-slug>.md` with
+  `Status: active` and put the Goal Text in the report Abstract.
 
 ## Controller Loop
 
@@ -108,7 +111,7 @@ Linked Artifacts: related research or plan paths, or none
 |---|---|---|---|---|---|---|---|---|---|---|---|
 
 The report is cross-turn memory. It does not replace the durable plan, research
-artifact, native goal state, review verdict, or direct verification evidence.
+artifact, platform goal surface, review verdict, or direct verification evidence.
 
 ## Goal Output
 
@@ -116,7 +119,8 @@ artifact, native goal state, review verdict, or direct verification evidence.
 Route: teamwork-goal
 Reason: <one sentence tied to autonomous convergence>
 Mode: goal
-Native Codex Goal: proposed | created | continued | completed | not used
+Platform Goal Surface: codex-native: proposed | created | continued | completed | not used
+  or cursor-report: initialized | active | accepted | blocked | budget-exhausted
 Active Plan Artifact: <docs/teamwork/plans/YYYY-MM-DD-<slug>.md | none>
 Rolling Report: <docs/teamwork/reports/YYYY-MM-DD-<slug>.md | none>
 Iterations: <n and short summary>

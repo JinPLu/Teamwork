@@ -3,7 +3,6 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_MODE="${TEAMWORK_INSTALL_MODE:-copy}"
-DEST_ROOT="$HOME/.codex/skills"
 SKILLS=(
   using-teamwork
   teamwork-init
@@ -31,9 +30,10 @@ RETIRED_SKILLS=(
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] [codex]
+  ./install.sh [--copy|--link] codex
+  ./install.sh [--copy|--link] cursor
 
-Installs the Teamwork skill set into ~/.codex/skills.
+Installs the Teamwork skill set into ~/.codex/skills or ~/.cursor/skills.
 
 Default mode is --copy, which installs standalone skill files. Use --link for
 local development when installed skills should track this checkout.
@@ -63,8 +63,9 @@ retired_copy_is_plugin_owned() {
 }
 
 remove_retired_skill() {
-  local retired="$1"
-  local dest="$DEST_ROOT/$retired"
+  local dest_root="$1"
+  local retired="$2"
+  local dest="$dest_root/$retired"
   local link="$dest/SKILL.md"
   local raw_target resolved
 
@@ -117,6 +118,31 @@ install_skill_dir() {
   esac
 }
 
+install_skill_set() {
+  local dest_root="$1"
+  local label="$2"
+  local skill
+
+  mkdir -p "$dest_root"
+  for retired in "${RETIRED_SKILLS[@]}"; do
+    remove_retired_skill "$dest_root" "$retired"
+  done
+
+  for skill in "${SKILLS[@]}"; do
+    install_skill_dir "$ROOT/skills/$skill" "$dest_root/$skill"
+  done
+
+  echo "Installed $label skills under: $dest_root ($INSTALL_MODE)"
+}
+
+install_codex() {
+  install_skill_set "$HOME/.codex/skills" "Codex"
+}
+
+install_cursor() {
+  install_skill_set "$HOME/.cursor/skills" "Cursor"
+}
+
 case "${1:-}" in
   --copy)
     INSTALL_MODE="copy"
@@ -129,21 +155,14 @@ case "${1:-}" in
 esac
 
 case "${1:-codex}" in
-  ""|codex)
+  codex)
+    install_codex
+    ;;
+  cursor)
+    install_cursor
     ;;
   *)
     usage
     exit 2
     ;;
 esac
-
-mkdir -p "$DEST_ROOT"
-for retired in "${RETIRED_SKILLS[@]}"; do
-  remove_retired_skill "$retired"
-done
-
-for skill in "${SKILLS[@]}"; do
-  install_skill_dir "$ROOT/skills/$skill" "$DEST_ROOT/$skill"
-done
-
-echo "Installed Codex skills under: $DEST_ROOT ($INSTALL_MODE)"

@@ -5,16 +5,17 @@ description: Use when starting any coding-agent task including coding, debugging
 
 # Using Teamwork
 
-Teamwork is a Codex-native augmentation layer. Codex native capabilities do the
-work; Teamwork adds evidence discipline, stage routing, proactive dispatch,
-review, durable memory, version hygiene, and goal convergence when useful.
+Teamwork is a platform-native augmentation layer. Codex or Cursor native
+capabilities do the work; Teamwork adds evidence discipline, stage routing,
+proactive dispatch, review, durable memory, version hygiene, and goal
+convergence when useful.
 Evidence labels are observed, inferred, or claimed.
 
 Keep simple work native. Route only when Teamwork changes the outcome.
 
 ## References
 
-Load only focused references. `references/workflow-contract.md` owns Evidence Interpretation Contract, Codex Native Policy Map, Context & Cost Discipline, and Subagent Collaboration Model; dispatch policy owns Dispatch Economics.
+Load only focused references. `references/workflow-contract.md` owns Evidence Interpretation Contract, Platform Native Policy Map, Context & Cost Discipline, and Subagent Collaboration Model; dispatch policy owns Dispatch Economics.
 
 ## Route Check
 
@@ -33,14 +34,14 @@ Load only focused references. `references/workflow-contract.md` owns Evidence In
 Do not wait for the user to name a Teamwork skill when intent is clear; discovery reads frontmatter before route filtering.
 
 - Planning: "plan", "design", "figure out", non-trivial "implement/fix/add/change" after evidence; unclear root/source/API/failure/evidence/risk routes research first.
-- Init: "init", "initialize", "AGENTS", "CODEX", "CLAUDE", "slim instructions", "workflow rules".
+- Init: "init", "initialize", "AGENTS", "CODEX", "CURSOR", "CLAUDE", "slim instructions", "workflow rules".
 - Execution: "go ahead", "execute", "continue", "resume", "do it".
 - Review: "review", "check", "validate", "look over the diff".
 - Update: "version", "release", "changelog", "update Teamwork", "bump".
 - Goal: "keep going", "until it passes", "iterate until done", budget.
 
 For autonomous convergence, route to `teamwork-goal` for chat-only `Goal Proposal`
-before native goal state unless an active goal exists.
+before platform goal handoff unless an active goal surface exists.
 
 ## Native Default
 
@@ -56,7 +57,8 @@ apply Stage-Routed Proactive Dispatch before serial work; acceptance needs a
 fresh Reviewer, not self-review. Plans may suggest routing; stage dispatch need not
 wait for named tracks.
 
-Before treating subagents as unavailable, use the Subagent Tool Discovery Gate.
+Before treating subagents as unavailable, use the Subagent Tool Discovery Gate
+(`spawn_agent` on Codex, `Task` on Cursor).
 Skipped required dispatch needs `Dispatch Exception:`; non-lightweight
 acceptance without a fresh Reviewer remains `unreviewed`.
 

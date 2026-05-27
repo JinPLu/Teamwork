@@ -29,8 +29,9 @@ Read only as needed:
 - Inspect source, diff, logs, tests, command output, artifacts, research, plan,
   and user constraints.
 - Label important evidence `observed`, `inferred`, or `claimed`.
-- Treat executor summaries, `codex review`, CI summaries, and tool output as
-  evidence inputs, not final verdicts.
+- Treat executor summaries, `codex review` (Codex), `code-reviewer` subagent
+  output (Cursor), git diff, CI summaries, test runner output, and tool output
+  as evidence inputs, not final verdicts.
 - Do not fix issues during review unless explicitly asked.
 
 ## Plan Review

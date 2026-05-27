@@ -48,9 +48,9 @@ properties, git diff, or primary external evidence.
   Teamwork work. The main agent remains the orchestrator and keeps raw
   evidence, implementation detail, and fresh review outside the main context
   whenever an independent track exists.
-- Missing currently active subagent tools is not enough to stay local. If
-  `tool_search` is available, discover `spawn_agent` before recording an
-  unavailable-tool exception.
+- Missing currently active subagent tools is not enough to stay local. On
+  Codex, if `tool_search` is available, discover `spawn_agent` before recording
+  an unavailable-tool exception. On Cursor, use the `Task` tool when present.
 
 ## Workflow Pattern Selection
 
@@ -69,18 +69,29 @@ Choose the smallest workflow pattern that preserves correctness:
 - Clear acceptance plus retry need: use a review or goal loop with explicit
   verification and stop rules.
 
-## Codex Native Policy Map
+## Platform Native Policy Map
 
-Native Codex capabilities remain the execution substrate. Use native tools for
-editing, shell, MCP/app access, sandbox approvals, `update_plan`, goals,
-subagents, automations, review commands, and verification. Teamwork adds route
+Native platform capabilities remain the execution substrate. Teamwork adds route
 policy, evidence requirements, durable artifacts, and acceptance gates; it does
 not replace native state or tool semantics.
 
+### Codex
+
+Use native tools for editing, shell, MCP/app access, sandbox approvals,
+`update_plan`, goals, `spawn_agent`, automations, review commands, and
+verification.
+
+### Cursor
+
+Use native tools for editing, shell, MCP/app access, permissions, `Task`
+subagents, browser automation, and verification. Goal-mode convergence stays in
+chat unless the user explicitly uses another native goal surface.
+
 ## Progress Anchors And Artifacts
 
-`update_plan` and task widgets are transient UI-only checklist state. They are
-not durable execution specs, review targets, or completion evidence.
+Visible progress tools (Codex `update_plan`, Cursor TodoWrite, chat checklist)
+are transient UI-only state. They are not durable execution specs, review
+targets, or completion evidence.
 
 Use artifacts only when they will reduce repeated work or anchor cross-turn,
 cross-agent, high-risk, ambiguous, public/shared, explicitly planned, or

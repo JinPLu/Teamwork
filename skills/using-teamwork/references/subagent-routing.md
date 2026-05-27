@@ -3,7 +3,7 @@
 Compatibility index for Teamwork subagent routing. Prefer the focused files:
 
 - `dispatch-policy.md`: Stage-Routed Proactive Dispatch, roles, economics, and
-  Codex mapping.
+  Codex/Cursor mapping.
 - `subagent-prompt-contract.md`: Context Strategies, required prompt fields,
   role templates, allowed/forbidden actions, and escalation triggers.
 - `subagent-packets.md`: Explorer Result Packet, Designer Decision Packet,

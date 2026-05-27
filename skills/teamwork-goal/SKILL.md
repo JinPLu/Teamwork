@@ -9,8 +9,14 @@ Use when the user wants autonomous progress to verified success, budget
 exhaustion, repeated no-progress, or hard blocker. Ordinary one-shot research,
 planning, execution, or review should use the narrower stage.
 
-Native Codex goal state is the source of truth. Teamwork-goal adds goal design,
-evidence, durable memory when needed, plan adequacy, verification, and review.
+Platform goal surface is the source of truth for autonomous lifecycle:
+
+- Codex: native goal state; after approval call `create_goal` with the Goal Text.
+- Cursor: no native goal; initialize a rolling report as durable goal state and
+  drive the controller loop from chat.
+
+Teamwork-goal adds goal design, evidence, durable memory when needed, plan
+adequacy, verification, and review.
 
 Read only as needed:
 
@@ -21,15 +27,17 @@ Read only as needed:
   Gate, output format, and rolling report.
 - `skills/using-teamwork/references/artifact-protocol.md` for durable memory.
 
-## Goal Proposal Before Native Goal
+## Goal Proposal Before Platform Goal Handoff
 
 If objective, verification, scope, or stop rules are not crisp, return a
-chat-only `Goal Proposal` and wait for approval before `create_goal`. Skip only
-when an active native goal exists or the user supplied a complete target.
+chat-only `Goal Proposal` and wait for approval before native goal handoff or
+rolling-report initialization. Skip only when an active goal surface exists or
+the user supplied a complete target.
 
-The approved `Native Codex Goal Text` goes into native goal state. Proposal
-`Subagent Routing` is initial only; `teamwork-plan` reruns the Parallelization
-Gate and each active stage reruns Stage-Routed Proactive Dispatch.
+The approved Goal Text goes into the platform goal surface: Codex `create_goal`,
+or Cursor rolling-report header and Abstract. Proposal `Subagent Routing` is
+initial only; `teamwork-plan` reruns the Parallelization Gate and each active
+stage reruns Stage-Routed Proactive Dispatch.
 
 ## Inputs
 
@@ -61,8 +69,9 @@ architecture, contracts, or user intent.
 - Stop after 2 consecutive `no-progress` iterations.
 - Stop immediately on destructive risk, auth failure, missing resources,
   protected-boundary conflict, or user-intent ambiguity.
-- Mark native goal complete only after focused verification and execution
-  review pass.
+- Mark the platform goal surface complete only after focused verification and
+  execution review pass: Codex native goal complete, or Cursor report
+  `Status: accepted`.
 
 ## Output
 

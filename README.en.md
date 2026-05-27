@@ -4,19 +4,19 @@
 
 ![Teamwork workflow banner](assets/teamwork-hero.png)
 
-Teamwork is a **Codex-only skill package**. Codex native capabilities are the execution substrate: native goals, `update_plan`, subagents, review, sandbox approvals, automations, MCP, and plugins still do the work. Teamwork adds the collaboration policy that makes complex coding-agent work more reliable: evidence first, reusable artifacts, stage-routed proactive dispatch, reviewed execution, and goal iteration that does not stop early.
+Teamwork is a **Codex + Cursor skill package**. Each platform's native capabilities are the execution substrate: Codex provides native goals, `update_plan`, and `spawn_agent`; Cursor provides `Task` subagents, MCP, browser automation, and permissions. Teamwork adds the collaboration policy that makes complex coding-agent work more reliable: evidence first, reusable artifacts, stage-routed proactive dispatch, reviewed execution, and goal iteration that does not stop early.
 
-After Teamwork activates, the main agent acts as the orchestrator. Simple tasks still stay in Codex native flow; non-lightweight research, plan, execute, review, and goal work proactively evaluates subagent dispatch instead of waiting for user or plan authorization.
+After Teamwork activates, the main agent acts as the orchestrator. Simple tasks stay in native platform flow; non-lightweight research, plan, execute, review, and goal work proactively evaluates subagent dispatch instead of waiting for user or plan authorization.
 
 ## Core Advantages
 
 | Advantage | What Teamwork Adds |
 |---|---|
 | Evidence first | Important claims must come from source, diffs, logs, tests, artifacts, or primary external sources. File names, README prose, comments, stale summaries, and `latest` labels are claims; `implement/fix` routes to research first when root/source/API/failure/evidence/risk is unclear. |
-| Better native goals | Unclear autonomous requests first get a chat-window `Goal Proposal`. After human approval, its `Native Codex Goal Text` is used with Codex native goal state. Failed attempts return to research + plan adequacy instead of early block. |
+| Better platform goals | Unclear autonomous requests first get a chat-window `Goal Proposal`. After approval, Codex calls `create_goal` with the Goal Text; Cursor initializes a rolling report as durable goal state and drives the controller loop from chat. Failed attempts return to research + plan adequacy instead of early block. |
 | Artifact memory | `research/`, `plans/`, and `reports/` preserve reusable evidence, execution memos, rolling attempts, verification, review, and routing decisions so work does not repeat or bloat the chat context. |
 | Retrieval headers | Durable artifacts start with type, status, updated date, search keys, abstract, and linked artifacts so future agents can find the right memory before full-text search. |
-| Stage-routed dispatch | Teamwork uses subagent-first orchestration after activation. Research / plan / execute / review / goal stages proactively evaluate Explorer, Designer, Judge, Worker, or Reviewer dispatch for non-lightweight work; if `spawn_agent` is inactive but `tool_search` exists, tools must be discovered before being called unavailable. Non-lightweight acceptance needs a fresh Reviewer, and self-review is not acceptance. |
+| Stage-routed dispatch | Teamwork uses subagent-first orchestration after activation. Research / plan / execute / review / goal stages proactively evaluate Explorer, Designer, Judge, Worker, or Reviewer dispatch for non-lightweight work. Codex uses `spawn_agent`; Cursor uses `Task`. On Codex, if `spawn_agent` is inactive but `tool_search` exists, tools must be discovered before being called unavailable. Non-lightweight acceptance needs a fresh Reviewer, and self-review is not acceptance. |
 
 ## Skill Map
 
@@ -32,20 +32,21 @@ After Teamwork activates, the main agent acts as the orchestrator. Simple tasks 
 | Update version, release metadata, or skill topology | `teamwork-update` | Synchronized `VERSION`, manifest, docs, install, and validation |
 | Iterate until a verifiable target is reached | `teamwork-goal` | Goal Proposal, native goal handoff, iteration loop, rolling report when needed |
 
-Subagent references are split by responsibility: `dispatch-policy` defines when to dispatch, caps/economics, native Codex dispatch fields, and role-specific model class; `subagent-prompt-contract` defines prompt shape plus `Native Fields`; and `subagent-packets` defines Worker / Reviewer handoff packets. Plan `Dispatch Guidance:` is advice; the active stage still owns actual dispatch through stage-routed proactive dispatch.
+Subagent references are split by responsibility: `dispatch-policy` defines when to dispatch, caps/economics, Codex/Cursor dispatch fields, and role-specific model class; `subagent-prompt-contract` defines prompt shape plus `Native Fields`; and `subagent-packets` defines Worker / Reviewer handoff packets. Plan `Dispatch Guidance:` is advice; the active stage still owns actual dispatch through stage-routed proactive dispatch.
 
-## Codex Native Policy Map
+## Platform Native Policy Map
 
-| Codex Capability | Teamwork Policy |
+| Platform Capability | Teamwork Policy |
 |---|---|
-| Native goal | Source of truth for autonomous target and lifecycle. Teamwork designs the goal, evidence, scope, retry policy, and acceptance checks before `create_goal`. |
+| Codex goal | Source of truth for autonomous target and lifecycle. Teamwork designs the goal, evidence, scope, retry policy, and acceptance checks before `create_goal`. |
+| Cursor goal | Without native goal state, goal-mode uses chat iteration plus durable reports; do not force `create_goal`. |
 | `update_plan` | Visible progress only. It is not a durable execution spec, review target, or completion proof. |
-| Subagents | Stage-routed proactive dispatch. After Teamwork activates, the main agent is the orchestrator; non-lightweight research, plan, execute, review, and goal work proactively evaluates and dispatches subagents. Plan `Dispatch Guidance:` or `Subagent Routing` is guidance, not the only authorization. If `spawn_agent` is missing from active tools but `tool_search` exists, discover it first; skipped required dispatch must emit `Dispatch Exception:`. Explorer/Reviewer default max 3; Worker has no fixed cap. Non-lightweight review may skip a fresh Reviewer only when subagent discovery fails or the user opts out, and must be labeled `unreviewed`. Model policy prefers fewer, stronger models: Explorer may use `cheap-fast` for narrow read-only work, Judge/Reviewer default to `frontier`, Worker defaults to `coding` or inherited. |
-| Review | Codex review output can be evidence, but completion still maps to requirements, diff, tests, artifacts, and acceptance criteria. |
-| Sandbox/permissions | Use Codex native approval and sandbox model. Teamwork only requires boundaries and risks to be explicit. |
-| Automations/heartbeat | Use native Codex automation or thread heartbeat for recurring checks or later continuation. Do not encode schedules in Teamwork artifacts. |
-| MCP/plugins | Prefer native Codex tools and connectors. Teamwork requires sources and limitations to be recorded when they affect decisions. |
-| Project instructions | `teamwork-init` initializes or slims `AGENTS.md`, `CODEX.md`, and `CLAUDE.md`, migrating reusable workflow into Teamwork while leaving project facts in the project. |
+| Subagents | Stage-routed proactive dispatch. After Teamwork activates, the main agent is the orchestrator; non-lightweight research, plan, execute, review, and goal work proactively evaluates and dispatches subagents. Codex uses `spawn_agent`; Cursor uses `Task`. Plan `Dispatch Guidance:` or `Subagent Routing` is guidance, not the only authorization. On Codex, if `spawn_agent` is missing from active tools but `tool_search` exists, discover it first; on Cursor, prefer `Task`. Skipped required dispatch must emit `Dispatch Exception:`. Explorer/Reviewer default max 3; Worker has no fixed cap. Non-lightweight review may skip a fresh Reviewer only when subagent discovery fails or the user opts out, and must be labeled `unreviewed`. Model policy prefers fewer, stronger models: Explorer may use `cheap-fast` for narrow read-only work, Judge/Reviewer default to `frontier`, Worker defaults to `coding` or inherited; translate concrete model slugs through the active platform mapping. |
+| Review | Platform review output can be evidence, but completion still maps to requirements, diff, tests, artifacts, and acceptance criteria. |
+| Sandbox/permissions | Use native approval and sandbox model for the active platform. Teamwork only requires boundaries and risks to be explicit. |
+| Automations/heartbeat | Codex uses native automation or thread heartbeat for recurring checks or later continuation. Do not encode schedules in Teamwork artifacts. |
+| MCP/plugins | Prefer native tools and connectors. Teamwork requires sources and limitations to be recorded when they affect decisions. |
+| Project instructions | `teamwork-init` initializes or slims `AGENTS.md`, `CODEX.md`, `CURSOR.md`, and `CLAUDE.md`, migrating reusable workflow into Teamwork while leaving project facts in the project. |
 
 Package version uses `VERSION` as the source of truth and must match
 `.codex-plugin/plugin.json`. Version, release metadata, or skill surface updates
@@ -53,7 +54,7 @@ use `teamwork-update`.
 
 ## Goal Proposal
 
-For unclear autonomous work, Teamwork returns this in chat before creating a native Codex goal:
+For unclear autonomous work, Teamwork returns this in chat before platform goal handoff:
 
 ```text
 Goal Proposal:
@@ -66,14 +67,14 @@ Goal Proposal:
 - Retry Policy: <failed verification returns to research + plan adequacy>
 - Artifacts: <none | suggested research/plan/report paths and why>
 - Subagent Routing: <suggested tracks to split, or why main-agent continuity is better>
-- Native Codex Goal Text: <concise text prepared for create_goal>
+- Goal Text: <concise target for platform goal handoff>
 ```
 
-The proposal is a human review gate. The approved `Native Codex Goal Text` is what should be written into native Codex goal state.
+The proposal is a human review gate. Codex writes the Goal Text into `create_goal`; Cursor writes it into the rolling report Abstract and starts the controller loop.
 
 ## Artifacts
 
-Artifacts are evidence memory, not a replacement for native Codex goal state. Create them only when they reduce repeated work or anchor cross-turn, cross-agent, high-risk, ambiguous, public/shared, explicitly planned, or goal-mode work.
+Artifacts are evidence memory, not a replacement for the platform goal surface. Create them only when they reduce repeated work or anchor cross-turn, cross-agent, high-risk, ambiguous, public/shared, explicitly planned, or goal-mode work.
 
 ```text
 docs/teamwork/research/YYYY-MM-DD-<slug>.md
@@ -96,20 +97,26 @@ These directories are gitignored unless the user intentionally asks to publish a
 
 ## Install
 
+Codex (default):
+
 ```bash
 ./install.sh
+# or
+./install.sh codex
 ```
 
-Equivalent explicit form:
+Cursor:
 
 ```bash
-./install.sh codex
+./install.sh cursor
 ```
 
 Use `--link` during local development:
 
 ```bash
 ./install.sh --link
+# or
+./install.sh --link cursor
 ```
 
 Validate this repository:
@@ -118,4 +125,4 @@ Validate this repository:
 ./scripts/validate.sh
 ```
 
-Behavior lives in `skills/*/SKILL.md`; `README.md` and `CODEX.md` are concise runtime summaries.
+Behavior lives in `skills/*/SKILL.md`; `README.md`, `CODEX.md`, and `CURSOR.md` are concise runtime summaries.

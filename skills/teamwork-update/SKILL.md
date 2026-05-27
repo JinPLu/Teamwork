@@ -28,7 +28,7 @@ behavior, installed skill surface, release metadata, or update notes.
    `scripts/validate.sh`, README files, and affected `skills/*/SKILL.md`.
 2. Choose the smallest justified semver bump and record why.
 3. Update `VERSION` and `.codex-plugin/plugin.json` together.
-4. Update README/CODEX/AGENTS only for user-visible changes.
+4. Update README/CODEX/CURSOR/AGENTS only for user-visible changes.
 5. Keep skill prose concise; move shared policy into references instead of
    repeating it across stage skills.
 6. Check `SKILL.md` line/word budgets when editing skills.

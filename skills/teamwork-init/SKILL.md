@@ -18,7 +18,7 @@ those rules safely.
 Read only as needed:
 
 - `skills/using-teamwork/references/workflow-contract.md` for evidence,
-  assumptions, native Codex boundaries, and artifact rules.
+  assumptions, platform native boundaries, and artifact rules.
 - `skills/using-teamwork/references/project-init.md` for project rule layering,
   MCP policy, and context-cache discipline.
 - `skills/using-teamwork/references/artifact-protocol.md` when durable research,
@@ -27,7 +27,7 @@ Read only as needed:
 ## Workflow
 
 1. Inspect the real project context first: root and repo-local instruction
-   files such as `AGENTS.md`, `CODEX.md`, `CLAUDE.md`, `GEMINI.md`, README
+   files such as `AGENTS.md`, `CODEX.md`, `CURSOR.md`, `CLAUDE.md`, `GEMINI.md`, README
    guidance, existing `docs/teamwork/` artifacts, and any user-provided local
    plans or source documents.
 2. Classify content as portable workflow, project fact, current state,

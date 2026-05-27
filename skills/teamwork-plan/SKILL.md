@@ -68,8 +68,8 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 - Delegated plans name prompt contract, context strategy, ownership, and
   Required Output Schema.
 - Goal-mode durable plans include Search Keys and Abstract.
-- Codex native dispatch fields are derived at dispatch time from the active
-  stage decision, not copied blindly from plan prose.
+- Platform native dispatch fields are derived at dispatch time from the active
+  stage decision and runtime platform, not copied blindly from plan prose.
 
 ## Output
 

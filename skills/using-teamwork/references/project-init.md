@@ -10,7 +10,7 @@ setup, cleanup, or migration into Teamwork.
   before reading deeper files.
 - Repo-local `AGENTS.md`: repository facts, evidence sources, commands,
   danger zones, and repo-specific acceptance expectations.
-- Platform files such as `CODEX.md`, `CLAUDE.md`, or `GEMINI.md`: only
+- Platform files such as `CODEX.md`, `CURSOR.md`, `CLAUDE.md`, or `GEMINI.md`: only
   platform-specific deltas. Link back to `AGENTS.md` and shared workflow
   files instead of copying them.
 - Appendix docs: long path maps, command inventories, environment matrices, and

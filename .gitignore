@@ -6,6 +6,7 @@ __pycache__/
 *.log
 tmp/
 dist/
+.codegraph/
 
 # Local workflow artifacts. Keep them in the working tree, but do not publish
 # them to GitHub unless a specific artifact is intentionally force-added.

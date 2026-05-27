@@ -24,10 +24,12 @@ both.
 ## Subagent Tool Discovery Gate
 
 Before serializing a second independent track, delivering a durable/high-risk
-plan, or accepting non-lightweight work: use active `spawn_agent`; otherwise,
-if `tool_search` exists, search `multi-agent spawn_agent`; only failed discovery
-proves unavailable tools. Omit `model` normally so subagents inherit the parent;
-record conceptual role, model class, native fields, and intentional inheritance.
+plan, or accepting non-lightweight work: use the active platform subagent tool
+(`spawn_agent` on Codex, `Task` on Cursor); on Codex, if `tool_search` exists,
+search `multi-agent spawn_agent` before claiming unavailability. Only failed
+discovery proves unavailable tools. Omit `model` normally so subagents inherit
+the parent; record conceptual role, model class, native fields, and intentional
+inheritance.
 When required dispatch is skipped, write:
 
 ```text
@@ -61,25 +63,33 @@ implements owned scope; Reviewer checks diffs, tests, logs, and artifacts.
 
 ## Role Profiles
 
-Use model class as the stable policy and translate it through Codex Model
-Mapping at dispatch time. Prefer fewer, stronger models over fragile cheap
-defaults.
+Use model class as the stable policy and translate it through the active
+platform Model Mapping at dispatch time. Prefer fewer, stronger models over
+fragile cheap defaults.
 
-- Explorer: `agent_type:"explorer"`, model class `balanced` by default;
-  `cheap-fast` only for narrow read-only evidence; context
+- Explorer: model class `balanced` by default; `cheap-fast` only for narrow
+  read-only evidence; reasoning `fast` or `standard`; context
   `condensed-evidence-only`.
-- Designer: `agent_type:"default"`, `balanced`; use `frontier` for architecture,
-  public behavior, data contracts, or unfamiliar APIs.
-- Judge: `agent_type:"default"`, model class `frontier`, high reasoning,
-  `fresh-context-review`, read-only.
-- Worker: `agent_type:"worker"`, `coding` or `inherited`; use `frontier` for
-  cross-module, high-risk, security, or public behavior changes.
-- Reviewer: `agent_type:"default"`, model class `frontier`, high reasoning,
-  `fresh-context-review`, read-only.
+- Designer: `balanced`; use `frontier` for architecture, public behavior, data
+  contracts, or unfamiliar APIs; reasoning `standard` or `high`; read-only.
+- Judge: model class `frontier`, reasoning `high`; context
+  `fresh-context-review`; read-only.
+- Worker: `coding` or `inherited`; use `frontier` for cross-module, high-risk,
+  security, or public behavior changes; reasoning `standard` or `high`; context
+  `owned-files-only`.
+- Reviewer: model class `frontier`, reasoning `high`; context
+  `fresh-context-review`; read-only.
 
 Do not use `cheap-fast` for Judge, Reviewer, architecture Designer, public
 behavior changes, failed-goal adequacy decisions, or non-mechanical Worker
 implementation.
+
+## Platform Dispatch Fields
+
+- Codex: `agent_type`, `model`, `reasoning_effort`, `fork_context`.
+- Cursor: `subagent_type`, `model`; no `reasoning_effort` or `fork_context`.
+- Both platforms: conceptual role, model class, and context strategy stay the
+  same; only native field translation changes.
 
 ## Codex Mapping
 
@@ -101,5 +111,40 @@ implementation.
 Do not combine `fork_context:true` with `agent_type`, `model`, or
 `reasoning_effort`; full-history forks inherit parent routing. Codex has no
 native `judge`, `reviewer`, or `designer` agent types.
+
+## Cursor Mapping
+
+- Explorer -> `subagent_type:"explore"`.
+- Worker -> `subagent_type:"generalPurpose"`; use `shell` for shell-only
+  isolated tracks.
+- Reviewer -> `subagent_type:"code-reviewer"`.
+- CI failure investigation -> `subagent_type:"ci-investigator"` when the track
+  is a single failing check.
+- Designer, Judge -> `subagent_type:"generalPurpose"` with role in prompt.
+- Cursor has no native `judge`, `reviewer`, or `designer` subagent types.
+
+## Cursor Task Parameters
+
+- `readonly: true` -> Explorer, Judge, and Reviewer by default.
+- `run_in_background: true` -> long Explorer or Worker tracks in Multitask Mode.
+- `resume: <id>` -> continue the same Reviewer or Explorer across goal iterations.
+- `resume: "self"` -> `full-history-fork` on Cursor.
+- `subagent_type: "best-of-n-runner"` -> parallel Worker experiments with worktree
+  isolation.
+- `subagent_type: "ci-investigator"` -> single failing CI check during goal-mode
+  failure analysis.
+- Browser or UI verification -> use browser automation when execute/verify needs
+  inspected behavior.
+
+## Cursor Model Mapping
+
+Use only models listed in the active `Task` tool schema; prefer the latest
+version when the user did not request a specific model.
+
+- `cheap-fast` -> `composer-2.5-fast`; only read-only, narrow, verifiable output.
+- `balanced` -> `gpt-5.5-medium` or `claude-4.6-sonnet-medium-thinking`.
+- `coding` -> `composer-2.5-fast` or inherited from a strong coding parent.
+- `frontier` -> `claude-opus-4-7-thinking-high`.
+- `inherited` -> omit `model`; record that inheritance is intentional.
 
 Evaluate the split before implementation steps. Do not wait for a proposal or plan to explicitly name every track; stage contracts authorize dispatch when economics and ownership are clear.

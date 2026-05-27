@@ -11,17 +11,20 @@ Use when preparing a delegated prompt. For dispatch decisions read
 - `fresh-context-review`: review target, criteria, diff/artifacts, rejection
   rules, and no parent reasoning.
 - `full-history-fork`: only when the side task needs nearly all parent context
-  and explicit routing overrides are not needed.
-- `explicit-non-inheriting-dispatch`: when role, model tier, or reasoning
-  effort must differ from the parent.
+  and explicit routing overrides are not needed. Codex: `fork_context:true`.
+  Cursor: `Task` with `resume:"self"`.
+- `explicit-non-inheriting-dispatch`: when role, model tier, or reasoning must
+  differ from the parent. Codex: override `agent_type`, `model`, or
+  `reasoning_effort`. Cursor: override `subagent_type` or `model`.
 
 ## Required Fields
 
 Every delegated prompt includes:
 
 - Conceptual Role: Explorer, Designer, Judge, Worker, or Reviewer.
-- Native Fields: `agent_type`, `model` or `model: inherited`,
-  `reasoning_effort`, and `fork_context`.
+- Native Fields: platform dispatch fields from `dispatch-policy.md` — on Codex
+  `agent_type`, `model` or `model: inherited`, `reasoning_effort`, and
+  `fork_context`; on Cursor `subagent_type`, `model` or `model: inherited`.
 - Mission: one concrete question, decision, implementation slice, or review.
 - Source: plan, research, report, diff, command output, or file paths.
 - Inputs: exact files, commands, evidence, assumptions, and acceptance target.
@@ -43,9 +46,9 @@ Native Fields request.
 ## Role Templates
 
 ```text
-Explorer: native fields <agent_type/model/effort/fork>; answer <evidence question>; read-only; output Explorer Result Packet.
-Designer: native fields <agent_type/model/effort/fork>; compare <decision options>; read-only; output Designer Decision Packet.
-Judge: native fields <agent_type/model/effort/fork>; review <plan> readiness; read-only; output Judge Plan Review Packet.
-Worker: native fields <agent_type/model/effort/fork>; implement <owned slice>; write only owned scope; output Worker Completion Packet.
-Reviewer: native fields <agent_type/model/effort/fork>; review <target> against criteria; read-only; output Reviewer Verdict Packet.
+Explorer: native fields <platform native fields per dispatch-policy.md>; answer <evidence question>; read-only; output Explorer Result Packet.
+Designer: native fields <platform native fields per dispatch-policy.md>; compare <decision options>; read-only; output Designer Decision Packet.
+Judge: native fields <platform native fields per dispatch-policy.md>; review <plan> readiness; read-only; output Judge Plan Review Packet.
+Worker: native fields <platform native fields per dispatch-policy.md>; implement <owned slice>; write only owned scope; output Worker Completion Packet.
+Reviewer: native fields <platform native fields per dispatch-policy.md>; review <target> against criteria; read-only; output Reviewer Verdict Packet.
 ```

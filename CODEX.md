@@ -1,6 +1,6 @@
 # Codex Usage
 
-Teamwork is a Codex-native augmentation layer. Codex native capabilities remain the substrate: goals, `update_plan`, subagents, review, sandbox approvals, automations, MCP, and plugins. Teamwork defines when and how those capabilities should be combined for evidence-heavy, reviewed, delegated, or autonomous work. After Teamwork activates, the main agent acts as the orchestrator: simple tasks can stay native, while non-lightweight research, plan, execute, review, and goal work proactively evaluates subagent dispatch.
+This is the Codex runtime profile of Teamwork. Codex native capabilities remain the substrate: goals, `update_plan`, subagents, review, sandbox approvals, automations, MCP, and plugins. Teamwork defines when and how those capabilities should be combined for evidence-heavy, reviewed, delegated, or autonomous work. After Teamwork activates, the main agent acts as the orchestrator: simple tasks can stay native, while non-lightweight research, plan, execute, review, and goal work proactively evaluates subagent dispatch.
 
 Install:
 

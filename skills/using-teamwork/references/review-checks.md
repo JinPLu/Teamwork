@@ -40,7 +40,7 @@ Return `revise` or `blocked` when:
   valid discovery/user-opt-out exception is recorded;
 - delegated work lacks prompt packets, output schema, ownership, or escalation
   triggers;
-- routing uses invalid Codex fields, nonexistent agent types, or misleading
+- routing uses invalid platform dispatch fields, nonexistent agent types, or misleading
   inherited reasoning effort;
 - protected contracts, architecture, or public behavior change outside scope.
 

@@ -105,9 +105,11 @@ for retired in "${RETIRED_SKILLS[@]}"; do
   [[ ! -d "$ROOT/skills/$retired" ]] || fail "retired skill directory still exists: skills/$retired"
 done
 
-for removed in ".claude-plugin" ".cursor" "commands" "hooks" "bin/raoctl.py" "CLAUDE.md" "CURSOR.md"; do
+for removed in ".claude-plugin" ".cursor" "commands" "hooks" "bin/raoctl.py" "CLAUDE.md"; do
   [[ ! -e "$ROOT/$removed" ]] || fail "removed runtime surface still exists: $removed"
 done
+
+[[ -f "$ROOT/CURSOR.md" ]] || fail "missing CURSOR.md"
 
 [[ -f "$ROOT/VERSION" ]] || fail "missing VERSION"
 git_known_or_worktree_addition "VERSION" || fail "VERSION is neither tracked nor a worktree addition"
@@ -188,11 +190,11 @@ if codex.get("version") != version:
     raise SystemExit("FAIL: Codex manifest version must match VERSION")
 PY
 
-grep_required 'Codex-only' "$ROOT/README.md" "README must state Codex-only positioning"
-grep_required 'Codex native capabilities are the execution substrate' "$ROOT/README.md" \
-  "README must explain native Codex augmentation"
-grep_required 'Native Codex Goal Text' "$ROOT/README.md" \
-  "README must document native goal text handoff"
+grep_required 'Codex + Cursor' "$ROOT/README.md" "README must state Codex + Cursor positioning"
+grep_required 'native capabilities' "$ROOT/README.md" \
+  "README must explain native platform augmentation"
+grep_required 'Goal Text' "$ROOT/README.md" \
+  "README must document goal text handoff"
 grep_required 'teamwork-update' "$ROOT/README.md" \
   "README must document teamwork-update"
 grep_required 'teamwork-init' "$ROOT/README.md" \
@@ -212,37 +214,45 @@ git -C "$ROOT" ls-files --error-unmatch "README.en.md" >/dev/null 2>&1 \
   || fail "README.en.md must be tracked by git"
 grep_required '\[中文\](README.md)' "$ROOT/README.en.md" \
   "English README must link to default Chinese README"
-grep_required 'Codex-only' "$ROOT/README.en.md" "English README must state Codex-only positioning"
-grep_required 'Codex native capabilities are the execution substrate' "$ROOT/README.en.md" \
-  "English README must explain native Codex augmentation"
+grep_required 'Codex + Cursor' "$ROOT/README.en.md" "English README must state Codex + Cursor positioning"
+grep_required 'native capabilities are the execution substrate' "$ROOT/README.en.md" \
+  "English README must explain native platform augmentation"
 grep_required 'teamwork-update' "$ROOT/README.en.md" \
   "English README must document teamwork-update"
 grep_required 'teamwork-init' "$ROOT/README.en.md" \
   "English README must document teamwork-init"
 grep_required 'VERSION' "$ROOT/README.en.md" \
   "English README must document package version source"
-grep_required 'Codex-only skill package' "$ROOT/AGENTS.md" \
-  "AGENTS.md must describe the Codex-only package"
+grep_required 'Codex + Cursor skill package' "$ROOT/AGENTS.md" \
+  "AGENTS.md must describe the Codex + Cursor package"
 grep_required 'teamwork-update' "$ROOT/AGENTS.md" \
   "AGENTS.md must document update skill ownership"
 grep_required 'teamwork-init' "$ROOT/AGENTS.md" \
   "AGENTS.md must document init skill ownership"
 grep_required 'Codex native capabilities' "$ROOT/CODEX.md" \
   "CODEX.md must document native Codex capability policy"
+grep_required 'Codex runtime profile' "$ROOT/CODEX.md" \
+  "CODEX.md must identify itself as the Codex runtime profile"
+grep_required 'Task' "$ROOT/CURSOR.md" \
+  "CURSOR.md must document Cursor Task subagent policy"
+grep_required 'Goal Mode' "$ROOT/CURSOR.md" \
+  "CURSOR.md must document Cursor goal mode"
+grep_required 'dispatch-policy.md' "$ROOT/CURSOR.md" \
+  "CURSOR.md must point to dispatch policy"
 grep_required 'VERSION' "$ROOT/CODEX.md" \
   "CODEX.md must document package version source"
 grep_required 'teamwork-init' "$ROOT/CODEX.md" \
   "CODEX.md must document teamwork-init"
-[[ "$(wc -l < "$ROOT/README.md")" -le 170 ]] || fail "README should stay concise"
-[[ "$(wc -l < "$ROOT/README.en.md")" -le 175 ]] || fail "English README should stay concise"
+[[ "$(wc -l < "$ROOT/README.md")" -le 180 ]] || fail "README should stay concise"
+[[ "$(wc -l < "$ROOT/README.en.md")" -le 185 ]] || fail "English README should stay concise"
 line_count_max "$ROOT/skills/using-teamwork/SKILL.md" 80 "using-teamwork should stay concise"
 word_count_max "$ROOT/skills/using-teamwork/SKILL.md" 450 "using-teamwork should stay concise"
 line_count_max "$ROOT/skills/teamwork-init/SKILL.md" 100 "teamwork-init should stay concise"
 word_count_max "$ROOT/skills/teamwork-init/SKILL.md" 600 "teamwork-init should stay concise"
 line_count_max "$ROOT/skills/teamwork-plan/SKILL.md" 120 "teamwork-plan should stay concise"
 word_count_max "$ROOT/skills/teamwork-plan/SKILL.md" 650 "teamwork-plan should stay concise"
-line_count_max "$ROOT/skills/teamwork-goal/SKILL.md" 120 "teamwork-goal should stay concise"
-word_count_max "$ROOT/skills/teamwork-goal/SKILL.md" 650 "teamwork-goal should stay concise"
+line_count_max "$ROOT/skills/teamwork-goal/SKILL.md" 130 "teamwork-goal should stay concise"
+word_count_max "$ROOT/skills/teamwork-goal/SKILL.md" 700 "teamwork-goal should stay concise"
 line_count_max "$ROOT/skills/teamwork-review/SKILL.md" 100 "teamwork-review should stay concise"
 word_count_max "$ROOT/skills/teamwork-review/SKILL.md" 550 "teamwork-review should stay concise"
 line_count_max "$ROOT/skills/teamwork-research/SKILL.md" 120 "teamwork-research should stay concise"
@@ -251,10 +261,10 @@ line_count_max "$ROOT/skills/teamwork-execute/SKILL.md" 120 "teamwork-execute sh
 word_count_max "$ROOT/skills/teamwork-execute/SKILL.md" 650 "teamwork-execute should stay concise"
 line_count_max "$ROOT/skills/teamwork-update/SKILL.md" 80 "teamwork-update should stay concise"
 word_count_max "$ROOT/skills/teamwork-update/SKILL.md" 400 "teamwork-update should stay concise"
-line_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 105 "dispatch policy reference should stay focused"
-word_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 700 "dispatch policy reference should stay focused"
-line_count_max "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" 70 "subagent prompt contract should stay focused"
-word_count_max "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" 450 "subagent prompt contract should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 160 "dispatch policy reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 950 "dispatch policy reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" 80 "subagent prompt contract should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" 500 "subagent prompt contract should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-packets.md" 110 "subagent packet reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-packets.md" 350 "subagent packet reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-routing.md" 25 "compatibility routing index should stay small"
@@ -265,10 +275,10 @@ for skill in "${SKILLS[@]}"; do
   fenced_block_line_count_max "$ROOT/skills/$skill/SKILL.md" 20 "$skill must not embed large fenced templates"
 done
 
-grep_required 'Codex-native augmentation layer' "$ENTRYPOINT" \
-  "entrypoint/router must define Teamwork as Codex-native augmentation"
-grep_required 'Codex Native Policy Map' "$ENTRYPOINT" \
-  "entrypoint/router must document Codex native policy map"
+grep_required 'platform-native augmentation layer' "$ENTRYPOINT" \
+  "entrypoint/router must define Teamwork as platform-native augmentation"
+grep_required 'Platform Native Policy Map' "$ENTRYPOINT" \
+  "entrypoint/router must document platform native policy map"
 grep_required 'Goal Proposal' "$ENTRYPOINT" \
   "entrypoint/router must document goal proposal routing"
 grep_required 'Stage-Routed Proactive Dispatch' "$ENTRYPOINT" \
@@ -285,8 +295,8 @@ grep_required 'Plans may' "$ENTRYPOINT" \
   "entrypoint/router must treat plans as routing guidance, not sole dispatch authorization"
 grep_required 'Workflow Pattern Selection' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must define workflow pattern selection"
-grep_required 'Codex Native Policy Map' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
-  "workflow contract must define Codex native policy map"
+grep_required 'Platform Native Policy Map' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must define platform native policy map"
 grep_required 'Subagent authorization is Stage-Routed Proactive Dispatch' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must define stage-routed proactive dispatch authorization"
 grep_required 'routing guidance' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
@@ -299,19 +309,35 @@ grep_required 'starting any coding-agent task' "$ROOT/skills/using-teamwork/SKIL
   "using-teamwork description must be broad enough for automatic discovery"
 grep_required 'discovery reads frontmatter before' "$ROOT/skills/using-teamwork/SKILL.md" \
   "using-teamwork must explain broad discovery before route filtering"
-
-grep_required 'Goal Proposal Before Native Goal' "$ROOT/skills/teamwork-goal/SKILL.md" \
-  "goal skill must require goal proposal before native goal creation"
-grep_required 'Native Codex goal state is the source of truth' "$ROOT/skills/teamwork-goal/SKILL.md" \
-  "goal skill must preserve native goal state"
-grep_required 'Native Codex Goal Text' "$ROOT/skills/teamwork-goal/SKILL.md" \
-  "goal proposal must include native goal text"
-grep_required 'create_goal' "$ROOT/skills/teamwork-goal/SKILL.md" \
-  "goal skill must hand approved goal text to native create_goal"
+grep_required 'platform goal handoff unless an active goal surface exists' "$ROOT/skills/using-teamwork/SKILL.md" \
+  "using-teamwork must route goal work through platform goal handoff"
+grep_required '"CURSOR"' "$ROOT/skills/using-teamwork/SKILL.md" \
+  "using-teamwork must include CURSOR init trigger"
+grep_required 'CURSOR.md' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must inspect CURSOR.md"
+grep_required 'platform native boundaries' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must reference platform native boundaries"
+grep_required 'Visible progress tools' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must define platform-neutral progress anchors"
+grep_required 'Platform Goal Surface:' "$ROOT/skills/using-teamwork/references/goal-iteration.md" \
+  "goal iteration reference must define platform goal surface output"
+grep_required 'Goal Text:' "$ROOT/skills/using-teamwork/references/goal-iteration.md" \
+  "goal iteration reference must define Goal Text in proposal"
+grep_required 'before platform goal handoff' "$ROOT/skills/using-teamwork/references/goal-iteration.md" \
+  "goal iteration reference must require platform goal handoff"
 grep_required 'Research + Plan Adequacy Gate' "$ROOT/skills/teamwork-goal/SKILL.md" \
   "goal skill must define failure iteration gate"
+
+grep_required 'Goal Proposal Before Platform Goal Handoff' "$ROOT/skills/teamwork-goal/SKILL.md" \
+  "goal skill must require goal proposal before platform goal handoff"
+grep_required 'Platform goal surface is the source of truth' "$ROOT/skills/teamwork-goal/SKILL.md" \
+  "goal skill must define platform goal surface"
+grep_required 'Goal Text goes into the platform goal surface' "$ROOT/skills/teamwork-goal/SKILL.md" \
+  "goal skill must hand approved goal text to the platform goal surface"
+grep_required 'create_goal' "$ROOT/skills/teamwork-goal/SKILL.md" \
+  "goal skill must preserve Codex create_goal handoff"
 grep_required 'rolling report' "$ROOT/skills/teamwork-goal/SKILL.md" \
-  "goal skill must require rolling report when durable memory is needed"
+  "goal skill must preserve Cursor rolling-report handoff"
 
 grep_required 'Research Artifact Requirement' "$ROOT/skills/teamwork-research/SKILL.md" \
   "research skill must require reusable research artifacts"
@@ -345,7 +371,7 @@ grep_required 'Abstract' "$ROOT/skills/using-teamwork/references/plan-output.md"
   "plan output reference must include Abstract"
 grep_required 'Durable Plan Sections' "$ROOT/skills/using-teamwork/references/plan-output.md" \
   "plan output reference must include durable plan sections"
-grep_required 'Codex native dispatch fields are derived at dispatch time from the' "$ROOT/skills/teamwork-plan/SKILL.md" \
+grep_required 'Platform native dispatch fields are derived at dispatch time from the' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must derive native dispatch fields at dispatch time"
 grep_required 'codex review' "$ROOT/skills/teamwork-review/SKILL.md" \
   "review skill must mention codex review as evidence"
@@ -417,8 +443,8 @@ grep_required 'Role Profiles' "$ROOT/skills/using-teamwork/references/dispatch-p
   "dispatch policy reference must define role profiles"
 grep_required 'model class `balanced` by default' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "Explorer profile must avoid weak default models"
-grep_required 'model class `frontier`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
-  "Judge/Reviewer profiles must require frontier model class"
+grep_required 'reasoning `high`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Judge/Reviewer profiles must require high reasoning class"
 grep_required 'Codex Model Mapping' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must define Codex model mapping"
 grep_required '`cheap-fast` -> `gpt-5.4-mini`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
@@ -429,6 +455,38 @@ grep_required '`coding` -> `gpt-5.3-codex`' "$ROOT/skills/using-teamwork/referen
   "model mapping must define coding model"
 grep_required '`frontier` -> `gpt-5.5`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "model mapping must define frontier model"
+grep_required 'Platform Dispatch Fields' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy reference must define platform dispatch fields"
+grep_required 'Cursor Mapping' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy reference must define Cursor mapping"
+grep_required 'Explorer -> `subagent_type:"explore"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Cursor mapping must map Explorer to explore"
+grep_required 'Reviewer -> `subagent_type:"code-reviewer"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Cursor mapping must map Reviewer to code-reviewer"
+grep_required 'Cursor Model Mapping' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy reference must define Cursor model mapping"
+grep_required '`cheap-fast` -> `composer-2.5-fast`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Cursor model mapping must define cheap-fast model"
+grep_required '`coding` -> `composer-2.5-fast`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Cursor model mapping must define coding model"
+grep_required '`frontier` -> `claude-opus-4-7-thinking-high`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Cursor model mapping must define frontier model"
+grep_required 'Cursor Task Parameters' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy reference must define Cursor Task parameters"
+grep_required 'readonly: true' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Cursor Task parameters must define readonly default"
+grep_required 'run_in_background: true' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Cursor Task parameters must define background dispatch"
+grep_required 'best-of-n-runner' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Cursor Task parameters must define best-of-n-runner"
+grep_required 'resume: "self"' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Cursor Task parameters must define self resume"
+grep_required 'code-reviewer' "$ROOT/skills/teamwork-review/SKILL.md" \
+  "review skill must mention Cursor code-reviewer evidence"
+grep_required 'platform native fields per dispatch-policy.md' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+  "subagent prompt contract must use platform-neutral role templates"
+grep_required 'resume:"self"' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+  "subagent prompt contract must define Cursor full-history fork"
 grep_required 'Do not use `cheap-fast` for Judge, Reviewer' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy must forbid cheap-fast for Judge and Reviewer"
 grep_required 'routing guidance, not the only' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
@@ -471,8 +529,10 @@ grep_required 'Subagent Prompt Contract' "$ROOT/skills/using-teamwork/references
   "subagent prompt contract must define subagent prompt contract"
 grep_required 'Conceptual Role: Explorer, Designer, Judge, Worker, or Reviewer' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require conceptual role"
-grep_required 'Native Fields: `agent_type`, `model` or `model: inherited`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+grep_required 'Native Fields: platform dispatch fields from `dispatch-policy.md`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require native fields"
+grep_required 'on Cursor `subagent_type`, `model` or `model: inherited`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+  "subagent prompt contract must document Cursor native fields"
 grep_required 'Never imply a stronger model than the' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must prevent misleading model claims"
 grep_required 'Context Strategy: one value from `Context Strategies`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
@@ -511,6 +571,10 @@ grep_required 'Prompt Packet:' "$ROOT/skills/using-teamwork/references/subagent-
   "actual dispatch log must record prompt packet"
 grep_required 'Returned Packet:' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
   "actual dispatch log must record returned packet"
+grep_required 'invalid platform dispatch fields' "$ROOT/skills/using-teamwork/references/review-checks.md" \
+  "review checks must validate platform dispatch fields"
+grep_required 'Codex/Cursor mapping' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
+  "compatibility routing index must mention Codex/Cursor mapping"
 grep_required 'dispatch-policy.md' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
   "compatibility routing index must point to dispatch policy"
 grep_required 'subagent-prompt-contract.md' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
@@ -563,7 +627,7 @@ grep_required 'Search Keys' "$ROOT/skills/using-teamwork/references/artifact-pro
 grep_required 'Abstract' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" \
   "artifact protocol must define Abstract"
 
-if git -C "$ROOT" grep -n -E 'Claude|Cursor|raoctl|RAO|Stop hook|/rao:|/teamwork:|\.claude|\.cursor|claude-plugin' \
+if git -C "$ROOT" grep -n -E 'Claude|raoctl|RAO|Stop hook|/rao:|/teamwork:|\.claude|claude-plugin' \
   -- ':!scripts/validate.sh' >/tmp/teamwork-retired-grep.$$; then
   cat /tmp/teamwork-retired-grep.$$ >&2
   rm -f /tmp/teamwork-retired-grep.$$
@@ -603,6 +667,12 @@ for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/home-link/.codex/skills/$skill" ]] || fail "link install must symlink $skill directory"
 done
 
-HOME="$tmp/home-invalid" "$ROOT/install.sh" cursor >/dev/null 2>&1 && fail "installer must reject non-Codex targets"
+HOME="$tmp/home-cursor" "$ROOT/install.sh" cursor >/dev/null
+for skill in "${SKILLS[@]}"; do
+  [[ -f "$tmp/home-cursor/.cursor/skills/$skill/SKILL.md" ]] || fail "Cursor install missing $skill"
+  [[ ! -L "$tmp/home-cursor/.cursor/skills/$skill/SKILL.md" ]] || fail "default Cursor install must copy $skill"
+done
 
-echo "OK: Codex-only Teamwork skill package validates"
+HOME="$tmp/home-invalid" "$ROOT/install.sh" claude >/dev/null 2>&1 && fail "installer must reject unsupported targets"
+
+echo "OK: Teamwork skill package validates"
