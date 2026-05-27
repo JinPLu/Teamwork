@@ -64,9 +64,8 @@ implements owned scope; Reviewer checks diffs, tests, logs, and artifacts.
 
 ## Role Profiles
 
-Use model class as the stable policy and translate it through the active
-platform Model Mapping at dispatch time. Prefer fewer, stronger models over
-fragile cheap defaults.
+Use model class as stable policy; translate through active platform Model
+Mapping. Prefer fewer, stronger models over fragile cheap defaults.
 
 - Explorer: model class `balanced` by default; use `frontier` for broad,
   ambiguous, unfamiliar, or high-risk evidence. `cheap-fast` is opt-in only for
@@ -100,9 +99,14 @@ or non-mechanical Worker implementation.
 
 ## Codex Mapping
 
-- Explorer -> `agent_type:"explorer"`.
-- Worker -> `agent_type:"worker"`.
-- Designer, Judge, Reviewer -> `agent_type:"default"` with role in prompt.
+- Prefer Teamwork custom agents under `.codex/agents/` or `~/.codex/agents/`:
+  Explorer -> `agent_type:"teamwork_explorer"`, Worker ->
+  `agent_type:"teamwork_worker"`, Designer -> `agent_type:"teamwork_designer"`,
+  Judge -> `agent_type:"teamwork_judge"`, Reviewer ->
+  `agent_type:"teamwork_reviewer"`.
+- Fallback when custom agents are unavailable: Explorer -> `agent_type:"explorer"`;
+  Worker -> `agent_type:"worker"`; Designer, Judge, Reviewer ->
+  `agent_type:"default"` with role in prompt.
 - `fast` -> `reasoning_effort:"low"`.
 - `standard` -> `reasoning_effort:"medium"`.
 - `high reasoning` -> `reasoning_effort:"high"`.
@@ -118,9 +122,23 @@ or non-mechanical Worker implementation.
 - `inherited` -> omit `model`; record why inheritance beats the Role Profile
   model.
 
+## Codex Native Field Presets
+
+Teamwork custom agents pin model and reasoning. For built-in fallbacks, Role
+Profile selection is a clear reason to set Codex's optional `model`. Do not let
+Explorer or Worker inherit a `frontier` parent by accident; inheritance is only
+for full-history forks, parent-model continuity, or explicit user model intent.
+
+- Explorer default: `agent_type:"explorer"`, `model:"gpt-5.4"`, `reasoning_effort:"medium"`; escalated uses `model:"gpt-5.5"`, `reasoning_effort:"high"`.
+- Worker default: `agent_type:"worker"`, `model:"gpt-5.3-codex"`, `reasoning_effort:"medium"`; escalated uses `model:"gpt-5.5"`, `reasoning_effort:"high"`.
+- Designer default: `agent_type:"default"`, `model:"gpt-5.4"`, `reasoning_effort:"medium"`; prompt says `Conceptual Role: Designer`.
+- Judge default: `agent_type:"default"`, `model:"gpt-5.5"`, `reasoning_effort:"high"`; prompt says `Conceptual Role: Judge`.
+- Reviewer default: `agent_type:"default"`, `model:"gpt-5.5"`, `reasoning_effort:"high"`; `gpt-5.4` only for low-risk mechanical diffs.
+
 Do not combine `fork_context:true` with `agent_type`, `model`, or
-`reasoning_effort`; full-history forks inherit parent routing. Codex has no
-native `judge`, `reviewer`, or `designer` agent types.
+`reasoning_effort`; full-history forks inherit parent routing. Without custom
+agents, Codex has no native `judge`, `reviewer`, or `designer` types, so they
+appear as `default` subagents unless prompt/logs show conceptual role.
 
 ## Cursor Mapping
 

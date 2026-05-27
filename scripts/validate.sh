@@ -111,6 +111,10 @@ done
 if git -C "$ROOT" ls-files '.cursor' 2>/dev/null | grep -q .; then
   fail ".cursor/ must not be tracked; use ./install.sh project for local project skills"
 fi
+if git -C "$ROOT" ls-files '.codex' 2>/dev/null | grep -q .; then
+  fail ".codex/ must not be tracked; use ./install.sh project for local project agents"
+fi
+grep_required '^\.codex/$' "$ROOT/.gitignore" ".gitignore must ignore local .codex/ install output"
 grep_required '^\.cursor/$' "$ROOT/.gitignore" ".gitignore must ignore local .cursor/ install output"
 grep_required '^\.claude/$' "$ROOT/.gitignore" ".gitignore must ignore local .claude/ install output"
 
@@ -290,8 +294,8 @@ line_count_max "$ROOT/skills/teamwork-execute/SKILL.md" 120 "teamwork-execute sh
 word_count_max "$ROOT/skills/teamwork-execute/SKILL.md" 650 "teamwork-execute should stay concise"
 line_count_max "$ROOT/skills/teamwork-update/SKILL.md" 80 "teamwork-update should stay concise"
 word_count_max "$ROOT/skills/teamwork-update/SKILL.md" 400 "teamwork-update should stay concise"
-line_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 210 "dispatch policy reference should stay focused"
-word_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 1250 "dispatch policy reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 225 "dispatch policy reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 1400 "dispatch policy reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" 80 "subagent prompt contract should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" 500 "subagent prompt contract should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-packets.md" 110 "subagent packet reference should stay focused"
@@ -358,8 +362,29 @@ grep_required '^model: sonnet$' "$ROOT/templates/claude-agents/worker.md" \
   "Claude worker agent must use coding/balanced model tier"
 grep_required '^model: opus$' "$ROOT/templates/claude-agents/code-reviewer.md" \
   "Claude reviewer agent must use frontier model tier"
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+  [[ -f "$ROOT/templates/codex-agents/$agent.toml" ]] \
+    || fail "missing templates/codex-agents/$agent.toml"
+  grep_required '^name = "teamwork_' "$ROOT/templates/codex-agents/$agent.toml" \
+    "Codex agent template must declare teamwork_ name: $agent"
+  grep_required '^description = ' "$ROOT/templates/codex-agents/$agent.toml" \
+    "Codex agent template must declare description: $agent"
+  grep_required '^developer_instructions = """' "$ROOT/templates/codex-agents/$agent.toml" \
+    "Codex agent template must declare developer_instructions: $agent"
+done
+grep_required '^model = "gpt-5.4"$' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
+  "Codex explorer agent must use balanced model tier"
+grep_required '^model = "gpt-5.3-codex"$' "$ROOT/templates/codex-agents/teamwork-worker.toml" \
+  "Codex worker agent must use coding model tier"
+grep_required '^model = "gpt-5.4"$' "$ROOT/templates/codex-agents/teamwork-designer.toml" \
+  "Codex designer agent must use balanced model tier"
+grep_required '^model = "gpt-5.5"$' "$ROOT/templates/codex-agents/teamwork-judge.toml" \
+  "Codex judge agent must use frontier model tier"
+grep_required '^model = "gpt-5.5"$' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" \
+  "Codex reviewer agent must use frontier model tier"
 grep -q 'all)' "$ROOT/install.sh" || fail "install.sh must support all target"
 grep -q 'project)' "$ROOT/install.sh" || fail "install.sh must support project target"
+grep -q 'codex-agents)' "$ROOT/install.sh" || fail "install.sh must support codex-agents target"
 grep -q 'claude-agents)' "$ROOT/install.sh" || fail "install.sh must support claude-agents target"
 grep_required 'platform native boundaries' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init must reference platform native boundaries"
@@ -471,12 +496,14 @@ for term in observed inferred claimed; do
   grep_required "$term" "$ROOT/skills/teamwork-review/SKILL.md" "review skill must mention $term evidence"
 done
 
-grep_required 'Explorer -> `agent_type:"explorer"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
-  "dispatch policy reference must map Explorer to Codex explorer"
-grep_required 'Worker -> `agent_type:"worker"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
-  "dispatch policy reference must map Worker to Codex worker"
-grep_required 'Designer, Judge, Reviewer -> `agent_type:"default"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
-  "dispatch policy reference must map review roles to Codex default"
+grep_required 'Explorer -> `agent_type:"teamwork_explorer"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy reference must map Explorer to Codex custom agent"
+grep_required '`agent_type:"teamwork_worker"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy reference must map Worker to Codex custom agent"
+grep_required '`agent_type:"teamwork_judge"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy reference must map Judge to Codex custom agent"
+grep_required 'Fallback when custom agents are unavailable' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy reference must define Codex built-in fallback mapping"
 grep_required '`fast` -> `reasoning_effort:"low"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must map fast tier"
 grep_required '`standard` -> `reasoning_effort:"medium"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
@@ -495,6 +522,8 @@ grep_required 'reasoning `high`' "$ROOT/skills/using-teamwork/references/dispatc
   "Judge/Reviewer profiles must require high reasoning class"
 grep_required 'Codex Model Mapping' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must define Codex model mapping"
+grep_required 'Codex Native Field Presets' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy reference must define explicit Codex native field presets"
 grep_required '`cheap-fast` -> `gpt-5.4-mini`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "model mapping must define cheap-fast model"
 grep_required 'opt-in only for trivial read-only' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
@@ -505,6 +534,14 @@ grep_required '`coding` -> `gpt-5.3-codex`' "$ROOT/skills/using-teamwork/referen
   "model mapping must define coding model"
 grep_required '`frontier` -> `gpt-5.5`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "model mapping must define frontier model"
+grep_required 'Explorer default: `agent_type:"explorer"`, `model:"gpt-5.4"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Codex Explorer preset must pin balanced model"
+grep_required 'Worker default: `agent_type:"worker"`, `model:"gpt-5.3-codex"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Codex Worker preset must pin coding model"
+grep_required 'Judge default: `agent_type:"default"`, `model:"gpt-5.5"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Codex Judge preset must pin frontier model"
+grep_required 'Codex Native Field Presets' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+  "subagent prompt contract must require Codex native field presets"
 grep_required 'Platform Dispatch Fields' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must define platform dispatch fields"
 grep_required 'Cursor Mapping' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
@@ -595,7 +632,7 @@ grep_required 'Native Fields: platform dispatch fields from `dispatch-policy.md`
   "subagent prompt contract must require native fields"
 grep_required 'on Cursor `subagent_type`, `model` or `model: inherited`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must document Cursor native fields"
-grep_required 'Never imply a stronger model than the' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+grep_required 'Never imply a stronger model' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must prevent misleading model claims"
 grep_required 'Context Strategy: one value from `Context Strategies`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require context strategy"
@@ -716,6 +753,20 @@ done
 [[ -f "$tmp/home/.codex/skills/using-teamwork/references/workflow-contract.md" ]] \
   || fail "Codex install must copy using-teamwork references"
 
+HOME="$tmp/home-codex-agents" "$ROOT/install.sh" codex-agents >/dev/null
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+  [[ -f "$tmp/home-codex-agents/.codex/agents/$agent.toml" ]] \
+    || fail "Codex agent install missing $agent"
+  [[ ! -L "$tmp/home-codex-agents/.codex/agents/$agent.toml" ]] \
+    || fail "default Codex agent install must copy $agent"
+done
+
+HOME="$tmp/home-codex-agents-link" "$ROOT/install.sh" --link codex-agents >/dev/null
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+  [[ -L "$tmp/home-codex-agents-link/.codex/agents/$agent.toml" ]] \
+    || fail "Codex agent link install must symlink $agent"
+done
+
 unknown_teamwork_dir="$tmp/home-unknown/.codex/skills/teamwork"
 mkdir -p "$unknown_teamwork_dir/references"
 printf '%s\n' '---' 'name: teamwork' 'description: Use when selecting a Teamwork stage.' '---' > "$unknown_teamwork_dir/SKILL.md"
@@ -756,17 +807,24 @@ for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/home-all/.cursor/skills/$skill" ]] || fail "all install must link Cursor skill $skill"
   [[ -L "$tmp/home-all/.claude/skills/$skill" ]] || fail "all install must link Claude skill $skill"
 done
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+  [[ -L "$tmp/home-all/.codex/agents/$agent.toml" ]] || fail "all install must link Codex agent $agent"
+done
 [[ ! -e "$tmp/home-all/.claude/skills/teamwork" ]] || fail "all install must remove retired teamwork skill"
 
 old_root="$ROOT"
 ROOT="$tmp/project-repo"
-mkdir -p "$ROOT/skills" "$ROOT/templates/claude-agents"
+mkdir -p "$ROOT/skills" "$ROOT/templates/claude-agents" "$ROOT/templates/codex-agents"
 cp -R "$old_root/skills/." "$ROOT/skills/"
 cp -R "$old_root/templates/claude-agents/." "$ROOT/templates/claude-agents/"
+cp -R "$old_root/templates/codex-agents/." "$ROOT/templates/codex-agents/"
 cp "$old_root/install.sh" "$ROOT/install.sh"
 HOME="$tmp/home-project" ROOT="$ROOT" "$ROOT/install.sh" --link project >/dev/null
 for skill in "${SKILLS[@]}"; do
   [[ -L "$ROOT/.cursor/skills/$skill" ]] || fail "project install must link Cursor skill $skill"
+done
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+  [[ -L "$ROOT/.codex/agents/$agent.toml" ]] || fail "project install must link Codex agent $agent"
 done
 for agent in explore worker code-reviewer; do
   [[ -L "$ROOT/.claude/agents/$agent.md" ]] || fail "project install must link Claude agent $agent"

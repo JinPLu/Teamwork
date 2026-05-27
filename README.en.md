@@ -102,6 +102,7 @@ Install all platforms (recommended after upgrades):
 
 ```bash
 ./install.sh all
+./install.sh codex-agents
 ./install.sh claude-agents
 ```
 
@@ -111,10 +112,11 @@ Per platform:
 ./install.sh codex
 ./install.sh cursor
 ./install.sh claude
+./install.sh codex-agents
 ```
 
-Project-local Cursor skills and Claude agents in the current checkout
-(`.cursor/skills/` and `.claude/agents/`, both gitignored):
+Project-local Cursor skills, Codex agents, and Claude agents in this checkout
+(`.cursor/skills/`, `.codex/agents/`, and `.claude/agents/`, all gitignored):
 
 ```bash
 ./install.sh project

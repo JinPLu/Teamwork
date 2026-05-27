@@ -13,7 +13,8 @@ Platform metadata lives in `.codex-plugin/` and `.claude-plugin/`. User-facing r
 - `./install.sh cursor`: installs the Teamwork skill set into `~/.cursor/skills`.
 - `./install.sh claude`: installs the Teamwork skill set into `~/.claude/skills`.
 - `./install.sh all`: installs skills to codex, cursor, and claude home directories.
-- `./install.sh project`: installs project `.cursor/skills/` and `.claude/agents/`.
+- `./install.sh project`: installs project `.cursor/skills/`, `.codex/agents/`, and `.claude/agents/`.
+- `./install.sh codex-agents`: installs Teamwork custom agents into `~/.codex/agents/`.
 - `./install.sh claude-agents`: installs Teamwork subagents into `~/.claude/agents/`.
 - `./install.sh --link`: installs symlinks for local development (combine with any target).
 

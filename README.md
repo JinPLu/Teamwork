@@ -97,6 +97,7 @@ docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 
 ```bash
 ./install.sh all
+./install.sh codex-agents
 ./install.sh claude-agents
 ```
 
@@ -106,9 +107,10 @@ docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 ./install.sh codex    # 默认目标
 ./install.sh cursor
 ./install.sh claude
+./install.sh codex-agents
 ```
 
-在**当前仓库**启用项目级 Cursor skills 与 Claude agents（写入已 gitignore 的 `.cursor/skills/`、`.claude/agents/`）：
+在**当前仓库**启用项目级 Cursor skills、Codex agents 与 Claude agents（写入已 gitignore 的 `.cursor/skills/`、`.codex/agents/`、`.claude/agents/`）：
 
 ```bash
 ./install.sh project

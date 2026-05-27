@@ -31,18 +31,26 @@ CLAUDE_AGENTS=(
   worker
   code-reviewer
 )
+CODEX_AGENTS=(
+  teamwork-explorer
+  teamwork-worker
+  teamwork-designer
+  teamwork-judge
+  teamwork-reviewer
+)
 
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] codex|cursor|claude|all|project|claude-agents
+  ./install.sh [--copy|--link] codex|cursor|claude|all|project|codex-agents|claude-agents
 
 Targets:
   codex          Install skills to ~/.codex/skills (default target)
   cursor         Install skills to ~/.cursor/skills
   claude         Install skills to ~/.claude/skills
   all            Install skills to codex, cursor, and claude home directories
-  project        Install skills to <repo>/.cursor/skills and agents to <repo>/.claude/agents
+  project        Install skills to <repo>/.cursor/skills and agents to <repo>/.codex/agents and <repo>/.claude/agents
+  codex-agents   Install Teamwork Codex custom agents to ~/.codex/agents
   claude-agents  Install Teamwork Claude subagents to ~/.claude/agents
 
 Default mode is --copy. Use --link for local development when installs should
@@ -181,6 +189,21 @@ install_claude_agent_set() {
   echo "Installed $label Claude agents under: $dest_root ($INSTALL_MODE)"
 }
 
+install_codex_agent_set() {
+  local dest_root="$1"
+  local label="$2"
+  local agent
+
+  mkdir -p "$dest_root"
+  for agent in "${CODEX_AGENTS[@]}"; do
+    install_agent_file \
+      "$ROOT/templates/codex-agents/$agent.toml" \
+      "$dest_root/$agent.toml"
+  done
+
+  echo "Installed $label Codex agents under: $dest_root ($INSTALL_MODE)"
+}
+
 install_codex() {
   install_skill_set "$HOME/.codex/skills" "Codex"
 }
@@ -197,11 +220,17 @@ install_all() {
   install_codex
   install_cursor
   install_claude
+  install_codex_agents_home
 }
 
 install_project() {
   install_skill_set "$ROOT/.cursor/skills" "project Cursor"
+  install_codex_agent_set "$ROOT/.codex/agents" "project"
   install_claude_agent_set "$ROOT/.claude/agents" "project Claude Code"
+}
+
+install_codex_agents_home() {
+  install_codex_agent_set "$HOME/.codex/agents" "user"
 }
 
 install_claude_agents_home() {
@@ -220,7 +249,7 @@ while [[ $# -gt 0 ]]; do
       INSTALL_MODE="link"
       shift
       ;;
-    codex|cursor|claude|all|project|claude-agents)
+    codex|cursor|claude|all|project|codex-agents|claude-agents)
       if [[ -n "$TARGET" ]]; then
         echo "Specify only one install target." >&2
         usage
@@ -256,6 +285,9 @@ case "${TARGET:-codex}" in
     ;;
   project)
     install_project
+    ;;
+  codex-agents)
+    install_codex_agents_home
     ;;
   claude-agents)
     install_claude_agents_home

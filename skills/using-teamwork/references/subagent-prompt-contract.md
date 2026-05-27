@@ -43,10 +43,12 @@ Every delegated prompt includes:
   changes public behavior, architecture, or contracts.
 - Required Output Schema: matching packet from `subagent-packets.md`.
 
-If `model` is omitted, write `model: inherited` and why inheritance is safer
-than an explicit Role Profile model. If `model` is pinned, write the model
-class and reason for the override. Never imply a stronger model than the Native
-Fields request.
+For Codex, prefer installed Teamwork custom agents from `Codex Mapping`; when
+falling back to built-ins, fill native fields from `Codex Native Field Presets`
+unless using `full-history-fork`. If `model` is omitted, write
+`model: inherited` and why inheritance is safer than an explicit Role Profile
+model. If `model` is pinned, write the model class and reason for the override.
+Never imply a stronger model than the Native Fields request.
 
 ## Role Templates
 
