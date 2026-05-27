@@ -30,8 +30,9 @@ Use the lightest planning form that preserves correctness.
 
 - Lightweight plan: bounded low-risk work; include goal, scope, Dispatch
   Guidance, steps, verification, Expected Results, stop condition, review need.
-  Use lightweight `Dispatch Guidance:` for expected subagent routing or serial
-  rationale.
+  Use lightweight `Dispatch Guidance:` for expected subagent routing. Use
+  `Dispatch Guidance: none` only when the work is single-track, tightly
+  coupled, or cheaper to keep local under Dispatch Economics.
 - Durable plan: required for goal-mode, cross-turn, high-risk, ambiguous,
   public/shared behavior, long delegation, complex Worker fan-out, or explicit
   repository-plan requests.
@@ -45,8 +46,8 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 2. Build Requirements Mapping from each requirement to evidence or
    verification.
 3. Define in/out/protected scope and choose the smallest producer-side change.
-4. Run the Parallelization Gate before implementation steps: split before implementation steps, apply the Subagent Tool Discovery Gate, or emit
-   `Dispatch Exception:` with the allowed reason.
+4. Run the Parallelization Gate before implementation steps: split before implementation steps by default for independent tracks, apply the Subagent Tool
+   Discovery Gate, or emit `Dispatch Exception:` with the allowed reason. Do not wait for the user to request subagents.
 5. Use Designer for ambiguous choices unless observed evidence already fixes
    the decision. Use a fresh-context Judge before delivering high-risk,
    durable, delegated, or goal-mode plans; if unavailable after discovery or

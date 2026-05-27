@@ -5,9 +5,9 @@ description: Use when reviewing a plan, diff, completed implementation, or befor
 
 # Teamwork Review
 
-Use for a distinct reviewer pass when review adds value. Review reads direct
-evidence, preserves dissent, and does not rely only on planner/executor/tool
-summaries.
+Use for required non-lightweight acceptance and for distinct reviewer passes
+when review adds value. Review reads direct evidence, preserves dissent, and
+does not rely only on planner/executor/tool summaries.
 
 Read only as needed:
 
@@ -22,7 +22,8 @@ Read only as needed:
 
 - Choose `mode: plan` or `mode: execution`.
 - Default to fresh-context Reviewer subagents for non-lightweight plan/execution
-  acceptance. Same-context self-review is not acceptance.
+  acceptance without waiting for the user to request subagents.
+  Same-context self-review is not acceptance.
 - Local review is allowed only for lightweight work, subagent tools unavailable
   after the Subagent Tool Discovery Gate, or explicit user opt-out; label any
   non-lightweight verdict as unreviewed.

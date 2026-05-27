@@ -4,7 +4,9 @@ Teamwork is a platform-native augmentation layer for Cursor. Cursor native
 capabilities remain the substrate: editing, shell, MCP, permissions, `Task`
 subagents, browser automation, and verification. Teamwork defines when and how
 those capabilities should be combined for evidence-heavy, reviewed, delegated, or
-autonomous work.
+autonomous work. After Teamwork activates, only quick factual answers,
+one-liners, and tiny obvious edits stay native; non-lightweight work defaults to
+proactive subagent dispatch and fresh Reviewer acceptance.
 
 ## Install
 
@@ -42,6 +44,13 @@ Teamwork keeps conceptual roles (Explorer, Designer, Judge, Worker, Reviewer) an
 model classes (`cheap-fast`, `balanced`, `coding`, `frontier`, `inherited`)
 platform-neutral. At dispatch time, translate them through Cursor mapping in
 `skills/using-teamwork/references/dispatch-policy.md`:
+
+Teamwork activation is standing authorization for stage-routed proactive
+dispatch on non-lightweight work; the user does not need to say "fan out
+subagents". Dispatch independent Explorer, Designer, Judge, Worker, or Reviewer
+tracks when they can improve elapsed time, context isolation, or review quality.
+Non-lightweight acceptance requires a fresh Reviewer unless `Task` is
+unavailable after discovery or the user opts out.
 
 - Explorer -> `subagent_type:"explore"`
 - Worker -> `subagent_type:"generalPurpose"` or `shell` for shell-only tracks

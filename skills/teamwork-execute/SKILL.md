@@ -39,9 +39,9 @@ back to research or plan.
 For non-lightweight execution, re-run the Worker split from accepted steps,
 files, components, and ownership; dispatch parallel Worker subagents by default
 when tracks are independent and pass Dispatch Economics, even if the plan did
-not name every Worker. Apply the Subagent Tool Discovery Gate before keeping
-independent tracks local. Before dispatching more than 3 Workers, state
-ownership, integration order, verification, and why parallel beats serial.
+not name every Worker and even if the user did not request subagents. Apply the
+Subagent Tool Discovery Gate before keeping independent tracks local. Before dispatching more than 3 Workers, state ownership map, integration order,
+verification plan, and why parallel beats serial.
 
 Worker prompts follow the Subagent Prompt Contract, use disjoint ownership or
 worktree isolation, and require Worker Completion Packet.
@@ -49,8 +49,8 @@ worktree isolation, and require Worker Completion Packet.
 ## Execution Steps
 
 1. Re-read plan and relevant source.
-2. Dispatch Workers or emit `Dispatch Exception:` with continuity rationale;
-   start Actual Dispatch Log when subagents run.
+2. Dispatch Workers for independent tracks or emit `Dispatch Exception:` with
+   continuity rationale; start Actual Dispatch Log when subagents run.
 3. State files you or Workers intend to touch.
 4. Make only planned, minimal, producer-side edits.
 5. Integrate Worker Completion Packets before final verification.

@@ -6,33 +6,32 @@ description: Use when starting any coding-agent task including coding, debugging
 # Using Teamwork
 
 Teamwork is a platform-native augmentation layer. Native Codex, Cursor, or
-Claude Code capabilities do the work; Teamwork adds evidence discipline, stage
-routing, proactive dispatch, review, durable memory, and goal convergence.
-Evidence labels are observed, inferred, or claimed.
-
-Keep simple work native. Route only when Teamwork changes the outcome.
+Claude Code capabilities do the work; Teamwork orchestration is the default for
+coding-agent work that is not clearly lightweight. It adds evidence discipline,
+stage routing, proactive dispatch, review, durable memory, and goal
+convergence. Evidence labels: observed, inferred, claimed.
 
 ## References
 
-Load only focused references. `references/workflow-contract.md` owns Evidence Interpretation Contract, Platform Native Policy Map, Context & Cost Discipline, and Subagent Collaboration Model; dispatch policy owns Dispatch Economics.
+Load focused references only. `references/workflow-contract.md` owns Evidence Interpretation Contract, Platform Native Policy Map, Context & Cost Discipline, and Subagent Collaboration Model; `dispatch-policy.md` owns Dispatch Economics.
 
 ## Route Check
 
 | Signal | Route |
 |---|---|
-| Need evidence before choosing | `skills/teamwork-research/SKILL.md` |
-| Initialize/slim project instructions or migrate workflow rules | `skills/teamwork-init/SKILL.md` |
-| Need a plan before non-trivial edits | `skills/teamwork-plan/SKILL.md` |
-| Accepted plan/checklist needs edits | `skills/teamwork-execute/SKILL.md` |
-| Plan, diff, or result needs scrutiny | `skills/teamwork-review/SKILL.md` |
-| Version, release, installer, or topology update | `skills/teamwork-update/SKILL.md` |
-| Iterate until verified success, budget, or blocker | `skills/teamwork-goal/SKILL.md` |
+| Evidence | `skills/teamwork-research/SKILL.md` |
+| Init/slim | `skills/teamwork-init/SKILL.md` |
+| Plan edits | `skills/teamwork-plan/SKILL.md` |
+| Execute accepted plan | `skills/teamwork-execute/SKILL.md` |
+| Review | `skills/teamwork-review/SKILL.md` |
+| Update | `skills/teamwork-update/SKILL.md` |
+| Goal loop | `skills/teamwork-goal/SKILL.md` |
 
 ## Automatic Stage Selection
 
 Do not wait for the user to name a Teamwork skill when intent is clear; discovery reads frontmatter before route filtering.
 
-- Planning: "plan", "design", "figure out", non-trivial "implement/fix/add/change" after evidence; unclear root/source/API/failure/evidence/risk routes research first.
+- Planning: "plan", "design", "figure out", non-trivial "implement/fix/add/change"; unclear root/source/API/failure/evidence/risk routes research first.
 - Init: "init", "initialize", "AGENTS", "CODEX", "CURSOR", "CLAUDE", "slim instructions", "workflow rules".
 - Execution: "go ahead", "execute", "continue", "resume", "do it".
 - Review: "review", "check", "validate", "look over the diff".
@@ -42,22 +41,23 @@ Do not wait for the user to name a Teamwork skill when intent is clear; discover
 For autonomous convergence, route to `teamwork-goal` for chat-only `Goal Proposal`
 before platform goal handoff unless an active goal surface exists.
 
-## Native Default
+## Orchestration Default
 
-Native flow is correct for quick factual answers, one-liners, and small edits
-with obvious verification. Do not create artifacts, subagents, durable plans,
-or review passes for ceremony.
+Native flow is only for quick factual answers, one-liners, and tiny obvious
+edits. Do not create artifacts, subagents, durable plans, or review ceremony.
 
 Before staying native for non-trivial work, state scope, path, boundaries, and
 success check. If unclear, route to research.
 
-When Teamwork is active, the main agent orchestrates. For non-lightweight work,
-apply Stage-Routed Proactive Dispatch before serial work; acceptance needs a
-fresh Reviewer, not self-review. Plans may suggest routing; stage dispatch need not
-wait for named tracks.
+When Teamwork is active, the main agent orchestrates. Apply Stage-Routed Proactive Dispatch before serial work: split independent tracks, use the
+Subagent Tool Discovery Gate, then dispatch Explorer, Designer, Judge, Worker,
+or Reviewer tracks unless an allowed `Dispatch Exception:` applies. Acceptance
+needs a fresh Reviewer, not self-review.
 
-Before treating subagents as unavailable, use the Subagent Tool Discovery Gate
-(`spawn_agent` on Codex, `Task` on Cursor or Claude Code).
+Plans may suggest routing; stage dispatch must not wait for named tracks or
+explicit phrases. The user does not need to ask to "fan out subagents".
+
+Before treating subagents as unavailable, use the Subagent Tool Discovery Gate.
 Skipped required dispatch needs `Dispatch Exception:`; non-lightweight
 acceptance without a fresh Reviewer remains `unreviewed`.
 

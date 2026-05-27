@@ -1,25 +1,24 @@
 # Dispatch Policy
 
-Use when deciding whether to dispatch subagents or when reviewing dispatch
-economics. Keep prompt details in `subagent-prompt-contract.md` and packet
-schemas in `subagent-packets.md`.
+Use when dispatching subagents or reviewing dispatch economics. Keep prompts in
+`subagent-prompt-contract.md`; keep packet schemas in `subagent-packets.md`.
 
 ## Stage-Routed Proactive Dispatch
 
-Teamwork stages authorize their own non-destructive subagent dispatch. Do not
-wait for the user, `Goal Proposal`, `Dispatch Guidance:`, or durable
-`Subagent Routing` to name every track.
+Teamwork activation is standing authorization for non-destructive stage
+dispatch. For non-lightweight work, parallel subagents are the default execution substrate when independent tracks exist. Do not wait for the user to say "fan out subagents", or for `Goal Proposal`, `Dispatch Guidance:`, or
+durable `Subagent Routing` to explicitly name every track.
 
 - Research: Explorer tracks for 2+ separable evidence questions.
-- Plan: Designer for ambiguous choices; Judge for durable, high-risk,
-  ambiguous, delegated, or goal-mode plans.
+- Plan: Designer for ambiguity; Judge for durable, risky, delegated, or
+  goal-mode plans.
 - Execute: Worker split from accepted steps, files, components, and ownership.
 - Review: fresh-context Reviewer for non-trivial execution, high-risk diffs, or
-  acceptance; same-context self-review cannot accept non-lightweight work.
-- Goal: rerun the stage dispatch decision on each failed attempt.
+  acceptance; self-review cannot accept non-lightweight work.
+- Goal: rerun stage dispatch on each failed attempt.
 
 Plans record expected routing. Execution records actual dispatch. Review checks
-both.
+both. If non-lightweight work stays serial, record the allowed exception.
 
 ## Subagent Tool Discovery Gate
 
@@ -30,7 +29,7 @@ plan, or accepting non-lightweight work: use the active platform subagent tool
 unavailability. Only failed discovery proves unavailable tools. For bounded
 Codex role dispatch, set an explicit Role Profile model; use `inherited` only
 for full-history forks, parent-model continuity, or explicit user model intent.
-Record conceptual role, model class, native fields, and the pin/inherit reason.
+Record role, model class, native fields, and pin/inherit reason.
 When required dispatch is skipped, write:
 
 ```text
@@ -48,19 +47,19 @@ implements owned scope; Reviewer checks diffs, tests, logs, and artifacts.
 
 ## Dispatch Economics
 
-- Explorer/Reviewer: default max 3 parallel unless the user gives a larger
-  budget; keep raw evidence out of the main context.
-- Worker: no fixed numeric cap; dispatch one per independent owned track when
+- Explorer/Reviewer: default max 3 parallel unless user gives larger budget;
+  keep raw evidence out of the main context.
+- Worker: no fixed numeric cap; dispatch per independent owned track when
   elapsed time or isolation improves. Before dispatching more than 3 Workers,
   state ownership map, integration order, verification, and why parallel is
   cheaper than serial.
-- Use batch or worktree isolation when ownership is uncertain or merge cost may
+- Use batch or worktree isolation when ownership is unclear or merge cost may
   dominate.
 - If not dispatching, state why local execution is cheaper or safer. For
   non-lightweight review, unavailable tools or explicit user opt-out are the
   only acceptable reasons to skip a fresh Reviewer; mark acceptance unreviewed.
-- CodeGraph may replace Explorer only for a single structural code question.
-  Multi-domain research still applies the discovery gate and stage dispatch.
+- CodeGraph may replace Explorer for one structural code question.
+  Multi-domain research still applies discovery gate and stage dispatch.
 
 ## Role Profiles
 
@@ -119,7 +118,7 @@ or non-mechanical Worker implementation.
 - `coding` -> `gpt-5.3-codex`; use `frontier` when task risk or breadth
   matters more than credit efficiency.
 - `frontier` -> `gpt-5.5`.
-- `inherited` -> omit `model`; record why inheritance beats the Role Profile
+- `inherited` -> omit `model`; record why inheritance beats Role Profile
   model.
 
 ## Codex Native Field Presets
@@ -161,7 +160,7 @@ appear as `default` subagents unless prompt/logs show conceptual role.
   isolation.
 - `subagent_type: "ci-investigator"` -> single failing CI check during goal-mode
   failure analysis.
-- Browser or UI verification -> use browser automation when execute/verify needs
+- Browser or UI verification -> use browser automation when verification needs
   inspected behavior.
 
 ## Cursor Model Mapping
@@ -171,7 +170,7 @@ version when the user did not request a specific model.
 
 - `cheap-fast` -> `composer-2.5-fast`; opt-in only for trivial read-only,
   verifiable output under explicit latency/quota pressure.
-- `balanced` -> `gpt-5.5-medium` when listed; otherwise use the strongest
+- `balanced` -> `gpt-5.5-medium` when listed; otherwise strongest
   non-frontier model listed in the active schema.
 - `coding` -> `gpt-5.5-medium` when listed; otherwise use the strongest coding
   or non-frontier model listed in the active schema.
