@@ -365,13 +365,21 @@ grep_required '^model: opus$' "$ROOT/templates/claude-agents/code-reviewer.md" \
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
   [[ -f "$ROOT/templates/codex-agents/$agent.toml" ]] \
     || fail "missing templates/codex-agents/$agent.toml"
-  grep_required '^name = "teamwork_' "$ROOT/templates/codex-agents/$agent.toml" \
-    "Codex agent template must declare teamwork_ name: $agent"
   grep_required '^description = ' "$ROOT/templates/codex-agents/$agent.toml" \
     "Codex agent template must declare description: $agent"
   grep_required '^developer_instructions = """' "$ROOT/templates/codex-agents/$agent.toml" \
     "Codex agent template must declare developer_instructions: $agent"
 done
+grep_required '^name = "teamwork_explorer"$' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
+  "Codex explorer agent must declare exact name"
+grep_required '^name = "teamwork_worker"$' "$ROOT/templates/codex-agents/teamwork-worker.toml" \
+  "Codex worker agent must declare exact name"
+grep_required '^name = "teamwork_designer"$' "$ROOT/templates/codex-agents/teamwork-designer.toml" \
+  "Codex designer agent must declare exact name"
+grep_required '^name = "teamwork_judge"$' "$ROOT/templates/codex-agents/teamwork-judge.toml" \
+  "Codex judge agent must declare exact name"
+grep_required '^name = "teamwork_reviewer"$' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" \
+  "Codex reviewer agent must declare exact name"
 grep_required '^model = "gpt-5.4"$' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
   "Codex explorer agent must use balanced model tier"
 grep_required '^model = "gpt-5.3-codex"$' "$ROOT/templates/codex-agents/teamwork-worker.toml" \
@@ -500,8 +508,12 @@ grep_required 'Explorer -> `agent_type:"teamwork_explorer"`' "$ROOT/skills/using
   "dispatch policy reference must map Explorer to Codex custom agent"
 grep_required '`agent_type:"teamwork_worker"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must map Worker to Codex custom agent"
+grep_required '`agent_type:"teamwork_designer"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy reference must map Designer to Codex custom agent"
 grep_required '`agent_type:"teamwork_judge"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must map Judge to Codex custom agent"
+grep_required '`agent_type:"teamwork_reviewer"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy reference must map Reviewer to Codex custom agent"
 grep_required 'Fallback when custom agents are unavailable' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must define Codex built-in fallback mapping"
 grep_required '`fast` -> `reasoning_effort:"low"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
@@ -809,6 +821,9 @@ for skill in "${SKILLS[@]}"; do
 done
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
   [[ -L "$tmp/home-all/.codex/agents/$agent.toml" ]] || fail "all install must link Codex agent $agent"
+done
+for agent in explore worker code-reviewer; do
+  [[ -L "$tmp/home-all/.claude/agents/$agent.md" ]] || fail "all install must link Claude agent $agent"
 done
 [[ ! -e "$tmp/home-all/.claude/skills/teamwork" ]] || fail "all install must remove retired teamwork skill"
 

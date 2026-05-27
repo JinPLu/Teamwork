@@ -51,9 +51,8 @@ For failed goal iterations, refresh research and check whether the active plan w
 
 Use focused subagent references at dispatch time: `skills/using-teamwork/references/dispatch-policy.md` for when to dispatch, cap/economics rules, native Codex dispatch fields, and role-specific model classes; `skills/using-teamwork/references/subagent-prompt-contract.md` for prompt shape and `Native Fields`; and `skills/using-teamwork/references/subagent-packets.md` for Worker / Reviewer handoff packets. Plan `Dispatch Guidance:` is advisory; the active stage owns the actual dispatch decision and should record what it did when execution/report artifacts are warranted:
 
-- Explorer -> `agent_type:"explorer"`.
-- Worker -> `agent_type:"worker"`.
-- Designer, Judge, Reviewer -> `agent_type:"default"` with the conceptual role in the prompt.
+- Preferred custom agents -> `agent_type:"teamwork_explorer"`, `"teamwork_worker"`, `"teamwork_designer"`, `"teamwork_judge"`, or `"teamwork_reviewer"`.
+- Built-in fallback -> Explorer uses `agent_type:"explorer"`, Worker uses `agent_type:"worker"`, and Designer/Judge/Reviewer use `agent_type:"default"` with the conceptual role in the prompt.
 - `fast`, `standard`, and `high reasoning` map to low, medium, and high reasoning effort.
 - Prefer installed Teamwork custom agents from `~/.codex/agents` or `.codex/agents`: `teamwork_explorer`, `teamwork_worker`, `teamwork_designer`, `teamwork_judge`, and `teamwork_reviewer`. They pin role models directly: Explorer/Designer `gpt-5.4`, Worker `gpt-5.3-codex`, Judge/Reviewer `gpt-5.5`. If custom agents are unavailable, fall back to built-in `explorer`, `worker`, or `default` with explicit model overrides from `dispatch-policy.md`; do not let Explorer/Worker inherit a `gpt-5.5` parent by accident. Without custom agents, Designer/Judge/Reviewer appear as `default` subagents in Codex UI because Codex has no native role-specific agent types for them. `cheap-fast` is opt-in only for trivial read-only work under explicit latency or quota pressure.
 

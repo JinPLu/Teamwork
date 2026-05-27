@@ -221,6 +221,7 @@ install_all() {
   install_cursor
   install_claude
   install_codex_agents_home
+  install_claude_agents_home
 }
 
 install_project() {

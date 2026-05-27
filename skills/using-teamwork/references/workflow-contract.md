@@ -129,7 +129,7 @@ risk instead of presenting it as accepted.
 Subagent authorization is Stage-Routed Proactive Dispatch. Once a Teamwork
 stage is active, that stage may dispatch non-destructive Explorer, Designer,
 Judge, Worker, or Reviewer tracks that fit the stage contract. A plan's
-`Dispatch:` or durable `Subagent Routing` is routing guidance, not the only
+`Dispatch Guidance:` or durable `Subagent Routing` is routing guidance, not the only
 authorization source. The execution stage must re-evaluate the split from the
 accepted plan, source ownership, and current workspace evidence before editing.
 
