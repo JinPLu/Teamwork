@@ -368,7 +368,7 @@ grep_required 'CURSOR.md' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init must inspect CURSOR.md"
 grep_required 'AGENTS/CODEX/CURSOR/CLAUDE' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init description must mention AGENTS/CODEX/CURSOR/CLAUDE"
-grep_required 'Codex authorization: keep | add | user-opt-out' "$ROOT/skills/teamwork-init/SKILL.md" \
+grep_required 'Codex authorization: global | project-add | user-opt-out' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init must report Codex subagent authorization audit state"
 for agent in explore worker code-reviewer; do
   [[ -f "$ROOT/templates/claude-agents/$agent.md" ]] \
@@ -798,6 +798,54 @@ for skill in "${SKILLS[@]}"; do
 done
 [[ -f "$tmp/home/.codex/skills/using-teamwork/references/workflow-contract.md" ]] \
   || fail "Codex install must copy using-teamwork references"
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+  [[ -f "$tmp/home/.codex/agents/$agent.toml" ]] \
+    || fail "Codex install must copy Codex agent $agent"
+  [[ ! -L "$tmp/home/.codex/agents/$agent.toml" ]] \
+    || fail "default Codex install must copy Codex agent $agent"
+done
+grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$tmp/home/.codex/AGENTS.md" \
+  "Codex install must create Teamwork global AGENTS block"
+grep_required 'Teamwork Codex Global Policy' "$tmp/home/.codex/AGENTS.md" \
+  "Codex install must write Teamwork global policy heading"
+grep_required 'Agent efficiency comes first' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must prioritize agent efficiency"
+grep_required 'Remote execution:' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must include remote execution default"
+
+agents_preserve_home="$tmp/home-agents-preserve"
+mkdir -p "$agents_preserve_home/.codex"
+cat > "$agents_preserve_home/.codex/AGENTS.md" <<'AGENTS'
+Personal rule before.
+
+<!-- TEAMWORK_CODEX_GLOBAL_START -->
+old managed content
+<!-- TEAMWORK_CODEX_GLOBAL_END -->
+
+No user needs to specify sub-agents for distribution; default assignment is used.
+
+All code runs on a remote server; the local environment only supports basic testing and syntax checking.
+
+<!-- CODEGRAPH_START -->
+Keep CodeGraph instructions.
+<!-- CODEGRAPH_END -->
+AGENTS
+HOME="$agents_preserve_home" "$ROOT/install.sh" codex >/dev/null
+grep_required 'Personal rule before.' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must preserve user content"
+grep_required '<!-- CODEGRAPH_START -->' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must preserve CodeGraph block"
+grep_required 'Agent efficiency comes first' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must replace managed block"
+grep_absent 'old managed content' \
+  "Codex global policy install must replace old managed content" \
+  "$agents_preserve_home/.codex/AGENTS.md"
+grep_absent 'No user needs to specify sub-agents' \
+  "Codex global policy install must remove retired subagent sentence" \
+  "$agents_preserve_home/.codex/AGENTS.md"
+grep_absent 'All code runs on a remote server' \
+  "Codex global policy install must migrate retired remote sentence" \
+  "$agents_preserve_home/.codex/AGENTS.md"
 
 HOME="$tmp/home-codex-agents" "$ROOT/install.sh" codex-agents >/dev/null
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
@@ -806,6 +854,8 @@ for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge 
   [[ ! -L "$tmp/home-codex-agents/.codex/agents/$agent.toml" ]] \
     || fail "default Codex agent install must copy $agent"
 done
+[[ ! -e "$tmp/home-codex-agents/.codex/AGENTS.md" ]] \
+  || fail "codex-agents target must not write global AGENTS policy"
 
 HOME="$tmp/home-codex-agents-link" "$ROOT/install.sh" --link codex-agents >/dev/null
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do

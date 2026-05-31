@@ -102,17 +102,19 @@ Install all platforms (recommended after upgrades):
 
 ```bash
 ./install.sh all
-./install.sh codex-agents
-./install.sh claude-agents
 ```
+
+`all` refreshes Codex, Cursor, and Claude Code skills, installs Codex custom
+agents and Claude agents, and maintains the Teamwork global policy block in
+Codex `~/.codex/AGENTS.md`.
 
 Per platform:
 
 ```bash
-./install.sh codex
+./install.sh codex          # Codex skills + custom agents + global policy
 ./install.sh cursor
 ./install.sh claude
-./install.sh codex-agents
+./install.sh codex-agents   # agents only under ~/.codex/agents/
 ```
 
 Project-local Cursor skills, Codex agents, and Claude agents in this checkout

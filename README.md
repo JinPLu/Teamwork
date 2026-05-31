@@ -97,17 +97,17 @@ docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 
 ```bash
 ./install.sh all
-./install.sh codex-agents
-./install.sh claude-agents
 ```
+
+`all` 会刷新 Codex、Cursor、Claude Code skills，并安装 Codex custom agents、Claude agents；Codex 侧还会维护 `~/.codex/AGENTS.md` 中的 Teamwork 全局规则块。
 
 按平台单独安装：
 
 ```bash
-./install.sh codex    # 默认目标
+./install.sh codex    # 默认目标；Codex skills + custom agents + 全局规则
 ./install.sh cursor
 ./install.sh claude
-./install.sh codex-agents
+./install.sh codex-agents   # 仅刷新 ~/.codex/agents/
 ```
 
 在**当前仓库**启用项目级 Cursor skills、Codex agents 与 Claude agents（写入已 gitignore 的 `.cursor/skills/`、`.codex/agents/`、`.claude/agents/`）：

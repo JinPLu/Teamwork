@@ -5,9 +5,11 @@ setup, cleanup, or migration into Teamwork.
 
 ## Project Rule Layering
 
-- Root `AGENTS.md`: long-lived project boundaries, repo map, local/remote
-  execution policy, protected actions, and the minimum tool arbitration needed
-  before reading deeper files.
+- Global `~/.codex/AGENTS.md`: portable Teamwork defaults installed by
+  `./install.sh codex`, including Codex subagent authorization and remote
+  execution assumptions. Do not put project facts here.
+- Root `AGENTS.md`: project boundaries, repo map, local/remote policy,
+  protected actions, and minimal tool arbitration before deeper files.
 - Repo-local `AGENTS.md`: repository facts, evidence sources, commands,
   danger zones, and repo-specific acceptance expectations.
 - Platform files such as `CODEX.md`, `CURSOR.md`, `CLAUDE.md`, or `GEMINI.md`: only

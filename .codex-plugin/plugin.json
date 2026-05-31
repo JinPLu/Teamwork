@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Codex skills (also installable on Cursor and Claude Code) for evidence-first planning, execution, review, subagent routing, and native goal convergence.",
   "author": {
     "name": "JinPLu",

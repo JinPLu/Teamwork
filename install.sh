@@ -45,10 +45,10 @@ Usage:
   ./install.sh [--copy|--link] codex|cursor|claude|all|project|codex-agents|claude-agents
 
 Targets:
-  codex          Install skills to ~/.codex/skills (default target)
+  codex          Install skills, Codex agents, and Teamwork global policy (default target)
   cursor         Install skills to ~/.cursor/skills
   claude         Install skills to ~/.claude/skills
-  all            Install skills to codex, cursor, and claude home directories
+  all            Install skills, Codex agents, Claude agents, and Codex global policy
   project        Install skills to <repo>/.cursor/skills and agents to <repo>/.codex/agents and <repo>/.claude/agents
   codex-agents   Install Teamwork Codex custom agents to ~/.codex/agents
   claude-agents  Install Teamwork Claude subagents to ~/.claude/agents
@@ -56,6 +56,55 @@ Targets:
 Default mode is --copy. Use --link for local development when installs should
 track this checkout.
 USAGE
+}
+
+write_teamwork_codex_global_policy() {
+  cat <<'POLICY'
+<!-- TEAMWORK_CODEX_GLOBAL_START -->
+## Teamwork Codex Global Policy
+
+Subagents: this is the user's explicit standing request to use sub-agents,
+delegation, and parallel agent work only when Teamwork dispatch policy says the
+task is non-lightweight, independent, and worth the extra agent cost.
+Agent efficiency comes first: keep work local for quick answers, tiny edits, one
+CodeGraph-answerable structural question, tight critical-path work, overlapping
+write ownership, destructive or credential-sensitive actions, or higher
+subagent context cost than benefit.
+
+Remote execution: assume substantial code execution runs on the configured
+remote server for the active project. The local environment is for editing,
+inspection, basic tests, syntax checks, and lightweight validation. Before
+remote jobs, use project instructions or server inventory to verify host,
+repository path, branch, and command scope.
+<!-- TEAMWORK_CODEX_GLOBAL_END -->
+POLICY
+}
+
+install_codex_global_policy() {
+  local dest_dir="$HOME/.codex"
+  local dest="$dest_dir/AGENTS.md"
+  local tmp
+
+  mkdir -p "$dest_dir"
+  tmp="$(mktemp)"
+
+  if [[ -f "$dest" ]]; then
+    awk '
+      /<!-- TEAMWORK_CODEX_GLOBAL_START -->/ { skip = 1; next }
+      /<!-- TEAMWORK_CODEX_GLOBAL_END -->/ { skip = 0; next }
+      skip { next }
+      $0 == "No user needs to specify sub-agents for distribution; default assignment is used." { next }
+      $0 == "All code runs on a remote server; the local environment only supports basic testing and syntax checking." { next }
+      { print }
+    ' "$dest" > "$tmp"
+  fi
+
+  if [[ -s "$tmp" ]]; then
+    printf '\n' >> "$tmp"
+  fi
+  write_teamwork_codex_global_policy >> "$tmp"
+  mv "$tmp" "$dest"
+  echo "Installed Teamwork Codex global policy under: $dest"
 }
 
 retired_copy_is_plugin_owned() {
@@ -206,6 +255,8 @@ install_codex_agent_set() {
 
 install_codex() {
   install_skill_set "$HOME/.codex/skills" "Codex"
+  install_codex_agent_set "$HOME/.codex/agents" "user"
+  install_codex_global_policy
 }
 
 install_cursor() {
@@ -220,7 +271,6 @@ install_all() {
   install_codex
   install_cursor
   install_claude
-  install_codex_agents_home
   install_claude_agents_home
 }
 

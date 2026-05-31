@@ -36,10 +36,10 @@ behavior, installed skill surface, release metadata, or update notes.
    repeating it across stage skills.
 6. Check `SKILL.md` line/word budgets when editing skills.
 7. Run `./scripts/validate.sh`.
-8. Run `./install.sh all`, `./install.sh codex-agents`, and
-   `./install.sh claude-agents` when installed local skills or agents should
-   reflect the package update; use `./install.sh project` in checkouts that rely
-   on project-local discovery.
+8. Run `./install.sh all` when installed local skills, agents, and Codex global
+   policy should reflect the package update; use individual targets for narrow
+   refreshes and `./install.sh project` in checkouts that rely on project-local
+   discovery.
 
 ## Update Checklist
 

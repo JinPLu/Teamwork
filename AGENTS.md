@@ -9,10 +9,10 @@ Platform metadata lives in `.codex-plugin/` and `.claude-plugin/`. User-facing r
 ## Build, Test, and Development Commands
 
 - `./scripts/validate.sh`: required repository verification for skill topology, frontmatter, Codex and Claude Code manifests, artifact ignore rules, installer smoke, and platform contract checks.
-- `./install.sh codex`: installs the Teamwork skill set into `~/.codex/skills`.
+- `./install.sh codex`: installs Codex skills, Teamwork Codex agents, and the Teamwork-managed global block in `~/.codex/AGENTS.md`.
 - `./install.sh cursor`: installs the Teamwork skill set into `~/.cursor/skills`.
 - `./install.sh claude`: installs the Teamwork skill set into `~/.claude/skills`.
-- `./install.sh all`: installs skills to codex, cursor, and claude home directories.
+- `./install.sh all`: installs skills to codex, cursor, and claude home directories, plus Codex and Claude agent templates.
 - `./install.sh project`: installs project `.cursor/skills/`, `.codex/agents/`, and `.claude/agents/`.
 - `./install.sh codex-agents`: installs Teamwork custom agents into `~/.codex/agents/`.
 - `./install.sh claude-agents`: installs Teamwork subagents into `~/.claude/agents/`.
