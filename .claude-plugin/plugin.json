@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Claude Code skills for evidence-first planning, execution, review, subagent routing, and durable goal convergence.",
   "author": {
     "name": "JinPLu",

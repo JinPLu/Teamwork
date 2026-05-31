@@ -45,10 +45,12 @@ properties, git diff, or primary external evidence.
   context cost; Worker tracks are capped by ownership clarity, integration
   cost, and verification shape.
 - Treat subagent dispatch as the default substrate for non-lightweight
-  Teamwork work. Teamwork activation is standing authorization for
-  non-destructive dispatch; the user does not need to request "fan out subagents". The main agent remains the orchestrator and keeps raw evidence,
-  implementation detail, and fresh review outside the main context whenever an
-  independent track exists.
+  Teamwork work when the active platform or loaded instructions authorize
+  subagents. Codex standing authorization must come from the user's prompt or a
+  loaded project/global instruction. Teamwork activation decides dispatch economics
+  after that authorization exists. The main agent remains the
+  orchestrator and keeps raw evidence, implementation detail, and fresh review
+  outside the main context whenever an independent track exists.
 - Missing currently active subagent tools is not enough to stay local. On
   Codex, if `tool_search` is available, discover `spawn_agent` before recording
   an unavailable-tool exception. On Cursor or Claude Code, use the `Task` tool
@@ -123,22 +125,27 @@ conflict resolution, integration, final verification, and final acceptance.
 
 Same-context self-review is not acceptance for non-lightweight work. A fresh
 Reviewer subagent is required before claiming non-lightweight execution is
-complete, reviewed, or accepted. If subagents are unavailable or explicitly
-forbidden, report the work as verified-but-unreviewed and name the residual
-risk instead of presenting it as accepted.
+complete, reviewed, or accepted. If subagents are unavailable, authorization is
+missing, or dispatch is explicitly forbidden, report the work as
+verified-but-unreviewed and name the residual risk instead of presenting it as
+accepted.
 
-Subagent authorization is Stage-Routed Proactive Dispatch. Once a Teamwork
-stage is active, that stage may dispatch non-destructive Explorer, Designer,
-Judge, Worker, or Reviewer tracks that fit the stage contract. A plan's
-`Dispatch Guidance:` or durable `Subagent Routing` is routing guidance, not the only
-authorization source. The execution stage must re-evaluate the split from the
-accepted plan, source ownership, and current workspace evidence before editing.
-For non-lightweight Teamwork work with independent tracks, dispatch is the expected path; serial local work needs one of the allowed exception reasons.
+Subagent authorization has two layers: platform permission to spawn, and
+Stage-Routed Proactive Dispatch deciding when spawning is worthwhile. Once a
+Teamwork stage is active and subagents are authorized, that stage may dispatch
+non-destructive Explorer, Designer, Judge, Worker, or Reviewer tracks that fit
+the stage contract. A plan's `Dispatch Guidance:` or durable `Subagent Routing`
+is routing guidance, not the only authorization source. The execution stage
+must re-evaluate the split from the accepted plan, source ownership, and
+current workspace evidence before editing. For non-lightweight Teamwork work
+with independent tracks, dispatch is the expected path; serial local work needs
+one of the allowed exception reasons.
 
 Ask again only when dispatch needs credentials, destructive actions, unclear
-write ownership, protected-boundary changes, unavailable tools, or another
-approval-gated capability. Otherwise, dispatch proactively when an independent
-track can improve cost, elapsed time, context isolation, or quality.
+write ownership, protected-boundary changes, unavailable tools, missing Codex
+standing authorization, or another approval-gated capability. Otherwise,
+dispatch proactively when an independent track can improve cost, elapsed time,
+context isolation, or quality.
 
 For non-lightweight work, split before implementation steps and record either
 the chosen subagent tracks or the continuity rationale. If you keep work local,

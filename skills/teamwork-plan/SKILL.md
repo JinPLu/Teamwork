@@ -47,7 +47,8 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
    verification.
 3. Define in/out/protected scope and choose the smallest producer-side change.
 4. Run the Parallelization Gate before implementation steps: split before implementation steps by default for independent tracks, apply the Subagent Tool
-   Discovery Gate, or emit `Dispatch Exception:` with the allowed reason. Do not wait for the user to request subagents.
+   Discovery Gate when subagents are authorized, or emit `Dispatch Exception:`
+   with the allowed reason.
 5. Use Designer for ambiguous choices unless observed evidence already fixes
    the decision. Use a fresh-context Judge before delivering high-risk,
    durable, delegated, or goal-mode plans; if unavailable after discovery or

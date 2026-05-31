@@ -6,7 +6,7 @@
 
 Teamwork 是一个 **Codex + Cursor + Claude Code skill package**。各平台 native capabilities 是 execution substrate：Codex 侧有原生 goal、`update_plan`、`spawn_agent`；Cursor 侧有 `Task` subagents、MCP、browser 和 permissions；Claude Code 侧有 `Task` subagents（用户自定义于 `~/.claude/agents/`）、TodoWrite、MCP 和 permissions。Teamwork 只补上一层协作策略，让复杂 coding-agent 工作更可靠：证据优先、可复用 artifacts、stage-routed proactive dispatch、经过 review 的执行，以及不会过早停止的 goal iteration。
 
-Teamwork 激活后，主 agent 默认承担 orchestrator 角色：只有 quick factual answers、one-liners 和 tiny obvious edits 保留平台 native flow；research、plan、execute、review、goal 中的非轻量工作默认主动分发独立 subagents，并在非轻量验收前使用 fresh Reviewer，而不是等待用户说 “fan out subagents” 或等待 plan 授权。
+Teamwork 激活后，主 agent 默认承担 orchestrator 角色：只有 quick factual answers、one-liners 和 tiny obvious edits 保留平台 native flow；research、plan、execute、review、goal 中的非轻量工作在平台授权后默认主动分发独立 subagents，并在非轻量验收前使用 fresh Reviewer。Codex 需要用户 prompt 或已加载项目/全局 instructions 提供显式 standing authorization；Teamwork 决定何时分发。
 
 ## 核心优势
 
@@ -42,7 +42,7 @@ Subagent references 按职责拆分：`dispatch-policy` 说明何时分发、cap
 | Cursor goal | 无原生 goal state 时，goal-mode 用 chat iteration + durable report；不强制 `create_goal`。 |
 | Claude Code goal | 同 Cursor：无原生 goal state；goal-mode 用 chat iteration + rolling report。 |
 | `update_plan` / TodoWrite | 只表示可见进度。它不是 durable execution spec、review target 或 completion proof。 |
-| Subagents | Stage-routed proactive dispatch。Teamwork 激活就是非轻量工作进行 stage dispatch 的 standing authorization；主 agent 是 orchestrator，默认分发独立 subagents，不需要用户说 “fan out subagents”。Codex 用 `spawn_agent`，优先调用 `teamwork_*` custom agents；Cursor 和 Claude Code 用 `Task`（Claude Code 的 `subagent_type` 指向 `~/.claude/agents/` 里的用户自定义 agent，未配置时回落到 `general-purpose`）。Plan 中的 `Dispatch Guidance:` 或 `Subagent Routing` 是建议，不是唯一授权。若 Codex 上 `spawn_agent` 不在 active tools 里但 `tool_search` 可用，必须先发现工具。跳过 required dispatch 必须写 `Dispatch Exception:`。Explorer/Reviewer 默认 3；Worker 无固定 cap。非轻量 review 只有 subagent discovery 失败或用户禁用时才能跳过 fresh Reviewer，且必须标 `unreviewed`。Model policy 优先少而强：Codex custom agents 直接 pin role model；fallback 才显式传 Role Profile model；`cheap-fast` 只用于显式低延迟/额度压力的轻量只读任务。 |
+| Subagents | Stage-routed proactive dispatch。Codex 需要用户 prompt 或已加载 instructions 明确授权 `spawn_agent`；`teamwork-init` 可把这个 standing authorization 写入 `CODEX.md` 或 Codex 小节。授权存在后，Teamwork 激活负责判断非轻量工作是否应分发独立 subagents。Codex 用 `spawn_agent` 并优先调用 `teamwork_*` custom agents；Cursor 和 Claude Code 用 `Task`。Plan 中的 `Dispatch Guidance:` 或 `Subagent Routing` 是建议，不是唯一授权。若 Codex 上 `spawn_agent` 不在 active tools 里但 `tool_search` 可用，必须先发现工具。跳过 required dispatch 必须写 `Dispatch Exception:`。Explorer/Reviewer 默认 3；Worker 无固定 cap。非轻量 review 只有 subagent discovery 失败、授权缺失或用户禁用时才能跳过 fresh Reviewer，且必须标 `unreviewed`。 |
 | Review | 平台 review 输出可以作为证据，但完成判断仍必须映射到 requirements、diff、tests、artifacts 和 acceptance criteria。 |
 | Sandbox/permissions | 使用各平台原生 approval 和 sandbox/permission model。Teamwork 只要求 boundaries 和 risks 明确。 |
 | Automations/heartbeat | Codex 使用原生 automation 或 thread heartbeat。不要把 schedule 写进 Teamwork artifacts。 |
@@ -125,6 +125,7 @@ Claude Code 的 Teamwork 子代理模板（`explore`、`worker`、`code-reviewer
 本地开发时用 symlink 跟踪本仓库：
 
 ```bash
+./install.sh --link codex
 ./install.sh --link all
 ./install.sh --link project
 ```

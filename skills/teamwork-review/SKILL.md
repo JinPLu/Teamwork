@@ -22,11 +22,11 @@ Read only as needed:
 
 - Choose `mode: plan` or `mode: execution`.
 - Default to fresh-context Reviewer subagents for non-lightweight plan/execution
-  acceptance without waiting for the user to request subagents.
+  acceptance when subagents are authorized.
   Same-context self-review is not acceptance.
 - Local review is allowed only for lightweight work, subagent tools unavailable
-  after the Subagent Tool Discovery Gate, or explicit user opt-out; label any
-  non-lightweight verdict as unreviewed.
+  after the Subagent Tool Discovery Gate, missing authorization, or explicit
+  user opt-out; label any non-lightweight verdict as unreviewed.
 - Inspect source, diff, logs, tests, command output, artifacts, research, plan,
   and user constraints.
 - Label important evidence `observed`, `inferred`, or `claimed`.

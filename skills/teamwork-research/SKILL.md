@@ -36,10 +36,10 @@ Artifacts include Search Keys and Abstract for future retrieval.
 2. Retrieve prior research and record disposition.
 3. Split separable evidence questions: local source, symptoms, artifacts,
    external constraints, alternatives, upstream reports, papers, or practice.
-4. Default to parallel Explorer subagents for 2+ independent tracks. The user
-   does not need to request subagents. Before reading a second track serially,
-   run the Subagent Tool Discovery Gate from `dispatch-policy.md`; otherwise
-   emit `Dispatch Exception:`.
+4. Default to parallel Explorer subagents for 2+ independent tracks when
+   subagents are authorized. Before reading a second track serially, run the
+   Subagent Tool Discovery Gate from `dispatch-policy.md`; otherwise emit
+   `Dispatch Exception:`.
 5. Require Explorer Result Packet with observed/inferred/claimed evidence,
    confidence, dissent, open questions, and condensed evidence.
 6. Read primary local evidence first and label key findings.

@@ -37,14 +37,23 @@ Read only as needed:
    before edits, plan before complex work, confirm scope, implement in small
    steps, run focused verification, report residual gaps, and produce `/new`
    handoff summaries when switching tasks.
-4. Keep project facts, evidence sources, remote/local boundaries, protected
+4. For Codex project instructions, ensure an explicit standing authorization
+   exists when Teamwork dispatch is desired: the user authorizes Codex to use
+   sub-agents, delegation, and parallel agent work for non-lightweight Teamwork
+   tasks when independent tracks exist, without needing to repeat "use
+   subagents" in each prompt. Prefer `CODEX.md` for Codex-only deltas or a
+   clearly labeled Codex section in `AGENTS.md`; keep the rule short and do
+   not force dispatch for lightweight, tightly coupled, destructive, or
+   credential-sensitive work. In the audit, report
+   `Codex authorization: keep | add | user-opt-out`.
+5. Keep project facts, evidence sources, remote/local boundaries, protected
    actions, and domain-specific acceptance checks in project instructions.
-5. Move long path maps, command inventories, and historical navigation to
+6. Move long path maps, command inventories, and historical navigation to
    appendix docs that are explicitly read on demand.
-6. Preserve volatile experiment numbers, current task progress, temporary
+7. Preserve volatile experiment numbers, current task progress, temporary
    conclusions, and chat summaries outside `AGENTS.md`; use reviewed project
    evidence docs or Teamwork artifacts only when their triggers apply.
-7. Return a slim rules plan with changed files, collaboration audit decisions,
+8. Return a slim rules plan with changed files, collaboration audit decisions,
    migration rationale, verification, and any human decisions.
 
 ## Artifact Decision

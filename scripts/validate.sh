@@ -276,6 +276,12 @@ grep_required 'VERSION' "$ROOT/CODEX.md" \
   "CODEX.md must document package version source"
 grep_required 'teamwork-init' "$ROOT/CODEX.md" \
   "CODEX.md must document teamwork-init"
+grep_required "explicit standing request" "$ROOT/CODEX.md" \
+  "CODEX.md must include Codex standing subagent authorization snippet"
+grep_required './install.sh --link codex' "$ROOT/README.md" \
+  "README must document Codex link-mode development install"
+grep_required './install.sh --link codex' "$ROOT/README.en.md" \
+  "English README must document Codex link-mode development install"
 [[ "$(wc -l < "$ROOT/README.md")" -le 195 ]] || fail "README should stay concise"
 [[ "$(wc -l < "$ROOT/README.en.md")" -le 200 ]] || fail "English README should stay concise"
 line_count_max "$ROOT/skills/using-teamwork/SKILL.md" 80 "using-teamwork should stay concise"
@@ -330,25 +336,25 @@ grep_required 'Teamwork orchestration is' "$ENTRYPOINT" \
   "entrypoint/router must make Teamwork orchestration the default for non-lightweight coding work"
 grep_required 'Subagent Tool Discovery Gate' "$ENTRYPOINT" \
   "entrypoint/router must require tool discovery before serial fallback"
-grep_required 'does not need to ask to "fan out subagents"' "$ENTRYPOINT" \
-  "entrypoint/router must not require explicit fan-out wording from the user"
+grep_required 'instructions authorize subagents' "$ENTRYPOINT" \
+  "entrypoint/router must respect platform subagent authorization"
 grep_required 'Workflow Pattern Selection' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must define workflow pattern selection"
 grep_required 'Platform Native Policy Map' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must define platform native policy map"
-grep_required 'Subagent authorization is Stage-Routed Proactive Dispatch' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
-  "workflow contract must define stage-routed proactive dispatch authorization"
-grep_required 'does not need to request "fan out subagents"' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
-  "workflow contract must not require explicit user fan-out requests"
-grep_required 'standing authorization' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
-  "workflow contract must treat Teamwork activation as standing dispatch authorization"
+grep_required 'Codex standing authorization' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must distinguish Codex standing authorization from dispatch economics"
+grep_required 'loaded project/global instruction' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must support loaded Codex standing authorization"
+grep_required 'Teamwork activation decides dispatch economics' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must make Teamwork activation decide dispatch economics"
 grep_required 'dispatch is the expected path' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must make dispatch expected for independent non-lightweight tracks"
 grep_required 'routing guidance' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must define plan routing as guidance"
 grep_required 'not the only' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must not make plans the only authorization model"
-grep_required 'execution stage must re-evaluate' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+grep_required 'The execution stage' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must require execution-stage split reevaluation"
 grep_required 'starting any coding-agent task' "$ROOT/skills/using-teamwork/SKILL.md" \
   "using-teamwork description must be broad enough for automatic discovery"
@@ -362,6 +368,8 @@ grep_required 'CURSOR.md' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init must inspect CURSOR.md"
 grep_required 'AGENTS/CODEX/CURSOR/CLAUDE' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init description must mention AGENTS/CODEX/CURSOR/CLAUDE"
+grep_required 'Codex authorization: keep | add | user-opt-out' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must report Codex subagent authorization audit state"
 for agent in explore worker code-reviewer; do
   [[ -f "$ROOT/templates/claude-agents/$agent.md" ]] \
     || fail "missing templates/claude-agents/$agent.md"
@@ -536,7 +544,7 @@ grep_required '`high reasoning` -> `reasoning_effort:"high"`' "$ROOT/skills/usin
   "dispatch policy reference must map high reasoning tier"
 grep_required 'Do not combine' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must reject invalid full-history routing"
-grep_required 'Codex role dispatch, set an explicit Role Profile model' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'bounded Codex role dispatch' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "Codex role dispatch must pin role-profile models by default"
 grep_required 'Role Profiles' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must define role profiles"
@@ -634,10 +642,10 @@ grep_required 'Stage-Routed Proactive Dispatch' "$ROOT/skills/using-teamwork/ref
   "dispatch policy reference must define stage-routed proactive dispatch"
 grep_required 'parallel subagents are the default execution substrate' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy must default independent non-lightweight work to parallel subagents"
-grep_required 'standing authorization' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
-  "dispatch policy must define Teamwork activation as standing dispatch authorization"
-grep_required 'Do not wait for the user to say' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
-  "dispatch policy must not require explicit user fan-out requests"
+grep_required 'When the active platform or loaded instructions authorize subagents' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy must respect platform-specific subagent authorization gates"
+grep_required 'Codex, a project or global standing' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy must document Codex standing authorization"
 grep_required 'Do not wait' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must not wait for pre-authorization"
 grep_required 'explicitly name every track' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
@@ -712,22 +720,22 @@ grep_required 'subagent-packets.md' "$ROOT/skills/using-teamwork/references/suba
   "compatibility routing index must point to packet schemas"
 grep_required 'Default to parallel Explorer subagents' "$ROOT/skills/teamwork-research/SKILL.md" \
   "research skill must default-dispatch independent Explorer tracks"
-grep_required 'does not need to request subagents' "$ROOT/skills/teamwork-research/SKILL.md" \
-  "research skill must not require explicit user subagent requests"
+grep_required 'subagents are authorized' "$ROOT/skills/teamwork-research/SKILL.md" \
+  "research skill must respect subagent authorization"
 grep_required 'lightweight `Dispatch Guidance:`' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must support lightweight dispatch guidance"
-grep_required 'Do not wait for the user to request subagents' "$ROOT/skills/teamwork-plan/SKILL.md" \
-  "plan skill must not require explicit user subagent requests"
+grep_required 'when subagents are authorized' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan skill must respect subagent authorization"
 grep_required 'dispatch parallel Worker subagents by default' "$ROOT/skills/teamwork-execute/SKILL.md" \
   "execute skill must default-dispatch independent Worker tracks"
-grep_required 'even if the user did not request subagents' "$ROOT/skills/teamwork-execute/SKILL.md" \
-  "execute skill must not require explicit user subagent requests"
+grep_required 'when subagents' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  "execute skill must respect subagent authorization"
 grep_required 'Before dispatching more than 3 Workers' "$ROOT/skills/teamwork-execute/SKILL.md" \
   "execute skill must require >3 Worker integration plan"
 grep_required 'Default to fresh-context Reviewer subagents' "$ROOT/skills/teamwork-review/SKILL.md" \
   "review skill must default to fresh-context reviewer subagents for non-trivial execution"
-grep_required 'without waiting for the user to request subagents' "$ROOT/skills/teamwork-review/SKILL.md" \
-  "review skill must not require explicit user subagent requests"
+grep_required 'subagents are authorized' "$ROOT/skills/teamwork-review/SKILL.md" \
+  "review skill must respect subagent authorization"
 grep_required 'Dispatch Guidance:' "$ROOT/skills/using-teamwork/references/plan-output.md" \
   "lightweight plan template must include dispatch guidance"
 grep_required 'Explorer/Designer/Judge/Worker/Reviewer' "$ROOT/skills/using-teamwork/references/plan-output.md" \

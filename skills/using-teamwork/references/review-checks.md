@@ -20,9 +20,9 @@ Check:
   Subagent Prompt Packets are adequate.
 - Parallelization Gate appears before steps; 2+ independent tracks have
   Dispatch Guidance, or `Dispatch Guidance: none` gives a continuity rationale.
-- Required subagent dispatch either happened, records explicit user opt-out, or
-  records discovery-proven unavailability after the Subagent Tool Discovery
-  Gate.
+- Required subagent dispatch either happened, records explicit user opt-out,
+  records missing authorization, or records discovery-proven unavailability
+  after the Subagent Tool Discovery Gate.
 - Durable, high-risk, public/shared, or ambiguous plans have a Judge/fresh
   Reviewer verdict before acceptance, or are explicitly labeled `unreviewed`
   with residual risk.
@@ -37,7 +37,7 @@ Return `revise` or `blocked` when:
 - a non-lightweight plan skips split before implementation steps or serializes
   independent tracks without rationale;
 - required subagent dispatch or fresh-context plan review is missing and no
-  valid discovery/user-opt-out exception is recorded;
+  valid discovery/authorization/user-opt-out exception is recorded;
 - delegated work lacks prompt packets, output schema, ownership, or escalation
   triggers;
 - routing uses invalid platform dispatch fields, nonexistent agent types, or misleading

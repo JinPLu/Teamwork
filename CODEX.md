@@ -19,7 +19,7 @@ The behavior contract lives in `skills/`. `using-teamwork` is the automatic lean
 - Goals: native Codex goal state is the source of truth for autonomous target and lifecycle. For unclear targets, first return a chat-window `Goal Proposal`; after human approval or edits, call `create_goal` with the `Native Codex Goal Text`.
 - Planning and execution: route non-trivial implementation requests to `teamwork-plan` before edits only after evidence is sufficient; unclear root/source/API/failure/evidence/risk routes to `teamwork-research` first. Plan `Dispatch Guidance:` or durable `Subagent Routing` is routing guidance, not the only dispatch authorization. Route accepted, approved, resumed, or continued plans to `teamwork-execute` for bounded edits, focused verification, and a record of actual dispatch used. `update_plan` is visible transient progress. Durable execution memory lives in `docs/teamwork/plans/` only when artifact triggers apply.
 - Project initialization: use `teamwork-init` to audit or slim `AGENTS.md`, `CODEX.md`, `CLAUDE.md`, MCP policy, appendix navigation, and Teamwork artifact integration. Keep reusable workflow in Teamwork and project facts in project instructions.
-- Subagents: Teamwork activation is standing authorization for stage-routed proactive dispatch on non-lightweight work; the user does not need to say "fan out subagents". After Teamwork activates, the main agent is the orchestrator and dispatches Explorer, Designer, Judge, Worker, or Reviewer subagents when independent evidence gathering, design scrutiny, implementation, or review tracks exist. If `spawn_agent` is not active but `tool_search` exists, discover it before claiming subagents are unavailable. Explorer/Reviewer default max 3. Worker has no fixed cap; >3 Workers require ownership map, integration order, verification plan, and a rationale that parallel is cheaper than serial. Non-lightweight acceptance requires a fresh Reviewer; if subagents are unavailable after discovery or explicitly disabled, label the result unreviewed.
+- Subagents: Codex requires an explicit request or loaded standing instruction before `spawn_agent` is used. When that authorization exists, Teamwork activation decides stage-routed proactive dispatch economics for non-lightweight work. The main agent is the orchestrator and dispatches Explorer, Designer, Judge, Worker, or Reviewer subagents when independent evidence gathering, design scrutiny, implementation, or review tracks exist. If `spawn_agent` is not active but `tool_search` exists, discover it before claiming subagents are unavailable. Explorer/Reviewer default max 3. Worker has no fixed cap; >3 Workers require ownership map, integration order, verification plan, and a rationale that parallel is cheaper than serial. Non-lightweight acceptance requires a fresh Reviewer; if subagents are unavailable, authorization is missing, or dispatch is explicitly disabled, label the result unreviewed.
 - Review: `codex review --uncommitted`, `--base`, or `--commit` can support a verdict. Completion still requires direct mapping to requirements, diffs, tests, artifacts, or acceptance evidence.
 - Sandbox and permissions: use Codex native approval flows. Teamwork should identify destructive risk, credentials, unclear ownership, or protected boundaries before dispatch or execution.
 - Automations and heartbeats: use Codex native automation/thread heartbeat for recurring checks or later continuation. Teamwork artifacts do not store schedules.
@@ -46,6 +46,22 @@ The abstract is a retrieval aid, not completion proof.
 Use them for goal-mode, failed iteration, cross-agent execution, cross-turn work, high-risk or ambiguous changes, public/shared behavior, external calibration, and explicit repository-plan requests. Execution or report artifacts should record the actual dispatch decision and subagents used, including the allowed exception when no dispatch happened. Small low-risk edits can stay in native Codex chat/progress.
 
 For failed goal iterations, refresh research and check whether the active plan was under-informed, stale, wrong-scope, over-strict, or deviated from during execution before retrying. Revise and review the durable plan when new evidence changes the path.
+
+## Codex Subagent Authorization
+
+For Codex in repositories that opt into Teamwork dispatch, add this short rule
+to `CODEX.md`, a Codex-labeled section of `AGENTS.md`, or global
+`~/.codex/AGENTS.md`:
+
+```md
+For Codex in this repository, this is the user's explicit standing request to
+use sub-agents, delegation, and parallel agent work when Teamwork dispatch
+policy says it is appropriate. The user does not need to repeat "use
+subagents" in each prompt.
+```
+
+Keep the authorization short. Detailed dispatch economics stay in
+`dispatch-policy.md`.
 
 ## Subagent Mapping
 

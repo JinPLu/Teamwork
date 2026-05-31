@@ -4,10 +4,12 @@ Use when dispatching subagents or reviewing dispatch economics. Keep prompts in
 `subagent-prompt-contract.md`; keep packet schemas in `subagent-packets.md`.
 
 ## Stage-Routed Proactive Dispatch
-
-Teamwork activation is standing authorization for non-destructive stage
-dispatch. For non-lightweight work, parallel subagents are the default execution substrate when independent tracks exist. Do not wait for the user to say "fan out subagents", or for `Goal Proposal`, `Dispatch Guidance:`, or
-durable `Subagent Routing` to explicitly name every track.
+When the active platform or loaded instructions authorize subagents, Teamwork
+activation decides dispatch economics. For non-lightweight work, parallel subagents are the default execution substrate when independent tracks exist. Do
+not wait for `Goal Proposal`, `Dispatch Guidance:`, or durable `Subagent
+Routing` to explicitly name every track. On Codex, a project or global standing
+instruction can satisfy the explicit request; otherwise keep local and record
+the exception.
 
 - Research: Explorer tracks for 2+ separable evidence questions.
 - Plan: Designer for ambiguity; Judge for durable, risky, delegated, or
@@ -22,49 +24,49 @@ both. If non-lightweight work stays serial, record the allowed exception.
 
 ## Subagent Tool Discovery Gate
 
-Before serializing a second independent track, delivering a durable/high-risk
-plan, or accepting non-lightweight work: use the active platform subagent tool
-(`spawn_agent` on Codex, `Task` on Cursor or Claude Code); on Codex, if
-`tool_search` exists, search `multi-agent spawn_agent` before claiming
-unavailability. Only failed discovery proves unavailable tools. For bounded
-Codex role dispatch, set an explicit Role Profile model; use `inherited` only
-for full-history forks, parent-model continuity, or explicit user model intent.
-Record role, model class, native fields, and pin/inherit reason.
+Before serializing a second track, delivering a durable/high-risk plan, or
+accepting non-lightweight work: confirm subagent authorization, then use the
+active platform subagent tool (`spawn_agent` on Codex, `Task` on Cursor or
+Claude Code); on Codex, if `tool_search` exists, search
+`multi-agent spawn_agent` before claiming unavailability. Only failed discovery
+proves unavailable tools. For bounded Codex role dispatch, set an explicit Role
+Profile model; use `inherited` only for full-history forks, parent-model
+continuity, or user model intent. Record role, model class, fields, and
+pin/inherit reason.
 When required dispatch is skipped, write:
 
 ```text
-Dispatch Exception: <single-track | tight-critical-path | overlapping-ownership | higher-context-cost | tool-unavailable-after-discovery | user-opt-out>
+Dispatch Exception: <single-track | tight-critical-path | overlapping-ownership | higher-context-cost | tool-unavailable-after-discovery | authorization-missing | user-opt-out>
 ```
 
 For non-lightweight review or acceptance, the only valid exceptions are
-`tool-unavailable-after-discovery` or `user-opt-out`; the verdict must be
-marked `unreviewed`.
+`tool-unavailable-after-discovery`, `authorization-missing`, or `user-opt-out`;
+the verdict is `unreviewed`.
 
 ## Roles
 
-Explorer investigates; Designer resolves tradeoffs; Judge reviews plans; Worker
-implements owned scope; Reviewer checks diffs, tests, logs, and artifacts.
+Explorer investigates; Designer decides; Judge reviews plans; Worker
+implements; Reviewer checks diffs and tests.
 
 ## Dispatch Economics
 
-- Explorer/Reviewer: default max 3 parallel unless user gives larger budget;
+- Explorer/Reviewer: default max 3 parallel unless larger budget;
   keep raw evidence out of the main context.
 - Worker: no fixed numeric cap; dispatch per independent owned track when
-  elapsed time or isolation improves. Before dispatching more than 3 Workers,
-  state ownership map, integration order, verification, and why parallel is
-  cheaper than serial.
+  time or isolation improves. Before dispatching more than 3 Workers, state
+  ownership map, integration order, verification, and why parallel beats serial.
 - Use batch or worktree isolation when ownership is unclear or merge cost may
   dominate.
 - If not dispatching, state why local execution is cheaper or safer. For
-  non-lightweight review, unavailable tools or explicit user opt-out are the
-  only acceptable reasons to skip a fresh Reviewer; mark acceptance unreviewed.
+  non-lightweight review, unavailable tools, missing authorization, or explicit
+  user opt-out are valid Reviewer exceptions; mark acceptance unreviewed.
 - CodeGraph may replace Explorer for one structural code question.
   Multi-domain research still applies discovery gate and stage dispatch.
 
 ## Role Profiles
 
 Use model class as stable policy; translate through active platform Model
-Mapping. Prefer fewer, stronger models over fragile cheap defaults.
+Mapping. Prefer fewer, stronger models.
 
 - Explorer: model class `balanced` by default; use `frontier` for broad,
   ambiguous, unfamiliar, or high-risk evidence. `cheap-fast` is opt-in only for

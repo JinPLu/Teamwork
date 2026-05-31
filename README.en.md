@@ -6,7 +6,7 @@
 
 Teamwork is a **Codex + Cursor + Claude Code skill package**. Each platform's native capabilities are the execution substrate: Codex provides native goals, `update_plan`, and `spawn_agent`; Cursor provides `Task` subagents, MCP, browser automation, and permissions; Claude Code provides `Task` subagents (user-defined under `~/.claude/agents/`), TodoWrite, MCP, and permissions. Teamwork adds the collaboration policy that makes complex coding-agent work more reliable: evidence first, reusable artifacts, stage-routed proactive dispatch, reviewed execution, and goal iteration that does not stop early.
 
-After Teamwork activates, the main agent acts as the orchestrator. Only quick factual answers, one-liners, and tiny obvious edits stay in native platform flow; non-lightweight research, plan, execute, review, and goal work defaults to independent subagent dispatch and fresh Reviewer acceptance instead of waiting for the user to say "fan out subagents" or for plan authorization.
+After Teamwork activates, the main agent acts as the orchestrator. Only quick factual answers, one-liners, and tiny obvious edits stay in native platform flow; non-lightweight research, plan, execute, review, and goal work defaults to independent subagent dispatch and fresh Reviewer acceptance when the platform authorizes it. Codex needs the user prompt or loaded project/global instructions to provide explicit standing authorization; Teamwork decides when dispatch is worthwhile.
 
 ## Core Advantages
 
@@ -42,7 +42,7 @@ Subagent references are split by responsibility: `dispatch-policy` defines when 
 | Cursor goal | Without native goal state, goal-mode uses chat iteration plus durable reports; do not force `create_goal`. |
 | Claude Code goal | Same as Cursor: no native goal state; goal-mode uses chat iteration plus rolling reports. |
 | `update_plan` / TodoWrite | Visible progress only. It is not a durable execution spec, review target, or completion proof. |
-| Subagents | Stage-routed proactive dispatch. Teamwork activation is standing authorization for stage dispatch on non-lightweight work; the main agent is the orchestrator and defaults to independent subagent dispatch without requiring the user to say "fan out subagents". Codex uses `spawn_agent` and prefers `teamwork_*` custom agents; Cursor and Claude Code use `Task` (Claude Code's `subagent_type` references a user-defined agent under `~/.claude/agents/`; fall back to `general-purpose` when no specialized agent exists). Plan `Dispatch Guidance:` or `Subagent Routing` is guidance, not the only authorization. On Codex, if `spawn_agent` is missing from active tools but `tool_search` exists, discover it first. Skipped required dispatch must emit `Dispatch Exception:`. Explorer/Reviewer default max 3; Worker has no fixed cap. Non-lightweight review may skip a fresh Reviewer only when subagent discovery fails or the user opts out, and must be labeled `unreviewed`. Model policy prefers fewer, stronger models: Codex custom agents pin role models directly; fallback dispatch passes explicit Role Profile models; `cheap-fast` is only for explicit latency/quota pressure on trivial read-only work. |
+| Subagents | Stage-routed proactive dispatch. Codex needs the user prompt or loaded instructions to explicitly authorize `spawn_agent`; `teamwork-init` can add that standing authorization to `CODEX.md` or a Codex section. Once authorization exists, Teamwork activation decides whether non-lightweight work should split into independent subagents. Codex uses `spawn_agent` and prefers `teamwork_*` custom agents; Cursor and Claude Code use `Task`. Plan `Dispatch Guidance:` or `Subagent Routing` is guidance, not the only authorization. On Codex, if `spawn_agent` is missing from active tools but `tool_search` exists, discover it first. Skipped required dispatch must emit `Dispatch Exception:`. Explorer/Reviewer default max 3; Worker has no fixed cap. Non-lightweight review may skip a fresh Reviewer only when subagent discovery fails, authorization is missing, or the user opts out, and must be labeled `unreviewed`. |
 | Review | Platform review output can be evidence, but completion still maps to requirements, diff, tests, artifacts, and acceptance criteria. |
 | Sandbox/permissions | Use native approval and sandbox model for the active platform. Teamwork only requires boundaries and risks to be explicit. |
 | Automations/heartbeat | Codex uses native automation or thread heartbeat for recurring checks or later continuation. Do not encode schedules in Teamwork artifacts. |
@@ -131,6 +131,7 @@ Claude Code Teamwork subagents (`explore`, `worker`, `code-reviewer`):
 Use `--link` during local development:
 
 ```bash
+./install.sh --link codex
 ./install.sh --link all
 ./install.sh --link project
 ```

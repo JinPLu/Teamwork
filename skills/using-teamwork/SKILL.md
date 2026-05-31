@@ -49,13 +49,16 @@ edits. Do not create artifacts, subagents, durable plans, or review ceremony.
 Before staying native for non-trivial work, state scope, path, boundaries, and
 success check. If unclear, route to research.
 
-When Teamwork is active, the main agent orchestrates. Apply Stage-Routed Proactive Dispatch before serial work: split independent tracks, use the
-Subagent Tool Discovery Gate, then dispatch Explorer, Designer, Judge, Worker,
-or Reviewer tracks unless an allowed `Dispatch Exception:` applies. Acceptance
-needs a fresh Reviewer, not self-review.
+When Teamwork is active, the main agent orchestrates. If platform or loaded
+instructions authorize subagents, apply Stage-Routed Proactive Dispatch before
+serial work: split tracks, use the Subagent Tool Discovery Gate, then dispatch
+Explorer, Designer, Judge, Worker, or Reviewer tracks unless an allowed
+`Dispatch Exception:` applies. Acceptance needs fresh Reviewer, not self-review.
 
 Plans may suggest routing; stage dispatch must not wait for named tracks or
-explicit phrases. The user does not need to ask to "fan out subagents".
+plan phrases. On Codex, standing instructions can satisfy the
+explicit subagent request; without authorization, keep local and record the
+exception.
 
 Before treating subagents as unavailable, use the Subagent Tool Discovery Gate.
 Skipped required dispatch needs `Dispatch Exception:`; non-lightweight
