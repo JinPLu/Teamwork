@@ -40,6 +40,10 @@ Linked Artifacts: related research, plan, or report paths, or none
 Use concrete values. Do not use YAML frontmatter for artifacts; reserve YAML
 frontmatter for skill metadata only.
 
+When an artifact participates in `docs/teamwork/index.json` or supersession,
+add only the optional fields that help retrieval: `Index Role`, `Authority`,
+`Applies To`, `Supersedes`, `Superseded By`, and `Verification`.
+
 ## Artifact Retrieval
 
 Before new non-trivial research, plan creation, or goal failure analysis,
@@ -86,3 +90,35 @@ summaries plus citations over pasted logs.
 Durable artifacts must not contain executable placeholders such as `<...>`,
 `TODO`, `TBD`, or ellipsis tasks. Use concrete assumptions or mark the work
 blocked when required inputs are missing.
+
+## Native Index And Current-State Routing
+
+When durable project memory is relevant, use this lookup order when files exist:
+
+1. `docs/teamwork/index.json`
+2. `active.current` in index, else `docs/teamwork/current.md`
+3. active stage pointer(s) in index (`active.plan`, progress/report/result)
+4. linked artifact headers, then specific bodies as needed
+
+Lightweight native-flow tasks and clear one-turn Teamwork work stay
+artifact-free.
+
+## Memory Delta
+
+Report a memory delta when durable project memory was checked, changed, or
+intentionally left unchanged after a material-state question:
+
+`Memory Delta: none | current | plan | research | decision | supersede | compact | deferred`
+
+Use `none` when memory was checked and no durable project state changed. Omit
+the line for work that never touched durable memory. Use `deferred` only when a
+conflict blocks safe current-state updates and the handoff states the blocker.
+
+## Current-State Write Boundaries
+
+- Do not require artifacts for lightweight native-flow tasks.
+- Keep normal-task current-state writes bounded to
+  `docs/teamwork/index.json`, `docs/teamwork/current.md`, and at most one dated
+  artifact unless a durable trigger justifies more.
+- Stage artifacts hold evidence detail; `current.md` remains a compact active
+  digest.

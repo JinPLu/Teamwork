@@ -22,7 +22,7 @@ Read only as needed:
 - `skills/using-teamwork/references/project-init.md` for project rule layering,
   MCP policy, and context-cache discipline.
 - `skills/using-teamwork/references/artifact-protocol.md` when durable research,
-  plan, or report memory may be warranted.
+  plan, report, or current-state memory may be warranted.
 
 ## Workflow
 
@@ -52,6 +52,9 @@ Read only as needed:
    evidence docs or Teamwork artifacts only when their triggers apply.
 8. Return a slim rules plan with changed files, collaboration audit decisions,
    migration rationale, verification, and any human decisions.
+9. Bootstrap `docs/teamwork/index.json`, `docs/teamwork/README.md`, and
+   `docs/teamwork/current.md` only when project memory setup is in scope; then
+   report `Memory Delta:` per `artifact-protocol.md`.
 
 ## Artifact Decision
 

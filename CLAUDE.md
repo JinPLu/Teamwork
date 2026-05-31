@@ -1,6 +1,6 @@
 # Claude Code Usage
 
-This is the Claude Code runtime profile of Teamwork. Claude Code native capabilities are the execution substrate: editing, shell, MCP, permissions, `Task` subagents, TodoWrite, and verification. Teamwork defines when and how those capabilities should be combined for evidence-heavy, reviewed, delegated, or autonomous work. After Teamwork activates, only quick factual answers, one-liners, and tiny obvious edits stay native; non-lightweight work defaults to proactive subagent dispatch and fresh Reviewer acceptance.
+This is the Claude Code runtime profile of Teamwork. Claude Code native capabilities are the execution substrate: editing, shell, MCP, permissions, `Task` subagents, TodoWrite, and verification. Teamwork defines when and how those capabilities should be combined for evidence-heavy, reviewed, delegated, or autonomous work. After Teamwork activates, the main agent upgrades from native flow only when evidence, planning, dispatch, review, memory, or goal convergence improves correctness, continuity, or cost.
 
 ## Install
 
@@ -34,7 +34,7 @@ Skills install to `~/.claude/skills/`. Subagents install from
 - Goals: Claude Code has no native `create_goal` surface. Goal-mode work uses the same controller loop, Stop Rules, and Research + Plan Adequacy Gate as Cursor: a chat-only `Goal Proposal` for approval, then a rolling report under `docs/teamwork/reports/` as durable goal state.
 - Planning and execution: route non-trivial implementation requests to `teamwork-plan` before edits only after evidence is sufficient; unclear root/source/API/failure/evidence/risk routes to `teamwork-research` first. Plan `Dispatch Guidance:` or durable `Subagent Routing` is routing guidance, not the only dispatch authorization. Route accepted, approved, resumed, or continued plans to `teamwork-execute` for bounded edits, focused verification, and a record of actual dispatch used. TodoWrite is visible transient progress. Durable execution memory lives in `docs/teamwork/plans/` only when artifact triggers apply.
 - Project initialization: use `teamwork-init` to audit or slim `AGENTS.md`, `CLAUDE.md`, MCP policy, appendix navigation, and Teamwork artifact integration. Keep reusable workflow in Teamwork and project facts in project instructions.
-- Subagents: Teamwork activation is standing authorization for stage-routed proactive dispatch through Claude Code's `Task` tool on non-lightweight work; the user does not need to say "fan out subagents". After Teamwork activates, the main agent is the orchestrator and dispatches Explorer, Designer, Judge, Worker, or Reviewer subagents when independent evidence gathering, design scrutiny, implementation, or review tracks exist. `subagent_type` values map to user-defined agents under `~/.claude/agents/`; if specialized agents are not configured, fall back to `general-purpose`. Explorer/Reviewer default max 3. Worker has no fixed cap; >3 Workers require ownership map, integration order, verification plan, and a rationale that parallel is cheaper than serial. Non-lightweight acceptance requires a fresh Reviewer subagent; if `Task` is unavailable after discovery or explicitly disabled, label the result unreviewed.
+- Subagents: Teamwork activation is standing authorization for stage-routed dispatch through Claude Code's `Task` tool; the user does not need to say "fan out subagents". After Teamwork activates, the main agent orchestrates and dispatches Explorer, Designer, Judge, Worker, or Reviewer subagents for non-lightweight independent evidence, design, implementation, or review tracks. `subagent_type` values map to user-defined agents under `~/.claude/agents/`; if specialized agents are not configured, fall back to `general-purpose`. Explorer/Reviewer default max 3. Worker has no fixed cap; >3 Workers require ownership map, integration order, verification plan, and a rationale that parallel is cheaper than serial. If fresh review is unavailable after discovery or explicitly disabled, label the result unreviewed.
 - Review: Claude Code does not ship a built-in review command. Use a `Task` dispatch to a Reviewer subagent (custom `code-reviewer` agent or `general-purpose` with reviewer role in the prompt). Completion still requires direct mapping to requirements, diffs, tests, artifacts, or acceptance evidence.
 - Permissions: use Claude Code native approval and tool-permission flows. Teamwork should identify destructive risk, credentials, unclear ownership, or protected boundaries before dispatch or execution.
 - MCP and plugins: prefer native Claude Code tools and connectors. Record source limits when unavailable access affects research or acceptance.
@@ -59,11 +59,15 @@ The abstract is a retrieval aid, not completion proof.
 
 Use them for goal-mode, failed iteration, cross-agent execution, cross-turn work, high-risk or ambiguous changes, public/shared behavior, external calibration, and explicit repository-plan requests. Execution or report artifacts should record the actual dispatch decision and subagents used, including the allowed exception when no dispatch happened. Small low-risk edits can stay in native Claude Code chat with TodoWrite progress.
 
+When `docs/teamwork/index.json` exists and durable memory is relevant, Teamwork
+routes read it before historical artifacts. Stages report `Memory Delta` only
+when durable memory was checked or changed.
+
 For failed goal iterations, refresh research and check whether the active plan was under-informed, stale, wrong-scope, over-strict, or deviated from during execution before retrying. Revise and review the durable plan when new evidence changes the path.
 
 ## Subagent Mapping
 
-Teamwork keeps conceptual roles (Explorer, Designer, Judge, Worker, Reviewer) and model classes (`cheap-fast`, `balanced`, `coding`, `frontier`, `inherited`) platform-neutral. At dispatch time, translate them through the Claude mapping in `skills/using-teamwork/references/dispatch-policy.md`:
+Teamwork keeps conceptual roles (Explorer, Designer, Judge, Worker, Reviewer) and model classes (`cheap-fast`, `balanced`, `coding`, `frontier`, `inherited`) platform-neutral. At dispatch time, use `skills/using-teamwork/references/dispatch-policy.md` for the decision and translate native fields through `platform-dispatch-mapping.md`. Very large work may use `workflow-orchestration.md` and map to Claude Code dynamic workflows when available:
 
 - Explorer -> `subagent_type:"explore"` if defined, otherwise `general-purpose` with Explorer role in prompt
 - Worker -> `subagent_type:"general-purpose"` (or a user-defined `worker` agent)

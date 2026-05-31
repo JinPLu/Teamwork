@@ -60,6 +60,12 @@ Check:
   when subagents were used.
 - Worker Completion Packet and Reviewer Verdict Packet map implementation,
   verification, deviations, routing conformance, and residual risk to evidence.
+- Durable memory check: if current-state files changed, require a material
+  delta and evidence; reject churn-only writes.
+- Durable memory check: if accepted active state changed but no memory update
+  or explicit `none`/`deferred` disposition appears, name the residual risk.
+- Manual smoke evidence captures source, observed behavior, and pass/fail
+  result for any acceptance claim that depends on human-observed state.
 - Stage-Routed Proactive Dispatch was evaluated even when the plan did not
   explicitly name every subagent track.
 - Subagent Tool Discovery Gate ran before any unavailable-tool exception.

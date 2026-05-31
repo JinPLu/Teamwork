@@ -67,4 +67,5 @@ evidence, or the active plan is invalidated.
 
 Return artifact path or none, question, dispatch packets or continuity
 rationale, assumptions, evidence, options, recommendation, dissent, refresh
-triggers, and `Route: teamwork-plan`.
+triggers, optional `Memory Delta:` when durable project memory was checked or
+changed, and `Route: teamwork-plan`.

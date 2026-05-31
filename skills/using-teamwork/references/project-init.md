@@ -12,9 +12,8 @@ setup, cleanup, or migration into Teamwork.
   protected actions, and minimal tool arbitration before deeper files.
 - Repo-local `AGENTS.md`: repository facts, evidence sources, commands,
   danger zones, and repo-specific acceptance expectations.
-- Platform files such as `CODEX.md`, `CURSOR.md`, `CLAUDE.md`, or `GEMINI.md`: only
-  platform-specific deltas. Link back to `AGENTS.md` and shared workflow
-  files instead of copying them.
+- Platform files such as `CODEX.md`, `CURSOR.md`, `CLAUDE.md`, or `GEMINI.md`:
+  platform deltas only; link instead of copying shared workflow.
 - Appendix docs: long path maps, command inventories, environment matrices, and
   historical navigation. Read them only when navigation details are needed.
 - `docs/teamwork/{research,plans,reports}/`: durable Teamwork memory only when
@@ -53,8 +52,7 @@ workflow duplicated from Teamwork, or `add` when the habit is missing:
   to accepted scope.
 - Completion evidence: check whether final replies name changed files, why they
   changed, verification run, unverified gaps, and human confirmations needed.
-- Handoff hygiene: check whether long sessions or task switches require a
-  one-sentence `/new` handoff with task, changed files, state, and cautions.
+- Handoff hygiene: check whether task switches need a one-sentence handoff.
 
 ## MCP And Search Policy
 
@@ -76,19 +74,19 @@ workflow duplicated from Teamwork, or `add` when the habit is missing:
 - Prefer references and appendix files for detailed but conditional guidance.
 - Use artifact retrieval headers, `Search Keys`, and abstracts to find durable
   memory before reading large reports.
-- Do not paste raw logs, long transcripts, or full external docs into
-  instructions. Summarize evidence and link concrete paths or commands.
+- Do not paste raw logs, transcripts, or full external docs into instructions.
 - Remove duplicated workflow prose from project files when the installed
   Teamwork skill already owns the policy.
 
 ## Output Shape
 
-Return either a compact chat recommendation or a plan:
+Return a compact recommendation or plan covering files to slim or move,
+portable rules to migrate, `keep` / `migrate` / `add` decisions, project-local
+rules that remain, verification, and unresolved human decisions.
 
-- files to keep slim;
-- files to move into appendix or Teamwork artifacts;
-- portable rules to migrate into Teamwork;
-- collaboration backbone `keep` / `migrate` / `add` decisions;
-- project-local rules that must remain;
-- verification commands and expected scope checks;
-- unresolved decisions that require human confirmation.
+## Teamwork Memory Bootstrap
+
+For non-lightweight Teamwork workflows, initialize missing `index.json`,
+`README.md`, and `current.md` when bootstrap is in scope. Keep it minimal and
+compatible with `artifact-protocol.md`; do not force artifacts for lightweight
+native flow.

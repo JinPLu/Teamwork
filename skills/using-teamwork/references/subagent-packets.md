@@ -1,6 +1,8 @@
 # Subagent Packets
 
-Use when specifying subagent output or recording actual dispatch.
+Use when specifying subagent output or recording actual dispatch. If a
+subagent's work may change durable project memory, ask for `Memory Delta
+Candidate` and evidence; the orchestrator decides any writes.
 
 ## Result Packets
 
@@ -73,9 +75,17 @@ Review Target:
 Acceptance Mapping:
 Issues:
 Verification Reviewed:
+Manual Smoke Evidence:
 Routing Conformance:
 Residual Risk:
 Next Route:
+```
+
+Optional durable-memory fields when requested:
+
+```text
+Memory Delta Candidate: none | current | plan | research | decision | supersede | compact | deferred
+Memory Delta Evidence:
 ```
 
 ## Actual Dispatch Log

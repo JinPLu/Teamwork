@@ -17,6 +17,8 @@ Read only as needed:
 - `skills/using-teamwork/references/subagent-packets.md` for Worker Completion Packet and Actual
   Dispatch Log.
 - `skills/using-teamwork/references/goal-iteration.md` for failed goal attempts.
+- `skills/using-teamwork/references/artifact-protocol.md` when execution needs
+  durable memory or current-state lookup.
 
 ## Preconditions
 
@@ -37,11 +39,12 @@ requirements, or scope. If evidence changes those decisions, stop and route
 back to research or plan.
 
 For non-lightweight execution, re-run the Worker split from accepted steps,
-files, components, and ownership; dispatch parallel Worker subagents by default
-when tracks are independent and pass Dispatch Economics, even if the plan did
-not name every Worker. Apply the Subagent Tool Discovery Gate when subagents
-are authorized before keeping independent tracks local. Before dispatching more than 3 Workers, state ownership map, integration order,
-verification plan, and why parallel beats serial.
+files, components, and ownership. Dispatch parallel Worker subagents when
+tracks are independent and pass Dispatch Economics by default, even if the
+plan did not name every Worker. Apply the Subagent Tool Discovery Gate before
+claiming needed subagents are unavailable. Before dispatching more than 3 Workers, state
+ownership map, integration order, verification plan, and why parallel beats
+serial.
 
 Worker prompts follow the Subagent Prompt Contract, use disjoint ownership or
 worktree isolation, and require Worker Completion Packet.
@@ -74,4 +77,5 @@ continuity rationale, deviations, failures/blockers, and review request.
 Execution cannot accept its own work. For non-lightweight work, request a
 fresh-context Reviewer subagent before any completion claim; if subagents are
 unavailable after discovery or the user forbids them, report that acceptance is
-unreviewed.
+unreviewed. Include `Memory Delta:` only when durable project memory was
+checked or changed.

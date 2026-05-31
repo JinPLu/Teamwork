@@ -1,7 +1,8 @@
 # Subagent Prompt Contract
 
 Use when preparing a delegated prompt. For dispatch decisions read
-`dispatch-policy.md`; for returned shapes read `subagent-packets.md`.
+`dispatch-policy.md`; for native fields read `platform-dispatch-mapping.md`;
+for returned shapes read `subagent-packets.md`.
 
 ## Context Strategies
 
@@ -25,10 +26,10 @@ Use when preparing a delegated prompt. For dispatch decisions read
 Every delegated prompt includes:
 
 - Conceptual Role: Explorer, Designer, Judge, Worker, or Reviewer.
-- Native Fields: platform dispatch fields from `dispatch-policy.md` — on Codex
-  `agent_type`, `model` or `model: inherited`, `reasoning_effort`, and
-  `fork_context`; on Cursor `subagent_type`, `model` or `model: inherited`;
-  on Claude Code `subagent_type` (model lives on the agent definition).
+- Native Fields: platform dispatch fields from `platform-dispatch-mapping.md`
+  — on Codex `agent_type`, `model` or `model: inherited`,
+  `reasoning_effort`, and `fork_context`; on Cursor `subagent_type`, `model` or `model: inherited`;
+  on Claude Code `subagent_type`.
 - Mission: one concrete question, decision, implementation slice, or review.
 - Source: plan, research, report, diff, command output, or file paths.
 - Inputs: exact files, commands, evidence, assumptions, and acceptance target.
@@ -43,9 +44,14 @@ Every delegated prompt includes:
   changes public behavior, architecture, or contracts.
 - Required Output Schema: matching packet from `subagent-packets.md`.
 
-For Codex, prefer installed Teamwork custom agents from `Codex Mapping`; when
-falling back to built-ins, fill native fields from `Codex Native Field Presets`
-unless using `full-history-fork`. If `model` is omitted, write
+When delegated work may change durable project memory, ask for `Memory Delta
+Candidate` (`none | current | plan | research | decision | supersede | compact |
+deferred`). Subagents only propose candidates; the orchestrator decides writes.
+
+For Codex, prefer installed Teamwork custom agents from `Codex Mapping` in
+`platform-dispatch-mapping.md`; when falling back to built-ins, fill native
+fields from `Codex Native Field Presets` unless using `full-history-fork`. If
+`model` is omitted, write
 `model: inherited` and why inheritance is safer than an explicit Role Profile
 model. If `model` is pinned, write the model class and reason for the override.
 Never imply a stronger model than the Native Fields request.
@@ -53,9 +59,9 @@ Never imply a stronger model than the Native Fields request.
 ## Role Templates
 
 ```text
-Explorer: native fields <platform native fields per dispatch-policy.md>; answer <evidence question>; read-only; output Explorer Result Packet.
-Designer: native fields <platform native fields per dispatch-policy.md>; compare <decision options>; read-only; output Designer Decision Packet.
-Judge: native fields <platform native fields per dispatch-policy.md>; review <plan> readiness; read-only; output Judge Plan Review Packet.
-Worker: native fields <platform native fields per dispatch-policy.md>; implement <owned slice>; write only owned scope; output Worker Completion Packet.
-Reviewer: native fields <platform native fields per dispatch-policy.md>; review <target> against criteria; read-only; output Reviewer Verdict Packet.
+Explorer: native fields <platform native fields per platform-dispatch-mapping.md>; answer <evidence question>; read-only; output Explorer Result Packet.
+Designer: native fields <platform native fields per platform-dispatch-mapping.md>; compare <decision options>; read-only; output Designer Decision Packet.
+Judge: native fields <platform native fields per platform-dispatch-mapping.md>; review <plan> readiness; read-only; output Judge Plan Review Packet.
+Worker: native fields <platform native fields per platform-dispatch-mapping.md>; implement <owned slice>; write only owned scope; output Worker Completion Packet.
+Reviewer: native fields <platform native fields per platform-dispatch-mapping.md>; review <target> against criteria; read-only; output Reviewer Verdict Packet.
 ```

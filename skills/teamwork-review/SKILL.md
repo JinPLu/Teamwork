@@ -17,6 +17,8 @@ Read only as needed:
 - `skills/using-teamwork/references/subagent-prompt-contract.md` before Reviewer prompts.
 - `skills/using-teamwork/references/subagent-packets.md` for Reviewer Verdict Packet.
 - `skills/using-teamwork/references/goal-iteration.md` for goal failure routing.
+- `skills/using-teamwork/references/artifact-protocol.md` when review needs
+  durable memory or current-state lookup.
 
 ## Shared Rules
 
@@ -61,3 +63,7 @@ Dissent / Uncertainty: <none or concern>
 Verdict: pass | pass-with-notes | revise | blocked
 Rationale: <brief evidence-based reason>
 ```
+
+Include `Memory Delta:` only when durable project memory was checked or
+changed. When current-state files changed, review should verify the change is
+material and evidence-backed.

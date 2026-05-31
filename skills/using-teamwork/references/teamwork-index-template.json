@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "last_updated": "2026-06-01",
+  "project": {
+    "name": "Example Project",
+    "root": ".",
+    "description": "Short project identity for agent routing"
+  },
+  "source_of_truth_order": ["active", "linked", "header_search", "fulltext"],
+  "ignore_globs": [".planning/**"],
+  "budgets": {
+    "default_max_files": 5,
+    "default_max_artifact_bodies": 2,
+    "header_first": true
+  },
+  "active": {
+    "current": "docs/teamwork/current.md",
+    "design": "docs/teamwork/plans/current-design.md",
+    "plan": "docs/teamwork/plans/current-plan.md",
+    "progress": "docs/teamwork/reports/latest-progress.md",
+    "results": ["docs/teamwork/reports/current-results.md"]
+  },
+  "entries": [
+    {
+      "topic": "example-topic",
+      "kind": "result",
+      "title": "Example active result",
+      "status": "active",
+      "currentness": "current",
+      "authority": "canonical",
+      "path": "docs/teamwork/current.md",
+      "applies_to": ["src/", "docs/"],
+      "linked": ["docs/teamwork/reports/current-example.md"],
+      "evidence_paths": ["docs/teamwork/reports/current-example.md"],
+      "supersedes": ["docs/teamwork/reports/old-example.md"],
+      "search_keys": ["example", "result"],
+      "updated": "2026-06-01",
+      "summary": "One sentence applicability summary."
+    }
+  ],
+  "profiles": {
+    "status": ["index", "current", "topic"],
+    "implementation": ["index", "active_design_or_plan", "linked_research_headers"],
+    "review": ["index", "active_design_or_plan", "active_progress", "verification"],
+    "research": ["index", "topic_headers", "linked_artifacts"],
+    "design": ["index", "accepted_decisions", "active_design_plan", "linked_research"]
+  },
+  "pending": [
+    {
+      "topic": "example-topic",
+      "kind": "deferred",
+      "reason": "Template placeholder pending item",
+      "created": "2026-06-01"
+    }
+  ]
+}

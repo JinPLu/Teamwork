@@ -125,12 +125,13 @@ grep_required '^\.claude/$' "$ROOT/.gitignore" ".gitignore must ignore local .cl
 git_known_or_worktree_addition "VERSION" || fail "VERSION is neither tracked nor a worktree addition"
 grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' "$ROOT/VERSION" || fail "VERSION must be plain semver"
 
-if git -C "$ROOT" ls-files 'docs/teamwork/plans/*' 'docs/teamwork/research/*' 'docs/teamwork/reports/*' 'docs/superpowers/*' | grep -q .; then
-  fail "local workflow artifacts under docs/teamwork/{plans,research,reports}/ or docs/superpowers/ must not be tracked"
+if git -C "$ROOT" ls-files 'docs/teamwork/plans/*' 'docs/teamwork/research/*' 'docs/teamwork/reports/*' 'docs/teamwork/workflows/*' 'docs/superpowers/*' | grep -q .; then
+  fail "local workflow artifacts under docs/teamwork/{plans,research,reports,workflows}/ or docs/superpowers/ must not be tracked"
 fi
 grep_required '^docs/teamwork/plans/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork plan artifacts"
 grep_required '^docs/teamwork/research/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork research artifacts"
 grep_required '^docs/teamwork/reports/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork report artifacts"
+grep_required '^docs/teamwork/workflows/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork workflow artifacts"
 
 for skill in "${SKILLS[@]}"; do
   file="$ROOT/skills/$skill/SKILL.md"
@@ -157,12 +158,36 @@ for subskill in teamwork-init teamwork-goal teamwork-research teamwork-plan team
   grep_required "skills/$subskill/SKILL.md" "$ENTRYPOINT" "entrypoint/router does not reference skills/$subskill/SKILL.md"
 done
 
-for reference in artifact-protocol goal-iteration dispatch-policy subagent-prompt-contract subagent-packets subagent-routing workflow-contract plan-output review-checks project-init; do
+for reference in artifact-protocol goal-iteration dispatch-policy platform-dispatch-mapping workflow-orchestration subagent-prompt-contract subagent-packets subagent-routing workflow-contract codex-deep-collaboration plan-output review-checks project-init teamwork-index; do
   ref_file="$ROOT/skills/using-teamwork/references/$reference.md"
   [[ -f "$ref_file" ]] || fail "missing skills/using-teamwork/references/$reference.md"
   git_known_or_worktree_addition "skills/using-teamwork/references/$reference.md" \
     || fail "skills/using-teamwork/references/$reference.md is neither tracked nor a worktree addition"
 done
+
+for template in teamwork-index-template.json teamwork-index-readme-template.md teamwork-current-template.md; do
+  template_file="$ROOT/skills/using-teamwork/references/$template"
+  [[ -f "$template_file" ]] || fail "missing skills/using-teamwork/references/$template"
+  git_known_or_worktree_addition "skills/using-teamwork/references/$template" \
+    || fail "skills/using-teamwork/references/$template is neither tracked nor a worktree addition"
+done
+
+[[ -f "$ROOT/scripts/validate_teamwork_index.py" ]] || fail "missing scripts/validate_teamwork_index.py"
+git_known_or_worktree_addition "scripts/validate_teamwork_index.py" \
+  || fail "scripts/validate_teamwork_index.py is neither tracked nor a worktree addition"
+python3 "$ROOT/scripts/validate_teamwork_index.py" \
+  "$ROOT/skills/using-teamwork/references/teamwork-index-template.json" >/dev/null
+
+grep_required 'Optional durable-memory fields' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+  "subagent-packets must keep Memory Delta as optional durable-memory output"
+grep_required 'Memory Delta Candidate' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+  "subagent-packets must document optional Memory Delta Candidate"
+grep_required 'Durable memory check' "$ROOT/skills/using-teamwork/references/review-checks.md" \
+  "review-checks must include durable memory materiality checks"
+grep_required 'Manual smoke evidence captures source' "$ROOT/skills/using-teamwork/references/review-checks.md" \
+  "review-checks must include manual smoke evidence capture fields"
+grep_required 'When delegated work may change durable project memory' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+  "subagent prompt contract must make Memory Delta Candidate conditional"
 
 grep_required 'references/workflow-contract.md' "$ROOT/skills/using-teamwork/SKILL.md" \
   "using-teamwork must reference shared workflow contract"
@@ -300,8 +325,12 @@ line_count_max "$ROOT/skills/teamwork-execute/SKILL.md" 120 "teamwork-execute sh
 word_count_max "$ROOT/skills/teamwork-execute/SKILL.md" 650 "teamwork-execute should stay concise"
 line_count_max "$ROOT/skills/teamwork-update/SKILL.md" 80 "teamwork-update should stay concise"
 word_count_max "$ROOT/skills/teamwork-update/SKILL.md" 400 "teamwork-update should stay concise"
-line_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 225 "dispatch policy reference should stay focused"
-word_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 1400 "dispatch policy reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 140 "dispatch policy reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/dispatch-policy.md" 800 "dispatch policy reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" 130 "platform dispatch mapping reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" 700 "platform dispatch mapping reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/workflow-orchestration.md" 80 "workflow orchestration reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/workflow-orchestration.md" 500 "workflow orchestration reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" 80 "subagent prompt contract should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" 500 "subagent prompt contract should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-packets.md" 110 "subagent packet reference should stay focused"
@@ -310,33 +339,29 @@ line_count_max "$ROOT/skills/using-teamwork/references/subagent-routing.md" 25 "
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-routing.md" 120 "compatibility routing index should stay small"
 line_count_max "$ROOT/skills/using-teamwork/references/project-init.md" 95 "project init reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/project-init.md" 650 "project init reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/teamwork-index.md" 100 "teamwork index reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/teamwork-index.md" 600 "teamwork index reference should stay focused"
 for skill in "${SKILLS[@]}"; do
   fenced_block_line_count_max "$ROOT/skills/$skill/SKILL.md" 20 "$skill must not embed large fenced templates"
 done
 
-grep_required 'platform-native augmentation layer' "$ENTRYPOINT" \
-  "entrypoint/router must define Teamwork as platform-native augmentation"
+grep_required 'platform-native layer' "$ENTRYPOINT" \
+  "entrypoint/router must define Teamwork as platform-native"
 grep_required 'Platform Native Policy Map' "$ENTRYPOINT" \
   "entrypoint/router must document platform native policy map"
 grep_required 'Goal Proposal' "$ENTRYPOINT" \
   "entrypoint/router must document goal proposal routing"
-grep_required 'Stage-Routed Proactive Dispatch' "$ENTRYPOINT" \
-  "entrypoint/router must use stage-routed proactive dispatch authorization"
-grep_required 'Evidence Interpretation Contract' "$ENTRYPOINT" \
-  "entrypoint/router must define evidence interpretation contract"
-grep_required 'Context & Cost Discipline' "$ENTRYPOINT" \
-  "entrypoint/router must define context and cost discipline"
-grep_required 'Subagent Collaboration Model' "$ENTRYPOINT" \
-  "entrypoint/router must define subagent collaboration model"
-grep_required 'Dispatch Economics' "$ENTRYPOINT" \
+grep_required 'dispatch-policy.md' "$ENTRYPOINT" \
   "entrypoint/router must point to dispatch economics"
+grep_required 'workflow-contract.md' "$ENTRYPOINT" \
+  "entrypoint/router must point to shared workflow judgment"
 grep_required 'Plans may' "$ENTRYPOINT" \
   "entrypoint/router must treat plans as routing guidance, not sole dispatch authorization"
-grep_required 'Teamwork orchestration is' "$ENTRYPOINT" \
-  "entrypoint/router must make Teamwork orchestration the default for non-lightweight coding work"
+grep_required 'proactively for non-lightweight work' "$ENTRYPOINT" \
+  "entrypoint/router must make proactive dispatch the Codex-first default"
 grep_required 'Subagent Tool Discovery Gate' "$ENTRYPOINT" \
   "entrypoint/router must require tool discovery before serial fallback"
-grep_required 'instructions authorize subagents' "$ENTRYPOINT" \
+grep_required 'If subagents are' "$ENTRYPOINT" \
   "entrypoint/router must respect platform subagent authorization"
 grep_required 'Workflow Pattern Selection' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must define workflow pattern selection"
@@ -344,12 +369,20 @@ grep_required 'Platform Native Policy Map' "$ROOT/skills/using-teamwork/referenc
   "workflow contract must define platform native policy map"
 grep_required 'Codex standing authorization' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must distinguish Codex standing authorization from dispatch economics"
-grep_required 'loaded project/global instruction' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+grep_required 'project/global instruction' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must support loaded Codex standing authorization"
-grep_required 'Teamwork activation decides dispatch economics' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
-  "workflow contract must make Teamwork activation decide dispatch economics"
-grep_required 'dispatch is the expected path' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
-  "workflow contract must make dispatch expected for independent non-lightweight tracks"
+grep_required 'Use subagent dispatch when' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must make dispatch conditional on authorization and economics"
+grep_required 'dispatch is preferred when' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must prefer dispatch for valuable independent tracks"
+grep_required 'permission profiles' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must name Codex permission profiles"
+grep_required 'codex doctor' "$ROOT/skills/using-teamwork/references/codex-deep-collaboration.md" \
+  "Codex deep collaboration reference must include diagnostics"
+grep_required 'Appshots' "$ROOT/skills/using-teamwork/references/codex-deep-collaboration.md" \
+  "Codex deep collaboration reference must include visual evidence"
+grep_required 'Proactive Custom Agents' "$ROOT/skills/using-teamwork/references/codex-deep-collaboration.md" \
+  "Codex deep collaboration reference must define proactive custom agents"
 grep_required 'routing guidance' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must define plan routing as guidance"
 grep_required 'not the only' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
@@ -487,7 +520,7 @@ grep_required 'accepted, approved, resumed' "$ROOT/skills/teamwork-execute/SKILL
 grep_required 'go ahead, proceed, do it' "$ROOT/skills/teamwork-execute/SKILL.md" \
   "execute skill description must cover natural continuation verbs"
 grep_required 'parallel Worker' "$ROOT/skills/teamwork-execute/SKILL.md" \
-  "execute skill must prefer parallel Worker subagents when useful"
+  "execute skill must prefer parallel Worker subagents for independent tracks"
 grep_required 'Automatic Stage Selection' "$ROOT/skills/using-teamwork/SKILL.md" \
   "using-teamwork must define automatic natural-language stage selection"
 grep_required 'Do not wait for the user to name a Teamwork skill' "$ROOT/skills/using-teamwork/SKILL.md" \
@@ -524,27 +557,27 @@ for term in observed inferred claimed; do
   grep_required "$term" "$ROOT/skills/teamwork-review/SKILL.md" "review skill must mention $term evidence"
 done
 
-grep_required 'Explorer -> `agent_type:"teamwork_explorer"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Explorer -> `agent_type:"teamwork_explorer"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must map Explorer to Codex custom agent"
-grep_required '`agent_type:"teamwork_worker"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`agent_type:"teamwork_worker"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must map Worker to Codex custom agent"
-grep_required '`agent_type:"teamwork_designer"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`agent_type:"teamwork_designer"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must map Designer to Codex custom agent"
-grep_required '`agent_type:"teamwork_judge"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`agent_type:"teamwork_judge"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must map Judge to Codex custom agent"
-grep_required '`agent_type:"teamwork_reviewer"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`agent_type:"teamwork_reviewer"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must map Reviewer to Codex custom agent"
-grep_required 'Fallback when custom agents are unavailable' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Fallback when custom agents are unavailable' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define Codex built-in fallback mapping"
-grep_required '`fast` -> `reasoning_effort:"low"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`fast` -> `reasoning_effort:"low"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must map fast tier"
-grep_required '`standard` -> `reasoning_effort:"medium"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`standard` -> `reasoning_effort:"medium"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must map standard tier"
-grep_required '`high reasoning` -> `reasoning_effort:"high"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`high reasoning` -> `reasoning_effort:"high"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must map high reasoning tier"
-grep_required 'Do not combine' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Do not combine' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must reject invalid full-history routing"
-grep_required 'bounded Codex role dispatch' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Codex role dispatch' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "Codex role dispatch must pin role-profile models by default"
 grep_required 'Role Profiles' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must define role profiles"
@@ -552,69 +585,69 @@ grep_required 'model class `balanced` by default' "$ROOT/skills/using-teamwork/r
   "Explorer profile must avoid weak default models"
 grep_required 'reasoning `high`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "Judge/Reviewer profiles must require high reasoning class"
-grep_required 'Codex Model Mapping' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Codex Model Mapping' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define Codex model mapping"
-grep_required 'Codex Native Field Presets' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Codex Native Field Presets' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define explicit Codex native field presets"
-grep_required '`cheap-fast` -> `gpt-5.4-mini`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`cheap-fast` -> `gpt-5.4-mini`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "model mapping must define cheap-fast model"
-grep_required 'opt-in only for trivial read-only' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'opt-in only for trivial read-only' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "cheap-fast model must be opt-in, not a default"
-grep_required '`balanced` -> `gpt-5.4`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`balanced` -> `gpt-5.4`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "model mapping must define balanced model"
-grep_required '`coding` -> `gpt-5.3-codex`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`coding` -> `gpt-5.3-codex`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "model mapping must define coding model"
-grep_required '`frontier` -> `gpt-5.5`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`frontier` -> `gpt-5.5`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "model mapping must define frontier model"
-grep_required 'Explorer default: `agent_type:"explorer"`, `model:"gpt-5.4"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Explorer default: `agent_type:"explorer"`, `model:"gpt-5.4"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Codex Explorer preset must pin balanced model"
-grep_required 'Worker default: `agent_type:"worker"`, `model:"gpt-5.3-codex"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Worker default: `agent_type:"worker"`, `model:"gpt-5.3-codex"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Codex Worker preset must pin coding model"
-grep_required 'Judge default: `agent_type:"default"`, `model:"gpt-5.5"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Judge default: `agent_type:"default"`, `model:"gpt-5.5"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Codex Judge preset must pin frontier model"
 grep_required 'Codex Native Field Presets' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require Codex native field presets"
-grep_required 'Platform Dispatch Fields' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Platform Dispatch Fields' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define platform dispatch fields"
-grep_required 'Cursor Mapping' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Cursor Mapping' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define Cursor mapping"
-grep_required 'Explorer -> `subagent_type:"explore"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Explorer -> `subagent_type:"explore"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Cursor mapping must map Explorer to explore"
-grep_required 'Reviewer -> `subagent_type:"code-reviewer"`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Reviewer -> `subagent_type:"code-reviewer"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Cursor mapping must map Reviewer to code-reviewer"
-grep_required 'Cursor Model Mapping' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Cursor Model Mapping' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define Cursor model mapping"
-grep_required '`cheap-fast` -> `composer-2.5-fast`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`cheap-fast` -> `composer-2.5-fast`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Cursor model mapping must define cheap-fast model"
-grep_required '`balanced` -> `gpt-5.5-medium` when listed' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`balanced` -> `gpt-5.5-medium` when listed' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Cursor model mapping must define balanced model"
-grep_required '`coding` -> `gpt-5.5-medium` when listed' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`coding` -> `gpt-5.5-medium` when listed' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Cursor model mapping must define coding model"
-grep_required '`frontier` -> `claude-opus-4-7-thinking-high`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`frontier` -> `claude-opus-4-7-thinking-high`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Cursor model mapping must define frontier model"
-grep_required 'Cursor Task Parameters' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Cursor Task Parameters' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define Cursor Task parameters"
-grep_required 'Claude Code Mapping' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Claude Code Mapping' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define Claude Code mapping"
-grep_required 'Claude Code Task Parameters' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Claude Code Task Parameters' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define Claude Code Task parameters"
-grep_required 'Claude Code Model Mapping' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Claude Code Model Mapping' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define Claude Code model mapping"
-grep_required '`cheap-fast` -> `claude-haiku`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`cheap-fast` -> `claude-haiku`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Claude Code model mapping must define cheap-fast model"
-grep_required '`frontier` -> `claude-opus`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`frontier` -> `claude-opus`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Claude Code model mapping must define frontier model"
-grep_required 'readonly: true' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'readonly: true' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Cursor Task parameters must define readonly default"
-grep_required 'run_in_background: true' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'run_in_background: true' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Cursor Task parameters must define background dispatch"
-grep_required 'best-of-n-runner' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'best-of-n-runner' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Cursor Task parameters must define best-of-n-runner"
-grep_required 'resume: "self"' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'resume: "self"' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Cursor Task parameters must define self resume"
 grep_required 'code-reviewer' "$ROOT/skills/teamwork-review/SKILL.md" \
   "review skill must mention Cursor code-reviewer evidence"
-grep_required 'platform native fields per dispatch-policy.md' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+grep_required 'platform native fields per platform-dispatch-mapping.md' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must use platform-neutral role templates"
 grep_required 'resume:"self"' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must define Cursor full-history fork"
@@ -640,8 +673,18 @@ grep_required 'Evaluate the split before implementation steps' "$ROOT/skills/usi
   "dispatch policy reference must place split before implementation steps"
 grep_required 'Stage-Routed Proactive Dispatch' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must define stage-routed proactive dispatch"
-grep_required 'parallel subagents are the default execution substrate' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
-  "dispatch policy must default independent non-lightweight work to parallel subagents"
+grep_required 'parallel subagents when' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy must use parallel subagents when economics justify it"
+grep_required 'Workflow-class' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy must include workflow-class escalation"
+grep_required 'phase plan' "$ROOT/skills/using-teamwork/references/workflow-orchestration.md" \
+  "workflow orchestration must require phase plan"
+grep_required 'Cross-check' "$ROOT/skills/using-teamwork/references/workflow-orchestration.md" \
+  "workflow orchestration must require cross-checking"
+grep_required 'Claude Code' "$ROOT/skills/using-teamwork/references/workflow-orchestration.md" \
+  "workflow orchestration must define Claude Code mapping"
+grep_required 'Codex' "$ROOT/skills/using-teamwork/references/workflow-orchestration.md" \
+  "workflow orchestration must define Codex mapping"
 grep_required 'When the active platform or loaded instructions authorize subagents' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy must respect platform-specific subagent authorization gates"
 grep_required 'Codex, a project or global standing' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
@@ -666,7 +709,7 @@ grep_required 'Subagent Prompt Contract' "$ROOT/skills/using-teamwork/references
   "subagent prompt contract must define subagent prompt contract"
 grep_required 'Conceptual Role: Explorer, Designer, Judge, Worker, or Reviewer' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require conceptual role"
-grep_required 'Native Fields: platform dispatch fields from `dispatch-policy.md`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+grep_required 'Native Fields: platform dispatch fields from `platform-dispatch-mapping.md`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require native fields"
 grep_required 'on Cursor `subagent_type`, `model` or `model: inherited`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must document Cursor native fields"
@@ -714,6 +757,10 @@ grep_required 'Codex/Cursor/Claude Code mapping' "$ROOT/skills/using-teamwork/re
   "compatibility routing index must mention Codex/Cursor/Claude Code mapping"
 grep_required 'dispatch-policy.md' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
   "compatibility routing index must point to dispatch policy"
+grep_required 'platform-dispatch-mapping.md' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
+  "compatibility routing index must point to platform dispatch mapping"
+grep_required 'workflow-orchestration.md' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
+  "compatibility routing index must point to workflow orchestration"
 grep_required 'subagent-prompt-contract.md' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
   "compatibility routing index must point to prompt contract"
 grep_required 'subagent-packets.md' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
@@ -726,8 +773,8 @@ grep_required 'lightweight `Dispatch Guidance:`' "$ROOT/skills/teamwork-plan/SKI
   "plan skill must support lightweight dispatch guidance"
 grep_required 'when subagents are authorized' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must respect subagent authorization"
-grep_required 'dispatch parallel Worker subagents by default' "$ROOT/skills/teamwork-execute/SKILL.md" \
-  "execute skill must default-dispatch independent Worker tracks"
+grep_required 'Dispatch parallel Worker subagents when' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  "execute skill must dispatch independent Worker tracks when economics justify it"
 grep_required 'when subagents' "$ROOT/skills/teamwork-execute/SKILL.md" \
   "execute skill must respect subagent authorization"
 grep_required 'Before dispatching more than 3 Workers' "$ROOT/skills/teamwork-execute/SKILL.md" \

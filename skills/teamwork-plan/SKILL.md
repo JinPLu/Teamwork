@@ -15,7 +15,8 @@ Read only as needed:
 - `skills/using-teamwork/references/dispatch-policy.md` for Designer/Judge and Dispatch Guidance.
 - `skills/using-teamwork/references/subagent-prompt-contract.md` before delegated prompt packets.
 - `skills/using-teamwork/references/plan-output.md` for durable or complete handoff templates.
-- `skills/using-teamwork/references/artifact-protocol.md` for durable plan triggers.
+- `skills/using-teamwork/references/artifact-protocol.md` for durable plan
+  triggers and optional current-state lookup.
 - `skills/using-teamwork/references/goal-iteration.md` for failed goal-plan revision.
 
 ## Inputs
@@ -77,3 +78,5 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 
 Use a compact chat plan for lightweight work. For durable plans, use
 `skills/using-teamwork/references/plan-output.md`.
+Include `Memory Delta:` only when durable project memory was checked or
+changed.

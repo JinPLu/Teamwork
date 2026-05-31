@@ -1,7 +1,7 @@
 {
   "name": "teamwork-skill",
-  "version": "0.14.0",
-  "description": "Claude Code skills for evidence-first planning, execution, review, subagent routing, and durable goal convergence.",
+  "version": "1.0.0",
+  "description": "Claude Code adapter skills for evidence-first planning, execution, review, Task subagent routing, and durable goal convergence.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"
@@ -21,8 +21,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Teamwork",
-    "shortDescription": "Strengthen Claude Code Task subagents, plans, and review with evidence-first workflow policy.",
-    "longDescription": "A Claude Code broad entrypoint plus dedicated stage skills for project instruction initialization, evidence gathering, goal proposal, durable artifact memory, scoped execution, Task subagent routing, fresh review, package updates, and autonomous goal convergence on top of Claude Code native capabilities.",
+    "shortDescription": "Use Teamwork's Codex-first protocol as a Claude Code Task-subagent adapter.",
+    "longDescription": "A Claude Code adapter entrypoint plus dedicated stage skills for project instruction initialization, evidence gathering, native Teamwork index/current memory, goal proposal, durable artifact memory, scoped execution, Task subagent routing, fresh review, package updates, and autonomous goal convergence on top of Claude Code native capabilities.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -33,9 +33,9 @@
     "defaultPrompt": [
       "Design a goal with evidence, scope, retry policy, artifacts, and Task subagent routing.",
       "Initialize or slim project AGENTS/CLAUDE rules while preserving local evidence boundaries.",
-      "Split a coding task into evidence-gathering, planning, execution, and review tracks.",
+      "Apply Teamwork's Codex-first collaboration protocol to Claude Code evidence, planning, execution, and review tracks.",
       "Use Task subagents for independent investigation, scoped Worker execution, or fresh-context review.",
-      "Map completion claims to direct evidence before accepting the result.",
+      "Map completion claims and Memory Delta status to direct evidence before accepting the result.",
       "Update Teamwork version metadata and validate the installed skill surface."
     ],
     "brandColor": "#2563EB"

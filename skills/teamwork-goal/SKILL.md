@@ -78,3 +78,5 @@ architecture, contracts, or user intent.
 ## Output
 
 Use `skills/using-teamwork/references/goal-iteration.md`.
+Goal iterations that read or change durable project memory include
+`Memory Delta:` per `skills/using-teamwork/references/artifact-protocol.md`.

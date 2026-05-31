@@ -13,6 +13,12 @@ dist/
 docs/teamwork/plans/
 docs/teamwork/research/
 docs/teamwork/reports/
+docs/teamwork/workflows/
+docs/teamwork/index.json
+docs/teamwork/README.md
+docs/teamwork/current.md
+docs/teamwork/decisions.md
+docs/teamwork/migrations.md
 docs/superpowers/
 
 # Local project symlinks/copies from ./install.sh project

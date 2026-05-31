@@ -3,7 +3,10 @@
 Compatibility index for Teamwork subagent routing. Prefer the focused files:
 
 - `dispatch-policy.md`: Stage-Routed Proactive Dispatch, roles, economics, and
-  Codex/Cursor/Claude Code mapping.
+  workflow-class escalation.
+- `platform-dispatch-mapping.md`: Codex/Cursor/Claude Code mapping and native
+  fields.
+- `workflow-orchestration.md`: swarm-scale phased orchestration.
 - `subagent-prompt-contract.md`: Context Strategies, required prompt fields,
   role templates, allowed/forbidden actions, and escalation triggers.
 - `subagent-packets.md`: Explorer Result Packet, Designer Decision Packet,

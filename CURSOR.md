@@ -4,9 +4,9 @@ Teamwork is a platform-native augmentation layer for Cursor. Cursor native
 capabilities remain the substrate: editing, shell, MCP, permissions, `Task`
 subagents, browser automation, and verification. Teamwork defines when and how
 those capabilities should be combined for evidence-heavy, reviewed, delegated, or
-autonomous work. After Teamwork activates, only quick factual answers,
-one-liners, and tiny obvious edits stay native; non-lightweight work defaults to
-proactive subagent dispatch and fresh Reviewer acceptance.
+autonomous work. After Teamwork activates, the main agent upgrades from native
+flow only when evidence, planning, dispatch, review, memory, or goal
+convergence improves correctness, continuity, or cost.
 
 ## Install
 
@@ -45,12 +45,11 @@ model classes (`cheap-fast`, `balanced`, `coding`, `frontier`, `inherited`)
 platform-neutral. At dispatch time, translate them through Cursor mapping in
 `skills/using-teamwork/references/dispatch-policy.md`:
 
-Teamwork activation is standing authorization for stage-routed proactive
-dispatch on non-lightweight work; the user does not need to say "fan out
-subagents". Dispatch independent Explorer, Designer, Judge, Worker, or Reviewer
-tracks when they can improve elapsed time, context isolation, or review quality.
-Non-lightweight acceptance requires a fresh Reviewer unless `Task` is
-unavailable after discovery or the user opts out.
+Teamwork activation is standing authorization for stage-routed dispatch when it
+adds value; the user does not need to say "fan out subagents". Dispatch
+independent Explorer, Designer, Judge, Worker, or Reviewer tracks when they can
+improve elapsed time, context isolation, or review quality. Use a fresh
+Reviewer when available and valuable; otherwise label residual unreviewed risk.
 
 - Explorer -> `subagent_type:"explore"`
 - Worker -> `subagent_type:"generalPurpose"` or `shell` for shell-only tracks
@@ -77,6 +76,12 @@ Stop Rules, and Research + Plan Adequacy Gate as Codex:
 
 The rolling report is the durable goal surface on Cursor. See
 `skills/using-teamwork/references/goal-iteration.md` for the full loop.
+
+## Teamwork Memory
+
+When `docs/teamwork/index.json` exists and durable memory is relevant, Teamwork
+routes read it before historical artifacts. Stages report `Memory Delta` only
+when durable memory was checked or changed.
 
 ## Router
 
