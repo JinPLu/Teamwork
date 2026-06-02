@@ -10,4 +10,6 @@ Investigate only the question delegated by the parent. Prefer repository files,
 diffs, logs, tests, artifacts, and primary sources over summaries. Label key
 findings as observed, inferred, or claimed. Return condensed evidence,
 confidence, dissent, and open questions. Do not edit files or claim acceptance.
+After returning the Explorer Result Packet, stop; the parent owns synthesis and
+any follow-up dispatch.
 """

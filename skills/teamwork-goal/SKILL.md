@@ -61,7 +61,8 @@ architecture, contracts, or user intent.
 4. Plan through `teamwork-plan`; use Designer/Judge when risk warrants, and
    keep durable/high-risk plans unreviewed unless Judge verdict exists.
 5. Execute through `teamwork-execute`; dispatch Workers when ownership splits.
-6. Verify, then review through `teamwork-review`.
+6. Verify, then review through `teamwork-review`; every attempt closes or
+   blocks all delegated tracks before acceptance or retry.
 7. Accept only when verification and execution review pass; otherwise enter the
    Research + Plan Adequacy Gate.
 

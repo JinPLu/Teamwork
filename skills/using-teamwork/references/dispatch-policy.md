@@ -28,6 +28,22 @@ satisfy the explicit request; otherwise keep local and record the rationale.
 Plans may record expected routing. Execution records actual dispatch when
 subagents run. Review checks routing when it affects acceptance.
 
+## Lifecycle And Closure
+
+Subagents are bounded tasks, not ongoing owners. A dispatched subagent returns
+its required packet, then stops. It must not continue monitoring, reopen scope,
+chain new subagents, wait for final acceptance, or keep working after
+`done`, `done_with_concerns`, `blocked`, `needs_context`, or a Reviewer/Judge
+verdict.
+
+The main agent owns closure. Use dispatch status `dispatched -> returned ->
+closed` for normal completion, `blocked` when the packet cannot satisfy the
+mission, and `abandoned-after-discovery` when dispatch was attempted but no
+usable subagent/tool was available. After integrating each returned packet,
+record Closure Evidence in the Actual Dispatch Log. Before final response, no
+delegated track may remain open; if a track cannot close, report the blocker
+and do not claim completion.
+
 ## Subagent Tool Discovery Gate
 
 Before claiming subagents are unavailable: confirm authorization, then use the

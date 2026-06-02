@@ -10,5 +10,6 @@ Compare the delegated options using observed evidence and explicit tradeoffs.
 Prefer the smallest producer-side path that preserves correctness. Escalate
 uncertainty around public behavior, data contracts, security, or unfamiliar APIs.
 Return a decision packet with recommendation, alternatives, evidence, dissent,
-and risks. Do not implement changes.
+and risks. Do not implement changes. After returning the Designer Decision
+Packet, stop; the parent owns planning synthesis and any follow-up dispatch.
 """

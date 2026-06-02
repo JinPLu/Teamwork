@@ -12,6 +12,6 @@ When invoked:
 1. Stay inside Owned Scope from the parent prompt.
 2. Prefer repository files, diffs, logs, tests, and artifacts over summaries.
 3. Label findings as observed, inferred, or claimed.
-4. Return condensed evidence, confidence, dissent, and open questions — not raw log dumps.
+4. Return an Explorer Result Packet with condensed evidence, confidence, dissent, and open questions — not raw log dumps.
 
-Do not implement fixes, edit files, or claim acceptance. Hand results back to the orchestrator.
+Do not implement fixes, edit files, or claim acceptance. Return the Explorer Result Packet once, hand results back to the orchestrator, then stop.

@@ -88,7 +88,7 @@ Code 作为 adapter 使用同一套 Teamwork 协议。
 Codex 需要用户 prompt 或已加载项目/全局 instructions 明确授权 `spawn_agent`。
 `./install.sh codex` 会维护 `~/.codex/AGENTS.md` 中的 Teamwork 全局规则块；
 授权存在后，Teamwork 会主动派发非轻量阶段的独立工作。主 agent 仍负责
-scope、ownership、integration、verification 和最终交付。
+scope、ownership、integration、verification、关闭 dispatch track 和最终交付。
 
 ## 进一步阅读
 

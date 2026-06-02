@@ -90,7 +90,8 @@ Memory Delta Evidence:
 
 ## Actual Dispatch Log
 
-Record when dispatch affects review:
+Record when dispatch affects review. Final status cannot remain `dispatched`
+or `returned` at handoff or final response.
 
 ```text
 Actual Dispatch Log:
@@ -100,5 +101,6 @@ Actual Dispatch Log:
   Ownership:
   Prompt Packet:
   Returned Packet:
-  Status:
+  Status: dispatched | returned | closed | blocked | abandoned-after-discovery
+  Closure Evidence: <packet integrated | blocker reported | discovery failed>
 ```

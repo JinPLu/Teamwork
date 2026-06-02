@@ -54,6 +54,8 @@ Do not combine `fork_context:true` with `agent_type`, `model`, or
 - Reviewer -> `subagent_type:"code-reviewer"`.
 - CI failure investigation -> `subagent_type:"ci-investigator"` when focused.
 - Designer, Judge -> `subagent_type:"generalPurpose"` with role in prompt.
+  For `generalPurpose`, the prompt contract must carry role, packet, and
+  closure semantics.
 
 ## Cursor Task Parameters
 
@@ -79,6 +81,8 @@ Claude Code subagents are user-defined under `~/.claude/agents/`.
 - Worker -> `subagent_type:"general-purpose"` or user-defined `worker`.
 - Reviewer -> `subagent_type:"code-reviewer"` if defined, else `general-purpose`.
 - Designer, Judge -> `subagent_type:"general-purpose"` with role in prompt.
+  For `general-purpose`, the prompt contract must carry role, packet, and
+  closure semantics.
 
 ## Claude Code Task Parameters
 

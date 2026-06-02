@@ -188,6 +188,41 @@ grep_required 'Manual smoke evidence captures source' "$ROOT/skills/using-teamwo
   "review-checks must include manual smoke evidence capture fields"
 grep_required 'When delegated work may change durable project memory' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must make Memory Delta Candidate conditional"
+grep_required 'Lifecycle And Closure' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy must document subagent lifecycle closure"
+grep_required 'Closure Instruction' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+  "subagent prompt contract must require explicit closure instructions"
+grep_required 'Closure Evidence' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+  "subagent packets must record dispatch closure evidence"
+grep_required 'delegated track may remain open' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy must prohibit open delegated tracks before final response"
+grep_required 'Subagents are bounded tasks: return the required packet once, then stop' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must define bounded subagent lifecycle"
+grep_required '`abandoned-after-discovery`' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must use canonical abandoned-after-discovery status"
+grep_required 'dispatched -> returned ->' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy must define dispatch status transitions"
+grep_required '`done_with_concerns`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy must include all Worker terminal statuses"
+grep_required 'Final status cannot remain `dispatched`' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+  "subagent packets must forbid open final dispatch status"
+grep_required 'final status, closure evidence' "$ROOT/skills/using-teamwork/references/plan-output.md" \
+  "plan output must include dispatch closure evidence"
+grep_required 'No delegated track remains `dispatched` or `returned`' "$ROOT/skills/using-teamwork/references/review-checks.md" \
+  "review checks must reject open delegated tracks"
+grep_required 'closed dispatch log or continuity' "$ROOT/skills/teamwork-research/SKILL.md" \
+  "research handoff must close delegated tracks"
+grep_required 'Closure Evidence after integration' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  "execute skill must close Worker tracks after integration"
+grep_required 'Reject open delegated tracks' "$ROOT/skills/teamwork-review/SKILL.md" \
+  "review skill must reject open delegated tracks"
+grep_required 'Verdict: accept | revise | blocked' "$ROOT/skills/teamwork-review/SKILL.md" \
+  "review skill verdict enum must match Reviewer Verdict Packet"
+grep_absent 'Verdict: pass | pass-with-notes' \
+  "review skill must not use stale pass/pass-with-notes verdict enum" \
+  "$ROOT/skills/teamwork-review/SKILL.md"
+grep_required 'closes or' "$ROOT/skills/teamwork-goal/SKILL.md" \
+  "goal loop must close or block delegated tracks before retry"
 
 grep_required 'references/workflow-contract.md' "$ROOT/skills/using-teamwork/SKILL.md" \
   "using-teamwork must reference shared workflow contract"
@@ -415,6 +450,14 @@ grep_required '^model: sonnet$' "$ROOT/templates/claude-agents/worker.md" \
   "Claude worker agent must use coding/balanced model tier"
 grep_required '^model: opus$' "$ROOT/templates/claude-agents/code-reviewer.md" \
   "Claude reviewer agent must use frontier model tier"
+grep_required 'Explorer Result Packet once' "$ROOT/templates/claude-agents/explore.md" \
+  "Claude explore agent must return exact Explorer packet once and stop"
+grep_required 'Worker Completion Packet once' "$ROOT/templates/claude-agents/worker.md" \
+  "Claude worker agent must return exact Worker packet once and stop"
+grep_required 'Reviewer Verdict Packet once' "$ROOT/templates/claude-agents/code-reviewer.md" \
+  "Claude reviewer agent must return exact Reviewer packet once and stop"
+grep_required 'accept`, `revise`, or `blocked`' "$ROOT/templates/claude-agents/code-reviewer.md" \
+  "Claude reviewer verdict enum must match Reviewer Verdict Packet"
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
   [[ -f "$ROOT/templates/codex-agents/$agent.toml" ]] \
     || fail "missing templates/codex-agents/$agent.toml"
@@ -615,6 +658,8 @@ grep_required 'Explorer -> `subagent_type:"explore"`' "$ROOT/skills/using-teamwo
   "Cursor mapping must map Explorer to explore"
 grep_required 'Reviewer -> `subagent_type:"code-reviewer"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Cursor mapping must map Reviewer to code-reviewer"
+grep_required 'For `generalPurpose`, the prompt contract must carry role, packet, and' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+  "Cursor generalPurpose fallback must rely on full prompt contract for closure"
 grep_required 'Cursor Model Mapping' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define Cursor model mapping"
 grep_required '`cheap-fast` -> `composer-2.5-fast`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
@@ -631,6 +676,8 @@ grep_required 'Claude Code Mapping' "$ROOT/skills/using-teamwork/references/plat
   "dispatch policy reference must define Claude Code mapping"
 grep_required 'Claude Code Task Parameters' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define Claude Code Task parameters"
+grep_required 'For `general-purpose`, the prompt contract must carry role, packet, and' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+  "Claude general-purpose fallback must rely on full prompt contract for closure"
 grep_required 'Claude Code Model Mapping' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define Claude Code model mapping"
 grep_required '`cheap-fast` -> `claude-haiku`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \

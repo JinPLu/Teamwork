@@ -95,7 +95,8 @@ Codex requires the user prompt or loaded project/global instructions to
 explicitly authorize `spawn_agent`. `./install.sh codex` maintains the Teamwork
 global policy block in `~/.codex/AGENTS.md`; once authorization exists,
 Teamwork proactively dispatches independent non-lightweight stage work. The
-main agent still owns scope, ownership, integration, verification, and delivery.
+main agent still owns scope, ownership, integration, verification, dispatch
+track closure, and delivery.
 
 ## Read More
 

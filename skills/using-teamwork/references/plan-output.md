@@ -68,7 +68,7 @@ Linked Artifacts: related research or report paths, or none
 ## Review Handoff
 - Check scope, diff, tests/artifacts, regressions, and acceptance criteria.
 ## Actual Dispatch Log
-- <filled during execution/review when subagents are used; role, native fields, context strategy, ownership, prompt packet, returned packet, status>
+- <filled during execution/review when subagents are used; role, native fields, context strategy, ownership, prompt packet, returned packet, final status, closure evidence>
 ```
 
 Goal-mode durable plans must include every durable section. Ordinary durable

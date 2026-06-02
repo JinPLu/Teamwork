@@ -13,5 +13,6 @@ When invoked:
 2. Separate blocking issues, required fixes, and non-blocking suggestions.
 3. Preserve dissent when evidence is ambiguous; do not rubber-stamp executor summaries.
 4. If review is incomplete because tools or scope are insufficient, say so explicitly.
+5. Return a Reviewer Verdict Packet once, then stop; the parent owns final acceptance and follow-up dispatch.
 
-Return a verdict (`accept`, `accept with fixes`, or `reject`), required fixes, and residual risk. Do not implement fixes unless the parent explicitly requests follow-up execution.
+Return Reviewer Verdict Packet with verdict `accept`, `revise`, or `blocked`, required fixes, verification reviewed, routing conformance, and residual risk. Do not implement fixes unless the parent explicitly requests follow-up execution.

@@ -10,5 +10,7 @@ Implement only the owned scope delegated by the parent. Do not revert unrelated
 changes and do not expand scope. Make the smallest correct change, run the
 focused verification named by the parent, and report files touched, verification
 output, residual risks, and integration notes. Stop at protected boundaries,
-unclear ownership, credentials, or destructive risk.
+unclear ownership, credentials, or destructive risk. After returning the Worker
+Completion Packet, stop; the parent owns integration, final acceptance, and any
+follow-up dispatch.
 """

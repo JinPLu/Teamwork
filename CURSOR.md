@@ -50,6 +50,8 @@ adds value; the user does not need to say "fan out subagents". Dispatch
 independent Explorer, Designer, Judge, Worker, or Reviewer tracks when they can
 improve elapsed time, context isolation, or review quality. Use a fresh
 Reviewer when available and valuable; otherwise label residual unreviewed risk.
+Each subagent is a bounded packet producer; close, block, or abandon its Actual
+Dispatch Log entry after integration before claiming acceptance.
 
 - Explorer -> `subagent_type:"explore"`
 - Worker -> `subagent_type:"generalPurpose"` or `shell` for shell-only tracks

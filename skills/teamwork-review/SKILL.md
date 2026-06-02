@@ -36,6 +36,8 @@ Read only as needed:
   output (Cursor or Claude Code), git diff, CI summaries, test runner output,
   and tool output as evidence inputs, not final verdicts.
 - Do not fix issues during review unless explicitly asked.
+- Reviewer dispatch follows the same closure rule: return one verdict packet,
+  integrate it, and close or block the track before acceptance.
 
 ## Plan Review
 
@@ -49,7 +51,7 @@ Use `review-checks.md` for diff scope, plan conformance, verification,
 Routing conformance, Actual Dispatch Log, Worker Completion Packet, Reviewer
 Verdict Packet, dispatch economics, workspace hygiene, and next failure route.
 Confirm Stage-Routed Proactive Dispatch was evaluated even when the plan did not
-name every track.
+name every track. Reject open delegated tracks without blocker rationale.
 
 ## Verdict Format
 
@@ -60,7 +62,7 @@ Evidence Read:
 Findings:
 - [blocker|major|minor] <issue> - <evidence> - <required action>
 Dissent / Uncertainty: <none or concern>
-Verdict: pass | pass-with-notes | revise | blocked
+Verdict: accept | revise | blocked
 Rationale: <brief evidence-based reason>
 ```
 

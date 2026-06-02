@@ -40,6 +40,7 @@ Return `revise` or `blocked` when:
   valid discovery/authorization/user-opt-out exception is recorded;
 - delegated work lacks prompt packets, output schema, ownership, or escalation
   triggers;
+- delegated execution has open dispatch status without blocker rationale;
 - routing uses invalid platform dispatch fields, nonexistent agent types, or misleading
   inherited reasoning effort;
 - protected contracts, architecture, or public behavior change outside scope.
@@ -56,8 +57,9 @@ Check:
 - Diff and verification conform to the accepted lightweight plan or durable
   artifact.
 - Actual Dispatch Log records subagent roles, native fields, model tier,
-  context strategy, prompt packets, returned packets, order, and file ownership
-  when subagents were used.
+  context strategy, prompt packets, returned packets, order, file ownership,
+  final status, and closure evidence when subagents were used.
+- No delegated track remains `dispatched` or `returned` at review handoff.
 - Worker Completion Packet and Reviewer Verdict Packet map implementation,
   verification, deviations, routing conformance, and residual risk to evidence.
 - Durable memory check: if current-state files changed, require a material

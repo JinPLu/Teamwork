@@ -123,6 +123,10 @@ research and record reuse/update/new disposition in goal-mode reports.
 Subagents provide independent context, parallel evidence, isolated execution, or
 fresh review. The main agent is the orchestrator: it owns scope, synthesis,
 conflict resolution, integration, final verification, and final acceptance.
+Subagents are bounded tasks: return the required packet once, then stop. The
+orchestrator closes each delegated track as `closed`, `blocked`, or
+`abandoned-after-discovery` and must not claim completion while any track
+remains open.
 
 Same-context self-review is weaker than fresh review for non-lightweight work.
 Use a fresh Reviewer by default before claiming non-lightweight execution is

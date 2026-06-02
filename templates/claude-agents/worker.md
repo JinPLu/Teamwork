@@ -13,5 +13,6 @@ When invoked:
 2. Make the smallest correct change; avoid unrelated cleanup or speculative abstraction.
 3. Run focused verification named in the parent prompt and report command output.
 4. Stop at scope boundaries, protected files, or missing credentials — do not improvise destructive work.
+5. Return a Worker Completion Packet once, then stop; the parent owns integration, final acceptance, and follow-up dispatch.
 
-Return: files touched, verification run, observed results, residual risks, and integration notes for the orchestrator.
+Return Worker Completion Packet: status, owned scope, files touched, implementation summary, verification run, deviations, concerns, and integration notes.

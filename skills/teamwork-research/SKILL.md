@@ -42,11 +42,13 @@ Artifacts include Search Keys and Abstract for future retrieval.
    `Dispatch Exception:`.
 5. Require Explorer Result Packet with observed/inferred/claimed evidence,
    confidence, dissent, open questions, and condensed evidence.
-6. Read primary local evidence first and label key findings.
-7. Use external calibration when current platform, dependency, model, API,
+6. Close each Explorer track in the Actual Dispatch Log after synthesis, or
+   record `blocked` / `abandoned-after-discovery` with rationale.
+7. Read primary local evidence first and label key findings.
+8. Use external calibration when current platform, dependency, model, API,
    upstream behavior, performance, unfamiliar frameworks, or repeated failures
    could affect the answer.
-8. Synthesize options, preserve dissent, recommend the smallest producer-side
+9. Synthesize options, preserve dissent, recommend the smallest producer-side
    path, and write/update any required artifact.
 
 ## Hidden Research Gate
@@ -65,7 +67,7 @@ evidence, or the active plan is invalidated.
 
 ## Handoff
 
-Return artifact path or none, question, dispatch packets or continuity
+Return artifact path or none, question, closed dispatch log or continuity
 rationale, assumptions, evidence, options, recommendation, dissent, refresh
 triggers, optional `Memory Delta:` when durable project memory was checked or
 changed, and `Route: teamwork-plan`.

@@ -57,7 +57,9 @@ worktree isolation, and require Worker Completion Packet.
 3. State files you or Workers intend to touch.
 4. Make only planned, minimal, producer-side edits.
 5. Integrate Worker Completion Packets before final verification.
-6. Stop if new evidence invalidates the plan.
+6. Mark each delegated track `closed`, `blocked`, or
+   `abandoned-after-discovery` with Closure Evidence after integration.
+7. Stop if new evidence invalidates the plan.
 
 ## Verification And Failure
 
@@ -77,5 +79,5 @@ continuity rationale, deviations, failures/blockers, and review request.
 Execution cannot accept its own work. For non-lightweight work, request a
 fresh-context Reviewer subagent before any completion claim; if subagents are
 unavailable after discovery or the user forbids them, report that acceptance is
-unreviewed. Include `Memory Delta:` only when durable project memory was
-checked or changed.
+unreviewed. Do not claim completion while any delegated track is still open.
+Include `Memory Delta:` only when durable project memory was checked or changed.

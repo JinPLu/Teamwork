@@ -11,57 +11,56 @@ for returned shapes read `subagent-packets.md`.
 - `owned-files-only`: owned paths, allowed edits, and verification target.
 - `fresh-context-review`: review target, criteria, diff/artifacts, rejection
   rules, and no parent reasoning.
-- `full-history-fork`: only when the side task needs nearly all parent context
-  and explicit routing overrides are not needed. Codex: `fork_context:true`.
-  Cursor: `Task` with `resume:"self"`. Claude Code: not directly supported;
-  pass condensed context inline instead.
-- `explicit-non-inheriting-dispatch`: when role, model tier, or reasoning must
-  differ from the parent. Codex: override `agent_type`, `model`, or
-  `reasoning_effort`. Cursor: override `subagent_type` or `model`. Claude
-  Code: choose a `subagent_type` whose agent definition has the desired model
-  and tool scope.
+- `full-history-fork`: side task needs nearly all parent context. Codex:
+  `fork_context:true`. Cursor: `Task` with `resume:"self"`. Claude Code: pass
+  condensed context inline.
+- `explicit-non-inheriting-dispatch`: role, model tier, or reasoning differs.
+  Codex: override `agent_type`, `model`, or `reasoning_effort`. Cursor:
+  override `subagent_type` or `model`. Claude Code: choose a matching
+  `subagent_type`.
 
 ## Required Fields
 
 Every delegated prompt includes:
 
 - Conceptual Role: Explorer, Designer, Judge, Worker, or Reviewer.
-- Native Fields: platform dispatch fields from `platform-dispatch-mapping.md`
-  — on Codex `agent_type`, `model` or `model: inherited`,
-  `reasoning_effort`, and `fork_context`; on Cursor `subagent_type`, `model` or `model: inherited`;
-  on Claude Code `subagent_type`.
+- Native Fields: platform dispatch fields from `platform-dispatch-mapping.md`.
+  Codex: `agent_type`, `model` or `model: inherited`, `reasoning_effort`,
+  `fork_context`; on Cursor `subagent_type`, `model` or `model: inherited`;
+  Claude Code: `subagent_type`.
 - Mission: one concrete question, decision, implementation slice, or review.
 - Source: plan, research, report, diff, command output, or file paths.
 - Inputs: exact files, commands, evidence, assumptions, and acceptance target.
 - Owned Scope: files/components the subagent may inspect or edit.
 - Allowed Actions: read-only, workspace-writing, verification, or review-only.
 - Forbidden Actions: scope expansion, destructive operations, credentials,
-  overlapping writes, unrelated cleanup, broad refactors, final acceptance.
+  overlapping writes, unrelated cleanup, broad refactors, final acceptance,
+  follow-on monitoring, chaining subagents, or continuing after the packet.
 - Context Strategy: one value from `Context Strategies`.
 - Verification/Acceptance Target: command, artifact, behavior, or checklist.
-- Escalation Triggers: missing context, unclear ownership, protected-boundary
-  conflict, plan mismatch, destructive risk, auth failure, or uncertainty that
-  changes public behavior, architecture, or contracts.
+- Escalation Triggers: missing context, unclear ownership, protected boundary,
+  plan mismatch, destructive risk, auth failure, or uncertainty changing public
+  behavior, architecture, or contracts.
 - Required Output Schema: matching packet from `subagent-packets.md`.
+- Closure Instruction: return the required packet once, then stop; the
+  orchestrator owns integration, final acceptance, and any further dispatch.
 
 When delegated work may change durable project memory, ask for `Memory Delta
 Candidate` (`none | current | plan | research | decision | supersede | compact |
-deferred`). Subagents only propose candidates; the orchestrator decides writes.
+deferred`). The orchestrator decides writes.
 
-For Codex, prefer installed Teamwork custom agents from `Codex Mapping` in
-`platform-dispatch-mapping.md`; when falling back to built-ins, fill native
-fields from `Codex Native Field Presets` unless using `full-history-fork`. If
-`model` is omitted, write
-`model: inherited` and why inheritance is safer than an explicit Role Profile
-model. If `model` is pinned, write the model class and reason for the override.
-Never imply a stronger model than the Native Fields request.
+For Codex, prefer Teamwork custom agents from `Codex Mapping`; otherwise fill
+native fields from `Codex Native Field Presets` unless using
+`full-history-fork`. If `model` is omitted, write `model: inherited` and why.
+If pinned, write model class and reason. Never imply a stronger model than the
+Native Fields request.
 
 ## Role Templates
 
 ```text
-Explorer: native fields <platform native fields per platform-dispatch-mapping.md>; answer <evidence question>; read-only; output Explorer Result Packet.
-Designer: native fields <platform native fields per platform-dispatch-mapping.md>; compare <decision options>; read-only; output Designer Decision Packet.
-Judge: native fields <platform native fields per platform-dispatch-mapping.md>; review <plan> readiness; read-only; output Judge Plan Review Packet.
-Worker: native fields <platform native fields per platform-dispatch-mapping.md>; implement <owned slice>; write only owned scope; output Worker Completion Packet.
-Reviewer: native fields <platform native fields per platform-dispatch-mapping.md>; review <target> against criteria; read-only; output Reviewer Verdict Packet.
+Explorer: platform native fields per platform-dispatch-mapping.md; answer evidence question; read-only; output packet once, then stop.
+Designer: compare options; read-only; output packet once, then stop.
+Judge: review plan readiness; read-only; output packet once, then stop.
+Worker: implement owned slice; write owned scope only; output packet once, then stop.
+Reviewer: review target; read-only; output packet once, then stop.
 ```
