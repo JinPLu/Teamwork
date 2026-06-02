@@ -30,7 +30,7 @@ decisions stay in `dispatch-policy.md`.
 - `cheap-fast` -> `gpt-5.4-mini`; opt-in only for trivial read-only output
   under explicit latency/quota pressure.
 - `balanced` -> `gpt-5.4`.
-- `coding` -> `gpt-5.3-codex`.
+- `coding` -> `gpt-5.4`.
 - `frontier` -> `gpt-5.5`.
 - `inherited` -> omit `model`; record why inheritance beats Role Profile.
 
@@ -39,7 +39,7 @@ decisions stay in `dispatch-policy.md`.
 Use Teamwork custom agents when installed. For built-in fallbacks:
 
 - Explorer default: `agent_type:"explorer"`, `model:"gpt-5.4"`, `reasoning_effort:"medium"`.
-- Worker default: `agent_type:"worker"`, `model:"gpt-5.3-codex"`, `reasoning_effort:"medium"`.
+- Worker default: `agent_type:"worker"`, `model:"gpt-5.4"`, `reasoning_effort:"medium"`.
 - Designer default: `agent_type:"default"`, `model:"gpt-5.4"`, `reasoning_effort:"medium"`; prompt says `Conceptual Role: Designer`.
 - Judge default: `agent_type:"default"`, `model:"gpt-5.5"`, `reasoning_effort:"high"`; prompt says `Conceptual Role: Judge`.
 - Reviewer default: `agent_type:"default"`, `model:"gpt-5.5"`, `reasoning_effort:"high"`.

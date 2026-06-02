@@ -478,7 +478,7 @@ grep_required '^name = "teamwork_reviewer"$' "$ROOT/templates/codex-agents/teamw
   "Codex reviewer agent must declare exact name"
 grep_required '^model = "gpt-5.4"$' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
   "Codex explorer agent must use balanced model tier"
-grep_required '^model = "gpt-5.3-codex"$' "$ROOT/templates/codex-agents/teamwork-worker.toml" \
+grep_required '^model = "gpt-5.4"$' "$ROOT/templates/codex-agents/teamwork-worker.toml" \
   "Codex worker agent must use coding model tier"
 grep_required '^model = "gpt-5.4"$' "$ROOT/templates/codex-agents/teamwork-designer.toml" \
   "Codex designer agent must use balanced model tier"
@@ -638,14 +638,17 @@ grep_required 'opt-in only for trivial read-only' "$ROOT/skills/using-teamwork/r
   "cheap-fast model must be opt-in, not a default"
 grep_required '`balanced` -> `gpt-5.4`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "model mapping must define balanced model"
-grep_required '`coding` -> `gpt-5.3-codex`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+grep_required '`coding` -> `gpt-5.4`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "model mapping must define coding model"
 grep_required '`frontier` -> `gpt-5.5`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "model mapping must define frontier model"
 grep_required 'Explorer default: `agent_type:"explorer"`, `model:"gpt-5.4"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Codex Explorer preset must pin balanced model"
-grep_required 'Worker default: `agent_type:"worker"`, `model:"gpt-5.3-codex"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+grep_required 'Worker default: `agent_type:"worker"`, `model:"gpt-5.4"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Codex Worker preset must pin coding model"
+grep_absent 'gpt-5.3-codex' \
+  "Codex custom-agent model mapping must not use removed gpt-5.3-codex slug" \
+  "$ROOT/templates/codex-agents" "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" "$ROOT/CODEX.md"
 grep_required 'Judge default: `agent_type:"default"`, `model:"gpt-5.5"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Codex Judge preset must pin frontier model"
 grep_required 'Codex Native Field Presets' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
