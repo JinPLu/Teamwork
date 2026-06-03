@@ -578,10 +578,14 @@ grep_required 'CodeGraph' "$ROOT/skills/using-teamwork/references/project-init.m
   "project init reference must define CodeGraph policy"
 grep_required 'docs/teamwork' "$ROOT/skills/using-teamwork/references/project-init.md" \
   "project init reference must define Teamwork artifact placement"
+grep_required 'runtime memory entrypoint' "$ROOT/skills/using-teamwork/references/project-init.md" \
+  "project init reference must point project instructions to Teamwork runtime README"
 grep_required 'context-cache' "$ROOT/skills/using-teamwork/references/project-init.md" \
   "project init reference must define context-cache policy"
 grep_required 'current task progress' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init must forbid current task progress in instructions"
+grep_required 'short `AGENTS.md` or README pointer' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must add short project instruction pointer to Teamwork runtime README"
 grep_required 'project-init.md' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init must link project init reference"
 grep_required 'VERSION is the package version source of truth' "$ROOT/skills/teamwork-update/SKILL.md" \

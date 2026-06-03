@@ -52,7 +52,9 @@ Read only as needed:
    evidence docs or Teamwork artifacts only when their triggers apply.
 8. Return a slim rules plan with changed files, collaboration audit decisions,
    migration rationale, verification, and any human decisions.
-9. Bootstrap `docs/teamwork/index.json`, `docs/teamwork/README.md`, and
+9. When Teamwork memory exists, keep a short `AGENTS.md` or README pointer to
+   `docs/teamwork/README.md`; do not inline the runtime narrative.
+10. Bootstrap `docs/teamwork/index.json`, `docs/teamwork/README.md`, and
    `docs/teamwork/current.md` only when project memory setup is in scope; then
    report `Memory Delta:` per `artifact-protocol.md`.
 

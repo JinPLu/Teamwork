@@ -4,6 +4,8 @@
 
 This local runtime README is a short human entrypoint aligned with
 `docs/teamwork/index.json`.
+Project instructions may point here, but should not inline this runtime
+narrative.
 
 ## Read Order
 

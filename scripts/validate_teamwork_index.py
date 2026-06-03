@@ -143,7 +143,7 @@ def validate_templates(root: Path) -> None:
     require(line_count(current) <= 120, "teamwork-current-template.md exceeds 120 lines")
     require(word_count(current) <= 700, "teamwork-current-template.md exceeds 700 words")
 
-    required_readme_phrases = ["broad scan", "stage", "Memory Delta", "index.json"]
+    required_readme_phrases = ["broad scan", "stage", "Memory Delta", "index.json", "Project instructions may point here"]
     for phrase in required_readme_phrases:
         require(phrase.lower() in readme.lower(), f"README template missing required language: {phrase}")
 

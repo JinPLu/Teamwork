@@ -16,9 +16,10 @@ setup, cleanup, or migration into Teamwork.
   platform deltas only; link instead of copying shared workflow.
 - Appendix docs: long path maps, command inventories, environment matrices, and
   historical navigation. Read them only when navigation details are needed.
-- `docs/teamwork/{research,plans,reports}/`: durable Teamwork memory only when
-  artifact triggers apply. These files are retrieval aids, not completion
-  evidence or project truth by themselves.
+- `docs/teamwork/README.md`: runtime memory entrypoint; project AGENTS/README
+  may point here, but should not inline it.
+- `docs/teamwork/{research,plans,reports}/`: durable memory only when artifact
+  triggers apply; retrieval aids, not completion evidence by themselves.
 
 ## Content Classification
 
@@ -87,6 +88,7 @@ rules that remain, verification, and unresolved human decisions.
 ## Teamwork Memory Bootstrap
 
 For non-lightweight Teamwork workflows, initialize missing `index.json`,
-`README.md`, and `current.md` when bootstrap is in scope. Keep it minimal and
+`README.md`, and `current.md` when bootstrap is in scope. Add only a short
+project-instruction pointer to the runtime README. Keep it minimal and
 compatible with `artifact-protocol.md`; do not force artifacts for lightweight
 native flow.
