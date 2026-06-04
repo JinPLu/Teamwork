@@ -2,82 +2,90 @@
 
 [中文](README.md)
 
+Teamwork is a **Codex-first Codex + Cursor + Claude Code skill package**:
+a validated collaboration protocol for coding agents. Each platform's native capabilities are the execution substrate
+for editing, shell, MCP, permissions, browser work, and verification; Teamwork adds stage routing, role dispatch,
+evidence packets, fresh review, reusable memory, and goal convergence until a
+verifiable result or a real blocker is reached.
+
 ![Teamwork workflow banner](assets/teamwork-hero.png)
 
-Teamwork is a **Codex-first Codex + Cursor + Claude Code skill package**.
-Each platform's native capabilities are the execution substrate; Teamwork adds
-one collaboration protocol: evidence first, proactive dispatch, reusable memory,
-fresh review, and goal loops that keep moving until there is verified evidence.
+## Why Teamwork
 
-Codex is the 1.0 reference runtime. Native Codex goals are the autonomous
-control plane, and `teamwork_*` custom agents are the default collaboration
-network for non-lightweight work. Cursor and Claude Code use the same Teamwork
-protocol as adapters. Codex Pro/20x defaults to install-time
-`performance-first`: Teamwork custom agents use `gpt-5.5` with medium
-Explorer/Designer/Worker, high Judge/Reviewer, and xhigh Deep Judge/Reviewer
-for high-risk review. Use `--profile cost-first` at install time for a global
-cost-first profile; project init records only explicit local overrides.
+- Non-lightweight work moves from one-agent guessing into bounded stages:
+  evidence, design, plan, execute, review, and goal.
+- Important conclusions must map to source, diffs, logs, tests, artifacts, or
+  primary sources; names and summaries are only claims.
+- Subagents are bounded packet producers: they return once, while the main
+  agent integrates, closes dispatch tracks, verifies, and delivers.
+- Goal loops iterate until the target is met, budget is exhausted, progress
+  stalls, or a real blocker appears.
+- Durable artifacts and optional index/current memory reduce repeated research
+  across turns.
 
-## What It Is For
+## Core Capabilities
 
-- Coding-agent work that needs investigation, planning, execution, verification,
-  and review to stay connected.
+| Capability | What Teamwork Does |
+|---|---|
+| Evidence first | Maps key claims to direct evidence and labels `observed` / `inferred` / `claimed`. |
+| Stage router | `using-teamwork` routes `teamwork-init`, research, plan, execute, review, update, and goal work. |
+| Role workflow | Explorer gathers evidence, Designer chooses, Judge reviews plans, Worker executes slices, Reviewer fresh-reviews results. |
+| Proactive dispatch | After authorization, independent non-lightweight work dispatches roles by default; skips need `Dispatch Exception`. |
+| Packet contracts | Every role returns a fixed packet with scope, evidence, verification, risk, and closure data. |
+| Goal convergence | Codex uses native goals and Goal Text; Cursor/Claude Code use rolling reports. |
+| Artifact memory | Research, plans, and reports preserve reusable evidence, plans, conclusions, and failed attempts. |
+| Validation | `./scripts/validate.sh` locks skill topology, manifests, packet fields, templates, and doc contracts. |
+
+## Workflow And Roles
+
+Common path:
+
+```text
+research -> design/plan -> execute -> verify -> review -> report or goal update
+```
+
+| Role | Responsibility | Output |
+|---|---|---|
+| Explorer | Gather evidence, refresh assumptions, run web/deep research or source audit | Evidence packet |
+| Designer | Compare options, define constraints and success criteria, recommend a direction | Decision packet |
+| Judge | Review pre-execution plan evidence, boundaries, guardrails, and acceptance gaps | `accept` / `revise` / `blocked` |
+| Worker | Implement accepted scope with TDD, root-cause, and verification evidence | Completion packet |
+| Reviewer | Fresh-context review of diffs, tests, artifacts, PR/CI evidence | Verdict packet |
+
+Deep Judge and Deep Reviewer are high-risk review profiles for failed goals,
+security, destructive risk, public contracts, or release acceptance.
+
+## Good Fit / Not A Fit
+
+Good fit:
+
+- Coding-agent work that needs investigation, planning, execution,
+  verification, and review to stay connected.
 - Codex subagents that proactively handle exploration, implementation, review,
   and research instead of waiting for the user to push each step.
 - Cross-turn evidence, plans, results, or failed attempts that should be reused.
 - Goal-directed work that should iterate until a verifiable target is reached.
 
-Not for: one-line facts, tiny obvious edits, sensitive/destructive operations,
-tightly coupled critical paths, or work where subagent context cost exceeds
-the benefit.
-
-## What Teamwork Adds
-
-| Capability | Purpose |
-|---|---|
-| Evidence first | Important claims map to source, diffs, logs, tests, artifacts, or primary sources. |
-| Proactive dispatch | Non-lightweight research / plan / execute / review / goal stages dispatch Explorer, Designer, Judge, Worker, or Reviewer by default. Skips need `Dispatch Exception`. |
-| Goal control | Unclear goals get a `Goal Proposal`; Codex calls `create_goal` with the Goal Text, while Cursor/Claude Code use rolling reports. |
-| Artifact memory | `docs/teamwork/research/YYYY-MM-DD-<slug>.md`, `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`, and `docs/teamwork/reports/YYYY-MM-DD-<slug>.md` preserve reusable evidence and conclusions. |
-| Native index | Optional `docs/teamwork/index.json` / `current.md` points agents to current design, results, and progress without rereading history. |
-| Memory Delta | Reported only when durable project memory was checked or changed, preventing documentation bloat. |
-
-## Skill Map
-
-`using-teamwork` is the automatic lean entrypoint and router:
-
-| Intent | Skill |
-|---|---|
-| Initialize or slim project rules | `teamwork-init` |
-| Investigate, compare, refresh assumptions | `teamwork-research` |
-| Plan a non-trivial change | `teamwork-plan` |
-| Execute an accepted plan | `teamwork-execute` |
-| Review a plan, diff, or result | `teamwork-review` |
-| Update version, manifests, release surface | `teamwork-update` |
-| Iterate until a target is reached | `teamwork-goal` |
-
-`VERSION` is the package version source of truth and must match
-`.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`; version or skill
-surface updates use `teamwork-update`.
+Not a fit: one-line facts, tiny obvious edits, sensitive/destructive
+operations, tightly coupled critical paths, or work where subagent context cost
+exceeds the benefit.
 
 ## Install
 
-Recommended all-platform install:
+Codex-first default install:
 
 ```bash
-./install.sh all
+./install.sh              # same as ./install.sh codex
+./install.sh codex --profile cost-first
 ```
 
-Per platform:
+Adapter and all-platform installs:
 
 ```bash
-./install.sh codex          # Codex skills + custom agents + global policy
-./install.sh codex --profile cost-first
-./install.sh project --profile cost-first
 ./install.sh cursor
-./install.sh claude
-./install.sh codex-agents   # only ~/.codex/agents/
-./install.sh claude-agents  # only ~/.claude/agents/
+./install.sh claude          # Claude Code skills only
+./install.sh claude-agents   # Claude Code agents only
+./install.sh all             # all supported skills + Codex/Claude agents
 ```
 
 Project-local install writes gitignored `.cursor/skills/`, `.codex/agents/`,
@@ -95,25 +103,44 @@ Use symlinks for local development:
 ./install.sh --link project
 ```
 
-## Codex Authorization Model
+Codex installs use `performance-first` by default. It generates role-optimized
+Codex agents; `cost-first` downshifts only routine Explorer / Designer /
+Worker while keeping high-risk Judge / Reviewer on stronger model tiers.
 
-Codex requires the user prompt or loaded project/global instructions to
-explicitly authorize `spawn_agent`. `./install.sh codex` maintains the Teamwork
-global policy block in `~/.codex/AGENTS.md`; once authorization exists,
-Teamwork proactively dispatches independent non-lightweight stage work. The
-main agent still owns scope, ownership, integration, verification, dispatch
-track closure, and delivery.
-`teamwork-init` records `performance-first` or `cost-first` only when a project
-overrides the installed default; current Codex custom-agent templates are
-pinned to role-optimized `gpt-5.5`.
+## Platform Positioning
+
+Codex is the reference runtime: native goals are the autonomous control plane,
+and `teamwork_*` custom agents are the primary collaboration network for
+non-lightweight work. Codex calls `spawn_agent` only when the user prompt or
+loaded global/project rules provide standing authorization.
+
+Cursor and Claude Code are adapters: they reuse the same Teamwork protocol
+while keeping their own native capabilities. Cursor uses Task subagents; Claude
+Code skills install through `./install.sh claude`, while `explore`, `worker`,
+and `code-reviewer` agents install through `./install.sh claude-agents`, `all`,
+or `project`, with rolling reports for goal mode.
+
+## Memory And Version
+
+Teamwork artifacts:
+
+```text
+docs/teamwork/research/YYYY-MM-DD-<slug>.md
+docs/teamwork/plans/YYYY-MM-DD-<slug>.md
+docs/teamwork/reports/YYYY-MM-DD-<slug>.md
+```
+
+`VERSION` is the package version source of truth and must match
+`.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`; version,
+manifest, and release-surface updates use `teamwork-update`.
 
 ## Read More
 
-- [CODEX.md](CODEX.md): Codex runtime profile and custom-agent mapping.
+- [CODEX.md](CODEX.md): Codex runtime profile, Goal Text, and custom-agent mapping.
 - [CURSOR.md](CURSOR.md): Cursor adapter.
 - [CLAUDE.md](CLAUDE.md): Claude Code adapter.
-- `skills/*/SKILL.md`: behavior definitions.
-- `skills/using-teamwork/references/`: dispatch, artifact, review, and goal details.
+- `skills/*/SKILL.md`: stage skill behavior.
+- `skills/using-teamwork/references/`: dispatch, packet, artifact, review, and goal details.
 
 Validate the repository:
 

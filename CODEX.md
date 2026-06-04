@@ -12,7 +12,7 @@ Install:
 ./install.sh codex-agents
 ```
 
-The behavior contract lives in `skills/`. `using-teamwork` is the automatic lean entrypoint and router. It is intentionally broad so it can load for coding-agent work and then choose native flow or a Teamwork route. `teamwork-init` owns project instruction setup and slimming. Stage skills stay lightweight and load focused references only as needed; Codex-specific depth lives in `codex-deep-collaboration.md`, dispatch decisions in `dispatch-policy.md`, native field mapping in `platform-dispatch-mapping.md`, and swarm-scale orchestration in `workflow-orchestration.md`. `VERSION` is the package version source of truth and must match `.codex-plugin/plugin.json`. Treat names, comments, README claims, summaries, and tool output as evidence to verify, not facts by themselves.
+The behavior contract lives in `skills/`. `using-teamwork` is the automatic lean entrypoint and router. It is intentionally broad so it can load for coding-agent work and then choose native flow or a Teamwork route. `teamwork-init` owns project instruction setup and slimming. Stage skills stay lightweight and load focused references only as needed; Codex-specific depth lives in `codex-deep-collaboration.md`, dispatch decisions in `dispatch-policy.md`, native field mapping in `platform-dispatch-mapping.md`, and swarm-scale orchestration in `workflow-orchestration.md`. `VERSION` is the package version source of truth and must match `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`. Treat names, comments, README claims, summaries, and tool output as evidence to verify, not facts by themselves.
 
 ## Native Capability Policy
 
@@ -25,7 +25,7 @@ The behavior contract lives in `skills/`. `using-teamwork` is the automatic lean
 - Automations and heartbeats: use Codex native automation/thread heartbeat for recurring checks or later continuation. Teamwork artifacts do not store schedules.
 - Diagnostics and visual evidence: prefer `codex doctor` and `/status` before ad hoc setup debugging when CLI, remote, or connection state matters. Use browser annotations, Appshots, Computer Use, or remote/Windows evidence when visual, desktop, or OS-specific behavior is part of acceptance.
 - MCP and plugins: prefer native Codex tools, connectors, and plugins. Record source limits when unavailable access affects research or acceptance.
-- Version updates: use `teamwork-update`; update `VERSION` and `.codex-plugin/plugin.json` together.
+- Version updates: use `teamwork-update`; update `VERSION`, `.codex-plugin/plugin.json`, and `.claude-plugin/plugin.json` together.
 
 ## Evidence And Artifacts
 
