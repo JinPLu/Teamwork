@@ -124,6 +124,19 @@ Do not create artifacts for ordinary native-flow work or to record every
 thought. Search existing research artifacts before starting new non-trivial
 research and record reuse/update/new disposition in goal-mode reports.
 
+## Human Reviewability
+
+Prefer compact tables when the answer contains three or more comparable items
+that a human should audit: plan steps, requirement status, execution results,
+review findings, verification evidence, goal attempts, or option tradeoffs.
+Use prose for simple answers, single-file edits, one clear finding, or when a
+table would repeat the same sentence in every row.
+
+Good table columns expose review-relevant state: requirement, scope, owner,
+evidence, verification, status, risk, required action, or next step. Keep cells
+short and evidence-backed. Do not use tables to hide uncertainty, omit
+blockers, or make lightweight work look heavier than it is.
+
 ## Subagent Collaboration Model
 
 Subagents provide independent context, parallel evidence, isolated execution, or

@@ -6,6 +6,10 @@ shape only when durable or goal-mode work requires it.
 
 ## Lightweight Plan
 
+Use bullets for very small plans. When a plan has three or more comparable
+steps, prefer a compact table so humans can audit scope, owner, verification,
+and stop conditions quickly.
+
 ```text
 Mode: plan
 Research Artifact: <path | none>
@@ -23,6 +27,12 @@ Stop Rules: <when to stop or replan>
 Review Need: <none | local | fresh-context>
 Design/Judge: <none | Designer/Judge packet summary when used>
 ```
+
+Optional chat-table shape:
+
+| Step | Scope | Owner | Verification | Stop / Replan |
+|---|---|---|---|---|
+| <n> | <path/component> | <main/role> | <command/check> | <condition> |
 
 ## Durable Plan Header
 
@@ -44,7 +54,9 @@ Linked Artifacts: related research or report paths, or none
 
 ## Goal
 ## Requirements Mapping
-- <requirement>: <observed evidence or verification that will prove it>
+| Requirement | Evidence Or Verification | Status |
+|---|---|---|
+| <requirement> | <observed evidence or verification that will prove it> | planned |
 ## Evidence Read
 - <observed|inferred|claimed> <path/command/artifact/research>: <finding>
 ## Scope
@@ -61,7 +73,9 @@ Linked Artifacts: related research or report paths, or none
 ## Subagent Prompt Packets
 - <role>: <mission, source, owned scope, allowed actions, forbidden actions, escalation triggers, required output schema>
 ## Implementation Steps
-- [ ] 1. <path/component> - <minimal change> - <why>
+| Step | Scope | Owner | Change | Verification | Stop / Replan |
+|---|---|---|---|---|---|
+| 1 | <path/component> | <main/Worker> | <minimal change> | <command/check> | <condition> |
 ## Verification
 - Focused: ...
 - Broader: ...

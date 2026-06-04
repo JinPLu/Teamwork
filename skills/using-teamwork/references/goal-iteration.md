@@ -117,6 +117,14 @@ artifact, platform goal surface, review verdict, or direct verification evidence
 
 ## Goal Output
 
+For multi-attempt goals, prefer a compact table in the final answer before the
+conclusion so humans can audit each attempt without reading the full rolling
+report.
+
+| Attempt | Hypothesis | Verification | Result | Next Step / Stop Reason |
+|---|---|---|---|---|
+| <n> | <what changed or was tested> | <command/artifact/check> | <pass/fail/blocked> | <decision> |
+
 ```text
 Route: teamwork-goal
 Reason: <one sentence tied to autonomous convergence>

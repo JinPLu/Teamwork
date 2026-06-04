@@ -2,70 +2,116 @@
 
 [English](README.en.md)
 
-Teamwork 是一个 **Codex-first 的 Codex + Cursor + Claude Code skill package**：
-给 coding agents 加一层可验证的协作协议。各平台的 native capabilities 仍然
-负责编辑、shell、MCP、权限、浏览器和验证；Teamwork 负责分阶段、派角色、
-收证据、做 fresh review、保存可复用记忆，并把目标推进到可验证结果或真实
-blocker。
+**把 Codex 的 subagents 变成有分工、有记忆、有证据纪律、有验收闭环的工程团队。**
+
+Teamwork 是一个 **Codex-first 的 Codex + Cursor + Claude Code skill package**。
+它不替代 Codex、Cursor 或 Claude Code 的编辑、shell、MCP、浏览器、权限和验证能力；
+这些 `native capabilities` 仍然是执行底座。Teamwork 做四件事：
+
+1. 定制角色 subagents 分发，让复杂任务更经济、更高效、质量更稳。
+2. 用调研和证据优先的规则提醒模型：别太自信，先证明再下结论。
+3. 维护讨论 / 调研、计划和报告记忆，避免长期任务遗忘，并强化 goal 执行能力。
+4. 用验证、fresh review 和失败复盘形成验收闭环，不让“完成”只停留在模型自述。
 
 ![Teamwork workflow banner](assets/teamwork-hero.png)
 
-## 为什么用 Teamwork
+## 核心价值
 
-- 非轻量任务不再靠单个 agent 猜到底：Teamwork 会按阶段拆成 evidence、design、
-  plan、execute、review、goal。
-- 重要结论要落到源码、diff、日志、测试、artifact 或 primary source；名字和
-  summary 只是 claim。
-- Subagents 是有边界的 packet producer：返回一次结果，由主 agent 负责整合、
-  关闭 dispatch track、验证和最终交付。
-- Goal loop 会持续迭代到目标达成、预算耗尽、无进展阈值触发，或遇到真实 blocker。
-- Durable artifacts 和可选 index/current memory 减少跨回合重复调查。
+### 1. 角色化 subagents：更省、更快、更稳
 
-## 核心能力
+普通多 agent 协作容易变成“多开几个聊天窗口”。Teamwork 把 subagents 变成有职责的工程角色：
 
-| 能力 | Teamwork 做什么 |
+- `Explorer` 查证据和外部约束，不把大段原始上下文塞回主线程。
+- `Designer` 做方案取舍，明确边界、成功标准和放弃的选项。
+- `Judge` 在执行前审计划，找证据缺口、验收缺口和高风险假设。
+- `Worker` 只负责自己的实现切片，按计划交付变更和验证证据。
+- `Reviewer` 用 fresh context 审查 diff、测试、artifact、PR/CI 证据。
+
+这样做的收益很直接：
+
+| 收益 | 为什么 |
 |---|---|
-| Evidence first | 把关键 claim 映射到直接证据，区分 `observed` / `inferred` / `claimed`。 |
-| Stage router | `using-teamwork` 自动分流 `teamwork-init`、research、plan、execute、review、update、goal。 |
-| Role workflow | Explorer 查证据，Designer 做取舍，Judge 审计划，Worker 执行切片，Reviewer fresh review。 |
-| Proactive dispatch | 授权后，对非轻量且独立的工作默认派发角色；跳过需要 `Dispatch Exception`。 |
-| Packet contracts | 每个角色交付固定 packet，记录 scope、证据、验证、风险、closure。 |
-| Goal convergence | Codex 用 native goal 和 Goal Text；Cursor/Claude Code 用 rolling report。 |
-| Artifact memory | research / plans / reports 保存可复用证据、计划、结论和失败尝试。 |
-| Validation | `./scripts/validate.sh` 锁定 skill topology、manifests、packet 字段、模板和文档契约。 |
+| 更经济 | 不把所有工作都塞给同一个长上下文强模型；按角色、风险和任务类型选择模型档位。 |
+| 更高效 | 独立调研、实现、复查可以并行；主 agent 只负责调度、整合和最终判断。 |
+| 质量更好 | 每个 subagent 必须返回 packet；重要结论要有证据；非轻量结果需要 fresh review。 |
 
-## 工作流与角色
+### 2. 证据优先：模型别太自信
 
-常见路径：
+Coding agent 最危险的失败方式不是“不知道”，而是“不知道但说得很肯定”。
+Teamwork 的规则会把名字、README、issue、summary、`latest`、`v2` 这类信息先当成 claim，
+要求 agent 去找直接证据。
+
+- 重要结论要标成 `observed` / `inferred` / `claimed`。
+- 关键决策要映射到源码、配置、日志、测试、diff、artifact 或 primary source。
+- 根因、API 行为、外部约束、反复失败不清楚时，先走 research，不直接开改。
+- 计划和 review 会检查证据是否足够、假设是否安全、验收是否有缺口。
+
+这不是为了增加仪式感，而是把模型的自信压回到证据能支撑的范围内。
+
+### 3. 任务记忆：让长任务不会反复失忆
+
+复杂 coding-agent 任务通常不是一次完成的：先讨论，再调研，再计划，再执行，失败后还要复盘。
+如果这些只留在聊天上下文里，几轮之后就会丢失。
+
+Teamwork 用 artifacts 保存关键状态：
 
 ```text
-research -> design/plan -> execute -> verify -> review -> report or goal update
+docs/teamwork/research/YYYY-MM-DD-<slug>.md
+docs/teamwork/plans/YYYY-MM-DD-<slug>.md
+docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 ```
 
-| 角色 | 职责 | 输出 |
-|---|---|---|
-| Explorer | 查证据、刷新假设、做 web/deep research 或 source audit | Evidence packet |
-| Designer | 比较方案、明确约束和成功标准、给出推荐方向 | Decision packet |
-| Judge | 执行前审计划是否有证据、边界、guardrails 和验收缺口 | `accept` / `revise` / `blocked` |
-| Worker | 在已接受范围内实现，记录 TDD、root cause 和验证证据 | Completion packet |
-| Reviewer | fresh-context 审查 diff、测试、artifact、PR/CI 证据 | Verdict packet |
+- `research` 记录讨论 / 调研结论、证据、方案和仍然不确定的地方。
+- `plans` 记录可执行范围、边界、验收标准、dispatch guidance 和 stop rules。
+- `reports` 记录重要任务结论，或 goal-mode 下每轮尝试、验证结果、失败原因和下一步。
 
-Deep Judge / Deep Reviewer 只是高风险复查档位，用于 failed goal、security、
-destructive risk、public contract 或 release acceptance。
+这让 `Goal Text` 不只是一个目标句子，而是能绑定证据、预算、停止条件和历史尝试的执行控制面。
+失败后，Teamwork 会回到 research + plan adequacy，而不是重复上一轮猜测。
 
-## 适合 / 不适合
+### 4. 验收闭环：完成要能被复查
+
+Teamwork 把计划、执行、验证和 review 串成闭环。计划要写清 scope、verification、
+stop rules；执行结束要说明改了什么、证据是什么、哪里没覆盖；review 要按 severity、
+evidence、required action 给出结论。
+
+对多项状态，Teamwork 鼓励用短表格交付：
+
+| 场景 | 表格看什么 |
+|---|---|
+| 计划 | Step / Scope / Owner / Verification / Stop rule |
+| 执行结果 | Requirement / Change / Evidence / Status |
+| Review | Severity / Finding / Evidence / Required action |
+| Goal 迭代 | Attempt / Hypothesis / Verification / Result / Next step |
+
+表格不是为了好看，而是让人类能快速扫出范围、证据、风险和下一步。
+
+## 装上以后 agent 行为怎么变
+
+| 没有 Teamwork | 有 Teamwork |
+|---|---|
+| 主 agent 一边探索一边改 | `using-teamwork` 路由到 research、plan、execute、review、goal 等阶段 |
+| Subagents 没有稳定边界 | 角色 subagents 有固定职责、输入、输出 packet 和关闭条件 |
+| 模型把 summary 当事实 | 重要结论先标 `observed` / `inferred` / `claimed`，并映射到直接证据 |
+| 做完就说完成 | 非轻量结果默认 fresh review；同上下文自查不能冒充验收 |
+| 结论散在长段落里 | 计划、执行、review、goal 迭代用短表格汇总，方便人类复查 |
+| 失败几轮后忘记历史 | report 记录尝试、验证、失败分类和下一轮决策 |
+| 长任务靠用户反复提醒 | artifacts 和 goal loop 维持上下文、预算、stop rules 和验收证据 |
+
+## 什么时候值得用
 
 适合：
 
-- 需要把调查、规划、执行、验证、review 串起来的 coding-agent 工作。
-- 需要 Codex subagents 主动分担探索、实现、复查、调研，而不是用户每步手推。
-- 需要跨回合保存证据、计划、结果或失败尝试的任务。
-- 需要持续迭代直到可验证目标达成的目标型工作。
+- 需要多个 subagents 分担调研、方案、实现或复查的非轻量 coding-agent 工作。
+- 需要在成本、速度和质量之间做更清晰的角色分工。
+- 需要降低模型过度自信，把关键结论压到可检查证据上。
+- 需要跨回合保留讨论、调研、计划、报告、失败尝试和验收证据。
+- 需要计划、执行结果和 review 便于人类快速复查。
+- 需要持续迭代直到目标被验证、预算耗尽或遇到真实 blocker。
 
-不适合：一句话事实、很小的明显编辑、敏感/破坏性操作、强耦合临界路径，或
-subagent 上下文成本高于收益的任务。
+不适合：一句话事实、很小的明显编辑、敏感/破坏性操作、强耦合临界路径，
+或 subagent 上下文成本高于收益的任务。
 
-## 安装
+## 快速安装
 
 Codex-first 默认安装：
 
@@ -74,7 +120,7 @@ Codex-first 默认安装：
 ./install.sh codex --profile cost-first
 ```
 
-Adapter 和全平台安装：
+安装到其他平台：
 
 ```bash
 ./install.sh cursor
@@ -83,51 +129,52 @@ Adapter 和全平台安装：
 ./install.sh all             # 三端 skills + Codex/Claude agents
 ```
 
-项目级安装写入已 gitignore 的 `.cursor/skills/`、`.codex/agents/`、
-`.claude/agents/`：
+本地开发或项目级安装：
 
 ```bash
-./install.sh project
-```
-
-本地开发使用 symlink：
-
-```bash
+./install.sh project         # 写入 gitignored .cursor/.codex/.claude
 ./install.sh --link codex
 ./install.sh --link all
 ./install.sh --link project
 ```
 
-Codex 安装默认 `performance-first`。它生成角色优化的 Codex agents；`cost-first`
-只下调常规 Explorer / Designer / Worker，高风险 Judge / Reviewer 仍保留强模型档位。
+Codex 安装默认 `performance-first`：常规 Explorer / Designer / Worker 使用
+role-optimized 模型，高风险 Judge / Reviewer 保留更强模型档位。`cost-first`
+只下调常规角色，不降低高风险复查。
+
+## 它包含哪些 skill
+
+- `using-teamwork`：自动入口，决定当前任务该走哪个阶段。
+- `teamwork-research`：证据收集、根因调查、方案比较、外部校准。
+- `teamwork-plan`：把证据变成可执行计划、边界、验收和 dispatch guidance。
+- `teamwork-execute`：按已接受计划实现，记录变更、验证和偏差。
+- `teamwork-review`：fresh-context 审查计划或执行结果，给出 `accept` / `revise` / `blocked`。
+- `teamwork-goal`：面向可验证目标的迭代收敛。
+- `teamwork-init`：项目级 agent instructions、AGENTS/CODEX/CURSOR/CLAUDE 规则瘦身与初始化。
+- `teamwork-update`：版本、manifest、release surface 和包更新卫生。
 
 ## 平台定位
 
 Codex 是 reference runtime：native goals 是自治控制面，`teamwork_*` custom
 agents 是非轻量工作的主要协作网络。`./install.sh codex` 默认写入全局
-`~/.codex/AGENTS.md` standing authorization；安装后，用户不需要每次重复
-"use subagents"。未安装或项目 opt-out 时，Codex 仍需要用户 prompt 或已加载
-全局/项目规则授权后才会调用 `spawn_agent`。
+`~/.codex/AGENTS.md` standing authorization；安装后通常不用每次重复
+“use subagents”。
 
 Cursor 和 Claude Code 是 adapter：复用同一套 Teamwork 协议，但继续使用各自
-native capabilities。Cursor 侧使用 Task subagents；Claude Code skills 由
-`./install.sh claude` 安装，`explore`、`worker`、`code-reviewer` agents 由
-`./install.sh claude-agents`、`all` 或 `project` 安装，并用 rolling report 承载
-goal mode。
+native capabilities。Cursor 侧使用 Task subagents；Claude Code skills 和 agents
+通过对应 installer target 安装，goal mode 用 rolling report 承载。
 
-## 记忆与版本
-
-Teamwork artifacts：
-
-```text
-docs/teamwork/research/YYYY-MM-DD-<slug>.md
-docs/teamwork/plans/YYYY-MM-DD-<slug>.md
-docs/teamwork/reports/YYYY-MM-DD-<slug>.md
-```
+## 版本与验证
 
 `VERSION` 是包版本 source of truth，必须和 `.codex-plugin/plugin.json`、
-`.claude-plugin/plugin.json` 保持一致；版本、manifest、release surface 更新走
+`.claude-plugin/plugin.json` 保持一致。版本、manifest、release surface 更新走
 `teamwork-update`。
+
+验证仓库：
+
+```bash
+./scripts/validate.sh
+```
 
 ## 深入阅读
 
@@ -136,9 +183,3 @@ docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 - [CLAUDE.md](CLAUDE.md)：Claude Code adapter。
 - `skills/*/SKILL.md`：阶段 skill 行为定义。
 - `skills/using-teamwork/references/`：dispatch、packet、artifact、review、goal 细节。
-
-验证仓库：
-
-```bash
-./scripts/validate.sh
-```

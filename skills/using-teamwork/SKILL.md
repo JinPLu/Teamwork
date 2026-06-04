@@ -67,7 +67,9 @@ or user-disabled, label non-lightweight acceptance as `unreviewed`.
 
 ## Route Output
 
-For Teamwork routing, report `Route: teamwork-<stage>`, `Reason: ...`, and
-`Mode: research | plan | execution | review | update | goal`. For native-flow
-tasks, do not emit a route banner. Include `Memory Delta:` only when durable
-project memory was checked or changed.
+Use route banners only for non-lightweight handoffs, redirects, blockers,
+goal/update work, or material dispatch/artifact state: `Route: ...`,
+`Reason: ...`, `Mode: ...`.
+
+For lightweight native flow and final replies, write naturally. Include
+`Memory Delta:` only when durable memory was checked or changed materially.

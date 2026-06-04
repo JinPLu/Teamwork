@@ -8,6 +8,9 @@ evidence-based scrutiny.
 Check:
 
 - Plan source: lightweight checklist or readable durable artifact when required.
+- Plans with three or more comparable steps use a compact table or equivalent
+  scannable structure covering scope, owner, verification, and stop/replan
+  conditions.
 - Scope: every step traces to the goal.
 - Assumptions: missing inputs are explicit and safe.
 - Requirements mapping: each acceptance criterion maps to observed evidence or
@@ -52,6 +55,8 @@ Return `revise` or `blocked` when:
 Check:
 
 - Diff touches only planned files and necessary lines.
+- Multi-requirement execution summaries expose a compact review table or
+  equivalent structure mapping requirement, change, evidence, and status.
 - Expected artifacts, outputs, metrics, or UI state match acceptance.
 - Focused verification ran; broader validation exists when warranted.
 - No hidden contract changes, brittle assumptions, or cleanup masking producer
