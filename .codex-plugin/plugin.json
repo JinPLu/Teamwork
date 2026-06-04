@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Codex-first skills (also installable on Cursor and Claude Code) for evidence-first planning, proactive custom-agent dispatch, review, and native goal convergence.",
   "author": {
     "name": "JinPLu",
@@ -32,7 +32,7 @@
     "websiteURL": "https://github.com/JinPLu/Teamwork",
     "defaultPrompt": [
       "Design a Codex native goal with evidence, scope, retry policy, artifacts, and subagent routing.",
-      "Initialize or slim project AGENTS/CODEX/CLAUDE rules while preserving local evidence boundaries.",
+      "Initialize or slim project AGENTS/CODEX/CLAUDE rules with performance-first or cost-first Codex mode while preserving local evidence boundaries.",
       "Split non-lightweight Codex work into evidence-gathering, planning, execution, and review tracks.",
       "Use Teamwork custom agents proactively for investigation, scoped Worker execution, and fresh-context review.",
       "Map completion claims and Memory Delta status to direct evidence before accepting the result.",

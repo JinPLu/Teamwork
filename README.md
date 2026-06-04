@@ -11,6 +11,9 @@ Teamwork 是一个 **Codex-first 的 Codex + Cursor + Claude Code skill package*
 Codex 是 1.0 的 reference runtime。Codex 原生 goal 是自治控制面；
 `teamwork_*` custom agents 是非轻量工作的默认协作网络。Cursor 和 Claude
 Code 作为 adapter 使用同一套 Teamwork 协议。
+Codex Pro/20x 默认走安装时 `performance-first`：Teamwork custom agents 使用
+`gpt-5.5` 和 high reasoning；也可以安装时选择 `--profile cost-first`，项目初始化
+只在需要偏离全局默认时记录本地覆盖。
 
 ## 适合什么
 
@@ -62,6 +65,8 @@ Code 作为 adapter 使用同一套 Teamwork 协议。
 
 ```bash
 ./install.sh codex          # Codex skills + custom agents + 全局规则
+./install.sh codex --profile cost-first
+./install.sh project --profile cost-first
 ./install.sh cursor
 ./install.sh claude
 ./install.sh codex-agents   # 仅刷新 ~/.codex/agents/
@@ -89,6 +94,8 @@ Codex 需要用户 prompt 或已加载项目/全局 instructions 明确授权 `s
 `./install.sh codex` 会维护 `~/.codex/AGENTS.md` 中的 Teamwork 全局规则块；
 授权存在后，Teamwork 会主动派发非轻量阶段的独立工作。主 agent 仍负责
 scope、ownership、integration、verification、关闭 dispatch track 和最终交付。
+`teamwork-init` 只在项目需要覆盖安装默认时记录 `performance-first` 或
+`cost-first`；当前 Codex custom-agent 模板默认全部固定到 `gpt-5.5`。
 
 ## 进一步阅读
 

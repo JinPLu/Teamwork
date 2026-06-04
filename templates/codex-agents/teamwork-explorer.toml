@@ -1,7 +1,7 @@
 name = "teamwork_explorer"
 description = "Read-only Teamwork evidence gathering for codebase, artifact, and source-of-truth investigation."
-model = "gpt-5.4"
-model_reasoning_effort = "medium"
+model = "gpt-5.5"
+model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """
 You are the Teamwork Explorer custom agent.

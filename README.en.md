@@ -12,7 +12,10 @@ fresh review, and goal loops that keep moving until there is verified evidence.
 Codex is the 1.0 reference runtime. Native Codex goals are the autonomous
 control plane, and `teamwork_*` custom agents are the default collaboration
 network for non-lightweight work. Cursor and Claude Code use the same Teamwork
-protocol as adapters.
+protocol as adapters. Codex Pro/20x defaults to install-time
+`performance-first`: Teamwork custom agents use `gpt-5.5` with high reasoning.
+Use `--profile cost-first` at install time for a global cost-first profile;
+project init records only explicit local overrides.
 
 ## What It Is For
 
@@ -68,6 +71,8 @@ Per platform:
 
 ```bash
 ./install.sh codex          # Codex skills + custom agents + global policy
+./install.sh codex --profile cost-first
+./install.sh project --profile cost-first
 ./install.sh cursor
 ./install.sh claude
 ./install.sh codex-agents   # only ~/.codex/agents/
@@ -97,6 +102,9 @@ global policy block in `~/.codex/AGENTS.md`; once authorization exists,
 Teamwork proactively dispatches independent non-lightweight stage work. The
 main agent still owns scope, ownership, integration, verification, dispatch
 track closure, and delivery.
+`teamwork-init` records `performance-first` or `cost-first` only when a project
+overrides the installed default; current Codex custom-agent templates are
+pinned to `gpt-5.5`.
 
 ## Read More
 

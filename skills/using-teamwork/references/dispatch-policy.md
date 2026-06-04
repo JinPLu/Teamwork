@@ -85,7 +85,10 @@ implements; Reviewer checks diffs and tests.
 ## Role Profiles
 
 Use model class as stable policy; translate through active platform Model
-Mapping. Prefer fewer, stronger models.
+Mapping. Prefer fewer, stronger models. On Codex, `performance-first` init
+maps normal role classes to `gpt-5.5` and high reasoning; `cost-first`
+keeps lower routine classes but never downshifts Judge, Reviewer, high-risk,
+public, or failed-goal adequacy work.
 
 - Explorer: model class `balanced` by default; use `frontier` for broad,
   ambiguous, unfamiliar, or high-risk evidence. `cheap-fast` is opt-in only for
@@ -102,8 +105,8 @@ Mapping. Prefer fewer, stronger models.
   `balanced` only for mechanical diffs; context `fresh-context-review`;
   read-only.
 
-Do not use `cheap-fast` for normal Pro/20x Codex workflows, Judge, Reviewer,
-architecture Designer, public behavior, failed-goal adequacy decisions, or
-non-mechanical Worker implementation.
+Do not use `cheap-fast` for normal Pro/20x Codex workflows, performance-first
+projects, Judge, Reviewer, architecture Designer, public behavior, failed-goal
+adequacy decisions, or non-mechanical Worker implementation.
 
 Evaluate the split before implementation steps. Do not wait for a proposal or plan to explicitly name every track; stage contracts authorize dispatch when economics and ownership are clear.
