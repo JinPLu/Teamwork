@@ -438,6 +438,8 @@ grep_required 'AGENTS/CODEX/CURSOR/CLAUDE' "$ROOT/skills/teamwork-init/SKILL.md"
   "teamwork-init description must mention AGENTS/CODEX/CURSOR/CLAUDE"
 grep_required 'Codex authorization: global | project-add | user-opt-out' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init must report Codex subagent authorization audit state"
+grep_required 'Init Mode: global-default | performance-first | cost-first' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must report selected init mode"
 for agent in explore worker code-reviewer; do
   [[ -f "$ROOT/templates/claude-agents/$agent.md" ]] \
     || fail "missing templates/claude-agents/$agent.md"
@@ -476,16 +478,12 @@ grep_required '^name = "teamwork_judge"$' "$ROOT/templates/codex-agents/teamwork
   "Codex judge agent must declare exact name"
 grep_required '^name = "teamwork_reviewer"$' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" \
   "Codex reviewer agent must declare exact name"
-grep_required '^model = "gpt-5.4"$' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
-  "Codex explorer agent must use balanced model tier"
-grep_required '^model = "gpt-5.4"$' "$ROOT/templates/codex-agents/teamwork-worker.toml" \
-  "Codex worker agent must use coding model tier"
-grep_required '^model = "gpt-5.4"$' "$ROOT/templates/codex-agents/teamwork-designer.toml" \
-  "Codex designer agent must use balanced model tier"
-grep_required '^model = "gpt-5.5"$' "$ROOT/templates/codex-agents/teamwork-judge.toml" \
-  "Codex judge agent must use frontier model tier"
-grep_required '^model = "gpt-5.5"$' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" \
-  "Codex reviewer agent must use frontier model tier"
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+  grep_required '^model = "gpt-5.5"$' "$ROOT/templates/codex-agents/$agent.toml" \
+    "Codex agent must use performance-first pro model: $agent"
+  grep_required '^model_reasoning_effort = "high"$' "$ROOT/templates/codex-agents/$agent.toml" \
+    "Codex agent must use high reasoning: $agent"
+done
 grep -q 'all)' "$ROOT/install.sh" || fail "install.sh must support all target"
 grep -q 'project)' "$ROOT/install.sh" || fail "install.sh must support project target"
 grep -q 'codex-agents)' "$ROOT/install.sh" || fail "install.sh must support codex-agents target"
@@ -628,33 +626,38 @@ grep_required 'Codex role dispatch' "$ROOT/skills/using-teamwork/references/disp
   "Codex role dispatch must pin role-profile models by default"
 grep_required 'Role Profiles' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must define role profiles"
+grep_required 'performance-first` init' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy must define performance-first role profile behavior"
 grep_required 'model class `balanced` by default' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
-  "Explorer profile must avoid weak default models"
+  "Explorer profile must preserve stable class policy"
 grep_required 'reasoning `high`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "Judge/Reviewer profiles must require high reasoning class"
 grep_required 'Codex Model Mapping' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define Codex model mapping"
 grep_required 'Codex Native Field Presets' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define explicit Codex native field presets"
+grep_required '`performance-first`: install-time default for Pro/20x Codex workflows' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+  "model mapping must define performance-first Codex profile"
 grep_required '`cheap-fast` -> `gpt-5.4-mini`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
-  "model mapping must define cheap-fast model"
+  "cost-first model mapping must define cheap-fast model"
 grep_required 'opt-in only for trivial read-only' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "cheap-fast model must be opt-in, not a default"
-grep_required '`balanced` -> `gpt-5.4`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
-  "model mapping must define balanced model"
-grep_required '`coding` -> `gpt-5.4`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
-  "model mapping must define coding model"
+grep_required '`balanced` and' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+  "model mapping must define cost-first balanced/coding models"
 grep_required '`frontier` -> `gpt-5.5`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
-  "model mapping must define frontier model"
-grep_required 'Explorer default: `agent_type:"explorer"`, `model:"gpt-5.4"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
-  "Codex Explorer preset must pin balanced model"
-grep_required 'Worker default: `agent_type:"worker"`, `model:"gpt-5.4"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
-  "Codex Worker preset must pin coding model"
+  "model mapping must define frontier pro model"
+grep_required 'Explorer default: `agent_type:"explorer"`, `model:"gpt-5.5"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+  "Codex Explorer preset must pin pro model"
+grep_required 'Worker default: `agent_type:"worker"`, `model:"gpt-5.5"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+  "Codex Worker preset must pin pro model"
 grep_absent 'gpt-5.3-codex' \
   "Codex custom-agent model mapping must not use removed gpt-5.3-codex slug" \
   "$ROOT/templates/codex-agents" "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" "$ROOT/CODEX.md"
+grep_absent 'gpt-5.5-pro' \
+  "Codex custom-agent model mapping must not use unsupported gpt-5.5-pro slug" \
+  "$ROOT/templates/codex-agents" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/README.md" "$ROOT/README.en.md" "$ROOT/install.sh"
 grep_required 'Judge default: `agent_type:"default"`, `model:"gpt-5.5"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
-  "Codex Judge preset must pin frontier model"
+  "Codex Judge preset must pin pro model"
 grep_required 'Codex Native Field Presets' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require Codex native field presets"
 grep_required 'Platform Dispatch Fields' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
@@ -911,6 +914,8 @@ grep_required 'Teamwork Codex Global Policy' "$tmp/home/.codex/AGENTS.md" \
   "Codex install must write Teamwork global policy heading"
 grep_required 'Agent efficiency comes first' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must prioritize agent efficiency"
+grep_required 'Codex model profile: default is performance-first' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must record performance-first profile"
 grep_required 'Remote execution:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must include remote execution default"
 
@@ -954,9 +959,34 @@ for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge 
     || fail "Codex agent install missing $agent"
   [[ ! -L "$tmp/home-codex-agents/.codex/agents/$agent.toml" ]] \
     || fail "default Codex agent install must copy $agent"
+  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
+    "default Codex agent install must render performance model for $agent"
+  grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
+    "default Codex agent install must render high reasoning for $agent"
 done
 [[ ! -e "$tmp/home-codex-agents/.codex/AGENTS.md" ]] \
   || fail "codex-agents target must not write global AGENTS policy"
+
+HOME="$tmp/home-codex-agents-cost" "$ROOT/install.sh" --profile cost-first codex-agents >/dev/null
+for agent in teamwork-explorer teamwork-worker teamwork-designer; do
+  grep_required '^model = "gpt-5.4"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex agent install must downshift $agent"
+  grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex agent install must use medium reasoning for $agent"
+done
+for agent in teamwork-judge teamwork-reviewer; do
+  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex agent install must keep frontier model for $agent"
+  grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex agent install must keep high reasoning for $agent"
+done
+
+HOME="$tmp/home-codex-cost" "$ROOT/install.sh" --profile cost-first codex >/dev/null
+grep_required 'Codex model profile: default is cost-first' "$tmp/home-codex-cost/.codex/AGENTS.md" \
+  "Codex global policy must record cost-first profile"
+
+HOME="$tmp/home-invalid-profile" "$ROOT/install.sh" --profile invalid codex >/dev/null 2>&1 \
+  && fail "installer must reject unsupported Codex profiles"
 
 HOME="$tmp/home-codex-agents-link" "$ROOT/install.sh" --link codex-agents >/dev/null
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do

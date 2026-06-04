@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_MODE="${TEAMWORK_INSTALL_MODE:-copy}"
+CODEX_PROFILE="${TEAMWORK_CODEX_PROFILE:-performance-first}"
 SKILLS=(
   using-teamwork
   teamwork-init
@@ -42,7 +43,7 @@ CODEX_AGENTS=(
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] codex|cursor|claude|all|project|codex-agents|claude-agents
+  ./install.sh [--copy|--link] [--profile performance-first|cost-first] codex|cursor|claude|all|project|codex-agents|claude-agents
 
 Targets:
   codex          Install skills, Codex agents, and Teamwork global policy (default target)
@@ -55,11 +56,14 @@ Targets:
 
 Default mode is --copy. Use --link for local development when installs should
 track this checkout.
+
+Codex profile defaults to performance-first. Use cost-first to downshift
+Explorer, Designer, and Worker while keeping Judge and Reviewer on frontier.
 USAGE
 }
 
 write_teamwork_codex_global_policy() {
-  cat <<'POLICY'
+  cat <<POLICY
 <!-- TEAMWORK_CODEX_GLOBAL_START -->
 ## Teamwork Codex Global Policy
 
@@ -71,6 +75,12 @@ CodeGraph-answerable structural question, tight critical-path work, overlapping
 write ownership, destructive or credential-sensitive actions, or higher
 subagent context cost than benefit.
 
+Codex model profile: default is ${CODEX_PROFILE}. performance-first uses
+installed Teamwork custom agents with gpt-5.5 and high reasoning. cost-first
+downshifts routine Explorer, Designer, and Worker tracks while keeping Judge,
+Reviewer, high-risk, public, and failed-goal work on gpt-5.5 high reasoning.
+Use project-local Teamwork init mode only for explicit overrides.
+
 Remote execution: assume substantial code execution runs on the configured
 remote server for the active project. The local environment is for editing,
 inspection, basic tests, syntax checks, and lightweight validation. Before
@@ -78,6 +88,18 @@ remote jobs, use project instructions or server inventory to verify host,
 repository path, branch, and command scope.
 <!-- TEAMWORK_CODEX_GLOBAL_END -->
 POLICY
+}
+
+validate_codex_profile() {
+  case "$CODEX_PROFILE" in
+    performance-first|cost-first)
+      ;;
+    *)
+      echo "Unknown Codex profile: $CODEX_PROFILE" >&2
+      usage
+      exit 2
+      ;;
+  esac
 }
 
 install_codex_global_policy() {
@@ -206,6 +228,41 @@ install_agent_file() {
   esac
 }
 
+codex_agent_profile_values() {
+  local agent="$1"
+  case "$CODEX_PROFILE:$agent" in
+    cost-first:teamwork-explorer|cost-first:teamwork-designer|cost-first:teamwork-worker)
+      printf '%s %s\n' "gpt-5.4" "medium"
+      ;;
+    *)
+      printf '%s %s\n' "gpt-5.5" "high"
+      ;;
+  esac
+}
+
+install_codex_agent_file() {
+  local source="$1"
+  local dest="$2"
+  local agent="$3"
+  local model effort tmp
+
+  read -r model effort < <(codex_agent_profile_values "$agent")
+  rm -f "$dest"
+  mkdir -p "$(dirname "$dest")"
+
+  if [[ "$INSTALL_MODE" == "link" && "$CODEX_PROFILE" == "performance-first" ]]; then
+    ln -sfn "$source" "$dest"
+    return 0
+  fi
+
+  tmp="$(mktemp)"
+  sed \
+    -e "s/^model = .*/model = \"$model\"/" \
+    -e "s/^model_reasoning_effort = .*/model_reasoning_effort = \"$effort\"/" \
+    "$source" > "$tmp"
+  mv "$tmp" "$dest"
+}
+
 install_skill_set() {
   local dest_root="$1"
   local label="$2"
@@ -245,12 +302,13 @@ install_codex_agent_set() {
 
   mkdir -p "$dest_root"
   for agent in "${CODEX_AGENTS[@]}"; do
-    install_agent_file \
+    install_codex_agent_file \
       "$ROOT/templates/codex-agents/$agent.toml" \
-      "$dest_root/$agent.toml"
+      "$dest_root/$agent.toml" \
+      "$agent"
   done
 
-  echo "Installed $label Codex agents under: $dest_root ($INSTALL_MODE)"
+  echo "Installed $label Codex agents under: $dest_root ($INSTALL_MODE, $CODEX_PROFILE)"
 }
 
 install_codex() {
@@ -300,6 +358,19 @@ while [[ $# -gt 0 ]]; do
       INSTALL_MODE="link"
       shift
       ;;
+    --profile)
+      [[ $# -ge 2 ]] || { echo "--profile requires a value." >&2; usage; exit 2; }
+      CODEX_PROFILE="$2"
+      shift 2
+      ;;
+    --performance-first)
+      CODEX_PROFILE="performance-first"
+      shift
+      ;;
+    --cost-first)
+      CODEX_PROFILE="cost-first"
+      shift
+      ;;
     codex|cursor|claude|all|project|codex-agents|claude-agents)
       if [[ -n "$TARGET" ]]; then
         echo "Specify only one install target." >&2
@@ -320,6 +391,8 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+validate_codex_profile
 
 case "${TARGET:-codex}" in
   codex)
