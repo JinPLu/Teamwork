@@ -158,7 +158,7 @@ for subskill in teamwork-init teamwork-goal teamwork-research teamwork-plan team
   grep_required "skills/$subskill/SKILL.md" "$ENTRYPOINT" "entrypoint/router does not reference skills/$subskill/SKILL.md"
 done
 
-for reference in artifact-protocol goal-iteration dispatch-policy platform-dispatch-mapping workflow-orchestration subagent-prompt-contract subagent-packets subagent-routing workflow-contract codex-deep-collaboration plan-output review-checks project-init teamwork-index; do
+for reference in artifact-protocol goal-iteration dispatch-policy platform-dispatch-mapping workflow-orchestration subagent-prompt-contract subagent-packets subagent-routing workflow-contract codex-deep-collaboration plan-output review-checks project-init teamwork-index research-protocol role-workflows optional-skills designer-judge-workflow worker-workflow reviewer-workflow; do
   ref_file="$ROOT/skills/using-teamwork/references/$reference.md"
   [[ -f "$ref_file" ]] || fail "missing skills/using-teamwork/references/$reference.md"
   git_known_or_worktree_addition "skills/using-teamwork/references/$reference.md" \
@@ -171,6 +171,24 @@ for template in teamwork-index-template.json teamwork-index-readme-template.md t
   git_known_or_worktree_addition "skills/using-teamwork/references/$template" \
     || fail "skills/using-teamwork/references/$template is neither tracked nor a worktree addition"
 done
+
+expected_reference_inventory="$(
+  printf '%s\n' \
+    artifact-protocol.md codex-deep-collaboration.md designer-judge-workflow.md \
+    dispatch-policy.md goal-iteration.md optional-skills.md plan-output.md \
+    platform-dispatch-mapping.md project-init.md research-protocol.md \
+    reviewer-workflow.md review-checks.md role-workflows.md subagent-packets.md \
+    subagent-prompt-contract.md subagent-routing.md teamwork-current-template.md \
+    teamwork-index-readme-template.md teamwork-index-template.json \
+    teamwork-index.md worker-workflow.md workflow-contract.md \
+    workflow-orchestration.md | sort
+)"
+actual_reference_inventory="$(
+  find "$ROOT/skills/using-teamwork/references" -maxdepth 1 -type f \
+    -exec basename {} \; | sort
+)"
+[[ "$actual_reference_inventory" == "$expected_reference_inventory" ]] \
+  || fail "using-teamwork references inventory drifted"
 
 [[ -f "$ROOT/scripts/validate_teamwork_index.py" ]] || fail "missing scripts/validate_teamwork_index.py"
 git_known_or_worktree_addition "scripts/validate_teamwork_index.py" \
@@ -370,8 +388,20 @@ line_count_max "$ROOT/skills/using-teamwork/references/workflow-orchestration.md
 word_count_max "$ROOT/skills/using-teamwork/references/workflow-orchestration.md" 500 "workflow orchestration reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" 80 "subagent prompt contract should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" 500 "subagent prompt contract should stay focused"
-line_count_max "$ROOT/skills/using-teamwork/references/subagent-packets.md" 110 "subagent packet reference should stay focused"
-word_count_max "$ROOT/skills/using-teamwork/references/subagent-packets.md" 350 "subagent packet reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/subagent-packets.md" 150 "subagent packet reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/subagent-packets.md" 500 "subagent packet reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/research-protocol.md" 70 "research protocol reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/research-protocol.md" 450 "research protocol reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/role-workflows.md" 80 "role workflows reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/role-workflows.md" 500 "role workflows reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/optional-skills.md" 90 "optional skills reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/optional-skills.md" 600 "optional skills reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/designer-judge-workflow.md" 80 "designer/judge workflow reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/designer-judge-workflow.md" 550 "designer/judge workflow reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/worker-workflow.md" 80 "worker workflow reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/worker-workflow.md" 550 "worker workflow reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/reviewer-workflow.md" 80 "reviewer workflow reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/reviewer-workflow.md" 550 "reviewer workflow reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-routing.md" 25 "compatibility routing index should stay small"
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-routing.md" 120 "compatibility routing index should stay small"
 line_count_max "$ROOT/skills/using-teamwork/references/project-init.md" 95 "project init reference should stay focused"
@@ -402,6 +432,10 @@ grep_required 'If subagents are' "$ENTRYPOINT" \
   "entrypoint/router must respect platform subagent authorization"
 grep_required 'Workflow Pattern Selection' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must define workflow pattern selection"
+for pattern in 'Native single-agent' 'Skill:' 'Router/subagent' 'Handoff:' 'Custom workflow'; do
+  grep_required "$pattern" "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+    "workflow contract must define pattern choice: $pattern"
+done
 grep_required 'Platform Native Policy Map' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must define platform native policy map"
 grep_required 'Codex standing authorization' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
@@ -510,6 +544,10 @@ grep_required 'Explorer Result Packet once' "$ROOT/templates/codex-agents/teamwo
   "Codex explorer agent must return exact Explorer packet once and stop"
 grep_required 'Decision Relevance' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
   "Codex explorer agent must include expanded Explorer packet fields"
+grep_required 'Search Plan' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
+  "Codex explorer agent must include research packet fields"
+grep_required 'Citation Ledger' "$ROOT/templates/claude-agents/explore.md" \
+  "Claude explorer agent must include research packet fields"
 grep_required 'Designer Decision Packet once' "$ROOT/templates/codex-agents/teamwork-designer.toml" \
   "Codex designer agent must return exact Designer packet once and stop"
 grep_required 'Decision Scope' "$ROOT/templates/codex-agents/teamwork-designer.toml" \
@@ -520,6 +558,12 @@ grep_required 'accept, revise, or blocked' "$ROOT/templates/codex-agents/teamwor
   "Codex judge verdict enum must match Judge packet"
 grep_required 'Stop Rule Adequacy' "$ROOT/templates/codex-agents/teamwork-judge.toml" \
   "Codex judge agent must include expanded Judge packet fields"
+for agent in teamwork-judge teamwork-deep-judge; do
+  for anchor in 'Requirements Mapping Adequacy' 'Assumption Safety' 'Protected Boundary Adequacy' 'Plan Completeness' 'Guardrails / Stop Conditions' 'Verdict Rationale'; do
+    grep_required "$anchor" "$ROOT/templates/codex-agents/$agent.toml" \
+      "Codex $agent must include expanded Judge field: $anchor"
+  done
+done
 grep_required 'Worker Completion Packet once' "$ROOT/templates/codex-agents/teamwork-worker.toml" \
   "Codex worker agent must return exact Worker packet once and stop"
 grep_required 'done, done_with_concerns, blocked, or needs_context' "$ROOT/templates/codex-agents/teamwork-worker.toml" \
@@ -532,10 +576,56 @@ grep_required 'accept, revise, or blocked' "$ROOT/templates/codex-agents/teamwor
   "Codex reviewer verdict enum must match Reviewer packet"
 grep_required 'Requirement Misses' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" \
   "Codex reviewer agent must include expanded Reviewer packet fields"
+for agent in teamwork-reviewer teamwork-deep-reviewer; do
+  for anchor in 'Base/Head or Diff Source' 'Requirements / Evidence Map' 'Severity Crosswalk' 'Feedback / Thread Disposition' 'CI / Log Provenance' 'Re-review Status' 'Pushback / Dissent'; do
+    grep_required "$anchor" "$ROOT/templates/codex-agents/$agent.toml" \
+      "Codex $agent must include expanded Reviewer field: $anchor"
+  done
+done
+for anchor in 'Role' 'Native Fields' 'Status' 'Plan Source' 'Owned Scope' 'Plan Step Mapping' 'Files Changed' 'Implemented' 'Mode' 'TDD Evidence' 'Failing Test / Repro Evidence' 'Root Cause Evidence' 'Hypothesis Tested' 'Verification Commands' 'Verification Result' 'Claim Supported By Evidence' 'Review Loop Status' 'Deviations' 'Protected Boundary Hits' 'Concerns / Blockers'; do
+  grep_required "$anchor" "$ROOT/templates/claude-agents/worker.md" \
+    "Claude worker agent must include canonical Worker field: $anchor"
+done
+for anchor in 'Role' 'Native Fields' 'Verdict' 'Review Target' 'Base/Head or Diff Source' 'Requirements / Evidence Map' 'Acceptance Mapping' 'Requirement Misses' 'Issues' 'Severity Crosswalk' 'Feedback / Thread Disposition' 'Verification Reviewed' 'CI / Log Provenance' 'Manual Smoke Evidence' 'Routing Conformance' 'Re-review Status' 'Pushback / Dissent' 'Residual Risk' 'Next Route'; do
+  grep_required "$anchor" "$ROOT/templates/claude-agents/code-reviewer.md" \
+    "Claude reviewer agent must include canonical Reviewer field: $anchor"
+done
 grep_required 'not a separate conceptual role' "$ROOT/templates/codex-agents/teamwork-deep-judge.toml" \
   "Codex deep judge must be documented as a severity profile"
 grep_required 'not a separate conceptual role' "$ROOT/templates/codex-agents/teamwork-deep-reviewer.toml" \
   "Codex deep reviewer must be documented as a severity profile"
+if [[ -d "$ROOT/.codex/agents" ]]; then
+  for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
+    generated="$ROOT/.codex/agents/$agent.toml"
+    template="$ROOT/templates/codex-agents/$agent.toml"
+    if [[ -e "$generated" ]]; then
+      if [[ -L "$generated" ]]; then
+        [[ "$(readlink "$generated")" == "$template" ]] \
+          || fail "project Codex agent symlink drifted: $agent"
+      else
+        diff -q \
+          <(sed '/^model = /d;/^model_reasoning_effort = /d' "$generated") \
+          <(sed '/^model = /d;/^model_reasoning_effort = /d' "$template") >/dev/null \
+          || fail "project Codex agent copy drifted from template: $agent"
+      fi
+    fi
+  done
+fi
+if [[ -d "$ROOT/.claude/agents" ]]; then
+  for agent in explore worker code-reviewer; do
+    generated="$ROOT/.claude/agents/$agent.md"
+    template="$ROOT/templates/claude-agents/$agent.md"
+    if [[ -e "$generated" ]]; then
+      if [[ -L "$generated" ]]; then
+        [[ "$(readlink "$generated")" == "$template" ]] \
+          || fail "project Claude agent symlink drifted: $agent"
+      else
+        cmp -s "$generated" "$template" \
+          || fail "project Claude agent copy drifted from template: $agent"
+      fi
+    fi
+  done
+fi
 grep -q 'all)' "$ROOT/install.sh" || fail "install.sh must support all target"
 grep -q 'project)' "$ROOT/install.sh" || fail "install.sh must support project target"
 grep -q 'codex-agents)' "$ROOT/install.sh" || fail "install.sh must support codex-agents target"
@@ -570,6 +660,16 @@ grep_required 'Search existing research artifacts' "$ROOT/skills/teamwork-resear
   "research skill must reuse existing research artifacts"
 grep_required 'Research Refresh Triggers' "$ROOT/skills/teamwork-research/SKILL.md" \
   "research skill must define refresh triggers"
+grep_required 'plan-ready' "$ROOT/skills/teamwork-research/SKILL.md" \
+  "research handoff must include plan-ready fields"
+grep_required 'research-protocol.md' "$ROOT/skills/teamwork-research/SKILL.md" \
+  "research skill must use research protocol"
+grep_required 'source-audit' "$ROOT/skills/using-teamwork/references/research-protocol.md" \
+  "research protocol must define source-audit mode"
+grep_required 'Citation Ledger' "$ROOT/skills/using-teamwork/references/research-protocol.md" \
+  "research protocol must require Citation Ledger"
+grep_required 'public web search separate from private data' "$ROOT/skills/teamwork-research/SKILL.md" \
+  "research skill must preserve public/private research safety staging"
 grep_required 'Search Keys' "$ROOT/skills/teamwork-research/SKILL.md" \
   "research artifact template must include Search Keys"
 grep_required 'Abstract' "$ROOT/skills/teamwork-research/SKILL.md" \
@@ -598,6 +698,100 @@ grep_required 'Durable Plan Sections' "$ROOT/skills/using-teamwork/references/pl
   "plan output reference must include durable plan sections"
 grep_required 'Platform native dispatch fields are derived at dispatch time from the' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must derive native dispatch fields at dispatch time"
+grep_required 'designer-judge-workflow.md' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan skill must use designer/judge workflow detail"
+grep_required 'option matrix' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan skill must require Designer option matrix workflow"
+grep_required 'Designer Decision' "$ROOT/skills/using-teamwork/references/plan-output.md" \
+  "plan output must include optional Designer Decision section"
+grep_required 'Judge Plan Review' "$ROOT/skills/using-teamwork/references/plan-output.md" \
+  "plan output must include optional Judge Plan Review section"
+for role in Explorer Designer Judge Worker Reviewer; do
+  grep_required "$role" "$ROOT/skills/using-teamwork/references/role-workflows.md" \
+    "role workflows must cover $role"
+done
+for anchor in research-protocol writing-plans executing-plans subagent-driven-development test-driven-development systematic-debugging verification-before-completion requesting-code-review receiving-code-review; do
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/role-workflows.md" \
+    "role workflows must map mature workflow anchor: $anchor"
+done
+for anchor in brainstorming dispatching-parallel-agents writing-skills; do
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/role-workflows.md" \
+    "role workflows must map Designer/Judge workflow anchor: $anchor"
+done
+for anchor in 'Option Matrix' 'Plan Decomposition Notes' 'Acceptance Implications' 'Requirements Mapping Adequacy' 'Guardrails / Stop Conditions' 'Acceptance Gap'; do
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+    "subagent packets must include Designer/Judge field: $anchor"
+done
+for anchor in 'Plan Step Mapping' 'TDD Evidence' 'Root Cause Evidence' 'Verification Commands' 'Claim Supported By Evidence' 'Review Loop Status'; do
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+    "subagent packets must include Worker field: $anchor"
+done
+for anchor in 'Requirements / Evidence Map' 'Severity Crosswalk' 'Feedback / Thread Disposition' 'CI / Log Provenance' 'Re-review Status' 'Pushback / Dissent'; do
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+    "subagent packets must include Reviewer field: $anchor"
+done
+grep_required 'worker-workflow.md' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  "execute skill must use Worker workflow detail"
+grep_required 'exit condition' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  "execute skill must require Worker run-loop exit"
+grep_required 'reviewer-workflow.md' "$ROOT/skills/teamwork-review/SKILL.md" \
+  "review skill must use Reviewer workflow detail"
+grep_required 'Requirements / Evidence Map' "$ROOT/skills/teamwork-review/SKILL.md" \
+  "review skill verdict format must include evidence map"
+grep_required 'Re-review after `revise`' "$ROOT/skills/using-teamwork/references/reviewer-workflow.md" \
+  "reviewer workflow must define re-review loop"
+grep_required 'TDD Gate' "$ROOT/skills/using-teamwork/references/worker-workflow.md" \
+  "worker workflow must define TDD gate"
+grep_required 'Debugging Gate' "$ROOT/skills/using-teamwork/references/worker-workflow.md" \
+  "worker workflow must define debugging gate"
+grep_required 'expected output, guardrails, retry/stop conditions' "$ROOT/skills/using-teamwork/references/designer-judge-workflow.md" \
+  "designer/judge workflow must define guardrail and stop condition checks"
+for skill in teamwork-plan teamwork-execute teamwork-review; do
+  grep_required 'role-workflows.md' "$ROOT/skills/$skill/SKILL.md" \
+    "$skill must reference role workflows"
+done
+grep_required 'optional-skills.md' "$ROOT/skills/teamwork-research/SKILL.md" \
+  "research skill must reference optional skill gate"
+grep_required 'optional-skills.md' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan skill must reference optional skill gate"
+grep_required 'optional-skills.md' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  "execute skill must reference optional skill gate"
+grep_required 'optional-skills.md' "$ROOT/skills/teamwork-review/SKILL.md" \
+  "review skill must reference optional skill gate"
+for anchor in 'plugin-first' 'No duplicate install' 'credential' 'write risk' 'smoke test' 'broad community' 'Candidate Record'; do
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/optional-skills.md" \
+    "optional skills must document gate anchor: $anchor"
+done
+grep_required 'Skill = reusable workflow or expertise; plugin = installable distribution unit' "$ROOT/skills/using-teamwork/references/optional-skills.md" \
+  "optional skills must distinguish skill workflow from plugin distribution"
+grep_required 'licenses may differ per skill directory' "$ROOT/skills/using-teamwork/references/optional-skills.md" \
+  "optional skills must require per-skill license awareness"
+python3 - "$ROOT/skills/using-teamwork/references/optional-skills.md" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text()
+required = [
+    "Source/License",
+    "Role Fit",
+    "Trigger",
+    "Credentials",
+    "Write Risk",
+    "Smoke Test",
+    "Decision",
+]
+missing = [name for name in required if name not in text]
+if missing:
+    raise SystemExit(f"FAIL: optional-skills.md candidate record missing fields: {', '.join(missing)}")
+volatile = ["gh-fix-ci", "gh-address-comments", "playwright-interactive", "security-threat-model"]
+leaked = [name for name in volatile if name in text]
+if leaked:
+    raise SystemExit(f"FAIL: optional-skills.md must not keep static external skill inventory: {', '.join(leaked)}")
+PY
+grep_absent 'Official assumptions refreshed' \
+  "runtime references must not contain dated official-assumption refresh claims" \
+  "$ROOT/skills/using-teamwork/references"
 grep_required 'codex review' "$ROOT/skills/teamwork-review/SKILL.md" \
   "review skill must mention codex review as evidence"
 grep_required 'Routing conformance' "$ROOT/skills/teamwork-review/SKILL.md" \
@@ -606,6 +800,10 @@ grep_required 'missing Parallelization Gate' "$ROOT/skills/teamwork-review/SKILL
   "review skill must reject plans without the parallelization gate"
 grep_required 'Execution Review' "$ROOT/skills/using-teamwork/references/review-checks.md" \
   "review checks reference must include execution review"
+grep_required 'Re-review after `revise` records prior verdict' "$ROOT/skills/using-teamwork/references/review-checks.md" \
+  "review checks must require re-review closure evidence"
+grep_required 'CI review records failing check/log provenance' "$ROOT/skills/using-teamwork/references/review-checks.md" \
+  "review checks must require CI provenance when relevant"
 grep_required 'sandbox' "$ROOT/skills/teamwork-execute/SKILL.md" \
   "execute skill must document sandbox approvals"
 grep_required 'accepted, approved, resumed' "$ROOT/skills/teamwork-execute/SKILL.md" \
@@ -618,6 +816,12 @@ grep_required 'Automatic Stage Selection' "$ROOT/skills/using-teamwork/SKILL.md"
   "using-teamwork must define automatic natural-language stage selection"
 grep_required 'Do not wait for the user to name a Teamwork skill' "$ROOT/skills/using-teamwork/SKILL.md" \
   "using-teamwork must not require manual skill invocation"
+grep_required 'check/validate completed work' "$ROOT/skills/using-teamwork/SKILL.md" \
+  "using-teamwork must not route bare check/validate to review ceremony"
+grep_required 'simple checks stay native' "$ROOT/skills/using-teamwork/SKILL.md" \
+  "using-teamwork must keep simple checks lightweight"
+grep_required 'budgeted convergence' "$ROOT/skills/using-teamwork/SKILL.md" \
+  "using-teamwork must not route bare budget mentions to goal mode"
 grep_required 'teamwork-update' "$ROOT/skills/using-teamwork/SKILL.md" \
   "using-teamwork must route package update work"
 grep_required 'teamwork-init' "$ROOT/skills/using-teamwork/SKILL.md" \
@@ -702,6 +906,10 @@ grep_required '`balanced` and' "$ROOT/skills/using-teamwork/references/platform-
   "model mapping must define cost-first balanced/coding models"
 grep_required '`frontier` -> `gpt-5.5`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "model mapping must define frontier pro model"
+grep_required 'Codex role dispatch: `agent_type`, `model`, `reasoning_effort`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+  "Codex mapping must define role dispatch native fields"
+grep_required 'full-history fork: `fork_context:true` only' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+  "Codex mapping must define fork_context-only full-history shape"
 grep_required 'Explorer default: `agent_type:"explorer"`, `model:"gpt-5.5"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Codex Explorer preset must pin pro model"
 grep_required 'Worker default: `agent_type:"worker"`, `model:"gpt-5.5"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
@@ -788,6 +996,9 @@ grep_required 'Do not use `cheap-fast` for normal Pro/20x Codex workflows' "$ROO
   "dispatch policy must forbid cheap-fast for Judge and Reviewer"
 grep_required 'routing guidance, not the only' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must treat plan routing as guidance"
+grep_absent 'verified-but-unreviewed' \
+  "Teamwork must use canonical unreviewed status" \
+  "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/README.md" "$ROOT/README.en.md"
 grep_required 'split before implementation steps' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must require split before implementation steps"
 grep_required 'Explorer/Reviewer: default max 3' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
@@ -842,15 +1053,17 @@ grep_required 'Subagent Prompt Contract' "$ROOT/skills/using-teamwork/references
   "subagent prompt contract must define subagent prompt contract"
 grep_required 'Conceptual Role: Explorer, Designer, Judge, Worker, or Reviewer' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require conceptual role"
-grep_required 'Native Fields: platform dispatch fields from `platform-dispatch-mapping.md`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+grep_required 'Native Fields: fields from `platform-dispatch-mapping.md`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require native fields"
-grep_required 'on Cursor `subagent_type`, `model` or `model: inherited`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+grep_required 'full-history fork (`fork_context:true`, inherited model, no' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+  "subagent prompt contract must define Codex fork_context alternative"
+grep_required 'Cursor uses `subagent_type`, `model` or' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must document Cursor native fields"
 grep_required 'Never imply a stronger model' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must prevent misleading model claims"
 grep_required 'Context Strategy: one value from `Context Strategies`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require context strategy"
-grep_required 'Required Output Schema: matching packet from `subagent-packets.md`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+grep_required 'Required Output Schema: packet from `subagent-packets.md`' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require output schema"
 grep_required 'Role Templates' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must define role prompt templates"
@@ -868,6 +1081,8 @@ grep_required 'Result Packets' "$ROOT/skills/using-teamwork/references/subagent-
   "subagent packets reference must define packet shapes"
 grep_required 'Explorer Result Packet' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
   "subagent packets reference must define Explorer result packet"
+grep_required 'Search Plan; Queries Tried; Source Classes; Sources Used; Sources Rejected; Contradictions; Coverage Gaps; Citation Ledger' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+  "Explorer packet must define web/deep research fields"
 grep_required 'Native Fields:' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
   "subagent packets must record native fields"
 grep_required 'Designer Decision Packet' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
@@ -967,9 +1182,10 @@ trap 'rm -rf "$tmp"' EXIT
 retired_teamwork_dir="$tmp/home/.codex/skills/teamwork"
 mkdir -p "$retired_teamwork_dir/references"
 printf '%s\n' '---' 'name: teamwork' 'description: Use when selecting a Teamwork stage.' '---' > "$retired_teamwork_dir/SKILL.md"
-for reference in artifact-protocol goal-iteration dispatch-policy subagent-prompt-contract subagent-packets subagent-routing workflow-contract plan-output review-checks project-init; do
-  printf '%s\n' "retired $reference" > "$retired_teamwork_dir/references/$reference.md"
-done
+while IFS= read -r ref_file; do
+  reference="$(basename "$ref_file")"
+  printf '%s\n' "retired $reference" > "$retired_teamwork_dir/references/$reference"
+done < <(find "$ROOT/skills/using-teamwork/references" -maxdepth 1 -type f | sort)
 HOME="$tmp/home" "$ROOT/install.sh" >/dev/null
 [[ ! -e "$retired_teamwork_dir" ]] || fail "Codex install must remove old copied teamwork skill"
 for skill in "${SKILLS[@]}"; do

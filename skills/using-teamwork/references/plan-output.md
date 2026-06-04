@@ -21,6 +21,7 @@ Verification:
 - Expected Results: <exact passing output or behavior>
 Stop Rules: <when to stop or replan>
 Review Need: <none | local | fresh-context>
+Design/Judge: <none | Designer/Judge packet summary when used>
 ```
 
 ## Durable Plan Header
@@ -50,6 +51,10 @@ Linked Artifacts: related research or report paths, or none
 - In: ...
 - Out: ...
 - Protected boundaries: ...
+## Designer Decision
+- <optional; include Decision Scope, constraints, success criteria, option matrix, recommendation, rejected options, acceptance implications when used>
+## Judge Plan Review
+- <optional; include verdict, requirements/evidence adequacy, guardrails, stop conditions, acceptance gap, required fixes, residual risks when used>
 ## Subagent Routing
 - Expected: <role, scope, model tier, context strategy, order, independence, owned paths, why; or `none` with continuity rationale>
 - Execution may re-run the split and record Actual Dispatch Log.

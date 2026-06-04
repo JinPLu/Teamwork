@@ -13,6 +13,12 @@ Read only as needed:
 
 - `skills/using-teamwork/references/workflow-contract.md` for evidence, artifacts, and boundaries.
 - `skills/using-teamwork/references/dispatch-policy.md` for Designer/Judge and Dispatch Guidance.
+- `skills/using-teamwork/references/role-workflows.md` for Designer and Judge
+  method.
+- `skills/using-teamwork/references/designer-judge-workflow.md` for option matrix,
+  plan decomposition, and Judge acceptance-gap gates.
+- `skills/using-teamwork/references/optional-skills.md` when a plan proposes
+  external tool skills.
 - `skills/using-teamwork/references/subagent-prompt-contract.md` before delegated prompt packets.
 - `skills/using-teamwork/references/plan-output.md` for durable or complete handoff templates.
 - `skills/using-teamwork/references/artifact-protocol.md` for durable plan
@@ -50,14 +56,17 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 4. Run the Parallelization Gate before implementation steps: split before implementation steps by default for independent tracks, apply the Subagent Tool
    Discovery Gate when subagents are authorized, or emit `Dispatch Exception:`
    with the allowed reason.
-5. Use Designer for ambiguous choices unless observed evidence already fixes
-   the decision. Use a fresh-context Judge before delivering high-risk,
-   durable, delegated, or goal-mode plans; if unavailable after discovery or
-   explicitly opted out, label the plan `unreviewed`.
+5. Use Designer workflow for ambiguous choices unless observed evidence already
+   fixes the decision. Use Judge workflow before delivering high-risk, durable,
+   delegated, or goal-mode plans; if unavailable after discovery or explicitly
+   opted out, label the plan `unreviewed`. Record Designer/Judge packet
+   summaries in chat plans or the durable plan when used.
 6. Write `Dispatch Guidance:` or durable `Subagent Routing`; guidance helps
    execution but is not the only dispatch authorization.
-7. Add Subagent Prompt Packets only for delegated roles.
-8. Write ordered steps, verification, Expected Results, risks, stop rules, and
+7. If external skills are in scope, apply `optional-skills.md`; plans may
+   document install gates, but must not auto-install optional skills.
+8. Add Subagent Prompt Packets only for delegated roles.
+9. Write ordered steps, verification, Expected Results, risks, stop rules, and
    handoffs.
 
 ## Quality Gates

@@ -12,6 +12,10 @@ Read only as needed:
 
 - `skills/using-teamwork/references/workflow-contract.md` for evidence and context rules.
 - `skills/using-teamwork/references/dispatch-policy.md` for Explorer dispatch economics.
+- `skills/using-teamwork/references/research-protocol.md` for lookup,
+  research, deep-research, source-audit, citation, and safety staging.
+- `skills/using-teamwork/references/optional-skills.md` before installing or
+  invoking new external tool skills.
 - `skills/using-teamwork/references/subagent-prompt-contract.md` before writing Explorer prompts.
 - `skills/using-teamwork/references/subagent-packets.md` for Explorer Result Packet.
 - `skills/using-teamwork/references/artifact-protocol.md` for reusable research artifacts.
@@ -48,7 +52,13 @@ Artifacts include Search Keys and Abstract for future retrieval.
 8. Use external calibration when current platform, dependency, model, API,
    upstream behavior, performance, unfamiliar frameworks, or repeated failures
    could affect the answer.
-9. Synthesize options, preserve dissent, recommend the smallest producer-side
+9. For web or deep research, follow `research-protocol.md`: clarify/rewrite,
+   plan source classes, fan out queries, audit contradictions, record coverage
+   gaps, and keep public web search separate from private data.
+10. Before installing or depending on external skills, apply
+   `optional-skills.md`; prefer active plugins, reject duplicates, and require
+   credentials, write-risk review, and smoke test.
+11. Synthesize options, preserve dissent, recommend the smallest producer-side
    path, and write/update any required artifact.
 
 ## Hidden Research Gate
@@ -68,6 +78,7 @@ evidence, or the active plan is invalidated.
 ## Handoff
 
 Return artifact path or none, question, closed dispatch log or continuity
-rationale, assumptions, evidence, options, recommendation, dissent, refresh
-triggers, optional `Memory Delta:` when durable project memory was checked or
-changed, and `Route: teamwork-plan`.
+rationale, assumptions, evidence, options, recommendation, dissent, plan-ready
+fields (goal, scope, protected boundaries, verification target, budget, stop
+rules when known), refresh triggers, optional `Memory Delta:` when durable
+project memory was checked or changed, and `Route: teamwork-plan`.

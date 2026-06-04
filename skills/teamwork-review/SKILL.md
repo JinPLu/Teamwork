@@ -13,6 +13,13 @@ Read only as needed:
 
 - `skills/using-teamwork/references/workflow-contract.md` for evidence and context rules.
 - `skills/using-teamwork/references/review-checks.md` for plan/execution gates.
+- `skills/using-teamwork/references/role-workflows.md` for Reviewer method and
+  review-reception discipline.
+- `skills/using-teamwork/references/reviewer-workflow.md` for fresh review,
+  severity crosswalk, PR/CI provenance, feedback disposition, and re-review
+  closure.
+- `skills/using-teamwork/references/optional-skills.md` when reviewing
+  proposed or used external skills.
 - `skills/using-teamwork/references/dispatch-policy.md` for Reviewer dispatch and routing checks.
 - `skills/using-teamwork/references/subagent-prompt-contract.md` before Reviewer prompts.
 - `skills/using-teamwork/references/subagent-packets.md` for Reviewer Verdict Packet.
@@ -36,6 +43,10 @@ Read only as needed:
   output (Cursor or Claude Code), git diff, CI summaries, test runner output,
   and tool output as evidence inputs, not final verdicts.
 - Do not fix issues during review unless explicitly asked.
+- Use `blocker`, `major`, `minor` consistently: unsafe/impossible acceptance,
+  required-before-proceed, or follow-up/note.
+- When reviewing optional skills, reject duplicate installs, unclear
+  source/license, broad write risk, missing credentials, or missing smoke test.
 - Reviewer dispatch follows the same closure rule: return one verdict packet,
   integrate it, and close or block the track before acceptance.
 
@@ -52,6 +63,8 @@ Routing conformance, Actual Dispatch Log, Worker Completion Packet, Reviewer
 Verdict Packet, dispatch economics, workspace hygiene, and next failure route.
 Confirm Stage-Routed Proactive Dispatch was evaluated even when the plan did not
 name every track. Reject open delegated tracks without blocker rationale.
+For re-review after `revise`, require prior verdict, required fixes reviewed,
+fix evidence, remaining issues, and re-review verdict.
 
 ## Verdict Format
 
@@ -59,6 +72,8 @@ name every track. Reject open delegated tracks without blocker rationale.
 Mode: plan | execution
 Evidence Read:
 - <observed|inferred|claimed> <path/command/artifact>: <finding>
+Requirements / Evidence Map:
+- <requirement or plan step> -> <evidence> -> <pass|fail|partial|not reviewed>
 Findings:
 - [blocker|major|minor] <issue> - <evidence> - <required action>
 Dissent / Uncertainty: <none or concern>
