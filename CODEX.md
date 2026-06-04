@@ -10,6 +10,8 @@ Install:
 ./install.sh all
 # agents-only refresh when skills/global policy should not change:
 ./install.sh codex-agents
+# print the bootstrap block for Codex App Personalization:
+./install.sh codex-policy
 ```
 
 The behavior contract lives in `skills/`. `using-teamwork` is the automatic lean entrypoint and router. It is intentionally broad so it can load for coding-agent work and then choose native flow or a Teamwork route. `teamwork-init` owns project instruction setup and slimming. Stage skills stay lightweight and load focused references only as needed; Codex-specific depth lives in `codex-deep-collaboration.md`, dispatch decisions in `dispatch-policy.md`, native field mapping in `platform-dispatch-mapping.md`, and swarm-scale orchestration in `workflow-orchestration.md`. `VERSION` is the package version source of truth and must match `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`. Treat names, comments, README claims, summaries, and tool output as evidence to verify, not facts by themselves.
@@ -52,14 +54,17 @@ when durable memory was checked or changed.
 
 For failed goal iterations, refresh research and check whether the active plan was under-informed, stale, wrong-scope, over-strict, or deviated from during execution before retrying. Revise and review the durable plan when new evidence changes the path.
 
-## Codex Subagent Authorization
+## Codex Bootstrap Policy
 
 `./install.sh codex` maintains a Teamwork-managed block in global
-`~/.codex/AGENTS.md`. That block is the preferred portable standing
-authorization for subagents and the default remote-execution assumption; after
-installation, the user does not need to repeat "use subagents" in each prompt.
-Use a project `CODEX.md` or Codex-labeled `AGENTS.md` section only for
-repository exceptions or opt-outs:
+`~/.codex/AGENTS.md`. `./install.sh codex-policy` prints the same block for
+users who want to paste it into Codex App Personalization. The block is a short
+bootstrap policy: subagent authorization, dispatch efficiency, Codex model
+profile, fail-fast safety for missing required values, and remote-execution
+baseline. After installation or personalization, the user does not need to
+repeat "use subagents" in each prompt. Use a project `CODEX.md` or
+Codex-labeled `AGENTS.md` section only for repository facts, exceptions,
+required values, protected boundaries, or opt-outs:
 
 ```md
 For Codex in this repository, this is the user's explicit standing request to
@@ -68,8 +73,11 @@ dispatch policy says it is appropriate. The user does not need to repeat "use
 subagents" in each prompt.
 ```
 
-Keep project authorization short. Detailed dispatch economics stay in
-`dispatch-policy.md` and the installed global policy.
+Keep project authorization short. Detailed dispatch economics and workflow
+contracts stay in `skills/using-teamwork/references/`; concrete hosts, paths,
+commands, ports, credentials, models, hyperparameters, and execution modes stay
+in project instructions or source/config. Missing values are blockers, not
+defaults to invent.
 
 ## Init Mode
 

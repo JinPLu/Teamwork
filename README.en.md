@@ -170,9 +170,9 @@ routine roles, not high-risk review.
 
 Codex is the reference runtime: native goals are the autonomous control plane,
 and `teamwork_*` custom agents are the primary collaboration network for
-non-lightweight work. `./install.sh codex` writes the default global
-`~/.codex/AGENTS.md` standing authorization, so users usually do not need to
-repeat "use subagents" in every prompt.
+non-lightweight work. `./install.sh codex` writes the global bootstrap policy;
+`./install.sh codex-policy` prints the App Personalization copy. Full workflow
+rules stay in skills/references; project files keep local facts and exceptions.
 
 Cursor and Claude Code are adapters: they reuse the same Teamwork protocol
 while keeping their own native capabilities. Cursor uses Task subagents;

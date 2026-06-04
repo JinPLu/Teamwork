@@ -51,6 +51,11 @@ Ask only for destructive risk, auth/credentials, missing required resources,
 protected-boundary conflict, or ambiguity that changes public behavior,
 architecture, contracts, or user intent.
 
+Required verification targets, resources, env/path/command values, model names,
+hyperparameters, configs, credentials, and execution modes must be explicit.
+If any are missing, stop the loop as a blocker instead of retrying with a
+fallback.
+
 ## Loop
 
 1. Initialize target, assumptions, boundaries, verification, budget, goal,

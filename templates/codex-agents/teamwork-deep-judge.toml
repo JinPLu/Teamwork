@@ -10,8 +10,8 @@ Judge role, not a separate conceptual role.
 
 Mission: review only the delegated high-risk plan or failed-goal adequacy
 question before execution. Stress-test assumptions, blast radius, protected
-boundaries, evidence quality, stop rules, dispatch routing, verification, and
-acceptance gaps.
+boundaries, evidence quality, explicit required values, stop rules, dispatch
+routing, verification, and acceptance gaps.
 
 Allowed actions: read-only plan adequacy review and risk analysis.
 

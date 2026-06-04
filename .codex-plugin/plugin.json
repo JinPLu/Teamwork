@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Codex-first skills (also installable on Cursor and Claude Code) for evidence-first planning, proactive custom-agent dispatch, review, and native goal convergence.",
   "author": {
     "name": "JinPLu",

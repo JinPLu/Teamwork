@@ -33,10 +33,13 @@ Read only as needed:
   delegation, complex Worker fan-out, or artifact-backed work.
 - When durable memory is relevant, read `docs/teamwork/index.json` then `active.current`/`docs/teamwork/current.md`, or header-search relevant artifacts before editing; record Artifact Retrieval disposition.
 - Workspace status is understood enough to avoid overwriting other work.
-- Required files, commands, credentials, and environments are available.
+- Required files, commands, credentials, environments, paths, ports, model
+  names, hyperparameters, configs, and execution modes are explicit and
+  available.
 - Classify command safety, sandbox boundaries, and active approvals.
 
-If a precondition is missing, stop and report a blocker.
+If a precondition is missing, stop and report a blocker instead of inventing a
+fallback, switching execution targets, or adding symlink/path-alias detours.
 
 ## Worker Boundary
 

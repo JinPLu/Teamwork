@@ -3,6 +3,16 @@
 Use this reference whenever a Teamwork stage is active. Keep stage `SKILL.md`
 files focused on stage-specific behavior; this file owns shared judgment rules.
 
+## Rule Placement
+
+Keep always-on bootstrap policy short: Codex App Personalization or global
+`~/.codex/AGENTS.md` should contain only standing authorization, efficiency,
+model profile, remote-execution baseline, and a short fail-fast safety note.
+This file owns reusable workflow judgment such as evidence, assumptions, no
+silent defaults, artifacts, reviewability, and subagent lifecycle. Project
+instructions own concrete local facts, required values, exceptions, and
+protected boundaries.
+
 ## Assumptions And Boundaries
 
 - State assumptions before they affect behavior, scope, verification, public

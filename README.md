@@ -157,9 +157,9 @@ role-optimized 模型，高风险 Judge / Reviewer 保留更强模型档位。`c
 ## 平台定位
 
 Codex 是 reference runtime：native goals 是自治控制面，`teamwork_*` custom
-agents 是非轻量工作的主要协作网络。`./install.sh codex` 默认写入全局
-`~/.codex/AGENTS.md` standing authorization；安装后通常不用每次重复
-“use subagents”。
+agents 是非轻量工作的主要协作网络。`./install.sh codex` 写入全局 bootstrap
+policy；`./install.sh codex-policy` 打印同一 block 供 Codex App 个性化粘贴。
+完整 workflow 规则留在 skills/references，项目文件只存本地事实和例外。
 
 Cursor 和 Claude Code 是 adapter：复用同一套 Teamwork 协议，但继续使用各自
 native capabilities。Cursor 侧使用 Task subagents；Claude Code skills 和 agents

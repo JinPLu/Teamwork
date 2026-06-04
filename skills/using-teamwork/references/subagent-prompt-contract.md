@@ -21,39 +21,39 @@ for returned shapes read `subagent-packets.md`.
 
 ## Required Fields
 
-Every delegated prompt includes:
+Delegated prompts include:
 
 - Conceptual Role: Explorer, Designer, Judge, Worker, or Reviewer. Deep Judge
-  and Deep Reviewer are Codex severity profiles for Judge/Reviewer, not new
-  conceptual roles.
+  and Deep Reviewer are severity profiles, not roles.
 - Native Fields: fields from `platform-dispatch-mapping.md`, plus
   model class/pin reason. Codex uses role dispatch (`agent_type`,
   `model` or `model: inherited`, `reasoning_effort`, `fork_context:false`) or
   full-history fork (`fork_context:true`, inherited model, no
   `agent_type/model/reasoning_effort`). Cursor uses `subagent_type`, `model` or
   inherited; Claude uses `subagent_type`.
-- Mission: one concrete question, decision, implementation slice, or review.
-- Source: plan, research, report, diff, command output, or file paths.
-- Inputs: exact files, commands, evidence, assumptions, and acceptance target.
+- Mission: one question, decision, implementation slice, or review.
+- Source: plan, research, report, diff, output, or paths.
+- Inputs: exact files, commands, evidence, assumptions, required values, and target.
 - Owned Scope: files/components the subagent may inspect or edit.
-- Allowed Actions: read-only, workspace-writing, verification, or review-only.
+- Allowed Actions: read-only, workspace-write, verification, or review-only.
 - Forbidden Actions: scope expansion, destructive operations, credentials,
   overlapping writes, unrelated cleanup, broad refactors, final acceptance,
   follow-on monitoring, chaining subagents, or continuing after the packet.
 - Context Strategy: one value from `Context Strategies`.
-- Verification/Acceptance Target: command, artifact, behavior, or checklist.
-- Escalation Triggers: missing context, unclear ownership, protected boundary,
-  plan mismatch, destructive risk, auth failure, or uncertainty changing public
-  behavior, architecture, or contracts.
+- Verification Target: command, artifact, behavior, checklist.
+- Escalation Triggers: missing context, missing required env/path/command/model/config
+  values, unclear ownership, protected boundary, plan mismatch, destructive
+  risk, auth failure, or uncertainty changing public behavior, architecture, or
+  contracts.
 - Required Output Schema: packet from `subagent-packets.md`.
 - Closure Instruction: return the required packet once, then stop; the
-  orchestrator owns integration, final acceptance, and any further dispatch.
+  orchestrator owns integration, final acceptance, and further dispatch.
 
 When delegated work may change durable project memory, ask for `Memory Delta
 Candidate` (`none | current | plan | research | decision | supersede | compact |
-deferred`). The orchestrator decides writes.
+deferred`). Orchestrator decides writes.
 
-For Codex, prefer Teamwork custom agents from `Codex Mapping`; otherwise fill
+Prefer Teamwork custom agents from `Codex Mapping`; otherwise fill
 native fields from `Codex Native Field Presets` unless using
 `full-history-fork`. If `model` is omitted, write `model: inherited` and why.
 If pinned, write model class and reason. Never imply a stronger model than the
@@ -65,6 +65,6 @@ Native Fields request.
 Explorer: platform native fields per platform-dispatch-mapping.md; answer one evidence question; read-only; output Explorer Result Packet once, then stop.
 Designer: compare options and choose a direction; read-only; output Designer Decision Packet once, then stop.
 Judge: review plan readiness before execution; read-only; output Judge Plan Review Packet once, then stop. Use Deep Judge native fields only for high-risk severity.
-Worker: implement one owned slice; write owned scope only; output Worker Completion Packet once, then stop.
+Worker: implement one owned slice; write owned scope only; block on missing required values; output Worker Completion Packet once, then stop.
 Reviewer: review completed work after execution; read-only; output Reviewer Verdict Packet once, then stop. Use Deep Reviewer native fields only for high-risk severity.
 ```

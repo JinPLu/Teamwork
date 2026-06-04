@@ -47,15 +47,15 @@ override should change custom-agent models, refresh agents with
    appendix navigation, or durable artifact memory.
 3. Apply the Collaboration Backbone Audit from `project-init.md`; mark each
    reusable workflow habit `keep`, `migrate`, or `add`.
-4. For Codex, prefer the installed global `~/.codex/AGENTS.md` Teamwork block
-   for portable standing authorization and dispatch economics. Add project
-   Codex rules only for local exceptions or opt-outs; keep them short, do not
-   force dispatch for lightweight, tightly coupled, destructive, or
-   credential-sensitive work, and report
-   `Codex authorization: global | project-add | user-opt-out` plus the selected
+4. For Codex bootstrap policy, prefer global `~/.codex/AGENTS.md`; for App-wide
+   behavior point to `./install.sh codex-policy` and Codex App Personalization.
+   Project Codex rules are only for local facts, required values, exceptions,
+   or opt-outs. Report `Codex bootstrap policy:` as `app-personalization`,
+   `global-agents`, `project-add`, `missing`, or `user-opt-out`, plus
    `Init Mode`.
-5. Keep project facts, evidence sources, remote/local boundaries, protected
-   actions, and domain-specific acceptance checks in project instructions.
+5. Keep project facts, evidence sources, required values, remote/local
+   boundaries, protected actions, and domain-specific acceptance checks in
+   project instructions. Missing required values are blockers, not defaults.
 6. Move long path maps, command inventories, and historical navigation to
    appendix docs that are explicitly read on demand.
 7. Keep volatile experiment numbers, current task progress, temporary

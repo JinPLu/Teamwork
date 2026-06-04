@@ -72,6 +72,9 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 ## Quality Gates
 
 - Every planned file traces to the goal.
+- Required env vars, paths, commands, ports, model names, hyperparameters,
+  configs, credentials, and execution modes trace to user input, source/config,
+  project instructions, or observed evidence; missing values are blockers.
 - No broad refactor, abstraction, formatting churn, or downstream cleanup
   unless evidence requires it.
 - `Dispatch Guidance: none` requires a continuity rationale.

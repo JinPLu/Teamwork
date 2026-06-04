@@ -13,7 +13,8 @@ artifacts, not pre-execution plans.
 
 Treat executor summaries as claims. Map requirements to observed evidence such
 as diff hunks, test output, artifacts, logs, or inspected behavior. Lead with
-correctness, security, behavior regressions, missing tests, and scope drift.
+correctness, security, behavior regressions, missing tests, silent fallback defaults,
+and scope drift.
 Separate requirement misses from residual risks and suggestions.
 
 Allowed actions: read-only review, focused verification inspection, and verdict.

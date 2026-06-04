@@ -45,7 +45,7 @@ CODEX_AGENTS=(
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] [--profile performance-first|cost-first] codex|cursor|claude|all|project|codex-agents|claude-agents
+  ./install.sh [--copy|--link] [--profile performance-first|cost-first] codex|cursor|claude|all|project|codex-agents|claude-agents|codex-policy
 
 Targets:
   codex          Install skills, Codex agents, and Teamwork global policy (default target)
@@ -55,6 +55,7 @@ Targets:
   project        Install skills to <repo>/.cursor/skills and agents to <repo>/.codex/agents and <repo>/.claude/agents
   codex-agents   Install Teamwork Codex custom agents to ~/.codex/agents
   claude-agents  Install Teamwork Claude subagents to ~/.claude/agents
+  codex-policy   Print the Teamwork Codex global policy block for App Personalization
 
 Default mode is --copy. Use --link for local development when installs should
 track this checkout.
@@ -84,11 +85,17 @@ medium; Judge and Reviewer use high; Deep Judge/Reviewer use xhigh. cost-first
 downshifts routine Explorer, Designer, and Worker to gpt-5.4 medium.
 Use project-local Teamwork init mode only for explicit overrides.
 
+Bootstrap safety: required environment variables, paths, commands, ports, model
+names, hyperparameters, credentials, configs, and execution modes must be
+explicit in user input, project instructions, source/config, or an accepted
+plan. Missing required values are blockers; report what was checked instead of
+inventing fallbacks.
+
 Remote execution: assume substantial code execution runs on the configured
-remote server for the active project. The local environment is for editing,
-inspection, basic tests, syntax checks, and lightweight validation. Before
-remote jobs, use project instructions or server inventory to verify host,
-repository path, branch, and command scope.
+remote server when project instructions or server inventory identify one. The
+local environment is for editing, inspection, basic tests, syntax checks, and
+lightweight validation. Before remote jobs, verify host, repository path,
+branch, and command scope; do not invent missing execution targets.
 <!-- TEAMWORK_CODEX_GLOBAL_END -->
 POLICY
 }
@@ -384,7 +391,7 @@ while [[ $# -gt 0 ]]; do
       CODEX_PROFILE="cost-first"
       shift
       ;;
-    codex|cursor|claude|all|project|codex-agents|claude-agents)
+    codex|cursor|claude|all|project|codex-agents|claude-agents|codex-policy)
       if [[ -n "$TARGET" ]]; then
         echo "Specify only one install target." >&2
         usage
@@ -428,6 +435,9 @@ case "${TARGET:-codex}" in
     ;;
   claude-agents)
     install_claude_agents_home
+    ;;
+  codex-policy)
+    write_teamwork_codex_global_policy
     ;;
   *)
     usage

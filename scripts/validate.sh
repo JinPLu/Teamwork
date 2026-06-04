@@ -484,8 +484,10 @@ grep_required 'CURSOR.md' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init must inspect CURSOR.md"
 grep_required 'AGENTS/CODEX/CURSOR/CLAUDE' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init description must mention AGENTS/CODEX/CURSOR/CLAUDE"
-grep_required 'Codex authorization: global | project-add | user-opt-out' "$ROOT/skills/teamwork-init/SKILL.md" \
-  "teamwork-init must report Codex subagent authorization audit state"
+grep_required 'Codex bootstrap policy:' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must report Codex bootstrap policy audit state"
+grep_required 'app-personalization' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must include Codex App Personalization bootstrap state"
 grep_required 'Init Mode: global-default | performance-first | cost-first' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init must report selected init mode"
 grep_required 'downshift only routine Explorer' "$ROOT/skills/teamwork-init/SKILL.md" \
@@ -1002,12 +1004,28 @@ grep_required 'code-reviewer' "$ROOT/skills/teamwork-review/SKILL.md" \
   "review skill must mention Cursor code-reviewer evidence"
 grep_required 'platform native fields per platform-dispatch-mapping.md' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must use platform-neutral role templates"
+grep_required 'missing required env/path/command/model' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+  "subagent prompt contract must escalate missing required values"
 grep_required 'resume:"self"' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must define Cursor full-history fork"
+grep_required 'Do not invent fallback defaults' "$ROOT/templates/codex-agents/teamwork-worker.toml" \
+  "Codex Worker agent must block on missing required values"
+grep_required 'silent fallback defaults' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" \
+  "Codex Reviewer agent must flag silent fallback defaults"
 grep_required 'Do not use `cheap-fast` for normal Pro/20x Codex workflows' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy must forbid cheap-fast for Judge and Reviewer"
 grep_required 'routing guidance, not the only' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must treat plan routing as guidance"
+grep_required 'Rule Placement' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must define rule placement"
+grep_required 'No Silent Defaults' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must keep no-silent-defaults canonical"
+grep_required 'Missing required values are blockers' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must fail fast on missing required values"
+grep_required 'codex-policy' "$ROOT/skills/using-teamwork/references/project-init.md" \
+  "project init reference must document Codex policy rendering"
+grep_required 'required environment variables' "$ROOT/skills/using-teamwork/references/project-init.md" \
+  "project init reference must store required local values in project rules"
 grep_absent 'verified-but-unreviewed' \
   "Teamwork must use canonical unreviewed status" \
   "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/README.md" "$ROOT/README.en.md"
@@ -1242,8 +1260,12 @@ grep_required 'Agent efficiency comes first' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must prioritize agent efficiency"
 grep_required 'Codex model profile: default is performance-first' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must record performance-first profile"
+grep_required 'Bootstrap safety:' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must include bootstrap fail-fast safety"
 grep_required 'Remote execution:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must include remote execution default"
+grep_required 'do not invent missing execution targets' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must forbid invented remote targets"
 
 agents_preserve_home="$tmp/home-agents-preserve"
 mkdir -p "$agents_preserve_home/.codex"
@@ -1269,6 +1291,8 @@ grep_required '<!-- CODEGRAPH_START -->' "$agents_preserve_home/.codex/AGENTS.md
   "Codex global policy install must preserve CodeGraph block"
 grep_required 'Agent efficiency comes first' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must replace managed block"
+grep_required 'Bootstrap safety:' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must include bootstrap fail-fast safety"
 grep_absent 'old managed content' \
   "Codex global policy install must replace old managed content" \
   "$agents_preserve_home/.codex/AGENTS.md"
@@ -1278,6 +1302,17 @@ grep_absent 'No user needs to specify sub-agents' \
 grep_absent 'All code runs on a remote server' \
   "Codex global policy install must migrate retired remote sentence" \
   "$agents_preserve_home/.codex/AGENTS.md"
+
+codex_policy_out="$tmp/codex-policy.out"
+HOME="$tmp/home-codex-policy" "$ROOT/install.sh" codex-policy > "$codex_policy_out"
+grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$codex_policy_out" \
+  "codex-policy target must print Teamwork global policy start marker"
+grep_required 'Codex model profile: default is performance-first' "$codex_policy_out" \
+  "codex-policy target must render performance-first profile"
+grep_required 'Bootstrap safety:' "$codex_policy_out" \
+  "codex-policy target must print bootstrap fail-fast safety"
+[[ ! -e "$tmp/home-codex-policy/.codex/AGENTS.md" ]] \
+  || fail "codex-policy target must not write global AGENTS policy"
 
 HOME="$tmp/home-codex-agents" "$ROOT/install.sh" codex-agents >/dev/null
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
@@ -1330,6 +1365,12 @@ done
 HOME="$tmp/home-codex-cost" "$ROOT/install.sh" --profile cost-first codex >/dev/null
 grep_required 'Codex model profile: default is cost-first' "$tmp/home-codex-cost/.codex/AGENTS.md" \
   "Codex global policy must record cost-first profile"
+
+HOME="$tmp/home-codex-policy-cost" "$ROOT/install.sh" --profile cost-first codex-policy > "$tmp/codex-policy-cost.out"
+grep_required 'Codex model profile: default is cost-first' "$tmp/codex-policy-cost.out" \
+  "codex-policy target must render cost-first profile"
+[[ ! -e "$tmp/home-codex-policy-cost/.codex/AGENTS.md" ]] \
+  || fail "cost-first codex-policy target must not write global AGENTS policy"
 
 HOME="$tmp/home-invalid-profile" "$ROOT/install.sh" --profile invalid codex >/dev/null 2>&1 \
   && fail "installer must reject unsupported Codex profiles"

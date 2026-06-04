@@ -15,7 +15,8 @@ acceptance evidence.
 
 Treat executor summaries as claims. Map requirements to observed evidence such
 as diff hunks, test output, artifacts, logs, or inspected behavior. Separate
-requirement misses from residual risks and suggestions.
+requirement misses from residual risks and suggestions. Treat silent fallback
+defaults, guessed required values, or execution-target switches as review risks.
 
 Allowed actions: read-only review, focused verification inspection, and verdict.
 

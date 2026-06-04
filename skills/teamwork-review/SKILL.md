@@ -56,14 +56,16 @@ Read only as needed:
 ## Plan Review
 
 Use `review-checks.md` for scope, assumptions, requirements mapping, evidence,
-verification, risks, handoffs, routing, missing Parallelization Gate, prompt
-contract, Required Output Schema, and protected-boundary changes.
+verification, explicit required values, no silent fallback defaults, risks,
+handoffs, routing, missing Parallelization Gate, prompt contract, Required
+Output Schema, and protected-boundary changes.
 
 ## Execution Review
 
 Use `review-checks.md` for diff scope, plan conformance, verification,
-Routing conformance, Actual Dispatch Log, Worker Completion Packet, Reviewer
-Verdict Packet, dispatch economics, workspace hygiene, and next failure route.
+silent fallback defaults, Routing conformance, Actual Dispatch Log, Worker
+Completion Packet, Reviewer Verdict Packet, dispatch economics, workspace
+hygiene, and next failure route.
 Confirm Stage-Routed Proactive Dispatch was evaluated even when the plan did not
 name every track. Reject open delegated tracks without blocker rationale.
 For re-review after `revise`, require prior verdict, required fixes reviewed,
