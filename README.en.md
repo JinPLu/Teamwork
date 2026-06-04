@@ -10,7 +10,7 @@ permission, or verification tools. Those native capabilities are the execution s
 Teamwork adds four things:
 
 1. Custom role-based subagent dispatch, so complex work is cheaper, faster, and higher quality.
-2. Evidence-first rules that tell the model not to be overconfident: prove first, conclude second.
+2. Evidence-first rules that tell the model not to be overconfident and not to silently fall back.
 3. Durable discussion / research, plan, and report memory, so long-running goals do not forget and goal execution stays grounded.
 4. Verification, fresh review, and failure recovery loops, so "done" means reviewable evidence rather than model narration.
 
@@ -37,20 +37,23 @@ The payoff is practical:
 | Faster | Independent research, implementation, and review can run in parallel while the main agent orchestrates. |
 | Better quality | Every subagent returns a packet; important claims need evidence; non-lightweight results need fresh review. |
 
-### 2. Evidence First: Less Model Overconfidence
+### 2. Evidence First: Less Overconfidence, No Silent Fallbacks
 
 The dangerous failure mode is not only that a model does not know something.
-It is that the model does not know, but still sounds certain. Teamwork treats
-names, README prose, issues, summaries, `latest`, and `v2` labels as claims
-until the agent finds direct evidence.
+It is that the model does not know, but still sounds certain. Another common
+failure is inventing defaults for missing env, paths, hyperparameters, or
+execution modes and continuing anyway. Teamwork treats names, README prose,
+issues, summaries, `latest`, and `v2` labels as claims until the agent finds
+direct evidence; missing required inputs must fail fast instead of silently
+falling back.
 
 - Important conclusions are labeled `observed` / `inferred` / `claimed`.
 - Key decisions map to source, config, logs, tests, diffs, artifacts, or primary sources.
-- When root cause, API behavior, env / paths / hyperparameters, or external constraints are unclear, research or fail fast comes before edits.
+- When root cause, API behavior, env / paths / hyperparameters, providers, or external constraints are unclear, research or fail fast comes before edits.
 - Planning and review check evidence adequacy, assumption safety, and acceptance gaps.
 
-This is not ceremony. It keeps model confidence inside the boundary of what the
-evidence can support.
+This is not ceremony. It keeps model confidence and default-making inside the
+boundary of what the evidence can support.
 
 ### 3. Task Memory: Long Goals Stop Forgetting
 

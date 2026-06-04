@@ -9,7 +9,7 @@ Teamwork 是一个 **Codex-first 的 Codex + Cursor + Claude Code skill package*
 这些 `native capabilities` 仍然是执行底座。Teamwork 做四件事：
 
 1. 定制角色 subagents 分发，让复杂任务更经济、更高效、质量更稳。
-2. 用调研和证据优先的规则提醒模型：别太自信，先证明再下结论。
+2. 用调研和证据优先的规则提醒模型：别太自信，也别静默回退。
 3. 维护讨论 / 调研、计划和报告记忆，避免长期任务遗忘，并强化 goal 执行能力。
 4. 用验证、fresh review 和失败复盘形成验收闭环，不让“完成”只停留在模型自述。
 
@@ -35,18 +35,19 @@ Teamwork 是一个 **Codex-first 的 Codex + Cursor + Claude Code skill package*
 | 更高效 | 独立调研、实现、复查可以并行；主 agent 只负责调度、整合和最终判断。 |
 | 质量更好 | 每个 subagent 必须返回 packet；重要结论要有证据；非轻量结果需要 fresh review。 |
 
-### 2. 证据优先：模型别太自信
+### 2. 证据优先：模型别太自信，也别静默回退
 
 Coding agent 最危险的失败方式不是“不知道”，而是“不知道但说得很肯定”。
+另一种常见失败是缺环境、路径、超参数或执行模式时，模型自己编默认值继续跑。
 Teamwork 的规则会把名字、README、issue、summary、`latest`、`v2` 这类信息先当成 claim，
-要求 agent 去找直接证据。
+要求 agent 去找直接证据；缺少必要输入时，必须 fail fast，而不是静默回退。
 
 - 重要结论要标成 `observed` / `inferred` / `claimed`。
 - 关键决策要映射到源码、配置、日志、测试、diff、artifact 或 primary source。
-- 根因、API 行为、环境 / 路径 / 超参数、外部约束不清楚时，先 research 或 fail fast。
+- 根因、API 行为、环境 / 路径 / 超参数、provider、外部约束不清楚时，先 research 或 fail fast。
 - 计划和 review 会检查证据是否足够、假设是否安全、验收是否有缺口。
 
-这不是为了增加仪式感，而是把模型的自信压回到证据能支撑的范围内。
+这不是为了增加仪式感，而是把模型的自信和“自动补默认值”的冲动压回到证据能支撑的范围内。
 
 ### 3. 任务记忆：让长任务不会反复失忆
 
