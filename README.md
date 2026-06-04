@@ -12,8 +12,9 @@ Codex 是 1.0 的 reference runtime。Codex 原生 goal 是自治控制面；
 `teamwork_*` custom agents 是非轻量工作的默认协作网络。Cursor 和 Claude
 Code 作为 adapter 使用同一套 Teamwork 协议。
 Codex Pro/20x 默认走安装时 `performance-first`：Teamwork custom agents 使用
-`gpt-5.5` 和 high reasoning；也可以安装时选择 `--profile cost-first`，项目初始化
-只在需要偏离全局默认时记录本地覆盖。
+`gpt-5.5`，常规 Explorer/Designer/Worker 用 medium，Judge/Reviewer 用 high，
+Deep Judge/Reviewer 仅在高风险复查时用 xhigh。也可以安装时选择
+`--profile cost-first`，项目初始化只在需要偏离全局默认时记录本地覆盖。
 
 ## 适合什么
 
@@ -95,7 +96,7 @@ Codex 需要用户 prompt 或已加载项目/全局 instructions 明确授权 `s
 授权存在后，Teamwork 会主动派发非轻量阶段的独立工作。主 agent 仍负责
 scope、ownership、integration、verification、关闭 dispatch track 和最终交付。
 `teamwork-init` 只在项目需要覆盖安装默认时记录 `performance-first` 或
-`cost-first`；当前 Codex custom-agent 模板默认全部固定到 `gpt-5.5`。
+`cost-first`；当前 Codex custom-agent 模板默认使用 `gpt-5.5` 的角色优化配置。
 
 ## 进一步阅读
 

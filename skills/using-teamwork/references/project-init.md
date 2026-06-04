@@ -50,11 +50,10 @@ workflow duplicated from Teamwork, or `add` when the habit is missing:
 
 ## Teamwork Initialization Mode
 Codex model profile is chosen at install time. `performance-first` is the
-Pro/20x default: installed Teamwork custom agents use `gpt-5.5` high reasoning.
-`cost-first` downshifts routine Explorer, Designer, or Worker; Judge, Reviewer,
-public, high-risk, and failed-goal work stays frontier/high reasoning. Project
-init asks only when overriding the installed global policy. Model overrides
-require generated user or project Codex agents via `install.sh --profile`.
+Pro/20x default: `gpt-5.5` medium routine roles, high review roles, xhigh Deep
+Judge/Reviewer. `cost-first` downshifts routine roles. Project init asks only
+when overriding the global policy. Model overrides require generated agents via
+`install.sh --profile`.
 
 ## MCP And Search Policy
 

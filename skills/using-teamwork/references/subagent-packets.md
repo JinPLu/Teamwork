@@ -1,8 +1,6 @@
 # Subagent Packets
 
-Use when specifying subagent output or recording actual dispatch. If a
-subagent's work may change durable project memory, ask for `Memory Delta
-Candidate` and evidence; the orchestrator decides any writes.
+Specify subagent output or dispatch. Ask for `Memory Delta Candidate` only when work may change durable memory.
 
 ## Result Packets
 
@@ -19,6 +17,7 @@ Claimed:
 Confidence:
 Dissent / Risks:
 Open Questions:
+Decision Relevance:
 Suggested Next Step:
 ```
 
@@ -27,8 +26,11 @@ Designer Decision Packet:
 ```text
 Role: Designer
 Native Fields:
+Decision Scope:
 Decision:
+Decision Rule:
 Options:
+Rejected Options:
 Recommendation:
 Evidence Used:
 Risks / Dissent:
@@ -46,6 +48,8 @@ Plan Source:
 Evidence Adequacy:
 Routing Adequacy:
 Verification Adequacy:
+Stop Rule Adequacy:
+Acceptance Gap:
 Required Fixes:
 Residual Risks:
 ```
@@ -62,6 +66,7 @@ Files Changed:
 Implemented:
 Verification:
 Deviations:
+Protected Boundary Hits:
 Concerns / Blockers:
 ```
 
@@ -73,6 +78,7 @@ Native Fields:
 Verdict: accept | revise | blocked
 Review Target:
 Acceptance Mapping:
+Requirement Misses:
 Issues:
 Verification Reviewed:
 Manual Smoke Evidence:
@@ -81,17 +87,15 @@ Residual Risk:
 Next Route:
 ```
 
-Optional durable-memory fields when requested:
-
+Optional durable-memory fields:
 ```text
 Memory Delta Candidate: none | current | plan | research | decision | supersede | compact | deferred
 Memory Delta Evidence:
 ```
 
 ## Actual Dispatch Log
-
-Record when dispatch affects review. Final status cannot remain `dispatched`
-or `returned` at handoff or final response.
+Record review-relevant dispatch. Final status cannot remain `dispatched` or
+`returned`.
 
 ```text
 Actual Dispatch Log:

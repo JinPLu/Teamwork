@@ -23,7 +23,9 @@ for returned shapes read `subagent-packets.md`.
 
 Every delegated prompt includes:
 
-- Conceptual Role: Explorer, Designer, Judge, Worker, or Reviewer.
+- Conceptual Role: Explorer, Designer, Judge, Worker, or Reviewer. Deep Judge
+  and Deep Reviewer are Codex severity profiles for Judge/Reviewer, not new
+  conceptual roles.
 - Native Fields: platform dispatch fields from `platform-dispatch-mapping.md`.
   Codex: `agent_type`, `model` or `model: inherited`, `reasoning_effort`,
   `fork_context`; on Cursor `subagent_type`, `model` or `model: inherited`;
@@ -58,9 +60,9 @@ Native Fields request.
 ## Role Templates
 
 ```text
-Explorer: platform native fields per platform-dispatch-mapping.md; answer evidence question; read-only; output packet once, then stop.
-Designer: compare options; read-only; output packet once, then stop.
-Judge: review plan readiness; read-only; output packet once, then stop.
-Worker: implement owned slice; write owned scope only; output packet once, then stop.
-Reviewer: review target; read-only; output packet once, then stop.
+Explorer: platform native fields per platform-dispatch-mapping.md; answer one evidence question; read-only; output Explorer Result Packet once, then stop.
+Designer: compare options and choose a direction; read-only; output Designer Decision Packet once, then stop.
+Judge: review plan readiness before execution; read-only; output Judge Plan Review Packet once, then stop. Use Deep Judge native fields only for high-risk severity.
+Worker: implement one owned slice; write owned scope only; output Worker Completion Packet once, then stop.
+Reviewer: review completed work after execution; read-only; output Reviewer Verdict Packet once, then stop. Use Deep Reviewer native fields only for high-risk severity.
 ```

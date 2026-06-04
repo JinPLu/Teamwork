@@ -21,16 +21,17 @@ Read only as needed:
 ## Initialization Mode
 
 Installed Codex profile is the global default. During project init, ask only
-when the project should override that default. Pro/20x or max performance
-intent selects `performance-first`; quota, latency, or cost constraints select
+when the project should override that default. Pro/20x throughput intent
+selects `performance-first`; quota, latency, or cost constraints select
 `cost-first`.
 
-- `performance-first`: Codex subagents prefer `gpt-5.5` with high
-  reasoning for Explorer, Designer, Worker, Judge, and Reviewer. This is the
-  default for Pro/20x Codex workflows.
-- `cost-first`: preserve dispatch economics and use lower model classes for
-  routine Explorer, Designer, or Worker tracks; still use frontier/high
-  reasoning for Judge, Reviewer, high-risk, public, or failed-goal work.
+- `performance-first`: Codex subagents use role-optimized `gpt-5.5`: medium
+  routine Explorer/Designer/Worker, high Judge/Reviewer, and xhigh
+  Deep Judge/Reviewer only for failed-goal, security, destructive-risk,
+  public-contract, or release acceptance work.
+- `cost-first`: preserve dispatch economics and downshift only routine Explorer,
+  Designer, or Worker tracks; keep Judge/Reviewer high and preserve Deep
+  Judge/Reviewer xhigh triggers for high-risk, public, or failed-goal work.
 
 Record `Init Mode: global-default | performance-first | cost-first`; add a
 project-local Codex rule only when overriding the installed default. If the

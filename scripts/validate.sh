@@ -204,8 +204,10 @@ grep_required 'dispatched -> returned ->' "$ROOT/skills/using-teamwork/reference
   "dispatch policy must define dispatch status transitions"
 grep_required '`done_with_concerns`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy must include all Worker terminal statuses"
-grep_required 'Final status cannot remain `dispatched`' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
-  "subagent packets must forbid open final dispatch status"
+grep_required 'Final status cannot remain `dispatched` or' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+  "subagent packets must forbid dispatched final dispatch status"
+grep_required '`returned`.' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+  "subagent packets must forbid returned final dispatch status"
 grep_required 'final status, closure evidence' "$ROOT/skills/using-teamwork/references/plan-output.md" \
   "plan output must include dispatch closure evidence"
 grep_required 'No delegated track remains `dispatched` or `returned`' "$ROOT/skills/using-teamwork/references/review-checks.md" \
@@ -440,6 +442,10 @@ grep_required 'Codex authorization: global | project-add | user-opt-out' "$ROOT/
   "teamwork-init must report Codex subagent authorization audit state"
 grep_required 'Init Mode: global-default | performance-first | cost-first' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init must report selected init mode"
+grep_required 'downshift only routine Explorer' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init cost-first mode must only downshift routine roles"
+grep_required 'preserve Deep' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init cost-first mode must preserve deep xhigh triggers"
 for agent in explore worker code-reviewer; do
   [[ -f "$ROOT/templates/claude-agents/$agent.md" ]] \
     || fail "missing templates/claude-agents/$agent.md"
@@ -460,7 +466,7 @@ grep_required 'Reviewer Verdict Packet once' "$ROOT/templates/claude-agents/code
   "Claude reviewer agent must return exact Reviewer packet once and stop"
 grep_required 'accept`, `revise`, or `blocked`' "$ROOT/templates/claude-agents/code-reviewer.md" \
   "Claude reviewer verdict enum must match Reviewer Verdict Packet"
-for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
   [[ -f "$ROOT/templates/codex-agents/$agent.toml" ]] \
     || fail "missing templates/codex-agents/$agent.toml"
   grep_required '^description = ' "$ROOT/templates/codex-agents/$agent.toml" \
@@ -478,12 +484,58 @@ grep_required '^name = "teamwork_judge"$' "$ROOT/templates/codex-agents/teamwork
   "Codex judge agent must declare exact name"
 grep_required '^name = "teamwork_reviewer"$' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" \
   "Codex reviewer agent must declare exact name"
-for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+grep_required '^name = "teamwork_deep_judge"$' "$ROOT/templates/codex-agents/teamwork-deep-judge.toml" \
+  "Codex deep judge agent must declare exact name"
+grep_required '^name = "teamwork_deep_reviewer"$' "$ROOT/templates/codex-agents/teamwork-deep-reviewer.toml" \
+  "Codex deep reviewer agent must declare exact name"
+for agent in teamwork-explorer teamwork-worker teamwork-designer; do
   grep_required '^model = "gpt-5.5"$' "$ROOT/templates/codex-agents/$agent.toml" \
     "Codex agent must use performance-first pro model: $agent"
-  grep_required '^model_reasoning_effort = "high"$' "$ROOT/templates/codex-agents/$agent.toml" \
-    "Codex agent must use high reasoning: $agent"
+  grep_required '^model_reasoning_effort = "medium"$' "$ROOT/templates/codex-agents/$agent.toml" \
+    "Codex routine agent must use medium reasoning: $agent"
 done
+for agent in teamwork-judge teamwork-reviewer; do
+  grep_required '^model = "gpt-5.5"$' "$ROOT/templates/codex-agents/$agent.toml" \
+    "Codex review agent must use frontier model: $agent"
+  grep_required '^model_reasoning_effort = "high"$' "$ROOT/templates/codex-agents/$agent.toml" \
+    "Codex review agent must use high reasoning: $agent"
+done
+for agent in teamwork-deep-judge teamwork-deep-reviewer; do
+  grep_required '^model = "gpt-5.5"$' "$ROOT/templates/codex-agents/$agent.toml" \
+    "Codex deep agent must use frontier model: $agent"
+  grep_required '^model_reasoning_effort = "xhigh"$' "$ROOT/templates/codex-agents/$agent.toml" \
+    "Codex deep agent must use xhigh reasoning: $agent"
+done
+grep_required 'Explorer Result Packet once' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
+  "Codex explorer agent must return exact Explorer packet once and stop"
+grep_required 'Decision Relevance' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
+  "Codex explorer agent must include expanded Explorer packet fields"
+grep_required 'Designer Decision Packet once' "$ROOT/templates/codex-agents/teamwork-designer.toml" \
+  "Codex designer agent must return exact Designer packet once and stop"
+grep_required 'Decision Scope' "$ROOT/templates/codex-agents/teamwork-designer.toml" \
+  "Codex designer agent must include expanded Designer packet fields"
+grep_required 'Judge Plan Review Packet once' "$ROOT/templates/codex-agents/teamwork-judge.toml" \
+  "Codex judge agent must return exact Judge packet once and stop"
+grep_required 'accept, revise, or blocked' "$ROOT/templates/codex-agents/teamwork-judge.toml" \
+  "Codex judge verdict enum must match Judge packet"
+grep_required 'Stop Rule Adequacy' "$ROOT/templates/codex-agents/teamwork-judge.toml" \
+  "Codex judge agent must include expanded Judge packet fields"
+grep_required 'Worker Completion Packet once' "$ROOT/templates/codex-agents/teamwork-worker.toml" \
+  "Codex worker agent must return exact Worker packet once and stop"
+grep_required 'done, done_with_concerns, blocked, or needs_context' "$ROOT/templates/codex-agents/teamwork-worker.toml" \
+  "Codex worker status enum must match Worker packet"
+grep_required 'Protected Boundary Hits' "$ROOT/templates/codex-agents/teamwork-worker.toml" \
+  "Codex worker agent must include expanded Worker packet fields"
+grep_required 'Reviewer Verdict Packet once' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" \
+  "Codex reviewer agent must return exact Reviewer packet once and stop"
+grep_required 'accept, revise, or blocked' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" \
+  "Codex reviewer verdict enum must match Reviewer packet"
+grep_required 'Requirement Misses' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" \
+  "Codex reviewer agent must include expanded Reviewer packet fields"
+grep_required 'not a separate conceptual role' "$ROOT/templates/codex-agents/teamwork-deep-judge.toml" \
+  "Codex deep judge must be documented as a severity profile"
+grep_required 'not a separate conceptual role' "$ROOT/templates/codex-agents/teamwork-deep-reviewer.toml" \
+  "Codex deep reviewer must be documented as a severity profile"
 grep -q 'all)' "$ROOT/install.sh" || fail "install.sh must support all target"
 grep -q 'project)' "$ROOT/install.sh" || fail "install.sh must support project target"
 grep -q 'codex-agents)' "$ROOT/install.sh" || fail "install.sh must support codex-agents target"
@@ -620,18 +672,22 @@ grep_required '`standard` -> `reasoning_effort:"medium"`' "$ROOT/skills/using-te
   "dispatch policy reference must map standard tier"
 grep_required '`high reasoning` -> `reasoning_effort:"high"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must map high reasoning tier"
+grep_required '`deep reasoning` -> `reasoning_effort:"xhigh"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+  "dispatch policy reference must map deep reasoning tier"
 grep_required 'Do not combine' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must reject invalid full-history routing"
 grep_required 'Codex role dispatch' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "Codex role dispatch must pin role-profile models by default"
 grep_required 'Role Profiles' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy reference must define role profiles"
-grep_required 'performance-first` init' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required '`performance-first` uses' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy must define performance-first role profile behavior"
 grep_required 'model class `balanced` by default' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "Explorer profile must preserve stable class policy"
-grep_required 'reasoning `high`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+grep_required 'Judge: model class `frontier`, reasoning `high`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "Judge/Reviewer profiles must require high reasoning class"
+grep_required 'Reviewer: model class `frontier`, reasoning `high`' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "Reviewer profile must require high reasoning class"
 grep_required 'Codex Model Mapping' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "dispatch policy reference must define Codex model mapping"
 grep_required 'Codex Native Field Presets' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
@@ -650,14 +706,34 @@ grep_required 'Explorer default: `agent_type:"explorer"`, `model:"gpt-5.5"`' "$R
   "Codex Explorer preset must pin pro model"
 grep_required 'Worker default: `agent_type:"worker"`, `model:"gpt-5.5"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Codex Worker preset must pin pro model"
+grep_required 'agent_type:"teamwork_deep_judge"' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+  "Codex mapping must define explicit deep judge custom agent"
+grep_required 'agent_type:"teamwork_deep_reviewer"' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+  "Codex mapping must define explicit deep reviewer custom agent"
 grep_absent 'gpt-5.3-codex' \
   "Codex custom-agent model mapping must not use removed gpt-5.3-codex slug" \
   "$ROOT/templates/codex-agents" "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" "$ROOT/CODEX.md"
 grep_absent 'gpt-5.5-pro' \
   "Codex custom-agent model mapping must not use unsupported gpt-5.5-pro slug" \
   "$ROOT/templates/codex-agents" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/README.md" "$ROOT/README.en.md" "$ROOT/install.sh"
+grep_absent 'max-quality\|max quality\|--max-quality' \
+  "Teamwork must not add a max-quality profile" \
+  "$ROOT/templates/codex-agents" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/README.md" "$ROOT/README.en.md" "$ROOT/install.sh"
+grep_absent '^model_reasoning_effort = "xhigh"$' \
+  "Only deep Codex agents may use xhigh" \
+  "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
+  "$ROOT/templates/codex-agents/teamwork-worker.toml" \
+  "$ROOT/templates/codex-agents/teamwork-designer.toml" \
+  "$ROOT/templates/codex-agents/teamwork-judge.toml" \
+  "$ROOT/templates/codex-agents/teamwork-reviewer.toml"
 grep_required 'Judge default: `agent_type:"default"`, `model:"gpt-5.5"`' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
   "Codex Judge preset must pin pro model"
+grep_required 'Deep Judge/Reviewer default' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+  "Codex mapping must define deep xhigh fallback"
+grep_required 'triggers still use `gpt-5.5` with xhigh reasoning' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
+  "cost-first mapping must preserve deep xhigh triggers"
+grep_required 'five conceptual roles' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy must define five-role taxonomy"
 grep_required 'Codex Native Field Presets' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagent prompt contract must require Codex native field presets"
 grep_required 'Platform Dispatch Fields' "$ROOT/skills/using-teamwork/references/platform-dispatch-mapping.md" \
@@ -844,6 +920,8 @@ grep_required 'Dispatch Guidance:' "$ROOT/skills/using-teamwork/references/plan-
   "lightweight plan template must include dispatch guidance"
 grep_required 'Explorer/Designer/Judge/Worker/Reviewer' "$ROOT/skills/using-teamwork/references/plan-output.md" \
   "dispatch guidance must support all Teamwork subagent roles"
+grep_required 'Deep Judge/Reviewer severity' "$ROOT/skills/using-teamwork/references/plan-output.md" \
+  "dispatch guidance must record deep review severity when warranted"
 grep_required 'Subagent Prompt Packets' "$ROOT/skills/using-teamwork/references/plan-output.md" \
   "plan output reference must include subagent prompt packets"
 grep_required 'Actual Dispatch Log' "$ROOT/skills/using-teamwork/references/plan-output.md" \
@@ -902,11 +980,23 @@ for skill in "${SKILLS[@]}"; do
 done
 [[ -f "$tmp/home/.codex/skills/using-teamwork/references/workflow-contract.md" ]] \
   || fail "Codex install must copy using-teamwork references"
-for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
   [[ -f "$tmp/home/.codex/agents/$agent.toml" ]] \
     || fail "Codex install must copy Codex agent $agent"
   [[ ! -L "$tmp/home/.codex/agents/$agent.toml" ]] \
     || fail "default Codex install must copy Codex agent $agent"
+done
+for agent in teamwork-explorer teamwork-worker teamwork-designer; do
+  grep_required '^model_reasoning_effort = "medium"$' "$tmp/home/.codex/agents/$agent.toml" \
+    "Codex install must render medium reasoning for $agent"
+done
+for agent in teamwork-judge teamwork-reviewer; do
+  grep_required '^model_reasoning_effort = "high"$' "$tmp/home/.codex/agents/$agent.toml" \
+    "Codex install must render high reasoning for $agent"
+done
+for agent in teamwork-deep-judge teamwork-deep-reviewer; do
+  grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home/.codex/agents/$agent.toml" \
+    "Codex install must render xhigh reasoning for $agent"
 done
 grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$tmp/home/.codex/AGENTS.md" \
   "Codex install must create Teamwork global AGENTS block"
@@ -954,15 +1044,29 @@ grep_absent 'All code runs on a remote server' \
   "$agents_preserve_home/.codex/AGENTS.md"
 
 HOME="$tmp/home-codex-agents" "$ROOT/install.sh" codex-agents >/dev/null
-for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
   [[ -f "$tmp/home-codex-agents/.codex/agents/$agent.toml" ]] \
     || fail "Codex agent install missing $agent"
   [[ ! -L "$tmp/home-codex-agents/.codex/agents/$agent.toml" ]] \
     || fail "default Codex agent install must copy $agent"
+done
+for agent in teamwork-explorer teamwork-worker teamwork-designer; do
   grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
     "default Codex agent install must render performance model for $agent"
+  grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
+    "default Codex agent install must render medium reasoning for $agent"
+done
+for agent in teamwork-judge teamwork-reviewer; do
+  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
+    "default Codex agent install must render frontier model for $agent"
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
     "default Codex agent install must render high reasoning for $agent"
+done
+for agent in teamwork-deep-judge teamwork-deep-reviewer; do
+  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
+    "default Codex agent install must render frontier model for $agent"
+  grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
+    "default Codex agent install must render xhigh reasoning for $agent"
 done
 [[ ! -e "$tmp/home-codex-agents/.codex/AGENTS.md" ]] \
   || fail "codex-agents target must not write global AGENTS policy"
@@ -980,6 +1084,12 @@ for agent in teamwork-judge teamwork-reviewer; do
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
     "cost-first Codex agent install must keep high reasoning for $agent"
 done
+for agent in teamwork-deep-judge teamwork-deep-reviewer; do
+  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex agent install must keep frontier model for $agent"
+  grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex agent install must keep xhigh reasoning for $agent"
+done
 
 HOME="$tmp/home-codex-cost" "$ROOT/install.sh" --profile cost-first codex >/dev/null
 grep_required 'Codex model profile: default is cost-first' "$tmp/home-codex-cost/.codex/AGENTS.md" \
@@ -989,7 +1099,7 @@ HOME="$tmp/home-invalid-profile" "$ROOT/install.sh" --profile invalid codex >/de
   && fail "installer must reject unsupported Codex profiles"
 
 HOME="$tmp/home-codex-agents-link" "$ROOT/install.sh" --link codex-agents >/dev/null
-for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
   [[ -L "$tmp/home-codex-agents-link/.codex/agents/$agent.toml" ]] \
     || fail "Codex agent link install must symlink $agent"
 done
@@ -1034,7 +1144,7 @@ for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/home-all/.cursor/skills/$skill" ]] || fail "all install must link Cursor skill $skill"
   [[ -L "$tmp/home-all/.claude/skills/$skill" ]] || fail "all install must link Claude skill $skill"
 done
-for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
   [[ -L "$tmp/home-all/.codex/agents/$agent.toml" ]] || fail "all install must link Codex agent $agent"
 done
 for agent in explore worker code-reviewer; do
@@ -1053,7 +1163,7 @@ HOME="$tmp/home-project" ROOT="$ROOT" "$ROOT/install.sh" --link project >/dev/nu
 for skill in "${SKILLS[@]}"; do
   [[ -L "$ROOT/.cursor/skills/$skill" ]] || fail "project install must link Cursor skill $skill"
 done
-for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer; do
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
   [[ -L "$ROOT/.codex/agents/$agent.toml" ]] || fail "project install must link Codex agent $agent"
 done
 for agent in explore worker code-reviewer; do

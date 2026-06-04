@@ -38,6 +38,8 @@ CODEX_AGENTS=(
   teamwork-designer
   teamwork-judge
   teamwork-reviewer
+  teamwork-deep-judge
+  teamwork-deep-reviewer
 )
 
 usage() {
@@ -58,7 +60,7 @@ Default mode is --copy. Use --link for local development when installs should
 track this checkout.
 
 Codex profile defaults to performance-first. Use cost-first to downshift
-Explorer, Designer, and Worker while keeping Judge and Reviewer on frontier.
+Explorer, Designer, and Worker. Deep Judge/Reviewer stay xhigh.
 USAGE
 }
 
@@ -76,9 +78,9 @@ write ownership, destructive or credential-sensitive actions, or higher
 subagent context cost than benefit.
 
 Codex model profile: default is ${CODEX_PROFILE}. performance-first uses
-installed Teamwork custom agents with gpt-5.5 and high reasoning. cost-first
-downshifts routine Explorer, Designer, and Worker tracks while keeping Judge,
-Reviewer, high-risk, public, and failed-goal work on gpt-5.5 high reasoning.
+role-optimized gpt-5.5 agents: routine Explorer, Designer, and Worker use
+medium; Judge and Reviewer use high; Deep Judge/Reviewer use xhigh. cost-first
+downshifts routine Explorer, Designer, and Worker to gpt-5.4 medium.
 Use project-local Teamwork init mode only for explicit overrides.
 
 Remote execution: assume substantial code execution runs on the configured
@@ -233,6 +235,12 @@ codex_agent_profile_values() {
   case "$CODEX_PROFILE:$agent" in
     cost-first:teamwork-explorer|cost-first:teamwork-designer|cost-first:teamwork-worker)
       printf '%s %s\n' "gpt-5.4" "medium"
+      ;;
+    *:teamwork-deep-judge|*:teamwork-deep-reviewer)
+      printf '%s %s\n' "gpt-5.5" "xhigh"
+      ;;
+    *:teamwork-explorer|*:teamwork-designer|*:teamwork-worker)
+      printf '%s %s\n' "gpt-5.5" "medium"
       ;;
     *)
       printf '%s %s\n' "gpt-5.5" "high"

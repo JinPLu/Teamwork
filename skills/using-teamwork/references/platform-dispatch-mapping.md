@@ -18,18 +18,22 @@ decisions stay in `dispatch-policy.md`.
 - Designer -> `agent_type:"teamwork_designer"`.
 - Judge -> `agent_type:"teamwork_judge"`.
 - Reviewer -> `agent_type:"teamwork_reviewer"`.
+- Deep Judge/Reviewer severity profiles -> `agent_type:"teamwork_deep_judge"` /
+  `agent_type:"teamwork_deep_reviewer"` for failed goals, security,
+  destructive risk, public contracts, or release acceptance.
 - Fallback when custom agents are unavailable: Explorer -> `agent_type:"explorer"`;
   Worker -> `agent_type:"worker"`; Designer, Judge, Reviewer ->
   `agent_type:"default"` with role in prompt.
 - `fast` -> `reasoning_effort:"low"`.
 - `standard` -> `reasoning_effort:"medium"`.
 - `high reasoning` -> `reasoning_effort:"high"`.
+- `deep reasoning` -> `reasoning_effort:"xhigh"`.
 
 ## Codex Model Mapping
 
 - `performance-first`: install-time default for Pro/20x Codex workflows.
-  `balanced`, `coding`, and `frontier` -> `gpt-5.5`; use high reasoning for
-  installed Teamwork custom agents and built-in fallback presets.
+  `balanced`, `coding`, and `frontier` -> `gpt-5.5`; routine Explorer,
+  Designer, and Worker use medium, Judge/Reviewer high, Deep Judge/Reviewer xhigh.
 - `cost-first`: install-time override. `cheap-fast` -> `gpt-5.4-mini`; opt-in only for trivial read-only output under explicit latency/quota pressure.
   `balanced` and `coding` -> `gpt-5.4`; `frontier` -> `gpt-5.5`.
 - `inherited` -> omit `model`; record why inheritance beats Role Profile.
@@ -38,16 +42,18 @@ decisions stay in `dispatch-policy.md`.
 
 Use Teamwork custom agents when installed. For built-in fallbacks:
 
-- Explorer default: `agent_type:"explorer"`, `model:"gpt-5.5"`, `reasoning_effort:"high"`.
-- Worker default: `agent_type:"worker"`, `model:"gpt-5.5"`, `reasoning_effort:"high"`.
-- Designer default: `agent_type:"default"`, `model:"gpt-5.5"`, `reasoning_effort:"high"`; prompt says `Conceptual Role: Designer`.
+- Explorer default: `agent_type:"explorer"`, `model:"gpt-5.5"`, `reasoning_effort:"medium"`.
+- Worker default: `agent_type:"worker"`, `model:"gpt-5.5"`, `reasoning_effort:"medium"`.
+- Designer default: `agent_type:"default"`, `model:"gpt-5.5"`, `reasoning_effort:"medium"`; prompt says `Conceptual Role: Designer`.
 - Judge default: `agent_type:"default"`, `model:"gpt-5.5"`, `reasoning_effort:"high"`; prompt says `Conceptual Role: Judge`.
 - Reviewer default: `agent_type:"default"`, `model:"gpt-5.5"`, `reasoning_effort:"high"`.
+- Deep Judge/Reviewer default: `agent_type:"default"`, `model:"gpt-5.5"`, `reasoning_effort:"xhigh"`.
 
 For explicit `cost-first` project overrides, Explorer/Designer may use
 `gpt-5.4` with medium reasoning for bounded routine evidence/design, Worker may
 use `gpt-5.4` with medium reasoning for routine owned implementation, and
-Judge/Reviewer still use `gpt-5.5` with high reasoning.
+Judge/Reviewer still use `gpt-5.5` with high reasoning. Deep Judge/Reviewer
+triggers still use `gpt-5.5` with xhigh reasoning.
 
 Do not combine `fork_context:true` with `agent_type`, `model`, or
 `reasoning_effort`; full-history forks inherit parent routing.

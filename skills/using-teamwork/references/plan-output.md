@@ -12,7 +12,7 @@ Research Artifact: <path | none>
 Plan Tier: lightweight
 Goal: <one sentence>
 Scope: In <...>; Out <...>; Protected <...>
-Dispatch Guidance: none with rationale | Explorer/Designer/Judge/Worker/Reviewer tracks, ownership, context strategy, cap/batch reason
+Dispatch Guidance: none with rationale | Explorer/Designer/Judge/Worker/Reviewer tracks, ownership, context strategy, cap/batch reason, and Deep Judge/Reviewer severity when warranted
 Steps:
 - [ ] <path/component> - <minimal change> - <why>
 Verification:

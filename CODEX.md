@@ -74,10 +74,11 @@ Keep project authorization short. Detailed dispatch economics stay in
 
 `./install.sh codex --profile performance-first|cost-first` sets the global
 Codex profile and generates the installed Teamwork custom agents.
-`performance-first` is the Pro/20x default and uses `gpt-5.5` with high
-reasoning for Explorer, Designer, Worker, Judge, and Reviewer. `cost-first`
-downshifts routine Explorer/Designer/Worker dispatches but keeps Judge,
-Reviewer, high-risk, public, and failed-goal work on frontier/high reasoning.
+`performance-first` is the Pro/20x default and uses `gpt-5.5`: medium
+reasoning for Explorer, Designer, and Worker; high for Judge and Reviewer; and
+xhigh only for Deep Judge/Reviewer on failed-goal, security, destructive-risk,
+public-contract, or release acceptance work. `cost-first` downshifts routine
+Explorer/Designer/Worker dispatches but keeps high-risk review on frontier.
 Project init records only explicit overrides; model-changing overrides require
 refreshing user or project Codex agents with `install.sh --profile`.
 
@@ -85,10 +86,10 @@ refreshing user or project Codex agents with `install.sh --profile`.
 
 Use focused subagent references at dispatch time: `skills/using-teamwork/references/dispatch-policy.md` for when to dispatch, `platform-dispatch-mapping.md` for native fields and model classes, `workflow-orchestration.md` for large workflow-class runs, `subagent-prompt-contract.md` for prompt shape, and `subagent-packets.md` for handoff packets. Plan `Dispatch Guidance:` is advisory; the active stage owns the actual dispatch decision and should record what it did when execution/report artifacts are warranted:
 
-- Preferred custom agents -> `agent_type:"teamwork_explorer"`, `"teamwork_worker"`, `"teamwork_designer"`, `"teamwork_judge"`, or `"teamwork_reviewer"`.
-- Built-in fallback -> Explorer uses `agent_type:"explorer"`, Worker uses `agent_type:"worker"`, and Designer/Judge/Reviewer use `agent_type:"default"` with the conceptual role in the prompt.
-- `fast`, `standard`, and `high reasoning` map to low, medium, and high reasoning effort.
-- Prefer installed Teamwork custom agents from `~/.codex/agents` or `.codex/agents`: `teamwork_explorer`, `teamwork_worker`, `teamwork_designer`, `teamwork_judge`, and `teamwork_reviewer`. In performance-first mode they pin all role models directly to `gpt-5.5` with high reasoning. If custom agents are unavailable, fall back to built-in `explorer`, `worker`, or `default` with explicit model overrides from `dispatch-policy.md`; do not let subagents inherit an unintended parent model by accident. Without custom agents, Designer/Judge/Reviewer appear as `default` subagents in Codex UI because Codex has no native role-specific agent types for them. `cheap-fast` is opt-in only for explicit cost-first trivial read-only work under latency or quota pressure.
+- Preferred custom agents -> `teamwork_explorer`, `teamwork_worker`, `teamwork_designer`, `teamwork_judge`, `teamwork_reviewer`, `teamwork_deep_judge`, or `teamwork_deep_reviewer`.
+- Built-in fallback -> Explorer uses `agent_type:"explorer"`, Worker uses `agent_type:"worker"`, and Designer/Judge/Reviewer use `agent_type:"default"` with the conceptual role in the prompt. Deep Judge/Reviewer use the same conceptual roles with xhigh severity fields.
+- `fast`, `standard`, `high reasoning`, and `deep reasoning` map to low, medium, high, and xhigh reasoning effort.
+- Prefer installed Teamwork custom agents from `~/.codex/agents` or `.codex/agents`. If unavailable, fall back to built-ins with explicit model overrides from `dispatch-policy.md`; do not let subagents inherit an unintended parent model by accident. `cheap-fast` is opt-in only for explicit cost-first trivial read-only work under latency or quota pressure.
 - Subagents are bounded packet producers. After each packet returns, the orchestrator integrates it and closes, blocks, or abandons the dispatch in the Actual Dispatch Log before final acceptance.
 
 Do not encode native dispatch fields in ordinary plans unless they are part of the routing guidance. Preserve native flow only for quick facts, tiny obvious edits, destructive/credential-sensitive work, tightly coupled critical-path work, unavailable tools, missing authorization, explicit user opt-out, or cases where subagent context cost exceeds value.
