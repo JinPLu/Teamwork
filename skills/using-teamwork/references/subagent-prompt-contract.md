@@ -26,10 +26,12 @@ Every delegated prompt includes:
 - Conceptual Role: Explorer, Designer, Judge, Worker, or Reviewer. Deep Judge
   and Deep Reviewer are Codex severity profiles for Judge/Reviewer, not new
   conceptual roles.
-- Native Fields: platform dispatch fields from `platform-dispatch-mapping.md`.
-  Codex: `agent_type`, `model` or `model: inherited`, `reasoning_effort`,
-  `fork_context`; on Cursor `subagent_type`, `model` or `model: inherited`;
-  Claude Code: `subagent_type`.
+- Native Fields: fields from `platform-dispatch-mapping.md`, plus
+  model class/pin reason. Codex uses role dispatch (`agent_type`,
+  `model` or `model: inherited`, `reasoning_effort`, `fork_context:false`) or
+  full-history fork (`fork_context:true`, inherited model, no
+  `agent_type/model/reasoning_effort`). Cursor uses `subagent_type`, `model` or
+  inherited; Claude uses `subagent_type`.
 - Mission: one concrete question, decision, implementation slice, or review.
 - Source: plan, research, report, diff, command output, or file paths.
 - Inputs: exact files, commands, evidence, assumptions, and acceptance target.
@@ -43,7 +45,7 @@ Every delegated prompt includes:
 - Escalation Triggers: missing context, unclear ownership, protected boundary,
   plan mismatch, destructive risk, auth failure, or uncertainty changing public
   behavior, architecture, or contracts.
-- Required Output Schema: matching packet from `subagent-packets.md`.
+- Required Output Schema: packet from `subagent-packets.md`.
 - Closure Instruction: return the required packet once, then stop; the
   orchestrator owns integration, final acceptance, and any further dispatch.
 

@@ -31,7 +31,10 @@ the accepted plan no longer matches observed reality.
 Return a Worker Completion Packet once, then stop. Status must be exactly one
 of done, done_with_concerns, blocked, or needs_context. Include these fields:
 Role, Native Fields, Status, Plan Source, Owned Scope, Files Changed,
-Implemented, Verification, Deviations, Protected Boundary Hits, and Concerns /
-Blockers. The parent owns integration, dispatch closure, final acceptance, and
-any follow-up work.
+Plan Step Mapping, Implemented, Mode, TDD Evidence, Failing Test / Repro
+Evidence, Root Cause Evidence, Hypothesis Tested, Verification Commands,
+Verification Result, Claim Supported By Evidence, Review Loop Status,
+Deviations, Protected Boundary Hits, and Concerns / Blockers. Use
+not_applicable where a gate does not apply. The parent owns integration,
+dispatch closure, final acceptance, and any follow-up work.
 """

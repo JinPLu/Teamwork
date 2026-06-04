@@ -11,15 +11,14 @@ Labels: observed, inferred, claimed.
 
 ## References
 
-Load focused references only. `references/workflow-contract.md` owns judgment
-and Platform Native Policy Map, `codex-deep-collaboration.md` owns Codex depth,
-`dispatch-policy.md` owns dispatch economics, `platform-dispatch-mapping.md`
-owns native fields, `workflow-orchestration.md` owns swarm work, and
-`artifact-protocol.md` owns durable memory.
+Load focused references. `references/workflow-contract.md` owns judgment
+and Platform Native Policy Map; `codex-deep-collaboration.md` Codex depth;
+`dispatch-policy.md` dispatch economics; `platform-dispatch-mapping.md` native
+fields; `workflow-orchestration.md` swarm work; `artifact-protocol.md` memory.
 
 ## Route Check
 
-Evidence -> `skills/teamwork-research/SKILL.md`; init/slim -> `skills/teamwork-init/SKILL.md`; plan edits -> `skills/teamwork-plan/SKILL.md`; execute accepted plan -> `skills/teamwork-execute/SKILL.md`; review -> `skills/teamwork-review/SKILL.md`; update -> `skills/teamwork-update/SKILL.md`; goal loop -> `skills/teamwork-goal/SKILL.md`.
+Evidence -> `skills/teamwork-research/SKILL.md`; init/slim -> `skills/teamwork-init/SKILL.md`; plan -> `skills/teamwork-plan/SKILL.md`; execute accepted plan -> `skills/teamwork-execute/SKILL.md`; review -> `skills/teamwork-review/SKILL.md`; update -> `skills/teamwork-update/SKILL.md`; goal loop -> `skills/teamwork-goal/SKILL.md`.
 
 ## Automatic Stage Selection
 
@@ -29,9 +28,11 @@ discovery reads frontmatter before routing.
 - Planning: "plan", "design", "figure out", non-trivial "implement/fix/add/change"; unclear root/source/API/failure/evidence/risk routes research first.
 - Init: "init", "initialize", "AGENTS", "CODEX", "CURSOR", "CLAUDE", "slim instructions", "workflow rules".
 - Execution: "go ahead", "execute", "continue", "resume", "do it".
-- Review: "review", "check", "validate", "look over the diff".
+- Review: "review", "look over diff", or "check/validate completed work";
+  simple checks stay native.
 - Update: "version", "release", "changelog", "update Teamwork", "bump".
-- Goal: "keep going", "until it passes", "iterate until done", budget.
+- Goal: "keep going", "until it passes", "iterate until done", or explicit
+  budgeted convergence.
 
 For autonomous convergence, route to `teamwork-goal` for chat-only `Goal Proposal`
 before platform goal handoff unless an active goal surface exists.
@@ -48,7 +49,7 @@ When a Teamwork route needs durable project memory, check
 `docs/teamwork/current.md` before deeper artifact reads.
 
 Before staying native for non-trivial work, state scope, path, boundaries, and
-success check. If unclear, route research.
+success check; route unclear work to research.
 
 When Teamwork is active, the main agent orchestrates. If subagents are
 authorized, dispatch proactively for non-lightweight work: Explorer, Designer,

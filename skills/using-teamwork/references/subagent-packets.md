@@ -5,12 +5,12 @@ Specify subagent output or dispatch. Ask for `Memory Delta Candidate` only when 
 ## Result Packets
 
 Explorer Result Packet:
-
 ```text
 Role: Explorer
 Native Fields:
 Question:
 Files / Commands Read:
+Research Fields when web/deep research: Search Plan; Queries Tried; Source Classes; Sources Used; Sources Rejected; Contradictions; Coverage Gaps; Citation Ledger
 Observed:
 Inferred:
 Claimed:
@@ -27,11 +27,15 @@ Designer Decision Packet:
 Role: Designer
 Native Fields:
 Decision Scope:
+Constraints:
+Success Criteria:
 Decision:
 Decision Rule:
-Options:
+Option Matrix:
 Rejected Options:
 Recommendation:
+Plan Decomposition Notes:
+Acceptance Implications:
 Evidence Used:
 Risks / Dissent:
 Protected Boundaries:
@@ -45,12 +49,18 @@ Role: Judge
 Native Fields:
 Verdict: accept | revise | blocked
 Plan Source:
+Requirements Mapping Adequacy:
+Assumption Safety:
 Evidence Adequacy:
+Protected Boundary Adequacy:
+Plan Completeness:
 Routing Adequacy:
 Verification Adequacy:
+Guardrails / Stop Conditions:
 Stop Rule Adequacy:
 Acceptance Gap:
 Required Fixes:
+Verdict Rationale:
 Residual Risks:
 ```
 
@@ -62,9 +72,18 @@ Native Fields:
 Status: done | done_with_concerns | blocked | needs_context
 Plan Source:
 Owned Scope:
+Plan Step Mapping:
 Files Changed:
 Implemented:
-Verification:
+Mode: behavior_change | bug_failure | mechanical | planned_implementation
+TDD Evidence: not_applicable | red_seen | red_green_refactor | impractical_with_reason
+Failing Test / Repro Evidence:
+Root Cause Evidence: not_applicable | summarized
+Hypothesis Tested:
+Verification Commands:
+Verification Result: pass | fail | partial | not_run
+Claim Supported By Evidence: yes | no
+Review Loop Status: not_applicable | pending | spec_passed | quality_passed | final_reviewed
 Deviations:
 Protected Boundary Hits:
 Concerns / Blockers:
@@ -77,12 +96,19 @@ Role: Reviewer
 Native Fields:
 Verdict: accept | revise | blocked
 Review Target:
+Base/Head or Diff Source:
+Requirements / Evidence Map:
 Acceptance Mapping:
 Requirement Misses:
 Issues:
+Severity Crosswalk: blocker | major | minor
+Feedback / Thread Disposition:
 Verification Reviewed:
+CI / Log Provenance:
 Manual Smoke Evidence:
 Routing Conformance:
+Re-review Status:
+Pushback / Dissent:
 Residual Risk:
 Next Route:
 ```

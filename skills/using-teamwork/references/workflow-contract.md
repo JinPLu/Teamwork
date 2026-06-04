@@ -62,10 +62,16 @@ Choose the smallest workflow pattern that preserves correctness:
 - Treat work as non-lightweight when it is multi-file, unfamiliar, ambiguous,
   repeated-failure, public/shared behavior, protected-boundary, cross-turn,
   delegated, or completion acceptance work.
+- Native single-agent: quick facts, tiny edits, tight context, credential work,
+  or tightly coupled critical path.
+- Skill: repeated workflow or domain expertise that should load on demand.
 - Fixed sequence with clear steps: use a lightweight plan.
-- Distinct categories of work: route by stage instead of forcing one loop.
-- Independent evidence questions: dispatch parallel Explorer tracks by default
-  unless a Dispatch Exception applies.
+- Router/subagent: distinct domains, independent evidence, tests, logs, or
+  disjoint Worker ownership.
+- Handoff: user interaction, credentials, destructive action, or capability
+  boundary needs a different actor.
+- Custom workflow: many-shard, long-running, repeated, or resumable work needs
+  explicit state, caps, and stop controls.
 - Ambiguous design or high-risk plan quality: use Designer or Judge prompts
   before execution.
 - Unpredictable or multi-file implementation: use an orchestrator/Worker
@@ -132,7 +138,7 @@ Same-context self-review is weaker than fresh review for non-lightweight work.
 Use a fresh Reviewer by default before claiming non-lightweight execution is
 reviewed or accepted. If subagents are
 unavailable, authorization is missing, or dispatch is explicitly forbidden,
-report the work as verified-but-unreviewed and name the residual risk instead
+report the work as `unreviewed` and name the residual risk instead
 of presenting it as accepted.
 
 Subagent authorization has two layers: platform permission to spawn, and

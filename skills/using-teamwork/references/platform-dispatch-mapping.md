@@ -5,7 +5,8 @@ decisions stay in `dispatch-policy.md`.
 
 ## Platform Dispatch Fields
 
-- Codex: `agent_type`, `model`, `reasoning_effort`, `fork_context`.
+- Codex role dispatch: `agent_type`, `model`, `reasoning_effort`,
+  `fork_context:false`; full-history fork: `fork_context:true` only.
 - Cursor: `subagent_type`, `model`; no `reasoning_effort` or `fork_context`.
 - Claude Code: `subagent_type` (user-defined agent name under
   `~/.claude/agents/` or `general-purpose`); `model` lives on the agent

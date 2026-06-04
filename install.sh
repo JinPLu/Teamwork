@@ -141,12 +141,16 @@ retired_copy_is_plugin_owned() {
     case "$rel" in
       SKILL.md)
         ;;
-      references|references/artifact-protocol.md|references/goal-iteration.md|references/dispatch-policy.md|references/subagent-prompt-contract.md|references/subagent-packets.md|references/subagent-routing.md|references/workflow-contract.md|references/plan-output.md|references/review-checks.md|references/project-init.md)
+      references)
         [[ "$retired" == "teamwork" ]] || return 1
         ;;
-      *)
-        return 1
+      references/*)
+        [[ "$retired" == "teamwork" ]] || return 1
+        [[ -f "$ROOT/skills/using-teamwork/$rel" ]] || return 1
         ;;
+	      *)
+	        return 1
+	        ;;
     esac
   done < <(find "$dest" -mindepth 1 -print0)
 

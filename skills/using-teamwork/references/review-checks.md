@@ -16,6 +16,8 @@ Check:
   ambiguous architecture cite evidence or explain why local evidence is enough.
 - Verification: focused checks, broader checks when warranted, and Expected
   Results are present.
+- Expected output, guardrails, retry/stop conditions, and escalation triggers
+  are explicit for delegated or goal-mode work.
 - Risks, stop rules, Worker Handoff, Review Handoff, Subagent Routing, and
   Subagent Prompt Packets are adequate.
 - Parallelization Gate appears before steps; 2+ independent tracks have
@@ -62,6 +64,14 @@ Check:
 - No delegated track remains `dispatched` or `returned` at review handoff.
 - Worker Completion Packet and Reviewer Verdict Packet map implementation,
   verification, deviations, routing conformance, and residual risk to evidence.
+- Worker evidence includes plan-step mapping, TDD or repro/root-cause
+  applicability, verification command/result, and claim support.
+- Reviewer evidence map ties each requirement or plan step to observed source,
+  pass/fail/partial/not-reviewed disposition, issue, and required action.
+- PR review records base/head or diff source plus unresolved thread IDs when
+  available; CI review records failing check/log provenance and root cause.
+- Re-review after `revise` records prior verdict, required fixes reviewed, fix
+  evidence, remaining issues, and re-review verdict.
 - Durable memory check: if current-state files changed, require a material
   delta and evidence; reject churn-only writes.
 - Durable memory check: if accepted active state changed but no memory update

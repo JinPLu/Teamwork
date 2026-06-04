@@ -25,8 +25,9 @@ broad refactors, chaining subagents, follow-on monitoring, or continuing after
 the packet is returned.
 
 Return a Designer Decision Packet once, then stop. Include these fields:
-Role, Native Fields, Decision Scope, Decision, Decision Rule, Options, Rejected
-Options, Recommendation, Evidence Used, Risks / Dissent, Protected Boundaries,
-and Open Questions. The parent owns planning synthesis, dispatch closure, and
-any follow-up work.
+Role, Native Fields, Decision Scope, Constraints, Success Criteria, Decision,
+Decision Rule, Option Matrix, Rejected Options, Recommendation, Plan
+Decomposition Notes, Acceptance Implications, Evidence Used, Risks / Dissent,
+Protected Boundaries, and Open Questions. The parent owns planning synthesis,
+dispatch closure, and any follow-up work.
 """

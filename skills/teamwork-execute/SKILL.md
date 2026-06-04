@@ -13,6 +13,12 @@ Read only as needed:
 - `skills/using-teamwork/references/workflow-contract.md` for evidence, progress anchors, boundaries.
 - `skills/using-teamwork/references/dispatch-policy.md` for Worker split and
   platform mapping.
+- `skills/using-teamwork/references/role-workflows.md` for Worker method:
+  TDD, debugging, plan execution, verification, and protected boundaries.
+- `skills/using-teamwork/references/worker-workflow.md` for Worker mode
+  declaration, TDD/debugging evidence, run-loop exit, and proof-before-claim.
+- `skills/using-teamwork/references/optional-skills.md` before installing or
+  invoking external tool skills during execution.
 - `skills/using-teamwork/references/subagent-prompt-contract.md` before Worker prompts.
 - `skills/using-teamwork/references/subagent-packets.md` for Worker Completion Packet and Actual
   Dispatch Log.
@@ -47,7 +53,16 @@ ownership map, integration order, verification plan, and why parallel beats
 serial.
 
 Worker prompts follow the Subagent Prompt Contract, use disjoint ownership or
-worktree isolation, and require Worker Completion Packet.
+worktree isolation, and require Worker Completion Packet with plan-step
+mapping, TDD/debugging applicability, verification command/result, and whether
+evidence supports the claim.
+
+For behavior changes, prefer TDD when practical. For failures, diagnose root
+cause before fixes. Every nontrivial Worker slice needs an exit condition:
+passing proof, observed artifact/behavior, structured validation, bounded
+attempt limit, or blocker. Before any success claim, run fresh verification evidence.
+External skills stay opt-in tool substrates; do not install them unless the
+accepted plan and `optional-skills.md` gate both allow it.
 
 ## Execution Steps
 
