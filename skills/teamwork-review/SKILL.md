@@ -49,6 +49,9 @@ Read only as needed:
   source/license, broad write risk, missing credentials, or missing smoke test.
 - Reviewer dispatch follows the same closure rule: return one verdict packet,
   integrate it, and close or block the track before acceptance.
+- When durable memory is relevant, read `docs/teamwork/index.json` then
+  `active.current`/`docs/teamwork/current.md`, or header-search relevant
+  artifacts before verdict; record Artifact Retrieval disposition.
 
 ## Plan Review
 
@@ -72,6 +75,7 @@ fix evidence, remaining issues, and re-review verdict.
 Mode: plan | execution
 Evidence Read:
 - <observed|inferred|claimed> <path/command/artifact>: <finding>
+Artifact Retrieval: none | index | reuse | update | new - <evidence/boundary>
 Requirements / Evidence Map:
 - <requirement or plan step> -> <evidence> -> <pass|fail|partial|not reviewed>
 Findings:

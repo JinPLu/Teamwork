@@ -56,14 +56,15 @@ For failed goal iterations, refresh research and check whether the active plan w
 
 `./install.sh codex` maintains a Teamwork-managed block in global
 `~/.codex/AGENTS.md`. That block is the preferred portable standing
-authorization for subagents and the default remote-execution assumption. Use a
-project `CODEX.md` or Codex-labeled `AGENTS.md` section only for repository
-exceptions or opt-outs:
+authorization for subagents and the default remote-execution assumption; after
+installation, the user does not need to repeat "use subagents" in each prompt.
+Use a project `CODEX.md` or Codex-labeled `AGENTS.md` section only for
+repository exceptions or opt-outs:
 
 ```md
 For Codex in this repository, this is the user's explicit standing request to
-use sub-agents, delegation, and parallel agent work when Teamwork dispatch
-policy says it is appropriate. The user does not need to repeat "use
+authorize and use sub-agents, delegation, and parallel agent work when Teamwork
+dispatch policy says it is appropriate. The user does not need to repeat "use
 subagents" in each prompt.
 ```
 

@@ -358,6 +358,18 @@ grep_required 'teamwork-init' "$ROOT/CODEX.md" \
   "CODEX.md must document teamwork-init"
 grep_required "explicit standing request" "$ROOT/CODEX.md" \
   "CODEX.md must include Codex standing subagent authorization snippet"
+grep_required 'write_teamwork_codex_global_policy()' "$ROOT/install.sh" \
+  "installer must define Teamwork Codex global policy writer"
+grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$ROOT/install.sh" \
+  "installer global policy writer must include managed start marker"
+grep_required '<!-- TEAMWORK_CODEX_GLOBAL_END -->' "$ROOT/install.sh" \
+  "installer global policy writer must include managed end marker"
+grep_required 'explicit standing authorization and request' "$ROOT/install.sh" \
+  "installer global policy must provide explicit Codex subagent authorization"
+grep_required 'non-lightweight, independent, and worth the extra agent' "$ROOT/install.sh" \
+  "installer global policy must preserve dispatch economics"
+grep_required 'install_codex_global_policy' "$ROOT/install.sh" \
+  "installer must call Codex global policy install from Codex target"
 grep_required './install.sh --link codex' "$ROOT/README.md" \
   "README must document Codex link-mode development install"
 grep_required './install.sh --link codex' "$ROOT/README.en.md" \
@@ -1125,12 +1137,20 @@ grep_required 'Dispatch parallel Worker subagents when' "$ROOT/skills/teamwork-e
   "execute skill must dispatch independent Worker tracks when economics justify it"
 grep_required 'when subagents' "$ROOT/skills/teamwork-execute/SKILL.md" \
   "execute skill must respect subagent authorization"
+grep_required 'active.current' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  "execute skill must read active Teamwork memory before artifact-backed edits"
+grep_required 'Artifact Retrieval disposition' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  "execute skill must record artifact retrieval disposition"
 grep_required 'Before dispatching more than 3 Workers' "$ROOT/skills/teamwork-execute/SKILL.md" \
   "execute skill must require >3 Worker integration plan"
 grep_required 'Default to fresh-context Reviewer subagents' "$ROOT/skills/teamwork-review/SKILL.md" \
   "review skill must default to fresh-context reviewer subagents for non-trivial execution"
 grep_required 'subagents are authorized' "$ROOT/skills/teamwork-review/SKILL.md" \
   "review skill must respect subagent authorization"
+grep_required 'active.current' "$ROOT/skills/teamwork-review/SKILL.md" \
+  "review skill must read active Teamwork memory before durable verdicts"
+grep_required 'Artifact Retrieval: none | index | reuse | update | new' "$ROOT/skills/teamwork-review/SKILL.md" \
+  "review verdict must include artifact retrieval disposition"
 grep_required 'Dispatch Guidance:' "$ROOT/skills/using-teamwork/references/plan-output.md" \
   "lightweight plan template must include dispatch guidance"
 grep_required 'Explorer/Designer/Judge/Worker/Reviewer' "$ROOT/skills/using-teamwork/references/plan-output.md" \

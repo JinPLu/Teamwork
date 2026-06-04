@@ -31,7 +31,7 @@ Read only as needed:
 - Accepted lightweight or durable plan.
 - Durable plan path for goal-mode, cross-turn, high-risk, ambiguous, long
   delegation, complex Worker fan-out, or artifact-backed work.
-- Re-read durable artifacts before editing.
+- When durable memory is relevant, read `docs/teamwork/index.json` then `active.current`/`docs/teamwork/current.md`, or header-search relevant artifacts before editing; record Artifact Retrieval disposition.
 - Workspace status is understood enough to avoid overwriting other work.
 - Required files, commands, credentials, and environments are available.
 - Classify command safety, sandbox boundaries, and active approvals.
@@ -90,7 +90,8 @@ or budget exhaustion is a blocker.
 ## Handoff To Review
 
 Return implemented paths, plan source, verification, Actual Dispatch Log or
-continuity rationale, deviations, failures/blockers, and review request.
+continuity rationale, Artifact Retrieval disposition, deviations,
+failures/blockers, and review request.
 Execution cannot accept its own work. For non-lightweight work, request a
 fresh-context Reviewer subagent before any completion claim; if subagents are
 unavailable after discovery or the user forbids them, report that acceptance is

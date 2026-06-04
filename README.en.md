@@ -111,8 +111,11 @@ Worker while keeping high-risk Judge / Reviewer on stronger model tiers.
 
 Codex is the reference runtime: native goals are the autonomous control plane,
 and `teamwork_*` custom agents are the primary collaboration network for
-non-lightweight work. Codex calls `spawn_agent` only when the user prompt or
-loaded global/project rules provide standing authorization.
+non-lightweight work. `./install.sh codex` writes the default global
+`~/.codex/AGENTS.md` standing authorization, so users do not need to repeat
+"use subagents" in every prompt after install. Without that install, or after a
+project opt-out, Codex still needs user-prompt or loaded global/project
+authorization before calling `spawn_agent`.
 
 Cursor and Claude Code are adapters: they reuse the same Teamwork protocol
 while keeping their own native capabilities. Cursor uses Task subagents; Claude

@@ -69,9 +69,10 @@ write_teamwork_codex_global_policy() {
 <!-- TEAMWORK_CODEX_GLOBAL_START -->
 ## Teamwork Codex Global Policy
 
-Subagents: this is the user's explicit standing request to use sub-agents,
-delegation, and parallel agent work only when Teamwork dispatch policy says the
-task is non-lightweight, independent, and worth the extra agent cost.
+Subagents: this is the user's explicit standing authorization and request to
+use sub-agents, delegation, and parallel agent work only when Teamwork dispatch
+policy says the task is non-lightweight, independent, and worth the extra agent
+cost.
 Agent efficiency comes first: keep work local for quick answers, tiny edits, one
 CodeGraph-answerable structural question, tight critical-path work, overlapping
 write ownership, destructive or credential-sensitive actions, or higher
