@@ -46,7 +46,7 @@ until the agent finds direct evidence.
 
 - Important conclusions are labeled `observed` / `inferred` / `claimed`.
 - Key decisions map to source, config, logs, tests, diffs, artifacts, or primary sources.
-- When root cause, API behavior, external constraints, or repeated failures are unclear, research comes before edits.
+- When root cause, API behavior, env / paths / hyperparameters, or external constraints are unclear, research or fail fast comes before edits.
 - Planning and review check evidence adequacy, assumption safety, and acceptance gaps.
 
 This is not ceremony. It keeps model confidence inside the boundary of what the

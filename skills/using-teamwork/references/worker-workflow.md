@@ -12,9 +12,12 @@ Use for non-lightweight execution and Worker subagent prompts. This absorbs
    mechanical edit, or planned implementation.
 3. Evidence setup: identify plan steps, intended files, protected boundaries,
    and proving commands before edits.
-4. Minimal edit: change producer-side code only; avoid adjacent cleanup unless
+4. No silent fallback: confirm required env vars, paths, execution modes,
+   hyperparameters, config, and commands are explicit. If missing, block instead
+   of inventing defaults or soft redirects.
+5. Minimal edit: change producer-side code only; avoid adjacent cleanup unless
    the accepted plan requires it.
-5. Fresh verification: run the focused proof after edits and read output before
+6. Fresh verification: run the focused proof after edits and read output before
    claiming support.
 
 ## TDD Gate

@@ -19,6 +19,9 @@ Check:
   ambiguous architecture cite evidence or explain why local evidence is enough.
 - Verification: focused checks, broader checks when warranted, and Expected
   Results are present.
+- Required env vars, paths, execution modes, hyperparameters, configs, and
+  commands are explicit; missing values stop as blockers instead of silently
+  falling back.
 - Expected output, guardrails, retry/stop conditions, and escalation triggers
   are explicit for delegated or goal-mode work.
 - Risks, stop rules, Worker Handoff, Review Handoff, Subagent Routing, and
@@ -61,6 +64,9 @@ Check:
 - Focused verification ran; broader validation exists when warranted.
 - No hidden contract changes, brittle assumptions, or cleanup masking producer
   bugs.
+- No silent fallback defaults, guessed hyperparameters, implicit path
+  substitutions, symlink detours, or environment/provider switches mask missing
+  required state.
 - Diff and verification conform to the accepted lightweight plan or durable
   artifact.
 - Actual Dispatch Log records subagent roles, native fields, model tier,

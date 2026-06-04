@@ -13,6 +13,19 @@ files focused on stage-specific behavior; this file owns shared judgment rules.
 - Avoid speculative abstraction, unrelated cleanup, formatting churn, broad
   refactors, or downstream cleanup unless direct evidence requires it.
 
+## No Silent Defaults
+
+Do not invent fallback defaults for environment variables, paths, commands,
+ports, model names, hyperparameters, credentials, config, test inputs, external
+services, or execution modes. A default is allowed only when it is explicit in
+source, config, docs, the accepted plan, or user instruction.
+
+Missing required values are blockers: fail fast, report the missing input, and
+name the evidence checked. Do not mask missing state by switching local/remote,
+dev/prod, online/offline, datasets, models, providers, or paths. Avoid symlink
+or path-alias fixes unless the repo already depends on them or the user asks;
+when used, disclose the target and verify it.
+
 ## Evidence Interpretation Contract
 
 Treat names, comments, README prose, issue text, summaries, labels such as
