@@ -42,14 +42,17 @@ after upgrades.
 
 Teamwork keeps conceptual roles (Explorer, Designer, Judge, Worker, Reviewer) and
 model classes (`cheap-fast`, `balanced`, `coding`, `frontier`, `inherited`)
-platform-neutral. At dispatch time, translate them through Cursor mapping in
-`skills/using-teamwork/references/dispatch-policy.md`:
+platform-neutral. At dispatch time, decide with
+`skills/using-teamwork/references/dispatch-policy.md` and translate native
+fields through Cursor mapping in
+`skills/using-teamwork/references/platform-dispatch-mapping.md`:
 
 Teamwork activation is standing authorization for stage-routed dispatch when it
 adds value; the user does not need to say "fan out subagents". Dispatch
 independent Explorer, Designer, Judge, Worker, or Reviewer tracks when they can
-improve elapsed time, context isolation, or review quality. Use a fresh
-Reviewer when available and valuable; otherwise label residual unreviewed risk.
+improve evidence, elapsed time, context isolation, ownership clarity, or review
+quality. Use a fresh Reviewer for required acceptance when available; otherwise
+label residual unreviewed risk.
 Each subagent is a bounded packet producer; close, block, or abandon its Actual
 Dispatch Log entry after integration before claiming acceptance.
 

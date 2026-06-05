@@ -36,10 +36,10 @@ architecture lack evidence, route to `teamwork-research`.
 Use the lightest planning form that preserves correctness.
 
 - Lightweight plan: bounded low-risk work; include goal, scope, Dispatch
-  Guidance, steps, verification, Expected Results, stop condition, review need.
-  Use lightweight `Dispatch Guidance:` for expected subagent routing. Use
-  `Dispatch Guidance: none` only when the work is single-track, tightly
-  coupled, or cheaper to keep local under Dispatch Economics.
+  Guidance only when dispatch matters, steps, verification, and stop condition.
+  Use `Dispatch Guidance: none` only when a non-lightweight plan serializes
+  meaningful independent tracks; otherwise omit dispatch fields for native fast
+  path work.
 - Durable plan: required for goal-mode, cross-turn, high-risk, ambiguous,
   public/shared behavior, long delegation, complex Worker fan-out, or explicit
   repository-plan requests.
@@ -56,9 +56,11 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 3. Build Requirements Mapping from each requirement to evidence or
    verification.
 4. Define in/out/protected scope and choose the smallest producer-side change.
-5. Run the Parallelization Gate before implementation steps: split before implementation steps by default for independent tracks, apply the Subagent Tool
-   Discovery Gate when subagents are authorized, or emit `Dispatch Exception:`
-   with the allowed reason.
+5. Run the Parallelization Gate before implementation steps when work is
+   non-lightweight or dispatch would affect risk, cost, or review. Split
+   independent valuable tracks, apply the Subagent Tool Discovery Gate when
+   subagents are authorized, or emit `Dispatch Exception:` with the allowed
+   reason.
 6. Use Designer workflow for ambiguous choices unless observed evidence already
    fixes the decision. Use Judge workflow before delivering high-risk, durable,
    delegated, or goal-mode plans; if unavailable after discovery or explicitly
@@ -82,7 +84,8 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
   project instructions, or observed evidence; missing values are blockers.
 - No broad refactor, abstraction, formatting churn, or downstream cleanup
   unless evidence requires it.
-- `Dispatch Guidance: none` requires a continuity rationale.
+- `Dispatch Guidance: none` requires a continuity rationale only when dispatch
+  would otherwise be material.
 - Durable/high-risk/ambiguous plans require Judge verdict or an explicit
   `Dispatch Exception:` and `unreviewed` label.
 - Delegated plans name prompt contract, context strategy, ownership, and
@@ -93,7 +96,7 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 
 ## Output
 
-Use a compact chat plan for lightweight work. For durable plans, use
+Use bullets or a compact chat plan for lightweight work. For durable plans, use
 `skills/using-teamwork/references/plan-output.md`.
 Include `Memory Delta:` only when durable project memory was checked or
 changed.

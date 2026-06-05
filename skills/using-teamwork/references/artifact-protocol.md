@@ -10,9 +10,9 @@ Write or update `docs/teamwork/research/YYYY-MM-DD-<slug>.md` when research:
 - will be reused outside the current answer;
 - feeds a durable plan;
 - supports goal-mode iteration or failure analysis;
-- uses external calibration;
+- uses external calibration for a durable decision or reusable recommendation;
 - refreshes assumptions after repeated failure or no evidence delta;
-- justifies a non-trivial recommendation.
+- justifies a non-trivial recommendation that should survive this conversation.
 
 Write or update `docs/teamwork/plans/YYYY-MM-DD-<slug>.md` for goal-mode,
 cross-turn, cross-agent, high-risk, ambiguous, public/shared behavior changes,
@@ -100,8 +100,9 @@ When durable project memory is relevant, use this lookup order when files exist:
 3. active stage pointer(s) in index (`active.plan`, progress/report/result)
 4. linked artifact headers, then specific bodies as needed
 
-Lightweight native-flow tasks and clear one-turn Teamwork work stay
-artifact-free.
+Lightweight native-flow tasks, short-lived chat advice, and clear one-turn
+Teamwork work stay artifact-free even when they cite local evidence or public
+docs.
 
 ## Memory Delta
 
