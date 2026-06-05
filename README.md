@@ -8,7 +8,7 @@ Teamwork 是一个 **Codex-first 的 Codex + Cursor + Claude Code skill package*
 它不替代 Codex、Cursor 或 Claude Code 的编辑、shell、MCP、浏览器、权限和验证能力；
 这些 `native capabilities` 仍然是执行底座。Teamwork 做四件事：
 
-1. 定制角色 subagents 分发，让复杂任务更经济、更高效、质量更稳。
+1. 把非轻量任务 fan out 给定制角色 subagents，让复杂任务更经济、更高效、质量更稳。
 2. 用调研和证据优先的规则提醒模型：别太自信，也别静默回退。
 3. 维护讨论 / 调研、计划和报告记忆，避免长期任务遗忘，并强化 goal 执行能力。
 4. 用验证、fresh review 和失败复盘形成验收闭环，不让“完成”只停留在模型自述。
@@ -17,9 +17,10 @@ Teamwork 是一个 **Codex-first 的 Codex + Cursor + Claude Code skill package*
 
 ## 核心价值
 
-### 1. 角色化 subagents：更省、更快、更稳
+### 1. Fan out 角色化 subagents：更省、更快、更稳
 
-普通多 agent 协作容易变成“多开几个聊天窗口”。Teamwork 把 subagents 变成有职责的工程角色：
+普通多 agent 协作容易变成“多开几个聊天窗口”。Teamwork 做的是有边界的 fan out：
+主 agent 先判断任务是否真的值得拆分，再把独立调研、方案、实现、复查轨道分发给有职责的工程角色：
 
 - `Explorer` 查证据和外部约束，不把大段原始上下文塞回主线程。
 - `Designer` 做方案取舍，明确边界、成功标准和放弃的选项。
@@ -32,8 +33,8 @@ Teamwork 是一个 **Codex-first 的 Codex + Cursor + Claude Code skill package*
 | 收益 | 为什么 |
 |---|---|
 | 更经济 | 不把所有工作都塞给同一个长上下文强模型；按角色、风险和任务类型选择模型档位。 |
-| 更高效 | 独立调研、实现、复查可以并行；主 agent 只负责调度、整合和最终判断。 |
-| 质量更好 | 每个 subagent 必须返回 packet；重要结论要有证据；非轻量结果需要 fresh review。 |
+| 更高效 | 可以把互不阻塞的 evidence、design、worker、review 轨道并行 fan out；主 agent 只负责调度、整合和最终判断。 |
+| 质量更好 | 每个 subagent 有固定输入、输出 packet 和关闭条件；重要结论要有证据；非轻量结果需要 fresh review。 |
 
 ### 2. 证据优先：模型别太自信，也别静默回退
 
@@ -92,7 +93,7 @@ evidence、required action 给出结论。
 | 没有 Teamwork | 有 Teamwork |
 |---|---|
 | 主 agent 一边探索一边改 | `using-teamwork` 路由到 research、plan、execute、review、goal 等阶段 |
-| Subagents 没有稳定边界 | 角色 subagents 有固定职责、输入、输出 packet 和关闭条件 |
+| Subagents 没有稳定边界 | 独立轨道 fan out 给角色 subagents；每个角色有固定职责、输入、输出 packet 和关闭条件 |
 | 模型把 summary 当事实 | 重要结论先标 `observed` / `inferred` / `claimed`，并映射到直接证据 |
 | 做完就说完成 | 非轻量结果默认 fresh review；同上下文自查不能冒充验收 |
 | 结论散在长段落里 | 计划、执行、review、goal 迭代用短表格汇总，方便人类复查 |
@@ -103,7 +104,7 @@ evidence、required action 给出结论。
 
 适合：
 
-- 需要多个 subagents 分担调研、方案、实现或复查的非轻量 coding-agent 工作。
+- 需要把非轻量 coding-agent 工作 fan out 给多个 subagents 分担调研、方案、实现或复查。
 - 需要在成本、速度和质量之间做更清晰的角色分工。
 - 需要降低模型过度自信，把关键结论压到可检查证据上。
 - 需要跨回合保留讨论、调研、计划、报告、失败尝试和验收证据。

@@ -9,7 +9,7 @@ It does not replace Codex, Cursor, or Claude Code editing, shell, MCP, browser,
 permission, or verification tools. Those native capabilities are the execution substrate.
 Teamwork adds four things:
 
-1. Custom role-based subagent dispatch, so complex work is cheaper, faster, and higher quality.
+1. Fan-out dispatch to custom role-based subagents, so complex work is cheaper, faster, and higher quality.
 2. Evidence-first rules that tell the model not to be overconfident and not to silently fall back.
 3. Durable discussion / research, plan, and report memory, so long-running goals do not forget and goal execution stays grounded.
 4. Verification, fresh review, and failure recovery loops, so "done" means reviewable evidence rather than model narration.
@@ -18,10 +18,10 @@ Teamwork adds four things:
 
 ## Core Value
 
-### 1. Role-Based Subagents: Cheaper, Faster, Better
+### 1. Fan-Out Role Subagents: Cheaper, Faster, Better
 
-Plain multi-agent work can become several loose chat windows. Teamwork turns
-subagents into bounded engineering roles:
+Plain multi-agent work can become several loose chat windows. Teamwork keeps
+fan-out bounded: the main agent splits only worthwhile independent tracks into engineering roles:
 
 - `Explorer` gathers evidence and external constraints without dumping raw context back into the main thread.
 - `Designer` compares options and states boundaries, success criteria, and rejected paths.
@@ -34,8 +34,8 @@ The payoff is practical:
 | Benefit | Why |
 |---|---|
 | Cheaper | Not every task needs the same long context or strongest model; dispatch follows role, risk, and task type. |
-| Faster | Independent research, implementation, and review can run in parallel while the main agent orchestrates. |
-| Better quality | Every subagent returns a packet; important claims need evidence; non-lightweight results need fresh review. |
+| Faster | Independent evidence, design, worker, and review tracks can fan out in parallel while the main agent orchestrates. |
+| Better quality | Every subagent has fixed inputs, output packets, and closure conditions; important claims need evidence; non-lightweight results need fresh review. |
 
 ### 2. Evidence First: Less Overconfidence, No Silent Fallbacks
 
@@ -101,7 +101,7 @@ risk, and next steps quickly.
 | Without Teamwork | With Teamwork |
 |---|---|
 | The main agent explores while editing | `using-teamwork` routes work into research, plan, execute, review, goal, or update |
-| Subagents have no stable boundary | Role subagents have fixed responsibilities, inputs, output packets, and closure conditions |
+| Subagents have no stable boundary | Independent tracks fan out to role subagents with fixed responsibilities, inputs, output packets, and closure conditions |
 | The model treats summaries as facts | Important conclusions are labeled `observed` / `inferred` / `claimed` and mapped to direct evidence |
 | Done means "the agent says so" | Non-lightweight results default to fresh review; same-context self-review is not acceptance |
 | Results hide in long prose | Plans, execution results, reviews, and goal iterations use short tables for human review |
@@ -112,7 +112,7 @@ risk, and next steps quickly.
 
 Good fit:
 
-- Non-lightweight coding-agent work where subagents should share research, design, implementation, or review.
+- Non-lightweight coding-agent work that should fan out research, design, implementation, or review across subagents.
 - Work that needs clearer tradeoffs between cost, speed, and quality.
 - Work where overconfident model claims need to be grounded in checkable evidence.
 - Cross-turn discussion, research, plans, reports, failed attempts, or acceptance evidence that should be reused.
