@@ -38,13 +38,14 @@ Teamwork 是一个 **Codex-first 的 Codex + Cursor + Claude Code skill package*
 ### 2. 证据优先：模型别太自信，也别静默回退
 
 Coding agent 最危险的失败方式不是“不知道”，而是“不知道但说得很肯定”。
-另一种常见失败是缺环境、路径、超参数或执行模式时，模型自己编默认值继续跑。
+另一个常见失败是需求、范围或验收没问清楚就开始计划 / 执行；做完也可能是错的。
+缺环境、路径、超参数或执行模式时，模型也不能自己编默认值继续跑。
 Teamwork 的规则会把名字、README、issue、summary、`latest`、`v2` 这类信息先当成 claim，
 要求 agent 去找直接证据；缺少必要输入时，必须 fail fast，而不是静默回退。
 
 - 重要结论要标成 `observed` / `inferred` / `claimed`。
 - 关键决策要映射到源码、配置、日志、测试、diff、artifact 或 primary source。
-- 根因、API 行为、环境 / 路径 / 超参数、provider、外部约束不清楚时，先 research 或 fail fast。
+- 需求、验收、根因、API 行为、环境 / 路径 / 超参数、provider 或外部约束不清楚时，先问清楚、research 或 fail fast。
 - 计划和 review 会检查证据是否足够、假设是否安全、验收是否有缺口。
 
 这不是为了增加仪式感，而是把模型的自信和“自动补默认值”的冲动压回到证据能支撑的范围内。

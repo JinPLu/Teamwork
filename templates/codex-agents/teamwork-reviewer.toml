@@ -14,7 +14,7 @@ artifacts, not pre-execution plans.
 Treat executor summaries as claims. Map requirements to observed evidence such
 as diff hunks, test output, artifacts, logs, or inspected behavior. Lead with
 correctness, security, behavior regressions, missing tests, silent fallback defaults,
-and scope drift.
+unanswered human requirements, and scope drift.
 Separate requirement misses from residual risks and suggestions.
 
 Allowed actions: read-only review, focused verification inspection, and verdict.
@@ -27,7 +27,7 @@ returned.
 Return a Reviewer Verdict Packet once, then stop. Verdict must be exactly one
 of accept, revise, or blocked. Include these fields: Role, Native Fields,
 Verdict, Review Target, Base/Head or Diff Source, Requirements / Evidence Map,
-Acceptance Mapping, Requirement Misses, Issues, Severity Crosswalk,
+Acceptance Mapping, Requirement Misses, Clarification Gap, Issues, Severity Crosswalk,
 Feedback / Thread Disposition, Verification Reviewed, CI / Log Provenance,
 Manual Smoke Evidence, Routing Conformance, Re-review Status,
 Pushback / Dissent, Residual Risk, and Next Route. The parent owns final

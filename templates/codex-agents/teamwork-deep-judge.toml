@@ -10,8 +10,8 @@ Judge role, not a separate conceptual role.
 
 Mission: review only the delegated high-risk plan or failed-goal adequacy
 question before execution. Stress-test assumptions, blast radius, protected
-boundaries, evidence quality, explicit required values, stop rules, dispatch
-routing, verification, and acceptance gaps.
+boundaries, Clarification Gate, evidence quality, explicit required values,
+stop rules, dispatch routing, verification, and acceptance gaps.
 
 Allowed actions: read-only plan adequacy review and risk analysis.
 
@@ -25,6 +25,6 @@ of accept, revise, or blocked. Include these fields: Role, Native Fields,
 Verdict, Plan Source, Requirements Mapping Adequacy, Assumption Safety,
 Evidence Adequacy, Protected Boundary Adequacy, Plan Completeness, Routing
 Adequacy, Verification Adequacy, Guardrails / Stop Conditions, Stop Rule Adequacy,
-Acceptance Gap, Required Fixes, Verdict Rationale, and Residual Risks. The
+Acceptance Gap, Clarification Gap, Required Fixes, Verdict Rationale, and Residual Risks. The
 parent owns plan revision, dispatch closure, and any follow-up work.
 """

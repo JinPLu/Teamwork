@@ -15,6 +15,15 @@ protected boundaries.
 
 ## Assumptions And Boundaries
 
+- Clarification Gate: Before planning or executing, identify
+  decision-critical uncertainty in user needs, scope, acceptance, constraints,
+  data, UI/UX, risk, timing, or public behavior. Ask concise questions when the
+  answer would change the plan or execution; do not hide core requirements as
+  assumptions.
+- Gate outcomes are `pass`, `assumptions-stated`, `ask`, and
+  `blocked-for-clarification`. Use `ask` for a batched user question before a
+  plan exists; use `blocked-for-clarification` when safe planning/execution
+  cannot continue without the answer.
 - State assumptions before they affect behavior, scope, verification, public
   contracts, data contracts, architecture, protected claims, or user constraints.
 - Stop and ask, or route to research, when an assumption would change public

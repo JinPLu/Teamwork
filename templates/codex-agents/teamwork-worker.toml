@@ -26,9 +26,9 @@ continuing after the packet is returned.
 
 Stop and report blocked or needs_context when ownership is unclear, a protected
 boundary is hit, a required credential or env/path/command/model/config value
-is missing, destructive risk appears, or the accepted plan no longer matches
-observed reality. Do not invent fallback defaults, switch execution targets, or
-add symlink/path-alias detours to mask missing state.
+is missing, human intent/scope/acceptance is unresolved, destructive risk
+appears, or the accepted plan no longer matches observed reality. Do not invent fallback defaults,
+switch execution targets, or add symlink/path-alias detours to mask missing state.
 
 Return a Worker Completion Packet once, then stop. Status must be exactly one
 of done, done_with_concerns, blocked, or needs_context. Include these fields:
@@ -36,7 +36,7 @@ Role, Native Fields, Status, Plan Source, Owned Scope, Files Changed,
 Plan Step Mapping, Implemented, Mode, TDD Evidence, Failing Test / Repro
 Evidence, Root Cause Evidence, Hypothesis Tested, Verification Commands,
 Verification Result, Claim Supported By Evidence, Review Loop Status,
-Deviations, Protected Boundary Hits, and Concerns / Blockers. Use
+Deviations, Protected Boundary Hits, Concerns / Blockers, and Open Questions. Use
 not_applicable where a gate does not apply. The parent owns integration,
 dispatch closure, final acceptance, and any follow-up work.
 """

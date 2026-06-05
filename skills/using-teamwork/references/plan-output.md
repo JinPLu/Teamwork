@@ -15,6 +15,7 @@ Mode: plan
 Research Artifact: <path | none>
 Plan Tier: lightweight
 Goal: <one sentence>
+Clarification Gate: pass | assumptions-stated | blocked-for-clarification
 Scope: In <...>; Out <...>; Protected <...>
 Dispatch Guidance: none with rationale | Explorer/Designer/Judge/Worker/Reviewer tracks, ownership, context strategy, cap/batch reason, and Deep Judge/Reviewer severity when warranted
 Steps:
@@ -53,6 +54,10 @@ Linked Artifacts: related research or report paths, or none
 <header above>
 
 ## Goal
+## Clarification Gate
+- Outcome: pass | assumptions-stated | blocked-for-clarification
+- Questions asked or blocker: <none | concise question/blocker>
+- Non-blocking assumptions: <none | stated assumptions>
 ## Requirements Mapping
 | Requirement | Evidence Or Verification | Status |
 |---|---|---|

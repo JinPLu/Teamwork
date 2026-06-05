@@ -28,24 +28,25 @@ Read only as needed:
 
 ## Preconditions
 
-- Accepted lightweight or durable plan.
-- Durable plan path for goal-mode, cross-turn, high-risk, ambiguous, long
-  delegation, complex Worker fan-out, or artifact-backed work.
+- Accepted plan.
+- Durable plan path for goal-mode, cross-turn, high-risk, ambiguous, delegated,
+  complex fan-out, or artifact-backed work.
 - When durable memory is relevant, read `docs/teamwork/index.json` then `active.current`/`docs/teamwork/current.md`, or header-search relevant artifacts before editing; record Artifact Retrieval disposition.
-- Workspace status is understood enough to avoid overwriting other work.
-- Required files, commands, credentials, environments, paths, ports, model
-  names, hyperparameters, configs, and execution modes are explicit and
-  available.
-- Classify command safety, sandbox boundaries, and active approvals.
+- Workspace status avoids overwriting other work.
+- Accepted plan resolves decision-critical user needs, scope, acceptance,
+  constraints, risk, and UX via `Clarification Gate: pass` or
+  `assumptions-stated`; blocker outcomes stop execution.
+- Required files, commands, credentials, environments, paths, ports, models,
+  hyperparameters, configs, and execution modes are explicit and available.
+- Classify command safety, sandbox boundaries, approvals.
 
-If a precondition is missing, stop and report a blocker instead of inventing a
-fallback, switching execution targets, or adding symlink/path-alias detours.
+If a precondition is missing, stop as blocker instead of inventing a fallback,
+switching execution targets, or adding symlink/path-alias detours.
 
 ## Worker Boundary
 
 Workers execute the accepted plan. They do not reopen behavior, architecture,
-requirements, or scope. If evidence changes those decisions, stop and route
-back to research or plan.
+requirements, or scope. If evidence changes them, route to research or plan.
 
 For non-lightweight execution, re-run the Worker split from accepted steps,
 files, components, and ownership. Dispatch parallel Worker subagents when
@@ -56,12 +57,12 @@ ownership map, integration order, verification plan, and why parallel beats
 serial.
 
 Worker prompts follow the Subagent Prompt Contract, use disjoint ownership or
-worktree isolation, and require Worker Completion Packet with plan-step
+worktree isolation, and require Completion Packet with plan-step
 mapping, TDD/debugging applicability, verification command/result, and whether
 evidence supports the claim.
 
 For behavior changes, prefer TDD when practical. For failures, diagnose root
-cause before fixes. Every nontrivial Worker slice needs an exit condition:
+cause before fixes. Every Worker slice needs an exit condition:
 passing proof, observed artifact/behavior, structured validation, bounded
 attempt limit, or blocker. Before any success claim, run fresh verification evidence.
 External skills stay opt-in tool substrates; do not install them unless the

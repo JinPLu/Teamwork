@@ -17,6 +17,7 @@ Claimed:
 Confidence:
 Dissent / Risks:
 Open Questions:
+Clarification Relevance:
 Decision Relevance:
 Suggested Next Step:
 ```
@@ -40,6 +41,7 @@ Evidence Used:
 Risks / Dissent:
 Protected Boundaries:
 Open Questions:
+Clarification Relevance:
 ```
 
 Judge Plan Review Packet:
@@ -59,6 +61,7 @@ Verification Adequacy:
 Guardrails / Stop Conditions:
 Stop Rule Adequacy:
 Acceptance Gap:
+Clarification Gap:
 Required Fixes:
 Verdict Rationale:
 Residual Risks:
@@ -87,6 +90,7 @@ Review Loop Status: not_applicable | pending | spec_passed | quality_passed | fi
 Deviations:
 Protected Boundary Hits:
 Concerns / Blockers:
+Open Questions:
 ```
 
 Reviewer Verdict Packet:
@@ -100,6 +104,7 @@ Base/Head or Diff Source:
 Requirements / Evidence Map:
 Acceptance Mapping:
 Requirement Misses:
+Clarification Gap:
 Issues:
 Severity Crosswalk: blocker | major | minor
 Feedback / Thread Disposition:

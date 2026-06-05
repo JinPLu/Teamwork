@@ -11,7 +11,7 @@ Labels: observed, inferred, claimed.
 
 ## References
 
-Load focused references. `references/workflow-contract.md` owns judgment
+Load references. `references/workflow-contract.md` owns judgment
 and Platform Native Policy Map; `codex-deep-collaboration.md` Codex depth;
 `dispatch-policy.md` dispatch economics; `platform-dispatch-mapping.md` native
 fields; `workflow-orchestration.md` swarm work; `artifact-protocol.md` memory.
@@ -25,7 +25,9 @@ Evidence -> `skills/teamwork-research/SKILL.md`; init/slim -> `skills/teamwork-i
 Do not wait for the user to name a Teamwork skill when intent is clear;
 discovery reads frontmatter before routing.
 
-- Planning: "plan", "design", "figure out", non-trivial "implement/fix/add/change"; unclear root/source/API/failure/evidence/risk routes research first.
+- Planning: "plan", "design", "figure out", non-trivial
+  "implement/fix/add/change"; unclear human goal/scope/acceptance asks first;
+  unclear root/source/API/failure/evidence/risk routes research first.
 - Init: "init", "initialize", "AGENTS", "CODEX", "CURSOR", "CLAUDE", "slim instructions", "workflow rules".
 - Execution: "go ahead", "execute", "continue", "resume", "do it".
 - Review: "review", "look over diff", or "check/validate completed work";
@@ -71,5 +73,5 @@ Use route banners only for non-lightweight handoffs, redirects, blockers,
 goal/update work, or material dispatch/artifact state: `Route: ...`,
 `Reason: ...`, `Mode: ...`.
 
-For lightweight native flow and final replies, write naturally. Include
-`Memory Delta:` only when durable memory was checked or changed materially.
+For lightweight native flow, write naturally. Include `Memory Delta:` only when
+durable memory was checked or changed.

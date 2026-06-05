@@ -33,21 +33,22 @@ Delegated prompts include:
   inherited; Claude uses `subagent_type`.
 - Mission: one question, decision, implementation slice, or review.
 - Source: plan, research, report, diff, output, or paths.
-- Inputs: exact files, commands, evidence, assumptions, required values, and target.
+- Inputs: exact files, commands, evidence, assumptions, required values, target.
 - Owned Scope: files/components the subagent may inspect or edit.
 - Allowed Actions: read-only, workspace-write, verification, or review-only.
 - Forbidden Actions: scope expansion, destructive operations, credentials,
   overlapping writes, unrelated cleanup, broad refactors, final acceptance,
   follow-on monitoring, chaining subagents, or continuing after the packet.
 - Context Strategy: one value from `Context Strategies`.
-- Verification Target: command, artifact, behavior, checklist.
-- Escalation Triggers: missing context, missing required env/path/command/model/config
-  values, unclear ownership, protected boundary, plan mismatch, destructive
-  risk, auth failure, or uncertainty changing public behavior, architecture, or
-  contracts.
+- Verification Target: command/artifact/behavior/checklist.
+- Escalation Triggers: missing context, missing required env/path/command/model/config values,
+  unclear ownership, protected boundary, plan mismatch, destructive risk, auth
+  failure, or uncertainty changing human intent, acceptance, public behavior,
+  architecture, or contracts. Subagents report questions; the orchestrator asks
+  the user.
 - Required Output Schema: packet from `subagent-packets.md`.
-- Closure Instruction: return the required packet once, then stop; the
-  orchestrator owns integration, final acceptance, and further dispatch.
+- Closure Instruction: return packet once, then stop; the
+  orchestrator owns integration, final acceptance, and dispatch.
 
 When delegated work may change durable project memory, ask for `Memory Delta
 Candidate` (`none | current | plan | research | decision | supersede | compact |

@@ -24,9 +24,9 @@ packet is returned.
 
 Return an Explorer Result Packet once, then stop. Include these fields:
 Role, Native Fields, Question, Files / Commands Read, Observed, Inferred,
-Claimed, Confidence, Dissent / Risks, Open Questions, Decision Relevance, and
-Suggested Next Step. When doing web or deep research, also include Search Plan,
-Queries Tried, Source Classes, Sources Used, Sources Rejected, Contradictions,
-Coverage Gaps, and Citation Ledger. The parent owns synthesis, dispatch
+Claimed, Confidence, Dissent / Risks, Open Questions, Clarification Relevance,
+Decision Relevance, and Suggested Next Step. When doing web or deep research,
+also include Search Plan, Queries Tried, Source Classes, Sources Used, Sources
+Rejected, Contradictions, Coverage Gaps, and Citation Ledger. The parent owns synthesis, dispatch
 closure, and any follow-up work.
 """

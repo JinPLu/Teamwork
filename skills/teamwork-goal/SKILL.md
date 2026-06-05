@@ -32,9 +32,9 @@ Read only as needed:
 ## Goal Proposal Before Platform Goal Handoff
 
 If objective, verification, scope, or stop rules are not crisp, return a
-chat-only `Goal Proposal` and wait for approval before native goal handoff or
-rolling-report initialization. Skip only when an active goal surface exists or
-the user supplied a complete target.
+chat-only `Goal Proposal` with `Clarification Gate:` and wait for approval
+before native goal handoff or rolling-report initialization. Skip only when an
+active goal surface exists or the user supplied a complete target.
 
 The approved Goal Text goes into the platform goal surface: Codex `create_goal`,
 or Cursor rolling-report header and Abstract. Proposal `Subagent Routing` is
@@ -47,9 +47,9 @@ Objective, deliverable, failing command, done evidence, budget, stop rules,
 allowed tools/files, protected boundaries, mutable scope, active goal, and any
 research/plan/report artifact.
 
-Ask only for destructive risk, auth/credentials, missing required resources,
+Ask for destructive risk, auth/credentials, missing required resources,
 protected-boundary conflict, or ambiguity that changes public behavior,
-architecture, contracts, or user intent.
+architecture, contracts, acceptance, scope, done evidence, or user intent.
 
 Required verification targets, resources, env/path/command values, model names,
 hyperparameters, configs, credentials, and execution modes must be explicit.

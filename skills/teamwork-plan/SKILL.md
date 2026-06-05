@@ -50,28 +50,33 @@ Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
 
 1. Restate goal/root cause and label evidence `observed`, `inferred`, or
    `claimed`.
-2. Build Requirements Mapping from each requirement to evidence or
+2. Resolve decision-critical human requirement gaps before planning. Record
+   `Clarification Gate: pass | assumptions-stated | blocked-for-clarification`;
+   ask when scope, acceptance, constraints, risk, or UX would change.
+3. Build Requirements Mapping from each requirement to evidence or
    verification.
-3. Define in/out/protected scope and choose the smallest producer-side change.
-4. Run the Parallelization Gate before implementation steps: split before implementation steps by default for independent tracks, apply the Subagent Tool
+4. Define in/out/protected scope and choose the smallest producer-side change.
+5. Run the Parallelization Gate before implementation steps: split before implementation steps by default for independent tracks, apply the Subagent Tool
    Discovery Gate when subagents are authorized, or emit `Dispatch Exception:`
    with the allowed reason.
-5. Use Designer workflow for ambiguous choices unless observed evidence already
+6. Use Designer workflow for ambiguous choices unless observed evidence already
    fixes the decision. Use Judge workflow before delivering high-risk, durable,
    delegated, or goal-mode plans; if unavailable after discovery or explicitly
    opted out, label the plan `unreviewed`. Record Designer/Judge packet
    summaries in chat plans or the durable plan when used.
-6. Write `Dispatch Guidance:` or durable `Subagent Routing`; guidance helps
+7. Write `Dispatch Guidance:` or durable `Subagent Routing`; guidance helps
    execution but is not the only dispatch authorization.
-7. If external skills are in scope, apply `optional-skills.md`; plans may
+8. If external skills are in scope, apply `optional-skills.md`; plans may
    document install gates, but must not auto-install optional skills.
-8. Add Subagent Prompt Packets only for delegated roles.
-9. Write ordered steps, verification, Expected Results, risks, stop rules, and
+9. Add Subagent Prompt Packets only for delegated roles.
+10. Write ordered steps, verification, Expected Results, risks, stop rules, and
    handoffs.
 
 ## Quality Gates
 
 - Every planned file traces to the goal.
+- Clarification Gate is `pass` or `assumptions-stated`; otherwise the plan is
+  blocked until clarified.
 - Required env vars, paths, commands, ports, model names, hyperparameters,
   configs, credentials, and execution modes trace to user input, source/config,
   project instructions, or observed evidence; missing values are blockers.

@@ -41,15 +41,15 @@ The payoff is practical:
 
 The dangerous failure mode is not only that a model does not know something.
 It is that the model does not know, but still sounds certain. Another common
-failure is inventing defaults for missing env, paths, hyperparameters, or
-execution modes and continuing anyway. Teamwork treats names, README prose,
-issues, summaries, `latest`, and `v2` labels as claims until the agent finds
-direct evidence; missing required inputs must fail fast instead of silently
-falling back.
+failure is planning or executing before human requirements, scope, or acceptance
+are clear; even completed work can be wrong. Teamwork also rejects invented
+defaults for missing env, paths, hyperparameters, or execution modes. It treats
+names, README prose, issues, summaries, `latest`, and `v2` labels as claims
+until the agent finds direct evidence; missing required inputs must fail fast.
 
 - Important conclusions are labeled `observed` / `inferred` / `claimed`.
 - Key decisions map to source, config, logs, tests, diffs, artifacts, or primary sources.
-- When root cause, API behavior, env / paths / hyperparameters, providers, or external constraints are unclear, research or fail fast comes before edits.
+- When requirements, acceptance, root cause, API behavior, env / paths / hyperparameters, providers, or external constraints are unclear, ask, research, or fail fast before edits.
 - Planning and review check evidence adequacy, assumption safety, and acceptance gaps.
 
 This is not ceremony. It keeps model confidence and default-making inside the

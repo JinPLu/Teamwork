@@ -1012,6 +1012,24 @@ grep_required 'Do not invent fallback defaults' "$ROOT/templates/codex-agents/te
   "Codex Worker agent must block on missing required values"
 grep_required 'silent fallback defaults' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" \
   "Codex Reviewer agent must flag silent fallback defaults"
+grep_required 'Clarification Relevance' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
+  "Codex Explorer agent must report clarification relevance"
+grep_required 'Clarification Gap' "$ROOT/templates/codex-agents/teamwork-judge.toml" \
+  "Codex Judge agent must report clarification gaps"
+grep_required 'Clarification Gap' "$ROOT/templates/codex-agents/teamwork-deep-judge.toml" \
+  "Codex Deep Judge agent must report clarification gaps"
+grep_required 'Open Questions' "$ROOT/templates/codex-agents/teamwork-worker.toml" \
+  "Codex Worker agent must report open questions"
+grep_required 'Clarification Gap' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" \
+  "Codex Reviewer agent must report clarification gaps"
+grep_required 'Clarification Gap' "$ROOT/templates/codex-agents/teamwork-deep-reviewer.toml" \
+  "Codex Deep Reviewer agent must report clarification gaps"
+grep_required 'clarification relevance' "$ROOT/templates/claude-agents/explore.md" \
+  "Claude Explorer agent must report clarification relevance"
+grep_required 'Open Questions' "$ROOT/templates/claude-agents/worker.md" \
+  "Claude Worker agent must report open questions"
+grep_required 'Clarification Gap' "$ROOT/templates/claude-agents/code-reviewer.md" \
+  "Claude Reviewer agent must report clarification gaps"
 grep_required 'Do not use `cheap-fast` for normal Pro/20x Codex workflows' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
   "dispatch policy must forbid cheap-fast for Judge and Reviewer"
 grep_required 'routing guidance, not the only' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
@@ -1022,6 +1040,26 @@ grep_required 'No Silent Defaults' "$ROOT/skills/using-teamwork/references/workf
   "workflow contract must keep no-silent-defaults canonical"
 grep_required 'Missing required values are blockers' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must fail fast on missing required values"
+grep_required 'Before planning or executing' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must require clarification before plan or execution"
+grep_required 'Gate outcomes are `pass`, `assumptions-stated`, `ask`, and' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must define clarification gate outcomes"
+grep_required 'unclear human goal/scope/acceptance asks first' "$ENTRYPOINT" \
+  "entrypoint/router must ask before planning unclear human goals"
+grep_required 'Resolve decision-critical human requirement gaps' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "planning must clarify decision-critical human requirement gaps"
+grep_required 'Clarification Gate: pass | assumptions-stated | blocked-for-clarification' "$ROOT/skills/using-teamwork/references/plan-output.md" \
+  "plan output must expose clarification gate state"
+grep_required 'Accepted plan resolves decision-critical user needs' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  "execution must require clarified user needs in the accepted plan"
+grep_required 'Goal Proposal` with `Clarification Gate:' "$ROOT/skills/teamwork-goal/SKILL.md" \
+  "goal proposal must expose clarification gate state"
+grep_required 'unanswered human requirements could change' "$ROOT/skills/using-teamwork/references/review-checks.md" \
+  "review must reject plans with decision-critical unanswered human requirements"
+grep_required 'Subagents report questions; the orchestrator asks' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+  "subagents must not own user clarification"
+grep_required 'Clarification Gap' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+  "subagent packets must carry clarification gaps"
 grep_required 'codex-policy' "$ROOT/skills/using-teamwork/references/project-init.md" \
   "project init reference must document Codex policy rendering"
 grep_required 'required environment variables' "$ROOT/skills/using-teamwork/references/project-init.md" \

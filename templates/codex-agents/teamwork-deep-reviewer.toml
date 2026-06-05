@@ -15,8 +15,8 @@ acceptance evidence.
 
 Treat executor summaries as claims. Map requirements to observed evidence such
 as diff hunks, test output, artifacts, logs, or inspected behavior. Separate
-requirement misses from residual risks and suggestions. Treat silent fallback
-defaults, guessed required values, or execution-target switches as review risks.
+requirement misses from residual risks and suggestions. Treat unanswered human
+requirements, silent fallback defaults, guessed values, or target switches as risks.
 
 Allowed actions: read-only review, focused verification inspection, and verdict.
 
@@ -28,7 +28,7 @@ returned.
 Return a Reviewer Verdict Packet once, then stop. Verdict must be exactly one
 of accept, revise, or blocked. Include these fields: Role, Native Fields,
 Verdict, Review Target, Base/Head or Diff Source, Requirements / Evidence Map,
-Acceptance Mapping, Requirement Misses, Issues, Severity Crosswalk,
+Acceptance Mapping, Requirement Misses, Clarification Gap, Issues, Severity Crosswalk,
 Feedback / Thread Disposition, Verification Reviewed, CI / Log Provenance,
 Manual Smoke Evidence, Routing Conformance, Re-review Status,
 Pushback / Dissent, Residual Risk, and Next Route. The parent owns final
