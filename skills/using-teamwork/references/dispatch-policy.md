@@ -7,10 +7,11 @@ lives in `platform-dispatch-mapping.md`; swarm orchestration lives in
 ## Stage-Routed Proactive Dispatch
 
 When the active platform or loaded instructions authorize subagents, use
-parallel subagents when non-lightweight independent tracks exist by default.
-Do not wait for `Goal Proposal`, `Dispatch Guidance:`, or durable `Subagent
-Routing` to explicitly name every track. On Codex, a project or global standing
-request can authorize this; otherwise keep work local and record the rationale.
+parallel subagents when independent tracks have clear evidence, elapsed-time,
+context-isolation, implementation-ownership, or fresh-review value. Do not wait
+for `Goal Proposal`, `Dispatch Guidance:`, or durable `Subagent Routing` to
+explicitly name every track. On Codex, a project or global standing request can
+authorize this; otherwise keep work local and record the rationale.
 
 - Exploration: Explorer for codebase orientation, artifacts, or local evidence
   beyond a quick literal read.
@@ -19,8 +20,9 @@ request can authorize this; otherwise keep work local and record the rationale.
 - Plan: Designer for ambiguity; Judge for durable, risky, delegated, or
   goal-mode plans.
 - Execute: Worker split from accepted steps, files, components, and ownership.
-- Review: fresh Reviewer for non-trivial execution, high-risk diffs, or
-  acceptance; self-review cannot accept non-lightweight work.
+- Review: fresh Reviewer for non-trivial execution, high-risk diffs, delegated
+  work, public contracts, release/security/destructive risk, goal-mode, or
+  required acceptance; self-review cannot accept those cases.
 - Goal: rerun stage dispatch after failures for independent exploration,
   hypotheses, verification, or review.
 - Workflow-class: escalate to `workflow-orchestration.md` for many agents,
@@ -58,7 +60,7 @@ When a dispatch decision matters but dispatch is skipped, write:
 Dispatch Exception: <single-track | tight-critical-path | overlapping-ownership | higher-context-cost | tool-unavailable-after-discovery | authorization-missing | user-opt-out>
 ```
 
-For non-lightweight review or acceptance, valid exceptions are only
+For required fresh review or acceptance, valid exceptions are only
 `tool-unavailable-after-discovery`, `authorization-missing`, or `user-opt-out`;
 the verdict is `unreviewed`.
 
@@ -76,7 +78,7 @@ implements owned slices. Reviewer checks completed work.
   helps. Before dispatching more than 3 Workers, state ownership map,
   integration order, verification, and why parallel beats serial.
 - Use batch or worktree isolation when ownership or merge cost is unclear.
-- If skipping non-lightweight dispatch, state why local execution is cheaper or safer
+- If skipping material dispatch, state why local execution is cheaper or safer
   with `Dispatch Exception:`.
 - For one structural code question, use CodeGraph before Explorer fanout.
   Dispatch Explorer only when the question needs non-code evidence, stale index

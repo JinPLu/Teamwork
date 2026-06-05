@@ -1,6 +1,6 @@
 # Subagent Prompt Contract
 
-Use when preparing a delegated prompt. For dispatch decisions read
+Use for delegated prompts. Native flow summarizes. For dispatch read
 `dispatch-policy.md`; for native fields read `platform-dispatch-mapping.md`;
 for returned shapes read `subagent-packets.md`.
 

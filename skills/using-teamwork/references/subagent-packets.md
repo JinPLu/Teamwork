@@ -1,6 +1,9 @@
 # Subagent Packets
 
-Specify subagent output or dispatch. Ask for `Memory Delta Candidate` only when work may change durable memory.
+Specify delegated subagent output or material dispatch. Local native-flow work
+does not need packet formatting unless a durable artifact, goal loop, delegated
+track, public contract, or required acceptance gate needs it. Ask for
+`Memory Delta Candidate` only when work may change durable memory.
 
 ## Result Packets
 

@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "1.9.1",
+  "version": "1.10.0",
   "description": "Codex-first skills (also installable on Cursor and Claude Code) for evidence-first planning, role-subagent fan-out, review, and native goal convergence.",
   "author": {
     "name": "JinPLu",
@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Deep Codex collaboration with goals, proactive custom agents, plans, and fresh review.",
-    "longDescription": "A Codex-first broad entrypoint plus dedicated stage skills for project instruction initialization, evidence gathering, native Teamwork index/current memory, goal proposal, durable artifact memory, scoped execution, role-subagent fan-out for independent evidence/design/worker/review tracks, fresh review, package updates, and autonomous goal convergence on top of Codex native capabilities. The same protocol installs on Cursor and Claude Code as supported adapters via ./install.sh cursor or ./install.sh claude.",
+      "longDescription": "A Codex-first broad entrypoint plus dedicated stage skills for project instruction initialization, evidence gathering, native Teamwork index/current memory, goal proposal, durable artifact memory, scoped execution, native fast-path handling for lightweight work, role-subagent fan-out for valuable independent evidence/design/worker/review tracks, fresh review, package updates, and autonomous goal convergence on top of Codex native capabilities. The same protocol installs on Cursor and Claude Code as supported adapters via ./install.sh cursor or ./install.sh claude.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -33,7 +33,7 @@
     "defaultPrompt": [
       "Design a Codex native goal with evidence, scope, retry policy, artifacts, and subagent routing.",
       "Initialize or slim project AGENTS/CODEX/CLAUDE rules with performance-first or cost-first Codex mode while preserving local evidence boundaries.",
-      "Fan out non-lightweight Codex work into evidence-gathering, planning, execution, and review tracks.",
+      "Fan out valuable independent Codex work into evidence-gathering, planning, execution, and review tracks.",
       "Use role-optimized Teamwork custom agents proactively, including deep xhigh Judge/Reviewer for high-risk review.",
       "Map completion claims and Memory Delta status to direct evidence before accepting the result.",
       "Update Teamwork version metadata and validate the installed skill surface."

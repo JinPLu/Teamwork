@@ -6,9 +6,20 @@ shape only when durable or goal-mode work requires it.
 
 ## Lightweight Plan
 
-Use bullets for very small plans. When a plan has three or more comparable
-steps, prefer a compact table so humans can audit scope, owner, verification,
-and stop conditions quickly.
+Use bullets for very small plans:
+
+```text
+Goal: <one sentence>
+Scope: <paths/components in and out>
+Steps: <short ordered bullets>
+Verification: <focused command/check and expected result>
+Stop: <condition that triggers ask/replan>
+```
+
+Add Dispatch Guidance, Review Need, or Design/Judge only when dispatch, review,
+or design decisions materially affect execution. When a plan has three or more
+comparable steps, prefer a compact table so humans can audit scope, owner,
+verification, and stop conditions quickly.
 
 ```text
 Mode: plan
@@ -17,7 +28,7 @@ Plan Tier: lightweight
 Goal: <one sentence>
 Clarification Gate: pass | assumptions-stated | blocked-for-clarification
 Scope: In <...>; Out <...>; Protected <...>
-Dispatch Guidance: none with rationale | Explorer/Designer/Judge/Worker/Reviewer tracks, ownership, context strategy, cap/batch reason, and Deep Judge/Reviewer severity when warranted
+Dispatch Guidance: optional; include none with rationale only when material dispatch is skipped, or name Explorer/Designer/Judge/Worker/Reviewer tracks, ownership, context strategy, cap/batch reason, and Deep Judge/Reviewer severity when warranted
 Steps:
 - [ ] <path/component> - <minimal change> - <why>
 Verification:
@@ -25,8 +36,8 @@ Verification:
 - Broader: <command/check or not needed because ...>
 - Expected Results: <exact passing output or behavior>
 Stop Rules: <when to stop or replan>
-Review Need: <none | local | fresh-context>
-Design/Judge: <none | Designer/Judge packet summary when used>
+Review Need: <optional; none | local | fresh-context>
+Design/Judge: <optional; Designer/Judge packet summary when used>
 ```
 
 Optional chat-table shape:

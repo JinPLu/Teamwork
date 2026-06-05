@@ -30,12 +30,14 @@ Read only as needed:
 ## Shared Rules
 
 - Choose `mode: plan` or `mode: execution`.
-- Default to fresh-context Reviewer subagents for non-lightweight plan/execution
-  acceptance when subagents are authorized.
+- Default to fresh-context Reviewer subagents for non-lightweight high-risk,
+  public-contract, delegated, security, destructive, release, goal-mode, or
+  otherwise required plan/execution acceptance when subagents are authorized.
   Same-context self-review is not acceptance.
-- Local review is allowed only for lightweight work, subagent tools unavailable
-  after the Subagent Tool Discovery Gate, missing authorization, or explicit
-  user opt-out; label any non-lightweight verdict as unreviewed.
+- Local review is allowed for lightweight work, same-context checks, subagent
+  tools unavailable after the Subagent Tool Discovery Gate, missing
+  authorization, or explicit user opt-out; label any required fresh-review
+  verdict as unreviewed when no valid fresh review ran.
 - Inspect source, diff, logs, tests, command output, artifacts, research, plan,
   and user constraints.
 - Label important evidence `observed`, `inferred`, or `claimed`.
@@ -64,8 +66,8 @@ Output Schema, and protected-boundary changes.
 
 Use `review-checks.md` for diff scope, plan conformance, verification,
 silent fallback defaults, Routing conformance, Actual Dispatch Log, Worker
-Completion Packet, Reviewer Verdict Packet, dispatch economics, workspace
-hygiene, and next failure route.
+Completion Packet when Workers were delegated, Reviewer Verdict Packet,
+dispatch economics, workspace hygiene, and next failure route.
 Confirm Stage-Routed Proactive Dispatch was evaluated even when the plan did not
 name every track. Reject open delegated tracks without blocker rationale.
 For re-review after `revise`, require prior verdict, required fixes reviewed,

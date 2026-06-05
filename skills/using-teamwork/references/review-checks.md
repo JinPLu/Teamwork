@@ -27,8 +27,9 @@ Check:
   are explicit for delegated or goal-mode work.
 - Risks, stop rules, Worker Handoff, Review Handoff, Subagent Routing, and
   Subagent Prompt Packets are adequate.
-- Parallelization Gate appears before steps; 2+ independent tracks have
-  Dispatch Guidance, or `Dispatch Guidance: none` gives a continuity rationale.
+- Parallelization Gate appears before steps when dispatch would affect risk,
+  cost, ownership, or review; 2+ independent material tracks have Dispatch
+  Guidance, or `Dispatch Guidance: none` gives a continuity rationale.
 - Required subagent dispatch either happened, records explicit user opt-out,
   records missing authorization, or records discovery-proven unavailability
   after the Subagent Tool Discovery Gate.
@@ -46,7 +47,7 @@ Return `revise` or `blocked` when:
 - unanswered human requirements could change goal, scope, acceptance,
   constraints, risk, or UX;
 - a non-lightweight plan skips split before implementation steps or serializes
-  independent tracks without rationale;
+  independent material tracks without rationale;
 - required subagent dispatch or fresh-context plan review is missing and no
   valid discovery/authorization/user-opt-out exception is recorded;
 - delegated work lacks prompt packets, output schema, ownership, or escalation
@@ -76,8 +77,9 @@ Check:
   context strategy, prompt packets, returned packets, order, file ownership,
   final status, and closure evidence when subagents were used.
 - No delegated track remains `dispatched` or `returned` at review handoff.
-- Worker Completion Packet and Reviewer Verdict Packet map implementation,
-  verification, deviations, routing conformance, and residual risk to evidence.
+- Worker Completion Packet for delegated work and Reviewer Verdict Packet for
+  fresh review map implementation, verification, deviations, routing
+  conformance, and residual risk to evidence.
 - Worker evidence includes plan-step mapping, TDD or repro/root-cause
   applicability, verification command/result, and claim support.
 - Reviewer evidence map ties each requirement or plan step to observed source,

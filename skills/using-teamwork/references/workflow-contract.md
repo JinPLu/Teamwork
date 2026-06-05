@@ -79,11 +79,12 @@ properties, git diff, or primary external evidence.
 - For structural code questions, use CodeGraph before Explorer fanout; dispatch
   only when independent evidence or synthesis remains useful.
 - Use subagent dispatch when the active platform or loaded instructions
-  authorize subagents and the work is not lightweight. Codex standing authorization
-  must come from the user's prompt or a loaded project/global instruction. The
-  main agent remains the orchestrator and keeps raw evidence,
-  implementation detail, and fresh review outside the main context when that
-  improves quality or cost.
+  authorize subagents and an independent track has clear evidence,
+  elapsed-time, context-isolation, implementation-ownership, or fresh-review
+  value. Codex standing authorization must come from the user's prompt or a
+  loaded project/global instruction. The main agent remains the orchestrator and
+  keeps raw evidence, implementation detail, and fresh review outside the main
+  context when that improves quality or cost.
 - Missing currently active subagent tools is not enough to stay local. On
   Codex, if `tool_search` is available, discover `spawn_agent` before recording
   an unavailable-tool exception. On Cursor or Claude Code, use the `Task` tool
@@ -95,9 +96,12 @@ Choose the smallest workflow pattern that preserves correctness:
 
 - Treat work as non-lightweight when it is multi-file, unfamiliar, ambiguous,
   repeated-failure, public/shared behavior, protected-boundary, cross-turn,
-  delegated, or completion acceptance work.
-- Native single-agent: quick facts, tiny edits, tight context, credential work,
-  or tightly coupled critical path.
+  delegated, or completion acceptance work. Low-risk mechanical multi-file
+  edits and small bug fixes may still use the native fast path when scope,
+  boundary, and verification are clear.
+- Native single-agent: quick facts, tiny edits, low-risk bug fixes, low-risk
+  mechanical multi-file edits, tight context, credential work, one
+  CodeGraph-answerable structural question, or tightly coupled critical path.
 - Skill: repeated workflow or domain expertise that should load on demand.
 - Fixed sequence with clear steps: use a lightweight plan.
 - Router/subagent: distinct domains, independent evidence, tests, logs, or
@@ -189,22 +193,23 @@ report the work as `unreviewed` and name the residual risk instead
 of presenting it as accepted.
 
 Subagent authorization has two layers: platform permission to spawn, and
-Stage-Routed Proactive Dispatch deciding the stage split. Once a Teamwork
-stage is active and subagents are authorized, that stage should dispatch
-non-destructive Explorer, Designer, Judge, Worker, or Reviewer tracks that fit
-the stage contract. A plan's `Dispatch Guidance:` or durable `Subagent Routing`
-is routing guidance, not the only authorization source. The execution stage
-should re-evaluate the split from the accepted plan, source ownership, and
-current workspace evidence before editing. For Teamwork work with independent
-tracks, dispatch is preferred when it lowers risk, elapsed time, context cost,
-or review risk; serial local work should state the continuity rationale when
-the choice matters.
+Stage-Routed Proactive Dispatch deciding the stage split. Once a Teamwork stage
+is active and subagents are authorized, that stage should dispatch
+non-destructive Explorer, Designer, Judge, Worker, or Reviewer tracks only when
+the independent track improves evidence quality, elapsed time, context
+isolation, ownership clarity, or review quality enough to justify its cost. A
+plan's `Dispatch Guidance:` or durable `Subagent Routing` is routing guidance,
+not the only authorization source. The execution stage should re-evaluate the
+split from the accepted plan, source ownership, and current workspace evidence
+before editing. For Teamwork work with independent tracks, dispatch is preferred
+when it lowers risk, elapsed time, context cost, or review risk; serial local
+work should state the continuity rationale when the choice matters.
 
 Ask again only when dispatch needs credentials, destructive actions, unclear
 write ownership, protected-boundary changes, unavailable tools, missing Codex
 standing authorization, or another approval-gated capability. Otherwise,
-dispatch proactively when an independent track can improve cost, elapsed time,
-context isolation, or quality.
+dispatch proactively when an independent track clearly improves cost, elapsed
+time, context isolation, or quality.
 
 For non-lightweight work, evaluate the split before implementation steps and
 record chosen subagent tracks or continuity rationale when it affects review.

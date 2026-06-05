@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "1.9.1",
+  "version": "1.10.0",
   "description": "Claude Code adapter skills for evidence-first planning, execution, review, Task-subagent fan-out, and durable goal convergence.",
   "author": {
     "name": "JinPLu",
@@ -22,7 +22,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Use Teamwork's Codex-first protocol as a Claude Code Task-subagent adapter.",
-    "longDescription": "A Claude Code adapter entrypoint plus dedicated stage skills for project instruction initialization, evidence gathering, native Teamwork index/current memory, goal proposal, durable artifact memory, scoped execution, Task-subagent fan-out for independent evidence/design/worker/review tracks, fresh review, package updates, and autonomous goal convergence on top of Claude Code native capabilities.",
+      "longDescription": "A Claude Code adapter entrypoint plus dedicated stage skills for project instruction initialization, evidence gathering, native Teamwork index/current memory, goal proposal, durable artifact memory, scoped execution, native fast-path handling for lightweight work, Task-subagent fan-out for valuable independent evidence/design/worker/review tracks, fresh review, package updates, and autonomous goal convergence on top of Claude Code native capabilities.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [

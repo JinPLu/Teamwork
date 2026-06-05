@@ -25,8 +25,9 @@ Read only as needed:
 
 Write or update `docs/teamwork/research/YYYY-MM-DD-<slug>.md` when findings
 will be reused, feed a durable plan, support goal-mode iteration, use external
-calibration, refresh failed assumptions, or justify a non-trivial
-recommendation. For lightweight one-turn lookup, cite evidence in chat.
+calibration for a durable decision, refresh failed assumptions, or justify a
+non-trivial recommendation that should survive the current answer. For
+lightweight one-turn lookup, cite evidence in chat.
 
 Search existing research artifacts first with goal words, exact errors, paths,
 dependency/API names, external entities, and old slugs. Record reuse, update,
@@ -40,15 +41,16 @@ Artifacts include Search Keys and Abstract for future retrieval.
 2. Retrieve prior research and record disposition.
 3. Split separable evidence questions: local source, symptoms, artifacts,
    external constraints, alternatives, upstream reports, papers, or practice.
-4. Default to parallel Explorer subagents for 2+ independent tracks when
-   subagents are authorized. Before reading a second track serially, run the
-   Subagent Tool Discovery Gate from `dispatch-policy.md`; otherwise emit
-   `Dispatch Exception:`.
-5. Require Explorer Result Packet with observed/inferred/claimed evidence,
-   confidence, dissent, open questions, and condensed evidence.
+4. Use parallel Explorer subagents for 2+ independent tracks when they provide
+   clear evidence, elapsed-time, or context-isolation value and subagents are
+   authorized. Serial local research is fine for tightly coupled or lightweight
+   evidence; emit `Dispatch Exception:` only when skipped dispatch is material.
+5. Require Explorer Result Packet for delegated research. For local research,
+   use the same evidence fields naturally when they help the answer.
 6. Close each Explorer track in the Actual Dispatch Log after synthesis, or
    record `blocked` / `abandoned-after-discovery` with rationale.
-7. Read primary local evidence first and label key findings.
+7. Read primary local evidence first and label key findings observed, inferred,
+   or claimed.
 8. Use external calibration when current platform, dependency, model, API,
    upstream behavior, performance, unfamiliar frameworks, or repeated failures
    could affect the answer.
