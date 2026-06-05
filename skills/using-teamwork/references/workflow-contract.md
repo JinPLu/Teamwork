@@ -76,6 +76,8 @@ properties, git diff, or primary external evidence.
 - Use role-specific Dispatch Economics. Explorer/Reviewer tracks are capped by
   context cost; Worker tracks are capped by ownership clarity, integration
   cost, and verification shape.
+- For structural code questions, use CodeGraph before Explorer fanout; dispatch
+  only when independent evidence or synthesis remains useful.
 - Use subagent dispatch when the active platform or loaded instructions
   authorize subagents and the work is not lightweight. Codex standing authorization
   must come from the user's prompt or a loaded project/global instruction. The

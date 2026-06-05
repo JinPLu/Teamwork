@@ -4,21 +4,24 @@ Use with `teamwork-init` for agent instruction setup, cleanup, or migration.
 
 ## Project Rule Layering
 
-- Codex App Personalization: optional app-wide bootstrap; paste `./install.sh codex-policy` output only.
-- Global `~/.codex/AGENTS.md`: installer-managed bootstrap: subagents, efficiency, model profile, fail-fast safety, remote baseline.
-- Root `AGENTS.md`: project boundaries, repo map, required values, protected actions, and tool arbitration.
-- Repo-local `AGENTS.md`: facts, evidence sources, commands, danger zones, and acceptance expectations.
-- Platform files such as `CODEX.md`, `CURSOR.md`, `CLAUDE.md`, or `GEMINI.md`: platform deltas only.
-- Appendix docs: long paths, commands, environment matrices, and history. Read on demand.
+- Codex App Personalization: optional; paste only `./install.sh codex-policy`.
+- Global `~/.codex/AGENTS.md`: installer-managed bootstrap.
+- Root `AGENTS.md`: boundaries, repo map, required values, protected actions,
+  and tool arbitration.
+- Repo-local `AGENTS.md`: facts, evidence, commands, danger zones, acceptance.
+- Platform files `CODEX.md`, `CURSOR.md`, `CLAUDE.md`, `GEMINI.md`: deltas only.
+- Appendix docs: long paths, commands, environment matrices, and history.
 - `docs/teamwork/README.md`: runtime memory entrypoint; point to it, do not inline it.
 - `docs/teamwork/{research,plans,reports}/`: durable memory when triggered; retrieval aids, not completion evidence.
 
 ## Content Classification
 
-- Bootstrap policy: authorization, efficiency, model profile, fail-fast safety, and remote baseline before skills.
-- Portable workflow: evidence labels, artifact triggers, route selection, verification, handoff, and slimming policy.
-- Project facts: repo roles, source paths, server paths, execution model, required environment variables, commands, ports, protected boundaries, and red lines.
-- Current state: active results, progress, summaries, or run status. Move to artifacts when warranted.
+- Bootstrap policy: authorization, efficiency, model profile, fail-fast safety,
+  remote baseline.
+- Portable workflow: evidence labels, artifact triggers, route selection,
+  verification, handoff, and slimming policy.
+- Project facts: repo roles, paths, execution model, required environment variables, red lines.
+- Current state: active results, progress, summaries, or run status.
 - Appendix navigation: long trees, path tables, command catalogs, and environment matrices.
 
 ## Collaboration Backbone Audit
@@ -36,17 +39,26 @@ Audit reusable human-agent habits. Mark `keep` for project-specific acceptance,
 
 ## Teamwork Initialization Mode
 Codex model profile is chosen at install time. `performance-first` is Pro/20x
-default; `cost-first` downshifts routine roles. Project init asks only when
-overriding global policy. Model overrides require agents from
-`install.sh --profile`.
+default; `cost-first` downshifts routine roles. Project init asks only for
+global-policy overrides. Model overrides require `install.sh --profile` agents.
+
+## Full Feature Capability Matrix
+For full setup/full features/memory/docs graph requests, return compact matrix rows:
+Core Teamwork workflow; Platform profile; Project instruction layer;
+Artifact memory; CodeGraph policy; Subagent policy/install state;
+Superpowers role workflows; Validation; Optional docs graph; Optional external memory; Blockers.
+Statuses: `enabled`, `missing`, `blocked`, `optional`, `deferred`. Every
+non-enabled row names one next action. Core local rows may initialize in scope;
+Optional docs graph and Optional external memory stay `optional` or `deferred`
+until user approval and the optional-skills gate pass.
 
 ## Rule Persistence Decision
 
-Use `./install.sh codex` for managed `~/.codex/AGENTS.md`; use
-`./install.sh codex-policy` for Codex App Personalization. Keep both copies
-identical. Project instructions record concrete values, exceptions, opt-outs,
-or protected boundaries. Missing required host, path, command, port, credential,
-model, hyperparameter, or execution mode is a blocker, not a fallback rule.
+Use `./install.sh codex` for managed `~/.codex/AGENTS.md` and
+`./install.sh codex-policy` for Codex App Personalization. Project instructions
+record concrete values, exceptions, opt-outs, or protected boundaries. Missing
+host, path, command, port, credential, model, hyperparameter, or execution mode
+is a blocker, not a fallback.
 
 ## MCP And Search Policy
 
@@ -71,9 +83,8 @@ model, hyperparameter, or execution mode is a blocker, not a fallback rule.
   Teamwork skill already owns the policy.
 
 ## Output Shape
-Return a compact recommendation or plan covering files, portable migrations,
-`keep` / `migrate` / `add` decisions, remaining local rules, verification, and
-human decisions.
+Return compact files, `keep`/`migrate`/`add` decisions, remaining local rules,
+Capability Matrix when requested, verification, and human decisions.
 
 ## Teamwork Memory Bootstrap
 

@@ -122,7 +122,11 @@ Optional durable-memory fields:
 ```text
 Memory Delta Candidate: none | current | plan | research | decision | supersede | compact | deferred
 Memory Delta Evidence:
+Protected Data Status: clear | redacted | blocked | not_checked
 ```
+
+Subagents propose memory candidates only. They do not promote external memory,
+docs graph output, or recall into canonical Teamwork artifacts.
 
 ## Actual Dispatch Log
 Record review-relevant dispatch. Final status cannot remain `dispatched` or

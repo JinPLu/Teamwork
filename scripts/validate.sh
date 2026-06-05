@@ -202,6 +202,10 @@ grep_required 'Memory Delta Candidate' "$ROOT/skills/using-teamwork/references/s
   "subagent-packets must document optional Memory Delta Candidate"
 grep_required 'Durable memory check' "$ROOT/skills/using-teamwork/references/review-checks.md" \
   "review-checks must include durable memory materiality checks"
+grep_required 'Memory promotion check' "$ROOT/skills/using-teamwork/references/review-checks.md" \
+  "review-checks must include memory promotion checks"
+grep_required 'candidate memory' "$ROOT/skills/using-teamwork/references/review-checks.md" \
+  "review-checks must keep external memory candidate-scoped"
 grep_required 'Manual smoke evidence captures source' "$ROOT/skills/using-teamwork/references/review-checks.md" \
   "review-checks must include manual smoke evidence capture fields"
 grep_required 'When delegated work may change durable project memory' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
@@ -226,6 +230,10 @@ grep_required 'Final status cannot remain `dispatched` or' "$ROOT/skills/using-t
   "subagent packets must forbid dispatched final dispatch status"
 grep_required '`returned`.' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
   "subagent packets must forbid returned final dispatch status"
+grep_required 'Protected Data Status' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+  "subagent packets must expose protected-data status for memory candidates"
+grep_required 'Subagents propose memory candidates only' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+  "subagent packets must prevent subagents from promoting memory"
 grep_required 'final status, closure evidence' "$ROOT/skills/using-teamwork/references/plan-output.md" \
   "plan output must include dispatch closure evidence"
 grep_required 'No delegated track remains `dispatched` or `returned`' "$ROOT/skills/using-teamwork/references/review-checks.md" \
@@ -844,6 +852,32 @@ grep_required 'Project Rule Layering' "$ROOT/skills/using-teamwork/references/pr
   "project init reference must define project rule layering"
 grep_required 'CodeGraph' "$ROOT/skills/using-teamwork/references/project-init.md" \
   "project init reference must define CodeGraph policy"
+for row in 'Core Teamwork workflow' 'Platform profile' 'Project instruction layer' 'Artifact memory' 'CodeGraph policy' 'Subagent policy/install state' 'Superpowers role workflows' 'Validation' 'Optional docs graph' 'Optional external memory' 'Blockers'; do
+  grep_required "$row" "$ROOT/skills/using-teamwork/references/project-init.md" \
+    "project init full-feature matrix missing row: $row"
+done
+for status in enabled missing blocked optional deferred; do
+  grep_required "$status" "$ROOT/skills/using-teamwork/references/project-init.md" \
+    "project init full-feature matrix missing status: $status"
+done
+grep_required 'Full Feature Init' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must expose full-feature init behavior"
+grep_required 'Capability Matrix' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must return a capability matrix for full-feature requests"
+grep_required 'External memory/docs graph rows stay' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must keep external memory/docs graph opt-in"
+grep_required 'Memory And Docs Graph Candidates' "$ROOT/skills/using-teamwork/references/optional-skills.md" \
+  "optional skills must cover memory/docs graph candidate gates"
+grep_required 'Canonical Boundary' "$ROOT/skills/using-teamwork/references/optional-skills.md" \
+  "optional memory/docs graph gates must state candidate boundary"
+grep_required 'External Memory Promotion Gate' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" \
+  "artifact protocol must define external memory promotion gate"
+grep_required 'memory candidate' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" \
+  "artifact protocol must keep external recall as memory candidate context"
+grep_required 'use CodeGraph before Explorer fanout' "$ROOT/skills/using-teamwork/references/dispatch-policy.md" \
+  "dispatch policy must use CodeGraph before Explorer fanout for structural code"
+grep_required 'vendor-specific memory backend' "$ROOT/skills/using-teamwork/references/teamwork-index.md" \
+  "teamwork index contract must avoid vendor-specific memory backends"
 grep_required 'docs/teamwork' "$ROOT/skills/using-teamwork/references/project-init.md" \
   "project init reference must define Teamwork artifact placement"
 grep_required 'runtime memory entrypoint' "$ROOT/skills/using-teamwork/references/project-init.md" \

@@ -114,6 +114,17 @@ Use `none` when memory was checked and no durable project state changed. Omit
 the line for work that never touched durable memory. Use `deferred` only when a
 conflict blocks safe current-state updates and the handoff states the blocker.
 
+## External Memory Promotion Gate
+
+External memory, long-term memory, and docs graph recall are memory candidate
+context until promoted. They cannot override source, tests, configs, current
+artifacts, or direct tool evidence.
+
+Promote only when the claim has evidence paths, currentness, scope, protected
+data review, and a material Memory Delta reason. Subagents may propose a
+`Memory Delta Candidate`; the main agent decides whether to update canonical
+Teamwork memory.
+
 ## Current-State Write Boundaries
 
 - Do not require artifacts for lightweight native-flow tasks.

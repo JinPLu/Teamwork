@@ -78,7 +78,9 @@ implements owned slices. Reviewer checks completed work.
 - Use batch or worktree isolation when ownership or merge cost is unclear.
 - If skipping non-lightweight dispatch, state why local execution is cheaper or safer
   with `Dispatch Exception:`.
-- CodeGraph may replace Explorer for one structural code question.
+- For one structural code question, use CodeGraph before Explorer fanout.
+  Dispatch Explorer only when the question needs non-code evidence, stale index
+  handling, ambiguity resolution, or broader synthesis.
 
 ## Role Profiles
 

@@ -43,6 +43,10 @@ Top-level fields:
   `currentness` = current/stale/historical/candidate;
   `authority` = canonical/active-summary/supporting/candidate/historical/superseded.
 
+External memory and docs graph entries use `authority: candidate` or
+`supporting` unless a reviewed Memory Delta promotes them. Do not make a
+vendor-specific memory backend part of the schema.
+
 ## Continuous Memory Sync
 
 When durable project memory was checked or changed, stage exit reports a memory

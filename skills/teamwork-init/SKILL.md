@@ -5,9 +5,9 @@ description: Use when initializing, auditing, or slimming project agent instruct
 
 # Teamwork Init
 
-Use for project-level agent workflow setup, instruction slimming, and migration
-of portable process rules into Teamwork. Leave projects with only local facts,
-evidence sources, boundaries, and acceptance checks needed to apply Teamwork.
+Use for project workflow setup, instruction slimming, and migration into
+Teamwork. Leave only local facts, evidence sources, boundaries, and acceptance
+checks needed to apply Teamwork.
 
 Read only as needed:
 
@@ -17,13 +17,14 @@ Read only as needed:
   MCP policy, and context-cache discipline.
 - `skills/using-teamwork/references/artifact-protocol.md` when durable research,
   plan, report, or current-state memory may be warranted.
+- `skills/using-teamwork/references/optional-skills.md` before external
+  memory, docs graph, MCP, or skill installation.
 
 ## Initialization Mode
 
-Installed Codex profile is the global default. During project init, ask only
-when the project should override that default. Pro/20x throughput intent
-selects `performance-first`; quota, latency, or cost constraints select
-`cost-first`.
+Installed Codex profile is the default. Ask only for project overrides.
+Pro/20x throughput selects `performance-first`; quota, latency, or cost
+constraints select `cost-first`.
 
 - `performance-first`: Codex subagents use role-optimized `gpt-5.5`: medium
   routine Explorer/Designer/Worker, high Judge/Reviewer, and xhigh
@@ -34,17 +35,25 @@ selects `performance-first`; quota, latency, or cost constraints select
   Judge/Reviewer xhigh triggers for high-risk, public, or failed-goal work.
 
 Record `Init Mode: global-default | performance-first | cost-first`; add a
-project-local Codex rule only when overriding the installed default. If the
-override should change custom-agent models, refresh agents with
+project-local rule only for overrides. If custom-agent models must change, run
 `./install.sh --profile <mode> codex-agents` or `project`.
+
+## Full Feature Init
+
+For full setup/full features/memory integration/docs graph, return the
+Capability Matrix from `project-init.md`: rows, status
+`enabled | missing | blocked | optional | deferred`, evidence, one next
+action for each non-enabled row. Initialize scoped core rows.
+External memory/docs graph rows stay `optional` or `deferred` until explicit
+approval and gate pass.
 
 ## Workflow
 
 1. Inspect real project context first: root and repo-local `AGENTS.md`,
    `CODEX.md`, `CURSOR.md`, `CLAUDE.md`, `GEMINI.md`, README guidance,
    `docs/teamwork/` artifacts, and user-provided plans or source documents.
-2. Classify content as portable workflow, project fact, current state,
-   appendix navigation, or durable artifact memory.
+2. Classify content as workflow, project fact, current state, appendix, or
+   durable artifact memory.
 3. Apply the Collaboration Backbone Audit from `project-init.md`; mark each
    reusable workflow habit `keep`, `migrate`, or `add`.
 4. For Codex bootstrap policy, prefer global `~/.codex/AGENTS.md`; for App-wide
@@ -53,16 +62,15 @@ override should change custom-agent models, refresh agents with
    or opt-outs. Report `Codex bootstrap policy:` as `app-personalization`,
    `global-agents`, `project-add`, `missing`, or `user-opt-out`, plus
    `Init Mode`.
-5. Keep project facts, evidence sources, required values, remote/local
-   boundaries, protected actions, and domain-specific acceptance checks in
-   project instructions. Missing required values are blockers, not defaults.
+5. Keep facts, evidence, required values, boundaries, protected actions, and
+   acceptance checks in project instructions. Missing values are blockers.
 6. Move long path maps, command inventories, and historical navigation to
    appendix docs that are explicitly read on demand.
 7. Keep volatile experiment numbers, current task progress, temporary
    conclusions, and chat summaries outside `AGENTS.md`; use artifacts only
    when triggers apply.
-8. Return a slim rules plan with changed files, collaboration audit decisions,
-   migration rationale, verification, and any human decisions.
+8. Return changed files, audit decisions, migration rationale, verification,
+   and human decisions.
 9. When Teamwork memory exists, keep a short `AGENTS.md` or README pointer to
    `docs/teamwork/README.md`; do not inline the runtime narrative.
 10. Bootstrap `docs/teamwork/index.json`, `docs/teamwork/README.md`, and

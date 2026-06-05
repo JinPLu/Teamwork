@@ -90,6 +90,12 @@ Check:
   delta and evidence; reject churn-only writes.
 - Durable memory check: if accepted active state changed but no memory update
   or explicit `none`/`deferred` disposition appears, name the residual risk.
+- Memory promotion check: candidate memory or docs graph output has direct
+  evidence paths, currentness, scope, and protected data disposition before it
+  becomes canonical Teamwork memory.
+- Memory promotion check: external memory remains candidate memory when it is
+  stale, unverifiable, duplicated, overly broad, or higher prompt cost than
+  retrieval value.
 - Manual smoke evidence captures source, observed behavior, and pass/fail
   result for any acceptance claim that depends on human-observed state.
 - Stage-Routed Proactive Dispatch was evaluated even when the plan did not

@@ -31,3 +31,18 @@ For each candidate, record these current facts before install or use:
 
 Do not maintain a static external-skill inventory in runtime instructions.
 broad community collections require per-skill audit before any candidate record.
+
+## Memory And Docs Graph Candidates
+
+For memory integration or docs graph tools, add:
+
+- Canonical Boundary: recall/search/graph output is candidate context, not
+  Teamwork truth.
+- Data Scope: repository-only, personal memory, team memory, or external docs.
+- Promotion Gate: evidence path, currentness, protected-data check, and
+  Memory Delta owner.
+- Smoke Test: read-only search/status/API probe before writes or MCP
+  registration.
+
+Decision stays `defer` or `adapt` when schema, parser coverage, credentials,
+privacy, or write-risk evidence is incomplete.
