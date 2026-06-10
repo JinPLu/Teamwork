@@ -164,7 +164,7 @@ routine roles, not high-risk review.
 - `teamwork-review`: fresh-context plan or execution review with `accept` / `revise` / `blocked`.
 - `teamwork-goal`: convergence loop for verifiable targets.
 - `teamwork-init`: project agent instructions, AGENTS/CODEX/CURSOR/CLAUDE slimming, and setup.
-- `teamwork-update`: version, manifest, release surface, and package-update hygiene.
+- `teamwork-update`: version, manifest, install-surface refresh, release surface, and package-update hygiene.
 
 ## Platform Positioning
 
@@ -181,9 +181,9 @@ with rolling reports carrying goal mode.
 
 ## Version And Validation
 
-`VERSION` is the package version source of truth and must match
-`.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`. Version,
-manifest, and release-surface updates use `teamwork-update`.
+`VERSION` is the package version source of truth and must match `.codex-plugin/plugin.json`
+and `.claude-plugin/plugin.json`. Version, manifest, install-surface refresh, and release-surface updates use `teamwork-update`; it refreshes all Teamwork-managed
+skills, agents, and Codex global policy, with `./install.sh project` for local installs.
 
 Validate the repository:
 

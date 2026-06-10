@@ -27,7 +27,7 @@ The behavior contract lives in `skills/`. `using-teamwork` is the automatic lean
 - Automations and heartbeats: use Codex native automation/thread heartbeat for recurring checks or later continuation. Teamwork artifacts do not store schedules.
 - Diagnostics and visual evidence: prefer `codex doctor` and `/status` before ad hoc setup debugging when CLI, remote, or connection state matters. Use browser annotations, Appshots, Computer Use, or remote/Windows evidence when visual, desktop, or OS-specific behavior is part of acceptance.
 - MCP and plugins: prefer native Codex tools, connectors, and plugins. Record source limits when unavailable access affects research or acceptance.
-- Version updates: use `teamwork-update`; update `VERSION`, `.codex-plugin/plugin.json`, and `.claude-plugin/plugin.json` together.
+- Version updates: use `teamwork-update`; update `VERSION`, `.codex-plugin/plugin.json`, and `.claude-plugin/plugin.json` together, then refresh Teamwork-managed skills, agents, and global policy.
 
 ## Evidence And Artifacts
 

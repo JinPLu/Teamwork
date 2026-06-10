@@ -904,6 +904,16 @@ grep_required 'semantic versioning' "$ROOT/skills/teamwork-update/SKILL.md" \
   "update skill must define semver policy"
 grep_required 'Skill frontmatter must stay limited to `name` and `description`' "$ROOT/skills/teamwork-update/SKILL.md" \
   "update skill must preserve skill frontmatter contract"
+grep_required 'end-user package refresh' "$ROOT/skills/teamwork-update/SKILL.md" \
+  "update skill must treat Teamwork updates as user-facing package refresh"
+grep_required './install.sh all' "$ROOT/skills/teamwork-update/SKILL.md" \
+  "update skill must refresh all installed Teamwork surfaces"
+grep_required './install.sh project' "$ROOT/skills/teamwork-update/SKILL.md" \
+  "update skill must cover project-local install surface refresh"
+grep_required 'GitHub remote' "$ROOT/skills/teamwork-update/SKILL.md" \
+  "update skill must check GitHub remote for publication updates"
+grep_required 'tag/release' "$ROOT/skills/teamwork-update/SKILL.md" \
+  "update skill must cover tag/release publication checks"
 
 for term in observed inferred claimed; do
   grep_required "$term" "$ENTRYPOINT" "entrypoint/router must mention $term evidence"

@@ -1,18 +1,18 @@
 ---
 name: teamwork-update
-description: Use when updating Teamwork package version, release metadata, changelog notes, installer surface, or skill topology.
+description: Use when updating Teamwork package version, installed skills/agents/global policy, release metadata, or skill topology.
 ---
 
 # Teamwork Update
 
-Use this stage for Teamwork package maintenance that changes versioned public
-behavior, installed skill surface, release metadata, or update notes.
+Use this stage for end-user package refresh and Teamwork package maintenance:
+versioned behavior, installed surfaces, release metadata, or update notes.
 
 ## Version Source
 
 - VERSION is the package version source of truth.
-- `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` must use the
-  same version.
+- `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json` use the same
+  version.
 - Skill frontmatter must stay limited to `name` and `description`; do not add
   per-skill version metadata there.
 - Use semantic versioning:
@@ -22,6 +22,16 @@ behavior, installed skill surface, release metadata, or update notes.
     compatible workflow policy changes;
   - major: incompatible install surface, artifact contract, or user workflow
     changes.
+
+## Dependency Surface
+
+- Treat "update Teamwork" as refreshing every Teamwork-controlled dependency
+  surface, not metadata only.
+- Default: `./install.sh all` for Codex/Cursor/Claude skills, Codex/Claude
+  agents, and Codex global policy.
+- Run `./install.sh project` when a checkout uses project-local discovery.
+- For publication work, verify GitHub remote and existing tag/release state
+  before pushing artifacts; missing remote, credentials, or approval blocks.
 
 ## Workflow
 
@@ -34,17 +44,16 @@ behavior, installed skill surface, release metadata, or update notes.
 3. Choose the smallest justified semver bump and record why.
 4. Update `VERSION`, `.codex-plugin/plugin.json`, and `.claude-plugin/plugin.json`
    together.
-5. Update README/CODEX/CURSOR/CLAUDE/AGENTS only for user-visible changes.
-6. Keep skill prose concise; move shared policy into references instead of
-   repeating it across stage skills.
-7. Check `SKILL.md` line/word budgets when editing skills.
-8. Run `./scripts/validate.sh`.
-9. Run `./install.sh all` when installed local skills, agents, and Codex global
-   policy should reflect the package update; use individual targets for narrow
-   refreshes and `./install.sh project` in checkouts that rely on project-local
-   discovery.
-10. Include `Memory Delta:` only when durable project memory was checked or
-    changed.
+5. Update README/CODEX/CURSOR/CLAUDE/AGENTS only for user-visible changes; keep
+   skill prose concise and shared policy in references.
+6. Check `SKILL.md` line/word budgets, then run `./scripts/validate.sh`.
+7. Run `./install.sh all` by default after validation; add `./install.sh project`
+   for project-local installs or an individual target only when the user asked
+   for a narrow refresh.
+8. For release/public-version work, check branch sync, GitHub remote, and
+    tag/release state; create or push release artifacts only when explicitly in
+    scope.
+9. Include `Memory Delta:` only when durable project memory was checked/changed.
 
 ## Update Checklist
 
@@ -63,5 +72,7 @@ Changed Surface:
 
 Verification:
 - ./scripts/validate.sh: <result>
-- ./install.sh: <result or not run because ...>
+- ./install.sh all: <result or not run because ...>
+- ./install.sh project: <result or not run because ...>
+- GitHub remote / tag/release: <checked | skipped because ...>
 ```

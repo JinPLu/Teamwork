@@ -154,7 +154,7 @@ role-optimized 模型，高风险 Judge / Reviewer 保留更强模型档位。`c
 - `teamwork-review`：fresh-context 审查计划或执行结果，给出 `accept` / `revise` / `blocked`。
 - `teamwork-goal`：面向可验证目标的迭代收敛。
 - `teamwork-init`：项目级 agent instructions、AGENTS/CODEX/CURSOR/CLAUDE 规则瘦身与初始化。
-- `teamwork-update`：版本、manifest、release surface 和包更新卫生。
+- `teamwork-update`：版本、manifest、安装面刷新、release surface 和包更新卫生。
 
 ## 平台定位
 
@@ -170,8 +170,9 @@ native capabilities。Cursor 侧使用 Task subagents；Claude Code skills 和 a
 ## 版本与验证
 
 `VERSION` 是包版本 source of truth，必须和 `.codex-plugin/plugin.json`、
-`.claude-plugin/plugin.json` 保持一致。版本、manifest、release surface 更新走
-`teamwork-update`。
+`.claude-plugin/plugin.json` 保持一致。版本、manifest、安装面刷新和 release
+surface 更新走 `teamwork-update`；默认刷新所有 Teamwork 管理的 skills、agents
+和 Codex global policy，项目本地安装面用 `./install.sh project`。
 
 验证仓库：
 

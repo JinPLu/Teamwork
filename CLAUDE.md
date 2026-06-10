@@ -39,7 +39,7 @@ Skills install to `~/.claude/skills/`. Subagents install from
 - Review: Claude Code does not ship a built-in review command. Use a `Task` dispatch to a Reviewer subagent (custom `code-reviewer` agent or `general-purpose` with reviewer role in the prompt). Completion still requires direct mapping to requirements, diffs, tests, artifacts, or acceptance evidence.
 - Permissions: use Claude Code native approval and tool-permission flows. Teamwork should identify destructive risk, credentials, unclear ownership, or protected boundaries before dispatch or execution.
 - MCP and plugins: prefer native Claude Code tools and connectors. Record source limits when unavailable access affects research or acceptance.
-- Version updates: use `teamwork-update`; update `VERSION`, `.codex-plugin/plugin.json`, and `.claude-plugin/plugin.json` together.
+- Version updates: use `teamwork-update`; update `VERSION`, `.codex-plugin/plugin.json`, and `.claude-plugin/plugin.json` together, then refresh Teamwork-managed skills, agents, and global policy.
 
 ## Evidence And Artifacts
 
