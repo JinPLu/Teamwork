@@ -155,24 +155,26 @@ Designer / Worker roles use role-optimized models, while high-risk Judge /
 Reviewer profiles stay on stronger model tiers. `cost-first` downshifts only
 routine roles, not high-risk review.
 
-## Included Skills
+## How The Skills Work
 
-- `using-teamwork`: automatic entrypoint and stage router.
-- `teamwork-research`: evidence gathering, root-cause investigation, option comparison, external calibration.
-- `teamwork-plan`: turns evidence into executable scope, boundaries, acceptance, and dispatch guidance.
-- `teamwork-execute`: implements accepted plans and records changes, verification, and deviations.
-- `teamwork-review`: fresh-context plan or execution review with `accept` / `revise` / `blocked`.
-- `teamwork-goal`: convergence loop for verifiable targets.
-- `teamwork-init`: project agent instructions, AGENTS/CODEX/CURSOR/CLAUDE slimming, and setup.
-- `teamwork-update`: version, manifest, install-surface refresh, release surface, and package-update hygiene.
+`using-teamwork` is the only broad entrypoint: it tries the native fast path first, then escalates only for unclear requirements, missing evidence, planning, fan-out, review, or goal loops.
+
+| Skill | Use It For | Teamwork Capability |
+|---|---|---|
+| `teamwork-research` | root cause, evidence, options, external constraints | Evidence / Root Cause |
+| `teamwork-plan` | explicit plan/design or non-lightweight implementation boundaries | Design Synthesis / Planning Synthesis |
+| `teamwork-execute` | accepted plans after go ahead / continue / do it | Staged Execution / Verification Before Claims |
+| `teamwork-review` | review, diff, acceptance, PR/CI feedback | Review Reception / Fresh Review |
+| `teamwork-goal` | keep going, until it passes, budgeted iteration | Goal Recovery / Convergence |
+| `teamwork-init` | AGENTS/CODEX/CURSOR/CLAUDE and instruction slimming | Instruction Slimming |
+| `teamwork-update` | version, manifests, install surface, release hygiene | Package Hygiene |
+
+These are Teamwork-owned progressive abilities. Lightweight work does not show internal capability names; complex work loads references, artifacts, packets, or subagents only when needed.
 
 ## Platform Positioning
 
-Codex is the reference runtime: native goals are the autonomous control plane,
-and `teamwork_*` custom agents are the primary collaboration network for
-non-lightweight work. `./install.sh codex` writes the global bootstrap policy;
-`./install.sh codex-policy` prints the App Personalization copy. Full workflow
-rules stay in skills/references; project files keep local facts and exceptions.
+Codex is the reference runtime: native goals are the autonomous control plane, and `teamwork_*` custom agents are the primary collaboration network for non-lightweight work.
+`./install.sh codex` writes the global bootstrap policy; `./install.sh codex-policy` prints the App Personalization copy. Full workflow rules stay in skills/references; project files keep local facts and exceptions.
 
 Cursor and Claude Code are adapters: they reuse the same Teamwork protocol
 while keeping their own native capabilities. Cursor uses Task subagents;
@@ -181,9 +183,7 @@ with rolling reports carrying goal mode.
 
 ## Version And Validation
 
-`VERSION` is the package version source of truth and must match `.codex-plugin/plugin.json`
-and `.claude-plugin/plugin.json`. Version, manifest, install-surface refresh, and release-surface updates use `teamwork-update`; it refreshes all Teamwork-managed
-skills, agents, and Codex global policy, with `./install.sh project` for local installs.
+`VERSION` is the package version source of truth and must match `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`. Version, manifest, install-surface refresh, and release-surface updates use `teamwork-update`; it refreshes Teamwork-managed skills, agents, and Codex global policy, with `./install.sh project` for local installs.
 
 Validate the repository:
 

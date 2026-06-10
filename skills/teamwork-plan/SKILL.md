@@ -1,6 +1,6 @@
 ---
 name: teamwork-plan
-description: Use when asked to plan, implement, fix, add, change, refactor, or modify behavior and no accepted plan exists before edits.
+description: Use when explicit planning/design or non-trivial implement/fix/add/change/refactor work needs scope, verification, dispatch, memory, or acceptance boundaries before edits; skip tiny router-fast-path edits.
 ---
 
 # Teamwork Plan
@@ -35,6 +35,10 @@ architecture lack evidence, route to `teamwork-research`.
 
 Use the lightest planning form that preserves correctness.
 
+- Plan-as-you-go: for small-to-medium clear work, state scope, files,
+  verification, and stop condition, then continue. Ask approval only for
+  ambiguity, risk, public behavior, destructive action, credentials, or
+  instruction.
 - Lightweight plan: bounded low-risk work; include goal, scope, Dispatch
   Guidance only when dispatch matters, steps, verification, and stop condition.
   Use `Dispatch Guidance: none` only when a non-lightweight plan serializes

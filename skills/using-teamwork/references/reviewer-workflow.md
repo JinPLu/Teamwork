@@ -1,8 +1,8 @@
 # Reviewer Workflow
 
-Use for fresh-context plan or execution review. This absorbs
-`requesting-code-review`, `receiving-code-review`, `gh-address-comments`, and
-`gh-fix-ci` as evidence standards without making PR tooling mandatory.
+Use for fresh-context plan or execution review. This owns Teamwork's compact
+Review Request and Review Reception discipline. GitHub PR and CI helpers are
+optional evidence tools, not mandatory workflow dependencies.
 
 ## Fresh Review
 

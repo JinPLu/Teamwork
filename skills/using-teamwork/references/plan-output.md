@@ -6,6 +6,10 @@ shape only when durable or goal-mode work requires it.
 
 ## Lightweight Plan
 
+Plan-as-you-go is enough for small-to-medium clear work: state scope, files,
+verification, and stop condition in chat, then continue. Use the fuller shapes
+below only when a handoff, dispatch, review, or durable memory needs them.
+
 Use bullets for very small plans:
 
 ```text

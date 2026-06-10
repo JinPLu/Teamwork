@@ -27,7 +27,7 @@ Pro/20x throughput selects `performance-first`; quota, latency, or cost
 constraints select `cost-first`.
 
 - `performance-first`: Codex subagents use role-optimized `gpt-5.5`: medium
-  routine Explorer/Designer/Worker, high Judge/Reviewer, and xhigh
+  Explorer/Designer/Worker, high Judge/Reviewer, and xhigh
   Deep Judge/Reviewer only for failed-goal, security, destructive-risk,
   public-contract, or release acceptance work.
 - `cost-first`: preserve dispatch economics and downshift only routine Explorer,
@@ -88,7 +88,7 @@ approval and gate pass.
 
 ## Boundaries
 
-- Do not copy full Superpowers, MCP, or project docs into project instructions.
+- Do not copy full external workflow, MCP, or project docs into project instructions.
 - Do not replace project evidence sources with Teamwork artifacts.
 - Do not alter protected planning, secrets, server state, or current experiment
   truth unless the user explicitly asks and evidence supports the update.

@@ -102,6 +102,9 @@ Choose the smallest workflow pattern that preserves correctness:
 - Native single-agent: quick facts, tiny edits, low-risk bug fixes, low-risk
   mechanical multi-file edits, tight context, credential work, one
   CodeGraph-answerable structural question, or tightly coupled critical path.
+- Plan-as-you-go: for small-to-medium clear work, state scope, touched paths,
+  verification, and stop condition, then proceed without durable artifacts or
+  approval ceremony.
 - Skill: repeated workflow or domain expertise that should load on demand.
 - Fixed sequence with clear steps: use a lightweight plan.
 - Router/subagent: distinct domains, independent evidence, tests, logs, or

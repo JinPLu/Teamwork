@@ -125,8 +125,8 @@ grep_required '^\.claude/$' "$ROOT/.gitignore" ".gitignore must ignore local .cl
 git_known_or_worktree_addition "VERSION" || fail "VERSION is neither tracked nor a worktree addition"
 grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' "$ROOT/VERSION" || fail "VERSION must be plain semver"
 
-if git -C "$ROOT" ls-files 'docs/teamwork/plans/*' 'docs/teamwork/research/*' 'docs/teamwork/reports/*' 'docs/teamwork/workflows/*' 'docs/superpowers/*' | grep -q .; then
-  fail "local workflow artifacts under docs/teamwork/{plans,research,reports,workflows}/ or docs/superpowers/ must not be tracked"
+if git -C "$ROOT" ls-files 'docs/teamwork/plans/*' 'docs/teamwork/research/*' 'docs/teamwork/reports/*' 'docs/teamwork/workflows/*' | grep -q .; then
+  fail "local workflow artifacts under docs/teamwork/{plans,research,reports,workflows}/ must not be tracked"
 fi
 grep_required '^docs/teamwork/plans/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork plan artifacts"
 grep_required '^docs/teamwork/research/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork research artifacts"
@@ -446,6 +446,10 @@ grep_required 'Plans may' "$ENTRYPOINT" \
   "entrypoint/router must treat plans as routing guidance, not sole dispatch authorization"
 grep_required 'Native fast path' "$ENTRYPOINT" \
   "entrypoint/router must define native fast path"
+grep_required 'Progressive Reference Loading' "$ENTRYPOINT" \
+  "entrypoint/router must define progressive reference loading"
+grep_required 'Fast path first' "$ENTRYPOINT" \
+  "entrypoint/router must prioritize fast path"
 grep_required 'low-risk mechanical multi-file edits' "$ENTRYPOINT" \
   "entrypoint/router must allow low-risk mechanical multi-file native flow"
 grep_required 'dispatch proactively when an independent track has clear evidence' "$ENTRYPOINT" \
@@ -704,8 +708,10 @@ grep_required 'Abstract' "$ROOT/skills/teamwork-research/SKILL.md" \
   "research artifact template must include Abstract"
 grep_required 'Use the lightest planning form that preserves correctness' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must support lightweight and durable planning tiers"
-grep_required 'implement, fix, add, change' "$ROOT/skills/teamwork-plan/SKILL.md" \
-  "plan skill description must cover natural implementation verbs"
+grep_required 'non-trivial implement/fix/add/change' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan skill description must cover only non-trivial implementation verbs"
+grep_required 'Plan-as-you-go' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan skill must support plan-as-you-go"
 grep_required 'non-trivial implementation when no accepted plan' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must auto-route non-trivial implementation before edits"
 grep_required 'Goal-mode durable plans' "$ROOT/skills/teamwork-plan/SKILL.md" \
@@ -738,13 +744,13 @@ for role in Explorer Designer Judge Worker Reviewer; do
   grep_required "$role" "$ROOT/skills/using-teamwork/references/role-workflows.md" \
     "role workflows must cover $role"
 done
-for anchor in research-protocol writing-plans executing-plans subagent-driven-development test-driven-development systematic-debugging verification-before-completion requesting-code-review receiving-code-review; do
+for anchor in 'Research Protocol' 'Planning Synthesis' 'Staged Execution' 'TDD Gate' 'Debugging Gate' 'Verification Before Claims' 'Review Request' 'Review Reception'; do
   grep_required "$anchor" "$ROOT/skills/using-teamwork/references/role-workflows.md" \
-    "role workflows must map mature workflow anchor: $anchor"
+    "role workflows must map Teamwork workflow contract: $anchor"
 done
-for anchor in brainstorming dispatching-parallel-agents writing-skills; do
+for anchor in 'Design Synthesis' 'Parallel Dispatch' 'Skill Authoring'; do
   grep_required "$anchor" "$ROOT/skills/using-teamwork/references/role-workflows.md" \
-    "role workflows must map Designer/Judge workflow anchor: $anchor"
+    "role workflows must map Designer/Judge workflow contract: $anchor"
 done
 for anchor in 'Option Matrix' 'Plan Decomposition Notes' 'Acceptance Implications' 'Requirements Mapping Adequacy' 'Guardrails / Stop Conditions' 'Acceptance Gap'; do
   grep_required "$anchor" "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
@@ -858,7 +864,7 @@ grep_required 'Project Rule Layering' "$ROOT/skills/using-teamwork/references/pr
   "project init reference must define project rule layering"
 grep_required 'CodeGraph' "$ROOT/skills/using-teamwork/references/project-init.md" \
   "project init reference must define CodeGraph policy"
-for row in 'Core Teamwork workflow' 'Platform profile' 'Project instruction layer' 'Artifact memory' 'CodeGraph policy' 'Subagent policy/install state' 'Superpowers role workflows' 'Validation' 'Optional docs graph' 'Optional external memory' 'Blockers'; do
+for row in 'Core Teamwork workflow' 'Platform profile' 'Project instruction layer' 'Artifact memory' 'CodeGraph policy' 'Subagent policy/install state' 'Teamwork role workflow contracts' 'Validation' 'Optional docs graph' 'Optional external memory' 'Blockers'; do
   grep_required "$row" "$ROOT/skills/using-teamwork/references/project-init.md" \
     "project init full-feature matrix missing row: $row"
 done

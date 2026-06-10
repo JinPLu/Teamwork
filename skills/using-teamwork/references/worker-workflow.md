@@ -1,8 +1,8 @@
 # Worker Workflow
 
-Use for non-lightweight execution and Worker subagent prompts. This absorbs
-`test-driven-development`, `systematic-debugging`, `executing-plans`,
-`subagent-driven-development`, and `verification-before-completion`.
+Use for non-lightweight execution and Worker subagent prompts. This owns
+Teamwork's compact TDD Gate, Debugging Gate, Staged Execution, delegated Worker
+execution, and Verification Before Claims.
 
 ## Stage Contract
 

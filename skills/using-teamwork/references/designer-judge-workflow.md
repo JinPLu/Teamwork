@@ -1,8 +1,8 @@
 # Designer And Judge Workflow
 
-Use for ambiguous design, plan synthesis, or plan adequacy review. This absorbs
-`brainstorming`, `writing-plans`, `dispatching-parallel-agents`, and
-`writing-skills` as compact Teamwork gates.
+Use for ambiguous design, plan synthesis, or plan adequacy review. This owns
+Teamwork's compact Design Synthesis, Planning Synthesis, Parallel Dispatch, and
+Skill Authoring gates.
 
 ## Designer
 
@@ -19,7 +19,7 @@ Designer owns decision quality, not implementation acceptance.
 5. Escalate: mark open questions when public behavior, data contracts,
    security, unfamiliar APIs, or user intent are not evidence-grounded.
 
-Do not copy full brainstorming scripts into prompts. Load this reference only
+Do not copy full external design scripts into prompts. Load this reference only
 when a design choice is real.
 
 ## Judge

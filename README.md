@@ -145,16 +145,21 @@ Codex 安装默认 `performance-first`：常规 Explorer / Designer / Worker 使
 role-optimized 模型，高风险 Judge / Reviewer 保留更强模型档位。`cost-first`
 只下调常规角色，不降低高风险复查。
 
-## 它包含哪些 skill
+## Skills 怎么用
 
-- `using-teamwork`：自动入口，决定当前任务该走哪个阶段。
-- `teamwork-research`：证据收集、根因调查、方案比较、外部校准。
-- `teamwork-plan`：把证据变成可执行计划、边界、验收和 dispatch guidance。
-- `teamwork-execute`：按已接受计划实现，记录变更、验证和偏差。
-- `teamwork-review`：fresh-context 审查计划或执行结果，给出 `accept` / `revise` / `blocked`。
-- `teamwork-goal`：面向可验证目标的迭代收敛。
-- `teamwork-init`：项目级 agent instructions、AGENTS/CODEX/CURSOR/CLAUDE 规则瘦身与初始化。
-- `teamwork-update`：版本、manifest、安装面刷新、release surface 和包更新卫生。
+`using-teamwork` 是唯一宽入口：先走 native fast path，小事直接做；只有需求不清、证据不足、需要计划、需要 fan out、需要 review 或需要 goal loop 时才升级。
+
+| Skill | 什么时候用 | Teamwork 渐进能力 |
+|---|---|---|
+| `teamwork-research` | 根因、证据、方案、外部约束不清楚 | Evidence / Root Cause |
+| `teamwork-plan` | 明确要求 plan/design，或非轻量实现需要边界和验收 | Design Synthesis / Planning Synthesis |
+| `teamwork-execute` | 用户接受计划后说 go ahead / continue / do it | Staged Execution / Verification Before Claims |
+| `teamwork-review` | review、diff、非轻量完成验收、PR/CI 反馈 | Review Reception / Fresh Review |
+| `teamwork-goal` | keep going、until it passes、预算内迭代 | Goal Recovery / Convergence |
+| `teamwork-init` | AGENTS/CODEX/CURSOR/CLAUDE、项目规则瘦身 | Instruction Slimming |
+| `teamwork-update` | 版本、manifest、安装面、release hygiene | Package Hygiene |
+
+这些能力是 Teamwork 原生的渐进能力。普通聊天不显示内部能力名；复杂任务才按需加载 references、artifacts、packets 或 subagents。
 
 ## 平台定位
 

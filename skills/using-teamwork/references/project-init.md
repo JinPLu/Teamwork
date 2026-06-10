@@ -46,7 +46,7 @@ global-policy overrides. Model overrides require `install.sh --profile` agents.
 For full setup/full features/memory/docs graph requests, return compact matrix rows:
 Core Teamwork workflow; Platform profile; Project instruction layer;
 Artifact memory; CodeGraph policy; Subagent policy/install state;
-Superpowers role workflows; Validation; Optional docs graph; Optional external memory; Blockers.
+Teamwork role workflow contracts; Validation; Optional docs graph; Optional external memory; Blockers.
 Statuses: `enabled`, `missing`, `blocked`, `optional`, `deferred`. Every
 non-enabled row names one next action. Core local rows may initialize in scope;
 Optional docs graph and Optional external memory stay `optional` or `deferred`
