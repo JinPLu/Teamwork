@@ -13,7 +13,8 @@ Check:
   conditions.
 - Scope: every step traces to the goal.
 - Clarification Gate: decision-critical user requirement gaps are resolved or
-  the plan is `blocked-for-clarification`; missing inputs are explicit.
+  the plan is `ask` / `blocked-for-clarification`; missing inputs are explicit
+  and execution is not approved while the gate is unresolved.
 - Requirements mapping: each acceptance criterion maps to observed evidence or
   verification.
 - Research grounding: current APIs, upstream bugs, external behavior, and
@@ -45,7 +46,8 @@ Return `revise` or `blocked` when:
 - placeholders, ellipsis tasks, vague tests, missing Expected Results, or
   missing handoffs remain;
 - unanswered human requirements could change goal, scope, acceptance,
-  constraints, risk, or UX;
+  constraints, risk, UX, public behavior, data/contracts, architecture, or
+  verification;
 - a non-lightweight plan skips split before implementation steps or serializes
   independent material tracks without rationale;
 - required subagent dispatch or fresh-context plan review is missing and no

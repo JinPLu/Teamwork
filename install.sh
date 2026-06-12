@@ -79,6 +79,13 @@ CodeGraph-answerable structural question, tight critical-path work, overlapping
 write ownership, destructive or credential-sensitive actions, or higher
 subagent context cost than benefit.
 
+Clarification-first: before file edits, behavior changes, public outputs,
+execution-target choices, workflow policy changes, or non-trivial
+implementation, ask when intent, scope, acceptance, constraints, or protected
+boundaries are not explicit. Use assumptions-stated only for read-only work,
+tiny explicit mechanical edits, or cases where the assumption cannot change the
+outcome; missing human requirements are blockers.
+
 Codex model profile: default is ${CODEX_PROFILE}. performance-first uses
 role-optimized gpt-5.5 agents: routine Explorer, Designer, and Worker use
 medium; Judge and Reviewer use high; Deep Judge/Reviewer use xhigh. cost-first

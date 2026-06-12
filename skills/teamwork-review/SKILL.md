@@ -30,10 +30,10 @@ Read only as needed:
 ## Shared Rules
 
 - Choose `mode: plan` or `mode: execution`.
-- Default to fresh-context Reviewer subagents for non-lightweight high-risk,
-  public-contract, delegated, security, destructive, release, goal-mode, or
-  otherwise required plan/execution acceptance when subagents are authorized.
-  Same-context self-review is not acceptance.
+- Default to fresh-context Reviewer subagents for non-lightweight required
+  plan/execution acceptance when subagents are authorized, including high-risk,
+  public-contract, delegated, security, destructive, release, and goal-mode
+  work. Same-context self-review is not acceptance.
 - Local review is allowed for lightweight work, same-context checks, subagent
   tools unavailable after the Subagent Tool Discovery Gate, missing
   authorization, or explicit user opt-out; label any required fresh-review

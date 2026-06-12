@@ -30,8 +30,8 @@ Read only as needed:
 - When durable memory is relevant, read `docs/teamwork/index.json` then `active.current`/`docs/teamwork/current.md`, or header-search relevant artifacts before editing; record Artifact Retrieval disposition.
 - Workspace status avoids overwriting other work.
 - Accepted plan resolves decision-critical user needs, scope, acceptance,
-  constraints, risk, and UX via `Clarification Gate: pass` or
-  `assumptions-stated`.
+  constraints, risk, and UX via `Clarification Gate: pass` or narrow
+  `assumptions-stated`; do not execute `ask` or `blocked-for-clarification`.
 - Required files, commands, credentials, environments, paths, ports, models,
   hyperparameters, configs, and execution modes are explicit and available.
 - Classify command safety, sandbox boundaries, approvals.

@@ -448,12 +448,14 @@ grep_required 'Native fast path' "$ENTRYPOINT" \
   "entrypoint/router must define native fast path"
 grep_required 'Progressive Reference Loading' "$ENTRYPOINT" \
   "entrypoint/router must define progressive reference loading"
-grep_required 'Fast path first' "$ENTRYPOINT" \
-  "entrypoint/router must prioritize fast path"
+grep_required 'Clarification-first routing comes before any Native fast' "$ENTRYPOINT" \
+  "entrypoint/router must run clarification before native fast path"
 grep_required 'low-risk mechanical multi-file edits' "$ENTRYPOINT" \
   "entrypoint/router must allow low-risk mechanical multi-file native flow"
 grep_required 'dispatch proactively when an independent track has clear evidence' "$ENTRYPOINT" \
   "entrypoint/router must make valuable independent dispatch the Codex-first default"
+grep_required 'prefer fanout' "$ENTRYPOINT" \
+  "entrypoint/router must prefer non-lightweight research/design/review fanout"
 grep_required 'Subagent Tool Discovery Gate' "$ENTRYPOINT" \
   "entrypoint/router must require tool discovery before serial fallback"
 grep_required 'If subagents are' "$ENTRYPOINT" \
@@ -472,9 +474,9 @@ grep_required 'project/global instruction' "$ROOT/skills/using-teamwork/referenc
   "workflow contract must support loaded Codex standing authorization"
 grep_required 'Use subagent dispatch when' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must make dispatch conditional on authorization and economics"
-grep_required 'dispatch is preferred' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
-  "workflow contract must prefer dispatch for valuable independent tracks"
-grep_required 'Low-risk mechanical multi-file' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+grep_required 'dispatch is the default' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must default to dispatch for valuable independent non-lightweight tracks"
+grep_required 'low-risk mechanical multi-file' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must preserve native fast path for low-risk mechanical multi-file work"
 grep_required 'permission profiles' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must name Codex permission profiles"
@@ -724,6 +726,8 @@ grep_required 'Abstract' "$ROOT/skills/teamwork-research/SKILL.md" \
   "research artifact template must include Abstract"
 grep_required 'Use the lightest planning form that preserves correctness' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must support lightweight and durable planning tiers"
+grep_required 'Clarification Gate has run' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan skill must run clarification before planning tiers"
 grep_required 'non-trivial implement/fix/add/change' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill description must cover only non-trivial implementation verbs"
 grep_required 'Plan-as-you-go' "$ROOT/skills/teamwork-plan/SKILL.md" \
@@ -1114,13 +1118,15 @@ grep_required 'Missing required values are blockers' "$ROOT/skills/using-teamwor
   "workflow contract must fail fast on missing required values"
 grep_required 'Before planning or executing' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must require clarification before plan or execution"
+grep_required 'Clarification-first default' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must define clarification-first default"
 grep_required 'Gate outcomes are `pass`, `assumptions-stated`, `ask`, and' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must define clarification gate outcomes"
 grep_required 'unclear human goal/scope/acceptance asks first' "$ENTRYPOINT" \
   "entrypoint/router must ask before planning unclear human goals"
 grep_required 'Resolve decision-critical human requirement gaps' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "planning must clarify decision-critical human requirement gaps"
-grep_required 'Clarification Gate: pass | assumptions-stated | blocked-for-clarification' "$ROOT/skills/using-teamwork/references/plan-output.md" \
+grep_required 'Clarification Gate: pass | ask | assumptions-stated | blocked-for-clarification' "$ROOT/skills/using-teamwork/references/plan-output.md" \
   "plan output must expose clarification gate state"
 grep_required 'Accepted plan resolves decision-critical user needs' "$ROOT/skills/teamwork-execute/SKILL.md" \
   "execution must require clarified user needs in the accepted plan"
@@ -1408,6 +1414,8 @@ grep_required 'Teamwork Codex Global Policy' "$tmp/home/.codex/AGENTS.md" \
   "Codex install must write Teamwork global policy heading"
 grep_required 'Agent efficiency comes first' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must prioritize agent efficiency"
+grep_required 'Clarification-first:' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must include clarification-first posture"
 grep_required 'Codex model profile: default is performance-first' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must record performance-first profile"
 grep_required 'Bootstrap safety:' "$tmp/home/.codex/AGENTS.md" \
@@ -1441,6 +1449,8 @@ grep_required '<!-- CODEGRAPH_START -->' "$agents_preserve_home/.codex/AGENTS.md
   "Codex global policy install must preserve CodeGraph block"
 grep_required 'Agent efficiency comes first' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must replace managed block"
+grep_required 'Clarification-first:' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must include clarification-first posture"
 grep_required 'Bootstrap safety:' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must include bootstrap fail-fast safety"
 grep_absent 'old managed content' \

@@ -6,9 +6,10 @@ shape only when durable or goal-mode work requires it.
 
 ## Lightweight Plan
 
-Plan-as-you-go is enough for small-to-medium clear work: state scope, files,
-verification, and stop condition in chat, then continue. Use the fuller shapes
-below only when a handoff, dispatch, review, or durable memory needs them.
+Plan-as-you-go is enough for small-to-medium clear work only after the
+Clarification Gate passes: state scope, files, verification, and stop condition
+in chat, then continue. Use the fuller shapes below only when a handoff,
+dispatch, review, or durable memory needs them.
 
 Use bullets for very small plans:
 
@@ -30,7 +31,7 @@ Mode: plan
 Research Artifact: <path | none>
 Plan Tier: lightweight
 Goal: <one sentence>
-Clarification Gate: pass | assumptions-stated | blocked-for-clarification
+Clarification Gate: pass | ask | assumptions-stated | blocked-for-clarification
 Scope: In <...>; Out <...>; Protected <...>
 Dispatch Guidance: optional; include none with rationale only when material dispatch is skipped, or name Explorer/Designer/Judge/Worker/Reviewer tracks, ownership, context strategy, cap/batch reason, and Deep Judge/Reviewer severity when warranted
 Steps:
@@ -70,7 +71,7 @@ Linked Artifacts: related research or report paths, or none
 
 ## Goal
 ## Clarification Gate
-- Outcome: pass | assumptions-stated | blocked-for-clarification
+- Outcome: pass | ask | assumptions-stated | blocked-for-clarification
 - Questions asked or blocker: <none | concise question/blocker>
 - Non-blocking assumptions: <none | stated assumptions>
 ## Requirements Mapping

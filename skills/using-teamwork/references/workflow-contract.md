@@ -6,8 +6,9 @@ files focused on stage-specific behavior; this file owns shared judgment rules.
 ## Rule Placement
 
 Keep always-on bootstrap policy short: Codex App Personalization or global
-`~/.codex/AGENTS.md` should contain only standing authorization, efficiency,
-model profile, remote-execution baseline, and a short fail-fast safety note.
+`~/.codex/AGENTS.md` should contain only standing authorization,
+clarification-first posture, efficiency, model profile, remote-execution
+baseline, and a short fail-fast safety note.
 This file owns reusable workflow judgment such as evidence, assumptions, no
 silent defaults, artifacts, reviewability, and subagent lifecycle. Project
 instructions own concrete local facts, required values, exceptions, and
@@ -20,6 +21,11 @@ protected boundaries.
   data, UI/UX, risk, timing, or public behavior. Ask concise questions when the
   answer would change the plan or execution; do not hide core requirements as
   assumptions.
+- Clarification-first default: before file edits, behavior changes, public
+  output, execution-target choices, workflow policy changes, or non-trivial
+  implementation, ask when intent, scope, acceptance, constraints, or protected
+  boundaries are not explicit from the user, source/config, or an accepted
+  plan. Prefer a short batched question over inferred requirements.
 - Gate outcomes are `pass`, `assumptions-stated`, `ask`, and
   `blocked-for-clarification`. Use `ask` for a batched user question before a
   plan exists; use `blocked-for-clarification` when safe planning/execution
@@ -28,6 +34,10 @@ protected boundaries.
   contracts, data contracts, architecture, protected claims, or user constraints.
 - Stop and ask, or route to research, when an assumption would change public
   behavior, protected contracts, architecture, or user intent.
+- Use `assumptions-stated` only for read-only work, tiny explicit mechanical
+  edits, or cases where the assumption cannot change behavior, scope,
+  acceptance, architecture, public contracts, data contracts, or user-visible
+  output. Otherwise the gate is `ask` or `blocked-for-clarification`.
 - Prefer the smallest producer-side change that satisfies the goal.
 - Avoid speculative abstraction, unrelated cleanup, formatting churn, broad
   refactors, or downstream cleanup unless direct evidence requires it.
@@ -97,14 +107,15 @@ Choose the smallest workflow pattern that preserves correctness:
 - Treat work as non-lightweight when it is multi-file, unfamiliar, ambiguous,
   repeated-failure, public/shared behavior, protected-boundary, cross-turn,
   delegated, or completion acceptance work. Low-risk mechanical multi-file
-  edits and small bug fixes may still use the native fast path when scope,
-  boundary, and verification are clear.
-- Native single-agent: quick facts, tiny edits, low-risk bug fixes, low-risk
-  mechanical multi-file edits, tight context, credential work, one
-  CodeGraph-answerable structural question, or tightly coupled critical path.
-- Plan-as-you-go: for small-to-medium clear work, state scope, touched paths,
-  verification, and stop condition, then proceed without durable artifacts or
-  approval ceremony.
+  edits and small bug fixes may still use the native fast path only after the
+  Clarification Gate passes and scope, boundary, and verification are clear.
+- Native single-agent: quick facts, read-only answers, tiny explicit edits,
+  low-risk bug fixes, low-risk mechanical multi-file edits, tight context,
+  credential work, one CodeGraph-answerable structural question, or tightly
+  coupled critical path after clarification-first gating passes.
+- Plan-as-you-go: for small-to-medium clear work after the Clarification Gate
+  passes, state scope, touched paths, verification, and stop condition, then
+  proceed without durable artifacts or approval ceremony.
 - Skill: repeated workflow or domain expertise that should load on demand.
 - Fixed sequence with clear steps: use a lightweight plan.
 - Router/subagent: distinct domains, independent evidence, tests, logs, or
@@ -198,15 +209,10 @@ of presenting it as accepted.
 Subagent authorization has two layers: platform permission to spawn, and
 Stage-Routed Proactive Dispatch deciding the stage split. Once a Teamwork stage
 is active and subagents are authorized, that stage should dispatch
-non-destructive Explorer, Designer, Judge, Worker, or Reviewer tracks only when
-the independent track improves evidence quality, elapsed time, context
-isolation, ownership clarity, or review quality enough to justify its cost. A
-plan's `Dispatch Guidance:` or durable `Subagent Routing` is routing guidance,
-not the only authorization source. The execution stage should re-evaluate the
-split from the accepted plan, source ownership, and current workspace evidence
-before editing. For Teamwork work with independent tracks, dispatch is preferred
-when it lowers risk, elapsed time, context cost, or review risk; serial local
-work should state the continuity rationale when the choice matters.
+non-destructive Explorer, Designer, Judge, Worker, or Reviewer tracks when the
+independent track improves evidence quality, elapsed time, context isolation,
+ownership clarity, or review quality enough to justify its cost. A plan's
+`Dispatch Guidance:` or durable `Subagent Routing` is routing guidance, not the only authorization source. The execution stage should re-evaluate the split from the accepted plan, source ownership, and current workspace evidence before editing. For non-lightweight Teamwork work with independent tracks, dispatch is the default for research, design/plan adequacy, and fresh review; serial local work should state the continuity rationale when the choice matters.
 
 Ask again only when dispatch needs credentials, destructive actions, unclear
 write ownership, protected-boundary changes, unavailable tools, missing Codex

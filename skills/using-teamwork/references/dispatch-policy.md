@@ -1,8 +1,7 @@
 # Dispatch Policy
 
-Use when deciding whether and how to dispatch subagents. Native field mapping
-lives in `platform-dispatch-mapping.md`; swarm orchestration lives in
-`workflow-orchestration.md`.
+Use when deciding subagent dispatch. Native field mapping lives in
+`platform-dispatch-mapping.md`; swarm orchestration in `workflow-orchestration.md`.
 
 ## Stage-Routed Proactive Dispatch
 
@@ -12,6 +11,8 @@ context-isolation, implementation-ownership, or fresh-review value. Do not wait
 for `Goal Proposal`, `Dispatch Guidance:`, or durable `Subagent Routing` to
 explicitly name every track. On Codex, a project or global standing request can
 authorize this; otherwise keep work local and record the rationale.
+Subagents may identify clarification gaps; the orchestrator asks the user
+before execution depends on answers.
 
 - Exploration: Explorer for codebase orientation, artifacts, or local evidence
   beyond a quick literal read.
@@ -80,7 +81,9 @@ implements owned slices. Reviewer checks completed work.
   integration order, verification, and why parallel beats serial.
 - Use batch or worktree isolation when ownership or merge cost is unclear.
 - If skipping material dispatch, state why local execution is cheaper or safer
-  with `Dispatch Exception:`.
+  with `Dispatch Exception:`. When the user asks to fan out subagents, material
+  non-lightweight Explorer, Designer/Judge, and Reviewer tracks are expected
+  unless ownership, authorization, tool, or context-cost blockers exist.
 - For one structural code question, use CodeGraph before Explorer fanout.
   Dispatch Explorer only when the question needs non-code evidence, stale index
   handling, ambiguity resolution, or broader synthesis.

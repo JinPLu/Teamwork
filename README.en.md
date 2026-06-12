@@ -157,7 +157,7 @@ routine roles, not high-risk review.
 
 ## How The Skills Work
 
-`using-teamwork` is the only broad entrypoint: it tries the native fast path first, then escalates only for unclear requirements, missing evidence, planning, fan-out, review, or goal loops.
+`using-teamwork` is the only broad entrypoint: it runs clarification-first routing, uses the native fast path only after the gate passes, then escalates for unclear requirements, missing evidence, planning, fan-out, review, or goal loops.
 
 | Skill | Use It For | Teamwork Capability |
 |---|---|---|

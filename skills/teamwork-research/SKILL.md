@@ -53,10 +53,11 @@ as audit evidence.
 3. Run the Research Context Budget Gate, then split separable evidence
    questions: local source, symptoms, artifacts,
    external constraints, alternatives, upstream reports, papers, or practice.
-4. Use parallel Explorer subagents for 2+ independent tracks when they provide
-   clear evidence, elapsed-time, or context-isolation value and subagents are
-   authorized. Serial local research is fine for tightly coupled or lightweight
-   evidence; emit `Dispatch Exception:` only when skipped dispatch is material.
+4. Use parallel Explorer subagents for 2+ independent tracks in non-lightweight
+   research when they provide clear evidence, elapsed-time, or context-isolation value
+   and subagents are authorized. Serial local research is fine for tightly
+   coupled, lightweight, or one-track evidence; emit `Dispatch Exception:` when
+   authorized material dispatch is skipped.
 5. Require bounded Explorer Result Packet for delegated research. For local
    research, use the same evidence fields naturally when they help the answer.
 6. Close each Explorer track in the Actual Dispatch Log after synthesis, or
