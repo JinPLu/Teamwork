@@ -22,7 +22,7 @@ Teamwork 是一个 **Codex-first 的 Codex + Cursor + Claude Code skill package*
 普通多 agent 协作容易变成“多开几个聊天窗口”。Teamwork 做的是有边界的 fan out：
 主 agent 先判断任务是否真的值得拆分，再把独立调研、方案、实现、复查轨道分发给有职责的工程角色：
 
-- `Explorer` 查证据和外部约束，不把大段原始上下文塞回主线程。
+- `Explorer` 查证据和外部约束，用有预算的 packet 回传；source census、长矩阵和引用台账进 artifact，不把原始上下文塞回主线程。
 - `Designer` 做方案取舍，明确边界、成功标准和放弃的选项。
 - `Judge` 在执行前审计划，找证据缺口、验收缺口和高风险假设。
 - `Worker` 只负责自己的实现切片，按计划交付变更和验证证据。

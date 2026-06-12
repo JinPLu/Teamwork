@@ -13,7 +13,8 @@ Role: Explorer
 Native Fields:
 Question:
 Files / Commands Read:
-Research Fields when web/deep research: Search Plan; Queries Tried; Source Classes; Sources Used; Sources Rejected; Contradictions; Coverage Gaps; Citation Ledger
+Research Fields when web/deep research: Search Plan; Queries Tried; Source Classes; Source Census when broad; Sources Used; Sources Rejected; Contradictions; Coverage Gaps; Citation Ledger
+Artifact Pointer / Evidence Store:
 Observed:
 Inferred:
 Claimed:
@@ -25,8 +26,11 @@ Decision Relevance:
 Suggested Next Step:
 ```
 
-Designer Decision Packet:
+Broad Explorer packets cap `Sources Used`, `Observed`, and `Citation Ledger` to
+the requested budget, default max 8 each. Put source census, matrices, ledgers,
+and raw notes in the artifact pointer; report omissions as Coverage Gaps.
 
+Designer Decision Packet:
 ```text
 Role: Designer
 Native Fields:
@@ -48,7 +52,6 @@ Clarification Relevance:
 ```
 
 Judge Plan Review Packet:
-
 ```text
 Role: Judge
 Native Fields:
@@ -71,7 +74,6 @@ Residual Risks:
 ```
 
 Worker Completion Packet:
-
 ```text
 Role: Worker
 Native Fields:
@@ -97,7 +99,6 @@ Open Questions:
 ```
 
 Reviewer Verdict Packet:
-
 ```text
 Role: Reviewer
 Native Fields:

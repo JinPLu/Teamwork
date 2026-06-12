@@ -85,6 +85,13 @@ question, assumptions, local evidence, external evidence when used, options,
 recommendation, dissent/risks, refresh triggers, and handoff target. Prefer
 summaries plus citations over pasted logs.
 
+For broad research, artifacts also own the source census, selected-source table,
+rejected-source rationale, option or model matrix, contradiction notes,
+and citation ledger overflow. Chat and subagent packets should link the
+artifact and summarize only decision-relevant evidence; raw transcripts,
+search-result dumps, and copied source bodies do not belong in artifacts unless
+they are short, essential, and cited.
+
 ## Artifact Hygiene
 
 Durable artifacts must not contain executable placeholders such as `<...>`,

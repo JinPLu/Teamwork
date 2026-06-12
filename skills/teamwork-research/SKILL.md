@@ -35,18 +35,30 @@ or new.
 
 Artifacts include Search Keys and Abstract for future retrieval.
 
+## Research Context Budget Gate
+
+Before broad research, estimate candidate count, source classes, expected
+sources, and artifact need. Trigger source census plus artifact-backed evidence
+when candidates exceed 6, expected sources exceed 10, source classes exceed 3,
+public and private evidence mix, the user asks for broad/deep research, or the
+findings feed a durable plan. Keep broad recall in search/source census,
+Explorer subthreads, and artifacts; keep the main thread to compressed
+evidence, decision, and handoff. Use compaction only as continuity support, not
+as audit evidence.
+
 ## Workflow
 
 1. Define question and success criteria.
 2. Retrieve prior research and record disposition.
-3. Split separable evidence questions: local source, symptoms, artifacts,
+3. Run the Research Context Budget Gate, then split separable evidence
+   questions: local source, symptoms, artifacts,
    external constraints, alternatives, upstream reports, papers, or practice.
 4. Use parallel Explorer subagents for 2+ independent tracks when they provide
    clear evidence, elapsed-time, or context-isolation value and subagents are
    authorized. Serial local research is fine for tightly coupled or lightweight
    evidence; emit `Dispatch Exception:` only when skipped dispatch is material.
-5. Require Explorer Result Packet for delegated research. For local research,
-   use the same evidence fields naturally when they help the answer.
+5. Require bounded Explorer Result Packet for delegated research. For local
+   research, use the same evidence fields naturally when they help the answer.
 6. Close each Explorer track in the Actual Dispatch Log after synthesis, or
    record `blocked` / `abandoned-after-discovery` with rationale.
 7. Read primary local evidence first and label key findings observed, inferred,
@@ -55,8 +67,8 @@ Artifacts include Search Keys and Abstract for future retrieval.
    upstream behavior, performance, unfamiliar frameworks, or repeated failures
    could affect the answer.
 9. For web or deep research, follow `research-protocol.md`: clarify/rewrite,
-   plan source classes, fan out queries, audit contradictions, record coverage
-   gaps, and keep public web search separate from private data.
+   plan source classes, run source census before deep reads, fan out queries,
+   audit contradictions, record coverage gaps, and keep public web search separate from private data.
 10. Before installing or depending on external skills, apply
    `optional-skills.md`; prefer active plugins, reject duplicates, and require
    credentials, write-risk review, and smoke test.
@@ -82,5 +94,6 @@ evidence, or the active plan is invalidated.
 Return artifact path or none, question, closed dispatch log or continuity
 rationale, assumptions, evidence, options, recommendation, dissent, plan-ready
 fields (goal, scope, protected boundaries, verification target, budget, stop
-rules when known), refresh triggers, optional `Memory Delta:` when durable
-project memory was checked or changed, and `Route: teamwork-plan`.
+rules when known), context budget disposition, refresh triggers, optional
+`Memory Delta:` when durable project memory was checked or changed, and
+`Route: teamwork-plan`.

@@ -56,6 +56,11 @@ label residual unreviewed risk.
 Each subagent is a bounded packet producer; close, block, or abandon its Actual
 Dispatch Log entry after integration before claiming acceptance.
 
+For broad research, keep recall broad but context transport narrow: use source census,
+capped Explorer packets, and artifact-backed evidence ledgers instead of returning
+raw search output, long matrices, or copied source bodies to the main thread.
+Treat compaction as continuity support, not audit evidence.
+
 - Explorer -> `subagent_type:"explore"`
 - Worker -> `subagent_type:"generalPurpose"` or `shell` for shell-only tracks
 - Reviewer -> `subagent_type:"code-reviewer"`

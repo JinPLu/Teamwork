@@ -9,7 +9,8 @@ Claude-specific `.claude/workflows/` the core runtime.
 Use workflow-class orchestration for:
 
 - codebase-wide audits or migrations;
-- many-shard research or bug hunts;
+- many-shard research or bug hunts, including research whose context budget
+  gate exceeds candidate, source, or source-class caps;
 - adversarial plan stress tests;
 - long goal work that needs resumable state;
 - repeated workflows worth saving as a runbook.
@@ -33,6 +34,7 @@ Required fields:
 - phase plan;
 - concurrency cap and total-agent cap;
 - token/time budget;
+- packet/source budget and artifact path for many-shard research;
 - ownership map;
 - verification gate;
 - stop controls;

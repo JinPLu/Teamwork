@@ -16,7 +16,7 @@ authorize this; otherwise keep work local and record the rationale.
 - Exploration: Explorer for codebase orientation, artifacts, or local evidence
   beyond a quick literal read.
 - Research: Explorer tracks for evidence, stale assumptions, option comparison,
-  or failure analysis.
+  failure analysis, or broad source census that would pollute the main thread.
 - Plan: Designer for ambiguity; Judge for durable, risky, delegated, or
   goal-mode plans.
 - Execute: Worker split from accepted steps, files, components, and ownership.
@@ -73,7 +73,8 @@ implements owned slices. Reviewer checks completed work.
 ## Dispatch Economics
 
 - Explorer/Reviewer: default max 3 parallel unless budget; keep raw evidence
-  out of the main context.
+  out of the main context. Broad research uses capped Explorer packets and
+  artifact pointers for overflow.
 - Worker: no fixed numeric cap; dispatch per track when time or isolation
   helps. Before dispatching more than 3 Workers, state ownership map,
   integration order, verification, and why parallel beats serial.

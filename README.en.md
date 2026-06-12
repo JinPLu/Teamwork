@@ -23,7 +23,7 @@ Teamwork adds four things:
 Plain multi-agent work can become several loose chat windows. Teamwork keeps
 fan-out bounded: the main agent splits only worthwhile independent tracks into engineering roles:
 
-- `Explorer` gathers evidence and external constraints without dumping raw context back into the main thread.
+- `Explorer` gathers evidence and external constraints through budgeted packets; source census, long matrices, and citation ledgers go into artifacts, capped Explorer packets keep the main thread narrow, and artifact-backed evidence ledgers preserve audit detail. Treat compaction as continuity support, not audit evidence.
 - `Designer` compares options and states boundaries, success criteria, and rejected paths.
 - `Judge` reviews plans before execution and finds evidence gaps, acceptance gaps, and risky assumptions.
 - `Worker` owns one implementation slice and returns changes plus verification evidence.

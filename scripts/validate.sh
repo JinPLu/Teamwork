@@ -578,8 +578,24 @@ grep_required 'Decision Relevance' "$ROOT/templates/codex-agents/teamwork-explor
   "Codex explorer agent must include expanded Explorer packet fields"
 grep_required 'Search Plan' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
   "Codex explorer agent must include research packet fields"
+grep_required 'Artifact Pointer / Evidence Store' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
+  "Codex explorer agent must carry artifact pointer for evidence overflow"
+grep_required 'Source Census when broad' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
+  "Codex explorer agent must include source census for broad research"
+grep_required 'output/source/citation budget' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
+  "Codex explorer agent must respect parent budget fields"
+grep_required 'default max 8 each' "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
+  "Codex explorer agent must keep bounded broad-research caps"
 grep_required 'Citation Ledger' "$ROOT/templates/claude-agents/explore.md" \
   "Claude explorer agent must include research packet fields"
+grep_required 'Artifact Pointer / Evidence Store' "$ROOT/templates/claude-agents/explore.md" \
+  "Claude explorer agent must carry artifact pointer for evidence overflow"
+grep_required 'Source Census when broad' "$ROOT/templates/claude-agents/explore.md" \
+  "Claude explorer agent must include source census for broad research"
+grep_required 'output/source/citation budget' "$ROOT/templates/claude-agents/explore.md" \
+  "Claude explorer agent must respect parent budget fields"
+grep_required 'default max 8 each' "$ROOT/templates/claude-agents/explore.md" \
+  "Claude explorer agent must keep bounded broad-research caps"
 grep_required 'Designer Decision Packet once' "$ROOT/templates/codex-agents/teamwork-designer.toml" \
   "Codex designer agent must return exact Designer packet once and stop"
 grep_required 'Decision Scope' "$ROOT/templates/codex-agents/teamwork-designer.toml" \
@@ -1205,7 +1221,7 @@ grep_required 'Result Packets' "$ROOT/skills/using-teamwork/references/subagent-
   "subagent packets reference must define packet shapes"
 grep_required 'Explorer Result Packet' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
   "subagent packets reference must define Explorer result packet"
-grep_required 'Search Plan; Queries Tried; Source Classes; Sources Used; Sources Rejected; Contradictions; Coverage Gaps; Citation Ledger' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+grep_required 'Search Plan; Queries Tried; Source Classes; Source Census when broad; Sources Used; Sources Rejected; Contradictions; Coverage Gaps; Citation Ledger' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
   "Explorer packet must define web/deep research fields"
 grep_required 'Native Fields:' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
   "subagent packets must record native fields"
@@ -1223,6 +1239,38 @@ grep_required 'Prompt Packet:' "$ROOT/skills/using-teamwork/references/subagent-
   "actual dispatch log must record prompt packet"
 grep_required 'Returned Packet:' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
   "actual dispatch log must record returned packet"
+grep_required 'Artifact Pointer / Evidence Store' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+  "Explorer packet must carry artifact pointer for evidence overflow"
+grep_required 'default max 8 each' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
+  "Explorer packet must keep bounded broad-research caps"
+grep_required 'output/source/citation budget' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
+  "Explorer prompt contract must carry budget fields"
+grep_required 'source census' "$ROOT/skills/using-teamwork/references/research-protocol.md" \
+  "research protocol must stage broad research through source census"
+grep_required 'artifact pointer' "$ROOT/skills/using-teamwork/references/research-protocol.md" \
+  "research protocol must route overflow to artifact pointers"
+grep_required 'budgeted packets' "$ROOT/README.en.md" \
+  "English README must describe budgeted Explorer packets"
+grep_required 'capped Explorer packets' "$ROOT/README.en.md" \
+  "English README must mention capped Explorer packets"
+grep_required 'artifact-backed evidence ledgers' "$ROOT/README.en.md" \
+  "English README must mention artifact-backed evidence ledgers"
+grep_required 'citation ledgers go into artifacts' "$ROOT/README.en.md" \
+  "English README must describe broad-research artifact overflow"
+grep_required 'Treat compaction as continuity support, not audit evidence' "$ROOT/README.en.md" \
+  "English README must keep compaction as continuity support"
+for doc in CURSOR.md CLAUDE.md; do
+  grep_required 'source census' "$ROOT/$doc" \
+    "$doc must mention source census for broad research"
+  grep_required 'capped Explorer packets' "$ROOT/$doc" \
+    "$doc must mention capped Explorer packets"
+  grep_required 'artifact-backed evidence ledgers' "$ROOT/$doc" \
+    "$doc must mention artifact-backed evidence ledgers"
+done
+grep_required 'Treat compaction as continuity support, not audit evidence' "$ROOT/CURSOR.md" \
+  "Cursor runtime summary must keep compaction as continuity support"
+grep_required 'Treat compaction as continuity support, not audit evidence' "$ROOT/CLAUDE.md" \
+  "Claude runtime summary must keep compaction as continuity support"
 grep_required 'invalid platform dispatch fields' "$ROOT/skills/using-teamwork/references/review-checks.md" \
   "review checks must validate platform dispatch fields"
 grep_required 'Codex/Cursor/Claude Code mapping' "$ROOT/skills/using-teamwork/references/subagent-routing.md" \
@@ -1241,6 +1289,10 @@ grep_required 'Use parallel Explorer subagents for 2+ independent tracks' "$ROOT
   "research skill must dispatch valuable independent Explorer tracks"
 grep_required 'and subagents are' "$ROOT/skills/teamwork-research/SKILL.md" \
   "research skill must respect subagent authorization"
+grep_required 'Research Context Budget Gate' "$ROOT/skills/teamwork-research/SKILL.md" \
+  "research skill must define context budget gate"
+grep_required 'source census before deep reads' "$ROOT/skills/teamwork-research/SKILL.md" \
+  "research skill must require source census for broad research"
 grep_required 'Guidance only when dispatch matters' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan skill must support conditional lightweight dispatch guidance"
 grep_required 'subagents are authorized' "$ROOT/skills/teamwork-plan/SKILL.md" \
@@ -1300,6 +1352,10 @@ grep_required 'Search Keys' "$ROOT/skills/using-teamwork/references/artifact-pro
   "artifact protocol must define Search Keys"
 grep_required 'Abstract' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" \
   "artifact protocol must define Abstract"
+grep_required 'selected-source table' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" \
+  "artifact protocol must own broad-research evidence tables"
+grep_required 'packet/source budget' "$ROOT/skills/using-teamwork/references/workflow-orchestration.md" \
+  "workflow orchestration must carry research packet/source budget"
 
 if git -C "$ROOT" grep -n -E 'raoctl|RAO|Stop hook|/rao:|/teamwork:' \
   -- ':!scripts/validate.sh' >/tmp/teamwork-retired-grep.$$; then

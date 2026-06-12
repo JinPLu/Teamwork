@@ -33,6 +33,11 @@ The behavior contract lives in `skills/`. `using-teamwork` is the automatic lean
 
 Use repo files, logs, tests, diffs, artifacts, and prior Teamwork artifacts before new research. Use external calibration from official docs, papers, release notes, upstream issues, or other primary sources when current platform, model, dependency, API, or field practice can affect the result.
 
+For broad research, keep recall broad but context transport narrow: use source
+census, capped Explorer packets, and artifact-backed evidence ledgers instead
+of returning raw search output, long matrices, or copied source bodies to the
+main thread. Treat compaction as continuity support, not audit evidence.
+
 Artifacts are evidence memory:
 
 ```text
