@@ -34,12 +34,17 @@ decision-relevant compressed evidence.
    primary/secondary, freshness, relevance, and read/reject reason.
 5. Triage sources: prefer official docs, specs, repos, papers, filings,
    changelogs, issue threads, and direct data over summaries.
-6. Read enough selected primary text to extract evidence; label observed, inferred, and
+6. For current external library/API questions, use an approved documentation
+   MCP such as Context7 when already available and useful. Query only sanitized
+   library IDs, versions, and topic terms; treat returned snippets as
+   candidate/supporting evidence unless corroborated with primary source,
+   source/config, tests, or verified behavior.
+7. Read enough selected primary text to extract evidence; label observed, inferred, and
    claimed.
-7. Run contradiction search and note Sources Rejected with reasons.
-8. Audit coverage: missing source classes, stale assumptions, language/region
+8. Run contradiction search and note Sources Rejected with reasons.
+9. Audit coverage: missing source classes, stale assumptions, language/region
    gaps, and whether web-search context size limited recall.
-9. Produce capped Citation Ledger, Confidence, artifact pointer when overflow
+10. Produce capped Citation Ledger, Confidence, artifact pointer when overflow
    exists, and route gaps back to research or plan.
 
 ## Public/Private Safety

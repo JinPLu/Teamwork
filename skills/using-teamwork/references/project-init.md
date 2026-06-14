@@ -62,8 +62,10 @@ is a blocker, not a fallback.
 
 ## MCP And Search Policy
 
-- CodeGraph is the structural code source for symbol lookup, architecture
-  context, call paths, impact radius, and indexed file lists.
+- CodeGraph owns structural code lookup: symbols, architecture, call paths,
+  impact radius, and indexed files.
+- Approved docs MCPs such as Context7 cover library/framework/SDK/API docs as
+  candidate/supporting evidence; never replace source, tests, configs, lockfiles, or behavior.
 - Use native search and direct reads for literal text, logs, generated
   artifacts, LaTeX, result tables, images, PDFs, and non-code content.
 - If CodeGraph is not initialized, ask before running initialization. If stale,
@@ -88,8 +90,6 @@ Capability Matrix when requested, verification, and human decisions.
 
 ## Teamwork Memory Bootstrap
 
-For non-lightweight Teamwork workflows, initialize missing `index.json`,
-`README.md`, and `current.md` when bootstrap is in scope. Add only a short
-project-instruction pointer to the runtime README. Keep it minimal and
-compatible with `artifact-protocol.md`; do not force artifacts for lightweight
-native flow.
+For non-lightweight workflows, initialize missing `index.json`, `README.md`,
+and `current.md` only when memory bootstrap is in scope. Add one project-rule
+pointer; stay compatible with `artifact-protocol.md` and lightweight native flow.

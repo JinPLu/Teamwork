@@ -46,3 +46,33 @@ For memory integration or docs graph tools, add:
 
 Decision stays `defer` or `adapt` when schema, parser coverage, credentials,
 privacy, or write-risk evidence is incomplete.
+
+## External Documentation MCP
+
+Context7-class documentation MCPs complement CodeGraph. Use CodeGraph for local
+code structure; use the docs MCP for current external library, framework, SDK,
+API, or configuration documentation.
+
+When the user or project selects Context7, treat it as an optional docs graph
+candidate, not a required Teamwork dependency:
+
+- Source/License or trust note: Upstash Context7 MCP or configured equivalent;
+  record repository/plugin source when installation is requested.
+- Capability and Role Fit: external documentation lookup, version-specific
+  examples, and setup/API usage context; not local source truth, call graph, or
+  completion evidence.
+- Trigger and No duplicate install check: prefer an already-active Codex
+  plugin, connector, or MCP server before adding local CLI/server config.
+- Credentials and privacy boundary: send only sanitized library names, library
+  IDs, versions, and topic queries. Do not send private source, prompts,
+  customer data, secrets, or proprietary implementation details.
+- Write Risk and approval point: read-only lookup is allowed when already
+  available; MCP/plugin/CLI installation, API key setup, OAuth, private-source
+  indexing, policy writes, or repository config changes require explicit user
+  approval.
+- Smoke Test command or read-only probe: resolve a public library and retrieve
+  a small documentation result before relying on it. If no probe is available,
+  document `deferred`.
+- Decision: `use plugin` when already installed, `adapt` when used only as an
+  optional evidence source, `defer` when credentials/privacy/smoke test are
+  missing, and never `install` speculatively.
