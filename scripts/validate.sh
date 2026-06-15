@@ -1114,16 +1114,27 @@ grep_required 'Rule Placement' "$ROOT/skills/using-teamwork/references/workflow-
   "workflow contract must define rule placement"
 grep_required 'No Silent Defaults' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must keep no-silent-defaults canonical"
-grep_required 'Missing required values are blockers' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
-  "workflow contract must fail fast on missing required values"
+grep_required 'Missing required values are question-first blockers' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must ask before hard-blocking on missing required values"
+grep_required 'invent fallback' "$ROOT/skills/using-teamwork/references/project-init.md" \
+  "project init must preserve question-first no-silent-defaults policy"
+grep_absent 'is a blocker, not a fallback' \
+  "project init must not restore stale direct-blocker wording" \
+  "$ROOT/skills/using-teamwork/references/project-init.md"
 grep_required 'Before planning or executing' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must require clarification before plan or execution"
 grep_required 'Clarification-first default' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must define clarification-first default"
 grep_required 'Gate outcomes are `pass`, `assumptions-stated`, `ask`, and' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must define clarification gate outcomes"
+grep_required 'Router Gate' "$ENTRYPOINT" \
+  "entrypoint/router must include explicit Router Gate behavior"
+grep_required 'Confidence Ledger' "$ENTRYPOINT" \
+  "entrypoint/router must require confidence calibration for non-lightweight tasks"
 grep_required 'unclear human goal/scope/acceptance asks first' "$ENTRYPOINT" \
   "entrypoint/router must ask before planning unclear human goals"
+grep_required 'unsupported high confidence' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "planning skill must reject unsupported high confidence"
 grep_required 'Resolve decision-critical human requirement gaps' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "planning must clarify decision-critical human requirement gaps"
 grep_required 'Clarification Gate: pass | ask | assumptions-stated | blocked-for-clarification' "$ROOT/skills/using-teamwork/references/plan-output.md" \
@@ -1134,6 +1145,8 @@ grep_required 'Goal Proposal` with `Clarification Gate:' "$ROOT/skills/teamwork-
   "goal proposal must expose clarification gate state"
 grep_required 'unanswered human requirements could change' "$ROOT/skills/using-teamwork/references/review-checks.md" \
   "review must reject plans with decision-critical unanswered human requirements"
+grep_required 'Confidence/evidence calibration' "$ROOT/skills/using-teamwork/references/review-checks.md" \
+  "review checks must verify confidence and evidence calibration"
 grep_required 'Subagents report questions; the orchestrator asks' "$ROOT/skills/using-teamwork/references/subagent-prompt-contract.md" \
   "subagents must not own user clarification"
 grep_required 'Clarification Gap' "$ROOT/skills/using-teamwork/references/subagent-packets.md" \
@@ -1412,14 +1425,14 @@ grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$tmp/home/.codex/AGENTS.md
   "Codex install must create Teamwork global AGENTS block"
 grep_required 'Teamwork Codex Global Policy' "$tmp/home/.codex/AGENTS.md" \
   "Codex install must write Teamwork global policy heading"
-grep_required 'Agent efficiency comes first' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must prioritize agent efficiency"
+grep_required 'Question-first efficiency' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must prioritize question-first efficiency"
 grep_required 'Clarification-first:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must include clarification-first posture"
 grep_required 'Codex model profile: default is performance-first' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must record performance-first profile"
 grep_required 'Bootstrap safety:' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must include bootstrap fail-fast safety"
+  "Codex global policy must include bootstrap no-silent-defaults safety"
 grep_required 'Remote execution:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must include remote execution default"
 grep_required 'do not invent missing execution targets' "$tmp/home/.codex/AGENTS.md" \
@@ -1447,12 +1460,12 @@ grep_required 'Personal rule before.' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must preserve user content"
 grep_required '<!-- CODEGRAPH_START -->' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must preserve CodeGraph block"
-grep_required 'Agent efficiency comes first' "$agents_preserve_home/.codex/AGENTS.md" \
+grep_required 'Question-first efficiency' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must replace managed block"
 grep_required 'Clarification-first:' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must include clarification-first posture"
 grep_required 'Bootstrap safety:' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must include bootstrap fail-fast safety"
+  "Codex global policy install must include bootstrap no-silent-defaults safety"
 grep_absent 'old managed content' \
   "Codex global policy install must replace old managed content" \
   "$agents_preserve_home/.codex/AGENTS.md"
@@ -1470,7 +1483,7 @@ grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$codex_policy_out" \
 grep_required 'Codex model profile: default is performance-first' "$codex_policy_out" \
   "codex-policy target must render performance-first profile"
 grep_required 'Bootstrap safety:' "$codex_policy_out" \
-  "codex-policy target must print bootstrap fail-fast safety"
+  "codex-policy target must print bootstrap no-silent-defaults safety"
 [[ ! -e "$tmp/home-codex-policy/.codex/AGENTS.md" ]] \
   || fail "codex-policy target must not write global AGENTS policy"
 

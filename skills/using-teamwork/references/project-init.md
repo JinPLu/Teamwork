@@ -1,6 +1,6 @@
 # Project Init
 
-Use with `teamwork-init` for agent instruction setup, cleanup, or migration.
+Use with `teamwork-init` for instruction setup, cleanup, or migration.
 
 ## Project Rule Layering
 
@@ -16,8 +16,8 @@ Use with `teamwork-init` for agent instruction setup, cleanup, or migration.
 
 ## Content Classification
 
-- Bootstrap policy: authorization, efficiency, model profile, fail-fast safety,
-  remote baseline.
+- Bootstrap policy: authorization, question-first efficiency, model profile,
+  no-silent-defaults safety, remote baseline.
 - Portable workflow: evidence labels, artifact triggers, route selection,
   verification, handoff, and slimming policy.
 - Project facts: repo roles, paths, execution model, required environment variables, red lines.
@@ -49,16 +49,16 @@ Artifact memory; CodeGraph policy; Subagent policy/install state;
 Teamwork role workflow contracts; Validation; Optional docs graph; Optional external memory; Blockers.
 Statuses: `enabled`, `missing`, `blocked`, `optional`, `deferred`. Every
 non-enabled row names one next action. Core local rows may initialize in scope;
-Optional docs graph and Optional external memory stay `optional` or `deferred`
-until user approval and the optional-skills gate pass.
+Optional docs graph/external memory stay `optional` or `deferred` until user approval and the optional-skills gate pass.
 
 ## Rule Persistence Decision
 
 Use `./install.sh codex` for managed `~/.codex/AGENTS.md` and
 `./install.sh codex-policy` for Codex App Personalization. Project instructions
 record concrete values, exceptions, opt-outs, or protected boundaries. Missing
-host, path, command, port, credential, model, hyperparameter, or execution mode
-is a blocker, not a fallback.
+host/path/command/port/credential/model/hyperparameter/execution mode asks first
+when user-supplied; hard-block only if unavailable, unsafe, or declined; never
+invent fallback.
 
 ## MCP And Search Policy
 

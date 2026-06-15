@@ -8,7 +8,7 @@ files focused on stage-specific behavior; this file owns shared judgment rules.
 Keep always-on bootstrap policy short: Codex App Personalization or global
 `~/.codex/AGENTS.md` should contain only standing authorization,
 clarification-first posture, efficiency, model profile, remote-execution
-baseline, and a short fail-fast safety note.
+baseline, and a short question-first no-silent-defaults safety note.
 This file owns reusable workflow judgment such as evidence, assumptions, no
 silent defaults, artifacts, reviewability, and subagent lifecycle. Project
 instructions own concrete local facts, required values, exceptions, and
@@ -19,8 +19,9 @@ protected boundaries.
 - Clarification Gate: Before planning or executing, identify
   decision-critical uncertainty in user needs, scope, acceptance, constraints,
   data, UI/UX, risk, timing, or public behavior. Ask concise questions when the
-  answer would change the plan or execution; do not hide core requirements as
-  assumptions.
+  answer would change the plan or execution. Missing human requirements ask
+  first; they become blockers only when the answer cannot be obtained and safe
+  progress is impossible. Do not hide core requirements as assumptions.
 - Clarification-first default: before file edits, behavior changes, public
   output, execution-target choices, workflow policy changes, or non-trivial
   implementation, ask when intent, scope, acceptance, constraints, or protected
@@ -28,8 +29,9 @@ protected boundaries.
   plan. Prefer a short batched question over inferred requirements.
 - Gate outcomes are `pass`, `assumptions-stated`, `ask`, and
   `blocked-for-clarification`. Use `ask` for a batched user question before a
-  plan exists; use `blocked-for-clarification` when safe planning/execution
-  cannot continue without the answer.
+  plan exists or when execution needs one missing human requirement; use
+  `blocked-for-clarification` only after the needed answer is unavailable and
+  safe planning/execution cannot continue.
 - State assumptions before they affect behavior, scope, verification, public
   contracts, data contracts, architecture, protected claims, or user constraints.
 - Stop and ask, or route to research, when an assumption would change public
@@ -49,11 +51,12 @@ ports, model names, hyperparameters, credentials, config, test inputs, external
 services, or execution modes. A default is allowed only when it is explicit in
 source, config, docs, the accepted plan, or user instruction.
 
-Missing required values are blockers: fail fast, report the missing input, and
-name the evidence checked. Do not mask missing state by switching local/remote,
-dev/prod, online/offline, datasets, models, providers, or paths. Avoid symlink
-or path-alias fixes unless the repo already depends on them or the user asks;
-when used, disclose the target and verify it.
+Missing required values are question-first blockers: ask once when user input
+can supply the value. If unavailable, they are hard blockers: report the missing
+input and name the evidence checked. Do not mask missing state by switching
+local/remote, dev/prod, online/offline, datasets, models, providers, or paths.
+Avoid symlink or path-alias fixes unless the repo already depends on them or the
+user asks; when used, disclose the target and verify it.
 
 ## Evidence Interpretation Contract
 

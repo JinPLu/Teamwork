@@ -1,13 +1,12 @@
 ---
 name: teamwork-review
-description: Use when reviewing a plan, diff, completed implementation, or before claiming non-trivial Teamwork work is complete.
+description: Use when reviewing a plan, diff, implementation, or non-trivial completion claim.
 ---
 
 # Teamwork Review
 
-Use for required non-lightweight acceptance and for distinct reviewer passes
-when review adds value. Review reads direct evidence, preserves dissent, and
-does not rely only on planner/executor/tool summaries.
+Use for required non-lightweight acceptance and reviewer passes.
+Review reads evidence, preserves dissent, and never relies on summaries.
 
 Read only as needed:
 
@@ -41,14 +40,16 @@ Read only as needed:
 - Inspect source, diff, logs, tests, command output, artifacts, research, plan,
   and user constraints.
 - Label important evidence `observed`, `inferred`, or `claimed`.
+- Check confidence statements against evidence; no high confidence for inferred,
+  partial, stale, or unverified facts.
 - Treat executor summaries, `codex review` (Codex), `code-reviewer` subagent
   output (Cursor or Claude Code), git diff, CI summaries, test runner output,
   and tool output as evidence inputs, not final verdicts.
 - Do not fix issues during review unless explicitly asked.
 - Use `blocker`, `major`, `minor` consistently: unsafe/impossible acceptance,
   required-before-proceed, or follow-up/note.
-- When reviewing optional skills, reject duplicate installs, unclear
-  source/license, broad write risk, missing credentials, or missing smoke test.
+- When reviewing optional skills, reject duplicate installs, unclear source or
+  license, broad write risk, missing credentials, or missing smoke test.
 - Reviewer dispatch follows the same closure rule: return one verdict packet,
   integrate it, and close or block the track before acceptance.
 - When durable memory is relevant, read `docs/teamwork/index.json` then

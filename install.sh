@@ -74,17 +74,19 @@ Subagents: this is the user's explicit standing authorization and request to
 use sub-agents, delegation, and parallel agent work only when Teamwork dispatch
 policy says the task is non-lightweight, independent, and worth the extra agent
 cost.
-Agent efficiency comes first: keep work local for quick answers, tiny edits, one
+Question-first efficiency: keep work local for quick answers, tiny edits, one
 CodeGraph-answerable structural question, tight critical-path work, overlapping
 write ownership, destructive or credential-sensitive actions, or higher
-subagent context cost than benefit.
+subagent context cost than benefit. Do not skip a low-cost clarifying question
+when the answer could change behavior, scope, acceptance, UX, architecture,
+public output, data handling, execution target, or verification.
 
 Clarification-first: before file edits, behavior changes, public outputs,
 execution-target choices, workflow policy changes, or non-trivial
 implementation, ask when intent, scope, acceptance, constraints, or protected
 boundaries are not explicit. Use assumptions-stated only for read-only work,
 tiny explicit mechanical edits, or cases where the assumption cannot change the
-outcome; missing human requirements are blockers.
+outcome. Missing human requirements are question triggers first, not blockers.
 
 Codex model profile: default is ${CODEX_PROFILE}. performance-first uses
 role-optimized gpt-5.5 agents: routine Explorer, Designer, and Worker use
@@ -95,7 +97,9 @@ Use project-local Teamwork init mode only for explicit overrides.
 Bootstrap safety: required environment variables, paths, commands, ports, model
 names, hyperparameters, credentials, configs, and execution modes must be
 explicit in user input, project instructions, source/config, or an accepted
-plan. Missing required values are blockers; report what was checked instead of
+plan. Ask once when the user can supply a missing required value; treat it as
+blocked only when it cannot be safely obtained, requires unavailable
+credentials/resources, or the user declines. Report what was checked instead of
 inventing fallbacks.
 
 Remote execution: assume substantial code execution runs on the configured

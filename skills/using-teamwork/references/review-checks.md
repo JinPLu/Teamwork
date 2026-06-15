@@ -12,6 +12,9 @@ Check:
   scannable structure covering scope, owner, verification, and stop/replan
   conditions.
 - Scope: every step traces to the goal.
+- Confidence/evidence calibration: plan records concise evidence,
+  assumptions, uncertainty, next step, and confidence (or equivalent fields);
+  confidence is proportional to observed evidence.
 - Clarification Gate: decision-critical user requirement gaps are resolved or
   the plan is `ask` / `blocked-for-clarification`; missing inputs are explicit
   and execution is not approved while the gate is unresolved.
@@ -22,8 +25,9 @@ Check:
 - Verification: focused checks, broader checks when warranted, and Expected
   Results are present.
 - Required env vars, paths, execution modes, hyperparameters, configs, and
-  commands are explicit; missing values stop as blockers instead of silently
-  falling back.
+  commands are explicit; human requirement gaps ask first, while missing
+  source/config/credential values stop as blockers only when they cannot be
+  found or obtained.
 - Expected output, guardrails, retry/stop conditions, and escalation triggers
   are explicit for delegated or goal-mode work.
 - Risks, stop rules, Worker Handoff, Review Handoff, Subagent Routing, and
@@ -45,6 +49,8 @@ Return `revise` or `blocked` when:
 - a required durable artifact is missing or unreadable;
 - placeholders, ellipsis tasks, vague tests, missing Expected Results, or
   missing handoffs remain;
+- high confidence is asserted without observed evidence or while material
+  assumptions, uncertainty, stale facts, or unverified claims remain;
 - unanswered human requirements could change goal, scope, acceptance,
   constraints, risk, UX, public behavior, data/contracts, architecture, or
   verification;
@@ -67,6 +73,9 @@ Check:
 - Multi-requirement execution summaries expose a compact review table or
   equivalent structure mapping requirement, change, evidence, and status.
 - Expected artifacts, outputs, metrics, or UI state match acceptance.
+- Confidence/evidence calibration: implementation and acceptance claims do not
+  overstate certainty beyond observed diff, logs, tests, artifacts, or manual
+  smoke evidence.
 - Focused verification ran; broader validation exists when warranted.
 - No hidden contract changes, brittle assumptions, or cleanup masking producer
   bugs.
