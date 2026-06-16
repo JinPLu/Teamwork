@@ -176,7 +176,7 @@ done
 
 expected_reference_inventory="$(
   printf '%s\n' \
-    artifact-protocol.md goal-iteration.md optional-skills.md plan-output.md \
+    artifact-protocol.md check-update.md goal-iteration.md optional-skills.md plan-output.md \
     project-init.md research-protocol.md review-checks.md role-playbook.md \
     subagent-contract.md subagent-dispatch.md teamwork-current-template.md \
     teamwork-index-readme-template.md teamwork-index-template.json \
@@ -226,6 +226,7 @@ PY
 # --- Top-level docs ---
 grep_required 'Codex + Cursor + Claude Code' "$ROOT/README.md" "README must state Codex + Cursor + Claude Code positioning"
 grep_required 'teamwork-update' "$ROOT/README.md" "README must document teamwork-update"
+grep_required 'check-update.sh' "$ROOT/README.md" "README must document check-update script"
 grep_required 'teamwork-init' "$ROOT/README.md" "README must document teamwork-init"
 grep_required 'VERSION' "$ROOT/README.md" "README must document package version source"
 grep_required '\[English\](README.en.md)' "$ROOT/README.md" "default README must link to English README"
@@ -238,10 +239,12 @@ git -C "$ROOT" ls-files --error-unmatch "README.en.md" >/dev/null 2>&1 || fail "
 grep_required '\[中文\](README.md)' "$ROOT/README.en.md" "English README must link to default Chinese README"
 grep_required 'Codex + Cursor + Claude Code' "$ROOT/README.en.md" "English README must state Codex + Cursor + Claude Code positioning"
 grep_required 'teamwork-update' "$ROOT/README.en.md" "English README must document teamwork-update"
+grep_required 'check-update.sh' "$ROOT/README.en.md" "English README must document check-update script"
 grep_required 'VERSION' "$ROOT/README.en.md" "English README must document package version source"
 grep_required './install.sh --link codex' "$ROOT/README.en.md" "English README must document Codex link-mode development install"
 grep_required 'Codex + Cursor + Claude Code skill package' "$ROOT/AGENTS.md" "AGENTS.md must describe the package"
 grep_required 'teamwork-update' "$ROOT/AGENTS.md" "AGENTS.md must document update skill ownership"
+grep_required 'check-update.sh' "$ROOT/AGENTS.md" "AGENTS.md must document check-update script"
 grep_required 'teamwork-init' "$ROOT/AGENTS.md" "AGENTS.md must document init skill ownership"
 grep_required 'Codex native capabilities' "$ROOT/CODEX.md" "CODEX.md must document native Codex capability policy"
 grep_required 'Codex runtime profile' "$ROOT/CODEX.md" "CODEX.md must identify itself as the Codex runtime profile"
@@ -251,25 +254,38 @@ grep_required 'subagent-dispatch.md' "$ROOT/CODEX.md" "CODEX.md must point to su
 grep_required 'Task' "$ROOT/CURSOR.md" "CURSOR.md must document Cursor Task subagent policy"
 grep_required 'Goal Mode' "$ROOT/CURSOR.md" "CURSOR.md must document Cursor goal mode"
 grep_required 'subagent-dispatch.md' "$ROOT/CURSOR.md" "CURSOR.md must point to subagent dispatch reference"
+grep_required '~/.cursor/agents/' "$ROOT/CURSOR.md" "CURSOR.md must document Cursor custom agents"
+grep_required 'cursor-policy' "$ROOT/CURSOR.md" "CURSOR.md must document cursor-policy target"
 grep_required 'Claude Code native capabilities' "$ROOT/CLAUDE.md" "CLAUDE.md must document native Claude Code capability policy"
 grep_required 'Task' "$ROOT/CLAUDE.md" "CLAUDE.md must document Claude Code Task subagent policy"
 grep_required 'subagent-dispatch.md' "$ROOT/CLAUDE.md" "CLAUDE.md must point to subagent dispatch reference"
 grep_required 'rolling report' "$ROOT/CLAUDE.md" "CLAUDE.md must document Claude Code goal rolling report"
 grep_required 'VERSION' "$ROOT/CLAUDE.md" "CLAUDE.md must document package version source"
+grep_required '~/.claude/CLAUDE.md' "$ROOT/CLAUDE.md" "CLAUDE.md must document Claude global policy"
+grep_required 'claude-policy' "$ROOT/CLAUDE.md" "CLAUDE.md must document claude-policy target"
+grep_required 'deep-judge' "$ROOT/CLAUDE.md" "CLAUDE.md must document Deep Judge agent"
 
 # --- Installer global policy ---
 grep_required 'write_teamwork_codex_global_policy()' "$ROOT/install.sh" "installer must define Teamwork Codex global policy writer"
+grep_required 'write_teamwork_claude_global_policy()' "$ROOT/install.sh" "installer must define Teamwork Claude global policy writer"
+grep_required 'write_teamwork_cursor_global_policy()' "$ROOT/install.sh" "installer must define Teamwork Cursor global policy writer"
 grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$ROOT/install.sh" "installer global policy writer must include managed start marker"
-grep_required '<!-- TEAMWORK_CODEX_GLOBAL_END -->' "$ROOT/install.sh" "installer global policy writer must include managed end marker"
+grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$ROOT/install.sh" "installer Claude global policy writer must include managed start marker"
+grep_required '<!-- TEAMWORK_CURSOR_GLOBAL_START -->' "$ROOT/install.sh" "installer Cursor global policy writer must include managed start marker"
 grep_required 'install_codex_global_policy' "$ROOT/install.sh" "installer must call Codex global policy install from Codex target"
+grep_required 'install_claude_global_policy' "$ROOT/install.sh" "installer must call Claude global policy install from Claude target"
+grep_required 'install_cursor_agent_set' "$ROOT/install.sh" "installer must define Cursor agent install set"
+grep_required 'cursor-agents' "$ROOT/install.sh" "installer must support cursor-agents target"
+grep_required 'cursor-policy' "$ROOT/install.sh" "installer must support cursor-policy target"
+grep_required 'claude-policy' "$ROOT/install.sh" "installer must support claude-policy target"
 
 # --- Budgets ---
 [[ "$(wc -l < "$ROOT/README.md")" -le 195 ]] || fail "README should stay concise"
 [[ "$(wc -l < "$ROOT/README.en.md")" -le 200 ]] || fail "English README should stay concise"
 line_count_max "$ROOT/skills/using-teamwork/SKILL.md" 80 "using-teamwork should stay concise"
 word_count_max "$ROOT/skills/using-teamwork/SKILL.md" 450 "using-teamwork should stay concise"
-line_count_max "$ROOT/skills/teamwork-init/SKILL.md" 100 "teamwork-init should stay concise"
-word_count_max "$ROOT/skills/teamwork-init/SKILL.md" 600 "teamwork-init should stay concise"
+line_count_max "$ROOT/skills/teamwork-init/SKILL.md" 95 "teamwork-init should stay concise"
+word_count_max "$ROOT/skills/teamwork-init/SKILL.md" 650 "teamwork-init should stay concise"
 line_count_max "$ROOT/skills/teamwork-plan/SKILL.md" 120 "teamwork-plan should stay concise"
 word_count_max "$ROOT/skills/teamwork-plan/SKILL.md" 650 "teamwork-plan should stay concise"
 line_count_max "$ROOT/skills/teamwork-goal/SKILL.md" 130 "teamwork-goal should stay concise"
@@ -280,12 +296,12 @@ line_count_max "$ROOT/skills/teamwork-research/SKILL.md" 120 "teamwork-research 
 word_count_max "$ROOT/skills/teamwork-research/SKILL.md" 650 "teamwork-research should stay concise"
 line_count_max "$ROOT/skills/teamwork-execute/SKILL.md" 120 "teamwork-execute should stay concise"
 word_count_max "$ROOT/skills/teamwork-execute/SKILL.md" 650 "teamwork-execute should stay concise"
-line_count_max "$ROOT/skills/teamwork-update/SKILL.md" 80 "teamwork-update should stay concise"
-word_count_max "$ROOT/skills/teamwork-update/SKILL.md" 400 "teamwork-update should stay concise"
+line_count_max "$ROOT/skills/teamwork-update/SKILL.md" 70 "teamwork-update should stay concise"
+word_count_max "$ROOT/skills/teamwork-update/SKILL.md" 450 "teamwork-update should stay concise"
 line_count_max "$ROOT/skills/using-teamwork/references/workflow-contract.md" 150 "workflow contract reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/workflow-contract.md" 950 "workflow contract reference should stay focused"
-line_count_max "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" 130 "subagent dispatch reference should stay focused"
-word_count_max "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" 900 "subagent dispatch reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" 150 "subagent dispatch reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" 1050 "subagent dispatch reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-contract.md" 145 "subagent contract reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-contract.md" 600 "subagent contract reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/role-playbook.md" 100 "role playbook reference should stay focused"
@@ -298,8 +314,10 @@ line_count_max "$ROOT/skills/using-teamwork/references/plan-output.md" 90 "plan 
 word_count_max "$ROOT/skills/using-teamwork/references/plan-output.md" 460 "plan output reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/review-checks.md" 60 "review checks reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/review-checks.md" 460 "review checks reference should stay focused"
-line_count_max "$ROOT/skills/using-teamwork/references/project-init.md" 80 "project init reference should stay focused"
-word_count_max "$ROOT/skills/using-teamwork/references/project-init.md" 600 "project init reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/project-init.md" 85 "project init reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/project-init.md" 650 "project init reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/check-update.md" 70 "check update reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/check-update.md" 500 "check update reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/research-protocol.md" 60 "research protocol reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/research-protocol.md" 430 "research protocol reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/optional-skills.md" 60 "optional skills reference should stay focused"
@@ -319,6 +337,10 @@ for skill in teamwork-init teamwork-goal teamwork-research teamwork-plan teamwor
   grep_required 'skills/using-teamwork/references/workflow-contract.md' "$ROOT/skills/$skill/SKILL.md" "$skill must reference shared workflow contract"
 done
 
+grep_required 'check-update.md' "$ROOT/skills/teamwork-init/SKILL.md" "teamwork-init must reference check-update"
+grep_required 'check-update.md' "$ROOT/skills/teamwork-update/SKILL.md" "teamwork-update must reference check-update"
+grep_required 'check-update.sh' "$ROOT/skills/teamwork-update/SKILL.md" "teamwork-update must reference check-update script"
+[[ -x "$ROOT/scripts/check-update.sh" ]] || fail "check-update script must be executable"
 grep_required 'Verdict: accept | revise | blocked' "$ROOT/skills/teamwork-review/SKILL.md" "review skill verdict enum must match Reviewer Verdict Packet"
 grep_absent 'Verdict: pass | pass-with-notes' "review skill must not use stale verdict enum" "$ROOT/skills/teamwork-review/SKILL.md"
 grep_required 'Reject open delegated tracks' "$ROOT/skills/teamwork-review/SKILL.md" "review skill must reject open delegated tracks"
@@ -336,7 +358,8 @@ grep_required 'returns one packet, then stop' "$ROOT/skills/using-teamwork/refer
 grep_required 'abandoned-after-discovery' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" "subagent dispatch must use canonical closure status"
 grep_required 'agent_type' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" "subagent dispatch must map Codex fields"
 grep_required 'subagent_type' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" "subagent dispatch must map Cursor fields"
-grep_required 'frontier' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" "subagent dispatch must document model classes"
+grep_required 'Custom agent' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" "subagent dispatch must map Cursor custom agents"
+grep_required 'effort' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" "subagent dispatch must document Claude effort"
 
 # --- Subagent contract anchors ---
 grep_required 'Worker Completion Packet' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must define Worker packet"
@@ -394,6 +417,12 @@ for skill in "${SKILLS[@]}"; do
   grep_required "^name: $skill$" "$tmp/home/.codex/skills/$skill/SKILL.md" \
     "installed skill has wrong name: $skill"
 done
+[[ "$(tr -d '[:space:]' < "$tmp/home/.codex/skills/.teamwork-version")" == "$(tr -d '[:space:]' < "$ROOT/VERSION")" ]] \
+  || fail "Codex install must write .teamwork-version matching VERSION"
+[[ -f "$tmp/home/.codex/skills/.teamwork-profile" ]] \
+  || fail "Codex install must write .teamwork-profile"
+HOME="$tmp/home" "$ROOT/scripts/check-update.sh" --readiness --no-fetch >/dev/null \
+  || fail "check-update readiness must succeed after fresh install"
 [[ -f "$tmp/home/.codex/skills/using-teamwork/references/workflow-contract.md" ]] \
   || fail "Codex install must copy using-teamwork references"
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
@@ -565,6 +594,49 @@ for skill in "${SKILLS[@]}"; do
   [[ -f "$tmp/home-cursor/.cursor/skills/$skill/SKILL.md" ]] || fail "Cursor install missing $skill"
   [[ ! -L "$tmp/home-cursor/.cursor/skills/$skill/SKILL.md" ]] || fail "default Cursor install must copy $skill"
 done
+for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do
+  [[ -f "$tmp/home-cursor/.cursor/agents/$agent.md" ]] \
+    || fail "Cursor install must copy Cursor agent $agent"
+  [[ ! -L "$tmp/home-cursor/.cursor/agents/$agent.md" ]] \
+    || fail "default Cursor install must copy Cursor agent $agent"
+done
+for agent in explore designer; do
+  grep_required '^model: claude-sonnet-4-6$' "$tmp/home-cursor/.cursor/agents/$agent.md" \
+    "Cursor install must render sonnet 4.6 model for $agent"
+done
+grep_required '^model: composer-2.5-fast$' "$tmp/home-cursor/.cursor/agents/worker.md" \
+  "Cursor install must render composer 2.5 model for worker"
+for agent in judge code-reviewer deep-judge deep-reviewer; do
+  grep_required '^model: claude-opus-4-8-thinking-high$' "$tmp/home-cursor/.cursor/agents/$agent.md" \
+    "Cursor install must render opus 4.8 model for $agent"
+done
+
+HOME="$tmp/home-cursor-agents" "$ROOT/install.sh" cursor-agents >/dev/null
+for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do
+  [[ -f "$tmp/home-cursor-agents/.cursor/agents/$agent.md" ]] \
+    || fail "Cursor agent install missing $agent"
+done
+[[ ! -e "$tmp/home-cursor-agents/.cursor/skills" ]] \
+  || fail "cursor-agents target must not write Cursor skills"
+
+HOME="$tmp/home-cursor-cost" "$ROOT/install.sh" --profile cost-first cursor-agents >/dev/null
+for agent in explore designer worker; do
+  grep_required '^model: composer-2.5-fast$' "$tmp/home-cursor-cost/.cursor/agents/$agent.md" \
+    "cost-first Cursor agent install must downshift $agent"
+done
+for agent in judge code-reviewer deep-judge deep-reviewer; do
+  grep_required '^model: claude-opus-4-8-thinking-high$' "$tmp/home-cursor-cost/.cursor/agents/$agent.md" \
+    "cost-first Cursor agent install must keep opus 4.8 model for $agent"
+done
+
+cursor_policy_out="$tmp/cursor-policy.out"
+HOME="$tmp/home-cursor-policy" "$ROOT/install.sh" cursor-policy > "$cursor_policy_out"
+grep_required '<!-- TEAMWORK_CURSOR_GLOBAL_START -->' "$cursor_policy_out" \
+  "cursor-policy target must print Teamwork global policy start marker"
+grep_required 'Cursor model profile: default is performance-first' "$cursor_policy_out" \
+  "cursor-policy target must render performance-first profile"
+[[ ! -e "$tmp/home-cursor-policy/.cursor" ]] \
+  || fail "cursor-policy target must not write Cursor home files"
 
 HOME="$tmp/home-claude" "$ROOT/install.sh" claude >/dev/null
 for skill in "${SKILLS[@]}"; do
@@ -573,10 +645,89 @@ for skill in "${SKILLS[@]}"; do
 done
 [[ -f "$tmp/home-claude/.claude/skills/using-teamwork/references/workflow-contract.md" ]] \
   || fail "Claude Code install must copy using-teamwork references"
+for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do
+  [[ -f "$tmp/home-claude/.claude/agents/$agent.md" ]] \
+    || fail "Claude Code install must copy Claude agent $agent"
+  [[ ! -L "$tmp/home-claude/.claude/agents/$agent.md" ]] \
+    || fail "default Claude Code install must copy Claude agent $agent"
+done
+for agent in explore designer worker; do
+  grep_required '^model: sonnet$' "$tmp/home-claude/.claude/agents/$agent.md" \
+    "Claude install must render sonnet model for $agent"
+  grep_required '^effort: medium$' "$tmp/home-claude/.claude/agents/$agent.md" \
+    "Claude install must render medium effort for $agent"
+done
+for agent in judge code-reviewer; do
+  grep_required '^model: opus$' "$tmp/home-claude/.claude/agents/$agent.md" \
+    "Claude install must render opus model for $agent"
+  grep_required '^effort: high$' "$tmp/home-claude/.claude/agents/$agent.md" \
+    "Claude install must render high effort for $agent"
+done
+for agent in deep-judge deep-reviewer; do
+  grep_required '^model: opus$' "$tmp/home-claude/.claude/agents/$agent.md" \
+    "Claude install must render opus model for $agent"
+  grep_required '^effort: xhigh$' "$tmp/home-claude/.claude/agents/$agent.md" \
+    "Claude install must render xhigh effort for $agent"
+done
+grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$tmp/home-claude/.claude/CLAUDE.md" \
+  "Claude install must create Teamwork global CLAUDE block"
+grep_required 'Claude model profile: default is performance-first' "$tmp/home-claude/.claude/CLAUDE.md" \
+  "Claude global policy must record performance-first profile"
+grep_required 'Bootstrap safety:' "$tmp/home-claude/.claude/CLAUDE.md" \
+  "Claude global policy must include bootstrap no-silent-defaults safety"
+
+claude_policy_out="$tmp/claude-policy.out"
+HOME="$tmp/home-claude-policy" "$ROOT/install.sh" claude-policy > "$claude_policy_out"
+grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$claude_policy_out" \
+  "claude-policy target must print Teamwork global policy start marker"
+grep_required 'Claude model profile: default is performance-first' "$claude_policy_out" \
+  "claude-policy target must render performance-first profile"
+[[ ! -e "$tmp/home-claude-policy/.claude/CLAUDE.md" ]] \
+  || fail "claude-policy target must not write global CLAUDE policy"
+
+HOME="$tmp/home-claude-cost" "$ROOT/install.sh" --profile cost-first claude-agents >/dev/null
+for agent in explore designer worker; do
+  grep_required '^model: haiku$' "$tmp/home-claude-cost/.claude/agents/$agent.md" \
+    "cost-first Claude agent install must downshift $agent"
+done
+for agent in judge code-reviewer deep-judge deep-reviewer; do
+  grep_required '^model: opus$' "$tmp/home-claude-cost/.claude/agents/$agent.md" \
+    "cost-first Claude agent install must keep opus model for $agent"
+done
+
+claude_preserve_home="$tmp/home-claude-preserve"
+mkdir -p "$claude_preserve_home/.claude"
+cat > "$claude_preserve_home/.claude/CLAUDE.md" <<'CLAUDE'
+Personal rule before.
+
+<!-- TEAMWORK_CLAUDE_GLOBAL_START -->
+old managed content
+<!-- TEAMWORK_CLAUDE_GLOBAL_END -->
+
+<!-- CODEGRAPH_START -->
+Keep CodeGraph instructions.
+<!-- CODEGRAPH_END -->
+CLAUDE
+HOME="$claude_preserve_home" "$ROOT/install.sh" claude >/dev/null
+grep_required 'Personal rule before.' "$claude_preserve_home/.claude/CLAUDE.md" \
+  "Claude global policy install must preserve user content"
+grep_required '<!-- CODEGRAPH_START -->' "$claude_preserve_home/.claude/CLAUDE.md" \
+  "Claude global policy install must preserve CodeGraph block"
+grep_required 'Bootstrap safety:' "$claude_preserve_home/.claude/CLAUDE.md" \
+  "Claude global policy install must replace managed block"
+grep_absent 'old managed content' \
+  "Claude global policy install must replace old managed content" \
+  "$claude_preserve_home/.claude/CLAUDE.md"
 
 HOME="$tmp/home-claude-link" "$ROOT/install.sh" --link claude >/dev/null
 for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/home-claude-link/.claude/skills/$skill" ]] || fail "Claude Code link install must symlink $skill directory"
+done
+
+HOME="$tmp/home-claude-agents-link" "$ROOT/install.sh" --link claude-agents >/dev/null
+for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do
+  [[ -L "$tmp/home-claude-agents-link/.claude/agents/$agent.md" ]] \
+    || fail "Claude agent link install must symlink $agent.md"
 done
 
 HOME="$tmp/home-invalid" "$ROOT/install.sh" gemini >/dev/null 2>&1 && fail "installer must reject unsupported targets"
@@ -590,17 +741,23 @@ done
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
   [[ -L "$tmp/home-all/.codex/agents/$agent.toml" ]] || fail "all install must link Codex agent $agent"
 done
-for agent in explore worker code-reviewer; do
+for agent in explore worker code-reviewer designer judge deep-judge deep-reviewer; do
   [[ -L "$tmp/home-all/.claude/agents/$agent.md" ]] || fail "all install must link Claude agent $agent"
 done
+for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do
+  [[ -L "$tmp/home-all/.cursor/agents/$agent.md" ]] || fail "all install must link Cursor agent $agent"
+done
 [[ ! -e "$tmp/home-all/.claude/skills/teamwork" ]] || fail "all install must remove retired teamwork skill"
+grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$tmp/home-all/.claude/CLAUDE.md" \
+  "all install must write Claude global policy"
 
 old_root="$ROOT"
 ROOT="$tmp/project-repo"
-mkdir -p "$ROOT/skills" "$ROOT/templates/claude-agents" "$ROOT/templates/codex-agents"
+mkdir -p "$ROOT/skills" "$ROOT/templates/claude-agents" "$ROOT/templates/codex-agents" "$ROOT/templates/cursor-agents"
 cp -R "$old_root/skills/." "$ROOT/skills/"
 cp -R "$old_root/templates/claude-agents/." "$ROOT/templates/claude-agents/"
 cp -R "$old_root/templates/codex-agents/." "$ROOT/templates/codex-agents/"
+cp -R "$old_root/templates/cursor-agents/." "$ROOT/templates/cursor-agents/"
 cp "$old_root/install.sh" "$ROOT/install.sh"
 HOME="$tmp/home-project" ROOT="$ROOT" "$ROOT/install.sh" --link project >/dev/null
 for skill in "${SKILLS[@]}"; do
@@ -609,15 +766,24 @@ done
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
   [[ -L "$ROOT/.codex/agents/$agent.toml" ]] || fail "project install must link Codex agent $agent"
 done
-for agent in explore worker code-reviewer; do
+for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do
+  [[ -L "$ROOT/.cursor/agents/$agent.md" ]] || fail "project install must link Cursor agent $agent"
+done
+for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do
   [[ -L "$ROOT/.claude/agents/$agent.md" ]] || fail "project install must link Claude agent $agent"
 done
 ROOT="$old_root"
 
 HOME="$tmp/home-agents" "$ROOT/install.sh" --link claude-agents >/dev/null
-for agent in explore worker code-reviewer; do
+for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do
   [[ -L "$tmp/home-agents/.claude/agents/$agent.md" ]] \
     || fail "claude-agents install must link $agent.md"
+done
+
+HOME="$tmp/home-cursor-agents-link" "$ROOT/install.sh" --link cursor-agents >/dev/null
+for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do
+  [[ -L "$tmp/home-cursor-agents-link/.cursor/agents/$agent.md" ]] \
+    || fail "cursor-agents link install must symlink $agent.md"
 done
 
 echo "OK: Teamwork skill package validates"

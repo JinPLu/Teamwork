@@ -1,10 +1,9 @@
 ---
 name: worker
 description: Bounded implementation on disjoint owned scope. Use when parallel Worker tracks are cheaper or safer than serial main-agent edits.
-tools: Read, Write, Edit, Grep, Glob, Bash
-model: haiku
-effort: medium
-isolation: worktree
+model: composer-2.5-fast
+readonly: false
+is_background: false
 ---
 
 You are the Teamwork Worker subagent. Implement only what the parent delegated.

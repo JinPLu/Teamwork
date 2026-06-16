@@ -51,24 +51,46 @@ Codex uses `agent_type`; Cursor uses `subagent_type`; Claude Code uses `Task`.
 
 Reasoning effort: `fast`→low, `standard`→medium, `high reasoning`→high, `deep reasoning`→xhigh.
 
-**Cursor** — `subagent_type`, `model`; no `reasoning_effort` or `fork_context`.
-Explorer→`explore`; Worker→`generalPurpose` (or `shell` for shell-only); Reviewer→`code-reviewer`; Designer/Judge→`generalPurpose` with role in prompt. Use `readonly:true` for Explorer/Judge/Reviewer; `run_in_background:true` for long tracks; `resume:"self"` for full-history fork; `best-of-n-runner` for parallel Worker experiments.
+**Cursor** — prefer custom agents from `~/.cursor/agents/` by `name`; fallback `subagent_type`, `model`; no `reasoning_effort` or `fork_context`.
 
-**Claude Code** — `Task` call: `subagent_type` is agent name under `~/.claude/agents/` or `general-purpose`. Model and tool allowlist live on the agent definition, not per Task call.
+| Role | Custom agent | Fallback subagent_type |
+|---|---|---|
+| Explorer | `explore` | `explore` |
+| Worker | `worker` | `generalPurpose` or `shell` |
+| Designer | `designer` | `generalPurpose` + role in prompt |
+| Judge | `judge` | `generalPurpose` + role in prompt |
+| Reviewer | `code-reviewer` | `code-reviewer` |
+| Deep Judge | `deep-judge` | `generalPurpose` + role in prompt |
+| Deep Reviewer | `deep-reviewer` | `code-reviewer` + role in prompt |
+
+Use `readonly:true` for Explorer/Judge/Reviewer; `run_in_background:true` for long tracks; `resume:"self"` for full-history fork; `best-of-n-runner` for parallel Worker experiments.
+
+**Claude Code** — prefer custom agents from `~/.claude/agents/` by `name`; fallback `Task` with `general-purpose` and role in prompt. Model, `effort`, tool allowlist, and `isolation: worktree` live on the agent definition, not per Task call.
+
+| Role | Custom agent | Fallback |
+|---|---|---|
+| Explorer | `explore` | `Explore` or `general-purpose` |
+| Worker | `worker` | `general-purpose` |
+| Designer | `designer` | `general-purpose` + role in prompt |
+| Judge | `judge` | `general-purpose` + role in prompt |
+| Reviewer | `code-reviewer` | `general-purpose` + role in prompt |
+| Deep Judge | `deep-judge` | `general-purpose` + role in prompt |
+| Deep Reviewer | `deep-reviewer` | `general-purpose` + role in prompt |
 
 ## Model Classes
 
-| Class | Codex performance-first | Codex cost-first | Cursor | Claude Code |
-|---|---|---|---|---|
-| `cheap-fast` | opt-in only | gpt-5.4-mini | composer-2.5-fast | claude-haiku |
-| `balanced` | gpt-5.5 med | gpt-5.4 med | gpt-5.5-medium | claude-sonnet |
-| `coding` | gpt-5.5 med | gpt-5.4 med | gpt-5.5-medium | claude-sonnet |
-| `frontier` | gpt-5.5 high | gpt-5.5 high | claude-opus-4-7-thinking-high | claude-opus |
-| `inherited` | omit model | omit model | omit model | omit model |
+| Class | Codex performance-first | Codex cost-first | Cursor perf-first | Cursor cost-first | Claude perf-first | Claude cost-first |
+|---|---|---|---|---|---|---|
+| `cheap-fast` | opt-in only | gpt-5.4-mini | composer-2.5-fast | composer-2.5-fast | haiku med | haiku med |
+| `balanced` | gpt-5.5 med | gpt-5.4 med | claude-sonnet-4-6 | composer-2.5-fast | sonnet med | haiku med |
+| `coding` | gpt-5.5 med | gpt-5.4 med | composer-2.5-fast | composer-2.5-fast | sonnet med | haiku med |
+| `frontier` | gpt-5.5 high | gpt-5.5 high | claude-opus-4-8-thinking-high | claude-opus-4-8-thinking-high | opus high | opus high |
+| `deep reasoning` | gpt-5.5 xhigh | gpt-5.5 xhigh | claude-opus-4-8-thinking-high | claude-opus-4-8-thinking-high | opus xhigh | opus xhigh |
+| `inherited` | omit model | omit model | inherit | inherit | inherit | inherit |
 
 Role defaults: Explorer→`balanced` (use `frontier` for broad/ambiguous/high-risk); Designer→`balanced` (use `frontier` for architecture or public contracts); Judge→`frontier` high reasoning; Worker→`coding` or `inherited`; Reviewer→`frontier` high reasoning.
 
-`performance-first` (Pro/20x Codex default): balanced/coding/frontier→gpt-5.5; routine Explorer/Designer/Worker use medium, Judge/Reviewer high, Deep variants xhigh.
+`performance-first` is the default on all platforms. `./install.sh --profile` renders installed agents for Codex, Cursor, and Claude Code.
 
 Use `cheap-fast` only under explicit latency/quota pressure for trivial read-only evidence. Never for Judge, Reviewer, architecture Designer, public behavior, failed-goal adequacy, or performance-first projects.
 

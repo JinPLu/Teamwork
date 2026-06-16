@@ -2,21 +2,27 @@
 
 Teamwork is a platform-native augmentation layer for Cursor. Cursor native
 capabilities remain the substrate: editing, shell, MCP, permissions, `Task`
-subagents, browser automation, and verification. Teamwork defines when and how
-those capabilities should be combined for evidence-heavy, reviewed, delegated, or
-autonomous work. After Teamwork activates, the main agent upgrades from native
-flow only when evidence, planning, dispatch, review, memory, or goal
-convergence improves correctness, continuity, or cost.
+subagents, custom agents under `~/.cursor/agents/`, browser automation, and
+verification. Teamwork defines when and how those capabilities should be combined
+for evidence-heavy, reviewed, delegated, or autonomous work. After Teamwork
+activates, the main agent upgrades from native flow only when evidence, planning,
+dispatch, review, memory, or goal convergence improves correctness, continuity,
+or cost.
 
 ## Install
 
 ```bash
 ./install.sh cursor
+./install.sh cursor --profile cost-first
+# agents-only refresh when skills should not change:
+./install.sh cursor-agents
+# print the bootstrap block for Cursor User Rules:
+./install.sh cursor-policy
 # or refresh every platform:
 ./install.sh all
 ```
 
-Project-local skills (clone-and-use in this repo):
+Project-local skills and agents:
 
 ```bash
 ./install.sh project
@@ -31,19 +37,28 @@ Local development with symlinks:
 ```
 
 Skills install to `~/.cursor/skills/` (global) or `.cursor/skills/` (project).
-Behavior lives in `skills/`; this file is a concise runtime summary.
+Custom role agents install to `~/.cursor/agents/` (global) or
+`.cursor/agents/` (project). Behavior lives in `skills/`; this file is a concise
+runtime summary.
 
 **Discovery**: Cursor sessions should load Teamwork from `~/.cursor/skills/` or
 the project `.cursor/skills/`. Stale copies under `~/.claude/skills/` (especially
 the retired `teamwork` umbrella skill) can preempt routing; run `./install.sh all`
 after upgrades.
 
+## Global Policy
+
+Cursor has no documented home-file path for User Rules. `./install.sh
+cursor-policy` prints the Teamwork bootstrap block to paste into Cursor Settings
+→ Rules → User Rules. Project `AGENTS.md` or a Cursor-labeled section holds only
+local facts, required values, protected boundaries, or opt-outs.
+
 ## Subagent Dispatch
 
 Teamwork keeps conceptual roles (Explorer, Designer, Judge, Worker, Reviewer) and
 model classes (`cheap-fast`, `balanced`, `coding`, `frontier`, `inherited`)
 platform-neutral. At dispatch time, decide and translate native Cursor fields
-with `skills/using-teamwork/references/subagent-dispatch.md`:
+with `skills/using-teamwork/references/subagent-dispatch.md`.
 
 Teamwork activation is standing authorization for stage-routed dispatch when it
 adds value; the user does not need to say "fan out subagents". Dispatch
@@ -51,6 +66,15 @@ independent Explorer, Designer, Judge, Worker, or Reviewer tracks when they can
 improve evidence, elapsed time, context isolation, ownership clarity, or review
 quality. Use a fresh Reviewer for required acceptance when available; otherwise
 label residual unreviewed risk.
+
+Prefer installed Teamwork custom agents from `~/.cursor/agents/` or
+`.cursor/agents/` by agent `name`. Built-in fallback when unavailable:
+
+- Explorer -> `subagent_type:"explore"`
+- Worker -> `subagent_type:"generalPurpose"` or `shell` for shell-only tracks
+- Reviewer -> `subagent_type:"code-reviewer"`
+- Designer/Judge -> `subagent_type:"generalPurpose"` with role in prompt
+
 Each subagent is a bounded packet producer; close, block, or abandon its Actual
 Dispatch Log entry after integration before claiming acceptance.
 
@@ -59,16 +83,15 @@ capped Explorer packets, and artifact-backed evidence ledgers instead of returni
 raw search output, long matrices, or copied source bodies to the main thread.
 Treat compaction as continuity support, not audit evidence.
 
-- Explorer -> `subagent_type:"explore"`
-- Worker -> `subagent_type:"generalPurpose"` or `shell` for shell-only tracks
-- Reviewer -> `subagent_type:"code-reviewer"`
-- Designer/Judge -> `subagent_type:"generalPurpose"` with role in prompt
+## Profile And Models
 
-Model classes map to Cursor `Task` models: `composer-2.5-fast` only for
-opt-in `cheap-fast`, `gpt-5.5-medium` for `balanced` and `coding` when listed,
-and `claude-opus-4-7-thinking-high` for `frontier`. Use only models listed in
-the active `Task` tool schema; if `gpt-5.5-medium` is unavailable, choose the
-strongest non-frontier model rather than collapsing normal work to fast.
+`./install.sh cursor --profile performance-first|cost-first` renders installed
+Cursor agents. `performance-first` is default: Explorer/Designer use
+`claude-sonnet-4-6`, Worker uses `composer-2.5-fast`, Judge/Reviewer/Deep
+variants use `claude-opus-4-8-thinking-high`. `cost-first` downshifts routine
+roles to `composer-2.5-fast`; review tiers stay on
+`claude-opus-4-8-thinking-high`. Use only models listed in the active `Task`
+tool schema.
 
 ## Goal Mode
 

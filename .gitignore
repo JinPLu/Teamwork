@@ -24,3 +24,4 @@ docs/superpowers/
 # Local project symlinks/copies from ./install.sh project
 .cursor/
 .claude/
+.teamwork-profile

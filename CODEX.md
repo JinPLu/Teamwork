@@ -64,9 +64,9 @@ For failed goal iterations, refresh research and check whether the active plan w
 `./install.sh codex` maintains a Teamwork-managed block in global
 `~/.codex/AGENTS.md`. `./install.sh codex-policy` prints the same block for
 users who want to paste it into Codex App Personalization. The block is a short
-bootstrap policy: subagent authorization, question-first dispatch efficiency,
-Codex model profile, no-silent-defaults safety for required values, and
-remote-execution baseline. After installation or personalization, the user does not need to
+bootstrap policy: subagent authorization, act-by-default posture, Codex model
+profile, no-silent-defaults safety for required values, and remote-execution
+baseline. After installation or personalization, the user does not need to
 repeat "use subagents" in each prompt. Use a project `CODEX.md` or
 Codex-labeled `AGENTS.md` section only for repository facts, exceptions,
 required values, protected boundaries, or opt-outs:
@@ -108,3 +108,11 @@ Use focused subagent references at dispatch time: `skills/using-teamwork/referen
 - Subagents are bounded packet producers. After each packet returns, the orchestrator integrates it and closes, blocks, or abandons the dispatch in the Actual Dispatch Log before final acceptance.
 
 Do not encode native dispatch fields in ordinary plans unless they are part of the routing guidance. Preserve native flow for quick facts, tiny obvious edits, low-risk bug fixes, low-risk mechanical multi-file edits, destructive/credential-sensitive work, tightly coupled critical-path work, unavailable tools, missing authorization, explicit user opt-out, or cases where subagent context cost exceeds value.
+
+## Cross-Platform Parity
+
+Cursor and Claude Code use the same role model, profile system, and bootstrap
+policy pattern. See [CURSOR.md](CURSOR.md) and [CLAUDE.md](CLAUDE.md) for
+platform-specific install targets, agent paths, and global-policy surfaces.
+Shared dispatch and model-class rules live in
+`skills/using-teamwork/references/subagent-dispatch.md`.

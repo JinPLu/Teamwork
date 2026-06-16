@@ -132,14 +132,16 @@ Codex-first default install:
 ./install.sh codex --profile cost-first
 ```
 
-Install for other platforms:
+Install for other platforms (same `performance-first` / `cost-first` profiles):
 
 ```bash
-./install.sh cursor
-./install.sh claude          # Claude Code skills only
-./install.sh claude-agents   # Claude Code agents only
-./install.sh all             # all supported skills + Codex/Claude agents
+./install.sh cursor|claude|all
+./install.sh cursor-agents|claude-agents   # agents only
+./install.sh cursor-policy|claude-policy   # bootstrap policy print
 ```
+
+`./install.sh claude` writes managed global policy to `~/.claude/CLAUDE.md`;
+`./install.sh cursor-policy` prints the Cursor User Rules block.
 
 Local development or project installs:
 
@@ -149,11 +151,6 @@ Local development or project installs:
 ./install.sh --link all
 ./install.sh --link project
 ```
-
-Codex installs use `performance-first` by default: routine Explorer /
-Designer / Worker roles use role-optimized models, while high-risk Judge /
-Reviewer profiles stay on stronger model tiers. `cost-first` downshifts only
-routine roles, not high-risk review.
 
 ## How The Skills Work
 
@@ -166,28 +163,29 @@ routine roles, not high-risk review.
 | `teamwork-execute` | accepted plans after go ahead / continue / do it | Staged Execution / Verification Before Claims |
 | `teamwork-review` | review, diff, acceptance, PR/CI feedback | Review Reception / Fresh Review |
 | `teamwork-goal` | keep going, until it passes, budgeted iteration | Goal Recovery / Convergence |
-| `teamwork-init` | AGENTS/CODEX/CURSOR/CLAUDE and instruction slimming | Instruction Slimming |
-| `teamwork-update` | version, manifests, install surface, release hygiene | Package Hygiene |
+| `teamwork-init` | AGENTS/CODEX/CURSOR/CLAUDE, instruction slimming, install readiness | Instruction Slimming |
+| `teamwork-update` | refresh installs, check drift, release hygiene | Package Hygiene |
 
 These are Teamwork-owned progressive abilities. Lightweight work does not show internal capability names; complex work loads references, artifacts, packets, or subagents only when needed.
 
 ## Platform Positioning
 
 Codex is the reference runtime: native goals are the autonomous control plane, and `teamwork_*` custom agents are the primary collaboration network for non-lightweight work.
-`./install.sh codex` writes the global bootstrap policy; `./install.sh codex-policy` prints the App Personalization copy. Full workflow rules stay in skills/references; project files keep local facts and exceptions.
+`./install.sh codex` writes the global bootstrap policy; `./install.sh codex-policy` prints the App Personalization copy.
 
-Cursor and Claude Code are adapters: they reuse the same Teamwork protocol
-while keeping their own native capabilities. Cursor uses Task subagents;
-Claude Code skills and agents install through the matching installer targets,
-with rolling reports carrying goal mode.
+Cursor and Claude Code are first-class runtimes: 7 role agents, `./install.sh
+--profile`, and bootstrap policy via `cursor-policy` or managed
+`~/.claude/CLAUDE.md`. See [CURSOR.md](CURSOR.md) and [CLAUDE.md](CLAUDE.md).
 
 ## Version And Validation
 
-`VERSION` is the package version source of truth and must match `.codex-plugin/plugin.json` and `.claude-plugin/plugin.json`. Version, manifest, install-surface refresh, and release-surface updates use `teamwork-update`; it refreshes Teamwork-managed skills, agents, and Codex global policy, with `./install.sh project` for local installs.
-
-Validate the repository:
+`VERSION` matches both plugin manifests. Refresh installed surfaces with
+`teamwork-update` (user refresh) or `./scripts/check-update.sh`; init runs the
+readiness gate first. Maintainer release uses `teamwork-update`; project-local
+installs use `./install.sh project`.
 
 ```bash
+./scripts/check-update.sh --project /path/to/project
 ./scripts/validate.sh
 ```
 

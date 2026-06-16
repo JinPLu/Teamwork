@@ -1,7 +1,7 @@
 {
   "name": "teamwork-skill",
-  "version": "2.0.0",
-  "description": "Codex-first skills (also installable on Cursor and Claude Code) for evidence-first planning, role-subagent fan-out, review, and native goal convergence.",
+  "version": "2.2.0",
+  "description": "Codex-first skills (also installable on Cursor and Claude Code) for evidence-first planning, role-subagent fan-out, profile rendering, review, and native goal convergence.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"
