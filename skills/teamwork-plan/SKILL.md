@@ -5,95 +5,68 @@ description: Use when explicit planning/design or non-trivial implement/fix/add/
 
 # Teamwork Plan
 
-Use after research, diagnosis, or user direction selects a path. Use before
-non-trivial implementation when no accepted plan exists. Plans lock scope.
+Use after research or user direction selects a path, and before non-trivial
+implementation when no accepted plan exists. Plans lock scope.
 
-Read only as needed:
+Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
+evidence and judgment; `skills/using-teamwork/references/subagent-dispatch.md`
+for when to fan out; `skills/using-teamwork/references/role-playbook.md` for
+Designer/Judge method; `skills/using-teamwork/references/subagent-contract.md`
+for delegated prompts and packets; `skills/using-teamwork/references/plan-output.md`
+for durable plans; `skills/using-teamwork/references/artifact-protocol.md` for
+artifact triggers; `skills/using-teamwork/references/optional-skills.md` for
+external tools.
 
-- `skills/using-teamwork/references/workflow-contract.md` for evidence and boundaries.
-- `skills/using-teamwork/references/dispatch-policy.md` for Dispatch Guidance.
-- `skills/using-teamwork/references/role-workflows.md` for Designer/Judge method.
-- `skills/using-teamwork/references/designer-judge-workflow.md` for option matrix and Judge gates.
-- `skills/using-teamwork/references/optional-skills.md` for external skills.
-- `skills/using-teamwork/references/subagent-prompt-contract.md` for delegated prompts.
-- `skills/using-teamwork/references/plan-output.md` for durable handoffs.
-- `skills/using-teamwork/references/artifact-protocol.md` for durable triggers.
-- `skills/using-teamwork/references/goal-iteration.md` for failed goal-plan revision.
+## Ask First
 
-## Inputs
-
-Goal, evidence, scope, protected boundaries, verification target, budget, and
-stop rules. Route to `teamwork-research` when external behavior, unfamiliar
-APIs, upstream bugs, or ambiguous architecture lack evidence.
+Resolve decision-critical gaps before planning. Ask when scope, acceptance,
+constraints, risk, UX, public behavior, contracts, architecture, or
+verification would change the plan. Route to `teamwork-research` when external
+behavior, unfamiliar APIs, upstream bugs, or ambiguous architecture lack
+evidence. Do not produce an execution plan while a core requirement is open.
 
 ## Planning Tiers
 
-Use the lightest planning form that preserves correctness after the
-Clarification Gate has run.
+Use the lightest form that stays correct:
 
-- Plan-as-you-go: clear small-to-medium work; state scope, files,
-  verification, stop condition, and ask first if an answer could change outcome.
-- Lightweight plan: bounded low-risk work; include goal, scope, steps,
-  verification, stop condition, and Dispatch Guidance only when dispatch matters.
-- Durable plan: goal-mode, cross-turn, high-risk, ambiguous, public/shared
-  behavior, long delegation, complex Worker fan-out, or explicit repo plans.
-
-Default durable path: `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`.
+- **Plan-as-you-go:** clear small-to-medium work — state scope, files,
+  verification, and stop condition, then proceed.
+- **Lightweight plan:** bounded low-risk work — goal, scope, steps,
+  verification, stop condition.
+- **Durable plan:** goal-mode, cross-turn, high-risk, ambiguous, public/shared
+  behavior, long delegation, or explicit repo plans. Path
+  `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`; see `plan-output.md`.
 
 ## Workflow
 
-1. Restate goal/root cause and label evidence `observed`, `inferred`, or
-   `claimed`.
-2. Add short calibration before planning: `Evidence`, `Assumptions`,
-   `Uncertainty`, `Next`, and `Confidence`; match confidence to evidence.
-3. Resolve decision-critical human requirement gaps before planning. Record
-   `Clarification Gate: pass | ask | assumptions-stated | blocked-for-clarification`;
-   ask when scope, acceptance, constraints, risk, UX, public behavior,
-   contracts, architecture, or verification would change.
-4. Build Requirements Mapping from each requirement to evidence or
-   verification.
-5. Define in/out/protected scope and choose the smallest producer-side change.
-6. Run the Parallelization Gate before implementation steps when work is
-   non-lightweight or dispatch affects risk, cost, or review. Split independent
-   tracks when subagents are authorized, discover tools, or emit `Dispatch Exception:`.
-7. Use Designer workflow for ambiguous choices unless observed evidence already
-   fixes the decision. Use Judge workflow before delivering high-risk, durable,
-   delegated, or goal-mode plans; if unavailable after discovery or explicitly
-   opted out, label the plan `unreviewed`. Record Designer/Judge packet
-   summaries in chat plans or the durable plan when used.
-8. Write `Dispatch Guidance:` or durable `Subagent Routing`; guidance helps
-   execution but is not the only dispatch authorization.
-9. If external skills are in scope, apply `optional-skills.md`; plans may
-   document install gates, but must not auto-install optional skills.
-10. Add Subagent Prompt Packets only for delegated roles.
-11. Write ordered steps, verification, Expected Results, risks, stop rules, and
+1. Restate the goal or root cause; label evidence `observed`, `inferred`, or
+   `claimed`, and match confidence to evidence.
+2. Map each requirement to evidence or a verification step.
+3. Define in/out/protected scope and choose the smallest producer-side change.
+4. When work is non-lightweight, decide the dispatch split before writing steps:
+   split independent tracks to subagents with clear ownership, or keep local and
+   note why.
+5. Use Designer method for ambiguous choices; use Judge review before delivering
+   high-risk, durable, delegated, or goal-mode plans. If review is skipped after
+   discovery, name the residual risk.
+6. Write ordered steps, verification, expected results, risks, stop rules, and
    handoffs.
 
-## Quality Gates
+## Quality Bar
 
 - Every planned file traces to the goal.
-- Calibration is brief, explicit, and avoids unsupported high confidence.
-- Clarification Gate is `pass` or narrow `assumptions-stated`; `ask` or
-  `blocked-for-clarification` means no execution plan until the user answers.
 - Required env vars, paths, commands, ports, models, hyperparameters, configs,
-  credentials, and execution modes trace to user input, source/config, project
-  instructions, or observed evidence. Human requirements ask first; missing
-  source/config/credential values block only after they cannot be found or obtained.
-- No broad refactor, abstraction, formatting churn, or downstream cleanup
-  unless evidence requires it.
-- `Dispatch Guidance: none` requires a continuity rationale only when dispatch
-  would otherwise be material.
-- Durable/high-risk/ambiguous plans require Judge verdict or an explicit
-  `Dispatch Exception:` and `unreviewed` label.
-- Delegated plans name prompt contract, context strategy, ownership, and
-  Required Output Schema.
-- Goal-mode durable plans include Search Keys and Abstract.
-- Platform native dispatch fields are derived at dispatch time from the active
-  stage decision and runtime platform, not copied blindly from plan prose.
+  credentials, and execution modes trace to user input, source/config,
+  instructions, or observed evidence — never invented. Missing human
+  requirements ask first; missing source values block only after they cannot be
+  found.
+- No broad refactor, abstraction, formatting churn, or downstream cleanup unless
+  evidence requires it.
+- Delegated plans name the prompt shape, ownership, and expected packet.
+- Goal-mode durable plans include Search Keys and an Abstract.
 
 ## Output
 
-Use bullets or a compact chat plan for lightweight work. For durable plans, use
-`skills/using-teamwork/references/plan-output.md`.
-Include `Memory Delta:` only when durable project memory was checked or
-changed.
+Bullets or a compact chat plan for lightweight work; `plan-output.md` for
+durable plans. Include `Memory Delta:` only when durable project memory was
+checked or changed.

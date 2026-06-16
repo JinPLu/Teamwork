@@ -73,7 +73,7 @@ For failed goal iterations, refresh research and check whether the active plan w
 
 ## Subagent Mapping
 
-Teamwork keeps conceptual roles (Explorer, Designer, Judge, Worker, Reviewer) and model classes (`cheap-fast`, `balanced`, `coding`, `frontier`, `inherited`) platform-neutral. At dispatch time, use `skills/using-teamwork/references/dispatch-policy.md` for the decision and translate native fields through `platform-dispatch-mapping.md`. Very large work may use `workflow-orchestration.md` and map to Claude Code dynamic workflows when available:
+Teamwork keeps conceptual roles (Explorer, Designer, Judge, Worker, Reviewer) and model classes (`cheap-fast`, `balanced`, `coding`, `frontier`, `inherited`) platform-neutral. At dispatch time, use `skills/using-teamwork/references/subagent-dispatch.md` for the decision and native Claude Code field mapping. Very large work may use `workflow-orchestration.md` and map to Claude Code dynamic workflows when available:
 
 - Explorer -> `subagent_type:"explore"` if defined, otherwise `general-purpose` with Explorer role in prompt
 - Worker -> `subagent_type:"general-purpose"` (or a user-defined `worker` agent)

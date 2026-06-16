@@ -5,96 +5,54 @@ description: Use when the next step is evidence gathering, root-cause investigat
 
 # Teamwork Research
 
-Research establishes project reality, compares options, and hands a selected
-direction to `teamwork-plan`. It does not produce implementation plans.
+Research establishes project reality, compares options, and hands a direction to
+`teamwork-plan`. It does not produce implementation plans.
 
-Read only as needed:
+Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
+evidence rules; `skills/using-teamwork/references/research-protocol.md` for
+lookup/research/deep modes and source-census; `skills/using-teamwork/references/subagent-dispatch.md`
+and `skills/using-teamwork/references/subagent-contract.md` for Explorer fan-out;
+`skills/using-teamwork/references/artifact-protocol.md` for reusable findings;
+`skills/using-teamwork/references/optional-skills.md` before external tools.
 
-- `skills/using-teamwork/references/workflow-contract.md` for evidence and context rules.
-- `skills/using-teamwork/references/dispatch-policy.md` for Explorer dispatch economics.
-- `skills/using-teamwork/references/research-protocol.md` for lookup,
-  research, deep-research, source-audit, citation, and safety staging.
-- `skills/using-teamwork/references/optional-skills.md` before installing or
-  invoking new external tool skills.
-- `skills/using-teamwork/references/subagent-prompt-contract.md` before writing Explorer prompts.
-- `skills/using-teamwork/references/subagent-packets.md` for Explorer Result Packet.
-- `skills/using-teamwork/references/artifact-protocol.md` for reusable research artifacts.
-- `skills/using-teamwork/references/goal-iteration.md` for failed goal attempts.
+## When To Use
 
-## Research Artifact Requirement
-
-Write or update `docs/teamwork/research/YYYY-MM-DD-<slug>.md` when findings
-will be reused, feed a durable plan, support goal-mode iteration, use external
-calibration for a durable decision, refresh failed assumptions, or justify a
-non-trivial recommendation that should survive the current answer. For
-lightweight one-turn lookup, cite evidence in chat.
-
-Search existing research artifacts first with goal words, exact errors, paths,
-dependency/API names, external entities, and old slugs. Record reuse, update,
-or new.
-
-Artifacts include Search Keys and Abstract for future retrieval.
-
-## Research Context Budget Gate
-
-Before broad research, estimate candidate count, source classes, expected
-sources, and artifact need. Trigger source census plus artifact-backed evidence
-when candidates exceed 6, expected sources exceed 10, source classes exceed 3,
-public and private evidence mix, the user asks for broad/deep research, or the
-findings feed a durable plan. Keep broad recall in search/source census,
-Explorer subthreads, and artifacts; keep the main thread to compressed
-evidence, decision, and handoff. Use compaction only as continuity support, not
-as audit evidence.
+Route here before planning or execution when root cause, source of truth,
+current API behavior, prior failure, acceptance evidence, or risk is unclear.
+If you skip it, state the direct observed evidence that makes research
+unnecessary.
 
 ## Workflow
 
-1. Define question and success criteria.
-2. Retrieve prior research and record disposition.
-3. Run the Research Context Budget Gate, then split separable evidence
-   questions: local source, symptoms, artifacts,
-   external constraints, alternatives, upstream reports, papers, or practice.
-4. Use parallel Explorer subagents for 2+ independent tracks in non-lightweight
-   research when they provide clear evidence, elapsed-time, or context-isolation value
-   and subagents are authorized. Serial local research is fine for tightly
-   coupled, lightweight, or one-track evidence; emit `Dispatch Exception:` when
-   authorized material dispatch is skipped.
-5. Require bounded Explorer Result Packet for delegated research. For local
-   research, use the same evidence fields naturally when they help the answer.
-6. Close each Explorer track in the Actual Dispatch Log after synthesis, or
-   record `blocked` / `abandoned-after-discovery` with rationale.
-7. Read primary local evidence first and label key findings observed, inferred,
-   or claimed.
-8. Use external calibration when current platform, dependency, model, API,
-   upstream behavior, performance, unfamiliar frameworks, or repeated failures
-   could affect the answer.
-9. For web or deep research, follow `research-protocol.md`: clarify/rewrite,
-   plan source classes, run source census before deep reads, fan out queries,
-   audit contradictions, record coverage gaps, and keep public web search separate from private data.
-10. Before installing or depending on external skills, apply
-   `optional-skills.md`; prefer active plugins, reject duplicates, and require
-   credentials, write-risk review, and smoke test.
-11. Synthesize options, preserve dissent, recommend the smallest producer-side
-   path, and write/update any required artifact.
+1. Define the question and what a good answer looks like.
+2. Search prior artifacts; record reuse, update, or new.
+3. Split separable evidence questions: local source, symptoms, external
+   constraints, alternatives, upstream reports, papers, or practice.
+4. Fan out parallel Explorers for 2+ independent tracks when they add evidence,
+   time, or context-isolation value and subagents are authorized. Keep tightly
+   coupled or one-track evidence local.
+5. Read primary local evidence first; label findings `observed`, `inferred`, or
+   `claimed`.
+6. Use external calibration when platform, dependency, model, API, or upstream
+   behavior could change the answer; follow `research-protocol.md` for web/deep
+   work and keep public web search separate from private data.
+7. Synthesize options, preserve dissent, recommend the smallest producer-side
+   path, and write any reusable artifact.
 
-## Hidden Research Gate
+## Artifacts
 
-Do not skip research merely because the user asked to implement. Route here
-before planning or execution when root cause, source of truth, current API
-behavior, prior failure, acceptance evidence, or risk is unclear. If skipping,
-state the direct observed evidence that makes research unnecessary.
-
-## Research Refresh Triggers
-
-Route back to research when verification has no evidence delta, reviewer
-dissent reinforces a stale assumption, behavior may be version/environment
-specific, local evidence contradicts claims, implementation broadens without
-evidence, or the active plan is invalidated.
+Write `docs/teamwork/research/YYYY-MM-DD-<slug>.md` when findings will be reused,
+feed a durable plan, support goal-mode iteration, or justify a non-trivial
+recommendation. For one-turn lookup, cite evidence in chat. Artifacts include
+Search Keys and an Abstract for retrieval. For broad research, keep recall broad
+but transport narrow: condensed Explorer packets plus artifact pointers, not raw
+dumps in the main thread.
 
 ## Handoff
 
-Return artifact path or none, question, closed dispatch log or continuity
-rationale, assumptions, evidence, options, recommendation, dissent, plan-ready
-fields (goal, scope, protected boundaries, verification target, budget, stop
-rules when known), context budget disposition, refresh triggers, optional
-`Memory Delta:` when durable project memory was checked or changed, and
-`Route: teamwork-plan`.
+Return artifact path or none, the question, a closed dispatch log or continuity
+rationale, assumptions, evidence, options, recommendation, dissent, and
+plan-ready fields (goal, scope, protected boundaries, verification target,
+budget, stop rules when known). Include `Memory Delta:` only when durable
+project memory was checked or changed. End with `Route: teamwork-plan` when a
+plan is the next step.

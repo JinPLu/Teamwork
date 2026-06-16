@@ -1,230 +1,129 @@
 # Workflow Contract
 
-Use this reference whenever a Teamwork stage is active. Keep stage `SKILL.md`
-files focused on stage-specific behavior; this file owns shared judgment rules.
+Shared judgment for every Teamwork stage. Stage `SKILL.md` files stay
+stage-specific; this file owns the reusable rules. Teamwork sits on top of
+native tools: native capabilities execute, Teamwork adds evidence, dispatch,
+memory, and acceptance.
 
-## Rule Placement
+## Principles
 
-Keep always-on bootstrap policy short: Codex App Personalization or global
-`~/.codex/AGENTS.md` should contain only standing authorization,
-clarification-first posture, efficiency, model profile, remote-execution
-baseline, and a short question-first no-silent-defaults safety note.
-This file owns reusable workflow judgment such as evidence, assumptions, no
-silent defaults, artifacts, reviewability, and subagent lifecycle. Project
-instructions own concrete local facts, required values, exceptions, and
-protected boundaries.
+1. **Act by default.** Once intent is clear, do the work directly and make
+   ordinary decisions yourself: which tool or MCP to use, naming, formatting,
+   safe/reversible defaults, and equivalent approaches. No gate labels, no
+   ceremony, no permission-seeking for routine choices.
+2. **Ask only when it matters.** Ask when you hit a real obstacle, lack
+   information you cannot obtain on your own, or face a core decision you cannot
+   resolve from the request, code, or context — scope, acceptance, irreversible
+   or destructive actions, public contracts, architecture, or conflicting
+   requirements. Batch such questions and keep them short. Do not ask about
+   routine tool/MCP/approach choices the model can reasonably judge.
+3. **No silent defaults.** Never invent values for env vars, paths, commands,
+   ports, models, hyperparameters, credentials, configs, or execution modes. Ask
+   when the user can supply a missing value; block and say what you checked when
+   it cannot be obtained. Do not mask missing state by switching local/remote,
+   dev/prod, datasets, models, or providers.
+4. **Ground claims in evidence.** Label important findings `observed`,
+   `inferred`, or `claimed`. Treat names, comments, READMEs, summaries, and
+   labels like `latest`/`v2` as `claimed` until a direct source, test, config,
+   command output, diff, or primary source confirms them.
+5. **Judge silently; narrate only what matters.** Clarification, dispatch, and
+   review decisions are internal. Do not emit gate-status labels as required
+   output. Record a decision only when it has real consequences: a question the
+   user must answer, an open delegated track, or a skipped action that changes
+   the review outcome.
+6. **Fan out to go faster.** When an independent track can run in parallel with
+   clear ownership, dispatch it. Keep the main thread for orchestration,
+   integration, and final verification. See `subagent-dispatch.md`.
+7. **Acceptance is real but light.** High-risk, public-contract, delegated,
+   release, or destructive work gets a fresh review. Everything else accepts on
+   same-context verification plus a one-line residual risk. Completion always
+   needs verification evidence, never just a self-report.
 
-## Assumptions And Boundaries
+## Asking vs Assuming
 
-- Clarification Gate: Before planning or executing, identify
-  decision-critical uncertainty in user needs, scope, acceptance, constraints,
-  data, UI/UX, risk, timing, or public behavior. Ask concise questions when the
-  answer would change the plan or execution. Missing human requirements ask
-  first; they become blockers only when the answer cannot be obtained and safe
-  progress is impossible. Do not hide core requirements as assumptions.
-- Clarification-first default: before file edits, behavior changes, public
-  output, execution-target choices, workflow policy changes, or non-trivial
-  implementation, ask when intent, scope, acceptance, constraints, or protected
-  boundaries are not explicit from the user, source/config, or an accepted
-  plan. Prefer a short batched question over inferred requirements.
-- Gate outcomes are `pass`, `assumptions-stated`, `ask`, and
-  `blocked-for-clarification`. Use `ask` for a batched user question before a
-  plan exists or when execution needs one missing human requirement; use
-  `blocked-for-clarification` only after the needed answer is unavailable and
-  safe planning/execution cannot continue.
-- State assumptions before they affect behavior, scope, verification, public
-  contracts, data contracts, architecture, protected claims, or user constraints.
-- Stop and ask, or route to research, when an assumption would change public
-  behavior, protected contracts, architecture, or user intent.
-- Use `assumptions-stated` only for read-only work, tiny explicit mechanical
-  edits, or cases where the assumption cannot change behavior, scope,
-  acceptance, architecture, public contracts, data contracts, or user-visible
-  output. Otherwise the gate is `ask` or `blocked-for-clarification`.
-- Prefer the smallest producer-side change that satisfies the goal.
-- Avoid speculative abstraction, unrelated cleanup, formatting churn, broad
-  refactors, or downstream cleanup unless direct evidence requires it.
+Default to proceeding. Make and state a reasonable assumption for anything you
+can judge from the request, code, or context, and keep moving.
 
-## No Silent Defaults
+Ask first only when the answer is genuinely beyond the model's reach and would
+change the outcome: a blocking obstacle, missing information you cannot obtain
+yourself, or a core decision on scope, acceptance, constraints, protected
+boundaries, public/data contracts, architecture, or an irreversible/destructive
+action. Batch these into one short question. A missing required value is a
+question only when the user can supply it and you cannot find it; otherwise it
+is a blocker. Do not interrupt for routine choices — tool or MCP selection,
+naming, formatting, or equivalent approaches.
 
-Do not invent fallback defaults for environment variables, paths, commands,
-ports, model names, hyperparameters, credentials, config, test inputs, external
-services, or execution modes. A default is allowed only when it is explicit in
-source, config, docs, the accepted plan, or user instruction.
+## Evidence
 
-Missing required values are question-first blockers: ask once when user input
-can supply the value. If unavailable, they are hard blockers: report the missing
-input and name the evidence checked. Do not mask missing state by switching
-local/remote, dev/prod, online/offline, datasets, models, providers, or paths.
-Avoid symlink or path-alias fixes unless the repo already depends on them or the
-user asks; when used, disclose the target and verify it.
-
-## Evidence Interpretation Contract
-
-Treat names, comments, README prose, issue text, summaries, labels such as
-`latest` or `v2`, and historical notes as claims until corroborated.
-
-Label important evidence:
-
-- `observed`: directly inspected source, diff, config, log, command output,
-  test result, artifact, or primary external source.
-- `inferred`: conclusion drawn from observed evidence.
-- `claimed`: narrative, naming, summary, or user statement that still needs a
-  direct evidence cross-check.
-
-Before important decisions, cross-check at least one direct evidence category:
+Cross-check at least one direct evidence category before an important decision:
 source call path, test behavior, configuration, command output, artifact
-properties, git diff, or primary external evidence.
+properties, git diff, or primary external source. Use local files, diffs, logs,
+tests, and prior artifacts first. Add external calibration (official docs,
+papers, release notes, upstream issues) when current platform, dependency,
+model, API, or field practice could change the answer.
 
-## Context & Cost Discipline
+## Context & Cost
 
-- Use local files, diffs, logs, tests, artifacts, and prior Teamwork artifacts
-  first to establish the actual project state.
-- For non-trivial research, use external calibration from official docs,
-  papers, release notes, upstream issues, or other primary sources when current
-  platform, dependency, model, API, upstream, or field practice can affect the
-  answer.
-- Load references only when their condition applies. Do not paste large logs or
-  raw subagent transcripts into the main context; ask for condensed evidence,
-  confidence, dissent, and open questions.
-- Use role-specific Dispatch Economics. Explorer/Reviewer tracks are capped by
-  context cost; Worker tracks are capped by ownership clarity, integration
-  cost, and verification shape.
-- For structural code questions, use CodeGraph before Explorer fanout; dispatch
-  only when independent evidence or synthesis remains useful.
-- Use subagent dispatch when the active platform or loaded instructions
-  authorize subagents and an independent track has clear evidence,
-  elapsed-time, context-isolation, implementation-ownership, or fresh-review
-  value. Codex standing authorization must come from the user's prompt or a
-  loaded project/global instruction. The main agent remains the orchestrator and
-  keeps raw evidence, implementation detail, and fresh review outside the main
-  context when that improves quality or cost.
-- Missing currently active subagent tools is not enough to stay local. On
-  Codex, if `tool_search` is available, discover `spawn_agent` before recording
-  an unavailable-tool exception. On Cursor or Claude Code, use the `Task` tool
-  when present.
+Keep raw logs and subagent transcripts out of the main thread; ask for condensed
+evidence, confidence, and open questions. For one structural code question, use
+CodeGraph before dispatching an Explorer. Load references only when their
+condition applies.
 
-## Workflow Pattern Selection
+## How Much Process
 
-Choose the smallest workflow pattern that preserves correctness:
+Pick the lightest pattern that stays correct:
 
-- Treat work as non-lightweight when it is multi-file, unfamiliar, ambiguous,
-  repeated-failure, public/shared behavior, protected-boundary, cross-turn,
-  delegated, or completion acceptance work. Low-risk mechanical multi-file
-  edits and small bug fixes may still use the native fast path only after the
-  Clarification Gate passes and scope, boundary, and verification are clear.
-- Native single-agent: quick facts, read-only answers, tiny explicit edits,
-  low-risk bug fixes, low-risk mechanical multi-file edits, tight context,
-  credential work, one CodeGraph-answerable structural question, or tightly
-  coupled critical path after clarification-first gating passes.
-- Plan-as-you-go: for small-to-medium clear work after the Clarification Gate
-  passes, state scope, touched paths, verification, and stop condition, then
-  proceed without durable artifacts or approval ceremony.
-- Skill: repeated workflow or domain expertise that should load on demand.
-- Fixed sequence with clear steps: use a lightweight plan.
-- Router/subagent: distinct domains, independent evidence, tests, logs, or
-  disjoint Worker ownership.
-- Handoff: user interaction, credentials, destructive action, or capability
-  boundary needs a different actor.
-- Custom workflow: many-shard, long-running, repeated, or resumable work needs
-  explicit state, caps, and stop controls.
-- Ambiguous design or high-risk plan quality: use Designer or Judge prompts
-  before execution.
-- Unpredictable or multi-file implementation: use an orchestrator/Worker
-  pattern with disjoint ownership or worktree isolation.
-- Clear acceptance plus retry need: use a review or goal loop with explicit
-  verification and stop rules.
+- **Native single-agent:** quick facts, read-only answers, tiny edits, low-risk
+  bug fixes, low-risk mechanical multi-file edits, one CodeGraph question, or a
+  tightly coupled critical path.
+- **Plan-as-you-go:** clear small-to-medium work; state scope, files,
+  verification, and stop condition, then proceed.
+- **Durable plan:** goal-mode, cross-turn, high-risk, ambiguous, public/shared
+  behavior, long delegation, or explicit repo plans.
+- **Subagent fan-out:** independent evidence, design, implementation, or review
+  tracks with clear ownership.
+- **Workflow orchestration:** many-shard, long-running, or resumable work; see
+  `workflow-orchestration.md`.
 
-## Platform Native Policy Map
+Treat work as non-lightweight when it is multi-file, unfamiliar, ambiguous,
+repeated-failure, public/shared, protected-boundary, cross-turn, delegated, or
+acceptance work.
 
-Native platform capabilities remain the execution substrate. Teamwork adds route
-policy, evidence requirements, durable artifacts, and acceptance gates; it does
-not replace native state or tool semantics.
+## Subagents
 
-### Codex
+A dispatched subagent is a bounded task: it returns one packet, then stops. The
+main agent owns scope, integration, final verification, and acceptance, and
+closes each delegated track as `closed`, `blocked`, or
+`abandoned-after-discovery` before claiming completion. Same-context self-review
+does not accept non-lightweight work; use a fresh Reviewer, or name the residual
+risk when one is unavailable. Full dispatch rules live in `subagent-dispatch.md`,
+prompt and packet shapes in `subagent-contract.md`, role methods in
+`role-playbook.md`.
 
-Use native tools for editing, shell, MCP/app access, sandbox approvals,
-permission profiles, `update_plan`, goals, `spawn_agent`, plugins/connectors,
-`codex doctor`, `/status`, browser annotations, Appshots, Computer Use, remote
-or Windows support, review commands, and verification.
+## Platform Native Map
 
-### Cursor
+Native tools stay the execution substrate; Teamwork adds policy, evidence,
+artifacts, and acceptance, not new state or tool semantics.
 
-Use native tools for editing, shell, MCP/app access, permissions, `Task`
-subagents, browser automation, and verification. Goal-mode convergence stays in
-chat unless the user explicitly uses another native goal surface.
+- **Codex:** native editing, shell, MCP, approvals, `update_plan`, goals,
+  `spawn_agent`, review commands, and verification.
+- **Cursor:** native editing, shell, MCP, `Task` subagents, browser automation,
+  and verification. Goal-mode convergence stays in chat.
+- **Claude Code:** native editing, shell, MCP, `Task` subagents (user-defined
+  under `~/.claude/agents/`, fallback `general-purpose`), TodoWrite progress,
+  and verification. Goal-mode uses a chat `Goal Proposal` plus a rolling report.
 
-### Claude Code
+## Artifacts & Memory
 
-Use native tools for editing, shell, MCP/app access, permissions, `Task`
-subagents (user-defined under `~/.claude/agents/`, fallback `general-purpose`),
-TodoWrite progress, and verification. Goal-mode has no native goal surface; use
-a chat-only `Goal Proposal` plus a rolling report under `docs/teamwork/reports/`
-as durable goal state.
-
-## Progress Anchors And Artifacts
-
-Visible progress tools (Codex `update_plan`, Cursor TodoWrite, Claude Code
-TodoWrite, chat checklist) are transient UI-only state. They are not durable
-execution specs, review targets, or completion evidence.
-
-Use artifacts only when they will reduce repeated work or anchor cross-turn,
-cross-agent, high-risk, ambiguous, public/shared, explicitly planned, or
-goal-mode work:
-
-- `docs/teamwork/research/`: reusable investigation findings.
-- `docs/teamwork/plans/`: execution memo and active plan anchor.
-- `docs/teamwork/reports/`: reusable task conclusions and goal rolling memory.
-
-Do not create artifacts for ordinary native-flow work or to record every
-thought. Search existing research artifacts before starting new non-trivial
-research and record reuse/update/new disposition in goal-mode reports.
+Visible progress tools (`update_plan`, TodoWrite, chat checklists) are transient
+UI, not durable specs or completion proof. Create artifacts under
+`docs/teamwork/{research,plans,reports}/` only for reusable, cross-turn,
+high-risk, ambiguous, public, planned, or goal-mode work. Search existing
+artifacts before new non-trivial research. See `artifact-protocol.md`.
 
 ## Human Reviewability
 
-Prefer compact tables when the answer contains three or more comparable items
-that a human should audit: plan steps, requirement status, execution results,
-review findings, verification evidence, goal attempts, or option tradeoffs.
-Use prose for simple answers, single-file edits, one clear finding, or when a
-table would repeat the same sentence in every row.
-
-Good table columns expose review-relevant state: requirement, scope, owner,
-evidence, verification, status, risk, required action, or next step. Keep cells
-short and evidence-backed. Do not use tables to hide uncertainty, omit
-blockers, or make lightweight work look heavier than it is.
-
-## Subagent Collaboration Model
-
-Subagents provide independent context, parallel evidence, isolated execution, or
-fresh review. The main agent is the orchestrator: it owns scope, synthesis,
-conflict resolution, integration, final verification, and final acceptance.
-Subagents are bounded tasks: return the required packet once, then stop. The
-orchestrator closes each delegated track as `closed`, `blocked`, or
-`abandoned-after-discovery` and must not claim completion while any track
-remains open.
-
-Same-context self-review is weaker than fresh review for non-lightweight work.
-Use a fresh Reviewer by default before claiming non-lightweight execution is
-reviewed or accepted. If subagents are
-unavailable, authorization is missing, or dispatch is explicitly forbidden,
-report the work as `unreviewed` and name the residual risk instead
-of presenting it as accepted.
-
-Subagent authorization has two layers: platform permission to spawn, and
-Stage-Routed Proactive Dispatch deciding the stage split. Once a Teamwork stage
-is active and subagents are authorized, that stage should dispatch
-non-destructive Explorer, Designer, Judge, Worker, or Reviewer tracks when the
-independent track improves evidence quality, elapsed time, context isolation,
-ownership clarity, or review quality enough to justify its cost. A plan's
-`Dispatch Guidance:` or durable `Subagent Routing` is routing guidance, not the only authorization source. The execution stage should re-evaluate the split from the accepted plan, source ownership, and current workspace evidence before editing. For non-lightweight Teamwork work with independent tracks, dispatch is the default for research, design/plan adequacy, and fresh review; serial local work should state the continuity rationale when the choice matters.
-
-Ask again only when dispatch needs credentials, destructive actions, unclear
-write ownership, protected-boundary changes, unavailable tools, missing Codex
-standing authorization, or another approval-gated capability. Otherwise,
-dispatch proactively when an independent track clearly improves cost, elapsed
-time, context isolation, or quality.
-
-For non-lightweight work, evaluate the split before implementation steps and
-record chosen subagent tracks or continuity rationale when it affects review.
-If you keep work local, useful reasons include tight coupling, overlapping
-ownership, small scope, unavailable tool, urgent critical-path dependency, or
-higher context cost than benefit.
+Use a compact table when three or more comparable items need auditing (plan
+steps, requirement status, results, findings, attempts, trade-offs). Use prose
+for simple answers. Keep cells short and evidence-backed; never use tables to
+hide uncertainty or omit blockers.

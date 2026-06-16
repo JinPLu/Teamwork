@@ -6,95 +6,57 @@ description: Use when a user says go ahead, proceed, do it, implement this plan,
 # Teamwork Execute
 
 Use after a plan is accepted, approved, resumed, or continued. Execution
-implements the plan; it does not self-declare completion.
+implements the plan; it does not declare its own completion.
 
-Read only as needed:
-
-- `skills/using-teamwork/references/workflow-contract.md` for evidence and boundaries.
-- `skills/using-teamwork/references/dispatch-policy.md` for Worker split.
-- `skills/using-teamwork/references/role-workflows.md` for Worker method.
-- `skills/using-teamwork/references/worker-workflow.md` for Worker mode
-  declaration, TDD/debugging evidence, run-loop exit, and proof-before-claim.
-- `skills/using-teamwork/references/optional-skills.md` before external skills.
-- `skills/using-teamwork/references/subagent-prompt-contract.md` before Worker prompts.
-- `skills/using-teamwork/references/subagent-packets.md` for Worker Completion Packet and Actual
-  Dispatch Log.
-- `skills/using-teamwork/references/goal-iteration.md` for failed goal attempts.
-- `skills/using-teamwork/references/artifact-protocol.md` for durable memory.
+Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
+evidence and judgment; `skills/using-teamwork/references/subagent-dispatch.md`
+for the Worker split; `skills/using-teamwork/references/role-playbook.md` for
+Worker method; `skills/using-teamwork/references/subagent-contract.md` for
+Worker prompts and packets; `skills/using-teamwork/references/artifact-protocol.md`
+for durable memory; `skills/using-teamwork/references/optional-skills.md` before
+external tools.
 
 ## Preconditions
 
-- Accepted plan.
-- Durable plan path for goal-mode, cross-turn, high-risk, ambiguous, delegated,
-  complex fan-out, or artifact-backed work.
-- When durable memory is relevant, read `docs/teamwork/index.json` then `active.current`/`docs/teamwork/current.md`, or header-search relevant artifacts before editing; record Artifact Retrieval disposition.
-- Workspace status avoids overwriting other work.
-- Accepted plan resolves decision-critical user needs, scope, acceptance,
-  constraints, risk, and UX via `Clarification Gate: pass` or narrow
-  `assumptions-stated`; do not execute `ask` or `blocked-for-clarification`.
+- An accepted plan whose decision-critical needs, scope, acceptance, and
+  constraints are resolved.
 - Required files, commands, credentials, environments, paths, ports, models,
   hyperparameters, configs, and execution modes are explicit and available.
-- Classify command safety, sandbox boundaries, approvals.
+- A durable plan path for goal-mode, cross-turn, high-risk, delegated, or
+  artifact-backed work; read `docs/teamwork/index.json` then current-state
+  pointers when durable memory is relevant.
 
-If a precondition is missing, stop as blocker instead of inventing a fallback,
+If a precondition is missing, stop as a blocker instead of inventing a fallback,
 switching execution targets, or adding symlink/path-alias detours.
 
 ## Worker Boundary
 
-Workers execute the accepted plan. They do not reopen behavior, architecture,
-requirements, or scope. If evidence changes them, route to research or plan.
+Workers execute the accepted scope; they do not reopen behavior, architecture,
+requirements, or scope. If evidence changes those, route back to research or
+plan. Prefer TDD for behavior changes when practical; diagnose root cause before
+fixing failures. Every slice needs an exit condition: passing proof, observed
+artifact/behavior, structured validation, a bounded attempt limit, or a blocker.
 
-For non-lightweight execution, re-run the Worker split from accepted steps,
-files, components, and ownership. Dispatch parallel Worker subagents when
-tracks are independent and have clear elapsed-time, context-isolation, or
-ownership value. Keep tightly coupled or low-risk native fast path work local
-and record continuity rationale when it affects review. Apply the Subagent Tool
-Discovery Gate before claiming needed subagents are unavailable. Before
-dispatching more than 3 Workers, state ownership map, integration order,
-verification plan, and why parallel beats serial.
+## Steps
 
-Delegated Worker prompts follow the Subagent Prompt Contract, use disjoint
-ownership or worktree isolation, and require Completion Packet with plan-step
-mapping, TDD/debugging applicability, verification result, and claim support.
-Local native execution may summarize these fields naturally.
-
-For behavior changes, prefer TDD when practical. For failures, diagnose root
-cause before fixes. Every Worker slice needs an exit condition:
-passing proof, observed artifact/behavior, structured validation, bounded
-attempt limit, or blocker. Before any success claim, run fresh verification evidence.
-External skills stay opt-in tool substrates; do not install them unless the
-accepted plan and `optional-skills.md` gate both allow it.
-
-## Execution Steps
-
-1. Re-read plan and relevant source.
-2. Dispatch Workers for independent valuable tracks or keep local with
-   continuity rationale; start Actual Dispatch Log when subagents run.
-3. State files you or Workers intend to touch.
+1. Re-read the plan and relevant source.
+2. For non-lightweight work, fan out Workers for independent tracks with
+   disjoint ownership or worktree isolation; keep tightly coupled work local.
+   Before more than 3 Workers, state the ownership map, integration order, and
+   verification plan. Start an Actual Dispatch Log when subagents run.
+3. State the files you or Workers will touch.
 4. Make only planned, minimal, producer-side edits.
-5. Integrate Worker Completion Packets before final verification.
-6. Mark each delegated track `closed`, `blocked`, or
+5. Integrate Worker packets, then mark each track `closed`, `blocked`, or
    `abandoned-after-discovery` with Closure Evidence after integration.
+6. Run focused verification; cite command output, artifacts, diffs, or tests.
+   Add broader checks only when planned or when shared/public behavior changes.
 7. Stop if new evidence invalidates the plan.
 
-## Verification And Failure
+## Handoff
 
-Run focused verification first. Add broader checks only when planned or
-shared/public behavior changes. Cite command output, artifacts, diffs, or test
-results.
-
-Classify failures as fixed, improved, unchanged, regressed, new, unrelated, or
-blocked. Goal-mode failure returns to the Research + Plan Adequacy Gate.
-Destructive risk, auth failure, sacred-boundary conflict, missing credentials,
-or budget exhaustion is a blocker.
-
-## Handoff To Review
-
-Return implemented paths, plan source, verification, Actual Dispatch Log or
-continuity rationale, Artifact Retrieval disposition, deviations,
-failures/blockers, and review request.
-Execution cannot accept its own work. For non-lightweight work, request a
-fresh-context Reviewer subagent before any completion claim; if subagents are
-unavailable after discovery or the user forbids them, report that acceptance is
-unreviewed. Do not claim completion while any delegated track is still open.
+Return implemented paths, plan source, verification evidence, the Actual
+Dispatch Log or continuity rationale, deviations, and any blockers. For
+non-lightweight work, request a fresh-context Reviewer before claiming
+completion; if subagents are unavailable, report the work as unreviewed with its
+residual risk. Do not claim completion while any delegated track is open.
 Include `Memory Delta:` only when durable project memory was checked or changed.

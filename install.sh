@@ -74,19 +74,18 @@ Subagents: this is the user's explicit standing authorization and request to
 use sub-agents, delegation, and parallel agent work only when Teamwork dispatch
 policy says the task is non-lightweight, independent, and worth the extra agent
 cost.
-Question-first efficiency: keep work local for quick answers, tiny edits, one
-CodeGraph-answerable structural question, tight critical-path work, overlapping
-write ownership, destructive or credential-sensitive actions, or higher
-subagent context cost than benefit. Do not skip a low-cost clarifying question
-when the answer could change behavior, scope, acceptance, UX, architecture,
-public output, data handling, execution target, or verification.
+Act by default: make ordinary decisions yourself — tool/MCP choice, naming,
+formatting, safe reversible defaults, and equivalent approaches. Keep work local
+for quick answers, tiny edits, one CodeGraph-answerable structural question,
+tight critical-path work, overlapping write ownership, destructive or
+credential-sensitive actions, or higher subagent context cost than benefit.
 
-Clarification-first: before file edits, behavior changes, public outputs,
-execution-target choices, workflow policy changes, or non-trivial
-implementation, ask when intent, scope, acceptance, constraints, or protected
-boundaries are not explicit. Use assumptions-stated only for read-only work,
-tiny explicit mechanical edits, or cases where the assumption cannot change the
-outcome. Missing human requirements are question triggers first, not blockers.
+Ask only when it matters: ask one short question when you hit a real obstacle,
+lack information you cannot obtain, or face a core decision you cannot resolve —
+scope, acceptance, constraints, public behavior, contracts, architecture, or an
+irreversible or destructive action. Do not interrupt for routine tool, MCP, or
+approach choices. Missing required human input is a question first, a blocker
+only when it cannot be obtained.
 
 Codex model profile: default is ${CODEX_PROFILE}. performance-first uses
 role-optimized gpt-5.5 agents: routine Explorer, Designer, and Worker use

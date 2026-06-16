@@ -131,7 +131,7 @@ def validate_index(index: dict) -> None:
 def validate_templates(root: Path) -> None:
     readme_path = root / "skills/using-teamwork/references/teamwork-index-readme-template.md"
     current_path = root / "skills/using-teamwork/references/teamwork-current-template.md"
-    index_doc_path = root / "skills/using-teamwork/references/teamwork-index.md"
+    index_doc_path = root / "skills/using-teamwork/references/artifact-protocol.md"
 
     readme = read_text(readme_path)
     current = read_text(current_path)

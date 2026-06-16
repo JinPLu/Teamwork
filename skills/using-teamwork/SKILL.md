@@ -5,52 +5,60 @@ description: Use when starting any coding-agent task: route to native/research/p
 
 # Using Teamwork
 
-Teamwork is a platform-native layer: native tools execute; Teamwork adds evidence, dispatch, and memory.
-Labels: observed, inferred, claimed.
+Teamwork sits on native tools: native capabilities execute; Teamwork adds
+evidence, dispatch, memory, and acceptance. Default to acting directly on clear
+work; escalate only when it improves correctness, continuity, or cost.
 
-## Progressive Reference Loading
+Read `references/workflow-contract.md` for the shared principles, judgment, and
+platform map. Load other references only when their stage needs them.
 
-| Condition | Load |
-|---|---|
-| judgment, boundaries, Platform Native Policy Map | `references/workflow-contract.md` |
-| dispatch economics | `dispatch-policy.md` |
-| native dispatch fields | `platform-dispatch-mapping.md` |
-| swarm workflow | `workflow-orchestration.md` |
-| durable memory | `artifact-protocol.md` |
+## First: can you proceed?
 
-## Route Check
+Default to proceeding. Ask one short question first only when you hit a real
+obstacle, lack information you cannot obtain yourself, or face a core decision
+you cannot resolve — scope, acceptance, a required value, an irreversible
+action, or public behavior. Decide routine matters (tool/MCP choice, naming,
+approach) yourself. Do not narrate this as a gate.
 
-Evidence -> `skills/teamwork-research/SKILL.md`; init/slim -> `skills/teamwork-init/SKILL.md`; plan -> `skills/teamwork-plan/SKILL.md`; accepted continuation -> `skills/teamwork-execute/SKILL.md`; review -> `skills/teamwork-review/SKILL.md`; update -> `skills/teamwork-update/SKILL.md`; convergence -> `skills/teamwork-goal/SKILL.md`.
+## Route
 
-## Automatic Stage Selection
+Pick the stage that matches the work. Most small, clear tasks need none of
+them — just do the work natively.
 
-Do not wait for named skills when intent is clear; discovery reads frontmatter before route filtering. Clarification-first routing comes before any Native fast path. Router Gate: Fast = clarified lightweight Native; Ask = missing human needs; Research = unclear evidence/root/stale/options; Design = non-trivial scope/verification/dispatch/acceptance; Review = completed work or non-lightweight acceptance.
+- **Stay native** — quick facts, read-only answers, tiny edits, low-risk bug
+  fixes, low-risk mechanical multi-file edits, one CodeGraph question, or a
+  tightly coupled critical path. Write naturally; no artifacts or ceremony.
+- **Research** (`skills/teamwork-research/SKILL.md`) — root cause, source/API
+  behavior, failure evidence, stale assumptions, or option comparison is
+  unclear.
+- **Plan** (`skills/teamwork-plan/SKILL.md`) — explicit plan/design request, or
+  non-trivial implementation that needs scope, verification, or dispatch.
+- **Execute** (`skills/teamwork-execute/SKILL.md`) — "go ahead", "do it",
+  "continue", "resume" on an accepted plan.
+- **Review** (`skills/teamwork-review/SKILL.md`) — "review", "diff", or check
+  completed non-lightweight work. Simple checks stay native.
+- **Goal** (`skills/teamwork-goal/SKILL.md`) — "keep going", "until it passes",
+  or budgeted iteration to a verified target.
+- **Init** (`skills/teamwork-init/SKILL.md`) — "init", "AGENTS/CODEX/CURSOR/
+  CLAUDE", or slim project instructions.
+- **Update** (`skills/teamwork-update/SKILL.md`) — "version", "release",
+  "bump", or refresh the installed package.
 
-- Native: quick facts, tiny edits, low-risk bugs, low-risk mechanical multi-file edits, credentials, tight path, one CodeGraph question.
-- Research: unclear root, source/API behavior, failure evidence, stale assumptions, or options.
-- Plan: explicit plan/design or non-trivial implementation needing scope/verification/dispatch/memory; unclear human goal/scope/acceptance asks first, not guessed.
-- Execute: "go ahead", "execute", "continue", "resume", "do it".
-- Review: "review", "diff", or "check/validate completed work"; simple checks stay native.
-- Init: "init", "initialize", "AGENTS", "CODEX", "CURSOR", "CLAUDE", "slim instructions".
-- Update: "version", "release", "changelog", "bump".
-- Goal: "keep going", "until it passes", "iterate until done", or budgeted convergence.
+Routing is automatic from intent; you do not wait for the user to name a stage.
 
-For convergence, route to `teamwork-goal` for chat-only `Goal Proposal` before platform goal handoff unless active goal state exists.
+## Orchestrate
 
-## Orchestration Default
+When the work is non-lightweight and an independent track can run in parallel
+with clear ownership, fan out subagents to go faster — proactively, without
+waiting for the user to ask. The main agent stays the orchestrator: it owns
+scope, integration, final verification, and acceptance. See
+`references/subagent-dispatch.md`.
 
-For lightweight work after clarification, write naturally. Do not create artifacts, subagents, durable plans, packets, route banners, or ceremony.
+For required acceptance of non-lightweight work, prefer a fresh-context
+Reviewer; if subagents are unavailable, say so and name the residual risk.
 
-Before staying native for non-trivial work, state scope, path, boundary, and success check.
+## Output
 
-For non-lightweight tasks, keep a short Confidence Ledger: evidence known, assumptions/questions, verification target, and residual risk.
-
-When Teamwork is active, the main agent orchestrates. If subagents are authorized, dispatch proactively when an independent track has clear evidence, elapsed-time, isolation, ownership, or review value; prefer fanout for non-lightweight research, design/plan review, and fresh execution review. Use fresh review for required acceptance; otherwise report unreviewed risk.
-
-Plans may suggest routing; they are not the only dispatch authorization. Use the Subagent Tool Discovery Gate before unavailable claims. Skipped material dispatch needs `Dispatch Exception:`.
-
-## Route Output
-
-Use route banners only for non-lightweight handoffs, redirects, blockers, goal/update work, or material dispatch/artifact state: `Route: ...`.
-
-For lightweight native flow, write naturally. Include `Memory Delta:` only for checked/changed durable memory.
+For lightweight native work, just answer. Reserve a short `Route: ...` line for
+non-lightweight handoffs, redirects, blockers, or goal/update work. Include
+`Memory Delta:` only when durable project memory was checked or changed.

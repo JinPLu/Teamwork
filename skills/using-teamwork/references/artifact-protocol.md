@@ -1,143 +1,92 @@
 # Artifact Protocol
 
-Use this reference when a Teamwork stage may need durable memory. Keep ordinary
-native-flow work lightweight; write artifacts only when a trigger below applies.
+Write durable artifacts only when a trigger applies. Default to lightweight native flow.
 
-## Durable Artifact Triggers
+## Artifact Triggers
 
-Write or update `docs/teamwork/research/YYYY-MM-DD-<slug>.md` when research:
+Write `docs/teamwork/research/YYYY-MM-DD-<slug>.md` when research will be reused, feeds a durable plan, supports goal-mode iteration, uses external calibration, or justifies a non-trivial reusable recommendation.
 
-- will be reused outside the current answer;
-- feeds a durable plan;
-- supports goal-mode iteration or failure analysis;
-- uses external calibration for a durable decision or reusable recommendation;
-- refreshes assumptions after repeated failure or no evidence delta;
-- justifies a non-trivial recommendation that should survive this conversation.
+Write `docs/teamwork/plans/YYYY-MM-DD-<slug>.md` for goal-mode, cross-turn, cross-agent, high-risk, ambiguous, or shared behavior changes.
 
-Write or update `docs/teamwork/plans/YYYY-MM-DD-<slug>.md` for goal-mode,
-cross-turn, cross-agent, high-risk, ambiguous, public/shared behavior changes,
-or explicit repository-plan requests.
-
-Write or update `docs/teamwork/reports/YYYY-MM-DD-<slug>.md` for goal-mode
-rolling attempts and for non-trivial conclusions that should survive the
-conversation. Do not write reports for ordinary lightweight tasks.
+Write `docs/teamwork/reports/YYYY-MM-DD-<slug>.md` for goal-mode rolling attempts and non-trivial conclusions that should outlive the conversation.
 
 ## Retrieval Header
 
-Start every durable artifact with a compact retrieval header before the body:
+Start every durable artifact with:
 
 ```text
 Artifact Type: research | plan | report
 Status: active | superseded | accepted | blocked | budget-exhausted
 Last Updated: YYYY-MM-DD
-Search Keys: exact errors, commands, paths, components, dependencies, model/API
-names, issue/PR IDs, user terms
-Abstract: 2-4 sentences covering the problem, conclusion, and applicability
-boundary. This summary helps retrieval; it is not completion evidence.
-Linked Artifacts: related research, plan, or report paths, or none
+Search Keys: exact errors, commands, paths, components, dependencies, model/API names, issue/PR IDs, user terms
+Abstract: 2-4 sentences covering the problem, conclusion, and applicability boundary.
+Linked Artifacts: related paths, or none
 ```
 
-Use concrete values. Do not use YAML frontmatter for artifacts; reserve YAML
-frontmatter for skill metadata only.
-
-When an artifact participates in `docs/teamwork/index.json` or supersession,
-add only the optional fields that help retrieval: `Index Role`, `Authority`,
-`Applies To`, `Supersedes`, `Superseded By`, and `Verification`.
+Add `Index Role`, `Authority`, `Applies To`, `Supersedes`, `Superseded By`, or `Verification` only when they aid retrieval. Do not use YAML frontmatter; reserve that for skill metadata only.
 
 ## Artifact Retrieval
 
-Before new non-trivial research, plan creation, or goal failure analysis,
-search existing `docs/teamwork/{research,plans,reports}/` with all useful keys
-available from the task:
+Before non-trivial research, plan creation, or goal failure analysis, search `docs/teamwork/{research,plans,reports}/` with all available keys: goal words, errors, component paths, package/model names, issue/PR IDs, user terms.
 
-- goal words and likely slug words;
-- exact error messages, commands, failing tests, log fragments, or status text;
-- component paths, package names, model names, API names, dependency names, and
-  external entity names;
-- old plan/report paths, issue IDs, PR names, experiment names, and user terms.
-
-Search retrieval headers and `Search Keys` first, then fall back to full-text
-search. Use repository search, for example:
+Search `Search Keys` and headers first, then fall back to full-text:
 
 ```bash
-rg -n "^(Artifact Type|Status|Search Keys|Abstract|Linked Artifacts):|<goal|error|component|dependency|external-name>" docs/teamwork/{research,plans,reports} 2>/dev/null || true
+rg -n "^(Search Keys|Abstract|Status):|<goal|error|component>" docs/teamwork/{research,plans,reports} 2>/dev/null || true
 ```
 
-If no directory exists, record that no prior research was available. Choose
-exactly one disposition before continuing, and carry that disposition into
-goal-mode reports when applicable:
+Choose one disposition before continuing:
 
-- **none**: no research artifact is needed for this lightweight or purely local
-  decision; state the local evidence boundary instead;
-- **reuse**: cite the artifact and carry forward still-valid evidence;
-- **update**: edit the artifact when the topic is the same but evidence,
-  recommendation, or refresh triggers changed;
-- **new**: create a new artifact and state why prior work is stale, different
-  in scope, or contradicted by new evidence.
+- **none**: lightweight or purely local decision; state the local evidence boundary.
+- **reuse**: cite and carry forward still-valid evidence.
+- **update**: edit when topic is the same but evidence or assumptions changed.
+- **new**: create when prior work is stale, out of scope, or contradicted by new evidence.
 
-Goal-mode failure analysis must also search `docs/teamwork/reports/` for prior
-attempts before repeating a hypothesis.
+Goal-mode failure analysis must search `docs/teamwork/reports/` before repeating a hypothesis.
 
-## Research Artifact Sections
+## Native Index
 
-After the Retrieval Header, research artifacts should stay compact and include:
-question, assumptions, local evidence, external evidence when used, options,
-recommendation, dissent/risks, refresh triggers, and handoff target. Prefer
-summaries plus citations over pasted logs.
-
-For broad research, artifacts also own the source census, selected-source table,
-rejected-source rationale, option or model matrix, contradiction notes,
-and citation ledger overflow. Chat and subagent packets should link the
-artifact and summarize only decision-relevant evidence; raw transcripts,
-search-result dumps, and copied source bodies do not belong in artifacts unless
-they are short, essential, and cited.
-
-## Artifact Hygiene
-
-Durable artifacts must not contain executable placeholders such as `<...>`,
-`TODO`, `TBD`, or ellipsis tasks. Use concrete assumptions or mark the work
-blocked when required inputs are missing.
-
-## Native Index And Current-State Routing
-
-When durable project memory is relevant, use this lookup order when files exist:
+When durable project memory is relevant, read in this order when files exist:
 
 1. `docs/teamwork/index.json`
 2. `active.current` in index, else `docs/teamwork/current.md`
-3. active stage pointer(s) in index (`active.plan`, progress/report/result)
-4. linked artifact headers, then specific bodies as needed
+3. Active stage pointers in index (`active.plan`, progress, report, result)
+4. Linked artifact headers, then bodies as needed
 
-Lightweight native-flow tasks, short-lived chat advice, and clear one-turn
-Teamwork work stay artifact-free even when they cite local evidence or public
-docs.
+Do not broad-scan historical artifacts by default. Read full bodies only when stage-justified.
+
+### Index Schema (`schema_version: 1`)
+
+Top-level fields: `schema_version` (integer, must be `1`), `last_updated`, `project`, `source_of_truth_order`, `ignore_globs`, `budgets`, `active`, `entries`, `profiles`, `pending` (optional, capped ≤ 5).
+
+`budgets`: `default_max_files` (1–10), `default_max_artifact_bodies` (0–5), `header_first` (boolean).
+
+`active` optional keys: `current`, `design`, `plan`, `progress`, `results` (array when present).
+
+`entries` item fields: `topic`, `kind`, `title`, `status`, `currentness`, `authority`, `path`, `updated`, `summary`. Optional: `applies_to`, `linked`, `evidence_paths`, `supersedes`, `search_keys`.
+
+`kind` = result / progress / design / decision / plan / report / research / runbook  
+`status` = active / historical / superseded / blocked / candidate / accepted  
+`authority` = canonical / active-summary / supporting / candidate / historical / superseded
+
+External memory entries use `authority: candidate` or `supporting` until a reviewed Memory Delta promotes them. At most one `entries` item with `status: active` per `topic + kind`.
 
 ## Memory Delta
 
-Report a memory delta when durable project memory was checked, changed, or
-intentionally left unchanged after a material-state question:
+Report a memory delta when durable project memory was checked, changed, or intentionally left unchanged after a material-state question:
 
 `Memory Delta: none | current | plan | research | decision | supersede | compact | deferred`
 
-Use `none` when memory was checked and no durable project state changed. Omit
-the line for work that never touched durable memory. Use `deferred` only when a
-conflict blocks safe current-state updates and the handoff states the blocker.
+Use `none` when checked with no state change. Omit for work that never touched durable memory. Use `deferred` only when a conflict blocks safe updates and the handoff names the blocker.
 
-## External Memory Promotion Gate
+Material delta examples: changed current result/progress/blocker/next action; changed active plan or design; accepted decision added or superseded; review found current-state inconsistency.
 
-External memory, long-term memory, and docs graph recall are memory candidate
-context until promoted. They cannot override source, tests, configs, current
-artifacts, or direct tool evidence.
+## Memory Promotion
 
-Promote only when the claim has evidence paths, currentness, scope, protected
-data review, and a material Memory Delta reason. Subagents may propose a
-`Memory Delta Candidate`; the main agent decides whether to update canonical
-Teamwork memory.
+External memory and docs graph output is candidate context until promoted. Promote only when the claim has evidence paths, currentness, scope, and protected data review.
 
-## Current-State Write Boundaries
+Subagents propose `Memory Delta Candidate` entries only; the main agent decides whether to update canonical Teamwork memory.
 
-- Do not require artifacts for lightweight native-flow tasks.
-- Keep normal-task current-state writes bounded to
-  `docs/teamwork/index.json`, `docs/teamwork/current.md`, and at most one dated
-  artifact unless a durable trigger justifies more.
-- Stage artifacts hold evidence detail; `current.md` remains a compact active
-  digest.
+## Write Boundaries
+
+Bound normal-task writes to `docs/teamwork/index.json`, `docs/teamwork/current.md`, and at most one dated artifact unless a durable trigger justifies more. `current.md` stays a compact active digest; stage artifacts hold evidence detail.

@@ -5,84 +5,56 @@ description: Use when reviewing a plan, diff, implementation, or non-trivial com
 
 # Teamwork Review
 
-Use for required non-lightweight acceptance and reviewer passes.
-Review reads evidence, preserves dissent, and never relies on summaries.
+Use for non-lightweight acceptance and reviewer passes. Review reads evidence
+directly and never relies on summaries.
 
-Read only as needed:
+Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
+evidence rules; `skills/using-teamwork/references/review-checks.md` for the
+plan/execution checks; `skills/using-teamwork/references/role-playbook.md` for
+Reviewer method; `skills/using-teamwork/references/subagent-dispatch.md` and
+`skills/using-teamwork/references/subagent-contract.md` for Reviewer dispatch and
+the verdict packet; `skills/using-teamwork/references/artifact-protocol.md` when
+review needs durable memory.
 
-- `skills/using-teamwork/references/workflow-contract.md` for evidence and context rules.
-- `skills/using-teamwork/references/review-checks.md` for plan/execution gates.
-- `skills/using-teamwork/references/role-workflows.md` for Reviewer method and
-  review-reception discipline.
-- `skills/using-teamwork/references/reviewer-workflow.md` for fresh review,
-  severity crosswalk, PR/CI provenance, feedback disposition, and re-review
-  closure.
-- `skills/using-teamwork/references/optional-skills.md` when reviewing
-  proposed or used external skills.
-- `skills/using-teamwork/references/dispatch-policy.md` for Reviewer dispatch and routing checks.
-- `skills/using-teamwork/references/subagent-prompt-contract.md` before Reviewer prompts.
-- `skills/using-teamwork/references/subagent-packets.md` for Reviewer Verdict Packet.
-- `skills/using-teamwork/references/goal-iteration.md` for goal failure routing.
-- `skills/using-teamwork/references/artifact-protocol.md` when review needs
-  durable memory or current-state lookup.
-
-## Shared Rules
+## Rules
 
 - Choose `mode: plan` or `mode: execution`.
-- Default to fresh-context Reviewer subagents for non-lightweight required
-  plan/execution acceptance when subagents are authorized, including high-risk,
-  public-contract, delegated, security, destructive, release, and goal-mode
-  work. Same-context self-review is not acceptance.
-- Local review is allowed for lightweight work, same-context checks, subagent
-  tools unavailable after the Subagent Tool Discovery Gate, missing
-  authorization, or explicit user opt-out; label any required fresh-review
-  verdict as unreviewed when no valid fresh review ran.
-- Inspect source, diff, logs, tests, command output, artifacts, research, plan,
-  and user constraints.
-- Label important evidence `observed`, `inferred`, or `claimed`.
-- Check confidence statements against evidence; no high confidence for inferred,
-  partial, stale, or unverified facts.
-- Treat executor summaries, `codex review` (Codex), `code-reviewer` subagent
-  output (Cursor or Claude Code), git diff, CI summaries, test runner output,
-  and tool output as evidence inputs, not final verdicts.
-- Do not fix issues during review unless explicitly asked.
-- Use `blocker`, `major`, `minor` consistently: unsafe/impossible acceptance,
-  required-before-proceed, or follow-up/note.
-- When reviewing optional skills, reject duplicate installs, unclear source or
-  license, broad write risk, missing credentials, or missing smoke test.
-- Reviewer dispatch follows the same closure rule: return one verdict packet,
-  integrate it, and close or block the track before acceptance.
-- When durable memory is relevant, read `docs/teamwork/index.json` then
-  `active.current`/`docs/teamwork/current.md`, or header-search relevant
-  artifacts before verdict; record Artifact Retrieval disposition.
+- Prefer a fresh-context Reviewer subagent for non-lightweight required
+  acceptance — high-risk, public-contract, delegated, security, destructive,
+  release, and goal-mode work. Same-context self-review is not acceptance.
+- Local review is fine for lightweight work, same-context checks, or when
+  subagent tools are unavailable after discovery; label any required fresh-review
+  verdict as unreviewed when no fresh review ran.
+- Inspect source, diff, logs, tests, command output, artifacts, plan, and user
+  constraints. Label key evidence `observed`, `inferred`, or `claimed`, and check
+  confidence against it.
+- Treat executor summaries, `code-reviewer` output, git diff, CI summaries, and
+  test output as inputs, not final verdicts.
+- Do not fix issues during review unless asked.
+- Reject open delegated tracks without a blocker rationale.
 
 ## Plan Review
 
-Use `review-checks.md` for scope, assumptions, requirements mapping, evidence,
-verification, explicit required values, no silent fallback defaults, risks,
-handoffs, routing, missing Parallelization Gate, prompt contract, Required
-Output Schema, and protected-boundary changes.
+Check scope, requirements mapping, evidence, verification, explicit required
+values (no silent fallback defaults), risks, dispatch split, and
+protected-boundary changes. See `review-checks.md`.
 
 ## Execution Review
 
-Use `review-checks.md` for diff scope, plan conformance, verification,
-silent fallback defaults, Routing conformance, Actual Dispatch Log, Worker
-Completion Packet when Workers were delegated, Reviewer Verdict Packet,
-dispatch economics, workspace hygiene, and next failure route.
-Confirm Stage-Routed Proactive Dispatch was evaluated even when the plan did not
-name every track. Reject open delegated tracks without blocker rationale.
-For re-review after `revise`, require prior verdict, required fixes reviewed,
-fix evidence, remaining issues, and re-review verdict.
+Check diff scope, plan conformance, verification evidence, no silent fallback
+defaults, the Actual Dispatch Log, Worker packets when Workers ran, dispatch
+economics, and workspace hygiene. Confirm the dispatch split was considered even
+when the plan did not name every track. For re-review after `revise`, require
+the prior verdict, the required fixes, fix evidence, and a re-review verdict.
 
-## Verdict Format
+## Verdict
 
 ```text
 Mode: plan | execution
 Evidence Read:
 - <observed|inferred|claimed> <path/command/artifact>: <finding>
-Artifact Retrieval: none | index | reuse | update | new - <evidence/boundary>
 Requirements / Evidence Map:
-- <requirement or plan step> -> <evidence> -> <pass|fail|partial|not reviewed>
+- <requirement or step> -> <evidence> -> <pass|fail|partial|not reviewed>
 Findings:
 - [blocker|major|minor] <issue> - <evidence> - <required action>
 Dissent / Uncertainty: <none or concern>
@@ -90,6 +62,6 @@ Verdict: accept | revise | blocked
 Rationale: <brief evidence-based reason>
 ```
 
-Include `Memory Delta:` only when durable project memory was checked or
-changed. When current-state files changed, review should verify the change is
-material and evidence-backed.
+Use `blocker`, `major`, `minor` consistently: unsafe/impossible acceptance,
+required-before-proceed, or follow-up note. Include `Memory Delta:` only when
+durable project memory was checked or changed.
