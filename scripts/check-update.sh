@@ -270,7 +270,7 @@ print_readiness() {
   echo "CLAUDE_VERSION=$claude_v"
   echo "MISSING=$(IFS=,; echo "${missing[*]-}")"
   echo "NEXT=cd \"$ROOT\" && ./install.sh all --profile $profile${PROJECT_ROOT:+ && ./install.sh --project-root \"$PROJECT_ROOT\" project}"
-  echo "CURSOR_POLICY=./install.sh cursor-policy"
+  echo "CURSOR_POLICY=./install.sh cursor-policy-copy"
 }
 
 print_report() {
@@ -337,7 +337,7 @@ print_report() {
   echo
 
   echo "--- Bootstrap manual checks ---"
-  echo "Cursor User Rules: paste ./install.sh cursor-policy (cannot auto-verify)"
+  echo "Cursor User Rules: run ./install.sh cursor-policy-copy, then paste in Cursor Settings -> Rules -> User Rules (cannot auto-verify)"
   echo
 
   echo "--- Model mapping (best-effort) ---"
@@ -383,7 +383,7 @@ print_report() {
   if [[ -n "$PROJECT_ROOT" ]]; then
     echo "3. cd \"$ROOT\" && ./install.sh project"
   fi
-  echo "4. ./install.sh cursor-policy  # paste into Cursor User Rules"
+  echo "4. ./install.sh cursor-policy-copy  # copy, then paste into Cursor User Rules"
   echo "5. ./scripts/validate.sh       # maintainer or post-release sanity"
   echo
 

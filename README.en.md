@@ -137,11 +137,11 @@ Install for other platforms (same `performance-first` / `cost-first` profiles):
 ```bash
 ./install.sh cursor|claude|all
 ./install.sh cursor-agents|claude-agents   # agents only
-./install.sh cursor-policy|claude-policy   # bootstrap policy print
+./install.sh cursor-policy-copy|cursor-policy|claude-policy
 ```
 
 `./install.sh claude` writes managed global policy to `~/.claude/CLAUDE.md`;
-`./install.sh cursor-policy` prints the Cursor User Rules block.
+`cursor-policy-copy` copies the Cursor block; `cursor-policy` prints it.
 
 Local development or project installs:
 
@@ -175,7 +175,7 @@ Codex is the reference runtime: native goals are the autonomous control plane, a
 `./install.sh codex` writes the global bootstrap policy; `./install.sh codex-policy` prints the App Personalization copy.
 
 Cursor and Claude Code are first-class runtimes: 7 role agents, `./install.sh
---profile`, and bootstrap policy via `cursor-policy` or managed
+--profile`, and bootstrap policy via `cursor-policy-copy` or managed
 `~/.claude/CLAUDE.md`. See [CURSOR.md](CURSOR.md) and [CLAUDE.md](CLAUDE.md).
 
 ## Version And Validation

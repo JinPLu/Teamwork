@@ -42,7 +42,7 @@ Before instruction work, run from the Teamwork checkout:
 ```
 
 When `INSTALL_READY=no`, show `MISSING` and ask once to run the printed `NEXT`
-command plus `./install.sh cursor-policy` paste. Continue init only after
+command plus `./install.sh cursor-policy-copy` paste. Continue init only after
 global skills/agents/policy are installed or the user declines and accepts
 residual gaps. Optional MCP/memory stays on the optional-skills gate.
 
@@ -64,9 +64,10 @@ residual gaps. Optional MCP/memory stays on the optional-skills gate.
    `AGENTS.md`; use artifacts only when triggers apply.
 8. For bootstrap policy, prefer global installs: `./install.sh codex` or
    `./install.sh codex-policy` for Codex; `./install.sh claude` or
-   `./install.sh claude-policy` for Claude Code; `./install.sh cursor-policy`
-   for Cursor User Rules paste. Project platform files hold only local facts,
-   required values, or opt-outs. Report `Bootstrap policy:` and `Init Mode:`.
+   `./install.sh claude-policy` for Claude Code; `./install.sh
+   cursor-policy-copy` for Cursor User Rules paste. Project platform files hold
+   only local facts, required values, or opt-outs. Report `Bootstrap policy:`
+   and `Init Mode:`.
 9. When Teamwork memory exists, keep a short pointer to
    `docs/teamwork/README.md`; do not inline the runtime narrative.
 10. For full-setup requests, return the Capability Matrix from `project-init.md`.

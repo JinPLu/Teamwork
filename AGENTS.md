@@ -21,6 +21,7 @@ Platform metadata lives in `.codex-plugin/` and `.claude-plugin/`. User-facing r
 - `./install.sh claude-agents`: installs Teamwork subagents into `~/.claude/agents/`.
 - `./install.sh codex-policy`: prints the Teamwork Codex global policy block.
 - `./install.sh cursor-policy`: prints the Teamwork Cursor global policy block for User Rules.
+- `./install.sh cursor-policy-copy`: copies the Cursor User Rules block to the clipboard.
 - `./install.sh claude-policy`: prints the Teamwork Claude global policy block.
 - `./install.sh --link`: installs symlinks for local development (combine with any target).
 

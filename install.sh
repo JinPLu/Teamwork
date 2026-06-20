@@ -65,7 +65,7 @@ usage() {
 Usage:
   ./install.sh [--copy|--link] [--profile performance-first|cost-first] \
     [--project-root PATH] \
-    codex|cursor|claude|all|project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|claude-policy
+    codex|cursor|claude|all|project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
 
 Targets:
   codex          Install skills, Codex agents, and Teamwork global policy (default target)
@@ -79,6 +79,8 @@ Targets:
   claude-agents  Install Teamwork Claude subagents to ~/.claude/agents
   codex-policy   Print the Teamwork Codex global policy block for App Personalization
   cursor-policy  Print the Teamwork Cursor global policy block for User Rules paste
+  cursor-policy-copy
+                 Copy the Teamwork Cursor global policy block to the clipboard
   claude-policy  Print the Teamwork Claude global policy block for manual review
 
 Default mode is --copy. Use --link for local development when installs should
@@ -227,6 +229,34 @@ lightweight validation. Before remote jobs, verify host, repository path,
 branch, and command scope; do not invent missing execution targets.
 <!-- TEAMWORK_CURSOR_GLOBAL_END -->
 POLICY
+}
+
+copy_teamwork_cursor_global_policy() {
+  local tmp
+  tmp="$(mktemp)"
+  write_teamwork_cursor_global_policy > "$tmp"
+
+  if command -v pbcopy >/dev/null 2>&1; then
+    pbcopy < "$tmp"
+  elif command -v wl-copy >/dev/null 2>&1; then
+    wl-copy < "$tmp"
+  elif command -v xclip >/dev/null 2>&1; then
+    xclip -selection clipboard < "$tmp"
+  elif command -v xsel >/dev/null 2>&1; then
+    xsel --clipboard --input < "$tmp"
+  elif command -v clip.exe >/dev/null 2>&1; then
+    clip.exe < "$tmp"
+  else
+    cat "$tmp"
+    rm -f "$tmp"
+    echo "No supported clipboard command found; printed policy block instead." >&2
+    echo "Paste it into Cursor Settings -> Rules -> User Rules." >&2
+    exit 1
+  fi
+
+  rm -f "$tmp"
+  echo "Copied Teamwork Cursor global policy to clipboard."
+  echo "Paste it into Cursor Settings -> Rules -> User Rules."
 }
 
 validate_codex_profile() {
@@ -596,6 +626,7 @@ install_codex() {
 install_cursor() {
   install_skill_set "$HOME/.cursor/skills" "Cursor"
   install_cursor_agent_set "$HOME/.cursor/agents" "user Cursor"
+  echo "Cursor User Rules: run ./install.sh cursor-policy-copy (or cursor-policy) and paste into Cursor Settings -> Rules -> User Rules."
 }
 
 install_claude() {
@@ -661,7 +692,7 @@ while [[ $# -gt 0 ]]; do
       CODEX_PROFILE="cost-first"
       shift
       ;;
-    codex|cursor|claude|all|project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|claude-policy)
+    codex|cursor|claude|all|project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy)
       if [[ -n "$TARGET" ]]; then
         echo "Specify only one install target." >&2
         usage
@@ -722,6 +753,9 @@ case "${TARGET:-codex}" in
     ;;
   cursor-policy)
     write_teamwork_cursor_global_policy
+    ;;
+  cursor-policy-copy)
+    copy_teamwork_cursor_global_policy
     ;;
   claude-policy)
     write_teamwork_claude_global_policy

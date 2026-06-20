@@ -6,7 +6,7 @@ Use with `teamwork-init` for instruction setup, cleanup, or migration.
 
 - Global bootstrap: installer-managed blocks in `~/.codex/AGENTS.md` (Codex),
   `~/.claude/CLAUDE.md` (Claude Code), and Cursor User Rules via
-  `./install.sh cursor-policy`.
+  `./install.sh cursor-policy-copy`.
 - Root `AGENTS.md`: boundaries, repo map, required values, protected actions, and tool arbitration.
 - Repo-local `AGENTS.md`: facts, evidence, commands, danger zones, acceptance.
 - Platform files `CODEX.md`, `CURSOR.md`, `CLAUDE.md`, `GEMINI.md`: deltas only.
@@ -52,11 +52,11 @@ Statuses: `enabled`, `missing`, `blocked`, `optional`, `deferred`. Every non-ena
 ## Rule Persistence Decision
 
 Use `./install.sh codex` for managed `~/.codex/AGENTS.md`, `./install.sh claude`
-for managed `~/.claude/CLAUDE.md`, and `./install.sh cursor-policy` for Cursor
-User Rules paste. Project instructions record concrete values, exceptions,
-opt-outs, or protected boundaries. Ask first when host/path/command/credential/model
-values are user-supplied; block only when unavailable, unsafe, or declined; never
-invent fallback.
+for managed `~/.claude/CLAUDE.md`, and `./install.sh cursor-policy-copy` for
+Cursor User Rules paste. Project instructions record concrete values,
+exceptions, opt-outs, or protected boundaries. Ask first when host/path/command/
+credential/model values are user-supplied; block only when unavailable, unsafe,
+or declined; never invent fallback.
 
 ## Output Shape
 

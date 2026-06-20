@@ -16,7 +16,8 @@ or cost.
 ./install.sh cursor --profile cost-first
 # agents-only refresh when skills should not change:
 ./install.sh cursor-agents
-# print the bootstrap block for Cursor User Rules:
+# copy or print the bootstrap block for Cursor User Rules:
+./install.sh cursor-policy-copy
 ./install.sh cursor-policy
 # or refresh every platform:
 ./install.sh all
@@ -49,9 +50,11 @@ after upgrades.
 ## Global Policy
 
 Cursor has no documented home-file path for User Rules. `./install.sh
-cursor-policy` prints the Teamwork bootstrap block to paste into Cursor Settings
-→ Rules → User Rules. Project `AGENTS.md` or a Cursor-labeled section holds only
-local facts, required values, protected boundaries, or opt-outs.
+cursor-policy-copy` copies the Teamwork bootstrap block for pasting into Cursor
+Settings → Rules → User Rules; `./install.sh cursor-policy` prints the same
+block. Teamwork does not write Cursor's opaque SQLite/cloud-backed state.
+Project `AGENTS.md` or a Cursor-labeled section holds only local facts, required
+values, protected boundaries, or opt-outs.
 
 ## Subagent Dispatch
 

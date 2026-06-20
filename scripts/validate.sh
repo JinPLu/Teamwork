@@ -277,6 +277,7 @@ grep_required 'install_claude_global_policy' "$ROOT/install.sh" "installer must 
 grep_required 'install_cursor_agent_set' "$ROOT/install.sh" "installer must define Cursor agent install set"
 grep_required 'cursor-agents' "$ROOT/install.sh" "installer must support cursor-agents target"
 grep_required 'cursor-policy' "$ROOT/install.sh" "installer must support cursor-policy target"
+grep_required 'cursor-policy-copy' "$ROOT/install.sh" "installer must support cursor-policy-copy target"
 grep_required 'claude-policy' "$ROOT/install.sh" "installer must support claude-policy target"
 
 # --- Budgets ---
@@ -674,6 +675,25 @@ grep_required 'Cursor model profile: default is performance-first' "$cursor_poli
   "cursor-policy target must render performance-first profile"
 [[ ! -e "$tmp/home-cursor-policy/.cursor" ]] \
   || fail "cursor-policy target must not write Cursor home files"
+
+mkdir -p "$tmp/bin"
+cat > "$tmp/bin/pbcopy" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+cat > "$TEAMWORK_TEST_CLIPBOARD"
+SH
+chmod +x "$tmp/bin/pbcopy"
+cursor_policy_copy_out="$tmp/cursor-policy-copy.out"
+TEAMWORK_TEST_CLIPBOARD="$tmp/cursor-policy-copy.clipboard" \
+  HOME="$tmp/home-cursor-policy-copy" \
+  PATH="$tmp/bin:$PATH" \
+  "$ROOT/install.sh" cursor-policy-copy > "$cursor_policy_copy_out"
+grep_required '<!-- TEAMWORK_CURSOR_GLOBAL_START -->' "$tmp/cursor-policy-copy.clipboard" \
+  "cursor-policy-copy target must copy Teamwork global policy start marker"
+grep_required 'Copied Teamwork Cursor global policy to clipboard.' "$cursor_policy_copy_out" \
+  "cursor-policy-copy target must report clipboard copy"
+[[ ! -e "$tmp/home-cursor-policy-copy/.cursor" ]] \
+  || fail "cursor-policy-copy target must not write Cursor home files"
 
 HOME="$tmp/home-claude" "$ROOT/install.sh" claude >/dev/null
 for skill in "${SKILLS[@]}"; do
