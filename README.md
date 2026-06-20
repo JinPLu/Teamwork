@@ -92,7 +92,7 @@ evidence、required action 给出结论。
 
 | 没有 Teamwork | 有 Teamwork |
 |---|---|
-| 主 agent 一边探索一边改 | `using-teamwork` 路由到 research、plan、execute、review、goal 等阶段 |
+| 主 agent 一边探索一边改 | `using-teamwork` 路由到 research、debug、plan、execute、review、goal 等阶段 |
 | Subagents 没有稳定边界 | 独立轨道 fan out 给角色 subagents；每个角色有固定职责、输入、输出 packet 和关闭条件 |
 | 模型把 summary 当事实 | 重要结论先标 `observed` / `inferred` / `claimed`，并映射到直接证据 |
 | 做完就说完成 | 非轻量结果默认 fresh review；同上下文自查不能冒充验收 |
@@ -145,11 +145,12 @@ Codex-first 默认安装：
 
 ## Skills 怎么用
 
-`using-teamwork` 是唯一宽入口：先走 native fast path，小事直接做；只有需求不清、证据不足、需要计划、需要 fan out、需要 review 或需要 goal loop 时才升级。
+`using-teamwork` 是唯一宽入口：先走 native fast path，小事直接做；只有需求不清、证据不足、可复现故障需要 runtime diagnosis、需要计划、需要 fan out、需要 review 或需要 goal loop 时才升级。
 
 | Skill | 什么时候用 | Teamwork 渐进能力 |
 |---|---|---|
-| `teamwork-research` | 根因、证据、方案、外部约束不清楚 | Evidence / Root Cause |
+| `teamwork-research` | 来源、证据、方案、外部约束或 repro surface 不清楚 | Evidence / Research Framing |
+| `teamwork-debug` | 可复现或大概率可复现的故障，需要假设、临时 instrumentation 和 runtime evidence 才能定根因 | Runtime Diagnosis / Root Cause Proof |
 | `teamwork-plan` | 明确要求 plan/design，或非轻量实现需要边界和验收 | Design Synthesis / Planning Synthesis |
 | `teamwork-execute` | 用户接受计划后说 go ahead / continue / do it | Staged Execution / Verification Before Claims |
 | `teamwork-review` | review、diff、非轻量完成验收、PR/CI 反馈 | Review Reception / Fresh Review |
@@ -157,7 +158,7 @@ Codex-first 默认安装：
 | `teamwork-init` | AGENTS/CODEX/CURSOR/CLAUDE、项目规则瘦身、安装就绪检查 | Instruction Slimming |
 | `teamwork-update` | 刷新安装面、检查版本漂移、release hygiene | Package Hygiene |
 
-这些能力是 Teamwork 原生的渐进能力。普通聊天不显示内部能力名；复杂任务才按需加载 references、artifacts、packets 或 subagents。
+这些能力是 Teamwork 原生的渐进能力。`teamwork-debug` 是 stage，不是新角色；普通聊天不显示内部能力名，复杂任务才按需加载 references、artifacts、packets 或 subagents。
 
 ## 平台定位
 

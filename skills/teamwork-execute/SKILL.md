@@ -13,7 +13,9 @@ evidence and judgment; `skills/using-teamwork/references/subagent-dispatch.md`
 for the Worker split; `skills/using-teamwork/references/role-playbook.md` for
 Worker method; `skills/using-teamwork/references/subagent-contract.md` for
 Worker prompts and packets; `skills/using-teamwork/references/artifact-protocol.md`
-for durable memory; `skills/using-teamwork/references/optional-skills.md` before
+for durable memory; `skills/using-teamwork/references/debug-mode.md` for
+bug/failure evidence and cleanup rules; `skills/using-teamwork/references/verification-patterns.md`
+for proof strength and baseline/treatment evidence; `skills/using-teamwork/references/optional-skills.md` before
 external tools.
 
 ## Preconditions
@@ -37,6 +39,13 @@ plan. Prefer TDD for behavior changes when practical; diagnose root cause before
 fixing failures. Every slice needs an exit condition: passing proof, observed
 artifact/behavior, structured validation, a bounded attempt limit, or a blocker.
 
+For reproducible but unclear failures where diagnosis is the task, route to
+`teamwork-debug`. Use only one bounded micro-debug pass locally when accepted
+scope needs small confirming evidence before a targeted fix; if root cause is
+still unclear, stop and route to Debug. Debug cleanup is narrow: remove
+temporary instrumentation, logs, scaffolding, and obvious touched-diff slop
+without broad refactor.
+
 ## Steps
 
 1. Re-read the plan and relevant source.
@@ -48,14 +57,16 @@ artifact/behavior, structured validation, a bounded attempt limit, or a blocker.
 4. Make only planned, minimal, producer-side edits.
 5. Integrate Worker packets, then mark each track `closed`, `blocked`, or
    `abandoned-after-discovery` with Closure Evidence after integration.
-6. Run focused verification; cite command output, artifacts, diffs, or tests.
-   Add broader checks only when planned or when shared/public behavior changes.
+6. Run focused verification; cite command output, artifacts, diffs, or tests,
+   and do not round blocked or build-only checks up to behavioral proof. Add
+   broader checks only when planned or when shared/public behavior changes.
 7. Stop if new evidence invalidates the plan.
 
 ## Handoff
 
-Return implemented paths, plan source, verification evidence, the Actual
-Dispatch Log or continuity rationale, deviations, and any blockers. For
+Return implemented paths, plan source, verification evidence, cleanup evidence
+when debug instrumentation was used, the Actual Dispatch Log or continuity rationale,
+deviations, and any blockers. For
 non-lightweight work, request a fresh-context Reviewer before claiming
 completion; if subagents are unavailable, report the work as unreviewed with its
 residual risk. Do not claim completion while any delegated track is open.

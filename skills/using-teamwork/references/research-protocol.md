@@ -8,6 +8,10 @@ Use for evidence gathering that can affect implementation, spending, public clai
 - `research`: several sources, options, or unknowns. Write concise synthesis. Fan out queries; triage sources; label observed/inferred/claimed.
 - `deep`: high-stakes, current, or multi-domain work. Use query fanout, source census, contradiction search, and coverage audit. Store overflow in artifacts.
 
+Runtime diagnosis with repro, instrumentation, logs, browser state, or CI output
+belongs to `teamwork-debug`; research frames unknown source/repro questions and
+hands off when runtime evidence becomes decisive.
+
 ## Source Census (deep mode)
 
 Build before broad reads: URL/path, source class, primary/secondary, freshness, relevance, read/reject reason. Use when candidates exceed 6, expected sources exceed 10, source classes exceed 3, or the result feeds a durable plan.

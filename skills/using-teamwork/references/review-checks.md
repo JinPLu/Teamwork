@@ -16,12 +16,22 @@ Return `revise` when required artifacts are missing, placeholders remain, confid
 
 1. **Diff scope**: touches only planned files and necessary lines; no unrelated edits, generated churn, or cleanup masking producer bugs; no silent fallback defaults, guessed hyperparameters, or environment switches masking missing state.
 
-2. **Verification**: focused verification ran with concrete evidence; acceptance claims match observed diff, logs, tests, or artifacts; expected artifacts, outputs, or UI state match acceptance criteria.
+2. **Verification**: focused verification ran with concrete evidence; acceptance claims match observed diff, logs, tests, or artifacts; expected artifacts, outputs, or UI state match acceptance criteria. For behavioral, UI, performance, memory, migration, or parity claims, check `verification-patterns.md` for baseline/treatment and proof strength.
 
 3. **Dispatch closure**: Actual Dispatch Log records roles, native fields, prompt and returned packets, final status, closure evidence. No delegated track remains dispatched or returned at review handoff.
 
 4. **Durable memory check**: if current-state files changed, require a material delta and evidence; reject churn-only writes. If accepted active state changed without a memory update or explicit `none`/`deferred` disposition, name the residual risk. Memory promotion check: candidate memory or docs graph output requires direct evidence paths, currentness, scope, and protected data disposition before becoming canonical Teamwork memory.
 
-5. **Manual smoke**: Manual smoke evidence captures source, observed behavior, and pass/fail result for any acceptance claim that depends on human-observed state.
+5. **Manual smoke**: Manual smoke evidence captures source, observed behavior, pass/fail result, and acceptance criterion mapping for any claim that depends on human-observed state.
+
+6. **Debug evidence**: debug-derived fixes require repro evidence or justified
+   non-repro path, hypothesis-to-evidence mapping, root-cause support, post-fix
+   verification, and cleanup of temporary instrumentation/logs/scaffolding.
+   Leftover debug artifacts are acceptance failures unless the plan keeps them
+   as intentional observability.
+
+7. **Maintainability/deslop lens**: when strict code quality review, deslop, or
+   PR walkthrough is requested, or structure regresses, use `review-lenses.md`.
+   Keep bounded deslop separate from broad structural review.
 
 If work cannot be accepted, state the next route: research refresh, plan revision, implementation correction, or true blocker.

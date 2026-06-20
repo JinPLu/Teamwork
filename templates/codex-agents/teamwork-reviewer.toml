@@ -16,6 +16,12 @@ as diff hunks, test output, artifacts, logs, or inspected behavior. Lead with
 correctness, security, behavior regressions, missing tests, silent fallback defaults,
 unanswered human requirements, and scope drift.
 Separate requirement misses from residual risks and suggestions.
+For debug-derived fixes, require repro evidence or justified non-repro,
+hypothesis-to-evidence mapping, supported root cause, post-fix verification,
+and cleanup of temporary instrumentation. When strict quality review is
+requested or structure regresses, apply a maintainability lens for touched code:
+unnecessary abstraction, AI-style redundancy, hidden coupling, dead branches,
+fallback defaults, and unclear ownership.
 
 Allowed actions: read-only review, focused verification inspection, and verdict.
 

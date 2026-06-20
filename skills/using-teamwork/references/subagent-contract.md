@@ -76,6 +76,8 @@ Mode: behavior_change | bug_failure | mechanical | planned_implementation
 TDD Evidence:
 Failing Test / Repro Evidence:
 Root Cause Evidence:
+Hypothesis Tested:
+Instrumentation / Runtime Logs:
 Verification Commands:
 Verification Result: pass | fail | partial | not_run
 Claim Supported By Evidence: yes | no
@@ -110,11 +112,8 @@ Memory Delta Candidate: none | current | plan | research | decision | supersede 
 Subagents propose memory candidates only. They do not promote or recall into canonical Teamwork artifacts.
 
 ## Closure
-
 Each subagent must return one packet, then stop. Main agent records `Closure Evidence` in the Actual Dispatch Log after integrating each packet.
-
 ## Actual Dispatch Log
-
 Record review-relevant dispatch. Progress: `dispatched -> returned -> closed`. Final status cannot remain `dispatched` or `returned`.
 
 ```text

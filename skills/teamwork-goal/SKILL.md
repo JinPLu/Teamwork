@@ -13,6 +13,7 @@ Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
 evidence and judgment; `skills/using-teamwork/references/goal-iteration.md` for
 the Goal Proposal, controller loop, adequacy gate, and rolling report;
 `skills/using-teamwork/references/subagent-dispatch.md` for stage dispatch;
+`skills/using-teamwork/references/debug-mode.md` for runtime failure diagnosis;
 `skills/using-teamwork/references/artifact-protocol.md` for durable memory.
 
 ## Goal Surface
@@ -34,7 +35,8 @@ supplied a complete target. The approved Goal Text goes into the goal surface.
 1. Initialize target, assumptions, boundaries, verification, budget, and a
    durable plan/report when needed.
 2. Retrieve prior research/report rows before repeating a hypothesis.
-3. Research unclear causes; plan through `teamwork-plan`; execute through
+3. Research broad unknowns; route reproducible unknown-cause failures through
+   `teamwork-debug`; plan through `teamwork-plan`; execute through
    `teamwork-execute`, dispatching subagents when ownership splits.
 4. Verify, then review through `teamwork-review`. Each attempt closes or blocks
    every delegated track before acceptance or retry.
@@ -44,7 +46,8 @@ supplied a complete target. The approved Goal Text goes into the goal surface.
 ## Stop Rules
 
 - Default budget is 3 iterations when unspecified.
-- Stop after 2 consecutive no-progress iterations.
+- Stop after 2 consecutive no-progress iterations; failed debug attempts return
+  to the Research + Plan Adequacy Gate before another fix attempt.
 - Stop immediately on destructive risk, auth failure, missing required
   resources, protected-boundary conflict, or user-intent ambiguity.
 - Mark complete only after focused verification and execution review pass: Codex

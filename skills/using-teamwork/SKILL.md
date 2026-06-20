@@ -1,6 +1,6 @@
 ---
 name: using-teamwork
-description: Use when starting any coding-agent task: route to native/research/plan/execute/review/goal/init/update.
+description: Use when starting any coding-agent task: route to native/research/debug/plan/execute/review/goal/init/update.
 ---
 
 # Using Teamwork
@@ -26,11 +26,15 @@ Pick the stage that matches the work. Most small, clear tasks need none of
 them — just do the work natively.
 
 - **Stay native** — quick facts, read-only answers, tiny edits, low-risk bug
-  fixes, low-risk mechanical multi-file edits, one CodeGraph question, or a
-  tightly coupled critical path. Write naturally; no artifacts or ceremony.
-- **Research** (`skills/teamwork-research/SKILL.md`) — root cause, source/API
-  behavior, failure evidence, stale assumptions, or option comparison is
-  unclear.
+  fixes with known cause or obvious local proof, low-risk mechanical multi-file
+  edits, one CodeGraph question, or a tightly coupled critical path. Write
+  naturally; no artifacts or ceremony.
+- **Research** (`skills/teamwork-research/SKILL.md`) — source/API behavior,
+  repro surface, stale assumptions, external constraints, or option comparison
+  is unclear.
+- **Debug** (`skills/teamwork-debug/SKILL.md`) — reproducible or potentially
+  reproducible bug/failure where runtime evidence, hypotheses, instrumentation,
+  logs, browser/CI evidence, or human repro must decide root cause before a fix.
 - **Plan** (`skills/teamwork-plan/SKILL.md`) — explicit plan/design request, or
   non-trivial implementation that needs scope, verification, or dispatch.
 - **Execute** (`skills/teamwork-execute/SKILL.md`) — "go ahead", "do it",

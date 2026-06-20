@@ -100,7 +100,7 @@ risk, and next steps quickly.
 
 | Without Teamwork | With Teamwork |
 |---|---|
-| The main agent explores while editing | `using-teamwork` routes work into research, plan, execute, review, goal, or update |
+| The main agent explores while editing | `using-teamwork` routes work into research, debug, plan, execute, review, goal, or update |
 | Subagents have no stable boundary | Independent tracks fan out to role subagents with fixed responsibilities, inputs, output packets, and closure conditions |
 | The model treats summaries as facts | Important conclusions are labeled `observed` / `inferred` / `claimed` and mapped to direct evidence |
 | Done means "the agent says so" | Non-lightweight results default to fresh review; same-context self-review is not acceptance |
@@ -154,11 +154,12 @@ Local development or project installs:
 
 ## How The Skills Work
 
-`using-teamwork` is the only broad entrypoint: act by default on clear work via the native fast path, ask only for core decisions or real blockers, then escalate for unclear requirements, missing evidence, planning, fan-out, review, or goal loops.
+`using-teamwork` is the only broad entrypoint: act by default on clear work via the native fast path, ask only for core decisions or real blockers, then escalate for unclear requirements, missing evidence, reproducible failures that need runtime diagnosis, planning, fan-out, review, or goal loops.
 
 | Skill | Use It For | Teamwork Capability |
 |---|---|---|
-| `teamwork-research` | root cause, evidence, options, external constraints | Evidence / Root Cause |
+| `teamwork-research` | source, evidence, options, external constraints, or an unclear repro surface | Evidence / Research Framing |
+| `teamwork-debug` | reproducible or likely reproducible failures that need hypotheses, temporary instrumentation, and runtime evidence to prove root cause | Runtime Diagnosis / Root Cause Proof |
 | `teamwork-plan` | explicit plan/design or non-lightweight implementation boundaries | Design Synthesis / Planning Synthesis |
 | `teamwork-execute` | accepted plans after go ahead / continue / do it | Staged Execution / Verification Before Claims |
 | `teamwork-review` | review, diff, acceptance, PR/CI feedback | Review Reception / Fresh Review |
@@ -166,7 +167,7 @@ Local development or project installs:
 | `teamwork-init` | AGENTS/CODEX/CURSOR/CLAUDE, instruction slimming, install readiness | Instruction Slimming |
 | `teamwork-update` | refresh installs, check drift, release hygiene | Package Hygiene |
 
-These are Teamwork-owned progressive abilities. Lightweight work does not show internal capability names; complex work loads references, artifacts, packets, or subagents only when needed.
+These are Teamwork-owned progressive abilities. `teamwork-debug` is a stage, not a new role. Lightweight work does not show internal capability names; complex work loads references, artifacts, packets, or subagents only when needed.
 
 ## Platform Positioning
 

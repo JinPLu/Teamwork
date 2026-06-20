@@ -25,7 +25,7 @@ After approval: Codex calls `create_goal` with the approved Goal Text. Cursor/Cl
 ## Controller Loop
 
 ```text
-initialize -> retrieve prior research/reports -> research if needed -> plan
+initialize -> retrieve prior research/reports -> research/debug if needed -> plan
 -> plan review -> execute -> verify -> execution review -> append report row
 -> accept / research+plan refresh / stop
 ```
@@ -39,13 +39,16 @@ Read direct evidence first: failed verification output, current durable plan, ex
 Classify the failure:
 
 - **research gap**: causes, external behavior, or prior attempts not understood
+- **debug gap**: reproducible failure lacks runtime evidence, hypotheses,
+  instrumentation, or post-fix repro verification
 - **plan insufficiency**: missed evidence, wrong scope, or stale assumption
 - **scope error**: touched wrong producer or boundary
 - **over-strict blocker**: research can refine the allowed path
 - **implementation deviation**: executor did not follow an otherwise valid plan
 - **true blocker**: missing credentials/resources, destructive risk, sacred-boundary conflict, budget exhaustion, or unresolvable user intent
 
-Refresh research and update the plan for the first four; execute again within budget. Stop only for true blockers or exhausted budget.
+Refresh research/debug evidence and update the plan for the first five; execute
+again within budget. Stop only for true blockers or exhausted budget.
 
 ## Rolling Report
 
@@ -60,3 +63,6 @@ Start with a retrieval header (`Artifact Type: report`), then append one table r
 | <n> | <what changed or was tested> | <command/artifact/check> | <pass/fail/blocked + decision> |
 
 The report is cross-turn memory. It does not replace the durable plan, research artifact, review verdict, or direct verification evidence.
+
+For debug attempts, put repro path, hypothesis tested, runtime evidence, root
+cause status, cleanup status, and next route in the attempt row or adjacent note.

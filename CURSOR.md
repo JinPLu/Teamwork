@@ -108,6 +108,9 @@ Stop Rules, and Research + Plan Adequacy Gate as Codex:
 The rolling report is the durable goal surface on Cursor. See
 `skills/using-teamwork/references/goal-iteration.md` for the full loop.
 
+For repeated failures or unknown-cause regressions inside that loop, route through
+`teamwork-debug` before retrying speculative fixes.
+
 ## Teamwork Memory
 
 When `docs/teamwork/index.json` exists and durable memory is relevant, Teamwork
@@ -116,5 +119,7 @@ when durable memory was checked or changed.
 
 ## Router
 
-`using-teamwork` is the automatic lean entrypoint. Stage skills load focused
-references only as needed.
+`using-teamwork` is the automatic lean entrypoint. It routes unclear source or
+repro setup to research, reproducible failures to `teamwork-debug`, accepted
+fixes to execute, and keeps Debug as a stage rather than a new role. Stage
+skills load focused references only as needed.

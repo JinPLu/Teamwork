@@ -10,10 +10,13 @@ directly and never relies on summaries.
 
 Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
 evidence rules; `skills/using-teamwork/references/review-checks.md` for the
-plan/execution checks; `skills/using-teamwork/references/role-playbook.md` for
+plan/execution checks; `skills/using-teamwork/references/verification-patterns.md`
+for proof strength and baseline/treatment checks; `skills/using-teamwork/references/review-lenses.md`
+for strict review, deslop, and reviewer-comprehension lenses; `skills/using-teamwork/references/role-playbook.md` for
 Reviewer method; `skills/using-teamwork/references/subagent-dispatch.md` and
 `skills/using-teamwork/references/subagent-contract.md` for Reviewer dispatch and
-the verdict packet; `skills/using-teamwork/references/artifact-protocol.md` when
+the verdict packet; `skills/using-teamwork/references/debug-mode.md` for
+debug-derived evidence and cleanup checks; `skills/using-teamwork/references/artifact-protocol.md` when
 review needs durable memory.
 
 ## Rules
@@ -46,6 +49,11 @@ defaults, the Actual Dispatch Log, Worker packets when Workers ran, dispatch
 economics, and workspace hygiene. Confirm the dispatch split was considered even
 when the plan did not name every track. For re-review after `revise`, require
 the prior verdict, the required fixes, fix evidence, and a re-review verdict.
+For debug-derived fixes, also check repro evidence, hypothesis-to-evidence
+mapping, root-cause support, post-fix repro/verification on the same surface,
+and cleanup of temporary instrumentation. When explicitly asked for strict code
+quality review, deslop, PR walkthrough, or when acceptance reveals structural
+regression, load `review-lenses.md`.
 
 ## Verdict
 
@@ -55,6 +63,7 @@ Evidence Read:
 - <observed|inferred|claimed> <path/command/artifact>: <finding>
 Requirements / Evidence Map:
 - <requirement or step> -> <evidence> -> <pass|fail|partial|not reviewed>
+Verification Strength: live-verified | targeted-test-verified | build-only | blocked | failed | not_applicable
 Findings:
 - [blocker|major|minor] <issue> - <evidence> - <required action>
 Dissent / Uncertainty: <none or concern>

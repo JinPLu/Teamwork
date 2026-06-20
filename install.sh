@@ -10,6 +10,7 @@ if [[ -f "$ROOT/VERSION" ]]; then
 fi
 SKILLS=(
   using-teamwork
+  teamwork-debug
   teamwork-init
   teamwork-goal
   teamwork-research

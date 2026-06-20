@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENTRYPOINT="$ROOT/skills/using-teamwork/SKILL.md"
 SKILLS=(
   using-teamwork
+  teamwork-debug
   teamwork-init
   teamwork-goal
   teamwork-research
@@ -90,10 +91,9 @@ fenced_block_line_count_max() {
   ' "$file" || exit 1
 }
 
-git_known_or_worktree_addition() {
+git_known_package_file() {
   local path="$1"
   git -C "$ROOT" ls-files --error-unmatch "$path" >/dev/null 2>&1 && return 0
-  git -C "$ROOT" status --short -- "$path" | grep -Eq '^\?\? ' && return 0
   return 1
 }
 
@@ -123,7 +123,7 @@ grep_required '^\.claude/$' "$ROOT/.gitignore" ".gitignore must ignore local .cl
 [[ -f "$ROOT/CLAUDE.md" ]] || fail "missing CLAUDE.md"
 
 [[ -f "$ROOT/VERSION" ]] || fail "missing VERSION"
-git_known_or_worktree_addition "VERSION" || fail "VERSION is neither tracked nor a worktree addition"
+git_known_package_file "VERSION" || fail "VERSION is not known to git; use git add -N before release validation"
 grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' "$ROOT/VERSION" || fail "VERSION must be plain semver"
 
 if git -C "$ROOT" ls-files 'docs/teamwork/plans/*' 'docs/teamwork/research/*' 'docs/teamwork/reports/*' 'docs/teamwork/workflows/*' | grep -q .; then
@@ -138,8 +138,8 @@ grep_required '^docs/teamwork/workflows/$' "$ROOT/.gitignore" ".gitignore must i
 for skill in "${SKILLS[@]}"; do
   file="$ROOT/skills/$skill/SKILL.md"
   [[ -f "$file" ]] || fail "missing skills/$skill/SKILL.md"
-  git_known_or_worktree_addition "skills/$skill/SKILL.md" \
-    || fail "skills/$skill/SKILL.md is neither tracked nor a worktree addition"
+  git_known_package_file "skills/$skill/SKILL.md" \
+    || fail "skills/$skill/SKILL.md is not known to git; use git add -N before release validation"
   head -n 1 "$file" | grep -qx -- "---" || fail "$skill SKILL.md must start with YAML frontmatter"
   grep_required "^name: $skill$" "$file" "$skill missing matching skill name"
   grep -Eq '^description: Use when .+' "$file" || fail "$skill description must start with: Use when"
@@ -155,32 +155,32 @@ for skill in "${SKILLS[@]}"; do
   done
 done
 
-for subskill in teamwork-init teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review teamwork-update; do
+for subskill in teamwork-debug teamwork-init teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review teamwork-update; do
   grep_required "skills/$subskill/SKILL.md" "$ENTRYPOINT" "entrypoint/router does not reference skills/$subskill/SKILL.md"
 done
 
 # --- Reference inventory ---
-for reference in artifact-protocol goal-iteration optional-skills plan-output project-init research-protocol review-checks role-playbook subagent-contract subagent-dispatch workflow-contract workflow-orchestration; do
+for reference in artifact-protocol debug-mode goal-iteration optional-skills plan-output project-init research-protocol review-checks review-lenses role-playbook subagent-contract subagent-dispatch verification-patterns workflow-contract workflow-orchestration; do
   ref_file="$ROOT/skills/using-teamwork/references/$reference.md"
   [[ -f "$ref_file" ]] || fail "missing skills/using-teamwork/references/$reference.md"
-  git_known_or_worktree_addition "skills/using-teamwork/references/$reference.md" \
-    || fail "skills/using-teamwork/references/$reference.md is neither tracked nor a worktree addition"
+  git_known_package_file "skills/using-teamwork/references/$reference.md" \
+    || fail "skills/using-teamwork/references/$reference.md is not known to git; use git add -N before release validation"
 done
 
 for template in teamwork-index-template.json teamwork-index-readme-template.md teamwork-current-template.md; do
   template_file="$ROOT/skills/using-teamwork/references/$template"
   [[ -f "$template_file" ]] || fail "missing skills/using-teamwork/references/$template"
-  git_known_or_worktree_addition "skills/using-teamwork/references/$template" \
-    || fail "skills/using-teamwork/references/$template is neither tracked nor a worktree addition"
+  git_known_package_file "skills/using-teamwork/references/$template" \
+    || fail "skills/using-teamwork/references/$template is not known to git; use git add -N before release validation"
 done
 
 expected_reference_inventory="$(
   printf '%s\n' \
-    artifact-protocol.md check-update.md goal-iteration.md optional-skills.md plan-output.md \
-    project-init.md research-protocol.md review-checks.md role-playbook.md \
+    artifact-protocol.md check-update.md debug-mode.md goal-iteration.md optional-skills.md plan-output.md \
+    project-init.md research-protocol.md review-checks.md review-lenses.md role-playbook.md \
     subagent-contract.md subagent-dispatch.md teamwork-current-template.md \
     teamwork-index-readme-template.md teamwork-index-template.json \
-    workflow-contract.md workflow-orchestration.md | sort
+    verification-patterns.md workflow-contract.md workflow-orchestration.md | sort
 )"
 actual_reference_inventory="$(
   find "$ROOT/skills/using-teamwork/references" -maxdepth 1 -type f \
@@ -190,8 +190,8 @@ actual_reference_inventory="$(
   || fail "using-teamwork references inventory drifted"
 
 [[ -f "$ROOT/scripts/validate_teamwork_index.py" ]] || fail "missing scripts/validate_teamwork_index.py"
-git_known_or_worktree_addition "scripts/validate_teamwork_index.py" \
-  || fail "scripts/validate_teamwork_index.py is neither tracked nor a worktree addition"
+git_known_package_file "scripts/validate_teamwork_index.py" \
+  || fail "scripts/validate_teamwork_index.py is not known to git; use git add -N before release validation"
 python3 "$ROOT/scripts/validate_teamwork_index.py" \
   "$ROOT/skills/using-teamwork/references/teamwork-index-template.json" >/dev/null
 
@@ -286,6 +286,8 @@ line_count_max "$ROOT/skills/using-teamwork/SKILL.md" 80 "using-teamwork should 
 word_count_max "$ROOT/skills/using-teamwork/SKILL.md" 450 "using-teamwork should stay concise"
 line_count_max "$ROOT/skills/teamwork-init/SKILL.md" 95 "teamwork-init should stay concise"
 word_count_max "$ROOT/skills/teamwork-init/SKILL.md" 650 "teamwork-init should stay concise"
+line_count_max "$ROOT/skills/teamwork-debug/SKILL.md" 85 "teamwork-debug should stay concise"
+word_count_max "$ROOT/skills/teamwork-debug/SKILL.md" 560 "teamwork-debug should stay concise"
 line_count_max "$ROOT/skills/teamwork-plan/SKILL.md" 120 "teamwork-plan should stay concise"
 word_count_max "$ROOT/skills/teamwork-plan/SKILL.md" 650 "teamwork-plan should stay concise"
 line_count_max "$ROOT/skills/teamwork-goal/SKILL.md" 130 "teamwork-goal should stay concise"
@@ -304,6 +306,12 @@ line_count_max "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" 150
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" 1050 "subagent dispatch reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-contract.md" 145 "subagent contract reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-contract.md" 600 "subagent contract reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/debug-mode.md" 85 "debug mode reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/debug-mode.md" 520 "debug mode reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/verification-patterns.md" 80 "verification patterns reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/verification-patterns.md" 560 "verification patterns reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/review-lenses.md" 85 "review lenses reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/review-lenses.md" 620 "review lenses reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/role-playbook.md" 100 "role playbook reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/role-playbook.md" 650 "role playbook reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/artifact-protocol.md" 120 "artifact protocol reference should stay focused"
@@ -331,11 +339,34 @@ done
 # --- Router + stage anchors ---
 grep_required 'references/workflow-contract.md' "$ENTRYPOINT" "using-teamwork must reference shared workflow contract"
 grep_required 'references/subagent-dispatch.md' "$ENTRYPOINT" "using-teamwork must reference subagent dispatch"
-for skill in teamwork-init teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review; do
+for skill in teamwork-debug teamwork-init teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review; do
   grep_absent '`references/' "$skill must not use sibling-local reference paths" "$ROOT/skills/$skill/SKILL.md"
   grep_absent '^- `references/' "$skill must not list sibling-local reference paths" "$ROOT/skills/$skill/SKILL.md"
   grep_required 'skills/using-teamwork/references/workflow-contract.md' "$ROOT/skills/$skill/SKILL.md" "$skill must reference shared workflow contract"
 done
+grep_required 'Debug' "$ENTRYPOINT" "using-teamwork router must name the Debug stage"
+grep_required 'skills/teamwork-debug/SKILL.md' "$ENTRYPOINT" "using-teamwork router must reference teamwork-debug"
+grep_required 'skills/using-teamwork/references/workflow-contract.md' "$ROOT/skills/teamwork-debug/SKILL.md" "teamwork-debug must reference shared workflow contract"
+grep_required 'debug-mode.md' "$ROOT/skills/teamwork-debug/SKILL.md" "teamwork-debug must reference the shared debug protocol"
+grep_required 'verification-patterns.md' "$ROOT/skills/teamwork-debug/SKILL.md" "teamwork-debug must reference verification patterns"
+grep_required 'verification-patterns.md' "$ROOT/skills/teamwork-plan/SKILL.md" "teamwork-plan must reference verification patterns"
+grep_required 'verification-patterns.md' "$ROOT/skills/teamwork-execute/SKILL.md" "teamwork-execute must reference verification patterns"
+grep_required 'verification-patterns.md' "$ROOT/skills/teamwork-review/SKILL.md" "teamwork-review must reference verification patterns"
+grep_required 'review-lenses.md' "$ROOT/skills/teamwork-review/SKILL.md" "teamwork-review must reference review lenses"
+grep_required 'repro-surface framing' "$ROOT/skills/teamwork-research/SKILL.md" "research trigger must stop before runtime diagnosis"
+grep_required 'one bounded micro-debug pass' "$ROOT/skills/teamwork-execute/SKILL.md" "execute must bound local micro-debugging"
+for anchor in Repro Hypotheses Instrumentation 'Runtime Evidence' Cleanup; do
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/debug-mode.md" "debug-mode must lock $anchor"
+done
+grep_required 'Wrong-surface or inconclusive checks are not a pass' "$ROOT/skills/using-teamwork/references/debug-mode.md" "debug-mode must preserve same-surface verification"
+for anchor in 'Verification Strength' 'Baseline / Treatment' 'VERIFIED' 'NOT VERIFIED' 'INCONCLUSIVE'; do
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/verification-patterns.md" "verification patterns must lock $anchor"
+done
+for anchor in Deslop 'Strict Maintainability' 'Reviewer Comprehension' 'Multi-Lens Review'; do
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/review-lenses.md" "review lenses must lock $anchor"
+done
+grep_absent 'Stage: teamwork-debug' "subagent contract must not define stage-local Debug output" "$ROOT/skills/using-teamwork/references/subagent-contract.md"
+grep_absent 'Debug Findings Output' "subagent contract must not define stage-local Debug output" "$ROOT/skills/using-teamwork/references/subagent-contract.md"
 
 grep_required 'check-update.md' "$ROOT/skills/teamwork-init/SKILL.md" "teamwork-init must reference check-update"
 grep_required 'check-update.md' "$ROOT/skills/teamwork-update/SKILL.md" "teamwork-update must reference check-update"
