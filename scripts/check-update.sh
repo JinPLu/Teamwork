@@ -184,10 +184,19 @@ source_profile() {
 upstream_version() {
   local remote_version=""
   if (( FETCH_UPSTREAM )) && git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    git -C "$ROOT" fetch origin --quiet 2>/dev/null || true
-    remote_version="$(git -C "$ROOT" show "origin/HEAD:VERSION" 2>/dev/null \
-      || git -C "$ROOT" show "origin/main:VERSION" 2>/dev/null \
-      || true)"
+    local upstream_ref upstream_remote
+    upstream_ref="$(git -C "$ROOT" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
+    if [[ -n "$upstream_ref" ]]; then
+      upstream_remote="${upstream_ref%%/*}"
+      git -C "$ROOT" fetch "$upstream_remote" --quiet 2>/dev/null || true
+      remote_version="$(git -C "$ROOT" show "$upstream_ref:VERSION" 2>/dev/null || true)"
+    fi
+    if [[ -z "$remote_version" ]]; then
+      git -C "$ROOT" fetch origin --quiet 2>/dev/null || true
+      remote_version="$(git -C "$ROOT" show "origin/HEAD:VERSION" 2>/dev/null \
+        || git -C "$ROOT" show "origin/main:VERSION" 2>/dev/null \
+        || true)"
+    fi
   fi
   if [[ -z "$remote_version" ]] && (( FETCH_UPSTREAM )) && command -v curl >/dev/null 2>&1; then
     remote_version="$(curl -fsSL "${GITHUB_REPO}/raw/main/VERSION" 2>/dev/null || true)"
