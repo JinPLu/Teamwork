@@ -1,6 +1,6 @@
 ---
 name: teamwork-debug
-description: Use when a reproducible or potentially reproducible bug needs runtime evidence, hypotheses, instrumentation, logs, browser or CI evidence, or human repro before a fix is safe.
+description: Use when the user reports a failure, flaky test, CI error, runtime log, crash, UI symptom, regression, or suspected bug where a repro, hypotheses, instrumentation, browser/CI evidence, or human observation must decide root cause before a fix is safe.
 ---
 
 # Teamwork Debug
@@ -20,9 +20,9 @@ browser, CI, logging, or observability tools.
 
 ## When To Use
 
-Route here for reproducible or likely reproducible bugs, regressions, timing
-issues, memory/performance failures, flaky tests with useful logs, browser
-runtime failures, or CI failures where source inspection alone is guessing.
+Route here when the user describes a failure symptom, failing/flaky command, CI
+error, crash, runtime log, browser/UI bug, regression, timing issue, or
+memory/performance failure where source inspection alone is guessing.
 
 Stay in `teamwork-research` when the repro surface, source of truth, upstream
 behavior, or environment is still unknown. Route to `teamwork-plan` when the

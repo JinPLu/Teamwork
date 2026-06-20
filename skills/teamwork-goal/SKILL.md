@@ -1,6 +1,6 @@
 ---
 name: teamwork-goal
-description: Use when the user asks to run until it passes, iterate until done, keep going until convergence, or gives a verifiable target with a budget.
+description: Use when the user asks to keep going, run until it passes, fix until green, iterate until done, converge on a verifiable target, or work within an explicit budget.
 ---
 
 # Teamwork Goal

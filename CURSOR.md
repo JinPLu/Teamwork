@@ -119,7 +119,8 @@ when durable memory was checked or changed.
 
 ## Router
 
-`using-teamwork` is the automatic lean entrypoint. It routes unclear source or
-repro setup to research, reproducible failures to `teamwork-debug`, accepted
-fixes to execute, and keeps Debug as a stage rather than a new role. Stage
-skills load focused references only as needed.
+`using-teamwork` is the automatic lean entrypoint. It infers routes from user
+intent, evidence state, and acceptance risk: unclear source or repro setup goes
+to research, reproducible failures to `teamwork-debug`, accepted fixes to
+execute, and Debug remains a stage rather than a new role. Stage skills load
+focused references only as needed.

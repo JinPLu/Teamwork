@@ -1,12 +1,13 @@
 ---
 name: teamwork-execute
-description: Use when a user says go ahead, proceed, do it, implement this plan, continue, or resume an accepted plan or approved checklist.
+description: Use when an accepted plan, checklist, approved scope, or known root-cause fix should be implemented, continued, resumed, or verified with focused edits.
 ---
 
 # Teamwork Execute
 
-Use after a plan is accepted, approved, resumed, or continued. Execution
-implements the plan; it does not declare its own completion.
+Use after a plan, checklist, scope, or root-cause fix is accepted, approved,
+resumed, or continued. Execution implements the accepted scope; it does not
+declare its own completion.
 
 Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
 evidence and judgment; `skills/using-teamwork/references/subagent-dispatch.md`

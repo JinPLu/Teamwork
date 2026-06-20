@@ -145,20 +145,20 @@ Codex-first 默认安装：
 
 ## Skills 怎么用
 
-`using-teamwork` 是唯一宽入口：先走 native fast path，小事直接做；只有需求不清、证据不足、可复现故障需要 runtime diagnosis、需要计划、需要 fan out、需要 review 或需要 goal loop 时才升级。
+`using-teamwork` 是唯一宽入口：先走 native fast path，小事直接做；再从用户自然意图、证据状态和验收风险自动推断 research/debug/plan/execute/review/goal 等阶段。用户不需要说内部 stage 名。
 
 | Skill | 什么时候用 | Teamwork 渐进能力 |
 |---|---|---|
 | `teamwork-research` | 来源、证据、方案、外部约束或 repro surface 不清楚 | Evidence / Research Framing |
 | `teamwork-debug` | 可复现或大概率可复现的故障，需要假设、临时 instrumentation 和 runtime evidence 才能定根因 | Runtime Diagnosis / Root Cause Proof |
 | `teamwork-plan` | 明确要求 plan/design，或非轻量实现需要边界和验收 | Design Synthesis / Planning Synthesis |
-| `teamwork-execute` | 用户接受计划后说 go ahead / continue / do it | Staged Execution / Verification Before Claims |
-| `teamwork-review` | review、diff、非轻量完成验收、PR/CI 反馈 | Review Reception / Fresh Review |
-| `teamwork-goal` | keep going、until it passes、预算内迭代 | Goal Recovery / Convergence |
+| `teamwork-execute` | 已接受的计划、清单、范围或已知根因修复需要实现 | Staged Execution / Verification Before Claims |
+| `teamwork-review` | review、diff、完成验收、strict quality、deslop、PR walkthrough | Review Reception / Fresh Review |
+| `teamwork-goal` | keep going、until green/done、预算内迭代 | Goal Recovery / Convergence |
 | `teamwork-init` | AGENTS/CODEX/CURSOR/CLAUDE、项目规则瘦身、安装就绪检查 | Instruction Slimming |
 | `teamwork-update` | 刷新安装面、检查版本漂移、release hygiene | Package Hygiene |
 
-这些能力是 Teamwork 原生的渐进能力。`teamwork-debug` 是 stage，不是新角色；普通聊天不显示内部能力名，复杂任务才按需加载 references、artifacts、packets 或 subagents。
+这些能力是 Teamwork 原生的渐进能力。`teamwork-debug` 是 stage，不是新角色；普通聊天不显示内部能力名，复杂任务才按需加载 routing policy、references、artifacts、packets 或 subagents。
 
 ## 平台定位
 

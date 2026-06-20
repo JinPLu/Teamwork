@@ -1,6 +1,6 @@
 ---
 name: teamwork-research
-description: Use when the next step is evidence gathering, source-of-truth lookup, repro-surface framing, option comparison, external calibration, or stale-assumption refresh before planning/debugging.
+description: Use when the next safe step is to learn before acting: source-of-truth lookup, current API behavior, repro-surface framing, option comparison, stale-assumption refresh, or risk/evidence gathering before planning/debugging.
 ---
 
 # Teamwork Research
@@ -19,10 +19,11 @@ boundary;
 
 ## When To Use
 
-Route here before planning or execution when source of truth, current API
-behavior, repro surface, prior evidence, acceptance evidence, or risk is
-unclear. Route to `teamwork-debug` instead when the bug is reproducible or
-likely reproducible and runtime evidence can decide the cause.
+Route here before planning or execution when the user asks "why/which/how is
+this supposed to work", when source of truth, current API behavior, repro
+surface, prior evidence, acceptance evidence, or risk is unclear. Route to
+`teamwork-debug` instead when the bug is reproducible or likely reproducible and
+runtime evidence can decide the cause.
 If you skip it, state the direct observed evidence that makes research
 unnecessary.
 

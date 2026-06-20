@@ -1,6 +1,6 @@
 ---
 name: teamwork-plan
-description: Use when explicit planning/design or non-trivial implement/fix/add/change/refactor needs scope, verification, dispatch, memory, or acceptance.
+description: Use when the user asks for plan/design or a non-trivial implement/fix/add/change/refactor needs scope, requirements, protected boundaries, verification, dispatch, memory, or acceptance before edits.
 ---
 
 # Teamwork Plan

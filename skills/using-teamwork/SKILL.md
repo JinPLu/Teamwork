@@ -1,6 +1,6 @@
 ---
 name: using-teamwork
-description: Use when starting any coding-agent task: route to native/research/debug/plan/execute/review/goal/init/update.
+description: Use when starting any coding-agent task: infer native/research/debug/plan/execute/review/goal/init/update from user intent, evidence state, and acceptance risk.
 ---
 
 # Using Teamwork
@@ -9,8 +9,9 @@ Teamwork sits on native tools: native capabilities execute; Teamwork adds
 evidence, dispatch, memory, and acceptance. Default to acting directly on clear
 work; escalate only when it improves correctness, continuity, or cost.
 
-Read `references/workflow-contract.md` for the shared principles, judgment, and
-platform map. Load other references only when their stage needs them.
+Read `references/workflow-contract.md` for shared principles and platform map.
+Read `references/routing-policy.md` when the route is ambiguous or the user
+describes symptoms instead of naming a stage.
 
 ## First: can you proceed?
 
@@ -22,33 +23,29 @@ approach) yourself. Do not narrate this as a gate.
 
 ## Route
 
-Pick the stage that matches the work. Most small, clear tasks need none of
-them — just do the work natively.
+Infer the route from user intent and evidence state. Most small, clear tasks
+need no Teamwork stage — just do the work natively.
 
-- **Stay native** — quick facts, read-only answers, tiny edits, low-risk bug
-  fixes with known cause or obvious local proof, low-risk mechanical multi-file
-  edits, one CodeGraph question, or a tightly coupled critical path. Write
-  naturally; no artifacts or ceremony.
-- **Research** (`skills/teamwork-research/SKILL.md`) — source/API behavior,
-  repro surface, stale assumptions, external constraints, or option comparison
-  is unclear.
-- **Debug** (`skills/teamwork-debug/SKILL.md`) — reproducible or potentially
-  reproducible bug/failure where runtime evidence, hypotheses, instrumentation,
-  logs, browser/CI evidence, or human repro must decide root cause before a fix.
-- **Plan** (`skills/teamwork-plan/SKILL.md`) — explicit plan/design request, or
-  non-trivial implementation that needs scope, verification, or dispatch.
-- **Execute** (`skills/teamwork-execute/SKILL.md`) — "go ahead", "do it",
-  "continue", "resume" on an accepted plan.
-- **Review** (`skills/teamwork-review/SKILL.md`) — "review", "diff", or check
-  completed non-lightweight work. Simple checks stay native.
-- **Goal** (`skills/teamwork-goal/SKILL.md`) — "keep going", "until it passes",
-  or budgeted iteration to a verified target.
-- **Init** (`skills/teamwork-init/SKILL.md`) — "init", "AGENTS/CODEX/CURSOR/
-  CLAUDE", or slim project instructions.
-- **Update** (`skills/teamwork-update/SKILL.md`) — "version", "release",
-  "bump", or refresh the installed package.
+- **Native** — quick facts, one CodeGraph question, tiny edits, obvious local
+  fixes, or low-risk mechanical work.
+- **Research** (`skills/teamwork-research/SKILL.md`) — source of truth, API
+  behavior, stale facts, options, constraints, or repro surface is unclear.
+- **Debug** (`skills/teamwork-debug/SKILL.md`) — a failure, flaky run, CI log,
+  crash, UI symptom, or regression may be reproducible and root cause is unclear.
+- **Plan** (`skills/teamwork-plan/SKILL.md`) — design/planning is requested, or
+  implementation affects scope, contracts, architecture, dispatch, or acceptance.
+- **Execute** (`skills/teamwork-execute/SKILL.md`) — an accepted plan/checklist
+  should be implemented or resumed.
+- **Review** (`skills/teamwork-review/SKILL.md`) — review, diff scrutiny,
+  completion validation, strict quality, deslop, or PR walkthrough is requested.
+- **Goal** (`skills/teamwork-goal/SKILL.md`) — iterate until green/done, keep
+  going, or work to a budgeted verifiable target.
+- **Init** (`skills/teamwork-init/SKILL.md`) — project agent instructions,
+  AGENTS/CODEX/CURSOR/CLAUDE, install readiness, or rule migration.
+- **Update** (`skills/teamwork-update/SKILL.md`) — Teamwork version, release,
+  refresh, or installed skills/agents/policy maintenance.
 
-Routing is automatic from intent; you do not wait for the user to name a stage.
+Users do not need to name stages. Treat stage names as optional force switches.
 
 ## Orchestrate
 

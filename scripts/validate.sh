@@ -160,7 +160,7 @@ for subskill in teamwork-debug teamwork-init teamwork-goal teamwork-research tea
 done
 
 # --- Reference inventory ---
-for reference in artifact-protocol debug-mode goal-iteration optional-skills plan-output project-init research-protocol review-checks review-lenses role-playbook subagent-contract subagent-dispatch verification-patterns workflow-contract workflow-orchestration; do
+for reference in artifact-protocol debug-mode goal-iteration optional-skills plan-output project-init research-protocol review-checks review-lenses role-playbook routing-policy subagent-contract subagent-dispatch verification-patterns workflow-contract workflow-orchestration; do
   ref_file="$ROOT/skills/using-teamwork/references/$reference.md"
   [[ -f "$ref_file" ]] || fail "missing skills/using-teamwork/references/$reference.md"
   git_known_package_file "skills/using-teamwork/references/$reference.md" \
@@ -177,7 +177,7 @@ done
 expected_reference_inventory="$(
   printf '%s\n' \
     artifact-protocol.md check-update.md debug-mode.md goal-iteration.md optional-skills.md plan-output.md \
-    project-init.md research-protocol.md review-checks.md review-lenses.md role-playbook.md \
+    project-init.md research-protocol.md review-checks.md review-lenses.md role-playbook.md routing-policy.md \
     subagent-contract.md subagent-dispatch.md teamwork-current-template.md \
     teamwork-index-readme-template.md teamwork-index-template.json \
     verification-patterns.md workflow-contract.md workflow-orchestration.md | sort
@@ -312,6 +312,8 @@ line_count_max "$ROOT/skills/using-teamwork/references/verification-patterns.md"
 word_count_max "$ROOT/skills/using-teamwork/references/verification-patterns.md" 560 "verification patterns reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/review-lenses.md" 85 "review lenses reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/review-lenses.md" 620 "review lenses reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/routing-policy.md" 70 "routing policy reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/routing-policy.md" 520 "routing policy reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/role-playbook.md" 100 "role playbook reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/role-playbook.md" 650 "role playbook reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/artifact-protocol.md" 120 "artifact protocol reference should stay focused"
@@ -338,6 +340,7 @@ done
 
 # --- Router + stage anchors ---
 grep_required 'references/workflow-contract.md' "$ENTRYPOINT" "using-teamwork must reference shared workflow contract"
+grep_required 'routing-policy.md' "$ENTRYPOINT" "using-teamwork must reference routing policy for ambiguous intent"
 grep_required 'references/subagent-dispatch.md' "$ENTRYPOINT" "using-teamwork must reference subagent dispatch"
 for skill in teamwork-debug teamwork-init teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review; do
   grep_absent '`references/' "$skill must not use sibling-local reference paths" "$ROOT/skills/$skill/SKILL.md"
@@ -364,6 +367,9 @@ for anchor in 'Verification Strength' 'Baseline / Treatment' 'VERIFIED' 'NOT VER
 done
 for anchor in Deslop 'Strict Maintainability' 'Reviewer Comprehension' 'Multi-Lens Review'; do
   grep_required "$anchor" "$ROOT/skills/using-teamwork/references/review-lenses.md" "review lenses must lock $anchor"
+done
+for anchor in 'Natural Signals' 'Tie-Breakers' 'User does not need to say' 'Symptom with unknown cause'; do
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/routing-policy.md" "routing policy must lock $anchor"
 done
 grep_absent 'Stage: teamwork-debug' "subagent contract must not define stage-local Debug output" "$ROOT/skills/using-teamwork/references/subagent-contract.md"
 grep_absent 'Debug Findings Output' "subagent contract must not define stage-local Debug output" "$ROOT/skills/using-teamwork/references/subagent-contract.md"

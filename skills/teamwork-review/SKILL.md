@@ -1,12 +1,13 @@
 ---
 name: teamwork-review
-description: Use when reviewing a plan, diff, implementation, or non-trivial completion claim.
+description: Use when the user asks to review/check a plan, diff, implementation, completion claim, strict code quality, deslop pass, PR walkthrough, or acceptance evidence.
 ---
 
 # Teamwork Review
 
-Use for non-lightweight acceptance and reviewer passes. Review reads evidence
-directly and never relies on summaries.
+Use for non-lightweight acceptance, diff scrutiny, strict-quality/deslop checks,
+PR walkthroughs, and reviewer passes. Review reads evidence directly and never
+relies on summaries.
 
 Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
 evidence rules; `skills/using-teamwork/references/review-checks.md` for the
