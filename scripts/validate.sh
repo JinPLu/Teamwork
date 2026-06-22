@@ -194,6 +194,9 @@ git_known_package_file "scripts/validate_teamwork_index.py" \
   || fail "scripts/validate_teamwork_index.py is not known to git; use git add -N before release validation"
 python3 "$ROOT/scripts/validate_teamwork_index.py" \
   "$ROOT/skills/using-teamwork/references/teamwork-index-template.json" >/dev/null
+if [[ -f "$ROOT/docs/teamwork/index.json" ]]; then
+  python3 "$ROOT/scripts/validate_teamwork_index.py" "$ROOT/docs/teamwork/index.json" >/dev/null
+fi
 
 # --- Plugin manifests ---
 [[ -f "$ROOT/.codex-plugin/plugin.json" ]] || fail "missing Codex plugin manifest"
@@ -421,14 +424,112 @@ grep_required 'Memory Delta' "$ROOT/skills/using-teamwork/references/artifact-pr
 grep_required 'Search Keys' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must define Search Keys"
 grep_required 'docs/teamwork/index.json' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must document index routing"
 grep_required 'schema_version' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must document index schema"
+grep_required 'active.goal' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must document active.goal"
+grep_required 'active.report' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must document active.report"
 grep_required 'Goal Proposal' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must define Goal Proposal"
 grep_required 'Research + Plan Adequacy Gate' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must define adequacy gate"
+grep_required 'Goal Invariants' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must preserve Goal Invariants"
+grep_required 'Replay Preflight' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must require Replay Preflight"
+grep_required 'Attempt Record' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must require Attempt Record"
+grep_required 'Failure Reflection' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must require Failure Reflection"
+grep_required 'reject` is not a lifecycle verdict' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must forbid reject as lifecycle verdict"
 grep_required 'final status, closure evidence' "$ROOT/skills/using-teamwork/references/plan-output.md" "plan output must include dispatch closure evidence"
+grep_required 'Goal Anchor' "$ROOT/skills/using-teamwork/references/plan-output.md" "plan output must include Goal Anchor"
 grep_required 'Durable memory check' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must include durable memory materiality checks"
 grep_required 'Memory promotion check' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must include memory promotion checks"
 grep_required 'candidate memory' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must keep external memory candidate-scoped"
 grep_required 'Manual smoke evidence captures source' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must include manual smoke evidence fields"
 grep_required 'No delegated track remains dispatched or returned' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must reject open delegated tracks"
+grep_required 'Drift Verdict' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must require goal drift verdict"
+grep_required 'Retry Verdict' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must require goal retry verdict"
+grep_required 'Goal Anchor' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must define Goal Anchor"
+grep_required 'Drift Verdict' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must define Drift Verdict"
+grep_required 'Retry Verdict' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must define Retry Verdict"
+grep_required 'reject` is not a lifecycle verdict' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must forbid reject as lifecycle verdict"
+
+python3 - "$ROOT" <<'PY'
+import pathlib
+import re
+import sys
+
+root = pathlib.Path(sys.argv[1])
+allowed = {"accept", "revise", "blocked"}
+bad_packet = "Role: Reviewer\nVerdict: reject\n"
+ok_packet = "Role: Reviewer\nVerdict: revise\n"
+bad_match = re.search(r"^Verdict:\s*(\w+)\b", bad_packet, re.M)
+ok_match = re.search(r"^Verdict:\s*(\w+)\b", ok_packet, re.M)
+if not bad_match or bad_match.group(1) in allowed:
+    raise SystemExit("FAIL: goal continuity smoke must catch reject lifecycle verdict")
+if not ok_match or ok_match.group(1) not in allowed:
+    raise SystemExit("FAIL: goal continuity smoke must allow revise lifecycle verdict")
+
+required = {
+    "skills/using-teamwork/references/goal-iteration.md": [
+        "Goal Invariants", "Replay Preflight", "Attempt Record", "Failure Reflection", "Do Not Repeat"
+    ],
+    "skills/using-teamwork/references/plan-output.md": [
+        "Goal Anchor", "Drift Verdict", "Retry Verdict", "Replay Preflight"
+    ],
+    "skills/using-teamwork/references/subagent-contract.md": [
+        "Goal Anchor", "Prior Attempts Reviewed", "Drift Verdict", "Retry Verdict"
+    ],
+}
+for rel, phrases in required.items():
+    text = (root / rel).read_text()
+    missing = [phrase for phrase in phrases if phrase not in text]
+    if missing:
+        raise SystemExit(f"FAIL: {rel} missing goal continuity anchors: {', '.join(missing)}")
+
+for rel in [
+    "skills/teamwork-review/SKILL.md",
+    "skills/using-teamwork/references/subagent-contract.md",
+]:
+    text = (root / rel).read_text()
+    if re.search(r"^Verdict:\s*reject\b", text, re.M):
+        raise SystemExit(f"FAIL: {rel} defines reject as a lifecycle verdict")
+
+def goal_retry_errors(text):
+    failed = re.search(r"^Attempt Result:\s*(failed|partial|blocked|no-progress)\b", text, re.M)
+    if not failed:
+        return []
+    required_fields = [
+        "Goal Invariants",
+        "Attempt Record",
+        "Failure Reflection",
+        "Replay Preflight",
+        "Do Not Repeat",
+        "Strategy Delta",
+    ]
+    errors = [field for field in required_fields if not re.search(rf"^{re.escape(field)}:", text, re.M)]
+    invariants = re.search(r"^Goal Invariants:\s*(.+)$", text, re.M)
+    invariant_text = invariants.group(1) if invariants else ""
+    for term in ["不要过严过滤", "数据飞轮"]:
+        if term in text and term not in invariant_text:
+            errors.append(f"Goal Invariants missing {term}")
+    return errors
+
+bad_storyboard = """Goal Text: 端到端视频生成一致性诊断与优化
+User Constraint: 不要过严过滤
+Data Flywheel: 数据飞轮
+Attempt Result: failed
+Next Plan: reclassify cases
+"""
+if not goal_retry_errors(bad_storyboard):
+    raise SystemExit("FAIL: goal continuity smoke must fail missing invariants/replay fields")
+
+good_storyboard = """Goal Text: 端到端视频生成一致性诊断与优化
+Goal Invariants: 端到端视频生成一致性诊断与优化; 不要过严过滤; 数据飞轮; remaining cases clean
+Attempt Result: failed
+Attempt Record: v20 kept weak cases but reject mixed unreviewed, ablation-only, readability-unchecked buckets
+Failure Reflection: over-strict bucket semantics hid usable data; evidence delta from v5/v6/v8/v9/v20 reviewed
+Replay Preflight: active goal/report and prior attempts reviewed
+Do Not Repeat: use reject as catch-all lifecycle verdict or data bucket
+Strategy Delta: split lifecycle verdict from data buckets and preserve weak/review candidates
+"""
+good_errors = goal_retry_errors(good_storyboard)
+if good_errors:
+    raise SystemExit(f"FAIL: goal continuity smoke rejected valid Storyboard fixture: {', '.join(good_errors)}")
+PY
 
 if git -C "$ROOT" grep -n -E 'raoctl|RAO|Stop hook|/rao:|/teamwork:' \
   -- ':!scripts/validate.sh' >/tmp/teamwork-retired-grep.$$; then

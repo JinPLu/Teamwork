@@ -32,22 +32,29 @@ supplied a complete target. The approved Goal Text goes into the goal surface.
 
 ## Loop
 
-1. Initialize target, assumptions, boundaries, verification, budget, and a
-   durable plan/report when needed.
-2. Retrieve prior research/report rows before repeating a hypothesis.
+1. Initialize target, Goal Invariants, assumptions, boundaries, verification,
+   budget, and a durable plan/report when needed.
+2. Retrieve prior research/report rows before repeating a hypothesis. After any
+   failed, partial, blocked, or no-progress attempt, run Replay Preflight before
+   refreshing the plan or dispatching more work.
 3. Research broad unknowns; route reproducible unknown-cause failures through
    `teamwork-debug`; plan through `teamwork-plan`; execute through
    `teamwork-execute`, dispatching subagents when ownership splits.
 4. Verify, then review through `teamwork-review`. Each attempt closes or blocks
    every delegated track before acceptance or retry.
-5. Accept only when verification and execution review pass; otherwise enter the
-   Research + Plan Adequacy Gate and revise.
+5. Append an Attempt Record after each verify/review cycle. For failed,
+   partial, blocked, or no-progress attempts, add a Failure Reflection before
+   entering the Research + Plan Adequacy Gate.
+6. Accept only when verification and execution review pass; otherwise revise
+   from the replayed evidence and Goal Invariants.
 
 ## Stop Rules
 
 - Default budget is 3 iterations when unspecified.
-- Stop after 2 consecutive no-progress iterations; failed debug attempts return
-  to the Research + Plan Adequacy Gate before another fix attempt.
+- Stop after 2 consecutive no-progress iterations unless a fresh strategy delta
+  is evidence-backed. Same failure plus no strategy delta counts as no-progress.
+- Failed debug attempts return to the Research + Plan Adequacy Gate before
+  another fix attempt.
 - Stop immediately on destructive risk, auth failure, missing required
   resources, protected-boundary conflict, or user-intent ambiguity.
 - Mark complete only after focused verification and execution review pass: Codex

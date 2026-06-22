@@ -21,8 +21,7 @@ for delegated prompts and packets; `skills/using-teamwork/references/plan-output
 for durable plans; `skills/using-teamwork/references/artifact-protocol.md` for
 artifact triggers; `skills/using-teamwork/references/debug-mode.md` for
 bug/failure plans that need runtime diagnosis; `skills/using-teamwork/references/verification-patterns.md`
-for falsifiable acceptance and proof strength; `skills/using-teamwork/references/optional-skills.md` for
-external tools.
+for falsifiable acceptance and proof strength.
 
 ## Ask First
 
@@ -64,9 +63,11 @@ Use the lightest form that stays correct:
    `debug -> plan -> execute`, or `debug -> execute`.
 6. Decide dispatch before finalizing steps. Split independent tracks to
    subagents with owned paths and packet shape, or keep local and state why.
-7. Use Designer for ambiguous decisions and Judge before high-risk, durable,
+7. For goal-mode retry plans, include Goal Invariants and Replay Preflight:
+   prior attempts reviewed, do-not-repeat, strategy delta, and stop check.
+8. Use Designer for ambiguous decisions and Judge before high-risk, durable,
    delegated, or goal-mode execution. If skipped, name the residual risk.
-8. End with next actions that `teamwork-execute` or a Worker can run directly.
+9. End with next actions that `teamwork-execute` or a Worker can run directly.
 
 ## Quality Bar
 
@@ -83,8 +84,9 @@ Use the lightest form that stays correct:
 - No broad refactor, abstraction, formatting churn, or downstream cleanup unless
   evidence requires it.
 - Delegated plans name the prompt shape, ownership, and expected packet.
-- Goal-mode durable plans include Search Keys, Abstract, budget, success signal,
-  no-progress stop, retry/research trigger, and acceptance review.
+- Goal-mode durable plans include Search Keys, Abstract, Goal Invariants,
+  budget, success signal, no-progress stop, retry/research trigger, and
+  acceptance review.
 
 ## Output
 

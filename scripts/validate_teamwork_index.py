@@ -106,6 +106,10 @@ def validate_index(index: dict) -> None:
 
     active = index["active"]
     require(isinstance(active, dict), "active must be object")
+    for key in ["current", "design", "plan", "progress", "goal", "report"]:
+        if key in active:
+            value = active[key]
+            require(value is None or (isinstance(value, str) and value), f"active.{key} must be null or non-empty string when present")
     if "results" in active:
         require(isinstance(active["results"], list), "active.results must be list when present")
 
@@ -147,7 +151,7 @@ def validate_templates(root: Path) -> None:
     for phrase in required_readme_phrases:
         require(phrase.lower() in readme.lower(), f"README template missing required language: {phrase}")
 
-    required_index_doc_phrases = ["pending", "active", "topic + kind", "stage", "broad-scan"]
+    required_index_doc_phrases = ["pending", "active", "active.goal", "active.report", "topic + kind", "stage", "broad-scan"]
     for phrase in required_index_doc_phrases:
         require(phrase.lower() in index_doc.lower(), f"index contract missing required language: {phrase}")
 

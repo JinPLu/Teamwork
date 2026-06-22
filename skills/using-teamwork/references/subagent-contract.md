@@ -18,6 +18,8 @@ Role Card (include when platform requires): Conceptual Role (Explorer|Designer|J
 
 Forbidden always: scope expansion, unrelated cleanup, chaining subagents, final acceptance, monitoring after packet. Block on missing env/path/command/model/config/credentials; report, never invent defaults.
 
+Lifecycle verdicts are `accept | revise | blocked`; `reject` is not a lifecycle verdict. Use rejected only for hypotheses, options, sources, memory candidates, or data buckets, with a reason.
+
 ## Packets
 
 ### Explorer Result Packet
@@ -110,6 +112,15 @@ Optional memory fields (add when work may change durable memory):
 Memory Delta Candidate: none | current | plan | research | decision | supersede | compact | deferred
 ```
 Subagents propose memory candidates only. They do not promote or recall into canonical Teamwork artifacts.
+
+Optional goal-mode fields (add for goal-mode work or failed-goal recovery):
+```text
+Goal Anchor: Goal Text; Goal Invariants; active goal/report; Attempt Record source
+Replay Preflight: done | not_applicable | blocked
+Prior Attempts Reviewed:
+Drift Verdict: on_goal | drifted | unclear
+Retry Verdict: continue | replan | stop | blocked
+```
 
 ## Closure
 Each subagent must return one packet, then stop. Main agent records `Closure Evidence` in the Actual Dispatch Log after integrating each packet.

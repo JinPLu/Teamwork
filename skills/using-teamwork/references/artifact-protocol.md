@@ -50,8 +50,10 @@ When durable project memory is relevant, read in this order when files exist:
 
 1. `docs/teamwork/index.json`
 2. `active.current` in index, else `docs/teamwork/current.md`
-3. Active stage pointers in index (`active.plan`, progress, report, result)
-4. Linked artifact headers, then bodies as needed
+3. Active goal pointers in index (`active.goal`, `active.report`) for goal-mode
+   and failed-goal recovery
+4. Active stage pointers in index (`active.plan`, progress, report, result)
+5. Linked artifact headers, then bodies as needed
 
 Do not broad-scan historical artifacts by default. Read full bodies only when stage-justified.
 
@@ -61,7 +63,7 @@ Top-level fields: `schema_version` (integer, must be `1`), `last_updated`, `proj
 
 `budgets`: `default_max_files` (1–10), `default_max_artifact_bodies` (0–5), `header_first` (boolean).
 
-`active` optional keys: `current`, `design`, `plan`, `progress`, `results` (array when present).
+`active` optional keys: `current`, `design`, `plan`, `progress`, `goal`, `report`, `results` (array when present). Scalar active pointers are string paths or `null` when known absent. `active.goal` may point to the active native-goal summary or report-backed goal note; `active.report` points to the rolling attempt report.
 
 `entries` item fields: `topic`, `kind`, `title`, `status`, `currentness`, `authority`, `path`, `updated`, `summary`. Optional: `applies_to`, `linked`, `evidence_paths`, `supersedes`, `search_keys`.
 

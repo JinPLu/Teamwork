@@ -30,6 +30,8 @@ Check:
 - scope and protected boundaries preserved; no placeholders, ellipses, or hidden broad refactors;
 - routing, ownership, output schema, prompt packets, and verification target are adequate;
 - guardrails, retry/stop conditions, and acceptance gap are explicit.
+- goal-mode retry plans carry Goal Anchor, Replay Preflight, Drift Verdict, and
+  Retry Verdict.
 
 Return `accept` when plan is runnable, scoped, and testable. Return `revise` with the smallest correction needed. Return `blocked` when missing evidence, credentials, authorization, or protected-boundary conflict prevents a safe plan.
 
@@ -66,6 +68,8 @@ Fresh-context review; read-only. Treat executor summaries, CI output, and tool s
    simplification, and file/module health issues.
 6. Push back on stale, out-of-scope, unsupported, or plan-violating feedback; record rationale.
 7. After `revise`: identify prior verdict, required fixes reviewed, fix evidence, remaining issues, re-review verdict. Close loop only when required fixes have evidence.
+8. For goal-mode work: verify Goal Invariants against prior attempts and call
+   out drift before acceptance.
 
 Return Reviewer Verdict Packet.
 

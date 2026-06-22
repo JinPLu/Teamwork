@@ -10,6 +10,8 @@ Use for `teamwork-review` when a plan or execution needs evidence-based scrutiny
 
 3. **Dispatch and handoff**: independent material tracks have Dispatch Guidance; delegated work has prompt packets, output schema, ownership, and escalation triggers; durable/high-risk/public plans have a Judge/Reviewer verdict or explicit residual risk statement.
 
+4. **Goal continuity**: goal-mode retry plans include Goal Invariants, Replay Preflight, Do Not Repeat, Goal Anchor fields, Drift Verdict, and Retry Verdict.
+
 Return `revise` when required artifacts are missing, placeholders remain, confidence is overstated without observed evidence, requirement gaps are unresolved, or dispatch/handoff requirements are unmet.
 
 ## Execution Review
@@ -33,5 +35,7 @@ Return `revise` when required artifacts are missing, placeholders remain, confid
 7. **Maintainability/deslop lens**: when strict code quality review, deslop, or
    PR walkthrough is requested, or structure regresses, use `review-lenses.md`.
    Keep bounded deslop separate from broad structural review.
+
+8. **Goal drift**: goal-mode acceptance requires Attempt Record, Failure Reflection when applicable, and no lifecycle verdict outside `accept | revise | blocked`.
 
 If work cannot be accepted, state the next route: research refresh, plan revision, implementation correction, or true blocker.
