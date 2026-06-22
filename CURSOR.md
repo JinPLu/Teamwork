@@ -54,7 +54,9 @@ cursor-policy-copy` copies the Teamwork bootstrap block for pasting into Cursor
 Settings → Rules → User Rules; `./install.sh cursor-policy` prints the same
 block. Teamwork does not write Cursor's opaque SQLite/cloud-backed state.
 Project `AGENTS.md` or a Cursor-labeled section holds only local facts, required
-values, protected boundaries, or opt-outs.
+values, protected boundaries, or opt-outs. Project init installs missing
+Teamwork global/project surfaces, writes `docs/teamwork/`, and initializes
+CodeGraph when the CLI is available.
 
 ## Subagent Dispatch
 

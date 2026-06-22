@@ -147,6 +147,7 @@ Local development or project installs:
 
 ```bash
 ./install.sh project         # writes gitignored .cursor/.codex/.claude
+./install.sh --project-root /path/to/project init-project  # full setup: global/project surfaces, AGENTS, docs/teamwork, CodeGraph
 ./install.sh --link codex
 ./install.sh --link all
 ./install.sh --link project
@@ -164,7 +165,7 @@ Local development or project installs:
 | `teamwork-execute` | accepted plans, checklists, scopes, or known root-cause fixes | Staged Execution / Verification Before Claims |
 | `teamwork-review` | review, diff, acceptance, strict quality, deslop, PR walkthrough | Review Reception / Fresh Review |
 | `teamwork-goal` | keep going, until green/done, budgeted iteration | Goal Recovery / Convergence |
-| `teamwork-init` | AGENTS/CODEX/CURSOR/CLAUDE, instruction slimming, install readiness | Instruction Slimming |
+| `teamwork-init` | AGENTS/CODEX/CURSOR/CLAUDE, docs/teamwork, CodeGraph project index, instruction slimming | Project Init / Instruction Slimming |
 | `teamwork-update` | refresh installs, check drift, release hygiene | Package Hygiene |
 
 These are Teamwork-owned progressive abilities. `teamwork-debug` is a stage, not a new role. Lightweight work does not show internal capability names; complex work loads routing policy, references, artifacts, packets, or subagents only when needed.
@@ -181,9 +182,9 @@ Cursor and Claude Code are first-class runtimes: 7 role agents, `./install.sh
 ## Version And Validation
 
 `VERSION` matches both plugin manifests. Refresh installed surfaces with
-`teamwork-update` (user refresh) or `./scripts/check-update.sh`; init runs the
-readiness gate first. Maintainer release uses `teamwork-update`; project-local
-installs use `./install.sh project`.
+`teamwork-update` or `./scripts/check-update.sh`; init checks readiness and
+installs missing Teamwork surfaces. Project installs use `./install.sh project`; full
+init uses `./install.sh --project-root PATH init-project`.
 
 ```bash
 ./scripts/check-update.sh --project /path/to/project

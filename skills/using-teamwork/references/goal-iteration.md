@@ -66,8 +66,8 @@ exhausted budget, or repeated no-progress.
 docs/teamwork/reports/YYYY-MM-DD-<goal-slug>.md
 ```
 
-Start with a retrieval header (`Artifact Type: report`), then append one row
-after each verification/review cycle:
+Start with retrieval header (`Artifact Type: report`). Add Mermaid for
+branching loops, then append one table row per verification/review cycle:
 
 | Attempt | Goal Invariants Check | Hypothesis / Change | Verification / Failure | Result / Next |
 |---|---|---|---|---|
@@ -80,6 +80,6 @@ evidence delta, over/under-strict risk, Do Not Repeat, and next plan constraint.
 Debug rows add repro path, hypothesis, runtime evidence, root cause status,
 cleanup status, and next route.
 
-The report is cross-turn memory, not a replacement for plan, research, review, or verification evidence.
+The report is memory, not a replacement for plan, research, review, or verification.
 
 Lifecycle verdicts are `accept | revise | blocked`. `reject` is not a lifecycle verdict; use only for rejected hypotheses, options, sources, memory candidates, or data buckets, with a reason.

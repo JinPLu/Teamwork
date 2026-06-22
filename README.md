@@ -138,6 +138,7 @@ Codex-first 默认安装：
 
 ```bash
 ./install.sh project         # 写入 gitignored .cursor/.codex/.claude
+./install.sh --project-root /path/to/project init-project  # 满血初始化：全局/项目面、AGENTS、docs/teamwork、CodeGraph
 ./install.sh --link codex
 ./install.sh --link all
 ./install.sh --link project
@@ -155,7 +156,7 @@ Codex-first 默认安装：
 | `teamwork-execute` | 已接受的计划、清单、范围或已知根因修复需要实现 | Staged Execution / Verification Before Claims |
 | `teamwork-review` | review、diff、完成验收、strict quality、deslop、PR walkthrough | Review Reception / Fresh Review |
 | `teamwork-goal` | keep going、until green/done、预算内迭代 | Goal Recovery / Convergence |
-| `teamwork-init` | AGENTS/CODEX/CURSOR/CLAUDE、项目规则瘦身、安装就绪检查 | Instruction Slimming |
+| `teamwork-init` | AGENTS/CODEX/CURSOR/CLAUDE、docs/teamwork、CodeGraph 项目索引、项目规则瘦身 | Project Init / Instruction Slimming |
 | `teamwork-update` | 刷新安装面、检查版本漂移、release hygiene | Package Hygiene |
 
 这些能力是 Teamwork 原生的渐进能力。`teamwork-debug` 是 stage，不是新角色；普通聊天不显示内部能力名，复杂任务才按需加载 routing policy、references、artifacts、packets 或 subagents。
@@ -176,7 +177,9 @@ managed `~/.claude/CLAUDE.md`）。详见 [CURSOR.md](CURSOR.md) 和
 
 `VERSION` 与两个 plugin manifest 保持一致。用户刷新安装面：`teamwork-update`
 （user refresh）或 `./scripts/check-update.sh`；项目 init 前也会跑 readiness
-检查。release 走 maintainer 模式；本地项目安装用 `./install.sh project`。
+检查；缺的 Teamwork 面会直接安装。release 走 maintainer 模式；本地项目安装用
+`./install.sh project`，完整项目初始化用 `./install.sh --project-root PATH
+init-project`。
 
 ```bash
 ./scripts/check-update.sh --project /path/to/project

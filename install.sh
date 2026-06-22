@@ -65,7 +65,7 @@ usage() {
 Usage:
   ./install.sh [--copy|--link] [--profile performance-first|cost-first] \
     [--project-root PATH] \
-    codex|cursor|claude|all|project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
+    codex|cursor|claude|all|project|init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
 
 Targets:
   codex          Install skills, Codex agents, and Teamwork global policy (default target)
@@ -74,6 +74,8 @@ Targets:
   all            Install skills, all platform agents, and Codex + Claude global policy
   project        Install project skills/agents under .cursor/, .codex/, and .claude/
                  (default: this checkout; use --project-root for another repo)
+  init-project   Full project init: global/project skills and agents, AGENTS.md,
+                 docs/teamwork/, .gitignore entries, and CodeGraph when available
   codex-agents   Install Teamwork Codex custom agents to ~/.codex/agents
   cursor-agents  Install Teamwork Cursor subagents to ~/.cursor/agents
   claude-agents  Install Teamwork Claude subagents to ~/.claude/agents
@@ -649,6 +651,14 @@ install_project() {
   install_claude_agent_set "$base/.claude/agents" "project Claude Code"
 }
 
+init_project() {
+  local base="${PROJECT_ROOT:-$PWD}"
+  "$ROOT/scripts/init-project.sh" \
+    "--$INSTALL_MODE" \
+    --profile "$CODEX_PROFILE" \
+    --project-root "$base"
+}
+
 install_codex_agents_home() {
   install_codex_agent_set "$HOME/.codex/agents" "user"
 }
@@ -692,7 +702,7 @@ while [[ $# -gt 0 ]]; do
       CODEX_PROFILE="cost-first"
       shift
       ;;
-    codex|cursor|claude|all|project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy)
+    codex|cursor|claude|all|project|init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy)
       if [[ -n "$TARGET" ]]; then
         echo "Specify only one install target." >&2
         usage
@@ -715,8 +725,8 @@ done
 
 validate_codex_profile
 
-if [[ -n "$PROJECT_ROOT" && "${TARGET:-codex}" != "project" ]]; then
-  echo "--project-root is valid only with the project target." >&2
+if [[ -n "$PROJECT_ROOT" && "${TARGET:-codex}" != "project" && "${TARGET:-codex}" != "init-project" ]]; then
+  echo "--project-root is valid only with the project and init-project targets." >&2
   usage
   exit 2
 fi
@@ -738,6 +748,9 @@ case "${TARGET:-codex}" in
     ;;
   project)
     install_project
+    ;;
+  init-project)
+    init_project
     ;;
   codex-agents)
     install_codex_agents_home

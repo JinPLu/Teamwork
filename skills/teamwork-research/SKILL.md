@@ -51,7 +51,8 @@ feed a durable plan, support goal-mode iteration, or justify a non-trivial
 recommendation. For one-turn lookup, cite evidence in chat. Artifacts include
 Search Keys and an Abstract for retrieval. For broad research, keep recall broad
 but transport narrow: condensed Explorer packets plus artifact pointers, not raw
-dumps in the main thread.
+dumps in the main thread. Use source, evidence, option, and recommendation
+tables when findings compare three or more items.
 
 ## Handoff
 

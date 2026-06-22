@@ -39,6 +39,17 @@ Model profile is chosen at install time on all platforms. `performance-first` is
 default; `cost-first` downshifts routine roles. Project init asks only for
 global-policy overrides. Model overrides require `./install.sh --profile`.
 
+## Local Project Init Surfaces
+
+For init/setup requests, run `./install.sh --project-root "<root>"
+init-project` from the Teamwork checkout unless a narrower audit-only request is
+explicit. This installs Teamwork-managed global and project skills/agents/
+policies by default, then writes the managed `AGENTS.md` block,
+`docs/teamwork/` README/index/current files, local `.gitignore` entries, and
+`codegraph init -i` when the CLI already exists. Cursor manual paste, missing
+CodeGraph CLI, or missing Context7/docs MCP is a reported gap, not a stop
+condition. Do not install external MCP/tools without approval.
+
 ## Full Feature Capability Matrix
 
 For full setup requests, run `./scripts/check-update.sh --readiness --project
@@ -51,12 +62,11 @@ Statuses: `enabled`, `missing`, `blocked`, `optional`, `deferred`. Every non-ena
 
 ## Rule Persistence Decision
 
-Use `./install.sh codex` for managed `~/.codex/AGENTS.md`, `./install.sh claude`
-for managed `~/.claude/CLAUDE.md`, and `./install.sh cursor-policy-copy` for
-Cursor User Rules paste. Project instructions record concrete values,
-exceptions, opt-outs, or protected boundaries. Ask first when host/path/command/
-credential/model values are user-supplied; block only when unavailable, unsafe,
-or declined; never invent fallback.
+Use `./install.sh --project-root "<root>" init-project` for default full setup.
+Project instructions record concrete values, exceptions, opt-outs, or protected
+boundaries. Ask first when host/path/command/credential/model values are
+user-supplied; block only when unavailable, unsafe, or declined; never invent
+fallback.
 
 ## Output Shape
 

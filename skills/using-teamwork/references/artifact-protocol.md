@@ -25,6 +25,16 @@ Linked Artifacts: related paths, or none
 
 Add `Index Role`, `Authority`, `Applies To`, `Supersedes`, `Superseded By`, or `Verification` only when they aid retrieval. Do not use YAML frontmatter; reserve that for skill metadata only.
 
+## Structured Bodies
+
+Durable artifacts favor compact tables and diagrams over long prose. Use tables
+for three or more comparable facts, sources, options, attempts, decisions,
+requirements, risks, or verification checks. Use Mermaid flowcharts for
+multi-stage, branching, delegated, or goal-mode flows. Research artifacts should
+include Source/Evidence and Option/Recommendation matrices when applicable.
+Report artifacts should include Outcome, Attempt/Failure, Decision, and
+Verification tables when applicable. Keep cells short and evidence-backed.
+
 ## Artifact Retrieval
 
 Before non-trivial research, plan creation, or goal failure analysis, search `docs/teamwork/{research,plans,reports}/` with all available keys: goal words, errors, component paths, package/model names, issue/PR IDs, user terms.

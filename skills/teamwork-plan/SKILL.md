@@ -8,7 +8,8 @@ description: Use when the user asks for plan/design or a non-trivial implement/f
 Use after research or user direction selects a path, and before non-trivial
 implementation when no accepted plan exists. Plans lock scope.
 
-Mirror Cursor Plan Mode's useful contract: research first, ask only
+Mirror Cursor Plan Mode's useful contract: use existing user/source evidence
+first, route to research only when evidence is missing or stale, ask only
 requirement-changing questions, produce a reviewable Markdown plan before code,
 then execute from the accepted plan. Teamwork adds evidence labels, dispatch,
 goal surfaces, stop rules, and acceptance.

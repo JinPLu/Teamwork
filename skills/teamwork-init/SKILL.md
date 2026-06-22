@@ -9,31 +9,37 @@ Use for project workflow setup, instruction slimming, and migration into
 Teamwork. Leave only local facts, evidence sources, boundaries, and acceptance
 checks needed to apply Teamwork.
 
-Read as needed: `skills/using-teamwork/references/check-update.md` for install
-readiness; `skills/using-teamwork/references/workflow-contract.md` for evidence
-and boundaries; `skills/using-teamwork/references/project-init.md` for rule
-layering, MCP policy, capability matrix, and context-cache discipline;
-`skills/using-teamwork/references/artifact-protocol.md` when durable memory may
-be warranted; `skills/using-teamwork/references/optional-skills.md` before
-external memory, docs graph, or skill installation.
+Read as needed: `skills/using-teamwork/references/check-update.md` for
+readiness, `skills/using-teamwork/references/workflow-contract.md` for
+evidence, `skills/using-teamwork/references/project-init.md` for layering/MCP,
+and artifact/optional references only when their trigger applies.
 
 ## Init Mode
 
 The installed profile is the default on Codex, Cursor, and Claude Code; ask only
 for project overrides. Pro/20x throughput selects `performance-first`; quota,
-latency, or cost constraints select `cost-first`.
+latency, or cost constraints select `cost-first`. Record `Init Mode:
+global-default | performance-first | cost-first`; add a project-local rule only
+for overrides. Refresh installed agents with `./install.sh --profile` when
+model overrides change.
 
-- `performance-first`: role-optimized agents — medium Explorer/Designer/Worker,
-  high Judge/Reviewer, xhigh Deep Judge/Reviewer for failed-goal, security,
-  destructive-risk, public-contract, or release work.
-- `cost-first`: downshift routine Explorer/Designer/Worker only; keep
-  Judge/Reviewer high and Deep xhigh triggers intact.
+## Full Project Init Default
 
-Record `Init Mode: global-default | performance-first | cost-first`; add a
-project-local rule only for overrides. Refresh installed agents with
-`./install.sh --profile` when model overrides change.
+For setup/init requests, behave like a project `/init`: install the
+Teamwork-managed full setup first and report gaps after. Use
+`./install.sh --project-root "<project-root>" init-project` from the Teamwork
+checkout, or perform the same steps directly when unavailable. The command
+installs missing Teamwork-managed global/project skills, agents, and policies;
+creates/updates the managed `AGENTS.md` block, `docs/teamwork/`, local ignore
+entries, and CodeGraph when the CLI exists. Context7/docs MCP is a read-only
+external docs substrate, not a project index; detect and record availability.
 
-## Install Readiness Gate
+Ask only before external MCP/skill installation, credentials, protected server
+state, destructive actions, or unresolved required values. Missing Teamwork
+surfaces are installed directly. Cursor manual paste, unavailable CodeGraph CLI,
+or missing Context7 are reported gaps, not stop conditions.
+
+## Install Readiness Check
 
 Before instruction work, run from the Teamwork checkout:
 
@@ -41,36 +47,34 @@ Before instruction work, run from the Teamwork checkout:
 ./scripts/check-update.sh --readiness --project "<project-root>"
 ```
 
-When `INSTALL_READY=no`, show `MISSING` and ask once to run the printed `NEXT`
-command plus `./install.sh cursor-policy-copy` paste. Continue init only after
-global skills/agents/policy are installed or the user declines and accepts
-residual gaps. Optional MCP/memory stays on the optional-skills gate.
+When `INSTALL_READY=no`, run the printed `NEXT` equivalent directly as part of
+init, copy Cursor policy to the clipboard when possible, and report any
+remaining manual Cursor paste or optional substrate gaps.
 
 ## Workflow
 
-1. Run the Install Readiness Gate; report `Install readiness:`.
-2. Inspect real project context: root and repo-local `AGENTS.md`, `CODEX.md`,
-   `CURSOR.md`, `CLAUDE.md`, README guidance, `docs/teamwork/` artifacts, and
-   user-provided plans.
-3. Classify content as workflow, project fact, current state, appendix, or
+1. Run the Install Readiness Check; report `Install readiness:` without hard
+   gating local files.
+2. Run `./install.sh --project-root "<project-root>" init-project`, or create
+   the same local surfaces directly when needed.
+3. Inspect real project context: local instruction files, README guidance,
+   `docs/teamwork/` artifacts, and user-provided plans.
+4. Classify content as workflow, project fact, current state, appendix, or
    durable artifact memory.
-4. Run the Collaboration Backbone Audit from `project-init.md`; mark each
+5. Run the Collaboration Backbone Audit from `project-init.md`; mark each
    reusable workflow habit `keep`, `migrate`, or `add`.
-5. Keep facts, required values, boundaries, protected actions, and acceptance
-   checks in project instructions. Missing required values are blockers.
-6. Move long path maps, command inventories, and historical navigation to
+6. Keep facts, required values, boundaries, protected actions, and acceptance
+   checks in project instructions.
+7. Move long path maps, command inventories, and historical navigation to
    appendix docs read on demand.
-7. Keep volatile experiment numbers, task progress, and chat summaries out of
+8. Keep volatile experiment numbers, task progress, and chat summaries out of
    `AGENTS.md`; use artifacts only when triggers apply.
-8. For bootstrap policy, prefer global installs: `./install.sh codex` or
-   `./install.sh codex-policy` for Codex; `./install.sh claude` or
-   `./install.sh claude-policy` for Claude Code; `./install.sh
-   cursor-policy-copy` for Cursor User Rules paste. Project platform files hold
-   only local facts, required values, or opt-outs. Report `Bootstrap policy:`
-   and `Init Mode:`.
-9. When Teamwork memory exists, keep a short pointer to
+9. For bootstrap policy, install managed Codex/Claude policy and Cursor agents;
+   copy Cursor User Rules when possible. Project files hold only local facts,
+   required values, or opt-outs. Report `Bootstrap policy:` and `Init Mode:`.
+10. When Teamwork memory exists, keep a short pointer to
    `docs/teamwork/README.md`; do not inline the runtime narrative.
-10. For full-setup requests, return the Capability Matrix from `project-init.md`.
+11. For full-setup requests, return the Capability Matrix from `project-init.md`.
 
 ## Boundaries
 
@@ -78,9 +82,9 @@ residual gaps. Optional MCP/memory stays on the optional-skills gate.
   instructions.
 - Do not replace project evidence sources with Teamwork artifacts.
 - Do not alter protected planning, secrets, server state, or current experiment
-  truth unless the user asks and evidence supports it.
-- Do not install or initialize external tooling without approval when it changes
-  system or repository state.
+  truth without evidence-backed user intent.
+- Do not install external tooling without approval. Initializing repo-local
+  CodeGraph is allowed when the CLI already exists; otherwise report the gap.
 
 Return changed files, audit decisions, migration rationale, verification, and
 human decisions. Include `Memory Delta:` only when durable memory was checked or

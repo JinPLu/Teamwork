@@ -20,7 +20,7 @@ Flags:
 
 Exit `0` when current; `1` when stale/missing surfaces need action.
 
-## Init Gate
+## Init Readiness
 
 Before project instruction work, run:
 
@@ -28,10 +28,14 @@ Before project instruction work, run:
 ./scripts/check-update.sh --readiness --project "$PWD"
 ```
 
-When `INSTALL_READY=no`, ask once to install Teamwork surfaces. With approval,
-run the printed `NEXT` command from the Teamwork checkout, run
-`./install.sh cursor-policy-copy`, paste into Cursor User Rules, then continue
-init.
+When `INSTALL_READY=no`, run the printed `NEXT` equivalent directly during
+init, then continue local project initialization. Do not stop before creating or
+updating `AGENTS.md`, `docs/teamwork/`, project skills/agents, and repo-local
+CodeGraph when the CLI is available.
+
+Run `./install.sh cursor-policy-copy` when clipboard tooling exists; report the
+remaining manual Cursor User Rules paste because Cursor UI state cannot be
+reliably written by the installer.
 
 Do not install external MCP/memory tools during the gate unless the user
 approves via `optional-skills.md`.

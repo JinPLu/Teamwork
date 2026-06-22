@@ -21,16 +21,17 @@ external tools.
 
 ## Preconditions
 
-- An accepted plan whose decision-critical needs, scope, acceptance, and
-  constraints are resolved.
+- An accepted plan, checklist, approved scope, or known root-cause fix whose
+  decision-critical needs, acceptance, and constraints are resolved.
 - Required files, commands, credentials, environments, paths, ports, models,
-  hyperparameters, configs, and execution modes are explicit and available.
+  hyperparameters, configs, and execution modes are explicit or discoverable.
 - A durable plan path for goal-mode, cross-turn, high-risk, delegated, or
   artifact-backed work; read `docs/teamwork/index.json` then current-state
   pointers when durable memory is relevant.
 
-If a precondition is missing, stop as a blocker instead of inventing a fallback,
-switching execution targets, or adding symlink/path-alias detours.
+If needed state is missing, inspect source/config first, ask once when a human
+can supply it, and block only when it is unavailable, unsafe, declined, or would
+require inventing a fallback, switching execution targets, or adding detours.
 
 ## Worker Boundary
 

@@ -426,12 +426,18 @@ grep_required 'docs/teamwork/index.json' "$ROOT/skills/using-teamwork/references
 grep_required 'schema_version' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must document index schema"
 grep_required 'active.goal' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must document active.goal"
 grep_required 'active.report' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must document active.report"
+grep_required 'Structured Bodies' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must require structured artifact bodies"
+grep_required 'Research artifacts should' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must require research matrices"
+grep_required 'Report artifacts should' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must require report tables"
+grep_required 'Evidence Matrix' "$ROOT/skills/using-teamwork/references/research-protocol.md" "research protocol must require evidence matrix"
+grep_required 'Option Matrix' "$ROOT/skills/using-teamwork/references/research-protocol.md" "research protocol must require option matrix"
 grep_required 'Goal Proposal' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must define Goal Proposal"
 grep_required 'Research + Plan Adequacy Gate' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must define adequacy gate"
 grep_required 'Goal Invariants' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must preserve Goal Invariants"
 grep_required 'Replay Preflight' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must require Replay Preflight"
 grep_required 'Attempt Record' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must require Attempt Record"
 grep_required 'Failure Reflection' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must require Failure Reflection"
+grep_required 'Mermaid for' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration reports must use diagrams when branching"
 grep_required 'reject` is not a lifecycle verdict' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must forbid reject as lifecycle verdict"
 grep_required 'final status, closure evidence' "$ROOT/skills/using-teamwork/references/plan-output.md" "plan output must include dispatch closure evidence"
 grep_required 'Goal Anchor' "$ROOT/skills/using-teamwork/references/plan-output.md" "plan output must include Goal Anchor"
@@ -931,6 +937,45 @@ for agent in explore worker designer judge code-reviewer deep-judge deep-reviewe
   [[ -L "$ROOT/.claude/agents/$agent.md" ]] || fail "project install must link Claude agent $agent"
 done
 ROOT="$old_root"
+
+init_root="$tmp/init-project"
+mkdir -p "$init_root"
+printf '# Init Smoke\n' > "$init_root/README.md"
+HOME="$tmp/home-init-project" \
+  TEAMWORK_INIT_CODEGRAPH=0 \
+  TEAMWORK_INIT_CURSOR_POLICY_COPY=0 \
+  "$ROOT/install.sh" --copy --project-root "$init_root" init-project >/dev/null
+grep_required '<!-- TEAMWORK_PROJECT_START -->' "$init_root/AGENTS.md" \
+  "init-project must write managed AGENTS.md block"
+grep_required 'docs/teamwork/README.md' "$init_root/AGENTS.md" \
+  "init-project AGENTS.md block must point to Teamwork memory"
+grep_required '# TEAMWORK_LOCAL_START' "$init_root/.gitignore" \
+  "init-project must write local .gitignore block"
+python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/index.json" >/dev/null
+[[ -f "$init_root/docs/teamwork/current.md" ]] || fail "init-project must write current.md"
+[[ -d "$tmp/home-init-project/.codex/skills/using-teamwork" ]] || fail "init-project must install global Codex skills by default"
+[[ -f "$tmp/home-init-project/.codex/AGENTS.md" ]] || fail "init-project must install global Codex policy by default"
+[[ -d "$tmp/home-init-project/.cursor/skills/using-teamwork" ]] || fail "init-project must install global Cursor skills by default"
+[[ -f "$tmp/home-init-project/.cursor/agents/worker.md" ]] || fail "init-project must install global Cursor agents by default"
+[[ -f "$tmp/home-init-project/.claude/CLAUDE.md" ]] || fail "init-project must install global Claude policy by default"
+[[ -f "$tmp/home-init-project/.claude/agents/worker.md" ]] || fail "init-project must install global Claude agents by default"
+[[ -d "$init_root/.cursor/skills/using-teamwork" ]] || fail "init-project must install project skills"
+[[ -f "$init_root/.codex/agents/teamwork-worker.toml" ]] || fail "init-project must install Codex agents"
+[[ -f "$init_root/.cursor/agents/worker.md" ]] || fail "init-project must install project Cursor agents"
+[[ -f "$init_root/.claude/agents/worker.md" ]] || fail "init-project must install project Claude agents"
+
+invalid_root="$tmp/init-project-invalid-index"
+mkdir -p "$invalid_root/docs/teamwork"
+printf '# Invalid Index Smoke\n' > "$invalid_root/README.md"
+printf '{"bad": true}\n' > "$invalid_root/docs/teamwork/index.json"
+invalid_output="$(
+  HOME="$tmp/home-init-project-invalid" \
+    TEAMWORK_INIT_CODEGRAPH=0 \
+    TEAMWORK_INIT_CURSOR_POLICY_COPY=0 \
+    "$ROOT/scripts/init-project.sh" --project-root "$invalid_root" --project-only --copy 2>&1
+)"
+printf '%s\n' "$invalid_output" | grep -q 'Teamwork memory: index invalid' \
+  || fail "init-project must report invalid existing Teamwork memory index"
 
 HOME="$tmp/home-agents" "$ROOT/install.sh" --link claude-agents >/dev/null
 for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do

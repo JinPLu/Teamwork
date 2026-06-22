@@ -16,7 +16,8 @@ Pick from user intent:
 
 - **User refresh** — update installed Teamwork on this machine or project.
   Run `./scripts/check-update.sh --project "<path>"`; `git pull` the Teamwork
-  checkout when upstream is newer; `./install.sh all --profile <profile>`;
+  checkout when upstream is newer; run `./install.sh all` using the checkout
+  profile by default, or `--profile <profile>` only for an explicit override;
   add `./install.sh project` when project rows are stale; run
   `./install.sh cursor-policy-copy` for Cursor User Rules paste when needed;
   re-run check-update. Do not bump

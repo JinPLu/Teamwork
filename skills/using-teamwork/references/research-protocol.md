@@ -32,6 +32,13 @@ Build before broad reads: URL/path, source class, primary/secondary, freshness, 
 
 Stage public web research separately from private files, MCP connectors, or credentials. Never send private repository facts, customer data, or secrets into public queries. Summarize private context locally, then search only public concepts.
 
-## Output Fields
+## Structured Output
 
-Queries Tried, Source Census (deep only), Sources Used, Sources Rejected, Contradictions, Coverage Gaps, Citation Ledger, Confidence, Artifact Pointer when overflow, Next Route.
+Use tables by default for multi-source or multi-option research:
+
+- Source Census: `Source | Class | Freshness | Relevance | Use / Reject`.
+- Evidence Matrix: `Claim | Evidence | Status | Confidence`.
+- Option Matrix: `Option | Evidence | Tradeoff | Recommendation`.
+
+Output fields: Queries Tried, Sources Used/Rejected, Contradictions, Coverage
+Gaps, Citation Ledger, Confidence, Artifact Pointer when overflow, Next Route.
