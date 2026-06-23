@@ -25,3 +25,19 @@ docs/superpowers/
 .cursor/
 .claude/
 .teamwork-profile
+
+# TEAMWORK_LOCAL_START
+# Teamwork local runtime and project install surfaces
+.codex/
+.cursor/
+.claude/
+.teamwork-profile
+.codegraph/
+docs/teamwork/plans/
+docs/teamwork/research/
+docs/teamwork/reports/
+docs/teamwork/workflows/
+docs/teamwork/index.json
+docs/teamwork/README.md
+docs/teamwork/current.md
+# TEAMWORK_LOCAL_END

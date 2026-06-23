@@ -46,3 +46,14 @@ When editing workflow behavior, update the relevant `skills/*/SKILL.md` first an
 Runtime memory lives under `docs/teamwork/`. Read `docs/teamwork/README.md` first,
 then follow `index.json` active pointers. Do not inline volatile progress or
 experiment state here.
+
+<!-- TEAMWORK_PROJECT_START -->
+## Teamwork Project Instructions
+
+- Project identity: `Teamwork` - Teamwork
+- Teamwork memory: read `docs/teamwork/README.md`, then `docs/teamwork/index.json` when durable memory is relevant.
+- CodeGraph: use `codegraph_*` tools for structural code questions when available. If `.codegraph/` is missing and the `codegraph` CLI is available, initialize with `codegraph init -i` from the project root.
+- Docs MCP: use Context7/docs MCP for current external library, framework, SDK, or API docs when already available. Send only sanitized package names, versions, and topic queries; do not send private source.
+- Keep volatile task progress, chat summaries, and experiment numbers out of `AGENTS.md`; use `docs/teamwork/current.md` or dated artifacts only when durable triggers apply.
+- Required values, credentials, paths, ports, model names, hyperparameters, configs, and execution modes must come from project files, environment, or the user; do not invent fallbacks.
+<!-- TEAMWORK_PROJECT_END -->

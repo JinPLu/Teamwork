@@ -97,6 +97,50 @@ git_known_package_file() {
   return 1
 }
 
+check_markdown_local_images() {
+  local file="$1"
+  python3 - "$ROOT" "$file" <<'PY'
+import pathlib
+import re
+import subprocess
+import sys
+from urllib.parse import unquote
+
+root = pathlib.Path(sys.argv[1]).resolve()
+file = pathlib.Path(sys.argv[2]).resolve()
+text = file.read_text()
+
+for raw_target in re.findall(r"!\[[^\]]*\]\(([^)]+)\)", text):
+    target = raw_target.strip()
+    if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", target):
+        continue
+    if target.startswith("#"):
+        continue
+    if target.startswith("<") and ">" in target:
+        target = target[1:target.index(">")]
+    else:
+        target = target.split()[0]
+    target = unquote(target)
+    asset = (file.parent / target).resolve()
+    try:
+        rel = asset.relative_to(root)
+    except ValueError as exc:
+        raise SystemExit(f"FAIL: {file.relative_to(root)} image points outside package: {raw_target}") from exc
+    if not asset.is_file():
+        raise SystemExit(f"FAIL: {file.relative_to(root)} image missing: {rel}")
+    known = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "--error-unmatch", str(rel)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if known.returncode != 0:
+        raise SystemExit(
+            f"FAIL: {file.relative_to(root)} image is not known to git: {rel}; use git add -N before release validation"
+        )
+PY
+}
+
 # --- Package layout ---
 expected_skill_dirs="$(printf '%s\n' "${SKILLS[@]}" | sort)"
 actual_skill_dirs="$(find "$ROOT/skills" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)"
@@ -122,7 +166,9 @@ grep_required '^\.claude/$' "$ROOT/.gitignore" ".gitignore must ignore local .cl
 [[ -f "$ROOT/CURSOR.md" ]] || fail "missing CURSOR.md"
 [[ -f "$ROOT/CLAUDE.md" ]] || fail "missing CLAUDE.md"
 [[ -f "$ROOT/CHANGELOG.md" ]] || fail "missing CHANGELOG.md"
+[[ -f "$ROOT/CHANGELOG.en.md" ]] || fail "missing CHANGELOG.en.md"
 git_known_package_file "CHANGELOG.md" || fail "CHANGELOG.md is not known to git; use git add -N before release validation"
+git_known_package_file "CHANGELOG.en.md" || fail "CHANGELOG.en.md is not known to git; use git add -N before release validation"
 
 [[ -f "$ROOT/VERSION" ]] || fail "missing VERSION"
 git_known_package_file "VERSION" || fail "VERSION is not known to git; use git add -N before release validation"
@@ -239,8 +285,13 @@ grep_required 'docs/teamwork/research/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" "R
 grep_required 'docs/teamwork/plans/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" "README must document plan artifact path"
 grep_required 'docs/teamwork/reports/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" "README must document report artifact path"
 grep_required './install.sh --link codex' "$ROOT/README.md" "README must document Codex link-mode development install"
-grep_required '^# Changelog' "$ROOT/CHANGELOG.md" "CHANGELOG must have a top-level heading"
+check_markdown_local_images "$ROOT/README.md"
+grep_required '^# 更新日志' "$ROOT/CHANGELOG.md" "CHANGELOG must have a Chinese top-level heading"
+grep_required '\[English\](CHANGELOG.en.md)' "$ROOT/CHANGELOG.md" "default CHANGELOG must link to English CHANGELOG"
 grep_required "## $(tr -d '[:space:]' < "$ROOT/VERSION") -" "$ROOT/CHANGELOG.md" "CHANGELOG must document current VERSION"
+grep_required '^# Changelog' "$ROOT/CHANGELOG.en.md" "English CHANGELOG must have a top-level heading"
+grep_required '\[中文\](CHANGELOG.md)' "$ROOT/CHANGELOG.en.md" "English CHANGELOG must link to default Chinese CHANGELOG"
+grep_required "## $(tr -d '[:space:]' < "$ROOT/VERSION") -" "$ROOT/CHANGELOG.en.md" "English CHANGELOG must document current VERSION"
 [[ -f "$ROOT/README.en.md" ]] || fail "missing English README"
 git -C "$ROOT" ls-files --error-unmatch "README.en.md" >/dev/null 2>&1 || fail "README.en.md must be tracked by git"
 grep_required '\[中文\](README.md)' "$ROOT/README.en.md" "English README must link to default Chinese README"
@@ -249,6 +300,7 @@ grep_required 'teamwork-update' "$ROOT/README.en.md" "English README must docume
 grep_required 'check-update.sh' "$ROOT/README.en.md" "English README must document check-update script"
 grep_required 'VERSION' "$ROOT/README.en.md" "English README must document package version source"
 grep_required './install.sh --link codex' "$ROOT/README.en.md" "English README must document Codex link-mode development install"
+check_markdown_local_images "$ROOT/README.en.md"
 grep_required 'Codex + Cursor + Claude Code skill package' "$ROOT/AGENTS.md" "AGENTS.md must describe the package"
 grep_required 'teamwork-update' "$ROOT/AGENTS.md" "AGENTS.md must document update skill ownership"
 grep_required 'check-update.sh' "$ROOT/AGENTS.md" "AGENTS.md must document check-update script"

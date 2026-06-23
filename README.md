@@ -2,128 +2,88 @@
 
 [English](README.en.md)
 
-**把 Codex 的 subagents 变成有分工、有记忆、有证据纪律、有验收闭环的工程团队。**
+**给个人科研/工程任务加一层协作系统：深调研、会分工、能写代码、可复盘、可验收。**
 
 Teamwork 是一个 **Codex-first 的 Codex + Cursor + Claude Code skill package**。
-它不替代 Codex、Cursor 或 Claude Code 的编辑、shell、MCP、浏览器、权限和验证能力；
-这些 `native capabilities` 仍然是执行底座。Teamwork 做四件事：
+它把 Codex、Cursor 和 Claude Code 从一次性聊天助手，变成围绕你长期项目工作的个性化科研协作 agent。
+它不替代编辑器、shell、MCP、浏览器、权限或测试工具；这些 native capabilities 仍然负责执行。
+Teamwork 解决的是更上层的问题：复杂任务怎样先查证、怎样分工、怎样保留上下文、怎样证明真的完成。
 
-1. 把非轻量任务 fan out 给定制角色 subagents，让复杂任务更经济、更高效、质量更稳。
-2. 用调研和证据优先的规则提醒模型：别太自信，也别静默回退。
-3. 维护讨论 / 调研、计划和报告记忆，避免长期任务遗忘，并强化 goal 执行能力。
-4. 用验证、fresh review 和失败复盘形成验收闭环，不让“完成”只停留在模型自述。
+Coding 是最重要的落地场景之一，但 Teamwork 的 research、planning、review 和 memory
+不是 coding 专属。它同样适合论文/领域调研、方案比较、实验设计、资料复盘、长期项目推进。
 
-![Teamwork workflow banner](assets/teamwork-hero.png)
+![Teamwork 工作流说明图](assets/teamwork-workflow-gpt-image-2.png)
 
-## 核心价值
+## 为什么需要
 
-### 1. Fan out 角色化 subagents：更省、更快、更稳
+个人科研和工程协作的瓶颈通常不是“模型不会回答”，而是：
 
-普通多 agent 协作容易变成“多开几个聊天窗口”。Teamwork 做的是有边界的 fan out：
-主 agent 先判断任务是否真的值得拆分，再把独立调研、方案、实现、复查轨道分发给有职责的工程角色：
+- 调研太浅：看一篇文章、一个 README 或一个搜索结果就开始总结，不会主动扩展到相邻来源和反例。
+- 主线漂移：研究、设计、实现、实验和复盘混在一条长聊天里。
+- 分工失控：几个 subagents 并行后没人负责集成，结论互相打架。
+- 假成功太多：缺 env、路径、端口、模型名、超参数、数据来源时随手给默认值继续跑。
+- 长任务失忆：调研、计划、失败尝试和验收证据散在聊天里。
+- 完成不可验收：最后只剩一句“我完成了”，没有来源、实验、测试、日志、diff、artifact 或 fresh review 支撑。
 
-- `Explorer` 查证据和外部约束，用有预算的 packet 回传；source census、长矩阵和引用台账进 artifact，不把原始上下文塞回主线程。
-- `Designer` 做方案取舍，明确边界、成功标准和放弃的选项。
-- `Judge` 在执行前审计划，找证据缺口、验收缺口和高风险假设。
-- `Worker` 只负责自己的实现切片，按计划交付变更和验证证据。
-- `Reviewer` 用 fresh context 审查 diff、测试、artifact、PR/CI 证据。
+Teamwork 把这些风险变成工作流约束：先查证，再计划；值得并行时才 fan out；
+必需值缺失就问、查证或 block；非轻量结果必须有验证证据。
 
-这样做的收益很直接：
+## 核心优势
 
-| 收益 | 为什么 |
-|---|---|
-| 更经济 | 不把所有工作都塞给同一个长上下文强模型；按角色、风险和任务类型选择模型档位。 |
-| 更高效 | 可以把互不阻塞的 evidence、design、worker、review 轨道并行 fan out；主 agent 只负责调度、整合和最终判断。 |
-| 质量更好 | 每个 subagent 有固定输入、输出 packet 和关闭条件；重要结论要有证据；非轻量结果需要 fresh review。 |
+| 用户遇到的问题 | 普通 agent / 简单 subagents | Teamwork |
+|---|---|---|
+| 调研不够深 | 停在用户给的 seed source | 从 seed source 扩到 source census、primary source、neighbor source、反例和空白问题 |
+| 分工不可控 | 多个聊天各说各话 | 只有独立轨道才 fan out；Explorer、Designer、Judge、Worker、Reviewer 输出 packet，由主 agent 集成 |
+| 证据不扎实 | 把标题、summary、文件名、`latest`、`v2` 当事实 | 关键结论映射到论文、文档、源码、配置、日志、测试、diff、artifact 或 primary source |
+| 缺值被兜底 | 防御性 fallback 把缺失状态伪装成成功 | 必需值必须来自用户、项目文件、源码、测试或已接受计划；否则问、查或停 |
+| 失败反复猜 | 失败后换个猜法继续试 | 记录假设、验证、失败类别和下一步，必要时回到 research + plan adequacy |
+| 完成不可验收 | 模型自述完成 | 执行给验证证据；重要结果进入 review 或 goal loop |
 
-### 2. 证据优先：模型别太自信，也别静默回退
-
-Coding agent 最危险的失败方式不是“不知道”，而是“不知道但说得很肯定”。
-另一个常见失败是需求、范围或验收没问清楚就开始计划 / 执行；做完也可能是错的。
-缺环境、路径、超参数或执行模式时，模型也不能自己编默认值继续跑。
-Teamwork 的规则会把名字、README、issue、summary、`latest`、`v2` 这类信息先当成 claim，
-要求 agent 去找直接证据；缺少必要输入时，必须 fail fast，而不是静默回退。
-
-- 重要结论要标成 `observed` / `inferred` / `claimed`。
-- 关键决策要映射到源码、配置、日志、测试、diff、artifact 或 primary source。
-- 需求、验收、根因、API 行为、环境 / 路径 / 超参数、provider 或外部约束不清楚时，先问清楚、research 或 fail fast。
-- 计划和 review 会检查证据是否足够、假设是否安全、验收是否有缺口。
-
-这不是为了增加仪式感，而是把模型的自信和“自动补默认值”的冲动压回到证据能支撑的范围内。
-
-### 3. 任务记忆：让长任务不会反复失忆
-
-复杂 coding-agent 任务通常不是一次完成的：先讨论，再调研，再计划，再执行，失败后还要复盘。
-如果这些只留在聊天上下文里，几轮之后就会丢失。
-
-Teamwork 用 artifacts 保存关键状态：
-
-```text
-docs/teamwork/research/YYYY-MM-DD-<slug>.md
-docs/teamwork/plans/YYYY-MM-DD-<slug>.md
-docs/teamwork/reports/YYYY-MM-DD-<slug>.md
-```
-
-- `research` 记录讨论 / 调研结论、证据、方案和仍然不确定的地方。
-- `plans` 记录可执行范围、边界、验收标准、dispatch guidance 和 stop rules。
-- `reports` 记录重要任务结论，或 goal-mode 下每轮尝试、验证结果、失败原因和下一步。
-
-这让 `Goal Text` 不只是一个目标句子，而是能绑定证据、预算、停止条件和历史尝试的执行控制面。
-失败后，Teamwork 会回到 research + plan adequacy，而不是重复上一轮猜测。
-
-### 4. 验收闭环：完成要能被复查
-
-Teamwork 把计划、执行、验证和 review 串成闭环。计划要写清 scope、verification、
-stop rules；执行结束要说明改了什么、证据是什么、哪里没覆盖；review 要按 severity、
-evidence、required action 给出结论。
-
-对多项状态，Teamwork 鼓励用短表格交付：
-
-| 场景 | 表格看什么 |
-|---|---|
-| 计划 | Step / Scope / Owner / Verification / Stop rule |
-| 执行结果 | Requirement / Change / Evidence / Status |
-| Review | Severity / Finding / Evidence / Required action |
-| Goal 迭代 | Attempt / Hypothesis / Verification / Result / Next step |
-
-表格不是为了好看，而是让人类能快速扫出范围、证据、风险和下一步。
-
-## 装上以后 agent 行为怎么变
-
-| 没有 Teamwork | 有 Teamwork |
-|---|---|
-| 主 agent 一边探索一边改 | `using-teamwork` 路由到 research、debug、plan、execute、review、goal 等阶段 |
-| Subagents 没有稳定边界 | 独立轨道 fan out 给角色 subagents；每个角色有固定职责、输入、输出 packet 和关闭条件 |
-| 模型把 summary 当事实 | 重要结论先标 `observed` / `inferred` / `claimed`，并映射到直接证据 |
-| 做完就说完成 | 非轻量结果默认 fresh review；同上下文自查不能冒充验收 |
-| 结论散在长段落里 | 计划、执行、review、goal 迭代用短表格汇总，方便人类复查 |
-| 失败几轮后忘记历史 | report 记录尝试、验证、失败分类和下一轮决策 |
-| 长任务靠用户反复提醒 | artifacts 和 goal loop 维持上下文、预算、stop rules 和验收证据 |
+一句话：Teamwork 不是让 agent 更会写“流程文档”，而是让大任务的证据、分工、记忆和验收都可检查。
 
 ## 什么时候值得用
 
+如果任务会跨论文/网页/代码/数据/回合/工具，或者你已经遇到 agent 反复猜、反复修、反复说完成，Teamwork 值得装。
+
 适合：
 
-- 需要把非轻量 coding-agent 工作 fan out 给多个 subagents 分担调研、方案、实现或复查。
-- 需要在成本、速度和质量之间做更清晰的角色分工。
-- 需要降低模型过度自信，把关键结论压到可检查证据上。
-- 需要跨回合保留讨论、调研、计划、报告、失败尝试和验收证据。
-- 需要计划、执行结果和 review 便于人类快速复查。
-- 需要持续迭代直到目标被验证、预算耗尽或遇到真实 blocker。
+- 先调研领域、paper、API、库、竞品、历史决策或项目资料，再制定方案。
+- 做科研/工程方向比较、实验设计、证据整理、长期项目推进。
+- coding、debug 可复现故障、flaky 测试、CI 失败、崩溃或 UI 症状，并证明根因。
+- fan out subagents 做调研、设计、实现或复查，但需要主线集成。
+- strict review、deslop、AI 冗余输出清理、代码质量/PR/CI 复查。
+- 持续迭代直到测试通过、目标达成、预算耗尽或遇到真实 blocker。
 
-不适合：一句话事实、很小的明显编辑、敏感/破坏性操作、强耦合临界路径，
-或 subagent 上下文成本高于收益的任务。
+不必用：
+
+- 一句话事实、小的明显编辑、局部语法问题。
+- 强耦合临界路径，subagent 上下文成本高于收益。
+- 敏感、破坏性或必须人工确认后才能继续的操作。
+
+## 怎么使用
+
+继续用自然语言提需求，不需要学习内部 stage 名：
+
+```text
+先调研这个领域、关键论文和现有代码，再给我一个方案。
+fan out subagents 比较几个方向，最后推荐一个可执行计划。
+按计划执行；失败要记录原因和证据，直到测试通过。
+严格 review 这次产出，重点看假成功、防御性 fallback 和 AI 冗余。
+```
+
+`using-teamwork` 会判断是直接走 native fast path，还是进入 research、debug、plan、execute、review、goal、init 或 update。
+小事直接做；复杂任务才加载更多规则、subagents 和 artifacts。
 
 ## 快速安装
 
-Codex-first 默认安装：
+Codex 默认安装：
 
 ```bash
 ./install.sh              # 等同于 ./install.sh codex
 ./install.sh codex --profile cost-first
 ```
 
-安装到其他平台（同样支持 `performance-first` / `cost-first`）：
+其他平台：
 
 ```bash
 ./install.sh cursor|claude|all
@@ -131,55 +91,41 @@ Codex-first 默认安装：
 ./install.sh cursor-policy-copy|cursor-policy|claude-policy
 ```
 
-`./install.sh claude` 写入 `~/.claude/CLAUDE.md`；`./install.sh cursor-policy`
-打印 Cursor User Rules block，`cursor-policy-copy` 复制到剪贴板后再粘贴。
-
-本地开发或项目级安装：
+项目级安装和本地开发：
 
 ```bash
-./install.sh project         # 写入 gitignored .cursor/.codex/.claude
-./install.sh --project-root /path/to/project init-project  # 满血初始化：全局/项目面、AGENTS、docs/teamwork、CodeGraph
+./install.sh project
+./install.sh --project-root /path/to/project init-project
 ./install.sh --link codex
-./install.sh --link all
-./install.sh --link project
 ```
 
-## Skills 怎么用
+`teamwork-init` 负责项目规则、AGENTS/CODEX/CURSOR/CLAUDE、`docs/teamwork/` 和 CodeGraph 初始化。
+`teamwork-update` 与 `./scripts/check-update.sh` 负责刷新 skills/agents/policy、检查安装面和版本漂移。
 
-`using-teamwork` 是唯一宽入口：先走 native fast path，小事直接做；再从用户自然意图、证据状态和验收风险自动推断 research/debug/plan/execute/review/goal 等阶段。用户不需要说内部 stage 名。
+## 工作方式
 
-| Skill | 什么时候用 | Teamwork 渐进能力 |
-|---|---|---|
-| `teamwork-research` | 来源、证据、方案、外部约束或 repro surface 不清楚 | Evidence / Research Framing |
-| `teamwork-debug` | 可复现或大概率可复现的故障，需要假设、临时 instrumentation 和 runtime evidence 才能定根因 | Runtime Diagnosis / Root Cause Proof |
-| `teamwork-plan` | 明确要求 plan/design，或非轻量实现需要边界和验收 | Design Synthesis / Planning Synthesis |
-| `teamwork-execute` | 已接受的计划、清单、范围或已知根因修复需要实现 | Staged Execution / Verification Before Claims |
-| `teamwork-review` | review、diff、完成验收、strict quality、deslop、PR walkthrough | Review Reception / Fresh Review |
-| `teamwork-goal` | keep going、until green/done、预算内迭代 | Goal Recovery / Convergence |
-| `teamwork-init` | AGENTS/CODEX/CURSOR/CLAUDE、docs/teamwork、CodeGraph 项目索引、项目规则瘦身 | Project Init / Instruction Slimming |
-| `teamwork-update` | 刷新安装面、检查版本漂移、release hygiene | Package Hygiene |
+Teamwork 的内部 skills 只在需要时触发：
 
-这些能力是 Teamwork 原生的渐进能力。`teamwork-debug` 是 stage，不是新角色；普通聊天不显示内部能力名，复杂任务才按需加载 routing policy、references、artifacts、packets 或 subagents。
+| 能力 | 什么时候触发 |
+|---|---|
+| `teamwork-research` | 来源、证据、方案、外部约束或 repro surface 不清楚 |
+| `teamwork-debug` | 有日志、CI、崩溃、flaky、UI 症状，需要 runtime evidence |
+| `teamwork-plan` | 需要边界、验收、dispatch guidance 或 stop rules |
+| `teamwork-execute` | 执行已接受计划、清单、范围或已知根因修复 |
+| `teamwork-review` | fresh review、strict quality、deslop、PR/CI 或完成验收 |
+| `teamwork-goal` | keep going、until green/done、预算内持续迭代 |
 
-## 平台定位
+需要跨回合保留时，artifacts 固定写到：
 
-Codex 是 reference runtime：native goals 是自治控制面，`teamwork_*` custom
-agents 是非轻量工作的主要协作网络。`./install.sh codex` 写入全局 bootstrap
-policy；`./install.sh codex-policy` 打印同一 block 供 Codex App 个性化粘贴。
-完整 workflow 规则留在 skills/references，项目文件只存本地事实和例外。
-
-Cursor 和 Claude Code 同样是一等 runtime：7 个角色 agent、`./install.sh
---profile`、以及 bootstrap policy（Cursor 用 `cursor-policy-copy`，Claude 用
-managed `~/.claude/CLAUDE.md`）。详见 [CURSOR.md](CURSOR.md) 和
-[CLAUDE.md](CLAUDE.md)。
+```text
+docs/teamwork/research/YYYY-MM-DD-<slug>.md
+docs/teamwork/plans/YYYY-MM-DD-<slug>.md
+docs/teamwork/reports/YYYY-MM-DD-<slug>.md
+```
 
 ## 版本与验证
 
-`VERSION` 与两个 plugin manifest 保持一致。用户刷新安装面：`teamwork-update`
-（user refresh）或 `./scripts/check-update.sh`；项目 init 前也会跑 readiness
-检查；缺的 Teamwork 面会直接安装。release 走 maintainer 模式；本地项目安装用
-`./install.sh project`，完整项目初始化用 `./install.sh --project-root PATH
-init-project`。
+`VERSION` 与 plugin manifest 保持一致。刷新安装面或做 release 前：
 
 ```bash
 ./scripts/check-update.sh --project /path/to/project
@@ -191,5 +137,5 @@ init-project`。
 - [CODEX.md](CODEX.md)：Codex runtime profile、Goal Text、custom-agent 映射。
 - [CURSOR.md](CURSOR.md)：Cursor adapter。
 - [CLAUDE.md](CLAUDE.md)：Claude Code adapter。
-- `skills/*/SKILL.md`：阶段 skill 行为定义。
+- `skills/*/SKILL.md`：各 workflow skill 的行为定义。
 - `skills/using-teamwork/references/`：dispatch、packet、artifact、review、goal 细节。
