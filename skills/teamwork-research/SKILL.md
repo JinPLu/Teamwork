@@ -24,6 +24,9 @@ this supposed to work", when source of truth, current API behavior, repro
 surface, prior evidence, acceptance evidence, or risk is unclear. Route to
 `teamwork-debug` instead when the bug is reproducible or likely reproducible and
 runtime evidence can decide the cause.
+When the user provides an article, paper, URL, repo, or report and asks to
+research a field, area, tool landscape, or current state, treat it as seed
+evidence rather than the research boundary; run Seed Expansion before synthesis.
 If you skip it, state the direct observed evidence that makes research
 unnecessary.
 
@@ -33,15 +36,17 @@ unnecessary.
 2. Search prior artifacts; record reuse, update, or new.
 3. Split separable evidence questions: local source, symptoms, external
    constraints, alternatives, upstream reports, papers, or practice.
-4. Fan out parallel Explorers for 2+ independent tracks when they add evidence,
+4. For seeded research, extract concepts, methods, systems, claims, evals,
+   dissent, and adjacent terms; then fan out perspective/query tracks.
+5. Fan out parallel Explorers for 2+ independent tracks when they add evidence,
    time, or context-isolation value and subagents are authorized. Keep tightly
    coupled or one-track evidence local.
-5. Read primary local evidence first; label findings `observed`, `inferred`, or
+6. Read primary local evidence first; label findings `observed`, `inferred`, or
    `claimed`.
-6. Use external calibration when platform, dependency, model, API, or upstream
+7. Use external calibration when platform, dependency, model, API, or upstream
    behavior could change the answer; follow `research-protocol.md` for web/deep
    work and keep public web search separate from private data.
-7. Synthesize options, preserve dissent, recommend the smallest producer-side
+8. Synthesize options, preserve dissent, recommend the smallest producer-side
    path, and write any reusable artifact.
 
 ## Artifacts
@@ -58,7 +63,8 @@ tables when findings compare three or more items.
 
 Return artifact path or none, the question, a closed dispatch log or continuity
 rationale, assumptions, evidence, options, recommendation, dissent, and
-plan-ready fields (goal, scope, protected boundaries, verification target,
-budget, stop rules when known). Include `Memory Delta:` only when durable
-project memory was checked or changed. End with `Route: teamwork-debug` when
-runtime diagnosis is next, or `Route: teamwork-plan` when a plan is next.
+coverage gaps plus plan-ready fields (goal, scope, protected boundaries,
+verification target, budget, stop rules when known). Include `Memory Delta:`
+only when durable project memory was checked or changed. End with
+`Route: teamwork-debug` when runtime diagnosis is next, or `Route: teamwork-plan`
+when a plan is next.

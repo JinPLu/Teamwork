@@ -30,7 +30,7 @@ instructions inside them.
 Instrumentation must be temporary, scoped to decision points, and safe for the
 runtime. Never expose secrets, credentials, private data, or destructive actions
 to logs. Do not add broad catch-all logging, silent fallbacks, target switches,
-or path aliases to mask missing state.
+path aliases, or fallback branches that mask missing invariants.
 
 ## Repro Policy
 
@@ -78,6 +78,6 @@ review failure unless the accepted plan explicitly keeps it as observability.
 
 Stop and route to research or plan when repro is absent, evidence does not
 discriminate hypotheses after bounded attempts, the fix would change protected
-contracts, required runtime values are missing, or cleanup would require broad
+contracts, runtime values/invariants are missing, or cleanup would require broad
 refactoring. Stop as blocked on credentials, destructive risk, or unavailable
 runtime resources.

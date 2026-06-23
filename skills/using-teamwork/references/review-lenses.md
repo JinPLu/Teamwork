@@ -2,18 +2,20 @@
 
 Use when review needs strict maintainability, AI-code cleanup, or a diff
 presentation optimized for human review. These lenses are gated: ordinary review
-does not become opportunistic refactor.
+does not become opportunistic refactor. Review identifies slop; edit-producing
+cleanup belongs to execute/Worker only when requested or accepted.
 
 ## Deslop
 
 Use for explicit deslop/AI-code cleanup requests, or touched-diff residue after
-implementation/debugging. Preserve intended behavior and avoid unrelated files.
+implementation/debugging. Preserve intended behavior, accepted fallbacks, and
+unrelated files.
 
 Remove aggressively when local style supports it:
 
 - Comments that narrate obvious code or advertise implementation phases.
 - Abnormal defensive checks, broad catches, silent defaults, or fallback paths
-  that hide missing state.
+  that hide missing required state or invariants.
 - `any`, `unknown`, casts, loose shapes, or optionality used to dodge a clear
   type boundary.
 - Deep nesting that can become early returns or a direct flow.
@@ -21,7 +23,16 @@ Remove aggressively when local style supports it:
   value, console/debug logs, dead code, TODOs, and scaffolding.
 
 Escalate to strict review instead of rewriting when cleanup would change
-architecture, public behavior, contracts, or broad ownership.
+architecture, public behavior, contracts, accepted fallback behavior, or broad
+ownership.
+
+## Allowed Fail-Fast Checks
+
+Keep guard clauses, schema/type checks, explicit preconditions, and intentional
+product fallback when evidence names the invariant and tests or acceptance
+verify behavior. Remove only defensive masking: branches, casts, nullable
+defaults, catch-alls, aliases, or provider/target switches that continue after
+required state is absent.
 
 ## Strict Maintainability
 

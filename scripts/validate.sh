@@ -372,6 +372,13 @@ done
 for anchor in Deslop 'Strict Maintainability' 'Reviewer Comprehension' 'Multi-Lens Review'; do
   grep_required "$anchor" "$ROOT/skills/using-teamwork/references/review-lenses.md" "review lenses must lock $anchor"
 done
+grep_required 'No silent defaults or invariant-masking fallback' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must define invariant-masking fallback"
+grep_required 'Required Values / Invariants' "$ROOT/skills/using-teamwork/references/plan-output.md" "plan output must lock required values and invariants"
+grep_required 'Fail fast rather than invent fallback behavior' "$ROOT/skills/teamwork-execute/SKILL.md" "execute must fail fast instead of masking invariants"
+grep_required 'Allowed Fail-Fast Checks' "$ROOT/skills/using-teamwork/references/review-lenses.md" "review lenses must distinguish fail-fast from defensive masking"
+grep_required 'fallback masking' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must catch fallback masking"
+grep_absent 'teamwork-quality' "Teamwork must not add a separate quality stage" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/install.sh"
+grep_absent 'teamwork-deslop' "Teamwork must not add a separate deslop stage" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/install.sh"
 for anchor in 'Natural Signals' 'Tie-Breakers' 'User does not need to say' 'Symptom with unknown cause'; do
   grep_required "$anchor" "$ROOT/skills/using-teamwork/references/routing-policy.md" "routing policy must lock $anchor"
 done
@@ -429,6 +436,10 @@ grep_required 'active.report' "$ROOT/skills/using-teamwork/references/artifact-p
 grep_required 'Structured Bodies' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must require structured artifact bodies"
 grep_required 'Research artifacts should' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must require research matrices"
 grep_required 'Report artifacts should' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must require report tables"
+grep_required 'Seed Expansion' "$ROOT/skills/teamwork-research/SKILL.md" "research skill must require seeded-source expansion"
+grep_required 'Seed Expansion' "$ROOT/skills/using-teamwork/references/research-protocol.md" "research protocol must define Seed Expansion"
+grep_required 'Coverage Audit' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "Explorer packet must carry coverage audit"
+grep_required 'broad/seeded research' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must catch shallow seeded research"
 grep_required 'Evidence Matrix' "$ROOT/skills/using-teamwork/references/research-protocol.md" "research protocol must require evidence matrix"
 grep_required 'Option Matrix' "$ROOT/skills/using-teamwork/references/research-protocol.md" "research protocol must require option matrix"
 grep_required 'Goal Proposal' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must define Goal Proposal"

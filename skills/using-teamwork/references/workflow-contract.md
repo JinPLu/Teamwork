@@ -17,11 +17,14 @@ memory, and acceptance.
    or destructive actions, public contracts, architecture, or conflicting
    requirements. Batch such questions and keep them short. Do not ask about
    routine tool/MCP/approach choices the model can reasonably judge.
-3. **No silent defaults.** Never invent values for env vars, paths, commands,
-   ports, models, hyperparameters, credentials, configs, or execution modes. Ask
-   when the user can supply a missing value; block and say what you checked when
-   it cannot be obtained. Do not mask missing state by switching local/remote,
-   dev/prod, datasets, models, or providers.
+3. **No silent defaults or invariant-masking fallback.** Routine tool, naming,
+   formatting, and reversible defaults are allowed under act-by-default.
+   Required code/runtime values and invariants are not. Never invent env vars,
+   paths, commands, ports, models, hyperparameters, credentials, configs,
+   execution modes, providers, datasets, schemas, or nullability to continue.
+   Ask when the user can supply a gap; block and say what you checked when it
+   cannot be obtained. Explicit product fallback is allowed only when user
+   input, source/config, tests, or an accepted plan names and verifies it.
 4. **Ground claims in evidence.** Label important findings `observed`,
    `inferred`, or `claimed`. Treat names, comments, READMEs, summaries, and
    labels like `latest`/`v2` as `claimed` until a direct source, test, config,
@@ -44,14 +47,13 @@ memory, and acceptance.
 Default to proceeding. Make and state a reasonable assumption for anything you
 can judge from the request, code, or context, and keep moving.
 
-Ask first only when the answer is genuinely beyond the model's reach and would
-change the outcome: a blocking obstacle, missing information you cannot obtain
-yourself, or a core decision on scope, acceptance, constraints, protected
-boundaries, public/data contracts, architecture, or an irreversible/destructive
-action. Batch these into one short question. A missing required value is a
-question only when the user can supply it and you cannot find it; otherwise it
-is a blocker. Do not interrupt for routine choices — tool or MCP selection,
-naming, formatting, or equivalent approaches.
+Ask first only when the answer is beyond the model's reach and would change the
+outcome: a blocker, missing information you cannot obtain, or a core decision on
+scope, acceptance, constraints, protected boundaries, public/data contracts,
+architecture, or an irreversible/destructive action. Batch these into one short
+question. A missing required value or invariant is a question only when the user
+can supply it and you cannot find it; otherwise it is a blocker, not a fallback.
+Do not interrupt for routine tool/MCP, naming, formatting, or equivalent choices.
 
 ## Evidence
 
@@ -91,13 +93,12 @@ acceptance work.
 
 ## Subagents
 
-A dispatched subagent is a bounded task: it returns one packet, then stops. The
-main agent owns scope, integration, final verification, and acceptance, and
-closes each delegated track as `closed`, `blocked`, or
-`abandoned-after-discovery` before claiming completion. Same-context self-review
-does not accept non-lightweight work; use a fresh Reviewer, or name the residual
-risk when one is unavailable. Full dispatch rules live in `subagent-dispatch.md`,
-prompt and packet shapes in `subagent-contract.md`, role methods in
+A dispatched subagent is bounded: it returns one packet, then stops. Main owns
+scope, integration, final verification, and acceptance, and closes each track as
+`closed`, `blocked`, or `abandoned-after-discovery` before completion.
+Same-context self-review does not accept non-lightweight work; use a fresh
+Reviewer, or name residual risk when unavailable. Dispatch rules live in
+`subagent-dispatch.md`, packet shapes in `subagent-contract.md`, role methods in
 `role-playbook.md`.
 
 ## Platform Native Map

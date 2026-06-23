@@ -8,11 +8,11 @@ description: Use when the user asks for plan/design or a non-trivial implement/f
 Use after research or user direction selects a path, and before non-trivial
 implementation when no accepted plan exists. Plans lock scope.
 
-Mirror Cursor Plan Mode's useful contract: use existing user/source evidence
-first, route to research only when evidence is missing or stale, ask only
+Mirror Cursor Plan Mode's useful contract: use user/source evidence first,
+route to research only when evidence is missing or stale, ask only
 requirement-changing questions, produce a reviewable Markdown plan before code,
-then execute from the accepted plan. Teamwork adds evidence labels, dispatch,
-goal surfaces, stop rules, and acceptance.
+then execute from acceptance. Teamwork adds evidence labels, dispatch, goal
+surfaces, stop rules, and acceptance.
 
 Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
 evidence and judgment; `skills/using-teamwork/references/subagent-dispatch.md`
@@ -77,11 +77,11 @@ Use the lightest form that stays correct:
   in compact tables or diagrams; prose explains only what tables cannot.
 - Agent executability: no vague "handle/fix/update" steps without owned scope,
   inputs, outputs, verification, and stop rules.
-- Required env vars, paths, commands, ports, models, hyperparameters, configs,
-  credentials, and execution modes trace to user input, source/config,
-  instructions, or observed evidence — never invented. Missing human
-  requirements ask first; missing source values block only after they cannot be
-  found.
+- Required values/invariants — env, paths, commands, ports, models,
+  hyperparameters, configs, credentials, execution modes, and fallback contracts
+  — trace to user input, source/config, instructions, tests, accepted plan, or
+  observed evidence; never invent them. Ask for human-only gaps; block when
+  source values cannot be found.
 - No broad refactor, abstraction, formatting churn, or downstream cleanup unless
   evidence requires it.
 - Delegated plans name the prompt shape, ownership, and expected packet.

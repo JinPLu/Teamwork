@@ -17,8 +17,8 @@ table for three or more comparable steps.
 
 ## Durable Plan Contract
 
-Durable plans are specs before edits and runbooks after acceptance. Favor tables
-and diagrams; write `none` with rationale instead of leaving ambiguity.
+Durable plans are pre-edit specs and post-acceptance runbooks; favor
+tables/diagrams; write `none` with rationale.
 
 ## Durable Plan Header
 
@@ -41,7 +41,7 @@ Use this order unless the task has a stronger local convention:
 3. `## 1. Flow` Mermaid `flowchart` for multi-stage, branching, delegated, or
    goal-mode work.
 4. `## 2. Scope And Requirements` table:
-   `Requirement | Evidence | Planned Handling | Verification`.
+   `Requirement | Required Values / Invariants | Evidence | Planned Handling | Verification`.
 5. `## 3. Execution Table`:
    `Phase | Owner | Input | Output | Verification | Stop / Replan`.
 6. `## 4. Artifacts / Interfaces`:
@@ -71,7 +71,7 @@ when debug is part of the route.
 
 ## Handoff Rules
 
-- Worker: execute only the accepted rows; no adjacent cleanup.
+- Worker: execute accepted rows only; no adjacent cleanup or fallback masking.
 - Reviewer/Judge: check evidence adequacy, scope, gates, verification, and
   acceptance criteria.
 - Actual Dispatch Log records review-relevant roles, native fields, prompt

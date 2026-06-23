@@ -39,19 +39,19 @@ review needs durable memory.
 
 ## Plan Review
 
-Check scope, requirements mapping, evidence, verification, explicit required
-values (no silent fallback defaults), risks, dispatch split, and
+Check scope, requirements mapping, evidence, verification, Required Values /
+Invariants, accepted fallback contracts, risks, dispatch split, and
 protected-boundary changes. See `review-checks.md`.
 For goal-mode retry plans, also verify Goal Invariants, Replay Preflight, and
 Goal Anchor fields before accepting.
 
 ## Execution Review
 
-Check diff scope, plan conformance, verification evidence, no silent fallback
-defaults, the Actual Dispatch Log, Worker packets when Workers ran, dispatch
+Check diff scope, plan conformance, verification evidence, no invariant-masking
+fallback, the Actual Dispatch Log, Worker packets when Workers ran, dispatch
 economics, and workspace hygiene. Confirm the dispatch split was considered even
 when the plan did not name every track. For re-review after `revise`, require
-the prior verdict, the required fixes, fix evidence, and a re-review verdict.
+the prior verdict, required fixes, fix evidence, and a re-review verdict.
 For goal-mode work, require the Attempt Record, any Failure Reflection, and a
 drift/retry verdict tied to prior attempts.
 For debug-derived fixes, also check repro evidence, hypothesis-to-evidence

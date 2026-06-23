@@ -51,8 +51,9 @@ runtime summary.
 `./install.sh claude` maintains a Teamwork-managed block in global
 `~/.claude/CLAUDE.md`. `./install.sh claude-policy` prints the same block for
 manual review. The block is a short bootstrap policy: subagent authorization,
-act-by-default posture, Claude model profile, no-silent-defaults safety, and
-remote-execution baseline. Keep project `CLAUDE.md` or a Claude-labeled
+act-by-default posture, Claude model profile, no-silent-defaults /
+invariant-masking fallback safety, and remote-execution baseline. Keep project
+`CLAUDE.md` or a Claude-labeled
 `AGENTS.md` section only for repository facts, exceptions, required values,
 protected boundaries, or opt-outs.
 
@@ -74,7 +75,9 @@ Use repo files, logs, tests, diffs, artifacts, and prior Teamwork artifacts befo
 For broad research, keep recall broad but context transport narrow: use source census,
 capped Explorer packets, and artifact-backed evidence ledgers instead of returning
 raw search output, long matrices, or copied source bodies to the main thread.
-Treat compaction as continuity support, not audit evidence.
+When a user gives an article, paper, URL, repo, or report as a field-research
+seed, expand to perspective/query fanout before synthesis. Treat compaction as
+continuity support, not audit evidence.
 
 Artifacts are evidence memory:
 

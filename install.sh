@@ -123,12 +123,11 @@ downshifts routine Explorer, Designer, and Worker to gpt-5.4 medium.
 Use project-local Teamwork init mode only for explicit overrides.
 
 Bootstrap safety: required environment variables, paths, commands, ports, model
-names, hyperparameters, credentials, configs, and execution modes must be
-explicit in user input, project instructions, source/config, or an accepted
-plan. Ask once when the user can supply a missing required value; treat it as
-blocked only when it cannot be safely obtained, requires unavailable
-credentials/resources, or the user declines. Report what was checked instead of
-inventing fallbacks.
+names, hyperparameters, credentials, configs, execution modes, and invariants
+must be explicit in user input, project instructions, source/config, tests, or
+an accepted plan. Routine reversible defaults remain allowed; code/runtime
+defaults or fallbacks may not mask missing required state. Ask once when the
+user can supply a missing value; otherwise block and report what was checked.
 
 Remote execution: assume substantial code execution runs on the configured
 remote server when project instructions or server inventory identify one. The
@@ -169,12 +168,11 @@ and Worker to haiku with medium effort. Use project-local Teamwork init mode
 only for explicit overrides.
 
 Bootstrap safety: required environment variables, paths, commands, ports, model
-names, hyperparameters, credentials, configs, and execution modes must be
-explicit in user input, project instructions, source/config, or an accepted
-plan. Ask once when the user can supply a missing required value; treat it as
-blocked only when it cannot be safely obtained, requires unavailable
-credentials/resources, or the user declines. Report what was checked instead of
-inventing fallbacks.
+names, hyperparameters, credentials, configs, execution modes, and invariants
+must be explicit in user input, project instructions, source/config, tests, or
+an accepted plan. Routine reversible defaults remain allowed; code/runtime
+defaults or fallbacks may not mask missing required state. Ask once when the
+user can supply a missing value; otherwise block and report what was checked.
 
 Remote execution: assume substantial code execution runs on the configured
 remote server when project instructions or server inventory identify one. The
@@ -217,12 +215,11 @@ composer-2.5-fast while keeping review tiers on claude-opus-4-8-thinking-high.
 Use project-local Teamwork init mode only for explicit overrides.
 
 Bootstrap safety: required environment variables, paths, commands, ports, model
-names, hyperparameters, credentials, configs, and execution modes must be
-explicit in user input, project instructions, source/config, or an accepted
-plan. Ask once when the user can supply a missing required value; treat it as
-blocked only when it cannot be safely obtained, requires unavailable
-credentials/resources, or the user declines. Report what was checked instead of
-inventing fallbacks.
+names, hyperparameters, credentials, configs, execution modes, and invariants
+must be explicit in user input, project instructions, source/config, tests, or
+an accepted plan. Routine reversible defaults remain allowed; code/runtime
+defaults or fallbacks may not mask missing required state. Ask once when the
+user can supply a missing value; otherwise block and report what was checked.
 
 Remote execution: assume substantial code execution runs on the configured
 remote server when project instructions or server inventory identify one. The

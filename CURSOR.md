@@ -56,7 +56,9 @@ block. Teamwork does not write Cursor's opaque SQLite/cloud-backed state.
 Project `AGENTS.md` or a Cursor-labeled section holds only local facts, required
 values, protected boundaries, or opt-outs. Project init installs missing
 Teamwork global/project surfaces, writes `docs/teamwork/`, and initializes
-CodeGraph when the CLI is available.
+CodeGraph when the CLI is available. Required values and invariants are never
+defaults or fallback branches to invent; explicit product fallback must come
+from user input, source/config, tests, or an accepted plan.
 
 ## Subagent Dispatch
 
@@ -86,7 +88,9 @@ Dispatch Log entry after integration before claiming acceptance.
 For broad research, keep recall broad but context transport narrow: use source census,
 capped Explorer packets, and artifact-backed evidence ledgers instead of returning
 raw search output, long matrices, or copied source bodies to the main thread.
-Treat compaction as continuity support, not audit evidence.
+When a user gives an article, paper, URL, repo, or report as a field-research
+seed, expand to perspective/query fanout before synthesis. Treat compaction as
+continuity support, not audit evidence.
 
 ## Profile And Models
 

@@ -40,7 +40,8 @@ plan or already accepted scope only needs a targeted fix.
   execution targets are explicit or discoverable from source/config.
 
 Ask or block before inventing missing runtime targets. Do not switch local/remote,
-dev/prod, browser/session, dataset, model, or CI target to make the bug easier.
+dev/prod, browser/session, dataset, model, CI target, or path alias to hide a
+missing invariant or make the bug easier.
 
 ## Workflow
 
@@ -61,7 +62,8 @@ dev/prod, browser/session, dataset, model, or CI target to make the bug easier.
 
 Debug cleanup removes temporary instrumentation, debug logs, scaffolding, and
 obvious touched-diff slop while preserving behavior. Do not broaden cleanup into
-structural refactors; route strict maintainability concerns to `teamwork-review`.
+structural refactors or fallback masking; route strict maintainability concerns
+to `teamwork-review`.
 
 ## Output
 

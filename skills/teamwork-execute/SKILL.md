@@ -31,7 +31,8 @@ external tools.
 
 If needed state is missing, inspect source/config first, ask once when a human
 can supply it, and block only when it is unavailable, unsafe, declined, or would
-require inventing a fallback, switching execution targets, or adding detours.
+require inventing a fallback, masking an invariant, switching targets, or adding
+detours.
 
 ## Worker Boundary
 
@@ -40,13 +41,17 @@ requirements, or scope. If evidence changes those, route back to research or
 plan. Prefer TDD for behavior changes when practical; diagnose root cause before
 fixing failures. Every slice needs an exit condition: passing proof, observed
 artifact/behavior, structured validation, a bounded attempt limit, or a blocker.
+Fail fast rather than invent fallback behavior when accepted scope lacks a
+required value or invariant. Do not add broad catches, nullable defaults, casts,
+aliases, provider/target switches, or defensive branches that make missing state
+look valid.
 
 For reproducible but unclear failures where diagnosis is the task, route to
 `teamwork-debug`. Use only one bounded micro-debug pass locally when accepted
 scope needs small confirming evidence before a targeted fix; if root cause is
 still unclear, stop and route to Debug. Debug cleanup is narrow: remove
 temporary instrumentation, logs, scaffolding, and obvious touched-diff slop
-without broad refactor.
+without broad refactor or unaccepted adjacent cleanup.
 
 ## Steps
 

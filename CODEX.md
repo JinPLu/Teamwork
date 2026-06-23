@@ -36,7 +36,9 @@ Use repo files, logs, tests, diffs, artifacts, and prior Teamwork artifacts befo
 For broad research, keep recall broad but context transport narrow: use source
 census, capped Explorer packets, and artifact-backed evidence ledgers instead
 of returning raw search output, long matrices, or copied source bodies to the
-main thread. Treat compaction as continuity support, not audit evidence.
+main thread. When a user gives an article, paper, URL, repo, or report as a
+field-research seed, expand to perspective/query fanout before synthesis. Treat
+compaction as continuity support, not audit evidence.
 
 Artifacts are evidence memory:
 
@@ -65,8 +67,9 @@ For failed goal iterations, refresh research and check whether the active plan w
 `~/.codex/AGENTS.md`. `./install.sh codex-policy` prints the same block for
 users who want to paste it into Codex App Personalization. The block is a short
 bootstrap policy: subagent authorization, act-by-default posture, Codex model
-profile, no-silent-defaults safety for required values, and remote-execution
-baseline. After installation or personalization, the user does not need to
+profile, no-silent-defaults / invariant-masking fallback safety for required
+values, and remote-execution baseline. After installation or personalization,
+the user does not need to
 repeat "use subagents" in each prompt. Use a project `CODEX.md` or
 Codex-labeled `AGENTS.md` section only for repository facts, exceptions,
 required values, protected boundaries, or opt-outs:
@@ -81,9 +84,10 @@ subagents" in each prompt.
 Keep project authorization short. Detailed dispatch economics and workflow
 contracts stay in `skills/using-teamwork/references/`; concrete hosts, paths,
 commands, ports, credentials, models, hyperparameters, and execution modes stay
-in project instructions or source/config. Missing values are questions first
-when a human can supply them, hard blockers only when they cannot be safely
-obtained; they are never defaults to invent.
+in project instructions or source/config. Missing values or invariants are
+questions first when a human can supply them, hard blockers only when they
+cannot be safely obtained; they are never defaults or fallback branches to
+invent.
 
 ## Init Mode
 

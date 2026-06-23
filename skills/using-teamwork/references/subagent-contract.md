@@ -16,7 +16,7 @@ Stop:        return packet once, then stop; orchestrator owns integration and fi
 
 Role Card (include when platform requires): Conceptual Role (Explorer|Designer|Judge|Worker|Reviewer); Native Fields per `subagent-dispatch.md`; Mode (read-only|workspace-write|review-only); Context Strategy (condensed-evidence-only|artifact-backed|owned-files-only|fresh-context-review|full-history-fork).
 
-Forbidden always: scope expansion, unrelated cleanup, chaining subagents, final acceptance, monitoring after packet. Block on missing env/path/command/model/config/credentials; report, never invent defaults.
+Forbidden always: scope expansion, unrelated cleanup, chaining subagents, final acceptance, monitoring after packet. Block on missing env/path/command/model/config/credentials/invariants; report, never invent defaults or mask them with fallbacks.
 
 Lifecycle verdicts are `accept | revise | blocked`; `reject` is not a lifecycle verdict. Use rejected only for hypotheses, options, sources, memory candidates, or data buckets, with a reason.
 
@@ -36,7 +36,7 @@ Dissent / Risks:
 Open Questions:
 Suggested Next Step:
 ```
-Web/deep extras: Search Plan; Queries Tried; Source Census; Sources Used; Sources Rejected; Citation Ledger. Cap each at 8; overflow → artifact pointer.
+Web/deep extras: Seed Expansion; Perspective Map; Search Plan; Queries Tried; Source Census; Sources Used; Sources Rejected; Coverage Audit; Citation Ledger. Cap each at 8; overflow → artifact pointer.
 
 ### Designer Decision Packet
 ```text
