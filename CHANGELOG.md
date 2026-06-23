@@ -2,144 +2,155 @@
 
 [English](CHANGELOG.en.md)
 
-Teamwork 的重要变更记录，按 git 历史整理。日期使用提交日期。版本边界以
-`VERSION` 和插件 manifest 的更新为准；当前仓库没有 git release tag。
+这份 changelog 按“用户升级后会感受到什么”来写，而不是只罗列文件改动。
+版本边界以 `VERSION` 和插件 manifest 的更新为准；当前仓库没有 git release tag。
 
 ## 2.6.0 - 2026-06-23
 
-- 强化 broad / seeded research：用户提供的文章、论文、URL、仓库或报告会被
-  视为研究种子，而不是研究边界。
-- 将 AI 代码质量规则统一为“禁止静默默认值或掩盖不变量的 fallback”，并贯穿
-  workflow、plan、execute、debug、review 和 subagent contract。
-- 明确 routine 可逆默认值仍然允许，但代码/运行时默认值和 fallback 不能隐藏
-  缺失的必需值或不变量。
-- 扩展 review lenses 和 validation anchors，覆盖 bounded deslop、strict
-  maintainability、fail-fast checks，并防止新增 `teamwork-quality` 或
-  `teamwork-deslop` 阶段。
-- 在 Codex、Cursor、Claude Code 和 installer 生成的全局策略中同步新的
-  bootstrap safety 规则。
+这版重点是：**规则更硬，调研更会发散，文档更像开源产品说明。**
+
+- 调研不会再只围着用户给的一篇文章、论文、URL、仓库或报告转。Teamwork 会把它当作
+  seed source，继续扩展到 primary source、相邻来源、反例和仍未覆盖的问题。
+- 设计/方案阶段更像科研助理：先看证据覆盖、反例、来源质量和未解问题，再给方向或计划。
+- 规则更能防止“假成功”：缺 env、路径、端口、模型名、超参数、credential、配置或不变量时，
+  agent 不能随手给默认值或 fallback 把缺失状态伪装成可用。
+- strict review / deslop 更实用：review 会更明确地抓 AI 冗余、异常防御性分支、宽泛
+  catch、静默默认值、fallback masking 和可维护性退化。
+- README、CODEX、CURSOR、CLAUDE 和 changelog 改成用户视角，先说明为什么用、何时用、
+  能得到什么，再把平台细节留给高级参考。
+- Codex、Cursor、Claude Code 的全局策略同步了同一套安全底线，升级后不同平台的行为更一致。
 
 ## 2.5.0 - 2026-06-22
 
-- 强化 goal continuity workflow，补足 Goal Anchor、Replay Preflight、Drift
-  Verdict、Retry Verdict 和 attempt record 的要求。
-- 扩展 goal artifacts、Teamwork index templates 和 lifecycle verdict 的验证覆盖。
-- 新增 `scripts/init-project.sh`，改进 project initialization 默认值、artifact
-  结构和项目级安装行为。
+这版重点是：**长任务失败后不会盲目重试。**
+
+- goal mode 记录每次尝试的目标、假设、验证结果、失败类别和下一步，方便跨回合继续推进。
+- 失败后会先做 Replay Preflight 和 plan adequacy 检查，判断是信息不足、计划过期、范围错了，
+  还是执行偏离，而不是直接重复上一轮修法。
+- 项目初始化更完整：新增 `scripts/init-project.sh`，改善项目级 artifacts、默认结构和安装行为。
 
 ## 2.4.1 - 2026-06-21
 
-- 新增 `./install.sh cursor-policy-copy`，用于把 Cursor User Rules 策略文本复制
-  到剪贴板。
-- 更新 Cursor install、init、check-update 和 validation 文档，明确 Cursor User
-  Rules 仍需要手动粘贴。
+这版重点是：**Cursor 用户更容易安装全局规则。**
+
+- 新增 `./install.sh cursor-policy-copy`，可以把 Cursor User Rules 策略直接复制到剪贴板。
+- 文档和 readiness 检查明确提示：Cursor 的 User Rules 仍需要用户手动粘贴。
 
 ## 2.4.0 - 2026-06-21
 
-- 新增 `routing-policy.md`，提供更智能的 stage routing。
-- 调整 router 和 stage 描述，覆盖 native、research、debug、plan、execute、
-  review、goal、init 和 update 工作流。
+这版重点是：**你可以更自然地说需求，Teamwork 更会自己路由。**
+
+- 普通自然语言请求更稳定地映射到研究、诊断、计划、执行、复查、长期目标、初始化或更新。
+- 小事更容易直接走 native fast path，大事才加载对应 stage 和 references。
 
 ## 2.3.0 - 2026-06-21
 
-- 新增 `teamwork-debug` 阶段，用于在 speculative fix 前先做 runtime diagnosis。
-- 新增 `debug-mode.md`、`verification-patterns.md` 和 `review-lenses.md`，覆盖
-  repro evidence、proof strength、strict maintainability 和 deslop review。
-- 围绕 debug evidence 和 cleanup 扩展 plan、execute、review、worker 和 agent
-  templates。
+这版重点是：**遇到 bug 先诊断，不再先猜修法。**
+
+- 新增 `teamwork-debug` 阶段，用于在修复前收集日志、复现、假设和 runtime evidence。
+- 新增 debug、verification 和 review lenses，帮助区分“真的根因”“只是现象”和“验证不够”。
+- 执行和 review 增加 debug cleanup 规则，避免临时日志、探针和修复残留变成新技术债。
 - 修复 `scripts/check-update.sh` 的 upstream remote 检测。
 
 ## 2.2.0 - 2026-06-16
 
-- 新增 `scripts/check-update.sh`，用于安装新鲜度和 readiness 检查。
-- 新增 installed-version markers、`--project-root` 和更完整的项目级安装支持。
-- 扩展 Codex、Cursor、Claude Code 的 agents、policy blocks、manifests、docs
-  和 validation，提升多平台一致性。
+这版重点是：**安装和更新更可检查。**
+
+- 新增 `scripts/check-update.sh`，用于检查本地 skills、agents、policy 和项目安装是否过期。
+- 增加 installed-version markers、`--project-root` 和更完整的项目级安装支持。
+- Codex、Cursor、Claude Code 的 agents、policy blocks、manifests、docs 和 validation 更一致。
 
 ## 2.0.0 - 2026-06-16
 
-- 将 Teamwork 收敛到 act-by-default routing：明确任务直接推进，只在真正的
-  blocker 或核心决策上提问。
-- 用聚焦的 dispatch、contract 和 role playbook references 取代分散的
-  subagent references。
-- 精简 validation，同时保留 package layout、manifest、skill、memory、platform
-  和 install-smoke 检查。
+这版重点是：**Teamwork 更少打断用户，更会自己推进。**
+
+- 收敛到 act-by-default routing：明确的任务直接做，只在真实 blocker 或核心决策上提问。
+- 把分散的 subagent 规则合并成更聚焦的 dispatch、contract 和 role playbook references。
+- 大幅精简 validation，但保留 package layout、manifest、skill、memory、platform 和 install-smoke 检查。
 
 ## 1.11.0 - 1.15.0 - 2026-06-11 to 2026-06-16
 
-- 扩展 `teamwork-update` 的 package refresh 行为和 validation 覆盖。
-- 让 skills 更 progressive，只在需要时加载聚焦 reference。
-- 新增 Explorer 和 deep research packets 的 research context budget 规则。
+这几版重点是：**skills 更按需加载，深调研更省上下文。**
+
+- `teamwork-update` 能更完整地刷新 package，并扩大 validation 覆盖。
+- skills 改成按需加载：只有任务需要时才加载更细规则。
+- Explorer 和 deep research packets 引入 research context budget，调研可以广泛找，但只把有用证据带回主线程。
 - 新增 optional docs MCP policy，用于查询当前 library/API 文档。
-- 在 2.0 consolidation 前细化 question-first routing。
 
 ## 1.5.0 - 1.10.0 - 2026-06-05
 
-- 强化 durable memory policy、clarification gates、evidence-first fallback
-  positioning、rule placement 和 role fan-out guidance。
+这几版重点是：**把 Teamwork 从“流程提示词”变成能记忆、能验收的协作系统。**
+
+- 强化 durable memory、clarification gates、evidence-first fallback positioning 和 role fan-out guidance。
 - 新增 full-feature memory / init gates，以及 external-memory promotion 防护。
-- 新增 fail-fast no-defaults guidance，并在保留 reviewability 的同时精简
-  workflow overhead。
+- 引入 fail-fast no-defaults guidance，同时逐步精简 workflow overhead。
 
 ## 1.2.0 - 1.4.1 - 2026-06-04 to 2026-06-05
 
-- 新增 install-time Codex model profiles，支持 `performance-first` 和
-  `cost-first` 模式。
-- 优化 Codex custom agent 的默认模型，并强化 role workflows。
+这几版重点是：**不同成本/性能偏好的用户可以选 profile。**
+
+- 新增 install-time Codex model profiles：`performance-first` 和 `cost-first`。
+- 优化 Codex custom agent 的默认模型，并强化 Explorer、Designer、Worker 等 role workflows。
 
 ## 1.0.0 - 1.1.2 - 2026-06-01 to 2026-06-04
 
-- 细化 Teamwork orchestration 和 workflow reference 结构。
-- 新增 delegated-track lifecycle closure contracts。
+这几版重点是：**建立 Teamwork 的协作骨架。**
+
+- 细化协作编排和阶段职责。
+- 新增 delegated-track lifecycle closure contracts，让 subagents 有明确交付和关闭条件。
 - 更新 Codex Worker model mapping。
 - 新增 runtime README pointer guidance。
 
 ## 0.14.0 - 2026-06-01
 
+这版重点是：**Codex 的 Teamwork 授权可以全局复用。**
+
 - 在 `~/.codex/AGENTS.md` 中安装 Teamwork 管理的全局策略块。
-- 让 Codex standing subagent authorization 可以跨项目复用。
+- 用户不需要每个项目都重复说明“可以使用 subagents”。
 
 ## 0.13.0 - 2026-05-31
 
-- 更新 Codex subagent authorization policy。
+这版重点是：**收紧 Codex subagent 授权规则。**
+
+- 更新 Codex subagent authorization policy，让并行 agent 的使用边界更清楚。
 
 ## 0.12.0 - 2026-05-28
 
-- 增加 Claude Code parity，包括 Claude plugin metadata、`CLAUDE.md`、Claude
-  install targets 和 Claude agent templates。
+这版重点是：**Claude Code 成为一等平台。**
+
+- 增加 Claude Code parity，包括 Claude plugin metadata、`CLAUDE.md`、Claude install targets
+  和 Claude agent templates。
 - 扩展 validation，覆盖 Claude manifests、skill installs 和 agent templates。
 
 ## 0.11.0 - 2026-05-27
 
-- 增加 Cursor platform parity，包括 `CURSOR.md`、Cursor install support、Cursor
-  Task subagent mapping 和 Cursor goal-mode 文档。
-- 将文档从 Codex-only 行为重塑为 platform-native capabilities 叙事。
+这版重点是：**Cursor 成为一等平台。**
+
+- 增加 Cursor platform parity，包括 `CURSOR.md`、Cursor install support、Cursor Task subagent
+  mapping 和 Cursor goal-mode 文档。
+- 文档从 Codex-only 行为改成 platform-native capabilities 叙事。
 
 ## 0.10.0 - 2026-05-27
 
-- 新增 dispatch discovery gates，避免过早宣称 subagents 不可用。
-- 对 non-lightweight acceptance paths 要求显式 dispatch exception 和
-  fresh-review labeling。
+这版重点是：**不能过早说 subagents 不可用，也不能把自查当验收。**
+
+- 新增 dispatch discovery gates，要求先发现可用 subagent 能力，再判断是否能分派。
+- non-lightweight acceptance paths 要求显式 dispatch exception 和 fresh-review labeling。
 
 ## 0.9.0 - 2026-05-27
 
+这版重点是：**Teamwork 第一次成为带版本的 workflow package。**
+
 - 发布第一个带版本号的 Teamwork workflow-gates package。
-- 通过 `teamwork-init` 和 project-init references 增加 project initialization
-  workflow 支持。
-- 建立 Codex-only Teamwork package 和 versioned metadata。
-- 将 workflow 职责拆分为 research、planning、execution、review、goal
-  iteration、init、update 和 auto-routing 等聚焦 skills。
-- 增加 evidence-first goal/runtime gates、durable artifacts 和 review-oriented
-  acceptance behavior。
-- 增加并细化 automatic subagent routing，包括 independent-track dispatch、
-  packet contracts 和 model-aware routing。
+- 通过 `teamwork-init` 和 project-init references 增加 project initialization workflow。
+- 将职责拆成 research、planning、execution、review、goal iteration、init、update 和 auto-routing。
+- 增加 evidence-first gates、durable artifacts、review-oriented acceptance 和 automatic subagent routing。
 
 ## Pre-0.9.0 - 2026-05-12 to 2026-05-26
 
-- 最初作为 `run-analyze-optimize` skill package 创建。
-- 将原始 package 重构为 research、plan、execute、goal 和 review router
-  subskills。
-- 增加 goal runtime commands、evidence gates、durable plan artifacts 和 Codex
-  auto-routing。
-- 将 package 重命名为 Teamwork，并在后续多平台支持前先收敛为 Codex-first
-  skill package。
+这段历史重点是：**从单个优化 skill 演进为 Teamwork。**
+
+- 最初从单一优化流程起步。
+- 逐步拆出 research、plan、execute、goal 和 review router subskills。
+- 增加 goal runtime commands、evidence gates、durable plan artifacts 和 Codex auto-routing。
+- 重命名为 Teamwork，并在后续多平台支持前先收敛为 Codex-first skill package。

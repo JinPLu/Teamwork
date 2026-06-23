@@ -1,18 +1,17 @@
 ---
 name: teamwork-plan
-description: Use when the user asks for plan/design or a non-trivial implement/fix/add/change/refactor needs scope, requirements, protected boundaries, verification, dispatch, memory, or acceptance before edits.
+description: Use when the user asks for plan/design or a non-trivial research, engineering, implementation, or project change needs scope, requirements, protected boundaries, verification, dispatch, memory, or acceptance before action.
 ---
 
 # Teamwork Plan
 
 Use after research or user direction selects a path, and before non-trivial
-implementation when no accepted plan exists. Plans lock scope.
+project action when no accepted plan exists. Plans lock scope; tiny fixed-scope
+work stays native or goes straight to execute.
 
-Mirror Cursor Plan Mode's useful contract: use user/source evidence first,
-route to research only when evidence is missing or stale, ask only
-requirement-changing questions, produce a reviewable Markdown plan before code,
-then execute from acceptance. Teamwork adds evidence labels, dispatch, goal
-surfaces, stop rules, and acceptance.
+Use user/source evidence first, route to research only when evidence is missing
+or stale, ask only requirement-changing questions, then act from acceptance.
+Teamwork adds evidence labels, dispatch, goal surfaces, stops, and review.
 
 Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
 evidence and judgment; `skills/using-teamwork/references/subagent-dispatch.md`
@@ -59,7 +58,7 @@ Use the lightest form that stays correct:
    more comparable items, use tables: status, phases, artifacts, gates,
    dispatch, and acceptance.
 5. Make steps executable: each phase has owner, input, output, verification,
-   expected result, and stop/replan trigger.
+   result, and stop trigger.
    For bug work, state whether the route is `research -> plan -> execute`,
    `debug -> plan -> execute`, or `debug -> execute`.
 6. Decide dispatch before finalizing steps. Split independent tracks to
@@ -72,7 +71,7 @@ Use the lightest form that stays correct:
 
 ## Quality Bar
 
-- Every planned file traces to the goal.
+- Every planned artifact, file, or action traces to the goal.
 - Human reviewability: important choices, comparable steps, and gates are visible
   in compact tables or diagrams; prose explains only what tables cannot.
 - Agent executability: no vague "handle/fix/update" steps without owned scope,
@@ -82,7 +81,7 @@ Use the lightest form that stays correct:
   — trace to user input, source/config, instructions, tests, accepted plan, or
   observed evidence; never invent them. Ask for human-only gaps; block when
   source values cannot be found.
-- No broad refactor, abstraction, formatting churn, or downstream cleanup unless
+- No broad refactor, abstraction, format churn, or downstream cleanup unless
   evidence requires it.
 - Delegated plans name the prompt shape, ownership, and expected packet.
 - Goal-mode durable plans include Search Keys, Abstract, Goal Invariants,

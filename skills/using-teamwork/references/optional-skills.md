@@ -1,10 +1,14 @@
 # Optional Skills
 
-External skills are tool substrates, not Teamwork roles. Ask the user before installing or invoking any skill not already active.
+External skills are tool substrates, not Teamwork roles. Ask before installing,
+configuring, granting credentials, or using a write-capable inactive skill.
+Already-available read-only lookup tools may be used when their data boundary
+fits the task.
 
 ## Install Flow
 
-1. **Ask**: confirm user intent, expected capability, and approval to proceed.
+1. **Ask**: confirm user intent, expected capability, and approval to install,
+   configure, grant credentials, or run write-capable actions.
 2. **Check duplicates**: prefer an active plugin or built-in tool over a new local skill.
 3. **Verify**: source/license or trust note, trigger scope, credential needs, write risk.
 4. **Smoke test**: run a read-only probe or minimal invocation before relying on the skill.
@@ -33,6 +37,9 @@ Decision stays `defer` or `adapt` when schema, credentials, privacy, or write-ri
 
 Use CodeGraph for local code structure; use the docs MCP for current external library, framework, SDK, or API documentation. Treat as optional docs graph candidate, not a Teamwork dependency.
 
-Send only sanitized library names, IDs, versions, and topic queries. Never send private source, prompts, customer data, or proprietary details. Read-only lookup is allowed when already available; MCP/plugin installation, API key setup, or repository config changes require explicit user approval.
+Send only sanitized library names, IDs, versions, and topic queries. Never send
+private source, prompts, customer data, or proprietary details. Read-only lookup
+is allowed when already available; MCP/plugin installation, API key setup, or
+repository config changes require explicit user approval.
 
 Smoke test: resolve a public library and retrieve a small result before relying on it.

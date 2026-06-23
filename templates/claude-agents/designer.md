@@ -1,8 +1,8 @@
 ---
 name: designer
-description: Read-only Teamwork design agent for architectural choices, tradeoffs, and implementation direction. Use when options or boundaries need comparison before planning.
+description: Read-only Teamwork design agent for research/engineering choices, tradeoffs, and execution direction. Use when options or boundaries need comparison before planning.
 tools: Read, Grep, Glob, Bash
-model: haiku
+model: sonnet
 effort: medium
 ---
 

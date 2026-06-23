@@ -70,7 +70,7 @@ Skip it for:
 
 ## How To Use It
 
-Keep asking in natural language. Users do not need internal stage names:
+Keep asking in natural language. Users do not need workflow labels:
 
 ```text
 Research this field, key papers, and the existing code first, then propose a plan.
@@ -104,11 +104,13 @@ Project installs and local development:
 
 ```bash
 ./install.sh project
+./install.sh --project-root /path/to/project project
 ./install.sh --project-root /path/to/project init-project
 ./install.sh --link codex
 ```
 
-`teamwork-init` owns project rules, AGENTS/CODEX/CURSOR/CLAUDE,
+`project` installs project-local skills/agents; `init-project` runs full project
+initialization. `teamwork-init` owns project rules, AGENTS/CODEX/CURSOR/CLAUDE,
 `docs/teamwork/`, and CodeGraph setup. `teamwork-update` and
 `./scripts/check-update.sh` refresh skills/agents/policy and check installed
 surfaces plus version drift.
@@ -145,8 +147,8 @@ docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 
 ## Read More
 
-- [CODEX.md](CODEX.md): Codex runtime profile, Goal Text, and custom-agent mapping.
-- [CURSOR.md](CURSOR.md): Cursor adapter.
-- [CLAUDE.md](CLAUDE.md): Claude Code adapter.
+- [CODEX.md](CODEX.md): Codex usage, Goal Mode, and custom-agent mapping.
+- [CURSOR.md](CURSOR.md): Cursor usage.
+- [CLAUDE.md](CLAUDE.md): Claude Code usage.
 - `skills/*/SKILL.md`: workflow skill behavior.
 - `skills/using-teamwork/references/`: dispatch, packet, artifact, review, and goal details.

@@ -1,135 +1,89 @@
 # Cursor Usage
 
-Teamwork is a platform-native augmentation layer for Cursor. Cursor native
-capabilities remain the substrate: editing, shell, MCP, permissions, `Task`
-subagents, custom agents under `~/.cursor/agents/`, browser automation, and
-verification. Teamwork defines when and how those capabilities should be combined
-for evidence-heavy, reviewed, delegated, or autonomous work. After Teamwork
-activates, the main agent upgrades from native flow only when evidence, planning,
-dispatch, review, memory, or goal convergence improves correctness, continuity,
-or cost.
+Teamwork for Cursor is an adapter for the same open-source skill package used by
+Codex and Claude Code. It keeps Cursor's editor, shell, MCP, permissions, `Task`
+subagents, custom agents, browser automation, and verification as the native
+execution layer, then adds research depth, delegation discipline, memory, and
+fresh review when a task is too large for a single chat.
 
 ## Install
 
 ```bash
 ./install.sh cursor
 ./install.sh cursor --profile cost-first
-# agents-only refresh when skills should not change:
 ./install.sh cursor-agents
-# copy or print the bootstrap block for Cursor User Rules:
 ./install.sh cursor-policy-copy
 ./install.sh cursor-policy
-# or refresh every platform:
 ./install.sh all
 ```
 
-Project-local skills and agents:
+Project-local setup:
 
 ```bash
 ./install.sh project
-```
-
-Local development with symlinks:
-
-```bash
 ./install.sh --link cursor
-./install.sh --link all
 ./install.sh --link project
 ```
 
-Skills install to `~/.cursor/skills/` (global) or `.cursor/skills/` (project).
-Custom role agents install to `~/.cursor/agents/` (global) or
-`.cursor/agents/` (project). Behavior lives in `skills/`; this file is a concise
-runtime summary.
+Skills install to `~/.cursor/skills/` or `.cursor/skills/`. Custom role agents
+install to `~/.cursor/agents/` or `.cursor/agents/`.
 
-**Discovery**: Cursor sessions should load Teamwork from `~/.cursor/skills/` or
-the project `.cursor/skills/`. Stale copies under `~/.claude/skills/` (especially
-the retired `teamwork` umbrella skill) can preempt routing; run `./install.sh all`
-after upgrades.
+Cursor stores User Rules outside a normal editable project file. Use
+`cursor-policy-copy` to copy the Teamwork bootstrap block, then paste it into
+Cursor Settings -> Rules -> User Rules. Project `AGENTS.md` should contain only
+local facts, required values, protected boundaries, and opt-outs.
 
-## Global Policy
+## How To Use
 
-Cursor has no documented home-file path for User Rules. `./install.sh
-cursor-policy-copy` copies the Teamwork bootstrap block for pasting into Cursor
-Settings → Rules → User Rules; `./install.sh cursor-policy` prints the same
-block. Teamwork does not write Cursor's opaque SQLite/cloud-backed state.
-Project `AGENTS.md` or a Cursor-labeled section holds only local facts, required
-values, protected boundaries, or opt-outs. Project init installs missing
-Teamwork global/project surfaces, writes `docs/teamwork/`, and initializes
-CodeGraph when the CLI is available. Required values and invariants are never
-defaults or fallback branches to invent; explicit product fallback must come
-from user input, source/config, tests, or an accepted plan.
+Ask naturally:
 
-## Subagent Dispatch
+- "research this field and compare approaches";
+- "fan out subagents, then recommend one executable plan";
+- "execute the accepted plan and verify it";
+- "strictly review for false success, defensive fallback, and AI bloat";
+- "keep going until the target is verified or blocked".
 
-Teamwork keeps conceptual roles (Explorer, Designer, Judge, Worker, Reviewer) and
-model classes (`cheap-fast`, `balanced`, `coding`, `frontier`, `inherited`)
-platform-neutral. At dispatch time, decide and translate native Cursor fields
-with `skills/using-teamwork/references/subagent-dispatch.md`.
+Teamwork stays out of tiny edits and one-line questions. It routes into
+research, debug, planning, execution, review, or goal loops only when evidence,
+scope, delegation, verification, or memory improves the result.
 
-Teamwork activation is standing authorization for stage-routed dispatch when it
-adds value; the user does not need to say "fan out subagents". Dispatch
-independent Explorer, Designer, Judge, Worker, or Reviewer tracks when they can
-improve evidence, elapsed time, context isolation, ownership clarity, or review
-quality. Use a fresh Reviewer for required acceptance when available; otherwise
-label residual unreviewed risk.
+## Subagents
 
-Prefer installed Teamwork custom agents from `~/.cursor/agents/` or
-`.cursor/agents/` by agent `name`. Built-in fallback when unavailable:
+Cursor dispatch uses `Task`, installed custom agents, or runtime fallbacks. The
+shared dispatch policy lives in `skills/using-teamwork/references/subagent-dispatch.md`.
 
-- Explorer -> `subagent_type:"explore"`
-- Worker -> `subagent_type:"generalPurpose"` or `shell` for shell-only tracks
-- Reviewer -> `subagent_type:"code-reviewer"`
-- Designer/Judge -> `subagent_type:"generalPurpose"` with role in prompt
+Use independent tracks only:
 
-Each subagent is a bounded packet producer; close, block, or abandon its Actual
-Dispatch Log entry after integration before claiming acceptance.
+- Explorer for source, paper, web, artifact, or option evidence;
+- Designer for ambiguous choices and plan shape;
+- Judge for high-risk or delegated plan review;
+- Worker for owned implementation or verification slices;
+- Reviewer for fresh acceptance review.
 
-For broad research, keep recall broad but context transport narrow: use source census,
-capped Explorer packets, and artifact-backed evidence ledgers instead of returning
-raw search output, long matrices, or copied source bodies to the main thread.
-When a user gives an article, paper, URL, repo, or report as a field-research
-seed, expand to perspective/query fanout before synthesis. Treat compaction as
-continuity support, not audit evidence.
-
-## Profile And Models
-
-`./install.sh cursor --profile performance-first|cost-first` renders installed
-Cursor agents. `performance-first` is default: Explorer/Designer use
-`claude-sonnet-4-6`, Worker uses `composer-2.5-fast`, Judge/Reviewer/Deep
-variants use `claude-opus-4-8-thinking-high`. `cost-first` downshifts routine
-roles to `composer-2.5-fast`; review tiers stay on
-`claude-opus-4-8-thinking-high`. Use only models listed in the active `Task`
-tool schema.
+Each subagent returns one compact packet and stops. The main agent integrates
+packets, closes the dispatch log, runs verification, and owns the final answer.
 
 ## Goal Mode
 
-Cursor has no native `create_goal`. Goal-mode work uses the same controller loop,
-Stop Rules, and Research + Plan Adequacy Gate as Codex:
+Cursor has no native Codex `create_goal` equivalent. Teamwork Goal Mode uses a
+rolling report under `docs/teamwork/reports/YYYY-MM-DD-<goal-slug>.md` as the
+durable goal surface:
 
-1. Return a chat-only `Goal Proposal` when the target is unclear.
-2. After approval, initialize `docs/teamwork/reports/YYYY-MM-DD-<goal-slug>.md`
-   with `Status: active` and put the Goal Text in the report Abstract.
-3. Drive `research -> plan -> execute -> verify -> review -> append report row`
-   from chat until verification and execution review pass, or budget/blocker stops.
-4. Mark completion by setting the report `Status: accepted`.
+1. propose the goal when target, scope, or stop rules are unclear;
+2. run research/plan/execute/verify/review loops from chat;
+3. append attempt evidence to the rolling report when durable memory is needed;
+4. mark the report accepted only after verification and review pass.
 
-The rolling report is the durable goal surface on Cursor. See
-`skills/using-teamwork/references/goal-iteration.md` for the full loop.
+Repeated failures route through research or debug before more implementation
+attempts.
 
-For repeated failures or unknown-cause regressions inside that loop, route through
-`teamwork-debug` before retrying speculative fixes.
+## Evidence And Updates
 
-## Teamwork Memory
+Required values such as env, paths, ports, model names, hyperparameters,
+credentials, commands, and execution modes must come from user input, source,
+config, tests, project instructions, or an accepted plan. Do not invent fallback
+values to keep a run moving.
 
-When `docs/teamwork/index.json` exists and durable memory is relevant, Teamwork
-routes read it before historical artifacts. Stages report `Memory Delta` only
-when durable memory was checked or changed.
-
-## Router
-
-`using-teamwork` is the automatic lean entrypoint. It infers routes from user
-intent, evidence state, and acceptance risk: unclear source or repro setup goes
-to research, reproducible failures to `teamwork-debug`, accepted fixes to
-execute, and Debug remains a stage rather than a new role. Stage skills load
-focused references only as needed.
+Use `teamwork-init` for project setup and instruction slimming. Use
+`teamwork-update` and `./scripts/check-update.sh` to refresh installed skills,
+agents, policy, and version state.

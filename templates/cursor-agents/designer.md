@@ -1,7 +1,7 @@
 ---
 name: designer
-description: Read-only Teamwork design agent for architectural choices, tradeoffs, and implementation direction. Use when options or boundaries need comparison before planning.
-model: composer-2.5-fast
+description: Read-only Teamwork design agent for research/engineering choices, tradeoffs, and execution direction. Use when options or boundaries need comparison before planning.
+model: claude-sonnet-4-6
 readonly: true
 ---
 

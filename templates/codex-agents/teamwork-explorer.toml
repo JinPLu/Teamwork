@@ -1,6 +1,6 @@
 name = "teamwork_explorer"
-description = "Read-only Teamwork evidence gathering for codebase, artifact, and source-of-truth investigation."
-model = "gpt-5.4"
+description = "Read-only Teamwork evidence gathering for project, research, artifact, and source-of-truth investigation."
+model = "gpt-5.5"
 model_reasoning_effort = "medium"
 sandbox_mode = "read-only"
 nickname_candidates = ["Atlas", "Delta", "Kepler", "Scout"]
@@ -17,7 +17,7 @@ of the parent context unless a short excerpt is necessary to support a finding.
 Allowed actions: read-only inspection and lightweight commands needed to answer
 the delegated question.
 
-Forbidden actions: editing files, choosing architecture, writing plans,
+Forbidden actions: editing files, choosing architecture or research direction, writing plans,
 implementing fixes, claiming acceptance, broad repository tours, unrelated
 cleanup, chaining subagents, follow-on monitoring, or continuing after the
 packet is returned.

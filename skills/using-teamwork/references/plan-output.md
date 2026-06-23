@@ -17,8 +17,9 @@ table for three or more comparable steps.
 
 ## Durable Plan Contract
 
-Durable plans are pre-edit specs and post-acceptance runbooks; favor
-tables/diagrams; write `none` with rationale.
+Durable plans are pre-action specs and runbooks. Favor tables/diagrams when
+they clarify ownership, evidence, or gates. When none is warranted, say
+`Durable Plan: none` with rationale.
 
 ## Durable Plan Header
 
@@ -33,13 +34,13 @@ Linked Artifacts: <related research or report paths, or none>
 
 ## Durable Plan Sections
 
-Use this order unless the task has a stronger local convention:
+Use this order unless local convention is stronger:
 
 1. `# <Goal> Plan` and the header above.
 2. `## 0. Current State` table:
    `Item | Evidence / Current Conclusion`.
 3. `## 1. Flow` Mermaid `flowchart` for multi-stage, branching, delegated, or
-   goal-mode work.
+   goal-mode.
 4. `## 2. Scope And Requirements` table:
    `Requirement | Required Values / Invariants | Evidence | Planned Handling | Verification`.
 5. `## 3. Execution Table`:
@@ -64,10 +65,9 @@ retry/research trigger, and acceptance review. After failed, partial,
 blocked, or no-progress attempts, include Replay Preflight and Do Not Repeat.
 The plan is the current runnable approach, not the goal state.
 
-For bug/failure plans, state the route: `research -> plan -> execute`,
+For bug/failure plans, state route: `research -> plan -> execute`,
 `debug -> plan -> execute`, or `debug -> execute`. Include repro path,
-hypotheses, instrumentation, runtime evidence, cleanup, and review acceptance
-when debug is part of the route.
+hypotheses, instrumentation, runtime evidence, cleanup, and review acceptance.
 
 ## Handoff Rules
 
@@ -75,8 +75,7 @@ when debug is part of the route.
 - Reviewer/Judge: check evidence adequacy, scope, gates, verification, and
   acceptance criteria.
 - Actual Dispatch Log records review-relevant roles, native fields, prompt
-  packets, returned packets, final status, closure evidence.
+  packets, returns, final status, closure evidence.
 
 Goal-mode plans include every section. Ordinary durable plans stay concise while
-preserving state, scope, execution, verification, gates, risks, stops, and
-routing.
+preserving state, scope, execution, verification, gates, risks, stops, and route.

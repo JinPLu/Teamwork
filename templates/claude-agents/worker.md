@@ -2,7 +2,7 @@
 name: worker
 description: Bounded implementation on disjoint owned scope. Use when parallel Worker tracks are cheaper or safer than serial main-agent edits.
 tools: Read, Write, Edit, Grep, Glob, Bash
-model: haiku
+model: sonnet
 effort: medium
 isolation: worktree
 ---

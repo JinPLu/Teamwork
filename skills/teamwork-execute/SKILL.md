@@ -1,17 +1,18 @@
 ---
 name: teamwork-execute
-description: Use when an accepted plan, checklist, approved scope, or known root-cause fix should be implemented, continued, resumed, or verified with focused edits.
+description: Use when an accepted plan, checklist, approved scope, or known root-cause fix should be implemented, continued, resumed, or verified with focused action.
 ---
 
 # Teamwork Execute
 
 Use after a plan, checklist, scope, or root-cause fix is accepted, approved,
-resumed, or continued. Execution implements the accepted scope; it does not
-declare its own completion.
+resumed, or continued. Execution carries out accepted scope; it does not
+expand scope. It reports implementation and verification; review or goal mode
+owns non-lightweight acceptance.
 
 Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
-evidence and judgment; `skills/using-teamwork/references/subagent-dispatch.md`
-for the Worker split; `skills/using-teamwork/references/role-playbook.md` for
+evidence; `skills/using-teamwork/references/subagent-dispatch.md`
+for Worker split; `skills/using-teamwork/references/role-playbook.md` for
 Worker method; `skills/using-teamwork/references/subagent-contract.md` for
 Worker prompts and packets; `skills/using-teamwork/references/artifact-protocol.md`
 for durable memory; `skills/using-teamwork/references/debug-mode.md` for
@@ -31,8 +32,7 @@ external tools.
 
 If needed state is missing, inspect source/config first, ask once when a human
 can supply it, and block only when it is unavailable, unsafe, declined, or would
-require inventing a fallback, masking an invariant, switching targets, or adding
-detours.
+invent a fallback, mask an invariant, switch targets, or add detours.
 
 ## Worker Boundary
 
@@ -47,9 +47,9 @@ aliases, provider/target switches, or defensive branches that make missing state
 look valid.
 
 For reproducible but unclear failures where diagnosis is the task, route to
-`teamwork-debug`. Use only one bounded micro-debug pass locally when accepted
-scope needs small confirming evidence before a targeted fix; if root cause is
-still unclear, stop and route to Debug. Debug cleanup is narrow: remove
+`teamwork-debug`. Use one bounded micro-debug pass locally when accepted scope
+needs small confirming evidence before a targeted fix; if root cause is still
+unclear, stop and route to Debug. Debug cleanup is narrow: remove
 temporary instrumentation, logs, scaffolding, and obvious touched-diff slop
 without broad refactor or unaccepted adjacent cleanup.
 
@@ -61,19 +61,19 @@ without broad refactor or unaccepted adjacent cleanup.
    Before more than 3 Workers, state the ownership map, integration order, and
    verification plan. Start an Actual Dispatch Log when subagents run.
 3. State the files you or Workers will touch.
-4. Make only planned, minimal, producer-side edits.
+4. Make only planned, minimal, producer-side changes.
 5. Integrate Worker packets, then mark each track `closed`, `blocked`, or
    `abandoned-after-discovery` with Closure Evidence after integration.
 6. Run focused verification; cite command output, artifacts, diffs, or tests,
-   and do not round blocked or build-only checks up to behavioral proof. Add
+   and do not round blocked/build-only checks up to behavioral proof. Add
    broader checks only when planned or when shared/public behavior changes.
 7. Stop if new evidence invalidates the plan.
 
 ## Handoff
 
 Return implemented paths, plan source, verification evidence, cleanup evidence
-when debug instrumentation was used, the Actual Dispatch Log or continuity rationale,
-deviations, and any blockers. For
+when debug instrumentation was used, Actual Dispatch Log or continuity rationale,
+deviations, and blockers. For
 non-lightweight work, request a fresh-context Reviewer before claiming
 completion; if subagents are unavailable, report the work as unreviewed with its
 residual risk. Do not claim completion while any delegated track is open.

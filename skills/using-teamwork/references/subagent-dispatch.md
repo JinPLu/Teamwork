@@ -1,17 +1,17 @@
 # Subagent Dispatch
 
-Dispatch decisions, role-to-model mapping, and platform field reference.
-Prompt and packets → `subagent-contract.md`. Swarm orchestration → `workflow-orchestration.md`.
+Dispatch decisions, role-capability mapping, and platform field reference.
+Prompt and packets -> `subagent-contract.md`. Swarm orchestration -> `workflow-orchestration.md`.
 
 ## When To Dispatch
 
 Dispatch when tracks are independent, isolatable, or parallel:
 
-- **Explore**: Explorer for codebase orientation, artifact lookup, or evidence beyond a quick literal read.
+- **Explore**: Explorer for project/source orientation, artifact lookup, literature/source census, or evidence beyond a quick literal read.
 - **Research**: Explorer tracks for external calibration, stale assumptions, option comparison, or broad source census.
 - **Design**: Designer for ambiguous decisions; Judge for durable, risky, or delegated plans.
-- **Execute**: Worker per independent owned slice with disjoint files or components.
-- **Review**: fresh Reviewer for non-trivial execution, high-risk diffs, delegated work, public contracts, release, security, or goal mode.
+- **Execute**: Worker per independent owned slice with disjoint files, components, artifacts, or verification targets.
+- **Review**: fresh Reviewer for non-trivial outputs, high-risk diffs, delegated work, public contracts, release, security, or goal mode.
 
 Skip dispatch for quick facts, tiny obvious edits, tightly coupled critical-path work, unavailable tools, missing authorization, explicit user opt-out, or when subagent context cost exceeds value. When skipping affects review or acceptance, record the reason.
 
@@ -37,7 +37,7 @@ Main agent owns closure. Dispatch states: `dispatched -> returned -> closed`, `b
 
 Codex uses `agent_type`; Cursor uses `subagent_type`; Claude Code uses `Task`.
 
-**Codex** — role dispatch: `agent_type`, `model`, `reasoning_effort`, `fork_context:false`. Full-history fork: `fork_context:true` only (no other fields).
+**Codex** - role dispatch: `agent_type`, optional model/profile fields supported by the runtime, `reasoning_effort`, `fork_context:false`. Full-history fork: `fork_context:true` only (no other fields).
 
 | Role | agent_type | Fallback |
 |---|---|---|
@@ -49,9 +49,9 @@ Codex uses `agent_type`; Cursor uses `subagent_type`; Claude Code uses `Task`.
 | Deep Judge | `teamwork_deep_judge` | `default` + role in prompt |
 | Deep Reviewer | `teamwork_deep_reviewer` | `default` + role in prompt |
 
-Reasoning effort: `fast`→low, `standard`→medium, `high reasoning`→high, `deep reasoning`→xhigh.
+Reasoning effort: `fast`->low, `standard`->medium, `high reasoning`->high, `deep reasoning`->xhigh.
 
-**Cursor** — prefer custom agents from `~/.cursor/agents/` by `name`; fallback `subagent_type`, `model`; no `reasoning_effort` or `fork_context`.
+**Cursor** - prefer custom agents from `~/.cursor/agents/` by `name`; fallback `subagent_type` and runtime-supported model fields; no `reasoning_effort` or `fork_context`.
 
 | Role | Custom agent | Fallback subagent_type |
 |---|---|---|
@@ -65,7 +65,7 @@ Reasoning effort: `fast`→low, `standard`→medium, `high reasoning`→high, `d
 
 Use `readonly:true` for Explorer/Judge/Reviewer; `run_in_background:true` for long tracks; `resume:"self"` for full-history fork; `best-of-n-runner` for parallel Worker experiments.
 
-**Claude Code** — prefer custom agents from `~/.claude/agents/` by `name`; fallback `Task` with `general-purpose` and role in prompt. Model, `effort`, tool allowlist, and `isolation: worktree` live on the agent definition, not per Task call.
+**Claude Code** - prefer custom agents from `~/.claude/agents/` by `name`; fallback `Task` with `general-purpose` and role in prompt. Model, `effort`, tool allowlist, and `isolation: worktree` live on the agent definition, not per Task call.
 
 | Role | Custom agent | Fallback |
 |---|---|---|
@@ -79,18 +79,22 @@ Use `readonly:true` for Explorer/Judge/Reviewer; `run_in_background:true` for lo
 
 ## Model Classes
 
-| Class | Codex performance-first | Codex cost-first | Cursor perf-first | Cursor cost-first | Claude perf-first | Claude cost-first |
-|---|---|---|---|---|---|---|
-| `cheap-fast` | opt-in only | gpt-5.4-mini | composer-2.5-fast | composer-2.5-fast | haiku med | haiku med |
-| `balanced` | gpt-5.5 med | gpt-5.4 med | claude-sonnet-4-6 | composer-2.5-fast | sonnet med | haiku med |
-| `coding` | gpt-5.5 med | gpt-5.4 med | composer-2.5-fast | composer-2.5-fast | sonnet med | haiku med |
-| `frontier` | gpt-5.5 high | gpt-5.5 high | claude-opus-4-8-thinking-high | claude-opus-4-8-thinking-high | opus high | opus high |
-| `deep reasoning` | gpt-5.5 xhigh | gpt-5.5 xhigh | claude-opus-4-8-thinking-high | claude-opus-4-8-thinking-high | opus xhigh | opus xhigh |
-| `inherited` | omit model | omit model | inherit | inherit | inherit | inherit |
+| Class | Intended use | Performance-first expectation | Cost-first expectation |
+|---|---|---|---|
+| `cheap-fast` | trivial read-only evidence under explicit latency/quota pressure | fast inexpensive model | fast inexpensive model |
+| `balanced` | routine Explorer/Designer work | strong mid/frontier model, medium effort | cheaper strong model, medium effort |
+| `coding` | Worker implementation slices | coding-optimized model or inherited parent | cheaper coding model or inherited parent |
+| `frontier` | Judge, Reviewer, public contracts, ambiguous architecture | frontier model, high effort | keep frontier for risk review |
+| `deep reasoning` | failed-goal recovery, security/destructive/release acceptance | frontier model, deepest effort | frontier model, deepest effort |
+| `inherited` | simple local continuation where parent context is the value | omit model override | omit model override |
 
-Role defaults: Explorer→`balanced` (use `frontier` for broad/ambiguous/high-risk); Designer→`balanced` (use `frontier` for architecture or public contracts); Judge→`frontier` high reasoning; Worker→`coding` or `inherited`; Reviewer→`frontier` high reasoning.
+Role defaults: Explorer->`balanced` (use `frontier` for broad/ambiguous/high-risk); Designer->`balanced` (use `frontier` for architecture or public contracts); Judge->`frontier` high reasoning; Worker->`coding` or `inherited`; Reviewer->`frontier` high reasoning.
 
 `performance-first` is the default on all platforms. `./install.sh --profile` renders installed agents for Codex, Cursor, and Claude Code.
+
+Exact model identifiers belong in installed agent definitions, runtime schemas,
+or platform docs, not in ordinary plans. When a schema does not support a field,
+omit it and express the role, evidence bar, and packet contract in the prompt.
 
 Use `cheap-fast` only under explicit latency/quota pressure for trivial read-only evidence. Never for Judge, Reviewer, architecture Designer, public behavior, failed-goal adequacy, or performance-first projects.
 

@@ -1,6 +1,6 @@
 ---
 name: using-teamwork
-description: Use when starting any coding-agent task: infer native/research/debug/plan/execute/review/goal/init/update from user intent, evidence state, and acceptance risk.
+description: Use when starting any research, engineering, or long-running agent task: infer native/research/debug/plan/execute/review/goal/init/update from user intent, evidence state, and acceptance risk.
 ---
 
 # Using Teamwork
@@ -26,17 +26,17 @@ approach) yourself. Do not narrate this as a gate.
 Infer the route from user intent and evidence state. Most small, clear tasks
 need no Teamwork stage — just do the work natively.
 
-- **Native** — quick facts, one CodeGraph question, tiny edits, obvious local
-  fixes, or low-risk mechanical work.
+- **Native** — quick facts, one CodeGraph question, small local edits,
+  obvious fixes, simple evidence checks, or low-risk mechanical work.
 - **Research** (`skills/teamwork-research/SKILL.md`) — source of truth, API
   behavior, stale facts, options, constraints, or repro surface is unclear.
 - **Debug** (`skills/teamwork-debug/SKILL.md`) — a failure, flaky run, CI log,
   crash, UI symptom, or regression may be reproducible and root cause is unclear.
 - **Plan** (`skills/teamwork-plan/SKILL.md`) — design/planning is requested, or
-  implementation affects scope, contracts, architecture, dispatch, or acceptance.
+  the next change affects scope, contracts, architecture, dispatch, or acceptance.
 - **Execute** (`skills/teamwork-execute/SKILL.md`) — an accepted plan/checklist
   should be implemented or resumed.
-- **Review** (`skills/teamwork-review/SKILL.md`) — review, diff scrutiny,
+- **Review** (`skills/teamwork-review/SKILL.md`) — review, output/diff scrutiny,
   completion validation, strict quality, deslop, or PR walkthrough is requested.
 - **Goal** (`skills/teamwork-goal/SKILL.md`) — iterate until green/done, keep
   going, or work to a budgeted verifiable target.

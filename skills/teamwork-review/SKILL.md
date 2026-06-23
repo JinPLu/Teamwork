@@ -1,13 +1,13 @@
 ---
 name: teamwork-review
-description: Use when the user asks to review/check a plan, diff, implementation, completion claim, strict code quality, deslop pass, PR walkthrough, or acceptance evidence.
+description: Use when the user asks to review/check a plan, artifact, diff, implementation, research output, completion claim, strict quality, deslop pass, PR walkthrough, or acceptance evidence.
 ---
 
 # Teamwork Review
 
-Use for non-lightweight acceptance, diff scrutiny, strict-quality/deslop checks,
-PR walkthroughs, and reviewer passes. Review reads evidence directly and never
-relies on summaries.
+Use for non-lightweight acceptance, output/diff scrutiny, strict-quality/deslop
+checks, PR walkthroughs, and reviewer passes. Review reads evidence directly and
+never relies on summaries.
 
 Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
 evidence rules; `skills/using-teamwork/references/review-checks.md` for the
@@ -22,16 +22,16 @@ review needs durable memory.
 
 ## Rules
 
-- Choose `mode: plan` or `mode: execution`.
+- Choose `mode: plan`, `mode: execution`, or `mode: output`.
 - Prefer a fresh-context Reviewer subagent for non-lightweight required
   acceptance — high-risk, public-contract, delegated, security, destructive,
   release, and goal-mode work. Same-context self-review is not acceptance.
 - Local review is fine for lightweight work, same-context checks, or when
   subagent tools are unavailable after discovery; label any required fresh-review
   verdict as unreviewed when no fresh review ran.
-- Inspect source, diff, logs, tests, command output, artifacts, plan, and user
-  constraints. Label key evidence `observed`, `inferred`, or `claimed`, and check
-  confidence against it.
+- Inspect sources, artifacts, diff, logs, tests, command output, plan, and user
+  constraints. Label key evidence `observed`, `inferred`, or `claimed`, and
+  check confidence against it.
 - Treat executor summaries, `code-reviewer` output, git diff, CI summaries, and
   test output as inputs, not final verdicts.
 - Do not fix issues during review unless asked.
@@ -47,14 +47,14 @@ Goal Anchor fields before accepting.
 
 ## Execution Review
 
-Check diff scope, plan conformance, verification evidence, no invariant-masking
-fallback, the Actual Dispatch Log, Worker packets when Workers ran, dispatch
-economics, and workspace hygiene. Confirm the dispatch split was considered even
-when the plan did not name every track. For re-review after `revise`, require
+Check output/diff scope, plan conformance, verification evidence, no
+invariant-masking fallback, the Actual Dispatch Log, Worker packets when
+Workers ran, dispatch economics, and workspace hygiene. Confirm the dispatch
+split was considered even when the plan did not name every track. For re-review after `revise`, require
 the prior verdict, required fixes, fix evidence, and a re-review verdict.
 For goal-mode work, require the Attempt Record, any Failure Reflection, and a
 drift/retry verdict tied to prior attempts.
-For debug-derived fixes, also check repro evidence, hypothesis-to-evidence
+For debug-derived work, also check repro evidence, hypothesis-to-evidence
 mapping, root-cause support, post-fix repro/verification on the same surface,
 and cleanup of temporary instrumentation. When explicitly asked for strict code
 quality review, deslop, PR walkthrough, or when acceptance reveals structural
@@ -63,7 +63,7 @@ regression, load `review-lenses.md`.
 ## Verdict
 
 ```text
-Mode: plan | execution
+Mode: plan | execution | output
 Evidence Read:
 - <observed|inferred|claimed> <path/command/artifact>: <finding>
 Requirements / Evidence Map:

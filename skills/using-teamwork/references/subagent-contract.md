@@ -1,6 +1,6 @@
 # Subagent Contract
 
-Prompt structure and packet schemas for dispatched subagents.
+Prompt structure and compact packet schemas for dispatched subagents.
 Dispatch decisions and platform fields → `subagent-dispatch.md`.
 
 ## Prompt
@@ -23,6 +23,7 @@ Lifecycle verdicts are `accept | revise | blocked`; `reject` is not a lifecycle 
 ## Packets
 
 ### Explorer Result Packet
+Use compact fields and include only evidence that affects the parent decision.
 ```text
 Role: Explorer
 Native Fields:
@@ -39,6 +40,8 @@ Suggested Next Step:
 Web/deep extras: Seed Expansion; Perspective Map; Search Plan; Queries Tried; Source Census; Sources Used; Sources Rejected; Coverage Audit; Citation Ledger. Cap each at 8; overflow → artifact pointer.
 
 ### Designer Decision Packet
+Use compact fields and include only decisions, tradeoffs, and blockers that
+affect the parent plan.
 ```text
 Role: Designer
 Native Fields:

@@ -5,8 +5,9 @@ description: Use when the next safe step is to learn before acting: source-of-tr
 
 # Teamwork Research
 
-Research establishes project reality, compares options, and hands a direction to
-`teamwork-plan` or `teamwork-debug`. It does not produce implementation plans.
+Research establishes project reality, compares options, and returns a usable
+outcome: literature/source map, claim ledger, reading plan, experiment design,
+decision memo, memory candidate, debug route, or implementation handoff.
 
 Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
 evidence rules; `skills/using-teamwork/references/research-protocol.md` for
@@ -35,7 +36,7 @@ unnecessary.
 1. Define the question and what a good answer looks like.
 2. Search prior artifacts; record reuse, update, or new.
 3. Split separable evidence questions: local source, symptoms, external
-   constraints, alternatives, upstream reports, papers, or practice.
+   constraints, alternatives, upstream reports, papers, datasets, or practice.
 4. For seeded research, extract concepts, methods, systems, claims, evals,
    dissent, and adjacent terms; then fan out perspective/query tracks.
 5. Fan out parallel Explorers for 2+ independent tracks when they add evidence,
@@ -43,11 +44,11 @@ unnecessary.
    coupled or one-track evidence local.
 6. Read primary local evidence first; label findings `observed`, `inferred`, or
    `claimed`.
-7. Use external calibration when platform, dependency, model, API, or upstream
+7. Use external calibration when platform, dependency, model, API, method, or upstream
    behavior could change the answer; follow `research-protocol.md` for web/deep
    work and keep public web search separate from private data.
-8. Synthesize options, preserve dissent, recommend the smallest producer-side
-   path, and write any reusable artifact.
+8. Synthesize options, preserve dissent, recommend the next route, and write any
+   reusable artifact.
 
 ## Artifacts
 
@@ -61,10 +62,9 @@ tables when findings compare three or more items.
 
 ## Handoff
 
-Return artifact path or none, the question, a closed dispatch log or continuity
-rationale, assumptions, evidence, options, recommendation, dissent, and
-coverage gaps plus plan-ready fields (goal, scope, protected boundaries,
-verification target, budget, stop rules when known). Include `Memory Delta:`
-only when durable project memory was checked or changed. End with
-`Route: teamwork-debug` when runtime diagnosis is next, or `Route: teamwork-plan`
-when a plan is next.
+Return artifact path or none, question, closed dispatch log or continuity
+rationale, assumptions, evidence, options, recommendation, dissent, coverage
+gaps, and the selected outcome type. Add plan-ready fields only when the next
+route is execution planning. Include `Memory Delta:` only when durable project
+memory was checked or changed. End with `Route: teamwork-debug`,
+`Route: teamwork-plan`, `Route: follow-up research`, or `Route: none`.
