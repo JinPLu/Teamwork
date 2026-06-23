@@ -121,6 +121,8 @@ grep_required '^\.claude/$' "$ROOT/.gitignore" ".gitignore must ignore local .cl
 
 [[ -f "$ROOT/CURSOR.md" ]] || fail "missing CURSOR.md"
 [[ -f "$ROOT/CLAUDE.md" ]] || fail "missing CLAUDE.md"
+[[ -f "$ROOT/CHANGELOG.md" ]] || fail "missing CHANGELOG.md"
+git_known_package_file "CHANGELOG.md" || fail "CHANGELOG.md is not known to git; use git add -N before release validation"
 
 [[ -f "$ROOT/VERSION" ]] || fail "missing VERSION"
 git_known_package_file "VERSION" || fail "VERSION is not known to git; use git add -N before release validation"
@@ -237,6 +239,8 @@ grep_required 'docs/teamwork/research/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" "R
 grep_required 'docs/teamwork/plans/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" "README must document plan artifact path"
 grep_required 'docs/teamwork/reports/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" "README must document report artifact path"
 grep_required './install.sh --link codex' "$ROOT/README.md" "README must document Codex link-mode development install"
+grep_required '^# Changelog' "$ROOT/CHANGELOG.md" "CHANGELOG must have a top-level heading"
+grep_required "## $(tr -d '[:space:]' < "$ROOT/VERSION") -" "$ROOT/CHANGELOG.md" "CHANGELOG must document current VERSION"
 [[ -f "$ROOT/README.en.md" ]] || fail "missing English README"
 git -C "$ROOT" ls-files --error-unmatch "README.en.md" >/dev/null 2>&1 || fail "README.en.md must be tracked by git"
 grep_required '\[中文\](README.md)' "$ROOT/README.en.md" "English README must link to default Chinese README"
