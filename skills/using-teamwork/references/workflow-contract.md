@@ -29,11 +29,12 @@ memory, and acceptance.
    `inferred`, or `claimed`. Treat names, comments, READMEs, summaries, and
    labels like `latest`/`v2` as `claimed` until a direct source, test, config,
    command output, diff, or primary source confirms them.
-5. **Judge silently; narrate only what matters.** Clarification, dispatch, and
-   review decisions are internal. Do not emit gate-status labels as required
-   output. Record a decision only when it has real consequences: a question the
-   user must answer, an open delegated track, or a skipped action that changes
-   the review outcome.
+5. **Think first; narrate only what matters.** Match reasoning depth to task
+   risk. For non-trivial or evidence-sensitive work, read sources, compare
+   plausible interpretations, and verify before final answers or edits. Keep
+   narration brief: user decisions, blockers, material dispatch/review handoffs,
+   evidence, or verification. Routine route choices need no gate labels;
+   consequential dispatch, review, or skipped actions stay auditable.
 6. **Fan out to go faster.** When an independent track can run in parallel with
    clear ownership, dispatch it. Keep the main thread for orchestration,
    integration, and final verification. See `subagent-dispatch.md`.

@@ -6,6 +6,25 @@ This changelog explains what users get after upgrading, not just which files
 changed. Version boundaries come from `VERSION` and plugin manifest updates;
 the repository currently has no git release tags.
 
+## 2.7.0 - 2026-07-01
+
+This release is about **letting Codex explicitly maximize reasoning while reducing rushed answers and performative progress updates**.
+
+- Added the `gpt55-xhigh` profile so quality-first Codex installs can render every
+  Teamwork Codex subagent as `gpt-5.5` with `xhigh` reasoning; Cursor and Claude
+  Code keep their native performance-first model tiers.
+- Added the `project-codex-agents` target for refreshing only project-local
+  `.codex/agents`, without touching Cursor or Claude Code project surfaces.
+- Added Codex global think-first reasoning discipline: non-lightweight or
+  evidence-sensitive work should not optimize for fast visible output over source
+  reading, interpretation checks, and verification; optional progress narration
+  should stay brief and tied to decisions, blockers, or verification.
+- Tightened the shared workflow contract so routine route choices do not need gate
+  labels, while material dispatch, review, and skipped actions remain auditable.
+- Updated README, CODEX, init guidance, dispatch references, and validation to
+  cover the new profile, project-local Codex agent target, and
+  reasoning/commentary policy.
+
 ## 2.6.0 - 2026-06-23
 
 This release is about **stronger rules, broader research, and clearer open-source product docs**.

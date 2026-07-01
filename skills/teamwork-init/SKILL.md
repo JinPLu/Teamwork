@@ -18,10 +18,11 @@ and artifact/optional references only when their trigger applies.
 
 The installed profile is the default on Codex, Cursor, and Claude Code; ask only
 for project overrides. Pro/20x throughput selects `performance-first`; quota,
-latency, or cost constraints select `cost-first`. Record `Init Mode:
-global-default | performance-first | cost-first`; add a project-local rule only
-for overrides. Refresh installed agents with `./install.sh --profile` when
-model overrides change.
+latency, or cost constraints select `cost-first`; explicit "all Codex subagents
+at gpt-5.5 xhigh" requests select `gpt55-xhigh`. Record `Init Mode:
+global-default | performance-first | cost-first | gpt55-xhigh`; add a
+project-local rule only for overrides. Refresh installed agents with
+`./install.sh --profile` when model overrides change.
 
 ## Full Project Init Default
 

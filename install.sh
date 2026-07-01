@@ -63,9 +63,9 @@ CODEX_AGENTS=(
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] [--profile performance-first|cost-first] \
+  ./install.sh [--copy|--link] [--profile performance-first|cost-first|gpt55-xhigh] \
     [--project-root PATH] \
-    codex|cursor|claude|all|project|init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
+    codex|cursor|claude|all|project|init-project|project-codex-agents|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
 
 Targets:
   codex          Install skills, Codex agents, and Teamwork global policy (default target)
@@ -76,6 +76,8 @@ Targets:
                  (default: this checkout; use --project-root for another repo)
   init-project   Full project init: global/project skills and agents, AGENTS.md,
                  docs/teamwork/, .gitignore entries, and CodeGraph when available
+  project-codex-agents
+                 Install only project-local Teamwork Codex agents under .codex/
   codex-agents   Install Teamwork Codex custom agents to ~/.codex/agents
   cursor-agents  Install Teamwork Cursor subagents to ~/.cursor/agents
   claude-agents  Install Teamwork Claude subagents to ~/.claude/agents
@@ -90,7 +92,9 @@ track this checkout.
 
 Profile defaults to performance-first on all platforms. Use cost-first to
 downshift routine Explorer, Designer, and Worker roles. Judge, Reviewer, and
-Deep variants stay on frontier tiers.
+Deep variants stay on frontier tiers. Use gpt55-xhigh to force every Codex
+Teamwork agent to gpt-5.5 with xhigh reasoning; non-Codex platforms keep their
+native performance-first model tiers.
 USAGE
 }
 
@@ -116,10 +120,18 @@ irreversible or destructive action. Do not interrupt for routine tool, MCP, or
 approach choices. Missing required human input is a question first, a blocker
 only when it cannot be obtained.
 
+Reasoning discipline: follow Teamwork's think-first rule. Do not optimize for
+fast visible output over source reading, interpretation checks, or verification
+when work is non-trivial or evidence-sensitive. Minimize optional commentary;
+when runtime or higher-priority instructions require progress updates, keep them
+brief, factual, and tied to decisions, blockers, or verification.
+
 Codex model profile: default is ${CODEX_PROFILE}. performance-first uses
 role-optimized gpt-5.5 agents: routine Explorer, Designer, and Worker use
 medium; Judge and Reviewer use high; Deep Judge/Reviewer use xhigh. cost-first
 downshifts routine Explorer, Designer, and Worker to gpt-5.4 medium.
+gpt55-xhigh forces every Codex Teamwork subagent to gpt-5.5 with xhigh
+reasoning.
 Use project-local Teamwork init mode only for explicit overrides.
 
 Bootstrap safety: required environment variables, paths, commands, ports, model
@@ -260,7 +272,7 @@ copy_teamwork_cursor_global_policy() {
 
 validate_codex_profile() {
   case "$CODEX_PROFILE" in
-    performance-first|cost-first)
+    performance-first|cost-first|gpt55-xhigh)
       ;;
     *)
       echo "Unknown profile: $CODEX_PROFILE" >&2
@@ -428,6 +440,9 @@ install_agent_file() {
 codex_agent_profile_values() {
   local agent="$1"
   case "$CODEX_PROFILE:$agent" in
+    gpt55-xhigh:*)
+      printf '%s %s\n' "gpt-5.5" "xhigh"
+      ;;
     cost-first:teamwork-explorer|cost-first:teamwork-designer|cost-first:teamwork-worker)
       printf '%s %s\n' "gpt-5.4" "medium"
       ;;
@@ -446,6 +461,9 @@ codex_agent_profile_values() {
 claude_agent_profile_values() {
   local agent="$1"
   case "$CODEX_PROFILE:$agent" in
+    gpt55-xhigh:explore|gpt55-xhigh:designer|gpt55-xhigh:worker)
+      printf '%s %s\n' "sonnet" "medium"
+      ;;
     cost-first:explore|cost-first:designer|cost-first:worker)
       printf '%s %s\n' "haiku" "medium"
       ;;
@@ -464,6 +482,12 @@ claude_agent_profile_values() {
 cursor_agent_profile_values() {
   local agent="$1"
   case "$CODEX_PROFILE:$agent" in
+    gpt55-xhigh:worker)
+      printf '%s\n' "composer-2.5-fast"
+      ;;
+    gpt55-xhigh:explore|gpt55-xhigh:designer)
+      printf '%s\n' "claude-sonnet-4-6"
+      ;;
     cost-first:explore|cost-first:designer|cost-first:worker)
       printf '%s\n' "composer-2.5-fast"
       ;;
@@ -699,7 +723,7 @@ while [[ $# -gt 0 ]]; do
       CODEX_PROFILE="cost-first"
       shift
       ;;
-    codex|cursor|claude|all|project|init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy)
+    codex|cursor|claude|all|project|init-project|project-codex-agents|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy)
       if [[ -n "$TARGET" ]]; then
         echo "Specify only one install target." >&2
         usage
@@ -722,8 +746,8 @@ done
 
 validate_codex_profile
 
-if [[ -n "$PROJECT_ROOT" && "${TARGET:-codex}" != "project" && "${TARGET:-codex}" != "init-project" ]]; then
-  echo "--project-root is valid only with the project and init-project targets." >&2
+if [[ -n "$PROJECT_ROOT" && "${TARGET:-codex}" != "project" && "${TARGET:-codex}" != "init-project" && "${TARGET:-codex}" != "project-codex-agents" ]]; then
+  echo "--project-root is valid only with the project, project-codex-agents, and init-project targets." >&2
   usage
   exit 2
 fi
@@ -745,6 +769,9 @@ case "${TARGET:-codex}" in
     ;;
   project)
     install_project
+    ;;
+  project-codex-agents)
+    install_codex_agent_set "${PROJECT_ROOT:-$ROOT}/.codex/agents" "project"
     ;;
   init-project)
     init_project

@@ -5,6 +5,22 @@
 这份 changelog 按“用户升级后会感受到什么”来写，而不是只罗列文件改动。
 版本边界以 `VERSION` 和插件 manifest 的更新为准；当前仓库没有 git release tag。
 
+## 2.7.0 - 2026-07-01
+
+这版重点是：**Codex 可以显式拉满推理强度，同时减少抢答和表演式进度。**
+
+- 新增 `gpt55-xhigh` profile：需要质量优先时，可以把所有 Teamwork Codex subagents
+  渲染为 `gpt-5.5` + `xhigh` reasoning；Cursor 和 Claude Code 继续保留各自的
+  performance-first 原生模型层级。
+- 新增 `project-codex-agents` 安装目标，用于只刷新项目级 `.codex/agents`，避免为了
+  Codex subagent profile 调整而改动 Cursor 或 Claude Code 项目面。
+- Codex 全局策略新增 think-first reasoning discipline：非轻量或证据敏感任务不能为了快速可见输出牺牲读源、
+  解释校验和验证；可选进度汇报应压缩，只保留决策、阻塞和验证相关信息。
+- 共享 workflow contract 将“少叙述”收敛为可审计规则：routine route 不需要 gate label，
+  但重要 dispatch、review 和 skipped action 仍必须保留审计线索。
+- README、CODEX、init guidance、dispatch reference 和 validation 同步覆盖新 profile、
+  项目级 Codex agent 安装目标和 reasoning/commentary policy。
+
 ## 2.6.0 - 2026-06-23
 
 这版重点是：**规则更硬，调研更会发散，文档更像开源产品说明。**

@@ -81,6 +81,7 @@ Codex 默认安装：
 ```bash
 ./install.sh              # 等同于 ./install.sh codex
 ./install.sh codex --profile cost-first
+./install.sh codex --profile gpt55-xhigh
 ```
 
 其他平台：
@@ -96,11 +97,13 @@ Codex 默认安装：
 ```bash
 ./install.sh project
 ./install.sh --project-root /path/to/project project
+./install.sh --project-root /path/to/project --profile gpt55-xhigh project-codex-agents
 ./install.sh --project-root /path/to/project init-project
 ./install.sh --link codex
 ```
 
 `project` 只安装项目级 skills/agents；`init-project` 会执行完整项目初始化。
+Codex 全局 policy 要求非轻量或证据敏感任务按风险投入推理、必要时读源和验证，并压缩可选进度汇报。
 `teamwork-init` 负责项目规则、AGENTS/CODEX/CURSOR/CLAUDE、`docs/teamwork/` 和 CodeGraph 初始化。
 `teamwork-update` 与 `./scripts/check-update.sh` 负责刷新 skills/agents/policy、检查安装面和版本漂移。
 

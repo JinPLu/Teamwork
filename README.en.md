@@ -90,6 +90,7 @@ Codex default install:
 ```bash
 ./install.sh              # same as ./install.sh codex
 ./install.sh codex --profile cost-first
+./install.sh codex --profile gpt55-xhigh
 ```
 
 Other platforms:
@@ -105,13 +106,16 @@ Project installs and local development:
 ```bash
 ./install.sh project
 ./install.sh --project-root /path/to/project project
+./install.sh --project-root /path/to/project --profile gpt55-xhigh project-codex-agents
 ./install.sh --project-root /path/to/project init-project
 ./install.sh --link codex
 ```
 
 `project` installs project-local skills/agents; `init-project` runs full project
-initialization. `teamwork-init` owns project rules, AGENTS/CODEX/CURSOR/CLAUDE,
-`docs/teamwork/`, and CodeGraph setup. `teamwork-update` and
+initialization. The Codex global policy matches reasoning depth to non-trivial
+or evidence-sensitive work, reads sources and verifies when needed, and
+minimizes optional progress narration. `teamwork-init` owns project rules,
+AGENTS/CODEX/CURSOR/CLAUDE, `docs/teamwork/`, and CodeGraph setup. `teamwork-update` and
 `./scripts/check-update.sh` refresh skills/agents/policy and check installed
 surfaces plus version drift.
 

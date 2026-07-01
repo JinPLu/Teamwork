@@ -19,14 +19,17 @@ to stop on missing required state, and how to attach evidence to completion.
 ```bash
 ./install.sh              # same as ./install.sh codex
 ./install.sh codex --profile cost-first
+./install.sh codex --profile gpt55-xhigh
 ./install.sh codex-agents
 ./install.sh codex-policy
 ./install.sh all
 ```
 
 Use `./install.sh project` or `./install.sh --project-root <path> project` for
-project-local skills and agents. Use `./install.sh --link codex` while editing
-this checkout.
+project-local skills and agents. Use `./install.sh --project-root <path>
+--profile gpt55-xhigh project-codex-agents` when only Codex subagent model
+definitions need the xhigh override. Use `./install.sh --link codex` while
+editing this checkout.
 
 ## How To Use
 
@@ -55,7 +58,9 @@ workflow rules belong in Teamwork skills.
 
 The global Codex bootstrap block installed by `./install.sh codex` authorizes
 subagents when Teamwork dispatch policy says they are worthwhile, sets the
-profile, and states the no-silent-defaults rule for required values.
+profile, applies think-first discipline to non-trivial or evidence-sensitive
+work, minimizes optional commentary, and states the no-silent-defaults rule for
+required values.
 
 ## Subagents
 

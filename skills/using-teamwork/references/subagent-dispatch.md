@@ -90,7 +90,11 @@ Use `readonly:true` for Explorer/Judge/Reviewer; `run_in_background:true` for lo
 
 Role defaults: Explorer->`balanced` (use `frontier` for broad/ambiguous/high-risk); Designer->`balanced` (use `frontier` for architecture or public contracts); Judge->`frontier` high reasoning; Worker->`coding` or `inherited`; Reviewer->`frontier` high reasoning.
 
-`performance-first` is the default on all platforms. `./install.sh --profile` renders installed agents for Codex, Cursor, and Claude Code.
+`performance-first` is the default on all platforms. `gpt55-xhigh` is a Codex
+override profile that renders every Teamwork Codex agent as gpt-5.5 with xhigh
+reasoning; Cursor and Claude Code keep native performance-first model tiers.
+`./install.sh --profile` renders installed agents for Codex, Cursor, and Claude
+Code.
 
 Exact model identifiers belong in installed agent definitions, runtime schemas,
 or platform docs, not in ordinary plans. When a schema does not support a field,

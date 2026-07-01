@@ -36,7 +36,9 @@ Audit reusable human-agent habits. Mark `keep` for project-specific acceptance, 
 ## Teamwork Initialization Mode
 
 Model profile is chosen at install time on all platforms. `performance-first` is
-default; `cost-first` downshifts routine roles. Project init asks only for
+default; `cost-first` downshifts routine roles; `gpt55-xhigh` forces every
+Codex Teamwork subagent to gpt-5.5 with xhigh reasoning while non-Codex
+platforms keep native performance-first tiers. Project init asks only for
 global-policy overrides. Model overrides require `./install.sh --profile`.
 
 ## Local Project Init Surfaces

@@ -613,7 +613,22 @@ fi
 rm -f /tmp/teamwork-retired-grep.$$
 
 tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
+original_profile_marker="$ROOT/.teamwork-profile"
+original_profile_exists=0
+original_profile=""
+if [[ -f "$original_profile_marker" ]]; then
+  original_profile_exists=1
+  original_profile="$(cat "$original_profile_marker")"
+fi
+restore_validate_state() {
+  rm -rf "$tmp"
+  if (( original_profile_exists )); then
+    printf '%s\n' "$original_profile" > "$original_profile_marker"
+  else
+    rm -f "$original_profile_marker"
+  fi
+}
+trap restore_validate_state EXIT
 retired_teamwork_dir="$tmp/home/.codex/skills/teamwork"
 mkdir -p "$retired_teamwork_dir/references"
 printf '%s\n' '---' 'name: teamwork' 'description: Use when selecting a Teamwork stage.' '---' > "$retired_teamwork_dir/SKILL.md"
@@ -663,6 +678,10 @@ grep_required 'Act by default:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must prioritize acting by default"
 grep_required 'Ask only when it matters:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must scope asking to core decisions"
+grep_required 'Reasoning discipline:' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must require reasoning discipline"
+grep_required 'Minimize optional commentary' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must minimize optional commentary"
 grep_required 'Codex model profile: default is performance-first' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must record performance-first profile"
 grep_required 'Bootstrap safety:' "$tmp/home/.codex/AGENTS.md" \
@@ -698,6 +717,10 @@ grep_required 'Act by default:' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must replace managed block"
 grep_required 'Ask only when it matters:' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must scope asking to core decisions"
+grep_required 'Reasoning discipline:' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must require reasoning discipline"
+grep_required 'Minimize optional commentary' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must minimize optional commentary"
 grep_required 'Bootstrap safety:' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must include bootstrap no-silent-defaults safety"
 grep_absent 'old managed content' \
@@ -718,6 +741,8 @@ grep_required 'Codex model profile: default is performance-first' "$codex_policy
   "codex-policy target must render performance-first profile"
 grep_required 'Bootstrap safety:' "$codex_policy_out" \
   "codex-policy target must print bootstrap no-silent-defaults safety"
+grep_required 'Reasoning discipline:' "$codex_policy_out" \
+  "codex-policy target must print reasoning discipline"
 [[ ! -e "$tmp/home-codex-policy/.codex/AGENTS.md" ]] \
   || fail "codex-policy target must not write global AGENTS policy"
 
@@ -778,6 +803,40 @@ grep_required 'Codex model profile: default is cost-first' "$tmp/codex-policy-co
   "codex-policy target must render cost-first profile"
 [[ ! -e "$tmp/home-codex-policy-cost/.codex/AGENTS.md" ]] \
   || fail "cost-first codex-policy target must not write global AGENTS policy"
+
+HOME="$tmp/home-codex-agents-xhigh" "$ROOT/install.sh" --profile gpt55-xhigh codex-agents >/dev/null
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
+  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents-xhigh/.codex/agents/$agent.toml" \
+    "gpt55-xhigh Codex agent install must render gpt-5.5 for $agent"
+  grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home-codex-agents-xhigh/.codex/agents/$agent.toml" \
+    "gpt55-xhigh Codex agent install must render xhigh reasoning for $agent"
+done
+
+HOME="$tmp/home-codex-xhigh" "$ROOT/install.sh" --profile gpt55-xhigh codex >/dev/null
+grep_required 'Codex model profile: default is gpt55-xhigh' "$tmp/home-codex-xhigh/.codex/AGENTS.md" \
+  "Codex global policy must record gpt55-xhigh profile"
+grep_required 'gpt55-xhigh forces every Codex Teamwork subagent to gpt-5.5 with xhigh' "$tmp/home-codex-xhigh/.codex/AGENTS.md" \
+  "Codex global policy must describe gpt55-xhigh behavior"
+
+HOME="$tmp/home-codex-policy-xhigh" "$ROOT/install.sh" --profile gpt55-xhigh codex-policy > "$tmp/codex-policy-xhigh.out"
+grep_required 'Codex model profile: default is gpt55-xhigh' "$tmp/codex-policy-xhigh.out" \
+  "codex-policy target must render gpt55-xhigh profile"
+[[ ! -e "$tmp/home-codex-policy-xhigh/.codex/AGENTS.md" ]] \
+  || fail "gpt55-xhigh codex-policy target must not write global AGENTS policy"
+
+project_codex_xhigh="$tmp/project-codex-xhigh"
+mkdir -p "$project_codex_xhigh"
+HOME="$tmp/home-project-codex-xhigh" "$ROOT/install.sh" --profile gpt55-xhigh --project-root "$project_codex_xhigh" project-codex-agents >/dev/null
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
+  grep_required '^model = "gpt-5.5"$' "$project_codex_xhigh/.codex/agents/$agent.toml" \
+    "project-codex-agents must render gpt-5.5 for $agent"
+  grep_required '^model_reasoning_effort = "xhigh"$' "$project_codex_xhigh/.codex/agents/$agent.toml" \
+    "project-codex-agents must render xhigh reasoning for $agent"
+done
+[[ ! -e "$project_codex_xhigh/.cursor" ]] \
+  || fail "project-codex-agents target must not write Cursor project agents"
+[[ ! -e "$project_codex_xhigh/.claude" ]] \
+  || fail "project-codex-agents target must not write Claude project agents"
 
 HOME="$tmp/home-invalid-profile" "$ROOT/install.sh" --profile invalid codex >/dev/null 2>&1 \
   && fail "installer must reject unsupported Codex profiles"
