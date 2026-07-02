@@ -125,16 +125,17 @@ Drift Verdict: on_goal | drifted | unclear
 Retry Verdict: continue | replan | stop | blocked
 ```
 
-## Closure
-Each subagent must return one packet, then stop. Main agent records `Closure Evidence` in the Actual Dispatch Log after integrating each packet.
+## Dispatch Log
+Each subagent must return one packet, then stop. Main agent records returned
+packets and blockers in the Actual Dispatch Log.
 ## Actual Dispatch Log
-Record review-relevant dispatch. Progress: `dispatched -> returned -> closed`. Final status cannot remain `dispatched` or `returned`.
+Record review-relevant dispatch outcomes.
 
 ```text
 Actual Dispatch Log:
 - Role:
   Native Fields:
   Ownership:
-  Status: dispatched | returned | closed | blocked | abandoned-after-discovery
-  Closure Evidence: <packet integrated | blocker reported | discovery failed>
+  Status: dispatched | returned | blocked | skipped_after_discovery
+  Returned Packet or Blocker: <packet summary | blocker rationale | skipped reason>
 ```

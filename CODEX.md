@@ -75,7 +75,7 @@ Typical roles:
 
 The main agent remains responsible for user questions, scope, integration,
 verification, and final response. Every subagent returns one packet, then stops;
-no delegated track may remain open at completion.
+the main agent records returned packets or blocker rationale for delegated work.
 
 Advanced dispatch fields, role mapping, model classes, and lifecycle details
 live in `skills/using-teamwork/references/subagent-dispatch.md`. Prompt and

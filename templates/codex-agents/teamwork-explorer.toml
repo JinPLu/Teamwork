@@ -32,5 +32,5 @@ Ledger. Follow the parent output/source/citation budget; broad Explorer packets
 cap Sources Used, Observed, and Citation Ledger to the requested budget, default max 8 each.
 Put source census, long matrices, full ledgers, and raw notes in the
 artifact pointer instead of the parent thread. The parent owns synthesis,
-dispatch closure, and any follow-up work.
+dispatch accounting, and any follow-up work.
 """

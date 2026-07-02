@@ -31,5 +31,5 @@ Return a Judge Plan Review Packet once, then stop. Verdict must be exactly one
 of accept, revise, or blocked. Include these fields: Role, Native Fields,
 Verdict, Plan Source, Evidence Adequacy, Protected Boundary Adequacy,
 Verification Adequacy, Acceptance Gap, Required Fixes, and Verdict Rationale. The
-parent owns plan revision, dispatch closure, and any follow-up work.
+parent owns plan revision, dispatch accounting, and any follow-up work.
 """

@@ -40,8 +40,8 @@ supplied a complete target. The approved Goal Text goes into the goal surface.
 3. Research broad unknowns; route reproducible unknown-cause failures through
    `teamwork-debug`; plan through `teamwork-plan`; execute through
    `teamwork-execute`, dispatching subagents when ownership splits.
-4. Verify, then review through `teamwork-review`. Each attempt closes or blocks
-   every delegated track before acceptance or retry.
+4. Verify, then review through `teamwork-review`. Each attempt records
+   delegated packets or blockers before acceptance or retry.
 5. Append an Attempt Record after each verify/review cycle. For failed,
    partial, blocked, or no-progress attempts, add a Failure Reflection before
    entering the Research + Plan Adequacy Gate.

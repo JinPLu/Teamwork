@@ -31,7 +31,9 @@ Deep Judge and Deep Reviewer are severity profiles of Judge and Reviewer, not se
 
 A dispatched subagent returns one packet, then stops. It does not monitor, reopen scope, chain new subagents, or continue after returning its packet.
 
-Main agent owns closure. Dispatch states: `dispatched -> returned -> closed`, `blocked`, or `abandoned-after-discovery`. Record Closure Evidence after integrating each packet. Before final response, no delegated track may remain open.
+Main agent records returned packets and blockers in the Actual Dispatch Log for
+review. Integration, final verification, and acceptance remain main-thread
+responsibilities.
 
 ## Platform Fields
 

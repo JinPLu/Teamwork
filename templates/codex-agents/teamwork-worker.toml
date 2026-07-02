@@ -45,6 +45,6 @@ Evidence, Root Cause Evidence, Hypothesis Tested, Verification Commands,
 Instrumentation / Runtime Logs, Verification Result, Claim Supported By
 Evidence, Review Loop Status, Deviations, Protected Boundary Hits, Concerns /
 Blockers, and Open Questions. Use not_applicable where a gate does not apply.
-The parent owns integration, dispatch closure, final acceptance, and any
+The parent owns integration, dispatch accounting, final acceptance, and any
 follow-up work.
 """

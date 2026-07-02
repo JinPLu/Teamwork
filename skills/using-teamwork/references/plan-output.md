@@ -50,7 +50,7 @@ Use this order unless local convention is stronger:
 7. `## 5. Gates`:
    `Gate | Go Condition | Stop Condition`.
 8. `## 6. Dispatch / Goal Surface`:
-   `Track | Owner | Native Fields | Owned Scope | Packet / Closure`.
+   `Track | Owner | Native Fields | Owned Scope | Packet / Result`.
 9. `## 7. Acceptance Checklist`:
    `Check | Required Evidence | Strength`.
 10. `## 8. Next Actions` numbered list.
@@ -75,7 +75,7 @@ hypotheses, instrumentation, runtime evidence, cleanup, and review acceptance.
 - Reviewer/Judge: check evidence adequacy, scope, gates, verification, and
   acceptance criteria.
 - Actual Dispatch Log records review-relevant roles, native fields, prompt
-  packets, returns, final status, closure evidence.
+  packets, returned packet status, and blocker rationale.
 
 Goal-mode plans include every section. Ordinary durable plans stay concise while
 preserving state, scope, execution, verification, gates, risks, stops, and route.
