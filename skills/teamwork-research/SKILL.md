@@ -62,7 +62,7 @@ tables when findings compare three or more items.
 
 ## Handoff
 
-Return artifact path or none, question, closed dispatch log or continuity
+Return artifact path or none, question, returned dispatch packets or continuity
 rationale, assumptions, evidence, options, recommendation, dissent, coverage
 gaps, and the selected outcome type. Add plan-ready fields only when the next
 route is execution planning. Include `Memory Delta:` only when durable project

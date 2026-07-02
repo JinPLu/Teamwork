@@ -62,8 +62,8 @@ without broad refactor or unaccepted adjacent cleanup.
    verification plan. Start an Actual Dispatch Log when subagents run.
 3. State the files you or Workers will touch.
 4. Make only planned, minimal, producer-side changes.
-5. Integrate Worker packets, then mark each track `closed`, `blocked`, or
-   `abandoned-after-discovery` with Closure Evidence after integration.
+5. Integrate Worker packets, then record returned packets or blockers in the
+   Actual Dispatch Log.
 6. Run focused verification; cite command output, artifacts, diffs, or tests,
    and do not round blocked/build-only checks up to behavioral proof. Add
    broader checks only when planned or when shared/public behavior changes.

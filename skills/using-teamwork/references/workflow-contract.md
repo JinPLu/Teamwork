@@ -95,8 +95,8 @@ acceptance work.
 ## Subagents
 
 A dispatched subagent is bounded: it returns one packet, then stops. Main owns
-scope, integration, final verification, and acceptance, and closes each track as
-`closed`, `blocked`, or `abandoned-after-discovery` before completion.
+scope, integration, final verification, and acceptance. Main records returned
+packets or blocker rationale for delegated tracks.
 Same-context self-review does not accept non-lightweight work; use a fresh
 Reviewer, or name residual risk when unavailable. Dispatch rules live in
 `subagent-dispatch.md`, packet shapes in `subagent-contract.md`, role methods in

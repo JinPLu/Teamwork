@@ -61,7 +61,7 @@ Use independent tracks only:
 - Reviewer for fresh acceptance review.
 
 Each subagent returns one compact packet and stops. The main agent integrates
-packets, closes the dispatch log, runs verification, and owns the final answer.
+packets, records dispatch outcomes, runs verification, and owns the final answer.
 
 ## Goal Mode
 

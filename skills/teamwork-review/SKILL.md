@@ -35,7 +35,7 @@ review needs durable memory.
 - Treat executor summaries, `code-reviewer` output, git diff, CI summaries, and
   test output as inputs, not final verdicts.
 - Do not fix issues during review unless asked.
-- Reject open delegated tracks without a blocker rationale.
+- Reject delegated tracks without a returned packet or blocker rationale.
 
 ## Plan Review
 

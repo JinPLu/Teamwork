@@ -20,7 +20,7 @@ Return `revise` when required artifacts are missing, placeholders remain, confid
 
 2. **Verification**: focused verification ran with concrete evidence; acceptance claims match observed diff, logs, tests, or artifacts; expected artifacts, outputs, or UI state match acceptance criteria. For behavioral, UI, performance, memory, migration, or parity claims, check `verification-patterns.md` for baseline/treatment and proof strength.
 
-3. **Dispatch closure**: Actual Dispatch Log records roles, native fields, prompt and returned packets, final status, closure evidence. No delegated track remains dispatched or returned at review handoff.
+3. **Dispatch accounting**: Actual Dispatch Log records roles, native fields, prompts, returned packets, and blocker rationale for delegated work.
 
 4. **Durable memory check**: if current-state files changed, require a material delta and evidence; reject churn-only writes. If accepted active state changed without a memory update or explicit `none`/`deferred` disposition, name the residual risk. Memory promotion check: candidate memory or docs graph output requires direct evidence paths, currentness, scope, and protected data disposition before becoming canonical Teamwork memory.
 
