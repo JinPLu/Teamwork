@@ -9,6 +9,7 @@ FETCH_UPSTREAM=1
 
 SKILLS=(
   using-teamwork
+  teamwork-debug
   teamwork-init
   teamwork-goal
   teamwork-research
@@ -104,6 +105,26 @@ skills_status() {
     echo "missing"
   else
     echo "partial($missing/${#SKILLS[@]})"
+  fi
+}
+
+skills_content_status() {
+  local dest_root="$1"
+  local rel drift=0 missing=0
+  [[ -d "$dest_root" ]] || { echo "missing"; return 0; }
+  while IFS= read -r -d '' source_file; do
+    rel="${source_file#$ROOT/skills/}"
+    if [[ ! -f "$dest_root/$rel" ]]; then
+      missing=$((missing + 1))
+    elif ! cmp -s "$source_file" "$dest_root/$rel"; then
+      drift=$((drift + 1))
+    fi
+  done < <(find "$ROOT/skills" -type f -print0)
+
+  if (( missing == 0 && drift == 0 )); then
+    echo "current"
+  else
+    echo "drift(missing=$missing,changed=$drift)"
   fi
 }
 
@@ -242,6 +263,9 @@ print_readiness() {
   [[ "$(skills_status "$HOME/.codex/skills")" == "ok" ]] || { ready=no; missing+=("codex-skills"); }
   [[ "$(skills_status "$HOME/.cursor/skills")" == "ok" ]] || { ready=no; missing+=("cursor-skills"); }
   [[ "$(skills_status "$HOME/.claude/skills")" == "ok" ]] || { ready=no; missing+=("claude-skills"); }
+  [[ "$(skills_content_status "$HOME/.codex/skills")" == "current" ]] || { ready=no; missing+=("codex-skill-content"); }
+  [[ "$(skills_content_status "$HOME/.cursor/skills")" == "current" ]] || { ready=no; missing+=("cursor-skill-content"); }
+  [[ "$(skills_content_status "$HOME/.claude/skills")" == "current" ]] || { ready=no; missing+=("claude-skill-content"); }
   [[ "$(agents_status "$HOME/.codex/agents" toml "${CODEX_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("codex-agents"); }
   [[ "$(agents_status "$HOME/.cursor/agents" md "${CURSOR_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("cursor-agents"); }
   [[ "$(agents_status "$HOME/.claude/agents" md "${CLAUDE_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("claude-agents"); }
@@ -251,7 +275,16 @@ print_readiness() {
 
   if [[ -n "$PROJECT_ROOT" ]]; then
     [[ "$(skills_status "$PROJECT_ROOT/.cursor/skills")" == "ok" ]] || { ready=no; missing+=("project-skills"); }
+    [[ "$(skills_content_status "$PROJECT_ROOT/.cursor/skills")" == "current" ]] || { ready=no; missing+=("project-skill-content"); }
     [[ "$(agents_status "$PROJECT_ROOT/.cursor/agents" md "${CURSOR_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("project-cursor-agents"); }
+    [[ "$(agents_status "$PROJECT_ROOT/.codex/agents" toml "${CODEX_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("project-codex-agents"); }
+    [[ "$(agents_status "$PROJECT_ROOT/.claude/agents" md "${CLAUDE_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("project-claude-agents"); }
+    local project_v
+    project_v="$(read_installed_version "$PROJECT_ROOT/.cursor/skills")"
+    if [[ "$project_v" != "missing" && "$project_v" != "unknown" ]] && semver_lt "$project_v" "$source_version"; then
+      ready=no
+      missing+=("project-version-drift")
+    fi
   fi
 
   for v in "$codex_v" "$cursor_v" "$claude_v"; do
@@ -299,7 +332,7 @@ print_report() {
   fi
   echo
 
-  printf '%-8s %-8s %-8s %-8s %-18s %-12s\n' "Platform" "Skills" "Agents" "Policy" "InstalledVersion" "Profile"
+  printf '%-8s %-8s %-12s %-8s %-8s %-18s %-12s\n' "Platform" "Skills" "SkillContent" "Agents" "Policy" "InstalledVersion" "Profile"
   local platform dest_skills dest_agents ext agents_ref
   for platform in codex cursor claude; do
     case "$platform" in
@@ -322,17 +355,18 @@ print_report() {
         agents_ref=("${CLAUDE_AGENTS[@]}")
         ;;
     esac
-    local installed_v skills_s agents_s policy_s drift_s prof_s
+    local installed_v skills_s content_s agents_s policy_s drift_s prof_s
     installed_v="$(read_installed_version "$dest_skills")"
     skills_s="$(skills_status "$dest_skills")"
+    content_s="$(skills_content_status "$dest_skills")"
     agents_s="$(agents_status "$dest_agents" "$ext" "${agents_ref[@]}")"
     policy_s="$(policy_status "$platform")"
     drift_s="$(version_drift "$installed_v" "$source_version")"
     prof_s="$(read_installed_profile "$dest_skills")"
-    [[ "$skills_s" == "ok" && "$agents_s" == "ok" && "$drift_s" == "current" ]] || note_issue
+    [[ "$skills_s" == "ok" && "$content_s" == "current" && "$agents_s" == "ok" && "$drift_s" == "current" ]] || note_issue
     [[ "$policy_s" == "missing" ]] && note_issue
-    printf '%-8s %-8s %-8s %-8s %-18s %-12s\n' \
-      "$platform" "$skills_s" "$agents_s" "$policy_s" "$drift_s" "$prof_s"
+    printf '%-8s %-8s %-12s %-8s %-8s %-18s %-12s\n' \
+      "$platform" "$skills_s" "$content_s" "$agents_s" "$policy_s" "$drift_s" "$prof_s"
   done
   echo
 
@@ -348,17 +382,21 @@ print_report() {
 
   if [[ -n "$PROJECT_ROOT" ]]; then
     echo "--- Project ($PROJECT_ROOT) ---"
-    local p_skills p_cursor_agents p_codex_agents p_claude_agents p_v
+    local p_skills p_content p_cursor_agents p_codex_agents p_claude_agents p_v p_drift
     p_skills="$(skills_status "$PROJECT_ROOT/.cursor/skills")"
+    p_content="$(skills_content_status "$PROJECT_ROOT/.cursor/skills")"
     p_cursor_agents="$(agents_status "$PROJECT_ROOT/.cursor/agents" md "${CURSOR_AGENTS[@]}")"
     p_codex_agents="$(agents_status "$PROJECT_ROOT/.codex/agents" toml "${CODEX_AGENTS[@]}")"
     p_claude_agents="$(agents_status "$PROJECT_ROOT/.claude/agents" md "${CLAUDE_AGENTS[@]}")"
     p_v="$(read_installed_version "$PROJECT_ROOT/.cursor/skills")"
-    echo "project skills: $p_skills ($p_v)"
+    p_drift="$(version_drift "$p_v" "$source_version")"
+    echo "project skills: $p_skills ($p_drift)"
+    echo "project skill content: $p_content"
     echo "project cursor agents: $p_cursor_agents"
     echo "project codex agents: $p_codex_agents"
     echo "project claude agents: $p_claude_agents"
-    [[ "$p_skills" != "ok" || "$p_cursor_agents" != "ok" ]] && note_issue
+    [[ "$p_skills" == "ok" && "$p_content" == "current" && "$p_drift" == "current" \
+      && "$p_cursor_agents" == "ok" && "$p_codex_agents" == "ok" && "$p_claude_agents" == "ok" ]] || note_issue
     if [[ -f "$PROJECT_ROOT/docs/teamwork/index.json" ]]; then
       echo "docs/teamwork/index.json: present"
     else

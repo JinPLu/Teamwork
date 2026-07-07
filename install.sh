@@ -120,6 +120,12 @@ irreversible or destructive action. Do not interrupt for routine tool, MCP, or
 approach choices. Missing required human input is a question first, a blocker
 only when it cannot be obtained.
 
+Grill mode: when the user explicitly asks to grill, question-first, stress-test,
+challenge assumptions, or ask before acting, suspend act-by-default for that
+task. Ask at least one decision or risk question with a recommended answer, and
+do not plan or implement until a Shared Understanding Packet is confirmed or the
+user exits grill mode.
+
 Reasoning discipline: follow Teamwork's think-first rule. Do not optimize for
 fast visible output over source reading, interpretation checks, or verification
 when work is non-trivial or evidence-sensitive. Minimize optional commentary;
@@ -178,6 +184,12 @@ irreversible or destructive action. Do not interrupt for routine tool, MCP, or
 approach choices. Missing required human input is a question first, a blocker
 only when it cannot be obtained.
 
+Grill mode: when the user explicitly asks to grill, question-first, stress-test,
+challenge assumptions, or ask before acting, suspend act-by-default for that
+task. Ask at least one decision or risk question with a recommended answer, and
+do not plan or implement until a Shared Understanding Packet is confirmed or the
+user exits grill mode.
+
 Claude model profile: default is ${CODEX_PROFILE}. performance-first uses
 role-optimized agents: routine Explorer, Designer, and Worker use sonnet with
 medium effort; Judge and Reviewer use opus with high effort; Deep Judge/Reviewer
@@ -230,6 +242,12 @@ scope, acceptance, constraints, public behavior, contracts, architecture, or an
 irreversible or destructive action. Do not interrupt for routine tool, MCP, or
 approach choices. Missing required human input is a question first, a blocker
 only when it cannot be obtained.
+
+Grill mode: when the user explicitly asks to grill, question-first, stress-test,
+challenge assumptions, or ask before acting, suspend act-by-default for that
+task. Ask at least one decision or risk question with a recommended answer, and
+do not plan or implement until a Shared Understanding Packet is confirmed or the
+user exits grill mode.
 
 Cursor model profile: default is ${CODEX_PROFILE}. performance-first uses
 claude-sonnet-4-6 for Explorer and Designer, composer-2.5-fast for Worker, and

@@ -21,7 +21,6 @@ Project-local setup:
 
 ```bash
 ./install.sh project
-./install.sh --link cursor
 ./install.sh --link project
 ```
 

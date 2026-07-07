@@ -56,7 +56,10 @@ missing invariant or make the bug easier.
    cause.
 6. Route: `research` if evidence is insufficient, `plan` if fix scope changes,
    `execute` if the fix scope is accepted, or `blocked` for missing resources.
-7. Verify with the repro after the fix and remove temporary instrumentation.
+   Debug may run only a tiny confirming fix when the user already accepted that
+   scope; otherwise hand off before implementation.
+7. After an executed fix, verify with the repro and remove temporary
+   instrumentation.
 
 ## Cleanup And Quality
 

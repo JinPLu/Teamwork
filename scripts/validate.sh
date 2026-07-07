@@ -208,7 +208,7 @@ for subskill in teamwork-debug teamwork-init teamwork-goal teamwork-research tea
 done
 
 # --- Reference inventory ---
-for reference in artifact-protocol debug-mode goal-iteration optional-skills plan-output project-init research-protocol review-checks review-lenses role-playbook routing-policy subagent-contract subagent-dispatch verification-patterns workflow-contract workflow-orchestration; do
+for reference in artifact-protocol check-update debug-mode goal-iteration grill-mode optional-skills plan-output project-init research-protocol review-checks review-lenses role-playbook routing-policy subagent-contract subagent-dispatch verification-patterns workflow-contract workflow-orchestration; do
   ref_file="$ROOT/skills/using-teamwork/references/$reference.md"
   [[ -f "$ref_file" ]] || fail "missing skills/using-teamwork/references/$reference.md"
   git_known_package_file "skills/using-teamwork/references/$reference.md" \
@@ -224,7 +224,7 @@ done
 
 expected_reference_inventory="$(
   printf '%s\n' \
-    artifact-protocol.md check-update.md debug-mode.md goal-iteration.md optional-skills.md plan-output.md \
+    artifact-protocol.md check-update.md debug-mode.md goal-iteration.md grill-mode.md optional-skills.md plan-output.md \
     project-init.md research-protocol.md review-checks.md review-lenses.md role-playbook.md routing-policy.md \
     subagent-contract.md subagent-dispatch.md teamwork-current-template.md \
     teamwork-index-readme-template.md teamwork-index-template.json \
@@ -380,6 +380,8 @@ line_count_max "$ROOT/skills/using-teamwork/references/artifact-protocol.md" 120
 word_count_max "$ROOT/skills/using-teamwork/references/artifact-protocol.md" 780 "artifact protocol reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/goal-iteration.md" 90 "goal iteration reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/goal-iteration.md" 520 "goal iteration reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/grill-mode.md" 70 "grill mode reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/grill-mode.md" 430 "grill mode reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/plan-output.md" 90 "plan output reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/plan-output.md" 460 "plan output reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/review-checks.md" 60 "review checks reference should stay focused"
@@ -402,6 +404,7 @@ done
 grep_required 'references/workflow-contract.md' "$ENTRYPOINT" "using-teamwork must reference shared workflow contract"
 grep_required 'routing-policy.md' "$ENTRYPOINT" "using-teamwork must reference routing policy for ambiguous intent"
 grep_required 'references/subagent-dispatch.md' "$ENTRYPOINT" "using-teamwork must reference subagent dispatch"
+grep_required 'grill-mode.md' "$ENTRYPOINT" "using-teamwork must reference grill mode for explicit question-first prompts"
 for skill in teamwork-debug teamwork-init teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review; do
   grep_absent '`references/' "$skill must not use sibling-local reference paths" "$ROOT/skills/$skill/SKILL.md"
   grep_absent '^- `references/' "$skill must not list sibling-local reference paths" "$ROOT/skills/$skill/SKILL.md"
@@ -429,6 +432,9 @@ for anchor in Deslop 'Strict Maintainability' 'Reviewer Comprehension' 'Multi-Le
   grep_required "$anchor" "$ROOT/skills/using-teamwork/references/review-lenses.md" "review lenses must lock $anchor"
 done
 grep_required 'No silent defaults or invariant-masking fallback' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must define invariant-masking fallback"
+grep_required 'Grill mode overrides act-by-default only when explicit' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must scope grill mode override"
+grep_required 'Shared Understanding Packet' "$ROOT/skills/using-teamwork/references/grill-mode.md" "grill mode must require a handoff packet"
+grep_required 'Ask at least one decision or risk question' "$ROOT/skills/using-teamwork/references/grill-mode.md" "grill mode must force at least one question"
 grep_required 'Required Values / Invariants' "$ROOT/skills/using-teamwork/references/plan-output.md" "plan output must lock required values and invariants"
 grep_required 'Fail fast rather than invent fallback behavior' "$ROOT/skills/teamwork-execute/SKILL.md" "execute must fail fast instead of masking invariants"
 grep_required 'Allowed Fail-Fast Checks' "$ROOT/skills/using-teamwork/references/review-lenses.md" "review lenses must distinguish fail-fast from defensive masking"
@@ -445,6 +451,8 @@ grep_required 'check-update.md' "$ROOT/skills/teamwork-init/SKILL.md" "teamwork-
 grep_required 'check-update.md' "$ROOT/skills/teamwork-update/SKILL.md" "teamwork-update must reference check-update"
 grep_required 'check-update.sh' "$ROOT/skills/teamwork-update/SKILL.md" "teamwork-update must reference check-update script"
 [[ -x "$ROOT/scripts/check-update.sh" ]] || fail "check-update script must be executable"
+grep_required 'teamwork-debug' "$ROOT/scripts/check-update.sh" "check-update inventory must include teamwork-debug"
+grep_required 'skills_content_status' "$ROOT/scripts/check-update.sh" "check-update must detect installed skill content drift"
 grep_required 'Verdict: accept | revise | blocked' "$ROOT/skills/teamwork-review/SKILL.md" "review skill verdict enum must match Reviewer Verdict Packet"
 grep_absent 'Verdict: pass | pass-with-notes' "review skill must not use stale verdict enum" "$ROOT/skills/teamwork-review/SKILL.md"
 grep_required 'Reject delegated tracks without a returned packet or blocker rationale' "$ROOT/skills/teamwork-review/SKILL.md" "review skill must require delegated track accounting"
@@ -677,6 +685,8 @@ grep_required 'Act by default:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must prioritize acting by default"
 grep_required 'Ask only when it matters:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must scope asking to core decisions"
+grep_required 'Grill mode:' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must document explicit grill mode override"
 grep_required 'Reasoning discipline:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must require reasoning discipline"
 grep_required 'Minimize optional commentary' "$tmp/home/.codex/AGENTS.md" \
@@ -716,6 +726,8 @@ grep_required 'Act by default:' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must replace managed block"
 grep_required 'Ask only when it matters:' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must scope asking to core decisions"
+grep_required 'Grill mode:' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must preserve grill mode override"
 grep_required 'Reasoning discipline:' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must require reasoning discipline"
 grep_required 'Minimize optional commentary' "$agents_preserve_home/.codex/AGENTS.md" \
@@ -836,6 +848,23 @@ done
   || fail "project-codex-agents target must not write Cursor project agents"
 [[ ! -e "$project_codex_xhigh/.claude" ]] \
   || fail "project-codex-agents target must not write Claude project agents"
+
+project_update="$tmp/project-update"
+mkdir -p "$project_update"
+HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
+HOME="$tmp/home-project-update" "$ROOT/install.sh" --project-root "$project_update" project >/dev/null
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --project "$project_update" --no-fetch > "$tmp/project-update-ready.out"
+grep_required '^INSTALL_READY=yes$' "$tmp/project-update-ready.out" \
+  "check-update project readiness must pass after fresh project install"
+printf '%s\n' '0.0.0' > "$project_update/.cursor/skills/.teamwork-version"
+printf '\n# stale drift fixture\n' >> "$project_update/.cursor/skills/using-teamwork/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --project "$project_update" --no-fetch > "$tmp/project-update-stale.out"
+grep_required '^INSTALL_READY=no$' "$tmp/project-update-stale.out" \
+  "check-update project readiness must fail on project drift"
+grep_required 'project-version-drift' "$tmp/project-update-stale.out" \
+  "check-update readiness must report project version drift"
+grep_required 'project-skill-content' "$tmp/project-update-stale.out" \
+  "check-update readiness must report project skill content drift"
 
 HOME="$tmp/home-invalid-profile" "$ROOT/install.sh" --profile invalid codex >/dev/null 2>&1 \
   && fail "installer must reject unsupported Codex profiles"

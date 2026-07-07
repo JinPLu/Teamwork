@@ -1,6 +1,6 @@
 ---
 name: using-teamwork
-description: Use when starting any research, engineering, or long-running agent task: infer native/research/debug/plan/execute/review/goal/init/update from user intent, evidence state, and acceptance risk.
+description: Use when a task is ambiguous, non-lightweight, multi-stage, explicitly Teamwork-routed, or asks for grill/question-first mode; infer native/research/debug/plan/execute/review/goal/init/update from intent, evidence, and risk.
 ---
 
 # Using Teamwork
@@ -9,17 +9,20 @@ Teamwork sits on native tools: native capabilities execute; Teamwork adds
 evidence, dispatch, memory, and acceptance. Default to acting directly on clear
 work; escalate only when it improves correctness, continuity, or cost.
 
-Read `references/workflow-contract.md` for shared principles and platform map.
-Read `references/routing-policy.md` when the route is ambiguous or the user
-describes symptoms instead of naming a stage.
+Read `references/workflow-contract.md` for shared principles, `references/routing-policy.md`
+for ambiguous routing, and `references/grill-mode.md` for explicit
+grill/question-first/stress-test requests.
 
 ## First: can you proceed?
 
-Default to proceeding. Ask one short question first only when you hit a real
-obstacle, lack information you cannot obtain yourself, or face a core decision
-you cannot resolve — scope, acceptance, a required value, an irreversible
-action, or public behavior. Decide routine matters (tool/MCP choice, naming,
-approach) yourself. Do not narrate this as a gate.
+Default to proceeding. Ask one short question only for a real obstacle,
+unobtainable information, or core decision: scope, acceptance, required value,
+irreversible action, or public behavior. Decide routine choices yourself.
+
+In explicit grill mode, ask at least one decision/risk question with a
+recommended answer unless the user exits or supplied a Shared Understanding
+Packet. Do not plan, edit, start a goal, or dispatch Workers until packet
+confirmation or exit.
 
 ## Route
 
@@ -49,11 +52,10 @@ Users do not need to name stages. Treat stage names as optional force switches.
 
 ## Orchestrate
 
-When the work is non-lightweight and an independent track can run in parallel
-with clear ownership, fan out subagents to go faster — proactively, without
-waiting for the user to ask. The main agent stays the orchestrator: it owns
-scope, integration, final verification, and acceptance. See
-`references/subagent-dispatch.md`.
+For non-lightweight work, fan out only when an independent track has clear
+ownership and enough evidence, time, or context-isolation value to beat its
+cost. The main agent owns scope, integration, final verification, and
+acceptance. See `references/subagent-dispatch.md`.
 
 For required acceptance of non-lightweight work, prefer a fresh-context
 Reviewer; if subagents are unavailable, say so and name the residual risk.

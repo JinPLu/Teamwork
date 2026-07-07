@@ -5,10 +5,9 @@ description: Use when an accepted plan, checklist, approved scope, or known root
 
 # Teamwork Execute
 
-Use after a plan, checklist, scope, or root-cause fix is accepted, approved,
-resumed, or continued. Execution carries out accepted scope; it does not
-expand scope. It reports implementation and verification; review or goal mode
-owns non-lightweight acceptance.
+Use after a plan, checklist, scope, or root-cause fix is accepted. Execution
+carries out accepted scope; it does not expand scope. It reports implementation
+and verification; review or goal mode owns non-lightweight acceptance.
 
 Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
 evidence; `skills/using-teamwork/references/subagent-dispatch.md`
@@ -17,8 +16,9 @@ Worker method; `skills/using-teamwork/references/subagent-contract.md` for
 Worker prompts and packets; `skills/using-teamwork/references/artifact-protocol.md`
 for durable memory; `skills/using-teamwork/references/debug-mode.md` for
 bug/failure evidence and cleanup rules; `skills/using-teamwork/references/verification-patterns.md`
-for proof strength and baseline/treatment evidence; `skills/using-teamwork/references/optional-skills.md` before
-external tools.
+for proof strength and baseline/treatment evidence; `skills/using-teamwork/references/optional-skills.md`
+before external tools; `skills/using-teamwork/references/grill-mode.md` when
+grill mode is active.
 
 ## Preconditions
 
@@ -26,6 +26,8 @@ external tools.
   decision-critical needs, acceptance, and constraints are resolved.
 - Required files, commands, credentials, environments, paths, ports, models,
   hyperparameters, configs, and execution modes are explicit or discoverable.
+- Explicit grill mode has either a confirmed Shared Understanding Packet or a
+  user exit from grill mode.
 - A durable plan path for goal-mode, cross-turn, high-risk, delegated, or
   artifact-backed work; read `docs/teamwork/index.json` then current-state
   pointers when durable memory is relevant.

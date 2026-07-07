@@ -14,7 +14,9 @@ evidence and judgment; `skills/using-teamwork/references/goal-iteration.md` for
 the Goal Proposal, controller loop, adequacy gate, and rolling report;
 `skills/using-teamwork/references/subagent-dispatch.md` for stage dispatch;
 `skills/using-teamwork/references/debug-mode.md` for runtime failure diagnosis;
-`skills/using-teamwork/references/artifact-protocol.md` for durable memory.
+`skills/using-teamwork/references/artifact-protocol.md` for durable memory;
+`skills/using-teamwork/references/grill-mode.md` when explicit grill mode is
+active before goal handoff.
 
 ## Goal Surface
 
@@ -28,7 +30,9 @@ the Goal Proposal, controller loop, adequacy gate, and rolling report;
 If objective, verification, scope, or stop rules are not crisp, return a
 chat-only `Goal Proposal` and wait for approval before goal handoff or
 rolling-report init. Skip only when an active goal surface exists or the user
-supplied a complete target. The approved Goal Text goes into the goal surface.
+supplied a complete target. The approved Goal Text must include objective,
+Goal Invariants, verification, budget, and stop rules unless a rolling report
+or durable plan carries them.
 
 ## Loop
 

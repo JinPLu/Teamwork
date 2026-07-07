@@ -8,6 +8,7 @@ Use with `teamwork-init` (readiness gate) and `teamwork-update` (user refresh).
 
 - checkout `VERSION` vs upstream GitHub `VERSION`
 - global skills/agents under `~/.codex`, `~/.cursor`, `~/.claude`
+- skill file content drift against this checkout
 - bootstrap policy markers (Codex/Claude managed files; Cursor UI paste)
 - optional `--project PATH` for repo-local `.cursor/.codex/.claude`
 - best-effort Cursor model slug sample and CodeGraph MCP detection

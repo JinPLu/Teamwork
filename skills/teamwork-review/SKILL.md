@@ -18,7 +18,8 @@ Reviewer method; `skills/using-teamwork/references/subagent-dispatch.md` and
 `skills/using-teamwork/references/subagent-contract.md` for Reviewer dispatch and
 the verdict packet; `skills/using-teamwork/references/debug-mode.md` for
 debug-derived evidence and cleanup checks; `skills/using-teamwork/references/artifact-protocol.md` when
-review needs durable memory.
+review needs durable memory; `skills/using-teamwork/references/grill-mode.md`
+when explicit grill mode was invoked.
 
 ## Rules
 
@@ -36,6 +37,9 @@ review needs durable memory.
   test output as inputs, not final verdicts.
 - Do not fix issues during review unless asked.
 - Reject delegated tracks without a returned packet or blocker rationale.
+- When grill mode was invoked, reject planning or implementation that lacks a
+  confirmed Shared Understanding Packet, invented user answers, or edited during
+  active grill mode.
 
 ## Plan Review
 

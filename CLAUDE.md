@@ -23,8 +23,7 @@ Project-local setup:
 
 ```bash
 ./install.sh project
-./install.sh --link claude
-./install.sh --link all
+./install.sh --link project
 ```
 
 Skills install to `~/.claude/skills/`. Subagents install to

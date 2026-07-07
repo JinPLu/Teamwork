@@ -1,6 +1,6 @@
 ---
 name: teamwork-plan
-description: Use when the user asks for plan/design or a non-trivial research, engineering, implementation, or project change needs scope, requirements, protected boundaries, verification, dispatch, memory, or acceptance before action.
+description: Use when the user asks for plan/design or a non-trivial research, engineering, or implementation change needs scope, requirements, protected boundaries, verification, dispatch, memory, or acceptance before action.
 ---
 
 # Teamwork Plan
@@ -9,9 +9,8 @@ Use after research or user direction selects a path, and before non-trivial
 project action when no accepted plan exists. Plans lock scope; tiny fixed-scope
 work stays native or goes straight to execute.
 
-Use user/source evidence first, route to research only when evidence is missing
-or stale, ask only requirement-changing questions, then act from acceptance.
-Teamwork adds evidence labels, dispatch, goal surfaces, stops, and review.
+Use user/source evidence first, route to research when evidence is missing or
+stale, ask only requirement-changing questions, then act from acceptance.
 
 Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
 evidence and judgment; `skills/using-teamwork/references/subagent-dispatch.md`
@@ -21,7 +20,8 @@ for delegated prompts and packets; `skills/using-teamwork/references/plan-output
 for durable plans; `skills/using-teamwork/references/artifact-protocol.md` for
 artifact triggers; `skills/using-teamwork/references/debug-mode.md` for
 bug/failure plans that need runtime diagnosis; `skills/using-teamwork/references/verification-patterns.md`
-for falsifiable acceptance and proof strength.
+for falsifiable acceptance and proof strength; `skills/using-teamwork/references/grill-mode.md`
+when explicit grill/question-first mode is active.
 
 ## Ask First
 
@@ -31,7 +31,8 @@ verification would change the plan. Route to `teamwork-research` when external
 behavior, unfamiliar APIs, upstream bugs, or ambiguous architecture lack
 evidence. Route to `teamwork-debug` when a reproducible failure needs runtime
 evidence before fix scope is safe. Do not produce an execution plan while a
-core requirement is open.
+core requirement is open, or while active grill mode lacks a confirmed Shared
+Understanding Packet.
 
 ## Planning Tiers
 
@@ -39,7 +40,7 @@ Use the lightest form that stays correct:
 
 - **Chat plan:** clear small-to-medium work — goal, scope, files, ordered
   steps, verification, and stop condition.
-- **Durable plan:** goal-mode, cross-turn, high-risk, ambiguous, public/shared
+- **Durable plan:** goal-mode, cross-turn, high-risk, ambiguous, public
   behavior, long delegation, or explicit repo plans. Path
   `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`; see `plan-output.md`.
 - **Goal plan:** autonomous or budgeted convergence. The native Codex goal or
@@ -54,9 +55,8 @@ Use the lightest form that stays correct:
    For bug, UI, performance, memory, migration, or parity claims, name any
    baseline/treatment evidence and expected verification strength.
 3. Define in/out/protected scope and pick the smallest producer-side change.
-4. For multi-stage or branching work, include a Mermaid flowchart. For three or
-   more comparable items, use tables: status, phases, artifacts, gates,
-   dispatch, and acceptance.
+4. Use Mermaid only for non-linear, delegated, or hard-to-audit flows. For three
+   or more comparable items, use compact tables.
 5. Make steps executable: each phase has owner, input, output, verification,
    result, and stop trigger.
    For bug work, state whether the route is `research -> plan -> execute`,
