@@ -41,6 +41,11 @@ requirements, or scope. If evidence changes those, route back to research or
 plan. Prefer TDD for behavior changes when practical; diagnose root cause before
 fixing failures. Every slice needs an exit condition: passing proof, observed
 artifact/behavior, structured validation, a bounded attempt limit, or a blocker.
+Before editing code, trace the existing owner, control flow, tests/config, and
+invariants enough to explain why the current path exists. Prefer reshaping the
+existing path over adding a parallel mode, compatibility branch, wrapper, or
+fallback. Keep implementation small and direct; do not grow branches to avoid
+understanding the current code.
 Fail fast rather than invent fallback behavior when accepted scope lacks a
 required value or invariant. Do not add broad catches, nullable defaults, casts,
 aliases, provider/target switches, or defensive branches that make missing state
@@ -55,13 +60,15 @@ without broad refactor or unaccepted adjacent cleanup.
 
 ## Steps
 
-1. Re-read the plan and relevant source.
+1. Re-read the plan and relevant source, including the current owner/control
+   flow and relevant tests or config before edits.
 2. For non-lightweight work, fan out Workers for independent tracks with
    disjoint ownership or worktree isolation; keep tightly coupled work local.
    Before more than 3 Workers, state the ownership map, integration order, and
    verification plan. Start an Actual Dispatch Log when subagents run.
 3. State the files you or Workers will touch.
-4. Make only planned, minimal, producer-side changes.
+4. Make only planned, minimal, producer-side changes; prefer simplifying the
+   existing flow over accumulating branches or modes.
 5. Integrate Worker packets, then record returned packets or blockers in the
    Actual Dispatch Log.
 6. Run focused verification; cite command output, artifacts, diffs, or tests,

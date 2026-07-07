@@ -6,6 +6,18 @@ This changelog explains what users get after upgrading, not just which files
 changed. Version boundaries come from `VERSION` and plugin manifest updates;
 the repository currently has no git release tags.
 
+## 2.7.1 - 2026-07-07
+
+This release is about **keeping code edits and reviews concise, clear, and maintainable**.
+
+- Execution and review now explicitly require understanding the existing owner,
+  control flow, tests/config, and invariants before changing or accepting code.
+- Workers and Reviewers push back harder on unevidenced branch, mode, wrapper, or
+  fallback accumulation, guessed defaults, and defensive masking of missing state.
+- Codex, Cursor, and Claude Code global policies now share the code-maintenance
+  rule: prefer changing/deleting the current path; add branches or fallback only
+  when accepted behavior requires and verifies them; fail fast when state is absent.
+
 ## 2.7.0 - 2026-07-01
 
 This release is about **letting Codex explicitly maximize reasoning while reducing rushed answers and performative progress updates**.

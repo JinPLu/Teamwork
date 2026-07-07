@@ -1,6 +1,6 @@
 # Review Checks
 
-Use for `teamwork-review` when a plan or execution needs evidence-based scrutiny.
+Use for `teamwork-review` plan/execution evidence scrutiny.
 
 ## Plan Review
 
@@ -16,9 +16,9 @@ Return `revise` when required artifacts are missing, placeholders remain, confid
 
 ## Execution Review
 
-1. **Diff scope**: touches only planned files/lines; no unrelated edits, generated churn, cleanup hiding producer bugs, invariant-masking branches, guessed hyperparameters, or target switches.
+1. **Diff scope**: touches only planned files/lines; no unrelated edits, generated churn, cleanup that hides producer bugs, invariant-masking branches, branch/mode accumulation, duplicate owners, guessed defaults/hyperparameters, or target switches.
 
-2. **Verification**: focused verification ran with concrete evidence; acceptance claims match observed diff, logs, tests, or artifacts; expected artifacts, outputs, or UI state match acceptance criteria. For behavioral, UI, performance, memory, migration, or parity claims, check `verification-patterns.md` for baseline/treatment and proof strength.
+2. **Verification**: focused verification ran with evidence; acceptance claims match observed diff, logs, tests, or artifacts; expected artifacts, outputs, or UI state match acceptance criteria. For behavioral, UI, performance, memory, migration, or parity claims, check `verification-patterns.md` for baseline/treatment and proof strength.
 
 3. **Dispatch accounting**: Actual Dispatch Log records roles, native fields, prompts, returned packets, and blocker rationale for delegated work.
 
@@ -35,6 +35,8 @@ Return `revise` when required artifacts are missing, placeholders remain, confid
 7. **Maintainability/deslop lens**: when strict code quality review, deslop, PR
    walkthrough, fallback masking, or structural regression appears, use
    `review-lenses.md`. Keep bounded deslop separate from broad structural review.
+   Require existing-path evidence before accepting new branches, modes, wrappers,
+   or fallback.
 
 8. **Goal drift**: goal-mode acceptance requires Attempt Record, Failure Reflection when applicable, and no lifecycle verdict outside `accept | revise | blocked`.
 

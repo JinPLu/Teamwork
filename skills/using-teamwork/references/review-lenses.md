@@ -16,6 +16,8 @@ Remove aggressively when local style supports it:
 - Comments that narrate obvious code or advertise implementation phases.
 - Abnormal defensive checks, broad catches, silent defaults, or fallback paths
   that hide missing required state or invariants.
+- New branches, modes, wrappers, or compatibility paths that duplicate the
+  existing owner instead of simplifying the current flow.
 - `any`, `unknown`, casts, loose shapes, or optionality used to dodge a clear
   type boundary.
 - Deep nesting that can become early returns or a direct flow.
@@ -42,12 +44,16 @@ regression, or a diff is large/risky enough to deserve a maintainability pass.
 Flag high-conviction issues:
 
 - A simpler framing would delete branches, helpers, modes, or layers.
+- The diff adds special paths before showing the existing code path was
+  understood and reused, moved, or deleted.
 - Special cases, feature checks, or nullable modes spread through unrelated
   flows.
 - A file crosses a healthy size boundary, especially near or above 1000 lines.
 - Thin wrappers, magic generic handlers, duplicated helpers, or wrong-layer
   logic add reader load.
 - Cast-heavy or fallback-heavy code hides the real invariant.
+- Guessed default values replace a required value that should come from user
+  input, source/config, tests, or an accepted plan.
 - Sequential orchestration or partial updates make independent work harder to
   reason about.
 

@@ -8,37 +8,41 @@ memory, and acceptance.
 ## Principles
 
 1. **Act by default.** Once intent is clear, do the work directly and make
-   ordinary decisions yourself: which tool or MCP to use, naming, formatting,
-   safe/reversible defaults, and equivalent approaches. No gate labels, no
-   ceremony, no permission-seeking for routine choices.
+   ordinary decisions yourself: tool/MCP choice, naming, formatting,
+   safe/reversible defaults, and equivalent approaches. No gate labels,
+   ceremony, or permission-seeking for routine choices.
 2. **Ask only when it matters.** Ask when you hit a real obstacle, lack
    information you cannot obtain on your own, or face a core decision you cannot
-   resolve from the request, code, or context — scope, acceptance, irreversible
-   or destructive actions, public contracts, architecture, or conflicting
-   requirements. Batch such questions and keep them short. Do not ask about
-   routine tool/MCP/approach choices the model can reasonably judge.
+   resolve from request, code, or context — scope, acceptance, irreversible or
+   destructive actions, public contracts, architecture, or conflicts. Batch
+   questions and keep them short. Do not ask about routine choices.
 3. **No silent defaults or invariant-masking fallback.** Routine tool, naming,
    formatting, and reversible defaults are allowed under act-by-default.
    Required code/runtime values and invariants are not. Never invent env vars,
    paths, commands, ports, models, hyperparameters, credentials, configs,
-   execution modes, providers, datasets, schemas, or nullability to continue.
+   execution modes, providers, datasets, schemas, or nullability.
    Ask when the user can supply a gap; block and say what you checked when it
    cannot be obtained. Explicit product fallback is allowed only when user
    input, source/config, tests, or an accepted plan names and verifies it.
-4. **Ground claims in evidence.** Label important findings `observed`,
+4. **Maintain code by reducing concepts.** Before code edits or review,
+   understand the existing owner, control flow, tests/config, and invariants.
+   Change/delete current path; add branches/modes/wrappers/fallback only when
+   accepted behavior requires and verifies them. Keep logic direct; fail fast
+   when state is absent.
+5. **Ground claims in evidence.** Label important findings `observed`,
    `inferred`, or `claimed`. Treat names, comments, READMEs, summaries, and
    labels like `latest`/`v2` as `claimed` until a direct source, test, config,
    command output, diff, or primary source confirms them.
-5. **Think first; narrate only what matters.** Match reasoning depth to task
+6. **Think first; narrate only what matters.** Match reasoning depth to task
    risk. For non-trivial or evidence-sensitive work, read sources, compare
    plausible interpretations, and verify before final answers or edits. Keep
    narration brief: user decisions, blockers, material dispatch/review handoffs,
    evidence, or verification. Routine route choices need no gate labels;
    consequential dispatch, review, or skipped actions stay auditable.
-6. **Fan out to go faster.** When an independent track can run in parallel with
+7. **Fan out to go faster.** When an independent track can run in parallel with
    clear ownership, dispatch it. Keep the main thread for orchestration,
    integration, and final verification. See `subagent-dispatch.md`.
-7. **Acceptance is real but light.** High-risk, public-contract, delegated,
+8. **Acceptance is real but light.** High-risk, public-contract, delegated,
    release, or destructive work gets a fresh review. Everything else accepts on
    same-context verification plus a one-line residual risk. Completion always
    needs verification evidence, never just a self-report.
@@ -59,11 +63,10 @@ Do not interrupt for routine tool/MCP, naming, formatting, or equivalent choices
 ## Evidence
 
 Cross-check at least one direct evidence category before an important decision:
-source call path, test behavior, configuration, command output, artifact
-properties, git diff, or primary external source. Use local files, diffs, logs,
-tests, and prior artifacts first. Add external calibration (official docs,
-papers, release notes, upstream issues) when current platform, dependency,
-model, API, or field practice could change the answer.
+source call path, tests, configuration, command output, artifact properties,
+git diff, or primary external source. Use local files, diffs, logs, tests, and
+prior artifacts first. Add external calibration when current platform,
+dependency, model, API, or field practice could change the answer.
 
 ## Context & Cost
 
@@ -125,7 +128,6 @@ artifacts before new non-trivial research. See `artifact-protocol.md`.
 
 ## Human Reviewability
 
-Use a compact table when three or more comparable items need auditing (plan
-steps, requirement status, results, findings, attempts, trade-offs). Use prose
-for simple answers. Keep cells short and evidence-backed; never use tables to
-hide uncertainty or omit blockers.
+Use a compact table when three or more comparable items need auditing. Use
+prose otherwise. Keep cells short and evidence-backed; never hide uncertainty
+or blockers in tables.

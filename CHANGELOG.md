@@ -5,6 +5,17 @@
 这份 changelog 按“用户升级后会感受到什么”来写，而不是只罗列文件改动。
 版本边界以 `VERSION` 和插件 manifest 的更新为准；当前仓库没有 git release tag。
 
+## 2.7.1 - 2026-07-07
+
+这版重点是：**写代码、改代码和复查代码时更偏向精简、清晰、可维护。**
+
+- 执行和 review 明确要求先理解现有 owner、control flow、tests/config 和 invariants，
+  再修改或验收代码。
+- Worker 和 Reviewer 会更直接地反对无证据的分支、mode、wrapper、fallback 堆叠，
+  以及猜默认值、防御式掩盖缺失状态的改法。
+- Codex、Cursor、Claude Code 的全局策略同步了 code maintenance 规则：优先改/删现有路径，
+  只有 accepted behavior 有证据要求时才新增分支或 fallback，缺状态时 fail fast。
+
 ## 2.7.0 - 2026-07-01
 
 这版重点是：**Codex 可以显式拉满推理强度，同时减少抢答和表演式进度。**

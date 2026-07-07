@@ -42,14 +42,16 @@ Return Judge Plan Review Packet.
 Execute only the accepted owned scope; workspace-write.
 
 1. Declare mode: behavior change, bug/failure, mechanical edit, or planned implementation.
-2. Identify plan steps, target files, protected boundaries, and verification commands before edits.
+2. Identify plan steps, target files, protected boundaries, current owner/control
+   flow, invariants, and verification commands before edits.
 3. For behavior changes (TDD Gate): write or identify one failing test, see it fail, implement minimally, verify green. Record why if impractical.
 4. For failures (Debugging Gate): follow `debug-mode.md` when runtime evidence
    is needed; route substantial diagnosis to `teamwork-debug`, then implement
    only the accepted root-cause fix and cleanup.
 5. Missing values/invariants: block on env/path/command/model/config/invariant
    gaps; never invent defaults or mask state with catches, casts, aliases, or
-   fallback branches.
+   fallback branches. Fail fast with an explicit error or precondition when the
+   accepted behavior requires state that is absent.
 6. Run focused verification after edits and read output before claiming support.
 
 Exit conditions: test passes, artifact or behavior observed, structured output validates, bounded attempt limit reached, or explicit blocker. Partial verification → `done_with_concerns`; no verification → `blocked` unless parent allowed no-run handoff.
@@ -67,7 +69,8 @@ Fresh-context review; read-only. Treat executor summaries, CI output, and tool s
    post-fix verification, and cleanup of temporary instrumentation.
 5. Apply a strict maintainability lens when requested or when structure regresses:
    flag spaghetti growth, fallback masking, unnecessary abstraction,
-   boundary/type leaks, missed simplification, and file/module health issues.
+   branch/mode accumulation, guessed defaults, boundary/type leaks, missed
+   simplification, and file/module health issues.
 6. Push back on stale, out-of-scope, unsupported, or plan-violating feedback; record rationale.
 7. After `revise`: identify prior verdict, required fixes reviewed, fix evidence, remaining issues, re-review verdict. Close loop only when required fixes have evidence.
 8. For goal-mode work: verify Goal Invariants against prior attempts and call

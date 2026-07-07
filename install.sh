@@ -141,6 +141,12 @@ an accepted plan. Routine reversible defaults remain allowed; code/runtime
 defaults or fallbacks may not mask missing required state. Ask once when the
 user can supply a missing value; otherwise block and report what was checked.
 
+Code maintenance: before code edits or review, understand the existing owner,
+control flow, tests/config, and invariants. Prefer changing or deleting the
+current path; add branches, modes, wrappers, or fallback only when accepted
+behavior requires and verifies them. Keep logic direct and fail fast when state
+is absent.
+
 Remote execution: assume substantial code execution runs on the configured
 remote server when project instructions or server inventory identify one. The
 local environment is for editing, inspection, basic tests, syntax checks, and
@@ -185,6 +191,12 @@ must be explicit in user input, project instructions, source/config, tests, or
 an accepted plan. Routine reversible defaults remain allowed; code/runtime
 defaults or fallbacks may not mask missing required state. Ask once when the
 user can supply a missing value; otherwise block and report what was checked.
+
+Code maintenance: before code edits or review, understand the existing owner,
+control flow, tests/config, and invariants. Prefer changing or deleting the
+current path; add branches, modes, wrappers, or fallback only when accepted
+behavior requires and verifies them. Keep logic direct and fail fast when state
+is absent.
 
 Remote execution: assume substantial code execution runs on the configured
 remote server when project instructions or server inventory identify one. The
@@ -232,6 +244,12 @@ must be explicit in user input, project instructions, source/config, tests, or
 an accepted plan. Routine reversible defaults remain allowed; code/runtime
 defaults or fallbacks may not mask missing required state. Ask once when the
 user can supply a missing value; otherwise block and report what was checked.
+
+Code maintenance: before code edits or review, understand the existing owner,
+control flow, tests/config, and invariants. Prefer changing or deleting the
+current path; add branches, modes, wrappers, or fallback only when accepted
+behavior requires and verifies them. Keep logic direct and fail fast when state
+is absent.
 
 Remote execution: assume substantial code execution runs on the configured
 remote server when project instructions or server inventory identify one. The
