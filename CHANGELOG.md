@@ -5,6 +5,19 @@
 这份 changelog 按“用户升级后会感受到什么”来写，而不是只罗列文件改动。
 版本边界以 `VERSION` 和插件 manifest 的更新为准；当前仓库没有 git release tag。
 
+## 2.8.0 - 2026-07-08
+
+这版重点是：**显式要求“先拷问我”时，Teamwork 会真的先问清楚。**
+
+- 新增 explicit grill/question-first 协议：当用户说 grill me、先问清楚、challenge assumptions
+  或 ask before acting 时，Teamwork 必须先提出至少一个决策/风险问题并给出推荐答案。
+- grill mode 会暂停 plan、implementation、goal start 和 Worker dispatch，直到用户确认
+  Shared Understanding Packet，或明确退出 grill mode。
+- plan、execute、goal、review 和 debug 阶段同步了新约束，避免一边说要问清楚、一边直接开始做。
+- `check-update.sh` 现在检查 installed skill file content drift，并覆盖 project-local skill 内容漂移；
+  validation 增加了对应 regression，避免安装面只看版本号却漏掉 skill 内容未刷新。
+- 安装的 Codex、Cursor、Claude Code 全局策略同步了 grill mode 和更精简的 dispatch 边界。
+
 ## 2.7.1 - 2026-07-07
 
 这版重点是：**写代码、改代码和复查代码时更偏向精简、清晰、可维护。**

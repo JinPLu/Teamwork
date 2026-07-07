@@ -6,6 +6,22 @@ This changelog explains what users get after upgrading, not just which files
 changed. Version boundaries come from `VERSION` and plugin manifest updates;
 the repository currently has no git release tags.
 
+## 2.8.0 - 2026-07-08
+
+This release is about **actually asking first when the user explicitly asks to be grilled**.
+
+- Added an explicit grill/question-first protocol: when the user says grill me,
+  ask before acting, challenge assumptions, or similar, Teamwork must ask at
+  least one decision/risk question and include a recommended answer.
+- Grill mode pauses planning, implementation, goal start, and Worker dispatch
+  until the user confirms a Shared Understanding Packet or explicitly exits grill mode.
+- Plan, execute, goal, review, and debug stages now share the constraint so the
+  system does not claim it will clarify first and then immediately start doing.
+- `check-update.sh` now checks installed skill file content drift, including
+  project-local skill content drift; validation adds a regression for that path.
+- Installed Codex, Cursor, and Claude Code global policies now include grill
+  mode and a leaner dispatch boundary.
+
 ## 2.7.1 - 2026-07-07
 
 This release is about **keeping code edits and reviews concise, clear, and maintainable**.
