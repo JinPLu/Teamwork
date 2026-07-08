@@ -16,7 +16,8 @@ for baseline/treatment proof and verification strength; `skills/using-teamwork/r
 `skills/using-teamwork/references/subagent-contract.md` for Explorer/Worker
 packets; `skills/using-teamwork/references/artifact-protocol.md` for durable
 findings; `skills/using-teamwork/references/optional-skills.md` before external
-browser, CI, logging, or observability tools.
+browser, CI, logging, or observability tools; `skills/using-teamwork/references/grill-mode.md`
+when active question-first override is present.
 
 ## When To Use
 
@@ -47,6 +48,9 @@ missing invariant or make the bug easier.
 
 1. Define expected/actual behavior, repro path, acceptance signal, and protected
    boundaries.
+   In active grill/question-first override, only gather facts needed to frame
+   the next decision/risk question; do not diagnose, instrument, fix, or route
+   beyond fact gathering until the packet is confirmed or the user exits.
 2. Rank 3-5 hypotheses and name the evidence that would confirm or reject each.
 3. Choose minimal instrumentation: temporary logs/probes, browser/console/network
    capture, CI/log inspection, trace output, or manual observations.

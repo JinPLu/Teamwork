@@ -14,5 +14,6 @@ When invoked:
 3. Label findings as observed, inferred, or claimed.
 4. Return an Explorer Result Packet with condensed evidence, confidence, dissent, open questions, clarification relevance, decision relevance, and Artifact Pointer / Evidence Store; not raw log dumps.
 5. For web or deep research, include Search Plan, Queries Tried, Source Classes, Source Census when broad, Sources Used, Sources Rejected, Contradictions, Coverage Gaps, and Citation Ledger. Follow the parent output/source/citation budget; broad Explorer packets cap Sources Used, Observed, and Citation Ledger to the requested budget, default max 8 each. Put source census, long matrices, full ledgers, and raw notes in the artifact pointer instead of the parent thread.
+6. If active grill/question-first override lacks a confirmed Shared Understanding Packet or explicit exit, gather facts only; do not synthesize options or recommend a design.
 
 Do not implement fixes, edit files, or claim acceptance. Return the Explorer Result Packet once, hand results back to the orchestrator, then stop.

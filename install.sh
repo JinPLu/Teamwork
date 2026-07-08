@@ -63,7 +63,7 @@ CODEX_AGENTS=(
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] [--profile performance-first|cost-first|gpt55-xhigh] \
+  ./install.sh [--copy|--link] [--profile performance-first|cost-first|gpt55-high|gpt55-xhigh] \
     [--project-root PATH] \
     codex|cursor|claude|all|project|init-project|project-codex-agents|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
 
@@ -92,9 +92,9 @@ track this checkout.
 
 Profile defaults to performance-first on all platforms. Use cost-first to
 downshift routine Explorer, Designer, and Worker roles. Judge, Reviewer, and
-Deep variants stay on frontier tiers. Use gpt55-xhigh to force every Codex
-Teamwork agent to gpt-5.5 with xhigh reasoning; non-Codex platforms keep their
-native performance-first model tiers.
+Deep variants stay on frontier tiers. Use gpt55-high or gpt55-xhigh to force
+every Codex Teamwork agent to gpt-5.5 with high or xhigh reasoning;
+non-Codex platforms keep their native performance-first model tiers.
 USAGE
 }
 
@@ -113,17 +113,19 @@ for quick answers, tiny edits, one CodeGraph-answerable structural question,
 tight critical-path work, overlapping write ownership, destructive or
 credential-sensitive actions, or higher subagent context cost than benefit.
 
-Ask only when it matters: ask one short question when you hit a real obstacle,
-lack information you cannot obtain, or face a core decision you cannot resolve —
-scope, acceptance, constraints, public behavior, contracts, architecture, or an
-irreversible or destructive action. Do not interrupt for routine tool, MCP, or
-approach choices. Missing required human input is a question first, a blocker
-only when it cannot be obtained.
+Ask when uncertainty matters: for uncertain, complex, or non-lightweight tasks,
+ask the next decision/risk question before planning or acting when the answer
+could change scope, acceptance, public behavior, contracts, architecture, risk,
+verification, or an irreversible/destructive action. Do not interrupt for
+routine tool, MCP, or approach choices. Missing required human input is a
+question first, a blocker only when it cannot be obtained.
 
-Grill mode: when the user explicitly asks to grill, question-first, stress-test,
-challenge assumptions, or ask before acting, suspend act-by-default for that
-task. Ask at least one decision or risk question with a recommended answer, and
-do not plan, synthesize research, choose design, edit, start a goal, or dispatch
+Grill mode: when the user explicitly asks to grill, grill-me, question-first,
+stress-test, challenge assumptions, ask before acting, or direct equivalents
+such as "先问清楚", suspend act-by-default for that task. Ask at least one
+decision or risk question with a recommended answer, then stop. Inspect
+available facts before asking when facts are discoverable; do not plan,
+synthesize research, choose design, edit, start a goal, or dispatch
 planning/design/execution agents until a Shared Understanding Packet is
 confirmed or the user exits grill mode.
 
@@ -137,6 +139,7 @@ Codex model profile: default is ${CODEX_PROFILE}. performance-first uses
 role-optimized gpt-5.5 agents: routine Explorer, Designer, and Worker use
 medium; Judge and Reviewer use high; Deep Judge/Reviewer use xhigh. cost-first
 downshifts routine Explorer, Designer, and Worker to gpt-5.4 medium.
+gpt55-high forces every Codex Teamwork subagent to gpt-5.5 with high reasoning;
 gpt55-xhigh forces every Codex Teamwork subagent to gpt-5.5 with xhigh
 reasoning.
 Use project-local Teamwork init mode only for explicit overrides.
@@ -178,17 +181,19 @@ for quick answers, tiny edits, one CodeGraph-answerable structural question,
 tight critical-path work, overlapping write ownership, destructive or
 credential-sensitive actions, or higher subagent context cost than benefit.
 
-Ask only when it matters: ask one short question when you hit a real obstacle,
-lack information you cannot obtain, or face a core decision you cannot resolve —
-scope, acceptance, constraints, public behavior, contracts, architecture, or an
-irreversible or destructive action. Do not interrupt for routine tool, MCP, or
-approach choices. Missing required human input is a question first, a blocker
-only when it cannot be obtained.
+Ask when uncertainty matters: for uncertain, complex, or non-lightweight tasks,
+ask the next decision/risk question before planning or acting when the answer
+could change scope, acceptance, public behavior, contracts, architecture, risk,
+verification, or an irreversible/destructive action. Do not interrupt for
+routine tool, MCP, or approach choices. Missing required human input is a
+question first, a blocker only when it cannot be obtained.
 
-Grill mode: when the user explicitly asks to grill, question-first, stress-test,
-challenge assumptions, or ask before acting, suspend act-by-default for that
-task. Ask at least one decision or risk question with a recommended answer, and
-do not plan, synthesize research, choose design, edit, start a goal, or dispatch
+Grill mode: when the user explicitly asks to grill, grill-me, question-first,
+stress-test, challenge assumptions, ask before acting, or direct equivalents
+such as "先问清楚", suspend act-by-default for that task. Ask at least one
+decision or risk question with a recommended answer, then stop. Inspect
+available facts before asking when facts are discoverable; do not plan,
+synthesize research, choose design, edit, start a goal, or dispatch
 planning/design/execution agents until a Shared Understanding Packet is
 confirmed or the user exits grill mode.
 
@@ -238,17 +243,19 @@ for quick answers, tiny edits, one CodeGraph-answerable structural question,
 tight critical-path work, overlapping write ownership, destructive or
 credential-sensitive actions, or higher subagent context cost than benefit.
 
-Ask only when it matters: ask one short question when you hit a real obstacle,
-lack information you cannot obtain, or face a core decision you cannot resolve —
-scope, acceptance, constraints, public behavior, contracts, architecture, or an
-irreversible or destructive action. Do not interrupt for routine tool, MCP, or
-approach choices. Missing required human input is a question first, a blocker
-only when it cannot be obtained.
+Ask when uncertainty matters: for uncertain, complex, or non-lightweight tasks,
+ask the next decision/risk question before planning or acting when the answer
+could change scope, acceptance, public behavior, contracts, architecture, risk,
+verification, or an irreversible/destructive action. Do not interrupt for
+routine tool, MCP, or approach choices. Missing required human input is a
+question first, a blocker only when it cannot be obtained.
 
-Grill mode: when the user explicitly asks to grill, question-first, stress-test,
-challenge assumptions, or ask before acting, suspend act-by-default for that
-task. Ask at least one decision or risk question with a recommended answer, and
-do not plan, synthesize research, choose design, edit, start a goal, or dispatch
+Grill mode: when the user explicitly asks to grill, grill-me, question-first,
+stress-test, challenge assumptions, ask before acting, or direct equivalents
+such as "先问清楚", suspend act-by-default for that task. Ask at least one
+decision or risk question with a recommended answer, then stop. Inspect
+available facts before asking when facts are discoverable; do not plan,
+synthesize research, choose design, edit, start a goal, or dispatch
 planning/design/execution agents until a Shared Understanding Packet is
 confirmed or the user exits grill mode.
 
@@ -311,7 +318,7 @@ copy_teamwork_cursor_global_policy() {
 
 validate_codex_profile() {
   case "$CODEX_PROFILE" in
-    performance-first|cost-first|gpt55-xhigh)
+    performance-first|cost-first|gpt55-high|gpt55-xhigh)
       ;;
     *)
       echo "Unknown profile: $CODEX_PROFILE" >&2
@@ -481,6 +488,9 @@ codex_agent_profile_values() {
   case "$CODEX_PROFILE:$agent" in
     gpt55-xhigh:*)
       printf '%s %s\n' "gpt-5.5" "xhigh"
+      ;;
+    gpt55-high:*)
+      printf '%s %s\n' "gpt-5.5" "high"
       ;;
     cost-first:teamwork-explorer|cost-first:teamwork-designer|cost-first:teamwork-worker)
       printf '%s %s\n' "gpt-5.4" "medium"
@@ -791,7 +801,13 @@ if [[ -n "$PROJECT_ROOT" && "${TARGET:-codex}" != "project" && "${TARGET:-codex}
   exit 2
 fi
 
-printf '%s\n' "$CODEX_PROFILE" > "$ROOT/.teamwork-profile"
+case "${TARGET:-codex}" in
+  codex-policy|cursor-policy|cursor-policy-copy|claude-policy)
+    ;;
+  *)
+    printf '%s\n' "$CODEX_PROFILE" > "$ROOT/.teamwork-profile"
+    ;;
+esac
 
 case "${TARGET:-codex}" in
   codex)

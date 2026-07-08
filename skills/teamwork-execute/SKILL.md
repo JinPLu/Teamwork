@@ -26,8 +26,8 @@ grill mode is active.
   decision-critical needs, acceptance, and constraints are resolved.
 - Required files, commands, credentials, environments, paths, ports, models,
   hyperparameters, configs, and execution modes are explicit or discoverable.
-- Explicit grill mode has either a confirmed Shared Understanding Packet or a
-  user exit from grill mode.
+- Active grill/question-first override has confirmed packet or exit. Do not
+  implement or dispatch Workers before that.
 - A durable plan path for goal-mode, cross-turn, high-risk, delegated, or
   artifact-backed work; read `docs/teamwork/index.json` then current-state
   pointers when durable memory is relevant.

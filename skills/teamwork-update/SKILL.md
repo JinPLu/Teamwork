@@ -7,8 +7,9 @@ description: Use when updating Teamwork package version, refreshing installed sk
 
 Use for package refresh and maintenance. Read
 `skills/using-teamwork/references/check-update.md` for the update script,
-`workflow-contract.md` for evidence, and `eval-gate.md` for Teamwork eval,
-ledger, and release gates.
+`skills/using-teamwork/references/workflow-contract.md` for evidence, and
+`skills/using-teamwork/references/eval-gate.md` for eval, ledger, and release
+gates.
 
 ## Modes
 
@@ -16,8 +17,9 @@ Pick from user intent:
 
 - **User refresh** — run `./scripts/check-update.sh --project "<path>"`; pull
   when upstream is newer; run `./install.sh all` with the checkout profile
-  unless explicitly overridden; add `./install.sh project` for stale project
-  rows; run `./install.sh cursor-policy-copy` when needed; re-run check-update.
+  unless explicitly overridden; add `./install.sh --project-root "<path>"
+  project` for stale project rows; run `./install.sh cursor-policy-copy` when
+  needed; re-run check-update.
   Do not bump `VERSION` or edit plugin manifests.
 - **Maintainer release** — change Teamwork itself (below).
 
@@ -38,14 +40,13 @@ Pick from user intent:
 2. Choose the smallest justified semver bump and record why.
 3. Update `VERSION` and both `plugin.json` together.
 4. Update README/CODEX/CURSOR/CLAUDE/AGENTS only for user-visible changes.
-5. For behavior, harness, or release-gate changes, run `python3 scripts/eval-teamwork.py --split dev`; route unclear failures to Debug.
-6. Run `./scripts/validate.sh`, then `./install.sh all`; add `./install.sh project` for project-local installs.
+5. For behavior, harness, question-first override, or release-gate changes, run `python3 scripts/eval-teamwork.py --split dev`; route unclear failures to Debug and cite accepted/rejected ledger deltas.
+6. Run `./scripts/validate.sh`, then `./install.sh all`; add `./install.sh --project-root "<project-root>" project` for project-local installs.
 7. Before release/version claims, run `python3 scripts/eval-teamwork.py --split release`; the split must be non-empty.
-8. For behavior changes, cite accepted/rejected ledger deltas behind the changelog, semver, or release rationale.
-9. For SkillOpt-Lite/HarnessOpt-Lite participation claims, require trajectory samples, same-case baseline/treatment, explicit model/config or offline mode, gate decision, rollback, ledger, fresh review, and release split as audit-only; harness mutation additionally needs allowlist plus smoke and full dev gates.
-10. Run `./scripts/check-update.sh` and confirm installed surfaces match
+8. For SkillOpt-Lite/HarnessOpt-Lite participation claims, require trajectory samples, same-case baseline/treatment, explicit model/config or offline mode, gate decision, rollback, ledger, fresh review, and release split as audit-only; harness mutation additionally needs allowlist plus smoke and full dev gates.
+9. Run `./scripts/check-update.sh` and confirm installed surfaces match
    `VERSION`.
-11. For release, verify GitHub remote and tag/release state before pushing;
+10. For release, verify GitHub remote and tag/release state before pushing;
    missing remote, credentials, or approval blocks.
 
 Treat "update Teamwork" as refreshing every Teamwork-controlled surface, not

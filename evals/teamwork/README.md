@@ -40,4 +40,5 @@ python3 scripts/eval-teamwork.py --all
 
 The first runner is deterministic and offline. It validates fixture shape,
 split/platform/source values, target paths, rubrics, ledgers, and non-empty
-behavior expectations. Eval output is evidence, not final acceptance.
+behavior expectations. It does not execute Codex, Cursor, Claude, or prove live
+model behavior. Eval output is evidence, not final acceptance.

@@ -36,9 +36,10 @@ unnecessary.
 ## Workflow
 
 1. Define the question and what a good answer looks like.
-2. In active grill mode, inspect only enough source/artifact context to ask the
-   next decision/risk question; do not fan out, synthesize, recommend, or write
-   artifacts until the packet is confirmed or the user exits.
+2. In active grill/question-first override, inspect only enough facts to ask
+   the next decision/risk question; do not fan out, synthesize, recommend a
+   research conclusion, or write artifacts until the packet is confirmed or the
+   user exits.
 3. Search prior artifacts; record reuse, update, or new.
 4. Split separable evidence questions: local source, symptoms, external
    constraints, alternatives, upstream reports, papers, datasets, or practice.

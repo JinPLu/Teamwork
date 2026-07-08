@@ -6,6 +6,30 @@ This changelog explains what users get after upgrading, not just which files
 changed. Version boundaries come from `VERSION` and plugin manifest updates;
 the repository currently has no git release tags.
 
+## 2.11.0 - 2026-07-08
+
+This release is about **turning question-first / grill-me into a cross-stage interaction protocol and making installed-surface drift checks more trustworthy**.
+
+- Complex, uncertain, or non-lightweight tasks now ask an outcome-changing
+  decision/risk question before planning or execution. Explicit `grill-me` /
+  question-first requests inspect discoverable facts first, ask one recommended
+  question, then stop until confirmation or exit.
+- Research, debug, plan, execute, review, goal, init, update, and the
+  Codex/Cursor/Claude Explorer, Designer, Judge, Worker, and Reviewer templates
+  now share question-first override guards.
+- Added question-first eval fixtures and three-platform static samples covering
+  explicit grill, ordinary complex uncertainty, and lightweight direct-action
+  control. The docs now state these are offline fixture/static-sample gates, not
+  proof of live model behavior.
+- `check-update.sh` now renders expected agent files from the installer profile
+  and compares them byte-for-byte, so readiness and the normal report detect
+  global/project agent content drift.
+- Update/init commands are now directly runnable: project-local refresh uses
+  `--project-root`, profile examples include `<profile> <target>`, and policy
+  output targets no longer rewrite the checkout `.teamwork-profile`.
+- Added the `gpt55-high` profile to pin Codex Teamwork subagents to gpt-5.5 high
+  reasoning.
+
 ## 2.10.0 - 2026-07-08
 
 This release is about **giving Teamwork a reusable SkillOpt-Lite/HarnessOpt-Lite candidate loop foundation**.

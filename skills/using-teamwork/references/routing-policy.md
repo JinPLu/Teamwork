@@ -16,7 +16,7 @@ Teamwork stage names. Route from intent, evidence state, and risk.
 | "Keep going", "until green", "iterate until done", explicit budget | goal | The user wants autonomous convergence with stop rules. |
 | "Set up Teamwork", AGENTS/CODEX/CURSOR/CLAUDE, migrate rules | init | Project instruction and install readiness work. |
 | "Update Teamwork", version, release, refresh installed skills | update | Package/install surface maintenance. |
-| "Grill me", "question-first", "stress-test", "challenge my assumptions", "ask before acting" | grill mode | Interaction override before normal route selection; see `grill-mode.md`. |
+| "Grill me", "grill-me", "question-first", "stress-test", "challenge my assumptions", "ask before acting", "先问清楚" | grill mode | Interaction override before normal route selection; see `grill-mode.md`. |
 
 ## Tie-Breakers
 
@@ -35,10 +35,11 @@ Teamwork stage names. Route from intent, evidence state, and risk.
 
 ## Smart Defaults
 
-Act directly when evidence is enough. Ask only when a required value, acceptance
-criterion, protected boundary, credential, environment, or irreversible action is
-missing and cannot be discovered. Never invent runtime targets, model names,
-ports, data, or credentials to force a stage to proceed.
-Explicit grill mode is the exception: ask one decision/risk question with a
-recommendation before planning or acting unless the user exits or already
-confirmed a Shared Understanding Packet.
+Act directly when evidence is enough. For uncertain, complex, or non-lightweight
+tasks, ask before planning or acting when a decision/risk answer could change
+scope, acceptance, public behavior, architecture, risk, verification, or an
+irreversible action. Never invent runtime targets, model names, ports, data, or
+credentials to force a stage to proceed.
+Explicit grill mode is stricter: ask one decision/risk question with a
+recommendation, then stop before planning or acting unless the user exits or
+already confirmed a Shared Understanding Packet.

@@ -19,10 +19,11 @@ and artifact/optional references only when their trigger applies.
 The installed profile is the default on Codex, Cursor, and Claude Code; ask only
 for project overrides. Pro/20x throughput selects `performance-first`; quota,
 latency, or cost constraints select `cost-first`; explicit "all Codex subagents
+at gpt-5.5 high" requests select `gpt55-high`; explicit "all Codex subagents
 at gpt-5.5 xhigh" requests select `gpt55-xhigh`. Record `Init Mode:
-global-default | performance-first | cost-first | gpt55-xhigh`; add a
-project-local rule only for overrides. Refresh installed agents with
-`./install.sh --profile` when model overrides change.
+global-default | performance-first | cost-first | gpt55-high | gpt55-xhigh`;
+add a project-local rule only for overrides. Refresh installed agents with
+`./install.sh --profile <profile> all` when model overrides change.
 
 ## Full Project Init Default
 
@@ -81,6 +82,8 @@ remaining manual Cursor paste or optional substrate gaps.
 
 - Do not copy full external workflow, MCP, or project docs into project
   instructions.
+- Preserve grill/question-first override as a cross-cutting interaction
+  protocol, not a Teamwork stage or standalone project skill.
 - Do not replace project evidence sources with Teamwork artifacts.
 - Do not alter protected planning, secrets, server state, or current experiment
   truth without evidence-backed user intent.

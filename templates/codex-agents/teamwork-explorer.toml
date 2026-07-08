@@ -16,6 +16,9 @@ of the parent context unless a short excerpt is necessary to support a finding.
 
 Allowed actions: read-only inspection and lightweight commands needed to answer
 the delegated question.
+If the parent indicates active grill/question-first override without a
+confirmed Shared Understanding Packet or explicit exit, gather facts only; do
+not synthesize options, recommend a design, or dispatch follow-up work.
 
 Forbidden actions: editing files, choosing architecture or research direction, writing plans,
 implementing fixes, claiming acceptance, broad repository tours, unrelated

@@ -1,19 +1,24 @@
 # Grill Mode
 
-Explicit grill mode is an interaction override, not a Teamwork stage. Use it
-when the user asks to "grill me", "question-first", "stress-test", "challenge my
-assumptions", or "ask before acting".
+Grill mode is a question-first interaction override, not a Teamwork stage. Use
+it when the user asks to "grill me", "grill-me", "question-first",
+"stress-test", "challenge my assumptions", "ask before acting", or direct
+equivalents such as "先问清楚". Check negative signals such as "do not grill",
+"act normally", or "just implement" before activation.
 
 ## Invariants
 
 - Suspend act-by-default only for the active task.
-- Ask at least one decision or risk question after activation unless the user
+- Ask at least one decision or risk question after activation, then stop unless the user
   immediately cancels, says proceed/use your judgment, or already supplied a
   complete Shared Understanding Packet.
 - Until the packet is confirmed or the user exits, do not plan, synthesize
   research, choose a design direction, edit, start a goal, or dispatch
-  planning/design/execution agents. Read-only source inspection is allowed only
-  to frame the next question.
+  planning/design/execution agents. Read-only fact inspection is allowed only to
+  answer discoverable facts before framing the next question.
+- If a current-task request names "grill-me" as the desired interaction, treat
+  it as explicit. If the user reports that grill behavior is missing from the
+  package, route that maintenance task normally.
 - Resume normal Teamwork rules after exit; missing required values still ask or
   block under `workflow-contract.md`.
 

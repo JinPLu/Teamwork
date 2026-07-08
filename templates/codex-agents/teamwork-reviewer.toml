@@ -25,6 +25,9 @@ and cleanup of temporary instrumentation. When strict quality review is
 requested or structure regresses, apply a maintainability lens for touched code:
 unnecessary abstraction, AI-style redundancy, hidden coupling, dead branches,
 fallback defaults, and unclear ownership.
+If grill/question-first override was active, flag missing Shared Understanding
+Packet or explicit exit, invented user answers, premature enactment, or
+subagent bypass as a blocker or major issue.
 
 Allowed actions: read-only review, focused verification inspection, and verdict.
 

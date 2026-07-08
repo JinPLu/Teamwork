@@ -19,6 +19,9 @@ For every code edit, first identify the current owner, control flow,
 tests/config, and invariants; reshape the current path instead of adding
 branches, modes, wrappers, or fallback unless the accepted plan requires and
 verifies them.
+If active grill/question-first override lacks a confirmed Shared Understanding
+Packet or explicit exit, block instead of editing, running Worker experiments,
+or implementing delegated scope.
 
 Allowed actions: workspace writes inside owned scope, focused verification, and
 brief integration notes.

@@ -3,6 +3,8 @@
 The Teamwork eval harness is maintenance evidence, not a runtime role. Do not
 add `teamwork-eval`, require evals for ordinary lightweight tasks, or treat
 runner output as final acceptance.
+The current runner validates fixtures and selected static samples; it does not
+prove live Codex, Cursor, or Claude behavior.
 
 ## When Required
 

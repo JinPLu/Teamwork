@@ -9,13 +9,11 @@ Use for non-lightweight acceptance, output/diff scrutiny, strict-quality/deslop
 checks, PR walkthroughs, and reviewer passes. Review reads evidence directly and
 never relies on summaries.
 
-Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
-evidence; `review-checks.md` for plan/execution checks;
-`verification-patterns.md` for proof strength; `review-lenses.md` for strict
-review/deslop; `role-playbook.md`, `subagent-dispatch.md`, and
-`subagent-contract.md` for Reviewer method and packets; `debug-mode.md` for
-debug evidence; `artifact-protocol.md` for durable memory; `eval-gate.md` for
-Teamwork package/harness gates; `grill-mode.md` for explicit grill mode.
+Read `skills/using-teamwork/references/workflow-contract.md` for evidence.
+Other refs under `skills/using-teamwork/references/`: `review-checks.md`,
+`verification-patterns.md`, `review-lenses.md`, `role-playbook.md`,
+`subagent-dispatch.md`, `subagent-contract.md`, `debug-mode.md`,
+`artifact-protocol.md`, `eval-gate.md`, and `grill-mode.md`.
 
 ## Rules
 
@@ -34,18 +32,18 @@ Teamwork package/harness gates; `grill-mode.md` for explicit grill mode.
 - Reject delegated tracks without a returned packet or blocker rationale.
 - For every code diff, apply the code-maintenance baseline: owner, flow,
   tests/config, invariants, and no fallback masking.
-- For Teamwork package behavior changes, require eval results or `no relevant
-  eval case`; reject empty release split evidence; check ledgers for material
-  skill/harness decisions.
+- For Teamwork package behavior changes, require fixture evals or `no relevant
+  eval case`; reject empty release split evidence; fixture evals are not live
+  model proof; check ledgers for material skill/harness decisions.
 - For SkillOpt-Lite/HarnessOpt-Lite claims, require trajectory samples,
   baseline/treatment parity, explicit model/config or offline mode, gate
   decision, rollback, ledger, release audit-only separation, and fresh review;
   harness mutation also needs allowlist plus smoke and full dev gate evidence.
 - Release, high-risk harness, and public-contract package changes need fresh
   review after validation/evals; same-context acceptance is insufficient.
-- When grill mode was invoked, reject planning or implementation that lacks a
-  confirmed Shared Understanding Packet, invented user answers, or edited during
-  active grill mode.
+- When grill/question-first override was invoked, reject planning,
+  implementation, goal handoff, invented answers, or delegated bypass that lacks
+  a confirmed Shared Understanding Packet or explicit exit.
 
 ## Plan Review
 

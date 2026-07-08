@@ -11,15 +11,17 @@ memory, and acceptance.
    ordinary decisions yourself: tool/MCP choice, naming, formatting,
    safe/reversible defaults, and equivalent approaches. No gate labels,
    ceremony, or permission-seeking for routine choices.
-2. **Ask only when it matters.** Ask for real obstacles, unobtainable
-   information, or core decisions not resolvable from request, code, or context:
-   scope, acceptance, irreversible/destructive actions, public contracts,
-   architecture, or conflicts. Batch questions. Do not ask about routine choices.
+2. **Ask when uncertainty matters.** For uncertain, complex, or non-lightweight
+   tasks, ask the next decision/risk question before planning or acting when the
+   answer could change scope, acceptance, public behavior, contracts,
+   architecture, risk, verification, or irreversible/destructive actions. Batch
+   related questions; do not ask about routine choices.
 3. **Grill mode overrides act-by-default only when explicit.** For user requests
-   to grill, question-first, stress-test, challenge assumptions, or ask before
-   acting, follow `grill-mode.md`: ask one decision/risk question with a
-   recommendation; do not research-synthesize, plan, design-select, dispatch, or
-   implement until the packet is confirmed or the user exits.
+   to grill, grill-me, question-first, stress-test, challenge assumptions, ask
+   before acting, or direct equivalents such as "先问清楚", follow
+   `grill-mode.md`: ask one decision/risk question with a recommendation, then
+   stop; do not research-synthesize, plan, design-select, dispatch, or implement
+   until the packet is confirmed or the user exits.
 4. **No silent defaults or invariant-masking fallback.** Routine tool, naming,
    formatting, and reversible defaults are allowed; required code/runtime values
    and invariants are not. Never invent env vars, paths, commands, ports,
@@ -52,15 +54,16 @@ memory, and acceptance.
 
 ## Asking vs Assuming
 
-Default to proceeding. Make and state a reasonable assumption for anything you
-can judge from the request, code, or context, and keep moving.
+Proceed when evidence is enough. Make and state a reasonable assumption for
+routine tool, naming, formatting, and reversible choices.
 
-Ask only when the answer is beyond the model's reach and would change the
-outcome: a blocker, missing information, or a core decision on scope,
-acceptance, constraints, protected boundaries, public/data contracts,
-architecture, or irreversible/destructive action. Batch these into one short
-question. Missing required values ask only when the user can supply them and you
-cannot find them; otherwise block. Do not interrupt for routine choices.
+Ask before planning or acting when uncertainty could change the outcome:
+ambiguous scope, acceptance, constraints, protected boundaries, UX/public
+behavior, data contracts, architecture, risk, verification strength, or
+irreversible/destructive action. Batch related questions into a short set and
+include a recommendation when useful. Missing required values ask only when the
+user can supply them and you cannot find them; otherwise block. Do not interrupt
+for routine choices.
 
 ## Evidence
 

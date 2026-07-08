@@ -1,6 +1,6 @@
 ---
 name: using-teamwork
-description: Use when a task is ambiguous, non-lightweight, multi-stage, explicitly Teamwork-routed, or asks for grill/question-first mode; infer native/research/debug/plan/execute/review/goal/init/update from intent, evidence, and risk.
+description: Use when a task is ambiguous, non-lightweight, multi-stage, explicitly Teamwork-routed, or asks for grill/grill-me/question-first mode; infer native/research/debug/plan/execute/review/goal/init/update from intent, evidence, and risk.
 ---
 
 # Using Teamwork
@@ -10,14 +10,15 @@ evidence, dispatch, memory, and acceptance. Default to acting directly on clear
 work; escalate only when it improves correctness, continuity, or cost.
 
 Read `references/workflow-contract.md` for shared principles, `references/routing-policy.md`
-for ambiguous routing, and `references/grill-mode.md` for explicit
-grill/question-first/stress-test requests.
+for ambiguous or uncertainty-driven questioning, and `references/grill-mode.md` for explicit
+grill/grill-me/question-first/stress-test requests.
 
 ## First: can you proceed?
 
-Default to proceeding. Ask one short question only for a real obstacle,
-unobtainable information, or core decision: scope, acceptance, required value,
-irreversible action, or public behavior. Decide routine choices yourself.
+Proceed when evidence is enough. For uncertain, complex, or non-lightweight
+tasks, ask the next decision/risk question before planning or acting when the
+answer could change scope, acceptance, public behavior, architecture, risk, or
+verification. Decide routine choices yourself.
 
 In explicit grill mode, ask at least one decision/risk question with a
 recommended answer unless the user exits or supplied a Shared Understanding

@@ -5,6 +5,19 @@
 这份 changelog 按“用户升级后会感受到什么”来写，而不是只罗列文件改动。
 版本边界以 `VERSION` 和插件 manifest 的更新为准；当前仓库没有 git release tag。
 
+## 2.11.0 - 2026-07-08
+
+这版重点是：**question-first / grill-me 变成跨阶段交互协议，并且安装面漂移检查更可信。**
+
+- 复杂、不确定或非轻量任务现在会在计划/执行前先问会改变结果的决策/风险问题；显式
+  `grill-me` / question-first 会先检查可发现事实，只问一个带推荐答案的问题，然后停止等待确认或退出。
+- Research、debug、plan、execute、review、goal、init、update，以及 Codex/Cursor/Claude
+  的 Explorer、Designer、Judge、Worker、Reviewer 模板都同步了 question-first override guard。
+- 新增 question-first eval fixtures 和三平台静态样本，覆盖显式 grill、普通复杂不确定任务、轻量任务不过度拷问三类场景；文档明确这些是离线 fixture/static-sample gate，不声称证明 live model 行为。
+- `check-update.sh` 现在按 installer profile 渲染 expected agent 文件并逐文件比较，readiness 和普通 report 都能发现 global/project agent 内容漂移。
+- 更新/初始化命令修正为可直接运行：project-local 刷新使用 `--project-root`，profile 示例带 `<profile> <target>`，policy 输出目标不再改写 checkout 的 `.teamwork-profile`。
+- 新增 `gpt55-high` profile，可把 Codex Teamwork subagents 固定到 gpt-5.5 high reasoning。
+
 ## 2.10.0 - 2026-07-08
 
 这版重点是：**Teamwork 有了可复用的 SkillOpt-Lite/HarnessOpt-Lite 候选闭环底座。**

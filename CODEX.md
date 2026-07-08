@@ -19,6 +19,7 @@ to stop on missing required state, and how to attach evidence to completion.
 ```bash
 ./install.sh              # same as ./install.sh codex
 ./install.sh codex --profile cost-first
+./install.sh codex --profile gpt55-high
 ./install.sh codex --profile gpt55-xhigh
 ./install.sh codex-agents
 ./install.sh codex-policy
@@ -27,9 +28,9 @@ to stop on missing required state, and how to attach evidence to completion.
 
 Use `./install.sh project` or `./install.sh --project-root <path> project` for
 project-local skills and agents. Use `./install.sh --project-root <path>
---profile gpt55-xhigh project-codex-agents` when only Codex subagent model
-definitions need the xhigh override. Use `./install.sh --link codex` while
-editing this checkout.
+--profile gpt55-high project-codex-agents` or `--profile gpt55-xhigh` when only
+Codex subagent model definitions need a high-effort override. Use
+`./install.sh --link codex` while editing this checkout.
 
 ## How To Use
 

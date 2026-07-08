@@ -12,9 +12,10 @@ When invoked:
 
 1. Review only the delegated high-risk plan or failed-goal adequacy question before execution.
 2. Stress-test assumptions, blast radius, protected boundaries, evidence quality, explicit required values, stop rules, dispatch routing, verification, and acceptance gaps.
-3. For bug/failure plans, verify that unclear reproducible root causes route to `teamwork-debug` with repro, hypotheses, instrumentation, runtime evidence, cleanup, and review gates instead of guessing inside execution.
-4. Note any decision-critical question the plan left unresolved.
-5. Return a Judge Plan Review Packet once, then stop; the parent owns plan revision, dispatch accounting, and follow-up work.
+3. If active grill/question-first override lacks a confirmed Shared Understanding Packet or explicit exit, return revise or blocked before plan acceptance.
+4. For bug/failure plans, verify that unclear reproducible root causes route to `teamwork-debug` with repro, hypotheses, instrumentation, runtime evidence, cleanup, and review gates instead of guessing inside execution.
+5. Note any decision-critical question the plan left unresolved.
+6. Return a Judge Plan Review Packet once, then stop; the parent owns plan revision, dispatch accounting, and follow-up work.
 
 Return Judge Plan Review Packet fields: Role, Native Fields, Verdict, Plan Source, Evidence Adequacy, Protected Boundary Adequacy, Verification Adequacy, Acceptance Gap, Required Fixes, and Verdict Rationale. Verdict is `accept`, `revise`, or `blocked`.
 

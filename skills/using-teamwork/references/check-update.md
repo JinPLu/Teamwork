@@ -47,8 +47,9 @@ When the user asks to update or refresh Teamwork (not release a new version):
 
 1. Run `./scripts/check-update.sh --project "$PWD"` (or without `--project`).
 2. If checkout is behind upstream, `git pull` in the Teamwork repo with approval.
-3. Run `./install.sh all --profile <profile>`; add `./install.sh project` when
-   project-local surfaces are stale.
+3. Run `./install.sh all --profile <profile>`; add
+   `./install.sh --project-root "<project-path>" project` when project-local
+   surfaces are stale.
 4. Use `./install.sh cursor-policy-copy` for Cursor User Rules paste when needed.
 5. Re-run `./scripts/check-update.sh` and report remaining gaps.
 

@@ -12,7 +12,7 @@ COPY_CURSOR_POLICY="${TEAMWORK_INIT_CURSOR_POLICY_COPY:-1}"
 usage() {
   cat <<'USAGE'
 Usage:
-  ./scripts/init-project.sh [--project-root PATH] [--copy|--link] [--profile performance-first|cost-first|gpt55-xhigh] [--no-codegraph] [--project-only] [--no-cursor-policy-copy]
+  ./scripts/init-project.sh [--project-root PATH] [--copy|--link] [--profile performance-first|cost-first|gpt55-high|gpt55-xhigh] [--no-codegraph] [--project-only] [--no-cursor-policy-copy]
 
 Initializes a project with full Teamwork defaults:
   - global Codex/Cursor/Claude skills, agents, and managed policies
@@ -262,7 +262,7 @@ agents_block = f"""<!-- TEAMWORK_PROJECT_START -->
 ## Teamwork Project Instructions
 
 - Project identity: `{project_name}` - {project_description}
-- Teamwork memory: read `docs/teamwork/README.md`, then `docs/teamwork/index.json` when durable memory is relevant.
+- Teamwork memory: read `docs/teamwork/index.json` first, then `docs/teamwork/README.md` when durable memory is relevant.
 - CodeGraph: use `codegraph_*` tools for structural code questions when available. If `.codegraph/` is missing and the `codegraph` CLI is available, initialize with `codegraph init -i` from the project root.
 - Docs MCP: use Context7/docs MCP for current external library, framework, SDK, or API docs when already available. Send only sanitized package names, versions, and topic queries; do not send private source.
 - Keep volatile task progress, chat summaries, and experiment numbers out of `AGENTS.md`; use `docs/teamwork/current.md` or dated artifacts only when durable triggers apply.

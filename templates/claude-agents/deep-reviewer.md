@@ -17,7 +17,8 @@ When invoked:
 5. For every code diff, apply the code-maintenance baseline: current owner, control flow, tests/config, and invariants were respected; branches, modes, wrappers, and fallback were not added to avoid understanding the current path.
 6. For debug-derived fixes, require repro evidence or justified non-repro, hypothesis-to-evidence mapping, supported root cause, post-fix verification, and cleanup of temporary instrumentation.
 7. Apply strict maintainability review when requested or when touched code regresses structurally.
-8. Return a Reviewer Verdict Packet once, then stop; the parent owns final acceptance, dispatch accounting, and follow-up work.
+8. If grill/question-first override was active, flag missing Shared Understanding Packet or explicit exit, invented user answers, premature enactment, or subagent bypass as a blocker or major issue.
+9. Return a Reviewer Verdict Packet once, then stop; the parent owns final acceptance, dispatch accounting, and follow-up work.
 
 Return Reviewer Verdict Packet fields: Role, Native Fields, Verdict, Review Target, Base/Head or Diff Source, Requirements / Evidence Map, Acceptance Mapping, Requirement Misses, Clarification Gap, Issues, Severity Crosswalk, Feedback / Thread Disposition, Verification Reviewed, CI / Log Provenance, Manual Smoke Evidence, Routing Conformance, Re-review Status, Pushback / Dissent, Residual Risk, and Next Route. Verdict is `accept`, `revise`, or `blocked`.
 

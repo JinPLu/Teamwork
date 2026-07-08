@@ -249,14 +249,28 @@ actual_reference_inventory="$(
 [[ -f "$ROOT/evals/teamwork/README.md" ]] || fail "missing evals/teamwork/README.md"
 git_known_package_file "evals/teamwork/README.md" \
   || fail "evals/teamwork/README.md is not known to git; use git add -N before release validation"
-for eval_dir in cases rubrics ledgers; do
+for eval_dir in cases rubrics ledgers outputs; do
   [[ -d "$ROOT/evals/teamwork/$eval_dir" ]] || fail "missing evals/teamwork/$eval_dir/"
 done
 while IFS= read -r eval_file; do
   rel="${eval_file#"$ROOT"/}"
   git_known_package_file "$rel" \
     || fail "$rel is not known to git; use git add -N before release validation"
-done < <(find "$ROOT/evals/teamwork/cases" "$ROOT/evals/teamwork/rubrics" "$ROOT/evals/teamwork/ledgers" -type f | sort)
+done < <(find "$ROOT/evals/teamwork/cases" "$ROOT/evals/teamwork/rubrics" "$ROOT/evals/teamwork/ledgers" "$ROOT/evals/teamwork/outputs" -type f | sort)
+[[ -f "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" ]] \
+  || fail "missing question-first eval output samples"
+for case_id in question-first-explicit-grill question-first-complex-uncertainty question-first-lightweight-control; do
+  [[ -f "$ROOT/evals/teamwork/cases/$case_id.dev.json" ]] \
+    || fail "missing question-first eval case: $case_id"
+  grep_required "\"case_id\":\"$case_id\"" "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" \
+    "question-first eval outputs must include $case_id"
+done
+for platform in codex cursor claude; do
+  grep_required "\"platform\":\"$platform\"" "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" \
+    "question-first eval outputs must include $platform samples"
+done
+grep_required 'Facts checked:' "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" \
+  "explicit grill output samples must cite facts checked before asking"
 [[ -f "$ROOT/scripts/eval-teamwork.py" ]] || fail "missing scripts/eval-teamwork.py"
 git_known_package_file "scripts/eval-teamwork.py" \
   || fail "scripts/eval-teamwork.py is not known to git; use git add -N before release validation"
@@ -495,13 +509,74 @@ for anchor in Deslop 'Strict Maintainability' 'Reviewer Comprehension' 'Multi-Le
   grep_required "$anchor" "$ROOT/skills/using-teamwork/references/review-lenses.md" "review lenses must lock $anchor"
 done
 grep_required 'No silent defaults or invariant-masking fallback' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must define invariant-masking fallback"
+grep_required 'Ask when uncertainty matters' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must ask on meaningful uncertainty"
+grep_required 'ask the next decision/risk question before planning or acting' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must ask before planning on complex uncertainty"
 grep_required 'Grill mode overrides act-by-default only when explicit' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must scope grill mode override"
 grep_required 'research-synthesize, plan, design-select, dispatch' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must gate grill before research/design/dispatch"
 grep_required 'Shared Understanding Packet' "$ROOT/skills/using-teamwork/references/grill-mode.md" "grill mode must require a handoff packet"
 grep_required 'Ask at least one decision or risk question' "$ROOT/skills/using-teamwork/references/grill-mode.md" "grill mode must force at least one question"
+grep_required 'grill-me' "$ROOT/skills/using-teamwork/references/grill-mode.md" "grill mode must recognize named grill-me requests"
+grep_required '先问清楚' "$ROOT/skills/using-teamwork/references/grill-mode.md" "grill mode must recognize direct non-English question-first equivalents"
+grep_required 'then stop' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must stop after the grill question"
 grep_required 'synthesize research, choose design' "$ENTRYPOINT" "using-teamwork must block research/design during active grill mode"
-grep_required 'do not fan out, synthesize, recommend, or write' "$ROOT/skills/teamwork-research/SKILL.md" "research must honor active grill mode before synthesis"
+grep_required 'do not fan out' "$ROOT/skills/teamwork-research/SKILL.md" "research must not fan out during active question-first override"
+grep_required 'research conclusion' "$ROOT/skills/teamwork-research/SKILL.md" "research must not synthesize during active question-first override"
+grep_required 'grill-mode.md' "$ROOT/skills/teamwork-debug/SKILL.md" "debug must reference grill mode for active question-first override"
+grep_required 'only gather facts needed to frame' "$ROOT/skills/teamwork-debug/SKILL.md" "debug must not diagnose past active question-first override"
 grep_required 'Do not dispatch Designer/Judge' "$ROOT/skills/teamwork-plan/SKILL.md" "plan must not dispatch design/judge while grill packet is missing"
+grep_required 'implement or dispatch Workers' "$ROOT/skills/teamwork-execute/SKILL.md" "execute must block implementation while grill packet is missing"
+grep_required 'delegated bypass' "$ROOT/skills/teamwork-review/SKILL.md" "review must catch subagent bypass of question-first override"
+grep_required 'iteration loop' "$ROOT/skills/teamwork-goal/SKILL.md" "goal must block iteration while question-first override is active"
+grep_required 'cross-cutting interaction' "$ROOT/skills/teamwork-init/SKILL.md" "init must preserve question-first as cross-cutting behavior"
+grep_required 'question-first override' "$ROOT/skills/teamwork-update/SKILL.md" "update must require eval coverage for question-first changes"
+[[ ! -e "$ROOT/skills/teamwork-grill" ]] || fail "question-first override must not become a peer teamwork-grill skill"
+grep_absent 'teamwork-grill)' "install skill list must not add a peer teamwork-grill skill" "$ROOT/install.sh"
+for platform in codex cursor claude; do
+  case "$platform" in
+    codex)
+      prefix="$ROOT/templates/codex-agents/teamwork-"
+      explorer="${prefix}explorer.toml"
+      worker="${prefix}worker.toml"
+      designer="${prefix}designer.toml"
+      judge="${prefix}judge.toml"
+      reviewer="${prefix}reviewer.toml"
+      deep_judge="${prefix}deep-judge.toml"
+      deep_reviewer="${prefix}deep-reviewer.toml"
+      ;;
+    cursor)
+      prefix="$ROOT/templates/cursor-agents/"
+      explorer="${prefix}explore.md"
+      worker="${prefix}worker.md"
+      designer="${prefix}designer.md"
+      judge="${prefix}judge.md"
+      reviewer="${prefix}code-reviewer.md"
+      deep_judge="${prefix}deep-judge.md"
+      deep_reviewer="${prefix}deep-reviewer.md"
+      ;;
+    claude)
+      prefix="$ROOT/templates/claude-agents/"
+      explorer="${prefix}explore.md"
+      worker="${prefix}worker.md"
+      designer="${prefix}designer.md"
+      judge="${prefix}judge.md"
+      reviewer="${prefix}code-reviewer.md"
+      deep_judge="${prefix}deep-judge.md"
+      deep_reviewer="${prefix}deep-reviewer.md"
+      ;;
+  esac
+  grep_required 'active grill/question-first override' "$explorer" "$platform Explorer must honor active question-first override"
+  grep_required 'gather facts only' "$explorer" "$platform Explorer must stay fact-only during active question-first override"
+  grep_required 'active grill/question-first override' "$worker" "$platform Worker must honor active question-first override"
+  grep_required 'block instead of editing' "$worker" "$platform Worker must block edits during active question-first override"
+  grep_required 'active grill/question-first override' "$designer" "$platform Designer must honor active question-first override"
+  grep_required 'explicit exit' "$designer" "$platform Designer must allow explicit exit from question-first override"
+  grep_required 'active grill/question-first override' "$judge" "$platform Judge must honor active question-first override"
+  grep_required 'explicit exit' "$judge" "$platform Judge must allow explicit exit from question-first override"
+  grep_required 'active grill/question-first override' "$deep_judge" "$platform Deep Judge must honor active question-first override"
+  grep_required 'explicit exit' "$deep_judge" "$platform Deep Judge must allow explicit exit from question-first override"
+  grep_required 'subagent bypass' "$reviewer" "$platform Reviewer must catch subagent bypass"
+  grep_required 'subagent bypass' "$deep_reviewer" "$platform Deep Reviewer must catch subagent bypass"
+done
 grep_required 'Required Values / Invariants' "$ROOT/skills/using-teamwork/references/plan-output.md" "plan output must lock required values and invariants"
 grep_required 'Every code write path starts' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must make code maintenance write-path-wide"
 grep_required 'For every code diff, apply the code-maintenance baseline' "$ROOT/skills/teamwork-review/SKILL.md" "review must apply code-maintenance baseline to every code diff"
@@ -531,7 +606,9 @@ grep_required 'check-update.sh' "$ROOT/skills/teamwork-update/SKILL.md" "teamwor
 grep_required 'teamwork-debug' "$ROOT/scripts/check-update.sh" "check-update inventory must include teamwork-debug"
 grep_required 'skills_content_status' "$ROOT/scripts/check-update.sh" "check-update must detect installed skill content drift"
 grep_required 'agents_content_status' "$ROOT/scripts/check-update.sh" "check-update must detect installed agent content drift"
+grep_required 'Ask when uncertainty matters' "$ROOT/scripts/check-update.sh" "check-update policy status must detect stale uncertainty asking policy"
 grep_required 'synthesize research, choose design' "$ROOT/scripts/check-update.sh" "check-update policy status must detect stale grill policy"
+grep_required 'grill-me' "$ROOT/scripts/check-update.sh" "check-update policy status must detect stale grill-me policy"
 grep_required 'Verdict: accept | revise | blocked' "$ROOT/skills/teamwork-review/SKILL.md" "review skill verdict enum must match Reviewer Verdict Packet"
 grep_absent 'Verdict: pass | pass-with-notes' "review skill must not use stale verdict enum" "$ROOT/skills/teamwork-review/SKILL.md"
 grep_required 'Reject delegated tracks without a returned packet or blocker rationale' "$ROOT/skills/teamwork-review/SKILL.md" "review skill must require delegated track accounting"
@@ -762,10 +839,20 @@ grep_required 'Teamwork Codex Global Policy' "$tmp/home/.codex/AGENTS.md" \
   "Codex install must write Teamwork global policy heading"
 grep_required 'Act by default:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must prioritize acting by default"
-grep_required 'Ask only when it matters:' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must scope asking to core decisions"
+grep_required 'Ask when uncertainty matters:' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must ask on meaningful uncertainty"
+grep_required 'ask the next decision/risk question before planning or acting' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must ask before planning on complex uncertainty"
 grep_required 'Grill mode:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must document explicit grill mode override"
+grep_required 'grill-me' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must recognize named grill-me requests"
+grep_required '先问清楚' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must recognize non-English question-first equivalents"
+grep_required 'then stop' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must stop after the grill question"
+grep_required 'available facts before asking' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must inspect discoverable facts before grill questions"
 grep_required 'synthesize research, choose design' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must gate research/design during grill mode"
 grep_required 'Code maintenance: every code write path starts' "$tmp/home/.codex/AGENTS.md" \
@@ -807,10 +894,18 @@ grep_required '<!-- CODEGRAPH_START -->' "$agents_preserve_home/.codex/AGENTS.md
   "Codex global policy install must preserve CodeGraph block"
 grep_required 'Act by default:' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must replace managed block"
-grep_required 'Ask only when it matters:' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must scope asking to core decisions"
+grep_required 'Ask when uncertainty matters:' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must refresh uncertainty asking policy"
+grep_required 'ask the next decision/risk question before planning or acting' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must ask before planning on complex uncertainty"
 grep_required 'Grill mode:' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must preserve grill mode override"
+grep_required 'grill-me' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must refresh named grill-me trigger"
+grep_required 'then stop' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must refresh grill stop gate"
+grep_required 'available facts before asking' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must preserve fact inspection before grill questions"
 grep_required 'synthesize research, choose design' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must refresh expanded grill anchor"
 grep_required 'Code maintenance: every code write path starts' "$agents_preserve_home/.codex/AGENTS.md" \
@@ -835,8 +930,14 @@ codex_policy_out="$tmp/codex-policy.out"
 HOME="$tmp/home-codex-policy" "$ROOT/install.sh" codex-policy > "$codex_policy_out"
 grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$codex_policy_out" \
   "codex-policy target must print Teamwork global policy start marker"
+grep_required 'Ask when uncertainty matters:' "$codex_policy_out" \
+  "codex-policy target must print uncertainty asking policy"
 grep_required 'synthesize research, choose design' "$codex_policy_out" \
   "codex-policy target must print expanded grill policy"
+grep_required 'grill-me' "$codex_policy_out" \
+  "codex-policy target must print named grill-me trigger"
+grep_required 'then stop' "$codex_policy_out" \
+  "codex-policy target must print grill stop gate"
 grep_required 'Codex model profile: default is performance-first' "$codex_policy_out" \
   "codex-policy target must render performance-first profile"
 grep_required 'Bootstrap safety:' "$codex_policy_out" \
@@ -906,6 +1007,40 @@ grep_required 'Codex model profile: default is cost-first' "$tmp/codex-policy-co
 [[ ! -e "$tmp/home-codex-policy-cost/.codex/AGENTS.md" ]] \
   || fail "cost-first codex-policy target must not write global AGENTS policy"
 
+HOME="$tmp/home-codex-agents-high" "$ROOT/install.sh" --profile gpt55-high codex-agents >/dev/null
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
+  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents-high/.codex/agents/$agent.toml" \
+    "gpt55-high Codex agent install must render gpt-5.5 for $agent"
+  grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-high/.codex/agents/$agent.toml" \
+    "gpt55-high Codex agent install must render high reasoning for $agent"
+done
+
+HOME="$tmp/home-codex-high" "$ROOT/install.sh" --profile gpt55-high codex >/dev/null
+grep_required 'Codex model profile: default is gpt55-high' "$tmp/home-codex-high/.codex/AGENTS.md" \
+  "Codex global policy must record gpt55-high profile"
+grep_required 'gpt55-high forces every Codex Teamwork subagent to gpt-5.5 with high' "$tmp/home-codex-high/.codex/AGENTS.md" \
+  "Codex global policy must describe gpt55-high behavior"
+
+HOME="$tmp/home-codex-policy-high" "$ROOT/install.sh" --profile gpt55-high codex-policy > "$tmp/codex-policy-high.out"
+grep_required 'Codex model profile: default is gpt55-high' "$tmp/codex-policy-high.out" \
+  "codex-policy target must render gpt55-high profile"
+[[ ! -e "$tmp/home-codex-policy-high/.codex/AGENTS.md" ]] \
+  || fail "gpt55-high codex-policy target must not write global AGENTS policy"
+
+project_codex_high="$tmp/project-codex-high"
+mkdir -p "$project_codex_high"
+HOME="$tmp/home-project-codex-high" "$ROOT/install.sh" --profile gpt55-high --project-root "$project_codex_high" project-codex-agents >/dev/null
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
+  grep_required '^model = "gpt-5.5"$' "$project_codex_high/.codex/agents/$agent.toml" \
+    "project-codex-agents must render gpt-5.5 for $agent"
+  grep_required '^model_reasoning_effort = "high"$' "$project_codex_high/.codex/agents/$agent.toml" \
+    "project-codex-agents must render high reasoning for $agent"
+done
+[[ ! -e "$project_codex_high/.cursor" ]] \
+  || fail "project-codex-agents target must not write Cursor project agents"
+[[ ! -e "$project_codex_high/.claude" ]] \
+  || fail "project-codex-agents target must not write Claude project agents"
+
 HOME="$tmp/home-codex-agents-xhigh" "$ROOT/install.sh" --profile gpt55-xhigh codex-agents >/dev/null
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
   grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents-xhigh/.codex/agents/$agent.toml" \
@@ -943,10 +1078,27 @@ done
 project_update="$tmp/project-update"
 mkdir -p "$project_update"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
+printf '\n# stale global agent drift fixture\n' >> "$tmp/home-project-update/.codex/agents/teamwork-worker.toml"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --no-fetch > "$tmp/global-agent-stale-report.out" || true
+grep_required 'drift(missing=0,changed=1)' "$tmp/global-agent-stale-report.out" \
+  "check-update report must show global agent content drift"
+grep_required 'Summary: .*issue' "$tmp/global-agent-stale-report.out" \
+  "check-update report must count global agent content drift"
+HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
 HOME="$tmp/home-project-update" "$ROOT/install.sh" --project-root "$project_update" project >/dev/null
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --project "$project_update" --no-fetch > "$tmp/project-update-ready.out"
 grep_required '^INSTALL_READY=yes$' "$tmp/project-update-ready.out" \
   "check-update project readiness must pass after fresh project install"
+printf '\n# stale agent drift fixture\n' >> "$project_update/.codex/agents/teamwork-worker.toml"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --project "$project_update" --no-fetch > "$tmp/project-update-agent-stale-report.out" || true
+grep_required 'project codex agent content: drift(missing=0,changed=1)' "$tmp/project-update-agent-stale-report.out" \
+  "check-update report must show project agent content drift"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --project "$project_update" --no-fetch > "$tmp/project-update-agent-stale.out"
+grep_required '^INSTALL_READY=no$' "$tmp/project-update-agent-stale.out" \
+  "check-update project readiness must fail on project agent drift"
+grep_required 'project-codex-agent-content' "$tmp/project-update-agent-stale.out" \
+  "check-update readiness must report project agent content drift"
+HOME="$tmp/home-project-update" "$ROOT/install.sh" --project-root "$project_update" project >/dev/null
 printf '%s\n' '0.0.0' > "$project_update/.cursor/skills/.teamwork-version"
 printf '\n# stale drift fixture\n' >> "$project_update/.cursor/skills/using-teamwork/SKILL.md"
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --project "$project_update" --no-fetch > "$tmp/project-update-stale.out"
@@ -1023,8 +1175,16 @@ cursor_policy_out="$tmp/cursor-policy.out"
 HOME="$tmp/home-cursor-policy" "$ROOT/install.sh" cursor-policy > "$cursor_policy_out"
 grep_required '<!-- TEAMWORK_CURSOR_GLOBAL_START -->' "$cursor_policy_out" \
   "cursor-policy target must print Teamwork global policy start marker"
+grep_required 'Ask when uncertainty matters:' "$cursor_policy_out" \
+  "cursor-policy target must print uncertainty asking policy"
 grep_required 'synthesize research, choose design' "$cursor_policy_out" \
   "cursor-policy target must print expanded grill policy"
+grep_required 'grill-me' "$cursor_policy_out" \
+  "cursor-policy target must print named grill-me trigger"
+grep_required 'then stop' "$cursor_policy_out" \
+  "cursor-policy target must print grill stop gate"
+grep_required 'available facts before asking' "$cursor_policy_out" \
+  "cursor-policy target must print fact inspection before grill questions"
 grep_required 'Code maintenance: every code write path starts' "$cursor_policy_out" \
   "cursor-policy target must print code maintenance policy"
 grep_required 'Cursor model profile: default is performance-first' "$cursor_policy_out" \
@@ -1046,8 +1206,16 @@ TEAMWORK_TEST_CLIPBOARD="$tmp/cursor-policy-copy.clipboard" \
   "$ROOT/install.sh" cursor-policy-copy > "$cursor_policy_copy_out"
 grep_required '<!-- TEAMWORK_CURSOR_GLOBAL_START -->' "$tmp/cursor-policy-copy.clipboard" \
   "cursor-policy-copy target must copy Teamwork global policy start marker"
+grep_required 'Ask when uncertainty matters:' "$tmp/cursor-policy-copy.clipboard" \
+  "cursor-policy-copy target must copy uncertainty asking policy"
 grep_required 'synthesize research, choose design' "$tmp/cursor-policy-copy.clipboard" \
   "cursor-policy-copy target must copy expanded grill policy"
+grep_required 'grill-me' "$tmp/cursor-policy-copy.clipboard" \
+  "cursor-policy-copy target must copy named grill-me trigger"
+grep_required 'then stop' "$tmp/cursor-policy-copy.clipboard" \
+  "cursor-policy-copy target must copy grill stop gate"
+grep_required 'available facts before asking' "$tmp/cursor-policy-copy.clipboard" \
+  "cursor-policy-copy target must copy fact inspection before grill questions"
 grep_required 'Code maintenance: every code write path starts' "$tmp/cursor-policy-copy.clipboard" \
   "cursor-policy-copy target must copy code maintenance policy"
 grep_required 'Copied Teamwork Cursor global policy to clipboard.' "$cursor_policy_copy_out" \
@@ -1090,8 +1258,16 @@ grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$tmp/home-claude/.claude/
   "Claude install must create Teamwork global CLAUDE block"
 grep_required 'Claude model profile: default is performance-first' "$tmp/home-claude/.claude/CLAUDE.md" \
   "Claude global policy must record performance-first profile"
+grep_required 'Ask when uncertainty matters:' "$tmp/home-claude/.claude/CLAUDE.md" \
+  "Claude global policy must ask on meaningful uncertainty"
 grep_required 'synthesize research, choose design' "$tmp/home-claude/.claude/CLAUDE.md" \
   "Claude global policy must gate research/design during grill mode"
+grep_required 'grill-me' "$tmp/home-claude/.claude/CLAUDE.md" \
+  "Claude global policy must recognize named grill-me requests"
+grep_required 'then stop' "$tmp/home-claude/.claude/CLAUDE.md" \
+  "Claude global policy must stop after the grill question"
+grep_required 'available facts before asking' "$tmp/home-claude/.claude/CLAUDE.md" \
+  "Claude global policy must inspect discoverable facts before grill questions"
 grep_required 'Code maintenance: every code write path starts' "$tmp/home-claude/.claude/CLAUDE.md" \
   "Claude global policy must make code maintenance write-path-wide"
 grep_required 'Bootstrap safety:' "$tmp/home-claude/.claude/CLAUDE.md" \
@@ -1101,8 +1277,14 @@ claude_policy_out="$tmp/claude-policy.out"
 HOME="$tmp/home-claude-policy" "$ROOT/install.sh" claude-policy > "$claude_policy_out"
 grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$claude_policy_out" \
   "claude-policy target must print Teamwork global policy start marker"
+grep_required 'Ask when uncertainty matters:' "$claude_policy_out" \
+  "claude-policy target must print uncertainty asking policy"
 grep_required 'synthesize research, choose design' "$claude_policy_out" \
   "claude-policy target must print expanded grill policy"
+grep_required 'grill-me' "$claude_policy_out" \
+  "claude-policy target must print named grill-me trigger"
+grep_required 'then stop' "$claude_policy_out" \
+  "claude-policy target must print grill stop gate"
 grep_required 'Code maintenance: every code write path starts' "$claude_policy_out" \
   "claude-policy target must print code maintenance policy"
 grep_required 'Claude model profile: default is performance-first' "$claude_policy_out" \

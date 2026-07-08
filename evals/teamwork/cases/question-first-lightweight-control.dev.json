@@ -1,0 +1,22 @@
+{
+  "id": "question-first-lightweight-control",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Fix a typo in one known README line.",
+  "expected": {
+    "mode": "native_lightweight",
+    "requires": ["direct action", "no grill ceremony", "no subagent dispatch"]
+  },
+  "must": [
+    "act directly when the task is clear, low-risk, and evidence-sufficient",
+    "avoid asking about routine naming, formatting, or equivalent choices"
+  ],
+  "must_not": [
+    "enter grill mode or require a Shared Understanding Packet",
+    "dispatch subagents or create a durable plan for the typo"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "docs/teamwork/plans/2026-07-08-question-first-interaction-override.md"
+}

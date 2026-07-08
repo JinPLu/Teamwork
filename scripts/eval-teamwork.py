@@ -15,6 +15,7 @@ EVAL_ROOT = ROOT / "evals" / "teamwork"
 CASE_DIR = EVAL_ROOT / "cases"
 RUBRIC_DIR = EVAL_ROOT / "rubrics"
 LEDGER_DIR = EVAL_ROOT / "ledgers"
+OUTPUT_DIR = EVAL_ROOT / "outputs"
 
 REQUIRED_CASE_FIELDS = {
     "id",
@@ -87,6 +88,20 @@ OPTIMIZER_GATE_DECISIONS = {"accept_new_best", "accept", "reject", "flat", "bloc
 OPTIMIZER_DECISIONS = {"candidate", "accepted", "rejected", "blocked"}
 PLACEHOLDER = "not_applicable"
 GLOB_CHARS = set("*?[")
+REQUIRED_QUESTION_FIRST_CASES = {
+    "question-first-explicit-grill": {"ask_one_question", "recommended_answer", "no_plan", "no_edit"},
+    "question-first-complex-uncertainty": {"decision_risk_question", "no_plan_before_question"},
+    "question-first-lightweight-control": {"direct_lightweight", "no_grill_ceremony"},
+}
+OUTPUT_REQUIRED_FIELDS = {
+    "case_id",
+    "platform",
+    "input",
+    "output",
+    "expected_behavior",
+    "passed",
+    "fail_reason",
+}
 
 
 class EvalError(Exception):
@@ -327,6 +342,99 @@ def validate_ledgers() -> int:
     return line_count
 
 
+def validate_question_first_outputs(case_ids: set[str]) -> int:
+    missing_cases = sorted(set(REQUIRED_QUESTION_FIRST_CASES) - case_ids)
+    if missing_cases:
+        raise EvalError(f"missing question-first case(s): {', '.join(missing_cases)}")
+
+    output_path = OUTPUT_DIR / "question-first" / "dev.jsonl"
+    if not output_path.is_file():
+        raise EvalError(f"missing question-first output samples: {display_path(output_path)}")
+
+    seen: set[str] = set()
+    seen_platforms: dict[str, set[str]] = {case_id: set() for case_id in REQUIRED_QUESTION_FIRST_CASES}
+    rows = 0
+    for index, line in enumerate(output_path.read_text().splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            data = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise EvalError(f"{display_path(output_path)}:{index}: invalid JSONL: {exc}") from exc
+        if not isinstance(data, dict):
+            raise EvalError(f"{display_path(output_path)}:{index}: output row must be an object")
+        missing = sorted(OUTPUT_REQUIRED_FIELDS - set(data))
+        if missing:
+            raise EvalError(f"{display_path(output_path)}:{index}: missing output fields: {', '.join(missing)}")
+
+        case_id = require_string(data.get("case_id"), "case_id", output_path)
+        if case_id not in REQUIRED_QUESTION_FIRST_CASES:
+            raise EvalError(f"{display_path(output_path)}:{index}: unexpected question-first case_id: {case_id}")
+        if case_id not in case_ids:
+            raise EvalError(f"{display_path(output_path)}:{index}: output references missing case: {case_id}")
+
+        platform = require_string(data.get("platform"), "platform", output_path)
+        if platform not in PLATFORMS:
+            raise EvalError(f"{display_path(output_path)}:{index}: unknown platform: {platform}")
+        require_string(data.get("input"), "input", output_path)
+        require_string(data.get("output"), "output", output_path)
+
+        expected = set(require_string_list(data.get("expected_behavior"), "expected_behavior", output_path))
+        required = REQUIRED_QUESTION_FIRST_CASES[case_id]
+        missing_expected = sorted(required - expected)
+        if missing_expected:
+            raise EvalError(
+                f"{display_path(output_path)}:{index}: expected_behavior missing for {case_id}: "
+                f"{', '.join(missing_expected)}"
+            )
+
+        passed = data.get("passed")
+        if not isinstance(passed, bool):
+            raise EvalError(f"{display_path(output_path)}:{index}: passed must be boolean")
+        fail_reason = data.get("fail_reason")
+        if not isinstance(fail_reason, str):
+            raise EvalError(f"{display_path(output_path)}:{index}: fail_reason must be a string")
+        if passed and fail_reason:
+            raise EvalError(f"{display_path(output_path)}:{index}: passing row must have empty fail_reason")
+        if not passed:
+            raise EvalError(f"{display_path(output_path)}:{index}: question-first sample failed: {fail_reason}")
+
+        output = data["output"].lower()
+        if case_id == "question-first-explicit-grill":
+            if output.count("question:") != 1 or data["output"].count("?") != 1:
+                raise EvalError(f"{display_path(output_path)}:{index}: explicit grill output must ask exactly one question")
+            if "facts checked:" not in output or "recommended:" not in output:
+                raise EvalError(
+                    f"{display_path(output_path)}:{index}: explicit grill output must cite facts and recommend"
+                )
+            forbidden = ("steps:", "implementation", "edit", "dispatch", "goal proposal")
+            if any(item in output for item in forbidden):
+                raise EvalError(f"{display_path(output_path)}:{index}: explicit grill output contains forbidden enactment")
+        if case_id == "question-first-complex-uncertainty":
+            if "question:" not in output:
+                raise EvalError(f"{display_path(output_path)}:{index}: complex uncertainty output must ask a question")
+            if "steps:" in output or "implementation" in output:
+                raise EvalError(f"{display_path(output_path)}:{index}: complex uncertainty output planned before asking")
+        if case_id == "question-first-lightweight-control":
+            if "shared understanding packet" in output or "grill" in output:
+                raise EvalError(f"{display_path(output_path)}:{index}: lightweight output must not use grill ceremony")
+
+        seen.add(case_id)
+        seen_platforms[case_id].add(platform)
+        rows += 1
+
+    missing_outputs = sorted(set(REQUIRED_QUESTION_FIRST_CASES) - seen)
+    if missing_outputs:
+        raise EvalError(f"missing question-first output row(s): {', '.join(missing_outputs)}")
+    for case_id, platforms in sorted(seen_platforms.items()):
+        missing_platforms = sorted(PLATFORMS - platforms)
+        if missing_platforms:
+            raise EvalError(
+                f"missing question-first output platform(s) for {case_id}: {', '.join(missing_platforms)}"
+            )
+    return rows
+
+
 def selected_cases(selection: str) -> list[dict[str, Any]]:
     if not CASE_DIR.is_dir():
         raise EvalError("evals/teamwork/cases/ is missing")
@@ -341,6 +449,7 @@ def selected_cases(selection: str) -> list[dict[str, Any]]:
         if case_id in seen:
             raise EvalError(f"duplicate case id: {case_id}")
         seen.add(case_id)
+    output_rows = validate_question_first_outputs(seen)
     if selection == "all":
         selected = cases
         missing_splits = sorted(split for split in SPLITS if not any(case["split"] == split for case in cases))

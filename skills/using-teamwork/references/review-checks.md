@@ -10,7 +10,7 @@ Use for `teamwork-review` plan/execution evidence scrutiny.
 
 3. **Dispatch and handoff**: material tracks have Dispatch Guidance; delegated work has prompt packets, output schema, ownership, and escalation triggers; durable/high-risk/public plans have a verdict or residual risk.
 
-4. **Grill handoff**: explicit grill mode has a confirmed Shared Understanding Packet before planning, execution, goal handoff, or Worker dispatch.
+4. **Question-first handoff**: active grill/question-first override has a confirmed packet or explicit exit before planning, execution, goal handoff, or Worker dispatch.
 
 5. **Goal continuity**: retry plans include Goal Invariants, Replay Preflight, Do Not Repeat, Goal Anchor, Drift Verdict, and Retry Verdict.
 
@@ -42,6 +42,6 @@ Return `revise` when required artifacts are missing, placeholders remain, confid
 
 8. **Goal drift**: goal-mode acceptance requires Attempt Record, Failure Reflection when applicable, and only `accept | revise | blocked`.
 
-9. **Grill drift**: no confirmed packet, invented user answers, or edits during active grill mode means `revise` or `blocked`.
+9. **Question-first drift**: missing packet/exit, invented answers, premature enactment, edits, or subagent bypass during active override means `revise` or `blocked`.
 
 If work cannot be accepted, state the next route: research refresh, plan revision, implementation correction, or true blocker.

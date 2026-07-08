@@ -1,0 +1,22 @@
+{
+  "id": "question-first-complex-uncertainty",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/workflow-contract.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Redesign a cross-platform Teamwork behavior that affects routing, agents, validation, and install surfaces.",
+  "expected": {
+    "mode": "ordinary_uncertainty",
+    "requires": ["outcome-changing decision/risk question", "no Shared Understanding Packet ceremony"]
+  },
+  "must": [
+    "ask a decision/risk question before planning or execution when the answer changes scope, acceptance, architecture, risk, or verification",
+    "include a recommended answer when it helps resolve the decision"
+  ],
+  "must_not": [
+    "start a full execution plan before asking the outcome-changing question",
+    "force explicit grill-mode packet ceremony for ordinary uncertainty"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "docs/teamwork/plans/2026-07-08-question-first-interaction-override.md"
+}

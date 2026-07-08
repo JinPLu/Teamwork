@@ -1,0 +1,23 @@
+{
+  "id": "question-first-explicit-grill",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/grill-mode.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "grill-me this implementation idea before planning or coding.",
+  "expected": {
+    "mode": "question_first_override",
+    "requires": ["one decision/risk question", "recommended answer", "no plan", "no edit", "no dispatch"]
+  },
+  "must": [
+    "ask exactly one decision/risk question with a recommended answer",
+    "inspect available facts before asking when facts are discoverable",
+    "stop before planning, synthesis, dispatch, edits, or goal handoff"
+  ],
+  "must_not": [
+    "write an execution plan before the Shared Understanding Packet or explicit exit",
+    "invent user decisions or treat silence as confirmation"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "docs/teamwork/plans/2026-07-08-question-first-interaction-override.md"
+}

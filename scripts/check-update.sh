@@ -150,22 +150,143 @@ agents_status() {
 agents_content_status() {
   local dest_root="$1"
   local ext="$2"
-  shift 2
-  local required=("$@")
-  local missing=0
+  local platform="$3"
+  shift 3
+  local agents=("$@")
+  local agent source expected tmp missing=0 drift=0
   [[ -d "$dest_root" ]] || { echo "missing"; return 0; }
-  for item in "${required[@]}"; do
-    local file="${item%%:*}"
-    local anchor="${item#*:}"
-    if [[ ! -f "$dest_root/$file.$ext" ]] || ! grep -q "$anchor" "$dest_root/$file.$ext"; then
+  tmp="$(mktemp -d)"
+  for agent in "${agents[@]}"; do
+    case "$platform" in
+      codex)
+        source="$ROOT/templates/codex-agents/$agent.toml"
+        expected="$tmp/$agent.toml"
+        render_codex_agent_expected "$source" "$expected" "$agent"
+        ;;
+      cursor)
+        source="$ROOT/templates/cursor-agents/$agent.md"
+        expected="$tmp/$agent.md"
+        render_cursor_agent_expected "$source" "$expected" "$agent"
+        ;;
+      claude)
+        source="$ROOT/templates/claude-agents/$agent.md"
+        expected="$tmp/$agent.md"
+        render_claude_agent_expected "$source" "$expected" "$agent"
+        ;;
+      *)
+        rm -rf "$tmp"
+        echo "unknown-platform"
+        return 0
+        ;;
+    esac
+    if [[ ! -f "$dest_root/$agent.$ext" ]]; then
       missing=$((missing + 1))
+    elif ! cmp -s "$expected" "$dest_root/$agent.$ext"; then
+      drift=$((drift + 1))
     fi
   done
-  if (( missing == 0 )); then
+  rm -rf "$tmp"
+  if (( missing == 0 && drift == 0 )); then
     echo "current"
   else
-    echo "drift($missing/${#required[@]})"
+    echo "drift(missing=$missing,changed=$drift)"
   fi
+}
+
+codex_agent_profile_values() {
+  local agent="$1"
+  case "$(source_profile):$agent" in
+    gpt55-xhigh:*)
+      printf '%s %s\n' "gpt-5.5" "xhigh"
+      ;;
+    gpt55-high:*)
+      printf '%s %s\n' "gpt-5.5" "high"
+      ;;
+    cost-first:teamwork-explorer|cost-first:teamwork-designer|cost-first:teamwork-worker)
+      printf '%s %s\n' "gpt-5.4" "medium"
+      ;;
+    *:teamwork-deep-judge|*:teamwork-deep-reviewer)
+      printf '%s %s\n' "gpt-5.5" "xhigh"
+      ;;
+    *:teamwork-explorer|*:teamwork-designer|*:teamwork-worker)
+      printf '%s %s\n' "gpt-5.5" "medium"
+      ;;
+    *)
+      printf '%s %s\n' "gpt-5.5" "high"
+      ;;
+  esac
+}
+
+claude_agent_profile_values() {
+  local agent="$1"
+  case "$(source_profile):$agent" in
+    gpt55-xhigh:explore|gpt55-xhigh:designer|gpt55-xhigh:worker)
+      printf '%s %s\n' "sonnet" "medium"
+      ;;
+    cost-first:explore|cost-first:designer|cost-first:worker)
+      printf '%s %s\n' "haiku" "medium"
+      ;;
+    *:deep-judge|*:deep-reviewer)
+      printf '%s %s\n' "opus" "xhigh"
+      ;;
+    *:explore|*:designer|*:worker)
+      printf '%s %s\n' "sonnet" "medium"
+      ;;
+    *)
+      printf '%s %s\n' "opus" "high"
+      ;;
+  esac
+}
+
+cursor_agent_profile_values() {
+  local agent="$1"
+  case "$(source_profile):$agent" in
+    gpt55-xhigh:worker)
+      printf '%s\n' "composer-2.5-fast"
+      ;;
+    gpt55-xhigh:explore|gpt55-xhigh:designer)
+      printf '%s\n' "claude-sonnet-4-6"
+      ;;
+    cost-first:explore|cost-first:designer|cost-first:worker)
+      printf '%s\n' "composer-2.5-fast"
+      ;;
+    performance-first:worker)
+      printf '%s\n' "composer-2.5-fast"
+      ;;
+    performance-first:explore|performance-first:designer)
+      printf '%s\n' "claude-sonnet-4-6"
+      ;;
+    *:judge|*:code-reviewer|*:deep-judge|*:deep-reviewer)
+      printf '%s\n' "claude-opus-4-8-thinking-high"
+      ;;
+    *)
+      printf '%s\n' "claude-sonnet-4-6"
+      ;;
+  esac
+}
+
+render_codex_agent_expected() {
+  local source="$1" expected="$2" agent="$3" model effort
+  read -r model effort < <(codex_agent_profile_values "$agent")
+  sed \
+    -e "s/^model = .*/model = \"$model\"/" \
+    -e "s/^model_reasoning_effort = .*/model_reasoning_effort = \"$effort\"/" \
+    "$source" > "$expected"
+}
+
+render_claude_agent_expected() {
+  local source="$1" expected="$2" agent="$3" model effort
+  read -r model effort < <(claude_agent_profile_values "$agent")
+  sed \
+    -e "s/^model: .*/model: $model/" \
+    -e "s/^effort: .*/effort: $effort/" \
+    "$source" > "$expected"
+}
+
+render_cursor_agent_expected() {
+  local source="$1" expected="$2" agent="$3" model
+  read -r model < <(cursor_agent_profile_values "$agent")
+  sed -e "s/^model: .*/model: $model/" "$source" > "$expected"
 }
 
 policy_status() {
@@ -188,7 +309,11 @@ policy_status() {
 
   if [[ -f "$file" ]] \
     && grep -q "$marker" "$file" \
+    && grep -q 'Ask when uncertainty matters' "$file" \
     && grep -q 'Grill mode:' "$file" \
+    && grep -q 'grill-me' "$file" \
+    && grep -q 'then stop' "$file" \
+    && grep -q 'available facts before asking' "$file" \
     && grep -q 'synthesize research, choose design' "$file" \
     && grep -q 'Code maintenance: every code write path starts' "$file"; then
     echo "ok"
@@ -296,21 +421,9 @@ print_readiness() {
   [[ "$(agents_status "$HOME/.codex/agents" toml "${CODEX_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("codex-agents"); }
   [[ "$(agents_status "$HOME/.cursor/agents" md "${CURSOR_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("cursor-agents"); }
   [[ "$(agents_status "$HOME/.claude/agents" md "${CLAUDE_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("claude-agents"); }
-  [[ "$(agents_content_status "$HOME/.codex/agents" toml \
-    "teamwork-worker:For every code edit, first identify" \
-    "teamwork-reviewer:For every code diff, apply the code-maintenance baseline" \
-    "teamwork-designer:active grill/question-first mode" \
-    "teamwork-judge:active grill/question-first mode")" == "current" ]] || { ready=no; missing+=("codex-agent-content"); }
-  [[ "$(agents_content_status "$HOME/.cursor/agents" md \
-    "worker:For every code edit, first identify" \
-    "code-reviewer:For every code diff, apply the code-maintenance baseline" \
-    "designer:active grill/question-first mode" \
-    "judge:active grill/question-first mode")" == "current" ]] || { ready=no; missing+=("cursor-agent-content"); }
-  [[ "$(agents_content_status "$HOME/.claude/agents" md \
-    "worker:For every code edit, first identify" \
-    "code-reviewer:For every code diff, apply the code-maintenance baseline" \
-    "designer:active grill/question-first mode" \
-    "judge:active grill/question-first mode")" == "current" ]] || { ready=no; missing+=("claude-agent-content"); }
+  [[ "$(agents_content_status "$HOME/.codex/agents" toml codex "${CODEX_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("codex-agent-content"); }
+  [[ "$(agents_content_status "$HOME/.cursor/agents" md cursor "${CURSOR_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("cursor-agent-content"); }
+  [[ "$(agents_content_status "$HOME/.claude/agents" md claude "${CLAUDE_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("claude-agent-content"); }
   [[ "$(policy_status codex)" == "ok" ]] || { ready=no; missing+=("codex-policy"); }
   [[ "$(policy_status claude)" == "ok" ]] || { ready=no; missing+=("claude-policy"); }
   missing+=("cursor-policy-manual")
@@ -321,21 +434,9 @@ print_readiness() {
     [[ "$(agents_status "$PROJECT_ROOT/.cursor/agents" md "${CURSOR_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("project-cursor-agents"); }
     [[ "$(agents_status "$PROJECT_ROOT/.codex/agents" toml "${CODEX_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("project-codex-agents"); }
     [[ "$(agents_status "$PROJECT_ROOT/.claude/agents" md "${CLAUDE_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("project-claude-agents"); }
-    [[ "$(agents_content_status "$PROJECT_ROOT/.codex/agents" toml \
-      "teamwork-worker:For every code edit, first identify" \
-      "teamwork-reviewer:For every code diff, apply the code-maintenance baseline" \
-      "teamwork-designer:active grill/question-first mode" \
-      "teamwork-judge:active grill/question-first mode")" == "current" ]] || { ready=no; missing+=("project-codex-agent-content"); }
-    [[ "$(agents_content_status "$PROJECT_ROOT/.cursor/agents" md \
-      "worker:For every code edit, first identify" \
-      "code-reviewer:For every code diff, apply the code-maintenance baseline" \
-      "designer:active grill/question-first mode" \
-      "judge:active grill/question-first mode")" == "current" ]] || { ready=no; missing+=("project-cursor-agent-content"); }
-    [[ "$(agents_content_status "$PROJECT_ROOT/.claude/agents" md \
-      "worker:For every code edit, first identify" \
-      "code-reviewer:For every code diff, apply the code-maintenance baseline" \
-      "designer:active grill/question-first mode" \
-      "judge:active grill/question-first mode")" == "current" ]] || { ready=no; missing+=("project-claude-agent-content"); }
+    [[ "$(agents_content_status "$PROJECT_ROOT/.codex/agents" toml codex "${CODEX_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("project-codex-agent-content"); }
+    [[ "$(agents_content_status "$PROJECT_ROOT/.cursor/agents" md cursor "${CURSOR_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("project-cursor-agent-content"); }
+    [[ "$(agents_content_status "$PROJECT_ROOT/.claude/agents" md claude "${CLAUDE_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("project-claude-agent-content"); }
     local project_v
     project_v="$(read_installed_version "$PROJECT_ROOT/.cursor/skills")"
     if [[ "$project_v" != "missing" && "$project_v" != "unknown" ]] && semver_lt "$project_v" "$source_version"; then
@@ -389,7 +490,7 @@ print_report() {
   fi
   echo
 
-  printf '%-8s %-8s %-12s %-8s %-8s %-18s %-12s\n' "Platform" "Skills" "SkillContent" "Agents" "Policy" "InstalledVersion" "Profile"
+  printf '%-8s %-8s %-12s %-8s %-14s %-8s %-18s %-12s\n' "Platform" "Skills" "SkillContent" "Agents" "AgentContent" "Policy" "InstalledVersion" "Profile"
   local platform dest_skills dest_agents ext agents_ref
   for platform in codex cursor claude; do
     case "$platform" in
@@ -412,18 +513,19 @@ print_report() {
         agents_ref=("${CLAUDE_AGENTS[@]}")
         ;;
     esac
-    local installed_v skills_s content_s agents_s policy_s drift_s prof_s
+    local installed_v skills_s content_s agents_s agent_content_s policy_s drift_s prof_s
     installed_v="$(read_installed_version "$dest_skills")"
     skills_s="$(skills_status "$dest_skills")"
     content_s="$(skills_content_status "$dest_skills")"
     agents_s="$(agents_status "$dest_agents" "$ext" "${agents_ref[@]}")"
+    agent_content_s="$(agents_content_status "$dest_agents" "$ext" "$platform" "${agents_ref[@]}")"
     policy_s="$(policy_status "$platform")"
     drift_s="$(version_drift "$installed_v" "$source_version")"
     prof_s="$(read_installed_profile "$dest_skills")"
-    [[ "$skills_s" == "ok" && "$content_s" == "current" && "$agents_s" == "ok" && "$drift_s" == "current" ]] || note_issue
+    [[ "$skills_s" == "ok" && "$content_s" == "current" && "$agents_s" == "ok" && "$agent_content_s" == "current" && "$drift_s" == "current" ]] || note_issue
     [[ "$policy_s" == "missing" ]] && note_issue
-    printf '%-8s %-8s %-12s %-8s %-8s %-18s %-12s\n' \
-      "$platform" "$skills_s" "$content_s" "$agents_s" "$policy_s" "$drift_s" "$prof_s"
+    printf '%-8s %-8s %-12s %-8s %-14s %-8s %-18s %-12s\n' \
+      "$platform" "$skills_s" "$content_s" "$agents_s" "$agent_content_s" "$policy_s" "$drift_s" "$prof_s"
   done
   echo
 
@@ -439,21 +541,28 @@ print_report() {
 
   if [[ -n "$PROJECT_ROOT" ]]; then
     echo "--- Project ($PROJECT_ROOT) ---"
-    local p_skills p_content p_cursor_agents p_codex_agents p_claude_agents p_v p_drift
+    local p_skills p_content p_cursor_agents p_codex_agents p_claude_agents p_cursor_agent_content p_codex_agent_content p_claude_agent_content p_v p_drift
     p_skills="$(skills_status "$PROJECT_ROOT/.cursor/skills")"
     p_content="$(skills_content_status "$PROJECT_ROOT/.cursor/skills")"
     p_cursor_agents="$(agents_status "$PROJECT_ROOT/.cursor/agents" md "${CURSOR_AGENTS[@]}")"
     p_codex_agents="$(agents_status "$PROJECT_ROOT/.codex/agents" toml "${CODEX_AGENTS[@]}")"
     p_claude_agents="$(agents_status "$PROJECT_ROOT/.claude/agents" md "${CLAUDE_AGENTS[@]}")"
+    p_cursor_agent_content="$(agents_content_status "$PROJECT_ROOT/.cursor/agents" md cursor "${CURSOR_AGENTS[@]}")"
+    p_codex_agent_content="$(agents_content_status "$PROJECT_ROOT/.codex/agents" toml codex "${CODEX_AGENTS[@]}")"
+    p_claude_agent_content="$(agents_content_status "$PROJECT_ROOT/.claude/agents" md claude "${CLAUDE_AGENTS[@]}")"
     p_v="$(read_installed_version "$PROJECT_ROOT/.cursor/skills")"
     p_drift="$(version_drift "$p_v" "$source_version")"
     echo "project skills: $p_skills ($p_drift)"
     echo "project skill content: $p_content"
     echo "project cursor agents: $p_cursor_agents"
+    echo "project cursor agent content: $p_cursor_agent_content"
     echo "project codex agents: $p_codex_agents"
+    echo "project codex agent content: $p_codex_agent_content"
     echo "project claude agents: $p_claude_agents"
+    echo "project claude agent content: $p_claude_agent_content"
     [[ "$p_skills" == "ok" && "$p_content" == "current" && "$p_drift" == "current" \
-      && "$p_cursor_agents" == "ok" && "$p_codex_agents" == "ok" && "$p_claude_agents" == "ok" ]] || note_issue
+      && "$p_cursor_agents" == "ok" && "$p_codex_agents" == "ok" && "$p_claude_agents" == "ok" \
+      && "$p_cursor_agent_content" == "current" && "$p_codex_agent_content" == "current" && "$p_claude_agent_content" == "current" ]] || note_issue
     if [[ -f "$PROJECT_ROOT/docs/teamwork/index.json" ]]; then
       echo "docs/teamwork/index.json: present"
     else
@@ -476,7 +585,7 @@ print_report() {
   fi
   echo "2. cd \"$ROOT\" && ./install.sh all --profile $profile"
   if [[ -n "$PROJECT_ROOT" ]]; then
-    echo "3. cd \"$ROOT\" && ./install.sh project"
+    echo "3. cd \"$ROOT\" && ./install.sh --project-root \"$PROJECT_ROOT\" project"
   fi
   echo "4. ./install.sh cursor-policy-copy  # copy, then paste into Cursor User Rules"
   echo "5. ./scripts/validate.sh       # maintainer or post-release sanity"

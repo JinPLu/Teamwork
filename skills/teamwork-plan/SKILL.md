@@ -24,13 +24,13 @@ when explicit grill/question-first mode is active.
 
 Resolve decision-critical gaps before planning. Ask when scope, acceptance,
 constraints, risk, UX, public behavior, contracts, architecture, or
-verification would change the plan. Route to `teamwork-research` when external
+verification would change the plan. In active grill/question-first override,
+do not produce a plan or dispatch Designer/Judge until the Shared Understanding
+Packet is confirmed or the user exits. Route to `teamwork-research` when external
 behavior, unfamiliar APIs, upstream bugs, or ambiguous architecture lack
 evidence. Route to `teamwork-debug` when a reproducible failure needs runtime
-evidence before fix scope is safe. Do not produce an execution plan while a
-core requirement is open, or while active grill mode lacks a confirmed Shared
-Understanding Packet. Do not dispatch Designer/Judge while that grill packet is
-missing.
+evidence before fix scope is safe. Do not dispatch Designer/Judge while that
+grill packet is missing.
 
 ## Planning Tiers
 

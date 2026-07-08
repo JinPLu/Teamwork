@@ -32,9 +32,9 @@ chat-only `Goal Proposal` and wait for approval before goal handoff or
 rolling-report init. Skip only when an active goal surface exists or the user
 supplied a complete target. The approved Goal Text must include objective,
 Goal Invariants, verification, budget, and stop rules unless a rolling report
-or durable plan carries them. Active grill mode blocks Goal Proposal, plan
-refresh, and goal handoff until a Shared Understanding Packet is confirmed or
-the user exits.
+or durable plan carries them. Active grill/question-first override blocks Goal
+Proposal, plan refresh, goal handoff, and the iteration loop until a Shared
+Understanding Packet is confirmed or the user exits.
 
 ## Loop
 

@@ -42,7 +42,7 @@ is missing, and attach verification evidence to non-lightweight results.
 | Uncontrolled delegation | Parallel chats drift apart | Only independent tracks fan out; Explorer, Designer, Judge, Worker, and Reviewer return packets for the main agent to integrate |
 | Weak evidence | Treats titles, summaries, filenames, `latest`, or `v2` labels as facts | Maps important claims to papers, docs, source, config, logs, tests, diffs, artifacts, or primary sources |
 | Fake fallback | Defensive defaults hide missing state | Required values must come from the user, project files, source, tests, or an accepted plan; otherwise ask, research, or stop |
-| Premature action | Says it will clarify, then starts planning or executing | Explicit "grill me / ask first" requests trigger decision/risk questions before work starts |
+| Premature action | Starts planning or executing while the task is complex or uncertain | Complex tasks ask outcome-changing decision/risk questions first; explicit "grill-me / ask first" requests wait for Shared Understanding |
 | Repeated guessing | Failure just triggers another guess | Records hypothesis, verification, failure class, and next step, then refreshes research or plan adequacy when needed |
 | Unreviewable done | Completion is self-reported | Execution returns verification evidence; important outcomes enter review or goal loops |
 

@@ -11,7 +11,8 @@ Use with `teamwork-init` for instruction setup, cleanup, or migration.
 - Repo-local `AGENTS.md`: facts, evidence, commands, danger zones, acceptance.
 - Platform files `CODEX.md`, `CURSOR.md`, `CLAUDE.md`, `GEMINI.md`: deltas only.
 - Appendix docs: long paths, commands, environment matrices, and history.
-- `docs/teamwork/README.md`: runtime memory entrypoint; point to it, do not inline it.
+- `docs/teamwork/index.json`: runtime memory entrypoint; README may explain it,
+  but active pointers come from the index.
 - `docs/teamwork/{research,plans,reports}/`: durable memory when triggered; retrieval aids, not completion evidence.
 
 ## Content Classification
@@ -36,10 +37,11 @@ Audit reusable human-agent habits. Mark `keep` for project-specific acceptance, 
 ## Teamwork Initialization Mode
 
 Model profile is chosen at install time on all platforms. `performance-first` is
-default; `cost-first` downshifts routine roles; `gpt55-xhigh` forces every
+default; `cost-first` downshifts routine roles; `gpt55-high` forces every Codex
+Teamwork subagent to gpt-5.5 with high reasoning; `gpt55-xhigh` forces every
 Codex Teamwork subagent to gpt-5.5 with xhigh reasoning while non-Codex
 platforms keep native performance-first tiers. Project init asks only for
-global-policy overrides. Model overrides require `./install.sh --profile`.
+global-policy overrides. Model overrides require `./install.sh --profile <profile> <target>`.
 
 ## Local Project Init Surfaces
 
