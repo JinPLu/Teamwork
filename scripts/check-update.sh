@@ -147,27 +147,54 @@ agents_status() {
   fi
 }
 
+agents_content_status() {
+  local dest_root="$1"
+  local ext="$2"
+  shift 2
+  local required=("$@")
+  local missing=0
+  [[ -d "$dest_root" ]] || { echo "missing"; return 0; }
+  for item in "${required[@]}"; do
+    local file="${item%%:*}"
+    local anchor="${item#*:}"
+    if [[ ! -f "$dest_root/$file.$ext" ]] || ! grep -q "$anchor" "$dest_root/$file.$ext"; then
+      missing=$((missing + 1))
+    fi
+  done
+  if (( missing == 0 )); then
+    echo "current"
+  else
+    echo "drift($missing/${#required[@]})"
+  fi
+}
+
 policy_status() {
   local platform="$1"
+  local file marker
   case "$platform" in
     codex)
-      if [[ -f "$HOME/.codex/AGENTS.md" ]] && grep -q 'TEAMWORK_CODEX_GLOBAL_START' "$HOME/.codex/AGENTS.md"; then
-        echo "ok"
-      else
-        echo "missing"
-      fi
+      file="$HOME/.codex/AGENTS.md"
+      marker="TEAMWORK_CODEX_GLOBAL_START"
       ;;
     claude)
-      if [[ -f "$HOME/.claude/CLAUDE.md" ]] && grep -q 'TEAMWORK_CLAUDE_GLOBAL_START' "$HOME/.claude/CLAUDE.md"; then
-        echo "ok"
-      else
-        echo "missing"
-      fi
+      file="$HOME/.claude/CLAUDE.md"
+      marker="TEAMWORK_CLAUDE_GLOBAL_START"
       ;;
     cursor)
       echo "manual"
+      return 0
       ;;
   esac
+
+  if [[ -f "$file" ]] \
+    && grep -q "$marker" "$file" \
+    && grep -q 'Grill mode:' "$file" \
+    && grep -q 'synthesize research, choose design' "$file" \
+    && grep -q 'Code maintenance: every code write path starts' "$file"; then
+    echo "ok"
+  else
+    echo "missing"
+  fi
 }
 
 version_drift() {
@@ -269,6 +296,21 @@ print_readiness() {
   [[ "$(agents_status "$HOME/.codex/agents" toml "${CODEX_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("codex-agents"); }
   [[ "$(agents_status "$HOME/.cursor/agents" md "${CURSOR_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("cursor-agents"); }
   [[ "$(agents_status "$HOME/.claude/agents" md "${CLAUDE_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("claude-agents"); }
+  [[ "$(agents_content_status "$HOME/.codex/agents" toml \
+    "teamwork-worker:For every code edit, first identify" \
+    "teamwork-reviewer:For every code diff, apply the code-maintenance baseline" \
+    "teamwork-designer:active grill/question-first mode" \
+    "teamwork-judge:active grill/question-first mode")" == "current" ]] || { ready=no; missing+=("codex-agent-content"); }
+  [[ "$(agents_content_status "$HOME/.cursor/agents" md \
+    "worker:For every code edit, first identify" \
+    "code-reviewer:For every code diff, apply the code-maintenance baseline" \
+    "designer:active grill/question-first mode" \
+    "judge:active grill/question-first mode")" == "current" ]] || { ready=no; missing+=("cursor-agent-content"); }
+  [[ "$(agents_content_status "$HOME/.claude/agents" md \
+    "worker:For every code edit, first identify" \
+    "code-reviewer:For every code diff, apply the code-maintenance baseline" \
+    "designer:active grill/question-first mode" \
+    "judge:active grill/question-first mode")" == "current" ]] || { ready=no; missing+=("claude-agent-content"); }
   [[ "$(policy_status codex)" == "ok" ]] || { ready=no; missing+=("codex-policy"); }
   [[ "$(policy_status claude)" == "ok" ]] || { ready=no; missing+=("claude-policy"); }
   missing+=("cursor-policy-manual")
@@ -279,6 +321,21 @@ print_readiness() {
     [[ "$(agents_status "$PROJECT_ROOT/.cursor/agents" md "${CURSOR_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("project-cursor-agents"); }
     [[ "$(agents_status "$PROJECT_ROOT/.codex/agents" toml "${CODEX_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("project-codex-agents"); }
     [[ "$(agents_status "$PROJECT_ROOT/.claude/agents" md "${CLAUDE_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("project-claude-agents"); }
+    [[ "$(agents_content_status "$PROJECT_ROOT/.codex/agents" toml \
+      "teamwork-worker:For every code edit, first identify" \
+      "teamwork-reviewer:For every code diff, apply the code-maintenance baseline" \
+      "teamwork-designer:active grill/question-first mode" \
+      "teamwork-judge:active grill/question-first mode")" == "current" ]] || { ready=no; missing+=("project-codex-agent-content"); }
+    [[ "$(agents_content_status "$PROJECT_ROOT/.cursor/agents" md \
+      "worker:For every code edit, first identify" \
+      "code-reviewer:For every code diff, apply the code-maintenance baseline" \
+      "designer:active grill/question-first mode" \
+      "judge:active grill/question-first mode")" == "current" ]] || { ready=no; missing+=("project-cursor-agent-content"); }
+    [[ "$(agents_content_status "$PROJECT_ROOT/.claude/agents" md \
+      "worker:For every code edit, first identify" \
+      "code-reviewer:For every code diff, apply the code-maintenance baseline" \
+      "designer:active grill/question-first mode" \
+      "judge:active grill/question-first mode")" == "current" ]] || { ready=no; missing+=("project-claude-agent-content"); }
     local project_v
     project_v="$(read_installed_version "$PROJECT_ROOT/.cursor/skills")"
     if [[ "$project_v" != "missing" && "$project_v" != "unknown" ]] && semver_lt "$project_v" "$source_version"; then

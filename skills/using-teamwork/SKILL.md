@@ -21,8 +21,8 @@ irreversible action, or public behavior. Decide routine choices yourself.
 
 In explicit grill mode, ask at least one decision/risk question with a
 recommended answer unless the user exits or supplied a Shared Understanding
-Packet. Do not plan, edit, start a goal, or dispatch Workers until packet
-confirmation or exit.
+Packet. Do not plan, synthesize research, choose design, edit, start a goal, or
+dispatch planning/design/execution agents until packet confirmation or exit.
 
 ## Route
 

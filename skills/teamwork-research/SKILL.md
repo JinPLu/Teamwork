@@ -16,7 +16,9 @@ and `skills/using-teamwork/references/subagent-contract.md` for Explorer fan-out
 `skills/using-teamwork/references/artifact-protocol.md` for reusable findings;
 `skills/using-teamwork/references/debug-mode.md` for the runtime-diagnosis
 boundary;
-`skills/using-teamwork/references/optional-skills.md` before external tools.
+`skills/using-teamwork/references/optional-skills.md` before external tools;
+`skills/using-teamwork/references/grill-mode.md` when explicit grill mode is
+active.
 
 ## When To Use
 
@@ -34,20 +36,23 @@ unnecessary.
 ## Workflow
 
 1. Define the question and what a good answer looks like.
-2. Search prior artifacts; record reuse, update, or new.
-3. Split separable evidence questions: local source, symptoms, external
+2. In active grill mode, inspect only enough source/artifact context to ask the
+   next decision/risk question; do not fan out, synthesize, recommend, or write
+   artifacts until the packet is confirmed or the user exits.
+3. Search prior artifacts; record reuse, update, or new.
+4. Split separable evidence questions: local source, symptoms, external
    constraints, alternatives, upstream reports, papers, datasets, or practice.
-4. For seeded research, extract concepts, methods, systems, claims, evals,
+5. For seeded research, extract concepts, methods, systems, claims, evals,
    dissent, and adjacent terms; then fan out perspective/query tracks.
-5. Fan out parallel Explorers for 2+ independent tracks when they add evidence,
+6. Fan out parallel Explorers for 2+ independent tracks when they add evidence,
    time, or context-isolation value and subagents are authorized. Keep tightly
    coupled or one-track evidence local.
-6. Read primary local evidence first; label findings `observed`, `inferred`, or
+7. Read primary local evidence first; label findings `observed`, `inferred`, or
    `claimed`.
-7. Use external calibration when platform, dependency, model, API, method, or upstream
+8. Use external calibration when platform, dependency, model, API, method, or upstream
    behavior could change the answer; follow `research-protocol.md` for web/deep
    work and keep public web search separate from private data.
-8. Synthesize options, preserve dissent, recommend the next route, and write any
+9. Synthesize options, preserve dissent, recommend the next route, and write any
    reusable artifact.
 
 ## Artifacts

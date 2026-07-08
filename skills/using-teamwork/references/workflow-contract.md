@@ -18,8 +18,8 @@ memory, and acceptance.
 3. **Grill mode overrides act-by-default only when explicit.** For user requests
    to grill, question-first, stress-test, challenge assumptions, or ask before
    acting, follow `grill-mode.md`: ask one decision/risk question with a
-   recommendation; do not plan or implement until the packet is confirmed or the
-   user exits.
+   recommendation; do not research-synthesize, plan, design-select, dispatch, or
+   implement until the packet is confirmed or the user exits.
 4. **No silent defaults or invariant-masking fallback.** Routine tool, naming,
    formatting, and reversible defaults are allowed; required code/runtime values
    and invariants are not. Never invent env vars, paths, commands, ports,
@@ -27,10 +27,10 @@ memory, and acceptance.
    datasets, schemas, or nullability. Ask for user-supplied gaps; otherwise
    block. Product fallback is allowed only when user input, source/config, tests,
    or an accepted plan names and verifies it.
-5. **Maintain code by reducing concepts.** Before edits or review, understand
-   owner, control flow, tests/config, and invariants. Change/delete current path;
-   add branches/modes/wrappers/fallback only when accepted behavior requires and
-   verifies them. Keep logic direct; fail fast when state is absent.
+5. **Maintain code by reducing concepts.** Every code write path starts by
+   understanding owner, control flow, tests/config, and invariants. Change/delete
+   current path; add branches/modes/wrappers/fallback only when accepted behavior
+   requires and verifies them. Keep logic direct; fail fast when state is absent.
 6. **Ground claims in evidence.** Label important findings `observed`,
    `inferred`, or `claimed`. Treat names, comments, READMEs, summaries, and
    labels like `latest`/`v2` as `claimed` until a direct source, test, config,

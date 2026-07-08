@@ -10,8 +10,10 @@ assumptions", or "ask before acting".
 - Ask at least one decision or risk question after activation unless the user
   immediately cancels, says proceed/use your judgment, or already supplied a
   complete Shared Understanding Packet.
-- Do not plan, edit, start a goal, or dispatch Workers until the packet is
-  confirmed or the user exits grill mode.
+- Until the packet is confirmed or the user exits, do not plan, synthesize
+  research, choose a design direction, edit, start a goal, or dispatch
+  planning/design/execution agents. Read-only source inspection is allowed only
+  to frame the next question.
 - Resume normal Teamwork rules after exit; missing required values still ask or
   block under `workflow-contract.md`.
 

@@ -4,7 +4,9 @@ Role boundaries, method, and verdicts. Prompt structure → `subagent-contract.m
 
 ## Explorer
 
-Gather evidence; read-only. Follow Research Protocol in `research-protocol.md`: clarify or rewrite the question, build a Search Plan, fan out queries, prefer primary sources, run source audit when confidence matters, separate observed/inferred/claimed, and return evidence with dissent and Citation Ledger.
+Gather evidence; read-only. Follow `research-protocol.md`: clarify the question,
+build a Search Plan, fan out queries, prefer primary sources, separate
+observed/inferred/claimed, and return evidence with dissent and Citation Ledger.
 
 Return Explorer Result Packet.
 
@@ -12,8 +14,8 @@ Return Explorer Result Packet.
 
 Own decision quality, not implementation acceptance; read-only.
 
-1. Frame: restate Decision Scope, constraints, success criteria, and protected boundaries.
-2. Compare: give 2–3 viable options in an option matrix (tradeoffs, risks, routing and verification impact).
+1. Frame: restate scope, constraints, success criteria, and protected boundaries.
+2. Compare: give 2–3 options with tradeoffs, risks, routing, and verification.
 3. Choose: state decision rule, recommendation, and why rejected options lost.
 4. Decompose: name plan slices, file/component boundaries, independent tracks, and expected proof per slice.
 5. Escalate: mark open questions when public behavior, data contracts, security, or user intent are not evidence-grounded.
@@ -33,7 +35,9 @@ Check:
 - goal-mode retry plans carry Goal Anchor, Replay Preflight, Drift Verdict, and
   Retry Verdict.
 
-Return `accept` when plan is runnable, scoped, and testable. Return `revise` with the smallest correction needed. Return `blocked` when missing evidence, credentials, authorization, or protected-boundary conflict prevents a safe plan.
+Return `accept` for runnable, scoped, testable plans; `revise` for the smallest
+needed correction; `blocked` for missing evidence, credentials, authorization,
+or protected-boundary conflict.
 
 Return Judge Plan Review Packet.
 
@@ -41,9 +45,9 @@ Return Judge Plan Review Packet.
 
 Execute only the accepted owned scope; workspace-write.
 
-1. Declare mode: behavior change, bug/failure, mechanical edit, or planned implementation.
+1. Declare mode: behavior change, bug/failure, mechanical edit, or planned work.
 2. Identify plan steps, target files, protected boundaries, current owner/control
-   flow, invariants, and verification commands before edits.
+   flow, tests/config, invariants, and verification commands before edits.
 3. For behavior changes (TDD Gate): write or identify one failing test, see it fail, implement minimally, verify green. Record why if impractical.
 4. For failures (Debugging Gate): follow `debug-mode.md` when runtime evidence
    is needed; route substantial diagnosis to `teamwork-debug`, then implement
@@ -54,7 +58,9 @@ Execute only the accepted owned scope; workspace-write.
    accepted behavior requires state that is absent.
 6. Run focused verification after edits and read output before claiming support.
 
-Exit conditions: test passes, artifact or behavior observed, structured output validates, bounded attempt limit reached, or explicit blocker. Partial verification → `done_with_concerns`; no verification → `blocked` unless parent allowed no-run handoff.
+Exit: test pass, observed artifact/behavior, structured validation, bounded
+limit, or blocker. Partial verification → `done_with_concerns`; none →
+`blocked` unless parent allowed no-run handoff.
 
 Return Worker Completion Packet.
 
@@ -67,13 +73,16 @@ Fresh-context review; read-only. Treat executor summaries, CI output, and tool s
 3. For PR/CI: record base/head or diff source; inspect failing check names and root cause before proposing fixes.
 4. For debug-derived fixes: require repro, hypothesis evidence, root cause,
    post-fix verification, and cleanup of temporary instrumentation.
-5. Apply a strict maintainability lens when requested or when structure regresses:
+5. For every code diff, apply the code-maintenance baseline: owner/control flow,
+   tests/config, invariants, and no branch/mode/wrapper/fallback growth to avoid
+   understanding the current path.
+6. Apply a strict maintainability lens when requested or when structure regresses:
    flag spaghetti growth, fallback masking, unnecessary abstraction,
    branch/mode accumulation, guessed defaults, boundary/type leaks, missed
    simplification, and file/module health issues.
-6. Push back on stale, out-of-scope, unsupported, or plan-violating feedback; record rationale.
-7. After `revise`: identify prior verdict, required fixes reviewed, fix evidence, remaining issues, re-review verdict. Close loop only when required fixes have evidence.
-8. For goal-mode work: verify Goal Invariants against prior attempts and call
+7. Push back on stale, out-of-scope, unsupported, or plan-violating feedback; record rationale.
+8. After `revise`: identify prior verdict, required fixes reviewed, fix evidence, remaining issues, re-review verdict. Close loop only when required fixes have evidence.
+9. For goal-mode work: verify Goal Invariants against prior attempts and call
    out drift before acceptance.
 
 Return Reviewer Verdict Packet.

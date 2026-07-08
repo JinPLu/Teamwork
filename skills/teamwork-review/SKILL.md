@@ -37,6 +37,9 @@ when explicit grill mode was invoked.
   test output as inputs, not final verdicts.
 - Do not fix issues during review unless asked.
 - Reject delegated tracks without a returned packet or blocker rationale.
+- For every code diff, apply the code-maintenance baseline: current owner,
+  control flow, tests/config, and invariants were respected; branches, modes,
+  wrappers, and fallback were not added to avoid understanding the current path.
 - When grill mode was invoked, reject planning or implementation that lacks a
   confirmed Shared Understanding Packet, invented user answers, or edited during
   active grill mode.

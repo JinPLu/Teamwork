@@ -123,8 +123,9 @@ only when it cannot be obtained.
 Grill mode: when the user explicitly asks to grill, question-first, stress-test,
 challenge assumptions, or ask before acting, suspend act-by-default for that
 task. Ask at least one decision or risk question with a recommended answer, and
-do not plan or implement until a Shared Understanding Packet is confirmed or the
-user exits grill mode.
+do not plan, synthesize research, choose design, edit, start a goal, or dispatch
+planning/design/execution agents until a Shared Understanding Packet is
+confirmed or the user exits grill mode.
 
 Reasoning discipline: follow Teamwork's think-first rule. Do not optimize for
 fast visible output over source reading, interpretation checks, or verification
@@ -147,9 +148,9 @@ an accepted plan. Routine reversible defaults remain allowed; code/runtime
 defaults or fallbacks may not mask missing required state. Ask once when the
 user can supply a missing value; otherwise block and report what was checked.
 
-Code maintenance: before code edits or review, understand the existing owner,
-control flow, tests/config, and invariants. Prefer changing or deleting the
-current path; add branches, modes, wrappers, or fallback only when accepted
+Code maintenance: every code write path starts by understanding the existing
+owner, control flow, tests/config, and invariants. Prefer changing or deleting
+the current path; add branches, modes, wrappers, or fallback only when accepted
 behavior requires and verifies them. Keep logic direct and fail fast when state
 is absent.
 
@@ -187,8 +188,9 @@ only when it cannot be obtained.
 Grill mode: when the user explicitly asks to grill, question-first, stress-test,
 challenge assumptions, or ask before acting, suspend act-by-default for that
 task. Ask at least one decision or risk question with a recommended answer, and
-do not plan or implement until a Shared Understanding Packet is confirmed or the
-user exits grill mode.
+do not plan, synthesize research, choose design, edit, start a goal, or dispatch
+planning/design/execution agents until a Shared Understanding Packet is
+confirmed or the user exits grill mode.
 
 Claude model profile: default is ${CODEX_PROFILE}. performance-first uses
 role-optimized agents: routine Explorer, Designer, and Worker use sonnet with
@@ -204,9 +206,9 @@ an accepted plan. Routine reversible defaults remain allowed; code/runtime
 defaults or fallbacks may not mask missing required state. Ask once when the
 user can supply a missing value; otherwise block and report what was checked.
 
-Code maintenance: before code edits or review, understand the existing owner,
-control flow, tests/config, and invariants. Prefer changing or deleting the
-current path; add branches, modes, wrappers, or fallback only when accepted
+Code maintenance: every code write path starts by understanding the existing
+owner, control flow, tests/config, and invariants. Prefer changing or deleting
+the current path; add branches, modes, wrappers, or fallback only when accepted
 behavior requires and verifies them. Keep logic direct and fail fast when state
 is absent.
 
@@ -246,8 +248,9 @@ only when it cannot be obtained.
 Grill mode: when the user explicitly asks to grill, question-first, stress-test,
 challenge assumptions, or ask before acting, suspend act-by-default for that
 task. Ask at least one decision or risk question with a recommended answer, and
-do not plan or implement until a Shared Understanding Packet is confirmed or the
-user exits grill mode.
+do not plan, synthesize research, choose design, edit, start a goal, or dispatch
+planning/design/execution agents until a Shared Understanding Packet is
+confirmed or the user exits grill mode.
 
 Cursor model profile: default is ${CODEX_PROFILE}. performance-first uses
 claude-sonnet-4-6 for Explorer and Designer, composer-2.5-fast for Worker, and
@@ -263,9 +266,9 @@ an accepted plan. Routine reversible defaults remain allowed; code/runtime
 defaults or fallbacks may not mask missing required state. Ask once when the
 user can supply a missing value; otherwise block and report what was checked.
 
-Code maintenance: before code edits or review, understand the existing owner,
-control flow, tests/config, and invariants. Prefer changing or deleting the
-current path; add branches, modes, wrappers, or fallback only when accepted
+Code maintenance: every code write path starts by understanding the existing
+owner, control flow, tests/config, and invariants. Prefer changing or deleting
+the current path; add branches, modes, wrappers, or fallback only when accepted
 behavior requires and verifies them. Keep logic direct and fail fast when state
 is absent.
 

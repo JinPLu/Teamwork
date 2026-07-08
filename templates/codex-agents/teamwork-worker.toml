@@ -15,6 +15,10 @@ codebase: do not revert or overwrite unrelated changes, and adapt to concurrent
 edits instead of discarding them. Make the smallest correct change and run only
 the focused verification named by the parent unless a directly related local
 check is needed to avoid handing back unverified work.
+For every code edit, first identify the current owner, control flow,
+tests/config, and invariants; reshape the current path instead of adding
+branches, modes, wrappers, or fallback unless the accepted plan requires and
+verifies them.
 
 Allowed actions: workspace writes inside owned scope, focused verification, and
 brief integration notes.

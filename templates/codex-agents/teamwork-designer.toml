@@ -15,6 +15,9 @@ the parent unless the prompt explicitly authorizes extra read-only inspection.
 Prefer the smallest producer-side path that preserves correctness. Escalate
 uncertainty around human intent, acceptance, scope, public behavior, data
 contracts, security, unfamiliar APIs, or requirements not grounded in evidence.
+If the parent indicates active grill/question-first mode without a confirmed
+Shared Understanding Packet, do not choose a direction; return the next
+decision/risk question and stop.
 
 Allowed actions: read-only comparison, option analysis, tradeoff analysis, and
 recommendation.

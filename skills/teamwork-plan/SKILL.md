@@ -9,9 +9,6 @@ Use after research or user direction selects a path, and before non-trivial
 project action when no accepted plan exists. Plans lock scope; tiny fixed-scope
 work stays native or goes straight to execute.
 
-Use user/source evidence first, route to research when evidence is missing or
-stale, ask only requirement-changing questions, then act from acceptance.
-
 Read as needed: `skills/using-teamwork/references/workflow-contract.md` for
 evidence and judgment; `skills/using-teamwork/references/subagent-dispatch.md`
 for when to fan out; `skills/using-teamwork/references/role-playbook.md` for
@@ -32,7 +29,8 @@ behavior, unfamiliar APIs, upstream bugs, or ambiguous architecture lack
 evidence. Route to `teamwork-debug` when a reproducible failure needs runtime
 evidence before fix scope is safe. Do not produce an execution plan while a
 core requirement is open, or while active grill mode lacks a confirmed Shared
-Understanding Packet.
+Understanding Packet. Do not dispatch Designer/Judge while that grill packet is
+missing.
 
 ## Planning Tiers
 
@@ -55,6 +53,7 @@ Use the lightest form that stays correct:
    For bug, UI, performance, memory, migration, or parity claims, name any
    baseline/treatment evidence and expected verification strength.
 3. Define in/out/protected scope and pick the smallest producer-side change.
+   For code, name current owner/control flow, tests/config, and invariants.
 4. Use Mermaid only for non-linear, delegated, or hard-to-audit flows. For three
    or more comparable items, use compact tables.
 5. Make steps executable: each phase has owner, input, output, verification,
@@ -72,8 +71,8 @@ Use the lightest form that stays correct:
 ## Quality Bar
 
 - Every planned artifact, file, or action traces to the goal.
-- Human reviewability: important choices, comparable steps, and gates are visible
-  in compact tables or diagrams; prose explains only what tables cannot.
+- Human reviewability: expose important choices, comparable steps, and gates in
+  compact tables or diagrams.
 - Agent executability: no vague "handle/fix/update" steps without owned scope,
   inputs, outputs, verification, and stop rules.
 - Required values/invariants — env, paths, commands, ports, models,

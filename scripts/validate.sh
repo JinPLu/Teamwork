@@ -433,9 +433,23 @@ for anchor in Deslop 'Strict Maintainability' 'Reviewer Comprehension' 'Multi-Le
 done
 grep_required 'No silent defaults or invariant-masking fallback' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must define invariant-masking fallback"
 grep_required 'Grill mode overrides act-by-default only when explicit' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must scope grill mode override"
+grep_required 'research-synthesize, plan, design-select, dispatch' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must gate grill before research/design/dispatch"
 grep_required 'Shared Understanding Packet' "$ROOT/skills/using-teamwork/references/grill-mode.md" "grill mode must require a handoff packet"
 grep_required 'Ask at least one decision or risk question' "$ROOT/skills/using-teamwork/references/grill-mode.md" "grill mode must force at least one question"
+grep_required 'synthesize research, choose design' "$ENTRYPOINT" "using-teamwork must block research/design during active grill mode"
+grep_required 'do not fan out, synthesize, recommend, or write' "$ROOT/skills/teamwork-research/SKILL.md" "research must honor active grill mode before synthesis"
+grep_required 'Do not dispatch Designer/Judge' "$ROOT/skills/teamwork-plan/SKILL.md" "plan must not dispatch design/judge while grill packet is missing"
 grep_required 'Required Values / Invariants' "$ROOT/skills/using-teamwork/references/plan-output.md" "plan output must lock required values and invariants"
+grep_required 'Every code write path starts' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must make code maintenance write-path-wide"
+grep_required 'For every code diff, apply the code-maintenance baseline' "$ROOT/skills/teamwork-review/SKILL.md" "review must apply code-maintenance baseline to every code diff"
+grep_required 'tests/config, invariants, and verification commands before edits' "$ROOT/skills/using-teamwork/references/role-playbook.md" "role playbook Worker must include tests/config in edit preflight"
+grep_required 'For every code diff, apply the code-maintenance baseline' "$ROOT/skills/using-teamwork/references/role-playbook.md" "role playbook Reviewer must check code maintenance for every code diff"
+grep_required 'For every code edit, first identify' "$ROOT/templates/codex-agents/teamwork-worker.toml" "Codex Worker must apply code maintenance before every edit"
+grep_required 'For every code edit, first identify' "$ROOT/templates/cursor-agents/worker.md" "Cursor Worker must apply code maintenance before every edit"
+grep_required 'For every code edit, first identify' "$ROOT/templates/claude-agents/worker.md" "Claude Worker must apply code maintenance before every edit"
+grep_required 'For every code diff, apply the code-maintenance baseline' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" "Codex Reviewer must check code maintenance for every code diff"
+grep_required 'For every code diff, apply the code-maintenance baseline' "$ROOT/templates/cursor-agents/code-reviewer.md" "Cursor Reviewer must check code maintenance for every code diff"
+grep_required 'For every code diff, apply the code-maintenance baseline' "$ROOT/templates/claude-agents/code-reviewer.md" "Claude Reviewer must check code maintenance for every code diff"
 grep_required 'Fail fast rather than invent fallback behavior' "$ROOT/skills/teamwork-execute/SKILL.md" "execute must fail fast instead of masking invariants"
 grep_required 'Allowed Fail-Fast Checks' "$ROOT/skills/using-teamwork/references/review-lenses.md" "review lenses must distinguish fail-fast from defensive masking"
 grep_required 'fallback masking' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must catch fallback masking"
@@ -453,6 +467,8 @@ grep_required 'check-update.sh' "$ROOT/skills/teamwork-update/SKILL.md" "teamwor
 [[ -x "$ROOT/scripts/check-update.sh" ]] || fail "check-update script must be executable"
 grep_required 'teamwork-debug' "$ROOT/scripts/check-update.sh" "check-update inventory must include teamwork-debug"
 grep_required 'skills_content_status' "$ROOT/scripts/check-update.sh" "check-update must detect installed skill content drift"
+grep_required 'agents_content_status' "$ROOT/scripts/check-update.sh" "check-update must detect installed agent content drift"
+grep_required 'synthesize research, choose design' "$ROOT/scripts/check-update.sh" "check-update policy status must detect stale grill policy"
 grep_required 'Verdict: accept | revise | blocked' "$ROOT/skills/teamwork-review/SKILL.md" "review skill verdict enum must match Reviewer Verdict Packet"
 grep_absent 'Verdict: pass | pass-with-notes' "review skill must not use stale verdict enum" "$ROOT/skills/teamwork-review/SKILL.md"
 grep_required 'Reject delegated tracks without a returned packet or blocker rationale' "$ROOT/skills/teamwork-review/SKILL.md" "review skill must require delegated track accounting"
@@ -687,6 +703,10 @@ grep_required 'Ask only when it matters:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must scope asking to core decisions"
 grep_required 'Grill mode:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must document explicit grill mode override"
+grep_required 'synthesize research, choose design' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must gate research/design during grill mode"
+grep_required 'Code maintenance: every code write path starts' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must make code maintenance write-path-wide"
 grep_required 'Reasoning discipline:' "$tmp/home/.codex/AGENTS.md" \
   "Codex global policy must require reasoning discipline"
 grep_required 'Minimize optional commentary' "$tmp/home/.codex/AGENTS.md" \
@@ -728,6 +748,10 @@ grep_required 'Ask only when it matters:' "$agents_preserve_home/.codex/AGENTS.m
   "Codex global policy install must scope asking to core decisions"
 grep_required 'Grill mode:' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must preserve grill mode override"
+grep_required 'synthesize research, choose design' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must refresh expanded grill anchor"
+grep_required 'Code maintenance: every code write path starts' "$agents_preserve_home/.codex/AGENTS.md" \
+  "Codex global policy install must refresh code maintenance anchor"
 grep_required 'Reasoning discipline:' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must require reasoning discipline"
 grep_required 'Minimize optional commentary' "$agents_preserve_home/.codex/AGENTS.md" \
@@ -748,10 +772,14 @@ codex_policy_out="$tmp/codex-policy.out"
 HOME="$tmp/home-codex-policy" "$ROOT/install.sh" codex-policy > "$codex_policy_out"
 grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$codex_policy_out" \
   "codex-policy target must print Teamwork global policy start marker"
+grep_required 'synthesize research, choose design' "$codex_policy_out" \
+  "codex-policy target must print expanded grill policy"
 grep_required 'Codex model profile: default is performance-first' "$codex_policy_out" \
   "codex-policy target must render performance-first profile"
 grep_required 'Bootstrap safety:' "$codex_policy_out" \
   "codex-policy target must print bootstrap no-silent-defaults safety"
+grep_required 'Code maintenance: every code write path starts' "$codex_policy_out" \
+  "codex-policy target must print code maintenance policy"
 grep_required 'Reasoning discipline:' "$codex_policy_out" \
   "codex-policy target must print reasoning discipline"
 [[ ! -e "$tmp/home-codex-policy/.codex/AGENTS.md" ]] \
@@ -932,6 +960,10 @@ cursor_policy_out="$tmp/cursor-policy.out"
 HOME="$tmp/home-cursor-policy" "$ROOT/install.sh" cursor-policy > "$cursor_policy_out"
 grep_required '<!-- TEAMWORK_CURSOR_GLOBAL_START -->' "$cursor_policy_out" \
   "cursor-policy target must print Teamwork global policy start marker"
+grep_required 'synthesize research, choose design' "$cursor_policy_out" \
+  "cursor-policy target must print expanded grill policy"
+grep_required 'Code maintenance: every code write path starts' "$cursor_policy_out" \
+  "cursor-policy target must print code maintenance policy"
 grep_required 'Cursor model profile: default is performance-first' "$cursor_policy_out" \
   "cursor-policy target must render performance-first profile"
 [[ ! -e "$tmp/home-cursor-policy/.cursor" ]] \
@@ -951,6 +983,10 @@ TEAMWORK_TEST_CLIPBOARD="$tmp/cursor-policy-copy.clipboard" \
   "$ROOT/install.sh" cursor-policy-copy > "$cursor_policy_copy_out"
 grep_required '<!-- TEAMWORK_CURSOR_GLOBAL_START -->' "$tmp/cursor-policy-copy.clipboard" \
   "cursor-policy-copy target must copy Teamwork global policy start marker"
+grep_required 'synthesize research, choose design' "$tmp/cursor-policy-copy.clipboard" \
+  "cursor-policy-copy target must copy expanded grill policy"
+grep_required 'Code maintenance: every code write path starts' "$tmp/cursor-policy-copy.clipboard" \
+  "cursor-policy-copy target must copy code maintenance policy"
 grep_required 'Copied Teamwork Cursor global policy to clipboard.' "$cursor_policy_copy_out" \
   "cursor-policy-copy target must report clipboard copy"
 [[ ! -e "$tmp/home-cursor-policy-copy/.cursor" ]] \
@@ -991,6 +1027,10 @@ grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$tmp/home-claude/.claude/
   "Claude install must create Teamwork global CLAUDE block"
 grep_required 'Claude model profile: default is performance-first' "$tmp/home-claude/.claude/CLAUDE.md" \
   "Claude global policy must record performance-first profile"
+grep_required 'synthesize research, choose design' "$tmp/home-claude/.claude/CLAUDE.md" \
+  "Claude global policy must gate research/design during grill mode"
+grep_required 'Code maintenance: every code write path starts' "$tmp/home-claude/.claude/CLAUDE.md" \
+  "Claude global policy must make code maintenance write-path-wide"
 grep_required 'Bootstrap safety:' "$tmp/home-claude/.claude/CLAUDE.md" \
   "Claude global policy must include bootstrap no-silent-defaults safety"
 
@@ -998,6 +1038,10 @@ claude_policy_out="$tmp/claude-policy.out"
 HOME="$tmp/home-claude-policy" "$ROOT/install.sh" claude-policy > "$claude_policy_out"
 grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$claude_policy_out" \
   "claude-policy target must print Teamwork global policy start marker"
+grep_required 'synthesize research, choose design' "$claude_policy_out" \
+  "claude-policy target must print expanded grill policy"
+grep_required 'Code maintenance: every code write path starts' "$claude_policy_out" \
+  "claude-policy target must print code maintenance policy"
 grep_required 'Claude model profile: default is performance-first' "$claude_policy_out" \
   "claude-policy target must render performance-first profile"
 [[ ! -e "$tmp/home-claude-policy/.claude/CLAUDE.md" ]] \
