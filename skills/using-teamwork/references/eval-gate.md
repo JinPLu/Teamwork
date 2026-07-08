@@ -28,6 +28,15 @@ Use judgment, but do not add process burden to ordinary user work.
 - Failing or inconclusive harness results are evidence. If root cause is unclear,
   route to `teamwork-debug` instead of guessing a fix.
 
+## Optimizer Participation
+
+Claim actual SkillOpt-Lite/HarnessOpt-Lite participation only for bounded
+candidates with trajectory samples, baseline/treatment on the same dev cases,
+explicit provider/model/config or offline mode, gate decision, rollback path,
+ledger entry, validation, release audit after freeze, and fresh review. Release
+split is audit-only; failures create future dev cases, not direct retuning.
+Harness mutation also needs an editable allowlist plus smoke and full dev gates.
+
 ## Ledgers
 
 Material skill or harness decisions need accepted/rejected ledger evidence. Keep

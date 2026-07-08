@@ -37,6 +37,10 @@ Teamwork package/harness gates; `grill-mode.md` for explicit grill mode.
 - For Teamwork package behavior changes, require eval results or `no relevant
   eval case`; reject empty release split evidence; check ledgers for material
   skill/harness decisions.
+- For SkillOpt-Lite/HarnessOpt-Lite claims, require trajectory samples,
+  baseline/treatment parity, explicit model/config or offline mode, gate
+  decision, rollback, ledger, release audit-only separation, and fresh review;
+  harness mutation also needs allowlist plus smoke and full dev gate evidence.
 - Release, high-risk harness, and public-contract package changes need fresh
   review after validation/evals; same-context acceptance is insufficient.
 - When grill mode was invoked, reject planning or implementation that lacks a

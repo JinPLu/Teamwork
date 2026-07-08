@@ -39,14 +39,13 @@ Pick from user intent:
 3. Update `VERSION` and both `plugin.json` together.
 4. Update README/CODEX/CURSOR/CLAUDE/AGENTS only for user-visible changes.
 5. For behavior, harness, or release-gate changes, run `python3 scripts/eval-teamwork.py --split dev`; route unclear failures to Debug.
-6. Run `./scripts/validate.sh`, then `./install.sh all`; add `./install.sh
-   project` for project-local installs.
+6. Run `./scripts/validate.sh`, then `./install.sh all`; add `./install.sh project` for project-local installs.
 7. Before release/version claims, run `python3 scripts/eval-teamwork.py --split release`; the split must be non-empty.
-8. For behavior changes, cite accepted/rejected ledger deltas behind the
-   changelog, semver, or release rationale.
-9. Run `./scripts/check-update.sh` and confirm installed surfaces match
+8. For behavior changes, cite accepted/rejected ledger deltas behind the changelog, semver, or release rationale.
+9. For SkillOpt-Lite/HarnessOpt-Lite participation claims, require trajectory samples, same-case baseline/treatment, explicit model/config or offline mode, gate decision, rollback, ledger, fresh review, and release split as audit-only; harness mutation additionally needs allowlist plus smoke and full dev gates.
+10. Run `./scripts/check-update.sh` and confirm installed surfaces match
    `VERSION`.
-10. For release, verify GitHub remote and tag/release state before pushing;
+11. For release, verify GitHub remote and tag/release state before pushing;
    missing remote, credentials, or approval blocks.
 
 Treat "update Teamwork" as refreshing every Teamwork-controlled surface, not

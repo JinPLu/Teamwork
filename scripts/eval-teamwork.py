@@ -62,67 +62,137 @@ LEDGER_SCHEMAS = {
         "decision",
         "rollback",
     },
+    "optimizer-candidates.jsonl": {
+        "date",
+        "candidate_id",
+        "kind",
+        "provider",
+        "model",
+        "model_config",
+        "prompt_or_template",
+        "owned_files",
+        "denylist",
+        "baseline",
+        "treatment",
+        "gate_decision",
+        "rollback",
+        "validation",
+        "release_audit",
+        "reviewer",
+        "decision",
+    },
 }
+OPTIMIZER_KINDS = {"skillopt-lite", "harnessopt-lite"}
+OPTIMIZER_GATE_DECISIONS = {"accept_new_best", "accept", "reject", "flat", "blocked"}
+OPTIMIZER_DECISIONS = {"candidate", "accepted", "rejected", "blocked"}
+PLACEHOLDER = "not_applicable"
+GLOB_CHARS = set("*?[")
 
 
 class EvalError(Exception):
     pass
 
 
+def display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+
 def load_json(path: Path) -> Any:
     try:
         return json.loads(path.read_text())
     except json.JSONDecodeError as exc:
-        raise EvalError(f"{path.relative_to(ROOT)}: invalid JSON: {exc}") from exc
+        raise EvalError(f"{display_path(path)}: invalid JSON: {exc}") from exc
 
 
 def require_string(value: Any, field: str, path: Path) -> str:
     if not isinstance(value, str) or not value.strip():
-        raise EvalError(f"{path.relative_to(ROOT)}: {field} must be a non-empty string")
+        raise EvalError(f"{display_path(path)}: {field} must be a non-empty string")
     return value
 
 
 def require_string_list(value: Any, field: str, path: Path) -> list[str]:
     if not isinstance(value, list) or not value:
-        raise EvalError(f"{path.relative_to(ROOT)}: {field} must be a non-empty list")
+        raise EvalError(f"{display_path(path)}: {field} must be a non-empty list")
     if not all(isinstance(item, str) and item.strip() for item in value):
-        raise EvalError(f"{path.relative_to(ROOT)}: {field} must contain non-empty strings")
+        raise EvalError(f"{display_path(path)}: {field} must contain non-empty strings")
     return value
+
+
+def is_package_relative(value: str) -> bool:
+    candidate = Path(value)
+    if candidate.is_absolute() or ".." in candidate.parts:
+        return False
+    try:
+        (ROOT / candidate).resolve().relative_to(ROOT)
+    except ValueError:
+        return False
+    return True
+
+
+def is_glob_like(value: str) -> bool:
+    return any(char in value for char in GLOB_CHARS)
+
+
+def require_evidence_path(value: Any, field: str, path: Path, index: int) -> str:
+    item = require_string(value, field, path)
+    if item == PLACEHOLDER:
+        raise EvalError(f"{display_path(path)}:{index}: {field} must not be {PLACEHOLDER}")
+    if not is_package_relative(item):
+        raise EvalError(f"{display_path(path)}:{index}: {field} must be package-relative: {item}")
+    item_path = ROOT / item
+    if not item_path.exists():
+        raise EvalError(f"{display_path(path)}:{index}: {field} path does not exist: {item}")
+    return item
+
+
+def validate_owned_files(items: list[str], path: Path, index: int) -> None:
+    for item in items:
+        if item == PLACEHOLDER:
+            raise EvalError(f"{display_path(path)}:{index}: owned_files must not contain {PLACEHOLDER}")
+        if not is_package_relative(item):
+            raise EvalError(f"{display_path(path)}:{index}: owned_files entry must be package-relative: {item}")
+        if is_glob_like(item):
+            continue
+        if not (ROOT / item).exists():
+            raise EvalError(f"{display_path(path)}:{index}: owned_files path does not exist: {item}")
 
 
 def validate_target(target: str, path: Path) -> None:
     if target.startswith("/") or ".." in Path(target).parts:
-        raise EvalError(f"{path.relative_to(ROOT)}: target must be package-relative: {target}")
+        raise EvalError(f"{display_path(path)}: target must be package-relative: {target}")
     if not target.startswith(TARGET_PREFIXES):
-        raise EvalError(f"{path.relative_to(ROOT)}: target is not an allowed package surface: {target}")
+        raise EvalError(f"{display_path(path)}: target is not an allowed package surface: {target}")
     target_path = (ROOT / target).resolve()
     try:
         target_path.relative_to(ROOT)
     except ValueError as exc:
-        raise EvalError(f"{path.relative_to(ROOT)}: target points outside repo: {target}") from exc
+        raise EvalError(f"{display_path(path)}: target points outside repo: {target}") from exc
     if not target_path.is_file():
-        raise EvalError(f"{path.relative_to(ROOT)}: target does not exist: {target}")
+        raise EvalError(f"{display_path(path)}: target does not exist: {target}")
 
 
 def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
     data = load_json(path)
     if not isinstance(data, dict):
-        raise EvalError(f"{path.relative_to(ROOT)}: case must be a JSON object")
+        raise EvalError(f"{display_path(path)}: case must be a JSON object")
     missing = sorted(REQUIRED_CASE_FIELDS - set(data))
     if missing:
-        raise EvalError(f"{path.relative_to(ROOT)}: missing required fields: {', '.join(missing)}")
+        raise EvalError(f"{display_path(path)}: missing required fields: {', '.join(missing)}")
 
     case_id = require_string(data["id"], "id", path)
     if not ID_RE.match(case_id):
-        raise EvalError(f"{path.relative_to(ROOT)}: id must be kebab-case")
+        raise EvalError(f"{display_path(path)}: id must be kebab-case")
 
     split = require_string(data["split"], "split", path)
     if split not in SPLITS:
-        raise EvalError(f"{path.relative_to(ROOT)}: split must be one of {sorted(SPLITS)}")
+        raise EvalError(f"{display_path(path)}: split must be one of {sorted(SPLITS)}")
 
     source = require_string(data["source"], "source", path)
     if source not in SOURCES:
-        raise EvalError(f"{path.relative_to(ROOT)}: source must be one of {sorted(SOURCES)}")
+        raise EvalError(f"{display_path(path)}: source must be one of {sorted(SOURCES)}")
 
     target = require_string(data["target"], "target", path)
     validate_target(target, path)
@@ -130,11 +200,11 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
     platforms = require_string_list(data["platforms"], "platforms", path)
     unknown_platforms = sorted(set(platforms) - PLATFORMS)
     if unknown_platforms:
-        raise EvalError(f"{path.relative_to(ROOT)}: unknown platforms: {', '.join(unknown_platforms)}")
+        raise EvalError(f"{display_path(path)}: unknown platforms: {', '.join(unknown_platforms)}")
 
     require_string(data["prompt"], "prompt", path)
     if not isinstance(data["expected"], dict) or not data["expected"]:
-        raise EvalError(f"{path.relative_to(ROOT)}: expected must be a non-empty object")
+        raise EvalError(f"{display_path(path)}: expected must be a non-empty object")
     require_string_list(data["must"], "must", path)
     require_string_list(data["must_not"], "must_not", path)
     evidence = data["evidence"]
@@ -145,13 +215,13 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
         and evidence
         and all(isinstance(item, str) and item.strip() for item in evidence)
     ):
-        raise EvalError(f"{path.relative_to(ROOT)}: evidence must be a non-empty string or string list")
+        raise EvalError(f"{display_path(path)}: evidence must be a non-empty string or string list")
 
     rubric = data.get("rubric")
     if rubric is not None:
         rubric_id = require_string(rubric, "rubric", path)
         if rubric_id not in known_rubrics:
-            raise EvalError(f"{path.relative_to(ROOT)}: unknown rubric: {rubric_id}")
+            raise EvalError(f"{display_path(path)}: unknown rubric: {rubric_id}")
     return data
 
 
@@ -162,20 +232,85 @@ def validate_rubrics() -> set[str]:
     for path in sorted(RUBRIC_DIR.glob("*.json")):
         data = load_json(path)
         if not isinstance(data, dict):
-            raise EvalError(f"{path.relative_to(ROOT)}: rubric must be a JSON object")
+            raise EvalError(f"{display_path(path)}: rubric must be a JSON object")
         rubric_id = require_string(data.get("id"), "id", path)
         if rubric_id in rubrics:
-            raise EvalError(f"{path.relative_to(ROOT)}: duplicate rubric id: {rubric_id}")
+            raise EvalError(f"{display_path(path)}: duplicate rubric id: {rubric_id}")
         has_criteria = isinstance(data.get("criteria"), list) and bool(data["criteria"])
         has_dimensions = isinstance(data.get("dimensions"), list) and bool(data["dimensions"])
         if not has_criteria and not has_dimensions:
-            raise EvalError(f"{path.relative_to(ROOT)}: rubric must define non-empty criteria or dimensions")
+            raise EvalError(f"{display_path(path)}: rubric must define non-empty criteria or dimensions")
         if "description" in data:
             require_string(data.get("description"), "description", path)
         rubrics.add(rubric_id)
     if not rubrics:
         raise EvalError("no rubrics found")
     return rubrics
+
+
+def validate_optimizer_candidate_entry(data: dict[str, Any], path: Path, index: int) -> None:
+    kind = require_string(data.get("kind"), "kind", path)
+    if kind not in OPTIMIZER_KINDS:
+        raise EvalError(f"{display_path(path)}:{index}: kind must be one of {sorted(OPTIMIZER_KINDS)}")
+
+    gate_decision = require_string(data.get("gate_decision"), "gate_decision", path)
+    if gate_decision not in OPTIMIZER_GATE_DECISIONS:
+        raise EvalError(
+            f"{display_path(path)}:{index}: gate_decision must be one of {sorted(OPTIMIZER_GATE_DECISIONS)}"
+        )
+
+    decision = require_string(data.get("decision"), "decision", path)
+    if decision not in OPTIMIZER_DECISIONS:
+        raise EvalError(f"{display_path(path)}:{index}: decision must be one of {sorted(OPTIMIZER_DECISIONS)}")
+
+    for field in (
+        "candidate_id",
+        "provider",
+        "model",
+        "model_config",
+        "release_audit",
+        "reviewer",
+    ):
+        item = require_string(data.get(field), field, path)
+        if item == PLACEHOLDER:
+            raise EvalError(f"{display_path(path)}:{index}: {field} must not be {PLACEHOLDER}")
+
+    for field in ("prompt_or_template", "baseline", "treatment", "rollback"):
+        require_evidence_path(data.get(field), field, path, index)
+
+    owned_files = require_string_list(data.get("owned_files"), "owned_files", path)
+    validate_owned_files(owned_files, path, index)
+
+    for field in ("denylist", "validation"):
+        items = require_string_list(data.get(field), field, path)
+        if field == "validation" and all(item == PLACEHOLDER for item in items):
+            raise EvalError(f"{display_path(path)}:{index}: validation must include real evidence")
+
+
+def validate_ledger_lines(path: Path, name: str, required_fields: set[str]) -> int:
+    if not path.is_file():
+        raise EvalError(f"missing ledger: {display_path(path)}")
+    lines = path.read_text().splitlines()
+    if not lines:
+        raise EvalError(f"{display_path(path)}: ledger must not be empty")
+    line_count = 0
+    for index, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        try:
+            data = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise EvalError(f"{display_path(path)}:{index}: invalid JSONL: {exc}") from exc
+        if not isinstance(data, dict):
+            raise EvalError(f"{display_path(path)}:{index}: ledger entry must be an object")
+        require_string(data.get("date"), "date", path)
+        missing = sorted(required_fields - set(data))
+        if missing:
+            raise EvalError(f"{display_path(path)}:{index}: missing ledger fields: {', '.join(missing)}")
+        if name == "optimizer-candidates.jsonl":
+            validate_optimizer_candidate_entry(data, path, index)
+        line_count += 1
+    return line_count
 
 
 def validate_ledgers() -> int:
@@ -185,26 +320,10 @@ def validate_ledgers() -> int:
     for name, required_fields in sorted(LEDGER_SCHEMAS.items()):
         path = LEDGER_DIR / name
         if not path.is_file():
-            raise EvalError(f"missing ledger: {path.relative_to(ROOT)}")
-        lines = path.read_text().splitlines()
-        if not lines:
-            raise EvalError(f"{path.relative_to(ROOT)}: ledger must not be empty")
-        for index, line in enumerate(lines, start=1):
-            if not line.strip():
+            if name == "optimizer-candidates.jsonl":
                 continue
-            try:
-                data = json.loads(line)
-            except json.JSONDecodeError as exc:
-                raise EvalError(f"{path.relative_to(ROOT)}:{index}: invalid JSONL: {exc}") from exc
-            if not isinstance(data, dict):
-                raise EvalError(f"{path.relative_to(ROOT)}:{index}: ledger entry must be an object")
-            require_string(data.get("date"), "date", path)
-            missing = sorted(required_fields - set(data))
-            if missing:
-                raise EvalError(
-                    f"{path.relative_to(ROOT)}:{index}: missing ledger fields: {', '.join(missing)}"
-                )
-            line_count += 1
+            raise EvalError(f"missing ledger: {display_path(path)}")
+        line_count += validate_ledger_lines(path, name, required_fields)
     return line_count
 
 
@@ -239,11 +358,24 @@ def parse_args() -> argparse.Namespace:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--split", choices=sorted(SPLITS))
     group.add_argument("--all", action="store_true", help="validate all cases")
+    group.add_argument("--optimizer-ledger", type=Path, metavar="PATH", help="validate one optimizer candidate ledger")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    if args.optimizer_ledger:
+        path = args.optimizer_ledger.resolve()
+        try:
+            count = validate_ledger_lines(path, "optimizer-candidates.jsonl", LEDGER_SCHEMAS["optimizer-candidates.jsonl"])
+        except EvalError as exc:
+            print(json.dumps({"status": "fail", "error": str(exc)}, sort_keys=True), file=sys.stderr)
+            print(f"FAIL: {exc}", file=sys.stderr)
+            return 1
+        print(json.dumps({"status": "pass", "selection": "optimizer-ledger", "rows": count}, sort_keys=True))
+        print(f"OK: optimizer ledger passed ({count} rows)")
+        return 0
+
     selection = "all" if args.all else args.split
     try:
         cases = selected_cases(selection)

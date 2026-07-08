@@ -27,6 +27,14 @@ RETIRED_SKILLS=(
   run-analyze-plan-review
   run-analyze-execution-review
 )
+CLEANUP_PATHS=()
+
+cleanup() {
+  if ((${#CLEANUP_PATHS[@]})); then
+    rm -rf "${CLEANUP_PATHS[@]}"
+  fi
+}
+trap cleanup EXIT
 
 fail() {
   echo "FAIL: $*" >&2
@@ -244,10 +252,51 @@ git_known_package_file "evals/teamwork/README.md" \
 for eval_dir in cases rubrics ledgers; do
   [[ -d "$ROOT/evals/teamwork/$eval_dir" ]] || fail "missing evals/teamwork/$eval_dir/"
 done
+while IFS= read -r eval_file; do
+  rel="${eval_file#"$ROOT"/}"
+  git_known_package_file "$rel" \
+    || fail "$rel is not known to git; use git add -N before release validation"
+done < <(find "$ROOT/evals/teamwork/cases" "$ROOT/evals/teamwork/rubrics" "$ROOT/evals/teamwork/ledgers" -type f | sort)
 [[ -f "$ROOT/scripts/eval-teamwork.py" ]] || fail "missing scripts/eval-teamwork.py"
 git_known_package_file "scripts/eval-teamwork.py" \
   || fail "scripts/eval-teamwork.py is not known to git; use git add -N before release validation"
 python3 "$ROOT/scripts/eval-teamwork.py" --split dev >/dev/null
+[[ -f "$ROOT/scripts/optimize-teamwork.py" ]] || fail "missing scripts/optimize-teamwork.py"
+git_known_package_file "scripts/optimize-teamwork.py" \
+  || fail "scripts/optimize-teamwork.py is not known to git; use git add -N before release validation"
+python3 "$ROOT/scripts/optimize-teamwork.py" --help >/dev/null
+opt_tmp="$(mktemp -d)"
+CLEANUP_PATHS+=("$opt_tmp")
+printf '%s\n' \
+  '{"id":"case-failed","status":"failed","score":0,"input":"Fix typo","expected":"direct edit","output":"planned too much","fail_reason":"over-routing"}' \
+  '{"id":"case-passed","passed":true,"score":1,"input":"Review release","expected":"release eval","output":"asked for eval"}' \
+  > "$opt_tmp/results.jsonl"
+python3 "$ROOT/scripts/optimize-teamwork.py" init-workspace \
+  --workspace "$opt_tmp/workspace" --skill "$ROOT/skills/using-teamwork/SKILL.md" >/dev/null
+python3 "$ROOT/scripts/optimize-teamwork.py" export-samples \
+  --results "$opt_tmp/results.jsonl" --workspace "$opt_tmp/workspace" --env teamwork >/dev/null
+[[ -f "$opt_tmp/workspace/.skillopt/samples/failed/case-failed.md" ]] \
+  || fail "optimizer smoke did not write failed sample"
+python3 "$ROOT/scripts/optimize-teamwork.py" score-results \
+  --results "$opt_tmp/results.jsonl" \
+  | grep -q '"mean_score": 0.5' \
+  || fail "optimizer smoke score did not compute expected mean"
+python3 "$ROOT/scripts/optimize-teamwork.py" gate \
+  --candidate-score 0.92 --current-score 0.80 --best-score 0.90 --dead-band 0.01 \
+  | grep -q '"action": "accept_new_best"' \
+  || fail "optimizer smoke gate did not accept new best"
+opt_ledger_tmp="$(mktemp -d)"
+CLEANUP_PATHS+=("$opt_ledger_tmp")
+printf '%s\n' \
+  '{"date":"2026-07-08","candidate_id":"optimizer-smoke-valid","kind":"skillopt-lite","provider":"offline","model":"deterministic-smoke","model_config":"offline-smoke","prompt_or_template":"skills/using-teamwork/SKILL.md","owned_files":["skills/teamwork-review/SKILL.md"],"denylist":["evals/teamwork/cases/*.json"],"baseline":"evals/teamwork/README.md","treatment":"scripts/optimize-teamwork.py","gate_decision":"reject","rollback":"evals/teamwork/README.md","validation":["scripts/validate.sh"],"release_audit":"validate smoke only","reviewer":"validate.sh","decision":"rejected"}' \
+  > "$opt_ledger_tmp/valid.jsonl"
+python3 "$ROOT/scripts/eval-teamwork.py" --optimizer-ledger "$opt_ledger_tmp/valid.jsonl" >/dev/null
+printf '%s\n' \
+  '{"date":"2026-07-08","candidate_id":"optimizer-smoke-invalid","kind":"skillopt-lite","provider":"offline","model":"deterministic-smoke","model_config":"offline-smoke","prompt_or_template":"not_applicable","owned_files":["skills/teamwork-review/SKILL.md"],"denylist":["evals/teamwork/cases/*.json"],"baseline":"evals/teamwork/README.md","treatment":"scripts/optimize-teamwork.py","gate_decision":"reject","rollback":"evals/teamwork/README.md","validation":["scripts/validate.sh"],"release_audit":"validate smoke only","reviewer":"validate.sh","decision":"rejected"}' \
+  > "$opt_ledger_tmp/invalid.jsonl"
+if python3 "$ROOT/scripts/eval-teamwork.py" --optimizer-ledger "$opt_ledger_tmp/invalid.jsonl" >/dev/null 2>&1; then
+  fail "optimizer ledger smoke accepted placeholder evidence"
+fi
 
 [[ -f "$ROOT/scripts/validate_teamwork_index.py" ]] || fail "missing scripts/validate_teamwork_index.py"
 git_known_package_file "scripts/validate_teamwork_index.py" \
