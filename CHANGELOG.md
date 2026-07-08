@@ -5,6 +5,20 @@
 这份 changelog 按“用户升级后会感受到什么”来写，而不是只罗列文件改动。
 版本边界以 `VERSION` 和插件 manifest 的更新为准；当前仓库没有 git release tag。
 
+## 2.8.1 - 2026-07-08
+
+这版重点是：**grill mode 和代码维护规则真的进入所有关键执行入口。**
+
+- `grill me` 现在会暂停 research synthesis、design selection、goal handoff、
+  edit 和 planning/design/execution agent dispatch，而不只是暂停 plan/implementation。
+- Research、plan、goal、review、Designer、Judge、Worker、Reviewer 的规则同步了
+  Shared Understanding Packet 前置锁，避免还没确认就开始综合、选方案或派工。
+- 代码维护规则改成每条 code write path 的前置条件：先理解 owner、control flow、
+  tests/config 和 invariants，再修改当前路径；Reviewer 对每个 code diff 都检查这条基线。
+- `check-update.sh` 和 validation 现在会检查 policy 与 agent 内容锚点，能发现 installed
+  global/project surfaces 仍是旧规则的情况。
+- Codex、Cursor、Claude Code 的全局策略、agent 模板和 project-local 安装面都同步了这套规则。
+
 ## 2.8.0 - 2026-07-08
 
 这版重点是：**显式要求“先拷问我”时，Teamwork 会真的先问清楚。**

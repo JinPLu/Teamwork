@@ -6,6 +6,23 @@ This changelog explains what users get after upgrading, not just which files
 changed. Version boundaries come from `VERSION` and plugin manifest updates;
 the repository currently has no git release tags.
 
+## 2.8.1 - 2026-07-08
+
+This release is about **making grill mode and code-maintenance rules reach every critical execution entrypoint**.
+
+- `grill me` now pauses research synthesis, design selection, goal handoff,
+  edits, and planning/design/execution agent dispatch, not only planning and implementation.
+- Research, plan, goal, review, Designer, Judge, Worker, and Reviewer rules now
+  share the Shared Understanding Packet precondition before synthesis, direction
+  choice, or delegation.
+- Code maintenance is now a precondition for every code write path: understand
+  owner, control flow, tests/config, and invariants before editing the current path.
+  Reviewers check that baseline for every code diff.
+- `check-update.sh` and validation now inspect policy and agent content anchors,
+  so stale installed global/project surfaces are detected.
+- Codex, Cursor, and Claude Code global policies, agent templates, and
+  project-local installs now share the hardened rules.
+
 ## 2.8.0 - 2026-07-08
 
 This release is about **actually asking first when the user explicitly asks to be grilled**.
