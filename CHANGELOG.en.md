@@ -6,6 +6,22 @@ This changelog explains what users get after upgrading, not just which files
 changed. Version boundaries come from `VERSION` and plugin manifest updates;
 the repository currently has no git release tags.
 
+## 2.9.0 - 2026-07-08
+
+This release is about **using a file-native harness to govern and improve Teamwork's own skill behavior**.
+
+- Added `evals/teamwork/` with tracked cases, rubrics, and ledgers for reusable
+  behavior expectations across lightweight native controls, complex coding,
+  debug, research, review, goal, release gates, and platform scope.
+- Added `scripts/eval-teamwork.py`, an offline no-model runner that validates
+  eval fixtures, dev/release splits, target surfaces, rubrics, and ledger schemas.
+- `scripts/validate.sh` now checks the eval harness inventory and runs the dev
+  split so skill/harness assets cannot drift silently.
+- Added `eval-gate.md`, which makes evals maintenance evidence rather than a new
+  runtime stage; ordinary lightweight user tasks are not forced through evals.
+- `teamwork-review` and `teamwork-update` now require eval, ledger, and non-empty
+  release split evidence for package behavior and release changes.
+
 ## 2.8.1 - 2026-07-08
 
 This release is about **making grill mode and code-maintenance rules reach every critical execution entrypoint**.

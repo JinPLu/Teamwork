@@ -5,6 +5,20 @@
 这份 changelog 按“用户升级后会感受到什么”来写，而不是只罗列文件改动。
 版本边界以 `VERSION` 和插件 manifest 的更新为准；当前仓库没有 git release tag。
 
+## 2.9.0 - 2026-07-08
+
+这版重点是：**Teamwork 开始用 file-native harness 约束和优化自己的 skill 行为。**
+
+- 新增 `evals/teamwork/`：用 tracked cases、rubrics 和 ledgers 保存可复用的行为期望，
+  覆盖轻量任务不过度流程化、复杂编码、debug、research、review、goal、release gate 和跨平台范围。
+- 新增 `scripts/eval-teamwork.py`：离线、无模型依赖地校验 eval fixture、dev/release split、
+  target surface、rubric 和 ledger schema。
+- `scripts/validate.sh` 现在会检查 eval harness inventory，并运行 dev split，避免 skill/harness
+  资产漂移。
+- 新增 `eval-gate.md`，明确 eval 是维护证据而不是新的 runtime stage；普通轻量任务不会被强制跑 eval。
+- `teamwork-review` 和 `teamwork-update` 现在要求 package behavior / release 变更引用 eval、ledger
+  和非空 release split 证据，避免只靠主观感觉接受 skill 改动。
+
 ## 2.8.1 - 2026-07-08
 
 这版重点是：**grill mode 和代码维护规则真的进入所有关键执行入口。**

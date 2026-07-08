@@ -1,0 +1,26 @@
+{
+  "id": "behavioral-contracts",
+  "version": 1,
+  "dimensions": [
+    {
+      "name": "routing_precision",
+      "description": "The response chooses native, research, debug, plan, execute, review, goal, init, or update only when the task evidence warrants it."
+    },
+    {
+      "name": "scope_control",
+      "description": "The response honors owned paths, protected boundaries, platform limits, and accepted-plan constraints."
+    },
+    {
+      "name": "evidence_quality",
+      "description": "Claims are backed by observed files, command output, source lookup, or clearly labeled inference."
+    },
+    {
+      "name": "user_burden",
+      "description": "The response avoids unnecessary plans, questions, artifacts, gates, and subagent dispatch for lightweight work."
+    },
+    {
+      "name": "release_governance",
+      "description": "Release claims rely on non-empty release evals, validation evidence, ledgers, and fresh review when required."
+    }
+  ]
+}

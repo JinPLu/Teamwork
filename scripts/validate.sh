@@ -208,7 +208,7 @@ for subskill in teamwork-debug teamwork-init teamwork-goal teamwork-research tea
 done
 
 # --- Reference inventory ---
-for reference in artifact-protocol check-update debug-mode goal-iteration grill-mode optional-skills plan-output project-init research-protocol review-checks review-lenses role-playbook routing-policy subagent-contract subagent-dispatch verification-patterns workflow-contract workflow-orchestration; do
+for reference in artifact-protocol check-update debug-mode eval-gate goal-iteration grill-mode optional-skills plan-output project-init research-protocol review-checks review-lenses role-playbook routing-policy subagent-contract subagent-dispatch verification-patterns workflow-contract workflow-orchestration; do
   ref_file="$ROOT/skills/using-teamwork/references/$reference.md"
   [[ -f "$ref_file" ]] || fail "missing skills/using-teamwork/references/$reference.md"
   git_known_package_file "skills/using-teamwork/references/$reference.md" \
@@ -224,7 +224,7 @@ done
 
 expected_reference_inventory="$(
   printf '%s\n' \
-    artifact-protocol.md check-update.md debug-mode.md goal-iteration.md grill-mode.md optional-skills.md plan-output.md \
+    artifact-protocol.md check-update.md debug-mode.md eval-gate.md goal-iteration.md grill-mode.md optional-skills.md plan-output.md \
     project-init.md research-protocol.md review-checks.md review-lenses.md role-playbook.md routing-policy.md \
     subagent-contract.md subagent-dispatch.md teamwork-current-template.md \
     teamwork-index-readme-template.md teamwork-index-template.json \
@@ -236,6 +236,18 @@ actual_reference_inventory="$(
 )"
 [[ "$actual_reference_inventory" == "$expected_reference_inventory" ]] \
   || fail "using-teamwork references inventory drifted"
+
+# --- Eval harness inventory ---
+[[ -f "$ROOT/evals/teamwork/README.md" ]] || fail "missing evals/teamwork/README.md"
+git_known_package_file "evals/teamwork/README.md" \
+  || fail "evals/teamwork/README.md is not known to git; use git add -N before release validation"
+for eval_dir in cases rubrics ledgers; do
+  [[ -d "$ROOT/evals/teamwork/$eval_dir" ]] || fail "missing evals/teamwork/$eval_dir/"
+done
+[[ -f "$ROOT/scripts/eval-teamwork.py" ]] || fail "missing scripts/eval-teamwork.py"
+git_known_package_file "scripts/eval-teamwork.py" \
+  || fail "scripts/eval-teamwork.py is not known to git; use git add -N before release validation"
+python3 "$ROOT/scripts/eval-teamwork.py" --split dev >/dev/null
 
 [[ -f "$ROOT/scripts/validate_teamwork_index.py" ]] || fail "missing scripts/validate_teamwork_index.py"
 git_known_package_file "scripts/validate_teamwork_index.py" \
@@ -368,6 +380,8 @@ line_count_max "$ROOT/skills/using-teamwork/references/subagent-contract.md" 145
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-contract.md" 600 "subagent contract reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/debug-mode.md" 85 "debug mode reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/debug-mode.md" 520 "debug mode reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/eval-gate.md" 75 "eval gate reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/eval-gate.md" 450 "eval gate reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/verification-patterns.md" 80 "verification patterns reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/verification-patterns.md" 560 "verification patterns reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/review-lenses.md" 85 "review lenses reference should stay focused"

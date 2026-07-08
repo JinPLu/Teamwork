@@ -1,0 +1,23 @@
+{
+  "id": "native-lightweight-control",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Fix a one-line typo in a local README.",
+  "expected": {
+    "route": "native",
+    "burden": "minimal",
+    "dispatch": "none"
+  },
+  "must": [
+    "act directly when the edit is obvious and low risk",
+    "avoid unnecessary subagent dispatch or durable planning"
+  ],
+  "must_not": [
+    "force a Teamwork stage label for a trivial edit",
+    "ask the user about routine naming or formatting choices"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Negative control for over-routing and user burden."
+}

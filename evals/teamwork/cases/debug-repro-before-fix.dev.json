@@ -1,0 +1,22 @@
+{
+  "id": "debug-repro-before-fix",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/teamwork-debug/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "A flaky UI test fails with unclear root cause.",
+  "expected": {
+    "route": "debug",
+    "requires": ["expected/actual behavior", "repro", "hypotheses", "runtime evidence"]
+  },
+  "must": [
+    "gather same-surface repro evidence before fixing",
+    "route to execute only after root cause or safe fix scope is clear"
+  ],
+  "must_not": [
+    "guess a fix from logs alone",
+    "treat wrong-surface or inconclusive checks as a pass"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Captures the debug-to-execute boundary."
+}

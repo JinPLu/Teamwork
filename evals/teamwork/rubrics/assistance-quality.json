@@ -1,0 +1,20 @@
+{
+  "id": "assistance-quality",
+  "description": "Scores whether Teamwork assistance improves outcomes without adding unjustified process.",
+  "criteria": [
+    "user_outcome",
+    "correctness",
+    "scope_control",
+    "evidence_quality",
+    "burden_control",
+    "release_discipline"
+  ],
+  "failure_modes": [
+    "over_routing",
+    "fallback_masking",
+    "unsupported_claim",
+    "empty_release_split",
+    "stage_sprawl",
+    "platform_overclaim"
+  ]
+}

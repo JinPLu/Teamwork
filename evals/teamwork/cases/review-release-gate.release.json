@@ -1,0 +1,22 @@
+{
+  "id": "review-release-gate",
+  "split": "release",
+  "source": "release",
+  "target": "skills/teamwork-review/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Review a Teamwork release candidate that changes workflow behavior.",
+  "expected": {
+    "route": "review",
+    "requires": ["fresh review", "eval evidence", "ledger evidence"]
+  },
+  "must": [
+    "reject empty release split output as release evidence",
+    "map requirements to validation, eval, diff, and ledger evidence"
+  ],
+  "must_not": [
+    "accept same-context self-review for release work",
+    "treat eval output as final acceptance without reviewer judgment"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Held-out release governance case."
+}

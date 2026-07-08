@@ -1,0 +1,22 @@
+{
+  "id": "update-release-ledger",
+  "split": "release",
+  "source": "release",
+  "target": "skills/teamwork-update/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Prepare a Teamwork maintainer release after changing package behavior.",
+  "expected": {
+    "route": "update",
+    "requires": ["dev eval", "validation", "release eval", "ledger deltas"]
+  },
+  "must": [
+    "run dev eval and repository validation before release claims",
+    "require non-empty release split and ledger-backed behavior deltas"
+  ],
+  "must_not": [
+    "bump version from metadata only for behavior changes",
+    "skip release split because dev validation passed"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Held-out update/release case."
+}

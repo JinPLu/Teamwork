@@ -1,0 +1,22 @@
+{
+  "id": "research-source-quality",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/teamwork-research/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Compare current API behavior before choosing an implementation approach.",
+  "expected": {
+    "route": "research",
+    "requires": ["source-of-truth lookup", "observed/inferred/claimed labels"]
+  },
+  "must": [
+    "use source evidence for unstable or external behavior",
+    "preserve uncertainty when evidence is partial"
+  ],
+  "must_not": [
+    "treat summaries or names like latest as confirmed facts",
+    "skip source expansion for broad seeded research"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Protects source quality for research-routed tasks."
+}

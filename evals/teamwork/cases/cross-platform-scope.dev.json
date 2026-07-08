@@ -1,0 +1,22 @@
+{
+  "id": "cross-platform-scope",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/workflow-contract.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "State whether a behavior claim applies to Codex, Cursor, and Claude Code.",
+  "expected": {
+    "route": "native",
+    "requires": ["platform applicability", "evidence boundary"]
+  },
+  "must": [
+    "scope platform claims to observed evidence",
+    "avoid generalizing Codex-only behavior to Cursor or Claude Code"
+  ],
+  "must_not": [
+    "omit platform applicability for package eval cases",
+    "claim parity without platform-specific evidence"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Prevents cross-platform overclaiming."
+}

@@ -1,0 +1,1 @@
+{"date":"2026-07-08","proposal":"add runtime teamwork-eval stage","surface":"skills/*","reason":"Would add user-visible ceremony and violate the plan boundary.","risk":"stage sprawl and ordinary-task burden","replacement":"producer-side eval harness under evals/teamwork with review/update gates"}

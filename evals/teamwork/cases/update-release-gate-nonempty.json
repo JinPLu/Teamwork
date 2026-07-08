@@ -1,0 +1,25 @@
+{
+  "id": "update-release-gate-nonempty",
+  "split": "dev",
+  "source": "release",
+  "target": "skills/teamwork-update/SKILL.md",
+  "platforms": ["codex"],
+  "prompt": "Prepare a Teamwork maintainer release and cite readiness evidence.",
+  "expected": {
+    "route": "update",
+    "release_split": "non_empty_required",
+    "validation": ["dev_eval", "release_eval", "repository_validation"]
+  },
+  "must": [
+    "Require dev eval and repository validation evidence for package changes.",
+    "Require a non-empty release split before making release claims.",
+    "Keep version and plugin metadata decisions scoped to maintainer release mode."
+  ],
+  "must_not": [
+    "Use an empty release split as release evidence.",
+    "Bump version metadata during a user refresh."
+  ],
+  "evidence": "docs/teamwork/plans/2026-07-08-skill-to-harness-optimization-plan.md",
+  "tags": ["update", "release", "governance"],
+  "severity": "high"
+}
