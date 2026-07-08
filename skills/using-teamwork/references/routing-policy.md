@@ -7,7 +7,7 @@ Teamwork stage names. Route from intent, evidence state, and risk.
 
 | User signal | Route | Why |
 |---|---|---|
-| "What is this?", "where is X?", tiny edit, obvious local fix | native | Direct answer or low-risk edit needs no Teamwork ceremony. |
+| "What is this?", "where is X?", tiny edit, obvious local fix | native | Direct answer or low-risk edit needs no Teamwork ceremony unless explicit grill mode is active. |
 | "Why?", "which option?", "is this current?", unfamiliar API, unclear repro surface | research | Source of truth, facts, or scope need evidence before action. |
 | Failing test, flaky run, CI failure, runtime log, UI symptom, regression, crash | debug | A real or likely repro can decide root cause. |
 | "Design", "plan", cross-file behavior, public contract, architecture, risky refactor | plan | Scope, acceptance, verification, or dispatch must be locked before edits. |
@@ -26,7 +26,7 @@ Teamwork stage names. Route from intent, evidence state, and risk.
   route research until the surface is clear enough to test.
 - Known root cause plus non-trivial or protected fix beats execute: route plan.
 - Known root cause plus accepted narrow fix routes execute; tiny obvious fixes
-  may stay native.
+  may stay native unless explicit grill mode is active.
 - "Do not fix yet" means research, debug, or review only.
 - "Do not grill", "act normally", or "just implement" disables grill mode unless
   normal required-state rules still ask or block.
@@ -35,11 +35,12 @@ Teamwork stage names. Route from intent, evidence state, and risk.
 
 ## Smart Defaults
 
-Act directly when evidence is enough. For uncertain, complex, or non-lightweight
-tasks, ask before planning or acting when a decision/risk answer could change
-scope, acceptance, public behavior, architecture, risk, verification, or an
-irreversible action. Never invent runtime targets, model names, ports, data, or
-credentials to force a stage to proceed.
+Act directly when evidence is enough and no explicit grill/question-first
+override is active. For uncertain, complex, or non-lightweight tasks, ask before
+planning or acting when a decision/risk answer could change scope, acceptance,
+public behavior, architecture, risk, verification, or an irreversible action.
+Never invent runtime targets, model names, ports, data, or credentials to force
+a stage to proceed.
 Explicit grill mode is stricter: ask one decision/risk question with a
 recommendation, then stop before planning or acting unless the user exits or
 already confirmed a Shared Understanding Packet.

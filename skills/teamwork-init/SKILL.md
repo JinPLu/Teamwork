@@ -82,8 +82,8 @@ remaining manual Cursor paste or optional substrate gaps.
 
 - Do not copy full external workflow, MCP, or project docs into project
   instructions.
-- Preserve grill/question-first override as a cross-cutting interaction
-  protocol, not a Teamwork stage or standalone project skill.
+- Preserve grill/question-first override as a cross-cutting interaction protocol, not a Teamwork stage.
+- In active grill/question-first mode, inspect facts for the next question; do not change init surfaces until packet confirmation or exit.
 - Do not replace project evidence sources with Teamwork artifacts.
 - Do not alter protected planning, secrets, server state, or current experiment
   truth without evidence-backed user intent.

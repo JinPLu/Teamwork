@@ -5,6 +5,18 @@
 这份 changelog 按“用户升级后会感受到什么”来写，而不是只罗列文件改动。
 版本边界以 `VERSION` 和插件 manifest 的更新为准；当前仓库没有 git release tag。
 
+## 2.11.1 - 2026-07-08
+
+这版重点是：**补实 question-first / grill-me 和轻量直做之间的优先级边界。**
+
+- 轻量任务仍默认直接做，但 `using-teamwork` 和 routing policy 现在明确写出：显式
+  `grill-me` / question-first 会先于轻量 fast path 生效。
+- 新增“简单任务 + 显式 grill-me”的 eval fixture，防止一行 typo 这类任务绕过
+  question-first override。
+- 轻量控制样本的验证更严格：现在会拒绝额外问题、grill ceremony、subagent dispatch
+  和 durable plan，而不是只看少量关键词。
+- Init/update skill 增加 active grill/question-first 的维护入口保护，避免在安装或发版任务中继续改动。
+
 ## 2.11.0 - 2026-07-08
 
 这版重点是：**question-first / grill-me 变成跨阶段交互协议，并且安装面漂移检查更可信。**

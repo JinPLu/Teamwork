@@ -27,8 +27,9 @@ dispatch planning/design/execution agents until packet confirmation or exit.
 
 ## Route
 
-Infer the route from user intent and evidence state. Most small, clear tasks
-need no Teamwork stage — just do the work natively.
+Infer the route from user intent and evidence state. Outside explicit
+grill/question-first mode, small, clear tasks need no Teamwork stage — just do
+the work natively.
 
 - **Native** — quick facts, one CodeGraph question, small local edits,
   obvious fixes, simple evidence checks, or low-risk mechanical work.
@@ -63,6 +64,7 @@ Reviewer; if subagents are unavailable, say so and name the residual risk.
 
 ## Output
 
-For lightweight native work, just answer. Reserve a short `Route: ...` line for
-non-lightweight handoffs, redirects, blockers, or goal/update work. Include
-`Memory Delta:` only when durable project memory was checked or changed.
+Outside explicit grill/question-first mode, just answer for lightweight native
+work. Reserve `Route: ...` for non-lightweight handoffs, redirects, blockers, or
+goal/update work. Include `Memory Delta:` only when durable memory was checked
+or changed.

@@ -1,0 +1,23 @@
+{
+  "id": "question-first-explicit-lightweight-grill",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/grill-mode.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "grill-me before fixing this one-line README typo.",
+  "expected": {
+    "mode": "question_first_override",
+    "requires": ["one decision/risk question", "recommended answer", "no plan", "no edit", "no dispatch", "lightweight task still honors explicit grill"]
+  },
+  "must": [
+    "treat the explicit grill-me request as higher priority than the lightweight native fast path",
+    "ask exactly one decision/risk question with a recommended answer",
+    "stop before planning, dispatch, edits, or goal handoff"
+  ],
+  "must_not": [
+    "apply the typo fix directly because it is simple",
+    "dispatch subagents or create a durable plan before the Shared Understanding Packet or explicit exit"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "docs/teamwork/plans/2026-07-08-question-first-interaction-override.md"
+}

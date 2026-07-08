@@ -259,7 +259,7 @@ while IFS= read -r eval_file; do
 done < <(find "$ROOT/evals/teamwork/cases" "$ROOT/evals/teamwork/rubrics" "$ROOT/evals/teamwork/ledgers" "$ROOT/evals/teamwork/outputs" -type f | sort)
 [[ -f "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" ]] \
   || fail "missing question-first eval output samples"
-for case_id in question-first-explicit-grill question-first-complex-uncertainty question-first-lightweight-control; do
+for case_id in question-first-explicit-grill question-first-explicit-lightweight-grill question-first-complex-uncertainty question-first-lightweight-control; do
   [[ -f "$ROOT/evals/teamwork/cases/$case_id.dev.json" ]] \
     || fail "missing question-first eval case: $case_id"
   grep_required "\"case_id\":\"$case_id\"" "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" \

@@ -89,9 +89,33 @@ OPTIMIZER_DECISIONS = {"candidate", "accepted", "rejected", "blocked"}
 PLACEHOLDER = "not_applicable"
 GLOB_CHARS = set("*?[")
 REQUIRED_QUESTION_FIRST_CASES = {
-    "question-first-explicit-grill": {"ask_one_question", "recommended_answer", "no_plan", "no_edit"},
+    "question-first-explicit-grill": {
+        "ask_one_question",
+        "recommended_answer",
+        "no_plan",
+        "no_edit",
+        "no_dispatch",
+    },
+    "question-first-explicit-lightweight-grill": {
+        "ask_one_question",
+        "recommended_answer",
+        "no_plan",
+        "no_edit",
+        "no_dispatch",
+        "lightweight_grill_override",
+    },
     "question-first-complex-uncertainty": {"decision_risk_question", "no_plan_before_question"},
-    "question-first-lightweight-control": {"direct_lightweight", "no_grill_ceremony"},
+    "question-first-lightweight-control": {
+        "direct_lightweight",
+        "no_grill_ceremony",
+        "no_subagent_dispatch",
+        "no_durable_plan",
+        "no_question",
+    },
+}
+EXPLICIT_GRILL_CASES = {
+    "question-first-explicit-grill",
+    "question-first-explicit-lightweight-grill",
 }
 OUTPUT_REQUIRED_FIELDS = {
     "case_id",
@@ -400,14 +424,25 @@ def validate_question_first_outputs(case_ids: set[str]) -> int:
             raise EvalError(f"{display_path(output_path)}:{index}: question-first sample failed: {fail_reason}")
 
         output = data["output"].lower()
-        if case_id == "question-first-explicit-grill":
+        if case_id in EXPLICIT_GRILL_CASES:
             if output.count("question:") != 1 or data["output"].count("?") != 1:
                 raise EvalError(f"{display_path(output_path)}:{index}: explicit grill output must ask exactly one question")
             if "facts checked:" not in output or "recommended:" not in output:
                 raise EvalError(
                     f"{display_path(output_path)}:{index}: explicit grill output must cite facts and recommend"
                 )
-            forbidden = ("steps:", "implementation", "edit", "dispatch", "goal proposal")
+            forbidden = (
+                "steps:",
+                "implementation",
+                "edit",
+                "dispatch",
+                "goal proposal",
+                "plan:",
+                "planning",
+                "subagent",
+                "worker",
+                "durable plan",
+            )
             if any(item in output for item in forbidden):
                 raise EvalError(f"{display_path(output_path)}:{index}: explicit grill output contains forbidden enactment")
         if case_id == "question-first-complex-uncertainty":
@@ -416,8 +451,27 @@ def validate_question_first_outputs(case_ids: set[str]) -> int:
             if "steps:" in output or "implementation" in output:
                 raise EvalError(f"{display_path(output_path)}:{index}: complex uncertainty output planned before asking")
         if case_id == "question-first-lightweight-control":
-            if "shared understanding packet" in output or "grill" in output:
+            ceremony_forbidden = (
+                "shared understanding packet",
+                "grill",
+                "question-first",
+            )
+            orchestration_forbidden = (
+                "question:",
+                "dispatch",
+                "subagent",
+                "worker",
+                "durable plan",
+                "plan:",
+                "planning",
+            )
+            if "?" in data["output"] or any(item in output for item in ceremony_forbidden):
                 raise EvalError(f"{display_path(output_path)}:{index}: lightweight output must not use grill ceremony")
+            if any(item in output for item in orchestration_forbidden):
+                raise EvalError(f"{display_path(output_path)}:{index}: lightweight output must not plan or dispatch")
+            direct_markers = ("directly", "make the one-line", "fix the typo")
+            if not any(item in output for item in direct_markers):
+                raise EvalError(f"{display_path(output_path)}:{index}: lightweight output must indicate direct action")
 
         seen.add(case_id)
         seen_platforms[case_id].add(platform)

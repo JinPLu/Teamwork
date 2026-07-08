@@ -6,6 +6,22 @@ This changelog explains what users get after upgrading, not just which files
 changed. Version boundaries come from `VERSION` and plugin manifest updates;
 the repository currently has no git release tags.
 
+## 2.11.1 - 2026-07-08
+
+This release is about **tightening the priority boundary between question-first
+/ grill-me and lightweight direct action**.
+
+- Lightweight tasks still default to direct action, but `using-teamwork` and the
+  routing policy now state explicitly that `grill-me` / question-first overrides
+  the lightweight fast path.
+- Added a "simple task + explicit grill-me" eval fixture so one-line typo tasks
+  cannot bypass the question-first override.
+- Hardened the lightweight control sample checks: they now reject extra
+  questions, grill ceremony, subagent dispatch, and durable plans instead of
+  relying on a narrow keyword check.
+- Init/update skills now include active grill/question-first maintenance guards
+  before install or release changes continue.
+
 ## 2.11.0 - 2026-07-08
 
 This release is about **turning question-first / grill-me into a cross-stage interaction protocol and making installed-surface drift checks more trustworthy**.

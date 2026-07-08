@@ -5,11 +5,9 @@ description: Use when updating Teamwork package version, refreshing installed sk
 
 # Teamwork Update
 
-Use for package refresh and maintenance. Read
-`skills/using-teamwork/references/check-update.md` for the update script,
-`skills/using-teamwork/references/workflow-contract.md` for evidence, and
-`skills/using-teamwork/references/eval-gate.md` for eval, ledger, and release
-gates.
+Use for package refresh and maintenance. Read `skills/using-teamwork/references/check-update.md`, `workflow-contract.md`, and `eval-gate.md`.
+
+During active grill/question-first mode, ask the next question and stop before version, install, or release changes until packet confirmation or exit.
 
 ## Modes
 
