@@ -6,6 +6,25 @@ This changelog explains what users get after upgrading, not just which files
 changed. Version boundaries come from `VERSION` and plugin manifest updates;
 the repository currently has no git release tags.
 
+## 2.10.0 - 2026-07-08
+
+This release is about **giving Teamwork a reusable SkillOpt-Lite/HarnessOpt-Lite candidate loop foundation**.
+
+- Added `scripts/optimize-teamwork.py` to initialize optimizer workspaces, export
+  result JSONL into file-native markdown samples, summarize scores, and apply a
+  deterministic candidate gate.
+- `scripts/eval-teamwork.py` now supports an optional `optimizer-candidates.jsonl`
+  schema plus a standalone `--optimizer-ledger` validator; real candidates must
+  carry provider/model/config, baseline/treatment, rollback, validation, reviewer,
+  and related evidence instead of `not_applicable` placeholders.
+- `scripts/validate.sh` now smokes the optimizer helper, valid/invalid candidate
+  ledgers, score summaries, and gate decisions while cleaning temporary files.
+- Review/update/eval-gate rules now state that actual SkillOpt-Lite/HarnessOpt-Lite
+  participation requires trajectory samples, same-case baseline/treatment, gate,
+  rollback, ledger, release audit, and fresh review.
+- This is a verifiable optimization-pipeline foundation; it does not claim the
+  scaffold itself is a completed real optimizer pilot.
+
 ## 2.9.0 - 2026-07-08
 
 This release is about **using a file-native harness to govern and improve Teamwork's own skill behavior**.

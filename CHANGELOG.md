@@ -5,6 +5,22 @@
 这份 changelog 按“用户升级后会感受到什么”来写，而不是只罗列文件改动。
 版本边界以 `VERSION` 和插件 manifest 的更新为准；当前仓库没有 git release tag。
 
+## 2.10.0 - 2026-07-08
+
+这版重点是：**Teamwork 有了可复用的 SkillOpt-Lite/HarnessOpt-Lite 候选闭环底座。**
+
+- 新增 `scripts/optimize-teamwork.py`：可以初始化优化工作区、把结果 JSONL 导出成
+  file-native markdown samples、汇总分数，并用 deterministic gate 判断候选是否接受。
+- `scripts/eval-teamwork.py` 新增可选的 `optimizer-candidates.jsonl` schema 和
+  `--optimizer-ledger` 独立校验入口；真实候选必须包含 provider/model/config、baseline/treatment、
+  rollback、validation、reviewer 等证据，不能用 `not_applicable` 占位。
+- `scripts/validate.sh` 现在覆盖 optimizer helper、有效/无效候选 ledger、score 和 gate smoke，
+  同时保持临时文件清理干净。
+- Review/update/eval gate 规则明确：只有具备 trajectory samples、同案 baseline/treatment、
+  gate、rollback、ledger、release audit 和 fresh review 时，才可以声称实际
+  SkillOpt-Lite/HarnessOpt-Lite 参与。
+- 这版提供可验证的优化管线底座；尚不把 scaffold 本身声明为一次真实 optimizer pilot。
+
 ## 2.9.0 - 2026-07-08
 
 这版重点是：**Teamwork 开始用 file-native harness 约束和优化自己的 skill 行为。**
