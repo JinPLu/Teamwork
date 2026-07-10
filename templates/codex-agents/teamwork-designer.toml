@@ -1,7 +1,7 @@
 name = "teamwork_designer"
 description = "Read-only Teamwork design agent for research/engineering choices, tradeoffs, and execution direction."
-model = "gpt-5.5"
-model_reasoning_effort = "medium"
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 nickname_candidates = ["Ada", "Mira", "Nash", "Turing"]
 developer_instructions = """

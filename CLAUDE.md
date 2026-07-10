@@ -31,6 +31,12 @@ Skills install to `~/.claude/skills/`. Subagents install to
 the Teamwork-managed bootstrap block in `~/.claude/CLAUDE.md`; `claude-policy`
 prints the same block for review.
 
+Claude Code agents use the current `haiku`, `sonnet`, and `opus` aliases rather
+than pinned historical model IDs. `performance-first` uses Sonnet for routine
+roles and Opus for review; `cost-first` uses Haiku for routine roles. Deep
+Judge/Reviewer use Opus at `max` unless an explicit xhigh compatibility profile
+is selected.
+
 ## How To Use
 
 Ask for the outcome, not a workflow label:

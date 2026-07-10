@@ -6,6 +6,23 @@ This changelog explains what users get after upgrading, not just which files
 changed. Version boundaries come from `VERSION`, plugin manifests, and GitHub
 release tags.
 
+## 2.14.0 - 2026-07-11
+
+This release **refreshes subagent model mappings for every platform and every
+profile**.
+
+- Codex `performance-first` uses GPT-5.6 Terra/Sol; `cost-first` uses
+  Luna/Terra/Sol; new `gpt56-high` and `gpt56-xhigh` profiles pin all roles to
+  Sol.
+- `gpt56-role`, `gpt55-high`, and `gpt55-xhigh` remain compatibility names, but
+  no Codex profile calls GPT-5.5 anymore.
+- Cursor uses current native Composer 2.5, Sonnet 4.6, and Opus 4.8 mappings,
+  with non-Fast Composer 2.5 for `cost-first`. Claude Code uses current
+  `haiku`/`sonnet`/`opus` aliases and moves Deep roles to `max`.
+- The installer, source templates, drift checker, platform docs, project-init
+  guidance, and validation now agree across copy/link and global/project
+  installs.
+
 ## 2.13.0 - 2026-07-10
 
 This release makes Teamwork **guardrail-first and conditionally progressive for

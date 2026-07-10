@@ -37,12 +37,14 @@ Audit reusable human-agent habits. Mark `keep` for project-specific acceptance, 
 ## Teamwork Initialization Mode
 
 Model profile is chosen at install time on all platforms. `performance-first` is
-default; `cost-first` downshifts routine roles; `gpt56-role` uses Terra medium
-for Explorer, Sol medium for Worker, Sol high for Designer/Judge/Reviewer, and
-Sol max for Deep Judge/Reviewer. `gpt55-high` and `gpt55-xhigh` retain explicit
-all-agent GPT-5.5 overrides. `gpt56-role` keeps non-Codex platforms on native
-performance-first tiers; legacy profiles retain their existing adapter
-behavior. Project init asks only for global-policy overrides. Model overrides
+the default and uses Terra medium for Explorer, Sol medium for Worker, Sol high
+for Designer/Judge/Reviewer, and Sol max for Deep Judge/Reviewer on Codex.
+`gpt56-role` is a compatibility alias for that Codex mapping. `cost-first`
+uses Luna/Terra/Sol on Codex and native low-cost models elsewhere.
+`gpt56-high` and `gpt56-xhigh` pin all Codex roles to Sol; legacy `gpt55-high`
+and `gpt55-xhigh` names alias those mappings without emitting GPT-5.5.
+Non-Codex platforms keep current native model families. Project init asks only
+for global-policy overrides. Model overrides
 require `./install.sh --profile <profile> <target>`.
 
 ## Local Project Init Surfaces

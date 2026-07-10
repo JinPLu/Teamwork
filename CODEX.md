@@ -20,19 +20,22 @@ to stop on missing required state, and how to attach evidence to completion.
 ```bash
 ./install.sh              # same as ./install.sh codex
 ./install.sh codex --profile cost-first
-./install.sh codex --profile gpt56-role
-./install.sh codex --profile gpt55-high
-./install.sh codex --profile gpt55-xhigh
+./install.sh codex --profile gpt56-role  # compatibility alias
+./install.sh codex --profile gpt56-high
+./install.sh codex --profile gpt56-xhigh
 ./install.sh codex-agents
 ./install.sh codex-policy
 ./install.sh all
 ```
 
+The default `performance-first` profile maps Explorer to
+`gpt-5.6-terra/medium`, Worker to `gpt-5.6-sol/medium`,
+Designer/Judge/Reviewer to `gpt-5.6-sol/high`, and Deep Judge/Reviewer to
+`gpt-5.6-sol/max`. `cost-first` uses Luna/Terra/Sol, while `gpt56-high` and
+`gpt56-xhigh` pin every Codex agent to Sol. `gpt56-role`, `gpt55-high`, and
+`gpt55-xhigh` remain compatibility names, but no active profile emits GPT-5.5.
 Use `./install.sh project` or `./install.sh --project-root <path> project` for
-project-local skills and agents. Use `./install.sh --project-root <path>
---profile gpt56-role project-codex-agents` for the role-tiered GPT-5.6 mapping;
-use `--profile gpt55-high` or `--profile gpt55-xhigh` for explicit all-agent
-GPT-5.5 overrides. Use
+project-local skills and agents. Use
 `./install.sh --link codex` while editing this checkout.
 
 ## How To Use

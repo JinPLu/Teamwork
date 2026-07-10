@@ -51,7 +51,7 @@ cd Teamwork
 | Claude Code | `./install.sh claude` | `~/.claude/skills/`、`~/.claude/agents/`，以及 `~/.claude/CLAUDE.md` 中的 Teamwork 标记块 |
 | 三个平台 | `./install.sh all` | 安装以上全部用户级入口 |
 
-默认使用 `--copy` 和 `performance-first` profile。高级 profile、单独安装 agents/policy 等选项以帮助输出为准：
+默认使用 `--copy` 和 `performance-first` profile；Codex 使用 GPT-5.6 Terra/Sol，Cursor 和 Claude Code 使用各自当前原生模型。`cost-first` 也已迁移到当前低成本模型；旧 `gpt55-*` 名称仅作兼容，不再调用 GPT-5.5。高级选项以帮助输出为准：
 
 ```bash
 ./install.sh --help

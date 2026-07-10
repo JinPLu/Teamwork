@@ -12,7 +12,7 @@ COPY_CURSOR_POLICY="${TEAMWORK_INIT_CURSOR_POLICY_COPY:-1}"
 usage() {
   cat <<'USAGE'
 Usage:
-  ./scripts/init-project.sh [--project-root PATH] [--copy|--link] [--profile performance-first|cost-first|gpt56-role|gpt55-high|gpt55-xhigh] [--no-codegraph] [--project-only] [--no-cursor-policy-copy]
+  ./scripts/init-project.sh [--project-root PATH] [--copy|--link] [--profile performance-first|cost-first|gpt56-role|gpt56-high|gpt56-xhigh|gpt55-high|gpt55-xhigh] [--no-codegraph] [--project-only] [--no-cursor-policy-copy]
 
 Initializes a project with full Teamwork defaults:
   - global Codex/Cursor/Claude skills, agents, and managed policies

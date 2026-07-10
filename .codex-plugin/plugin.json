@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "2.13.0",
+  "version": "2.14.0",
   "description": "Codex-first skills (also installable on Cursor and Claude Code) for evidence-first planning, role-subagent fan-out, profile rendering, review, and native goal convergence.",
   "author": {
     "name": "JinPLu",
@@ -34,7 +34,7 @@
       "Design a Codex native goal with evidence, scope, retry policy, artifacts, and subagent routing.",
       "Initialize or slim project AGENTS/CODEX/CLAUDE rules with performance-first or cost-first Codex mode while preserving local evidence boundaries.",
       "Fan out valuable independent Codex work into evidence-gathering, planning, execution, and review tracks.",
-      "Use role-optimized Teamwork custom agents proactively, including deep xhigh Judge/Reviewer for high-risk review.",
+      "Use current role-optimized Teamwork agents proactively, including GPT-5.6 Sol max Deep Judge/Reviewer for high-risk Codex review.",
       "Map completion claims and Memory Delta status to direct evidence before accepting the result.",
       "Update Teamwork version metadata, refresh installed skills/agents/global policy, and validate the installed surface."
     ],

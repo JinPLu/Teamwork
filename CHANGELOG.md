@@ -5,6 +5,20 @@
 这份 changelog 按“用户升级后会感受到什么”来写，而不是只罗列文件改动。
 版本边界以 `VERSION`、插件 manifests 和 GitHub release tags 为准。
 
+## 2.14.0 - 2026-07-11
+
+这版重点是：**刷新全部平台、全部 profile 的 subagent 模型映射。**
+
+- Codex 的 `performance-first` 使用 GPT-5.6 Terra/Sol；`cost-first` 使用
+  Luna/Terra/Sol；新增全 Sol 的 `gpt56-high` 和 `gpt56-xhigh`。
+- `gpt56-role`、`gpt55-high`、`gpt55-xhigh` 继续作为兼容名称，但所有
+  Codex profile 都不再调用 GPT-5.5。
+- Cursor 使用当前 Composer 2.5、Sonnet 4.6 和 Opus 4.8 原生映射，其中
+  `cost-first` 改用非 Fast Composer 2.5；Claude Code 使用当前
+  `haiku`/`sonnet`/`opus` aliases，Deep 档提升到 `max`。
+- installer、source templates、drift checker、三平台文档、项目初始化说明
+  和 validation 同步更新，copy/link 与全局/项目安装保持一致。
+
 ## 2.13.0 - 2026-07-10
 
 这版重点是：**针对 GPT-5.6 将 Teamwork 从“流程模板驱动”改成“最小护栏 + 条件协议”。**

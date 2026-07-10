@@ -683,17 +683,17 @@ for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge 
   [[ ! -L "$tmp/home/.codex/agents/$agent.toml" ]] \
     || fail "default Codex install must copy Codex agent $agent"
 done
-for agent in teamwork-explorer teamwork-worker teamwork-designer; do
+for agent in teamwork-explorer teamwork-worker; do
   grep_required '^model_reasoning_effort = "medium"$' "$tmp/home/.codex/agents/$agent.toml" \
     "Codex install must render medium reasoning for $agent"
 done
-for agent in teamwork-judge teamwork-reviewer; do
+for agent in teamwork-designer teamwork-judge teamwork-reviewer; do
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home/.codex/agents/$agent.toml" \
     "Codex install must render high reasoning for $agent"
 done
 for agent in teamwork-deep-judge teamwork-deep-reviewer; do
-  grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home/.codex/agents/$agent.toml" \
-    "Codex install must render xhigh reasoning for $agent"
+  grep_required '^model_reasoning_effort = "max"$' "$tmp/home/.codex/agents/$agent.toml" \
+    "Codex install must render max reasoning for $agent"
 done
 grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$tmp/home/.codex/AGENTS.md" \
   "Codex install must create Teamwork global AGENTS block"
@@ -750,45 +750,51 @@ for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge 
   [[ ! -L "$tmp/home-codex-agents/.codex/agents/$agent.toml" ]] \
     || fail "default Codex agent install must copy $agent"
 done
-for agent in teamwork-explorer teamwork-worker teamwork-designer; do
-  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
-    "default Codex agent install must render performance model for $agent"
-  grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
-    "default Codex agent install must render medium reasoning for $agent"
-done
-for agent in teamwork-judge teamwork-reviewer; do
-  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
-    "default Codex agent install must render frontier model for $agent"
+grep_required '^model = "gpt-5.6-terra"$' "$tmp/home-codex-agents/.codex/agents/teamwork-explorer.toml" \
+  "default Codex Explorer must use gpt-5.6-terra"
+grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents/.codex/agents/teamwork-explorer.toml" \
+  "default Codex Explorer must use medium reasoning"
+grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents/.codex/agents/teamwork-worker.toml" \
+  "default Codex Worker must use gpt-5.6-sol"
+grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents/.codex/agents/teamwork-worker.toml" \
+  "default Codex Worker must use medium reasoning"
+for agent in teamwork-designer teamwork-judge teamwork-reviewer; do
+  grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
+    "default Codex agent install must render gpt-5.6-sol for $agent"
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
     "default Codex agent install must render high reasoning for $agent"
 done
 for agent in teamwork-deep-judge teamwork-deep-reviewer; do
-  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
-    "default Codex agent install must render frontier model for $agent"
-  grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
-    "default Codex agent install must render xhigh reasoning for $agent"
+  grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
+    "default Codex agent install must render gpt-5.6-sol for $agent"
+  grep_required '^model_reasoning_effort = "max"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
+    "default Codex agent install must render max reasoning for $agent"
 done
 [[ ! -e "$tmp/home-codex-agents/.codex/AGENTS.md" ]] \
   || fail "codex-agents target must not write global AGENTS policy"
 
 HOME="$tmp/home-codex-agents-cost" "$ROOT/install.sh" --profile cost-first codex-agents >/dev/null
-for agent in teamwork-explorer teamwork-worker teamwork-designer; do
-  grep_required '^model = "gpt-5.4"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex agent install must downshift $agent"
+for agent in teamwork-explorer teamwork-designer; do
+  grep_required '^model = "gpt-5.6-luna"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex agent install must use Luna for $agent"
   grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
     "cost-first Codex agent install must use medium reasoning for $agent"
 done
+grep_required '^model = "gpt-5.6-terra"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-worker.toml" \
+  "cost-first Codex Worker must use Terra"
+grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-worker.toml" \
+  "cost-first Codex Worker must use medium reasoning"
 for agent in teamwork-judge teamwork-reviewer; do
-  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex agent install must keep frontier model for $agent"
+  grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex agent install must use Sol for $agent"
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
     "cost-first Codex agent install must keep high reasoning for $agent"
 done
 for agent in teamwork-deep-judge teamwork-deep-reviewer; do
-  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex agent install must keep frontier model for $agent"
-  grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex agent install must keep xhigh reasoning for $agent"
+  grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex agent install must use Sol for $agent"
+  grep_required '^model_reasoning_effort = "max"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex agent install must use max reasoning for $agent"
 done
 
 HOME="$tmp/home-codex-cost" "$ROOT/install.sh" --profile cost-first codex >/dev/null
@@ -874,16 +880,54 @@ done
 for agent in deep-judge deep-reviewer; do
   grep_required '^model: opus$' "$tmp/home-claude-gpt56-role/.claude/agents/$agent.md" \
     "gpt56-role must preserve Claude deep model for $agent"
-  grep_required '^effort: xhigh$' "$tmp/home-claude-gpt56-role/.claude/agents/$agent.md" \
-    "gpt56-role must preserve Claude deep effort for $agent"
+  grep_required '^effort: max$' "$tmp/home-claude-gpt56-role/.claude/agents/$agent.md" \
+    "gpt56-role must use Claude max effort for $agent"
+done
+
+for profile in gpt56-high gpt56-xhigh gpt55-high gpt55-xhigh; do
+  profile_home="$tmp/home-cross-platform-$profile"
+  HOME="$profile_home" "$ROOT/install.sh" --profile "$profile" all >/dev/null
+  for agent in explore designer; do
+    grep_required '^model: claude-sonnet-4-6$' "$profile_home/.cursor/agents/$agent.md" \
+      "$profile must keep the current Cursor model for $agent"
+  done
+  grep_required '^model: composer-2.5-fast$' "$profile_home/.cursor/agents/worker.md" \
+    "$profile must keep the current Cursor model for Worker"
+  for agent in judge code-reviewer deep-judge deep-reviewer; do
+    grep_required '^model: claude-opus-4-8-thinking-high$' "$profile_home/.cursor/agents/$agent.md" \
+      "$profile must keep the current Cursor review model for $agent"
+  done
+  for agent in explore designer worker; do
+    grep_required '^model: sonnet$' "$profile_home/.claude/agents/$agent.md" \
+      "$profile must keep the current Claude routine model for $agent"
+  done
+  for agent in judge code-reviewer deep-judge deep-reviewer; do
+    grep_required '^model: opus$' "$profile_home/.claude/agents/$agent.md" \
+      "$profile must keep the current Claude review model for $agent"
+  done
+  if [[ "$profile" == *xhigh ]]; then
+    expected_deep_effort="xhigh"
+  else
+    expected_deep_effort="max"
+  fi
+  for agent in deep-judge deep-reviewer; do
+    grep_required "^effort: $expected_deep_effort$" "$profile_home/.claude/agents/$agent.md" \
+      "$profile must render $expected_deep_effort for Claude $agent"
+  done
 done
 
 HOME="$tmp/home-codex-agents-high" "$ROOT/install.sh" --profile gpt55-high codex-agents >/dev/null
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
-  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents-high/.codex/agents/$agent.toml" \
-    "gpt55-high Codex agent install must render gpt-5.5 for $agent"
+  grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents-high/.codex/agents/$agent.toml" \
+    "legacy gpt55-high alias must render gpt-5.6-sol for $agent"
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-high/.codex/agents/$agent.toml" \
     "gpt55-high Codex agent install must render high reasoning for $agent"
+done
+HOME="$tmp/home-codex-agents-gpt56-high" "$ROOT/install.sh" --profile gpt56-high codex-agents >/dev/null
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
+  cmp -s "$tmp/home-codex-agents-gpt56-high/.codex/agents/$agent.toml" \
+    "$tmp/home-codex-agents-high/.codex/agents/$agent.toml" \
+    || fail "gpt55-high compatibility alias must match gpt56-high for $agent"
 done
 
 HOME="$tmp/home-codex-high" "$ROOT/install.sh" --profile gpt55-high codex >/dev/null
@@ -898,8 +942,8 @@ project_codex_high="$tmp/project-codex-high"
 mkdir -p "$project_codex_high"
 HOME="$tmp/home-project-codex-high" "$ROOT/install.sh" --profile gpt55-high --project-root "$project_codex_high" project-codex-agents >/dev/null
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
-  grep_required '^model = "gpt-5.5"$' "$project_codex_high/.codex/agents/$agent.toml" \
-    "project-codex-agents must render gpt-5.5 for $agent"
+  grep_required '^model = "gpt-5.6-sol"$' "$project_codex_high/.codex/agents/$agent.toml" \
+    "legacy gpt55-high project alias must render gpt-5.6-sol for $agent"
   grep_required '^model_reasoning_effort = "high"$' "$project_codex_high/.codex/agents/$agent.toml" \
     "project-codex-agents must render high reasoning for $agent"
 done
@@ -910,10 +954,16 @@ done
 
 HOME="$tmp/home-codex-agents-xhigh" "$ROOT/install.sh" --profile gpt55-xhigh codex-agents >/dev/null
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
-  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents-xhigh/.codex/agents/$agent.toml" \
-    "gpt55-xhigh Codex agent install must render gpt-5.5 for $agent"
+  grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents-xhigh/.codex/agents/$agent.toml" \
+    "legacy gpt55-xhigh alias must render gpt-5.6-sol for $agent"
   grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home-codex-agents-xhigh/.codex/agents/$agent.toml" \
     "gpt55-xhigh Codex agent install must render xhigh reasoning for $agent"
+done
+HOME="$tmp/home-codex-agents-gpt56-xhigh" "$ROOT/install.sh" --profile gpt56-xhigh codex-agents >/dev/null
+for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
+  cmp -s "$tmp/home-codex-agents-gpt56-xhigh/.codex/agents/$agent.toml" \
+    "$tmp/home-codex-agents-xhigh/.codex/agents/$agent.toml" \
+    || fail "gpt55-xhigh compatibility alias must match gpt56-xhigh for $agent"
 done
 
 HOME="$tmp/home-codex-xhigh" "$ROOT/install.sh" --profile gpt55-xhigh codex >/dev/null
@@ -928,8 +978,8 @@ project_codex_xhigh="$tmp/project-codex-xhigh"
 mkdir -p "$project_codex_xhigh"
 HOME="$tmp/home-project-codex-xhigh" "$ROOT/install.sh" --profile gpt55-xhigh --project-root "$project_codex_xhigh" project-codex-agents >/dev/null
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
-  grep_required '^model = "gpt-5.5"$' "$project_codex_xhigh/.codex/agents/$agent.toml" \
-    "project-codex-agents must render gpt-5.5 for $agent"
+  grep_required '^model = "gpt-5.6-sol"$' "$project_codex_xhigh/.codex/agents/$agent.toml" \
+    "legacy gpt55-xhigh project alias must render gpt-5.6-sol for $agent"
   grep_required '^model_reasoning_effort = "xhigh"$' "$project_codex_xhigh/.codex/agents/$agent.toml" \
     "project-codex-agents must render xhigh reasoning for $agent"
 done
@@ -1026,7 +1076,7 @@ done
 
 HOME="$tmp/home-cursor-cost" "$ROOT/install.sh" --profile cost-first cursor-agents >/dev/null
 for agent in explore designer worker; do
-  grep_required '^model: composer-2.5-fast$' "$tmp/home-cursor-cost/.cursor/agents/$agent.md" \
+  grep_required '^model: composer-2.5$' "$tmp/home-cursor-cost/.cursor/agents/$agent.md" \
     "cost-first Cursor agent install must downshift $agent"
 done
 for agent in judge code-reviewer deep-judge deep-reviewer; do
@@ -1091,8 +1141,8 @@ done
 for agent in deep-judge deep-reviewer; do
   grep_required '^model: opus$' "$tmp/home-claude/.claude/agents/$agent.md" \
     "Claude install must render opus model for $agent"
-  grep_required '^effort: xhigh$' "$tmp/home-claude/.claude/agents/$agent.md" \
-    "Claude install must render xhigh effort for $agent"
+  grep_required '^effort: max$' "$tmp/home-claude/.claude/agents/$agent.md" \
+    "Claude install must render max effort for $agent"
 done
 grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$tmp/home-claude/.claude/CLAUDE.md" \
   "Claude install must create Teamwork global CLAUDE block"
@@ -1114,6 +1164,10 @@ done
 for agent in judge code-reviewer deep-judge deep-reviewer; do
   grep_required '^model: opus$' "$tmp/home-claude-cost/.claude/agents/$agent.md" \
     "cost-first Claude agent install must keep opus model for $agent"
+done
+for agent in deep-judge deep-reviewer; do
+  grep_required '^effort: max$' "$tmp/home-claude-cost/.claude/agents/$agent.md" \
+    "cost-first Claude agent install must use max effort for $agent"
 done
 
 claude_preserve_home="$tmp/home-claude-preserve"

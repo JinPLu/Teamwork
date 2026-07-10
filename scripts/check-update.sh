@@ -196,35 +196,38 @@ agents_content_status() {
 codex_agent_profile_values() {
   local agent="$1"
   case "$(source_profile):$agent" in
-    gpt56-role:teamwork-explorer)
+    performance-first:teamwork-explorer|gpt56-role:teamwork-explorer)
       printf '%s %s\n' "gpt-5.6-terra" "medium"
       ;;
-    gpt56-role:teamwork-worker)
+    performance-first:teamwork-worker|gpt56-role:teamwork-worker)
       printf '%s %s\n' "gpt-5.6-sol" "medium"
       ;;
-    gpt56-role:teamwork-designer|gpt56-role:teamwork-judge|gpt56-role:teamwork-reviewer)
+    performance-first:teamwork-designer|performance-first:teamwork-judge|performance-first:teamwork-reviewer|gpt56-role:teamwork-designer|gpt56-role:teamwork-judge|gpt56-role:teamwork-reviewer)
       printf '%s %s\n' "gpt-5.6-sol" "high"
       ;;
-    gpt56-role:teamwork-deep-judge|gpt56-role:teamwork-deep-reviewer)
+    performance-first:teamwork-deep-judge|performance-first:teamwork-deep-reviewer|gpt56-role:teamwork-deep-judge|gpt56-role:teamwork-deep-reviewer)
       printf '%s %s\n' "gpt-5.6-sol" "max"
       ;;
-    gpt55-xhigh:*)
-      printf '%s %s\n' "gpt-5.5" "xhigh"
+    gpt56-xhigh:*|gpt55-xhigh:*)
+      printf '%s %s\n' "gpt-5.6-sol" "xhigh"
       ;;
-    gpt55-high:*)
-      printf '%s %s\n' "gpt-5.5" "high"
+    gpt56-high:*|gpt55-high:*)
+      printf '%s %s\n' "gpt-5.6-sol" "high"
       ;;
-    cost-first:teamwork-explorer|cost-first:teamwork-designer|cost-first:teamwork-worker)
-      printf '%s %s\n' "gpt-5.4" "medium"
+    cost-first:teamwork-explorer|cost-first:teamwork-designer)
+      printf '%s %s\n' "gpt-5.6-luna" "medium"
       ;;
-    *:teamwork-deep-judge|*:teamwork-deep-reviewer)
-      printf '%s %s\n' "gpt-5.5" "xhigh"
+    cost-first:teamwork-worker)
+      printf '%s %s\n' "gpt-5.6-terra" "medium"
       ;;
-    *:teamwork-explorer|*:teamwork-designer|*:teamwork-worker)
-      printf '%s %s\n' "gpt-5.5" "medium"
+    cost-first:teamwork-judge|cost-first:teamwork-reviewer)
+      printf '%s %s\n' "gpt-5.6-sol" "high"
+      ;;
+    cost-first:teamwork-deep-judge|cost-first:teamwork-deep-reviewer)
+      printf '%s %s\n' "gpt-5.6-sol" "max"
       ;;
     *)
-      printf '%s %s\n' "gpt-5.5" "high"
+      printf '%s %s\n' "gpt-5.6-sol" "high"
       ;;
   esac
 }
@@ -232,14 +235,17 @@ codex_agent_profile_values() {
 claude_agent_profile_values() {
   local agent="$1"
   case "$(source_profile):$agent" in
-    gpt56-role:explore|gpt56-role:designer|gpt56-role:worker|gpt55-xhigh:explore|gpt55-xhigh:designer|gpt55-xhigh:worker)
+    gpt56-role:explore|gpt56-role:designer|gpt56-role:worker|gpt56-high:explore|gpt56-high:designer|gpt56-high:worker|gpt56-xhigh:explore|gpt56-xhigh:designer|gpt56-xhigh:worker|gpt55-high:explore|gpt55-high:designer|gpt55-high:worker|gpt55-xhigh:explore|gpt55-xhigh:designer|gpt55-xhigh:worker)
       printf '%s %s\n' "sonnet" "medium"
       ;;
     cost-first:explore|cost-first:designer|cost-first:worker)
       printf '%s %s\n' "haiku" "medium"
       ;;
-    *:deep-judge|*:deep-reviewer)
+    gpt56-xhigh:deep-judge|gpt56-xhigh:deep-reviewer|gpt55-xhigh:deep-judge|gpt55-xhigh:deep-reviewer)
       printf '%s %s\n' "opus" "xhigh"
+      ;;
+    *:deep-judge|*:deep-reviewer)
+      printf '%s %s\n' "opus" "max"
       ;;
     *:explore|*:designer|*:worker)
       printf '%s %s\n' "sonnet" "medium"
@@ -253,19 +259,13 @@ claude_agent_profile_values() {
 cursor_agent_profile_values() {
   local agent="$1"
   case "$(source_profile):$agent" in
-    gpt56-role:worker|gpt55-xhigh:worker)
-      printf '%s\n' "composer-2.5-fast"
-      ;;
-    gpt56-role:explore|gpt56-role:designer|gpt55-xhigh:explore|gpt55-xhigh:designer)
-      printf '%s\n' "claude-sonnet-4-6"
-      ;;
     cost-first:explore|cost-first:designer|cost-first:worker)
+      printf '%s\n' "composer-2.5"
+      ;;
+    *:worker)
       printf '%s\n' "composer-2.5-fast"
       ;;
-    performance-first:worker)
-      printf '%s\n' "composer-2.5-fast"
-      ;;
-    performance-first:explore|performance-first:designer)
+    *:explore|*:designer)
       printf '%s\n' "claude-sonnet-4-6"
       ;;
     *:judge|*:code-reviewer|*:deep-judge|*:deep-reviewer)
@@ -545,8 +545,9 @@ print_report() {
 
   echo "--- Model mapping (best-effort) ---"
   echo "Cursor explore model: $(cursor_model_sample)"
-  echo "Expected gpt56-role Codex: Explorer=Terra/medium, Worker=Sol/medium, Designer/Judge/Reviewer=Sol/high, Deep=Sol/max"
-  echo "Expected cost-first routine: composer-2.5-fast"
+  echo "Expected performance-first Codex: Explorer=Terra/medium, Worker=Sol/medium, Designer/Judge/Reviewer=Sol/high, Deep=Sol/max"
+  echo "Expected gpt56-role Codex: compatibility alias of performance-first"
+  echo "Expected cost-first Cursor routine: composer-2.5"
   echo "Expected performance-first explore: claude-sonnet-4-6"
   echo
 

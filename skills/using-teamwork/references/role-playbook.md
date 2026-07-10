@@ -53,5 +53,5 @@ user asks for independent review.
 
 Use the installed Deep profile for failed goals, destructive or credential
 risk, security, public contracts, release acceptance, or repeated review
-failure. `gpt56-role` uses Sol `max`; legacy profiles retain their configured
+failure. `performance-first` and `gpt56-role` use Sol `max`; compatibility profiles retain their configured
 effort. Deep scrutiny does not expand task scope or permit recursive fan-out.

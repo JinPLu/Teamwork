@@ -1,7 +1,7 @@
 name = "teamwork_deep_judge"
-description = "X-high Teamwork Judge escalation profile for failed goals, public contracts, security, or destructive-risk plans."
-model = "gpt-5.5"
-model_reasoning_effort = "xhigh"
+description = "Max-effort Teamwork Judge escalation profile for failed goals, public contracts, security, or destructive-risk plans."
+model = "gpt-5.6-sol"
+model_reasoning_effort = "max"
 sandbox_mode = "read-only"
 nickname_candidates = ["Astra", "Orion", "Vega", "Zenith"]
 developer_instructions = """

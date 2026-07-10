@@ -54,7 +54,7 @@ Codex uses `agent_type`; Cursor uses `subagent_type`; Claude Code uses `Task`.
 | Deep Judge | `teamwork_deep_judge` | `default` + role in prompt |
 | Deep Reviewer | `teamwork_deep_reviewer` | `default` + role in prompt |
 
-Reasoning effort: `fast`->low, `standard`->medium, `high reasoning`->high, `deep reasoning`->xhigh.
+Reasoning effort: `fast`->low, `standard`->medium, `high reasoning`->high, `deep reasoning`->max.
 
 **Cursor** - prefer custom agents from `~/.cursor/agents/` by `name`; fallback `subagent_type` and runtime-supported model fields; no `reasoning_effort` or `fork_context`.
 
@@ -95,17 +95,16 @@ Use `readonly:true` for Explorer/Judge/Reviewer; `run_in_background:true` for lo
 
 Role defaults: Explorer->`balanced` (use `frontier` for broad/ambiguous/high-risk); Designer->`balanced` (use `frontier` for architecture or public contracts); Judge->`frontier` high reasoning; Worker->`coding` or `inherited`; Reviewer->`frontier` high reasoning.
 
-`performance-first` is the default on all platforms. `gpt56-role` is the
-role-tiered Codex profile: Explorer=`gpt-5.6-terra` medium;
+`performance-first` defaults to this Codex mapping: Explorer=`gpt-5.6-terra` medium;
 Worker=`gpt-5.6-sol` medium; Designer/Judge/Reviewer=`gpt-5.6-sol` high; Deep
-Judge/Reviewer=`gpt-5.6-sol` max. `gpt55-high` and `gpt55-xhigh` remain explicit
-all-agent GPT-5.5 overrides. `gpt56-role` keeps Cursor and Claude Code on their
-native performance-first model tiers; legacy profiles retain their existing
-adapter behavior.
+Judge/Reviewer=`gpt-5.6-sol` max. `gpt56-role` aliases it.
+`cost-first` uses Luna/Terra/Sol on Codex. `gpt56-high` and `gpt56-xhigh` pin
+all Codex roles to Sol; legacy `gpt55-*` names alias GPT-5.6. Cursor uses
+Composer 2.5/Sonnet 4.6/Opus 4.8; Claude uses current `haiku`/`sonnet`/`opus` aliases.
 `./install.sh --profile <profile> <target>` renders installed agents for Codex,
 Cursor, and Claude Code.
 
-`gpt56-role` uses `max` for Deep single-task scrutiny. Treat `ultra` as a
+`performance-first` and `gpt56-role` use `max` for Deep single-task scrutiny. Treat `ultra` as a
 separate orchestration experiment, not as a silent substitute for `max`; adopt
 it only with explicit nesting, cost, ownership, and acceptance evidence.
 

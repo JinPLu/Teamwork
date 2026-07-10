@@ -27,6 +27,11 @@ Project-local setup:
 Skills install to `~/.cursor/skills/` or `.cursor/skills/`. Custom role agents
 install to `~/.cursor/agents/` or `.cursor/agents/`.
 
+`performance-first` uses Sonnet 4.6 for Explorer/Designer, Composer 2.5 Fast
+for Worker, and Opus 4.8 Thinking High for review roles. `cost-first` uses base
+Composer 2.5 for routine roles. GPT-named compatibility profiles preserve these
+current native Cursor mappings rather than inventing OpenAI model slugs.
+
 Cursor stores User Rules outside a normal editable project file. Use
 `cursor-policy-copy` to copy the Teamwork bootstrap block, then paste it into
 Cursor Settings -> Rules -> User Rules. Project `AGENTS.md` should contain only

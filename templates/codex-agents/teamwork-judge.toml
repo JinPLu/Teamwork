@@ -1,6 +1,6 @@
 name = "teamwork_judge"
 description = "Fresh-context Teamwork plan adequacy reviewer for high-risk, durable, delegated, or goal-mode plans."
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 nickname_candidates = ["Axiom", "Cato", "Meridian", "Solon"]

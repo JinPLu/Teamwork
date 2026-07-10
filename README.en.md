@@ -51,7 +51,7 @@ Strictly review this output for false success, defensive fallback, and AI bloat.
 | Claude Code | `./install.sh claude` | `~/.claude/skills/`, `~/.claude/agents/`, and a marked Teamwork block in `~/.claude/CLAUDE.md` |
 | All three | `./install.sh all` | All user-level surfaces above |
 
-The defaults are `--copy` and the `performance-first` profile. Use the built-in help for advanced profiles and agent/policy-only targets:
+The defaults are `--copy` and `performance-first`: Codex uses GPT-5.6 Terra/Sol, while Cursor and Claude Code use their current native models. `cost-first` also uses current low-cost models; legacy `gpt55-*` names remain aliases but no longer call GPT-5.5. Use the built-in help for advanced targets:
 
 ```bash
 ./install.sh --help

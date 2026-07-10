@@ -63,7 +63,7 @@ CODEX_AGENTS=(
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] [--profile performance-first|cost-first|gpt56-role|gpt55-high|gpt55-xhigh] \
+  ./install.sh [--copy|--link] [--profile performance-first|cost-first|gpt56-role|gpt56-high|gpt56-xhigh|gpt55-high|gpt55-xhigh] \
     [--project-root PATH] \
     codex|cursor|claude|all|project|init-project|project-codex-agents|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
 
@@ -90,14 +90,14 @@ Targets:
 Default mode is --copy. Use --link for local development when installs should
 track this checkout.
 
-Profile defaults to performance-first on all platforms. Use cost-first to
-downshift routine Explorer, Designer, and Worker roles. Judge, Reviewer, and
-Deep variants stay on frontier tiers. Use gpt56-role for a GPT-5.6 Codex split:
-Terra medium for Explorer; Sol medium for Worker; Sol high for Designer, Judge,
-and Reviewer; Sol max for Deep Judge/Reviewer. Use gpt55-high or gpt55-xhigh to
-force every Codex Teamwork agent to gpt-5.5 with high or xhigh reasoning.
-The gpt56-role profile keeps non-Codex platforms on native performance-first
-model tiers; legacy gpt55 profiles keep their existing adapter behavior.
+Profile defaults to performance-first on all platforms. For Codex it uses a
+GPT-5.6 role split: Terra medium for Explorer; Sol medium for Worker; Sol high
+for Designer, Judge, and Reviewer; Sol max for Deep Judge/Reviewer. gpt56-role
+is a compatibility alias for the same Codex mapping. cost-first uses Luna for
+routine reading/design, Terra for implementation, and Sol for review. Use
+gpt56-high or gpt56-xhigh to pin every Codex agent to Sol; legacy gpt55-high and
+gpt55-xhigh names remain compatibility aliases and no longer emit GPT-5.5.
+Non-Codex platforms keep current native model families for the same profiles.
 USAGE
 }
 
@@ -220,7 +220,7 @@ copy_teamwork_cursor_global_policy() {
 
 validate_codex_profile() {
   case "$CODEX_PROFILE" in
-    performance-first|cost-first|gpt56-role|gpt55-high|gpt55-xhigh)
+    performance-first|cost-first|gpt56-role|gpt56-high|gpt56-xhigh|gpt55-high|gpt55-xhigh)
       ;;
     *)
       echo "Unknown profile: $CODEX_PROFILE" >&2
@@ -388,35 +388,38 @@ install_agent_file() {
 codex_agent_profile_values() {
   local agent="$1"
   case "$CODEX_PROFILE:$agent" in
-    gpt56-role:teamwork-explorer)
+    performance-first:teamwork-explorer|gpt56-role:teamwork-explorer)
       printf '%s %s\n' "gpt-5.6-terra" "medium"
       ;;
-    gpt56-role:teamwork-worker)
+    performance-first:teamwork-worker|gpt56-role:teamwork-worker)
       printf '%s %s\n' "gpt-5.6-sol" "medium"
       ;;
-    gpt56-role:teamwork-designer|gpt56-role:teamwork-judge|gpt56-role:teamwork-reviewer)
+    performance-first:teamwork-designer|performance-first:teamwork-judge|performance-first:teamwork-reviewer|gpt56-role:teamwork-designer|gpt56-role:teamwork-judge|gpt56-role:teamwork-reviewer)
       printf '%s %s\n' "gpt-5.6-sol" "high"
       ;;
-    gpt56-role:teamwork-deep-judge|gpt56-role:teamwork-deep-reviewer)
+    performance-first:teamwork-deep-judge|performance-first:teamwork-deep-reviewer|gpt56-role:teamwork-deep-judge|gpt56-role:teamwork-deep-reviewer)
       printf '%s %s\n' "gpt-5.6-sol" "max"
       ;;
-    gpt55-xhigh:*)
-      printf '%s %s\n' "gpt-5.5" "xhigh"
+    gpt56-xhigh:*|gpt55-xhigh:*)
+      printf '%s %s\n' "gpt-5.6-sol" "xhigh"
       ;;
-    gpt55-high:*)
-      printf '%s %s\n' "gpt-5.5" "high"
+    gpt56-high:*|gpt55-high:*)
+      printf '%s %s\n' "gpt-5.6-sol" "high"
       ;;
-    cost-first:teamwork-explorer|cost-first:teamwork-designer|cost-first:teamwork-worker)
-      printf '%s %s\n' "gpt-5.4" "medium"
+    cost-first:teamwork-explorer|cost-first:teamwork-designer)
+      printf '%s %s\n' "gpt-5.6-luna" "medium"
       ;;
-    *:teamwork-deep-judge|*:teamwork-deep-reviewer)
-      printf '%s %s\n' "gpt-5.5" "xhigh"
+    cost-first:teamwork-worker)
+      printf '%s %s\n' "gpt-5.6-terra" "medium"
       ;;
-    *:teamwork-explorer|*:teamwork-designer|*:teamwork-worker)
-      printf '%s %s\n' "gpt-5.5" "medium"
+    cost-first:teamwork-judge|cost-first:teamwork-reviewer)
+      printf '%s %s\n' "gpt-5.6-sol" "high"
+      ;;
+    cost-first:teamwork-deep-judge|cost-first:teamwork-deep-reviewer)
+      printf '%s %s\n' "gpt-5.6-sol" "max"
       ;;
     *)
-      printf '%s %s\n' "gpt-5.5" "high"
+      printf '%s %s\n' "gpt-5.6-sol" "high"
       ;;
   esac
 }
@@ -424,14 +427,17 @@ codex_agent_profile_values() {
 claude_agent_profile_values() {
   local agent="$1"
   case "$CODEX_PROFILE:$agent" in
-    gpt56-role:explore|gpt56-role:designer|gpt56-role:worker|gpt55-xhigh:explore|gpt55-xhigh:designer|gpt55-xhigh:worker)
+    gpt56-role:explore|gpt56-role:designer|gpt56-role:worker|gpt56-high:explore|gpt56-high:designer|gpt56-high:worker|gpt56-xhigh:explore|gpt56-xhigh:designer|gpt56-xhigh:worker|gpt55-high:explore|gpt55-high:designer|gpt55-high:worker|gpt55-xhigh:explore|gpt55-xhigh:designer|gpt55-xhigh:worker)
       printf '%s %s\n' "sonnet" "medium"
       ;;
     cost-first:explore|cost-first:designer|cost-first:worker)
       printf '%s %s\n' "haiku" "medium"
       ;;
-    *:deep-judge|*:deep-reviewer)
+    gpt56-xhigh:deep-judge|gpt56-xhigh:deep-reviewer|gpt55-xhigh:deep-judge|gpt55-xhigh:deep-reviewer)
       printf '%s %s\n' "opus" "xhigh"
+      ;;
+    *:deep-judge|*:deep-reviewer)
+      printf '%s %s\n' "opus" "max"
       ;;
     *:explore|*:designer|*:worker)
       printf '%s %s\n' "sonnet" "medium"
@@ -445,19 +451,13 @@ claude_agent_profile_values() {
 cursor_agent_profile_values() {
   local agent="$1"
   case "$CODEX_PROFILE:$agent" in
-    gpt56-role:worker|gpt55-xhigh:worker)
-      printf '%s\n' "composer-2.5-fast"
-      ;;
-    gpt56-role:explore|gpt56-role:designer|gpt55-xhigh:explore|gpt55-xhigh:designer)
-      printf '%s\n' "claude-sonnet-4-6"
-      ;;
     cost-first:explore|cost-first:designer|cost-first:worker)
+      printf '%s\n' "composer-2.5"
+      ;;
+    *:worker)
       printf '%s\n' "composer-2.5-fast"
       ;;
-    performance-first:worker)
-      printf '%s\n' "composer-2.5-fast"
-      ;;
-    performance-first:explore|performance-first:designer)
+    *:explore|*:designer)
       printf '%s\n' "claude-sonnet-4-6"
       ;;
     *:judge|*:code-reviewer|*:deep-judge|*:deep-reviewer)
