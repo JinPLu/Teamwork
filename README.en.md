@@ -1,145 +1,100 @@
 # Teamwork
 
-[中文](README.md)
+[中文](README.md) · [Changelog](CHANGELOG.en.md) · [Contributing](CONTRIBUTING.md) · [MIT License](LICENSE)
 
-**A personalized research-collaboration layer for deep research, planning, coding, review, and verifiable progress.**
+**Help Codex, Cursor, and Claude Code gather evidence before acting and finish complex research or engineering work with checkable results.**
 
-Teamwork is a **Codex-first Codex + Cursor + Claude Code skill package**.
-It turns Codex, Cursor, and Claude Code from one-off chat assistants into a
-personal research collaboration agent for long-running projects. It does not
-replace editors, shell, MCP, browser, permission, or test tools; those native
-capabilities still execute the work. Teamwork solves the layer above them: how
-complex tasks gather evidence, split work, preserve context, and prove progress.
+Teamwork is a **Codex-first Codex + Cursor + Claude Code skill package**. It does not replace shell, MCP, browser, permissions, or test tools. It adds task routing, evidence constraints, controlled delegation, cross-turn memory, and acceptance loops on top of those native capabilities.
 
-Coding is one of the main execution surfaces, but Teamwork research, planning,
-review, and memory are not coding-only. They also fit literature review, field
-research, option comparison, experiment design, source synthesis, and long-term
-project follow-through.
+![Teamwork workflow](assets/teamwork-workflow-gpt-image-2.png)
 
-![Teamwork workflow explainer](assets/teamwork-workflow-gpt-image-2.png)
+## What It Solves
 
-## Why It Exists
+| Common failure | Teamwork response |
+|---|---|
+| Research stops at one source | Expand from the seed to primary sources, neighboring evidence, and relevant counter-evidence |
+| Research, implementation, and review blur into one long chat | Route by risk into research, debug, plan, execute, review, or goal work |
+| Parallel subagents become disconnected chats | Split only independent tracks; the main agent owns scope, integration, and final verification |
+| Missing paths, ports, models, or config get invented | Required values must come from the user, project, source, config, tests, or an accepted plan |
+| “Done” has no proof | Support conclusions with sources, logs, tests, diffs, artifacts, or fresh review |
 
-The hard part of personal research and engineering work is usually not that the
-model cannot answer. It is that the agent:
+Small requests stay on the platform's native fast path. Teamwork adds structure only when it improves correctness, continuity, or acceptance.
 
-- stops research at one paper, README, or search result;
-- mixes research, design, implementation, experiments, and review in one long chat;
-- lets parallel subagents become disconnected chats;
-- invents defaults for missing env, paths, ports, model names, hyperparameters, or source data;
-- forgets research, plans, failed attempts, and acceptance evidence across long runs;
-- ends with "done" instead of sources, experiments, tests, logs, diffs, artifacts, or fresh review.
+## Quick Start
 
-Teamwork turns those risks into workflow constraints: research before planning,
-fan out only when tracks are independent, ask/research/block when required state
-is missing, and attach verification evidence to non-lightweight results.
+Prerequisites: a working Codex, Cursor, or Claude Code installation; the repository installer runs through Bash.
 
-## Core Advantages
+For Codex:
 
-| User Problem | Plain Agent / Simple Subagents | Teamwork |
+```bash
+git clone https://github.com/JinPLu/Teamwork.git
+cd Teamwork
+./install.sh codex
+./scripts/check-update.sh --no-fetch
+```
+
+After installation, ask for the outcome in natural language—there are no workflow names to memorize:
+
+```text
+Research this field, its key papers, and the existing code, then propose an executable plan.
+Find the root cause of this CI failure; confirm it with logs and a reproduction before fixing it.
+Execute the accepted plan and verify it; record failures until it passes or reaches a real blocker.
+Strictly review this output for false success, defensive fallback, and AI bloat.
+```
+
+## Choose An Install
+
+| Platform | Command | Installed surface |
 |---|---|---|
-| Shallow research | Stops at the seed source | Expands to primary, neighboring, and counter-evidence; only deep research requires a full source census |
-| Uncontrolled delegation | Parallel chats drift apart | Only independent tracks fan out; each role returns the smallest result needed for the parent decision |
-| Weak evidence | Treats titles, summaries, filenames, `latest`, or `v2` labels as facts | Maps important claims to papers, docs, source, config, logs, tests, diffs, artifacts, or primary sources |
-| Fake fallback | Defensive defaults hide missing state | Required values must come from the user, project files, source, tests, or an accepted plan; otherwise ask, research, or stop |
-| Premature action | Plans or executes before critical state is known | Proceeds when sufficiently specified, asks only for a real user-owned decision, and enters question-first only on an explicit request |
-| Repeated guessing | Failure just triggers another guess | Records hypothesis, verification, failure class, and next step, then refreshes research or plan adequacy when needed |
-| Unreviewable done | Completion is self-reported | Execution returns evidence; independent review is risk-gated for releases, goals, public contracts, or delegated writes |
+| Codex | `./install.sh codex` | `~/.codex/skills/`, `~/.codex/agents/`, and a marked Teamwork block in `~/.codex/AGENTS.md` |
+| Cursor | `./install.sh cursor` | `~/.cursor/skills/` and `~/.cursor/agents/`; follow the terminal prompt for User Rules |
+| Claude Code | `./install.sh claude` | `~/.claude/skills/`, `~/.claude/agents/`, and a marked Teamwork block in `~/.claude/CLAUDE.md` |
+| All three | `./install.sh all` | All user-level surfaces above |
 
-The point is not more process. It is to make evidence, delegation, memory, and
-acceptance inspectable when the task is too large for a single linear chat.
+The defaults are `--copy` and the `performance-first` profile. Use the built-in help for advanced profiles and agent/policy-only targets:
+
+```bash
+./install.sh --help
+./install.sh --profile cost-first codex
+```
+
+For project-local installation or full project initialization:
+
+```bash
+./install.sh --project-root /path/to/project project
+./install.sh --project-root /path/to/project init-project
+```
+
+`project` installs project-local skills and agents. `init-project` also configures project instructions, the `docs/teamwork/` memory entrypoint, and CodeGraph when available. When developing this repository, use `./install.sh --link codex` so the installed surface follows the checkout.
+
+The installer manages only Teamwork-owned directories, agent files, and bounded policy blocks. Each platform still owns its permissions, MCP, browser, and test configuration. See the [Codex](CODEX.md), [Cursor](CURSOR.md), and [Claude Code](CLAUDE.md) guides for platform details.
 
 ## When To Use It
 
-If the task crosses papers, pages, code, data, turns, tools, or agents, or if an agent has already
-started guessing, retrying, and claiming success without proof, Teamwork is worth installing.
+Good fits include:
 
-Good fit:
+- literature or field research, API/library selection, competitor research, and historical decision lookup;
+- evidence-backed option comparison, experiment design, and engineering implementation;
+- reproducible failures, flaky tests, CI, crashes, and UI symptom diagnosis;
+- subagent research, implementation, or review that splits into independent tracks;
+- cross-turn work or iteration until tests pass, a target is met, or a real blocker is confirmed.
 
-- Research a field, paper, API, library, competitor, historical decision, or project corpus before planning.
-- Compare research/engineering directions, design experiments, synthesize evidence, or drive long-running projects.
-- Code, debug reproducible failures, flaky tests, CI failures, crashes, or UI symptoms and prove root cause.
-- Fan out subagents across research, design, implementation, or review while keeping one main integrator.
-- Run strict review, deslop passes, AI-output cleanup, code-quality cleanup, or PR/CI review.
-- Iterate until tests pass, a target is met, budget is exhausted, or a real blocker appears.
-
-Skip it for:
-
-- One-line facts, tiny obvious edits, or local syntax questions.
-- Tightly coupled critical paths where subagent context cost exceeds value.
-- Sensitive, destructive, or explicitly human-confirmed operations.
-
-## How To Use It
-
-Keep asking in natural language. Users do not need workflow labels:
-
-```text
-Research this field, key papers, and the existing code first, then propose a plan.
-Grill me on this plan; ask first and do not start implementation yet.
-Fan out subagents to compare directions, then recommend one executable path.
-Execute the plan; record failure reasons and evidence until tests pass.
-Strictly review this output for fake success, defensive fallback, and AI bloat.
-```
-
-`using-teamwork` decides whether to stay on the native fast path or route into
-research, debug, plan, execute, review, goal, init, or update. Small work stays
-direct; complex work still loads only the protocols, subagents, and artifacts its risk requires.
-
-## Quick Install
-
-Codex default install:
-
-```bash
-./install.sh              # same as ./install.sh codex
-./install.sh codex --profile cost-first
-./install.sh codex --profile gpt56-role
-./install.sh codex --profile gpt55-xhigh
-```
-
-Other platforms:
-
-```bash
-./install.sh cursor|claude|all
-./install.sh cursor-agents|claude-agents
-./install.sh cursor-policy-copy|cursor-policy|claude-policy
-```
-
-Project installs and local development:
-
-```bash
-./install.sh project
-./install.sh --project-root /path/to/project project
-./install.sh --project-root /path/to/project --profile gpt56-role project-codex-agents
-./install.sh --project-root /path/to/project --profile gpt55-xhigh project-codex-agents
-./install.sh --project-root /path/to/project init-project
-./install.sh --link codex
-```
-
-`project` installs project-local skills/agents; `init-project` runs full project
-initialization. `gpt56-role` maps Explorer to `gpt-5.6-terra/medium`, Worker to
-`gpt-5.6-sol/medium`, Designer/Judge/Reviewer to `gpt-5.6-sol/high`, and Deep
-Judge/Reviewer to `gpt-5.6-sol/max`; Cursor and Claude Code retain their native
-performance-first tiers. The Codex global policy keeps only authorization,
-required-state, scope, evidence, and delegation boundaries; installed agent
-files own model mappings. `teamwork-init` owns project rules,
-AGENTS/CODEX/CURSOR/CLAUDE, `docs/teamwork/`, and CodeGraph setup. `teamwork-update` and
-`./scripts/check-update.sh` refresh skills/agents/policy and check installed
-surfaces plus version drift.
+Skip it for one-line facts, obvious tiny edits, local syntax questions, or tightly coupled work where delegation costs more than it helps. Sensitive, destructive, paid, or public actions still follow platform permissions and user confirmation.
 
 ## How It Works
 
-Teamwork skills trigger only when needed:
+`using-teamwork` is the lightweight router. It loads a dedicated skill only when the current task needs it:
 
-| Capability | Trigger |
+| Skill | Responsibility |
 |---|---|
-| `teamwork-research` | sources, evidence, options, external constraints, or repro surface are unclear |
-| `teamwork-debug` | logs, CI, crashes, flaky runs, or UI symptoms need runtime evidence |
-| `teamwork-plan` | boundaries, acceptance, dispatch guidance, or stop rules are needed |
-| `teamwork-execute` | execute an accepted plan, checklist, scope, or known root-cause fix |
-| `teamwork-review` | fresh review, strict quality, deslop, PR/CI review, or completion acceptance |
-| `teamwork-goal` | keep going, until green/done, or budgeted iteration |
+| `teamwork-research` | Verify sources, external constraints, options, and the repro surface |
+| `teamwork-debug` | Use reproduction, logs, hypotheses, and instrumentation to establish root cause |
+| `teamwork-plan` | Define scope, boundaries, steps, acceptance, and stop conditions |
+| `teamwork-execute` | Implement and verify an accepted scope |
+| `teamwork-review` | Check diffs, evidence, quality, and completion claims |
+| `teamwork-goal` | Iterate on an explicit target until complete or genuinely blocked |
 
-When work needs durable state, artifacts live at:
+`teamwork-init` owns project setup and instruction slimming. `teamwork-update` owns install refreshes and release hygiene. Durable artifacts are created only when cross-turn reuse is valuable, under:
 
 ```text
 docs/teamwork/research/YYYY-MM-DD-<slug>.md
@@ -147,20 +102,37 @@ docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 ```
 
-## Version And Validation
+## Update And Verify
 
-`VERSION` matches the plugin manifests. Before refresh or release:
+After updating the checkout, rerun the same install target and check installed-surface consistency:
+
+```bash
+git pull --ff-only
+./install.sh codex
+./scripts/check-update.sh --no-fetch
+```
+
+To include a project-local installation in the check:
 
 ```bash
 ./scripts/check-update.sh --project /path/to/project
+```
+
+[`VERSION`](VERSION) is the package version source of truth and stays aligned with the plugin manifests. Before repository changes or a release, run:
+
+```bash
 ./scripts/validate.sh
+python3 scripts/eval-teamwork.py --split dev
 python3 scripts/run-teamwork-live-eval.py --help
 ```
 
-## Read More
+## Documentation
 
-- [CODEX.md](CODEX.md): Codex usage, Goal Mode, and custom-agent mapping.
-- [CURSOR.md](CURSOR.md): Cursor usage.
-- [CLAUDE.md](CLAUDE.md): Claude Code usage.
-- `skills/*/SKILL.md`: workflow skill behavior.
-- `skills/using-teamwork/references/`: dispatch, packet, artifact, review, and goal details.
+- [CODEX.md](CODEX.md): Codex installation, project setup, subagents, Goal Mode, and model profiles.
+- [CURSOR.md](CURSOR.md): Cursor installation, User Rules, Task subagents, and goal records.
+- [CLAUDE.md](CLAUDE.md): Claude Code installation, Task subagents, and goal records.
+- [CHANGELOG.en.md](CHANGELOG.en.md): user-visible release changes.
+- [CONTRIBUTING.md](CONTRIBUTING.md): issue reports, change scope, and required verification.
+- [`skills/*/SKILL.md`](skills/): source definitions for workflow behavior.
+
+Report problems and suggestions through [GitHub Issues](https://github.com/JinPLu/Teamwork/issues).
