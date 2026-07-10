@@ -18,10 +18,11 @@ and artifact/optional references only when their trigger applies.
 
 The installed profile is the default on Codex, Cursor, and Claude Code; ask only
 for project overrides. Pro/20x throughput selects `performance-first`; quota,
-latency, or cost constraints select `cost-first`; explicit "all Codex subagents
-at gpt-5.5 high" requests select `gpt55-high`; explicit "all Codex subagents
-at gpt-5.5 xhigh" requests select `gpt55-xhigh`. Record `Init Mode:
-global-default | performance-first | cost-first | gpt55-high | gpt55-xhigh`;
+latency, or cost constraints select `cost-first`; explicit role-tiered GPT-5.6
+requests select `gpt56-role`; explicit "all Codex subagents at gpt-5.5 high"
+requests select `gpt55-high`; explicit "all Codex subagents at gpt-5.5 xhigh"
+requests select `gpt55-xhigh`. Record `Init Mode: global-default |
+performance-first | cost-first | gpt56-role | gpt55-high | gpt55-xhigh`;
 add a project-local rule only for overrides. Refresh installed agents with
 `./install.sh --profile <profile> all` when model overrides change.
 
@@ -91,5 +92,4 @@ remaining manual Cursor paste or optional substrate gaps.
   CodeGraph is allowed when the CLI already exists; otherwise report the gap.
 
 Return changed files, audit decisions, migration rationale, verification, and
-human decisions. Include `Memory Delta:` only when durable memory was checked or
-changed.
+human decisions. Include `Memory Delta:` only when durable memory was checked or changed.

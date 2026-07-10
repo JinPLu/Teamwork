@@ -1,7 +1,7 @@
 # Grill Mode
 
-Grill mode is a question-first interaction override, not a Teamwork stage. Use
-it when the user asks to "grill me", "grill-me", "question-first",
+Grill mode is an explicit question-first override, not a Teamwork stage. Use it
+only when the user asks to "grill me", "grill-me", "question-first",
 "stress-test", "challenge my assumptions", "ask before acting", or direct
 equivalents such as "先问清楚". Check negative signals such as "do not grill",
 "act normally", or "just implement" before activation.
@@ -9,9 +9,9 @@ equivalents such as "先问清楚". Check negative signals such as "do not grill
 ## Invariants
 
 - Suspend act-by-default only for the active task.
-- Ask at least one decision or risk question after activation, then stop unless the user
-  immediately cancels, says proceed/use your judgment, or already supplied a
-  complete Shared Understanding Packet.
+- Ask one decision or risk question with a recommendation, then stop unless the
+  user cancels, says proceed/use your judgment, or already supplied a confirmed
+  Shared Understanding Packet.
 - Until the packet is confirmed or the user exits, do not plan, synthesize
   research, choose a design direction, edit, start a goal, or dispatch
   planning/design/execution agents. Read-only fact inspection is allowed only to
@@ -28,7 +28,7 @@ equivalents such as "先问清楚". Check negative signals such as "do not grill
    factual answers before asking the user.
 2. Pick the next unresolved decision branch: scope, acceptance, UX/public
    behavior, data contract, architecture, risk, verification, or stop rule.
-3. Ask one question at a time:
+3. Ask one material question at a time:
    `Question: ... Recommended: ... because ... Alternatives: ...`
 4. Record the answer, rejected alternatives, and any explicit deferral.
 5. Checkpoint after 5 rounds, material fatigue, or repeated uncertainty: summarize

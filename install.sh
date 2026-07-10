@@ -63,7 +63,7 @@ CODEX_AGENTS=(
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] [--profile performance-first|cost-first|gpt55-high|gpt55-xhigh] \
+  ./install.sh [--copy|--link] [--profile performance-first|cost-first|gpt56-role|gpt55-high|gpt55-xhigh] \
     [--project-root PATH] \
     codex|cursor|claude|all|project|init-project|project-codex-agents|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
 
@@ -92,9 +92,12 @@ track this checkout.
 
 Profile defaults to performance-first on all platforms. Use cost-first to
 downshift routine Explorer, Designer, and Worker roles. Judge, Reviewer, and
-Deep variants stay on frontier tiers. Use gpt55-high or gpt55-xhigh to force
-every Codex Teamwork agent to gpt-5.5 with high or xhigh reasoning;
-non-Codex platforms keep their native performance-first model tiers.
+Deep variants stay on frontier tiers. Use gpt56-role for a GPT-5.6 Codex split:
+Terra medium for Explorer; Sol medium for Worker; Sol high for Designer, Judge,
+and Reviewer; Sol max for Deep Judge/Reviewer. Use gpt55-high or gpt55-xhigh to
+force every Codex Teamwork agent to gpt-5.5 with high or xhigh reasoning.
+The gpt56-role profile keeps non-Codex platforms on native performance-first
+model tiers; legacy gpt55 profiles keep their existing adapter behavior.
 USAGE
 }
 
@@ -103,65 +106,26 @@ write_teamwork_codex_global_policy() {
 <!-- TEAMWORK_CODEX_GLOBAL_START -->
 ## Teamwork Codex Global Policy
 
-Subagents: this is the user's explicit standing authorization and request to
-use sub-agents, delegation, and parallel agent work only when Teamwork dispatch
-policy says the task is non-lightweight, independent, and worth the extra agent
-cost.
-Act by default: make ordinary decisions yourself — tool/MCP choice, naming,
-formatting, safe reversible defaults, and equivalent approaches. Keep work local
-for quick answers, tiny edits, one CodeGraph-answerable structural question,
-tight critical-path work, overlapping write ownership, destructive or
-credential-sensitive actions, or higher subagent context cost than benefit.
+Act by default within the user's request. Answer, research, diagnose, plan, and
+review are read-only unless the user also authorizes a change. Make routine,
+reversible choices yourself; ask only when a remaining user decision could
+materially change scope, acceptance, public behavior, risk, or an irreversible
+action. Grill/question-first behavior activates only when explicitly requested.
 
-Ask when uncertainty matters: for uncertain, complex, or non-lightweight tasks,
-ask the next decision/risk question before planning or acting when the answer
-could change scope, acceptance, public behavior, contracts, architecture, risk,
-verification, or an irreversible/destructive action. Do not interrupt for
-routine tool, MCP, or approach choices. Missing required human input is a
-question first, a blocker only when it cannot be obtained.
+Required runtime values and invariants must come from the user, project
+instructions, source/config, tests, or an accepted plan. Do not invent them or
+hide their absence behind a fallback; inspect first, then ask or block.
 
-Grill mode: when the user explicitly asks to grill, grill-me, question-first,
-stress-test, challenge assumptions, ask before acting, or direct equivalents
-such as "先问清楚", suspend act-by-default for that task. Ask at least one
-decision or risk question with a recommended answer, then stop. Inspect
-available facts before asking when facts are discoverable; do not plan,
-synthesize research, choose design, edit, start a goal, or dispatch
-planning/design/execution agents until a Shared Understanding Packet is
-confirmed or the user exits grill mode.
+Keep changes inside the accepted scope. Get confirmation before destructive,
+credential-sensitive, paid, public, or external-system actions not already
+authorized. Match evidence and verification to risk, and do not claim behavior
+or completion beyond what the checks demonstrate.
 
-Reasoning discipline: follow Teamwork's think-first rule. Do not optimize for
-fast visible output over source reading, interpretation checks, or verification
-when work is non-trivial or evidence-sensitive. Minimize optional commentary;
-when runtime or higher-priority instructions require progress updates, keep them
-brief, factual, and tied to decisions, blockers, or verification.
-
-Codex model profile: default is ${CODEX_PROFILE}. performance-first uses
-role-optimized gpt-5.5 agents: routine Explorer, Designer, and Worker use
-medium; Judge and Reviewer use high; Deep Judge/Reviewer use xhigh. cost-first
-downshifts routine Explorer, Designer, and Worker to gpt-5.4 medium.
-gpt55-high forces every Codex Teamwork subagent to gpt-5.5 with high reasoning;
-gpt55-xhigh forces every Codex Teamwork subagent to gpt-5.5 with xhigh
-reasoning.
-Use project-local Teamwork init mode only for explicit overrides.
-
-Bootstrap safety: required environment variables, paths, commands, ports, model
-names, hyperparameters, credentials, configs, execution modes, and invariants
-must be explicit in user input, project instructions, source/config, tests, or
-an accepted plan. Routine reversible defaults remain allowed; code/runtime
-defaults or fallbacks may not mask missing required state. Ask once when the
-user can supply a missing value; otherwise block and report what was checked.
-
-Code maintenance: every code write path starts by understanding the existing
-owner, control flow, tests/config, and invariants. Prefer changing or deleting
-the current path; add branches, modes, wrappers, or fallback only when accepted
-behavior requires and verifies them. Keep logic direct and fail fast when state
-is absent.
-
-Remote execution: assume substantial code execution runs on the configured
-remote server when project instructions or server inventory identify one. The
-local environment is for editing, inspection, basic tests, syntax checks, and
-lightweight validation. Before remote jobs, verify host, repository path,
-branch, and command scope; do not invent missing execution targets.
+Delegation within the accepted scope is authorized, but use it only for
+independent work whose evidence, time, or context-isolation value exceeds
+coordination cost. The main agent owns integration and final verification.
+Installed agent files own model mappings; active profile:
+${CODEX_PROFILE}. Use project-local Teamwork init only for explicit overrides.
 <!-- TEAMWORK_CODEX_GLOBAL_END -->
 POLICY
 }
@@ -171,57 +135,26 @@ write_teamwork_claude_global_policy() {
 <!-- TEAMWORK_CLAUDE_GLOBAL_START -->
 ## Teamwork Claude Code Global Policy
 
-Subagents: this is the user's explicit standing authorization and request to
-use Task subagents, delegation, and parallel agent work only when Teamwork
-dispatch policy says the task is non-lightweight, independent, and worth the
-extra agent cost.
-Act by default: make ordinary decisions yourself — tool/MCP choice, naming,
-formatting, safe reversible defaults, and equivalent approaches. Keep work local
-for quick answers, tiny edits, one CodeGraph-answerable structural question,
-tight critical-path work, overlapping write ownership, destructive or
-credential-sensitive actions, or higher subagent context cost than benefit.
+Act by default within the user's request. Answer, research, diagnose, plan, and
+review are read-only unless the user also authorizes a change. Make routine,
+reversible choices yourself; ask only when a remaining user decision could
+materially change scope, acceptance, public behavior, risk, or an irreversible
+action. Grill/question-first behavior activates only when explicitly requested.
 
-Ask when uncertainty matters: for uncertain, complex, or non-lightweight tasks,
-ask the next decision/risk question before planning or acting when the answer
-could change scope, acceptance, public behavior, contracts, architecture, risk,
-verification, or an irreversible/destructive action. Do not interrupt for
-routine tool, MCP, or approach choices. Missing required human input is a
-question first, a blocker only when it cannot be obtained.
+Required runtime values and invariants must come from the user, project
+instructions, source/config, tests, or an accepted plan. Do not invent them or
+hide their absence behind a fallback; inspect first, then ask or block.
 
-Grill mode: when the user explicitly asks to grill, grill-me, question-first,
-stress-test, challenge assumptions, ask before acting, or direct equivalents
-such as "先问清楚", suspend act-by-default for that task. Ask at least one
-decision or risk question with a recommended answer, then stop. Inspect
-available facts before asking when facts are discoverable; do not plan,
-synthesize research, choose design, edit, start a goal, or dispatch
-planning/design/execution agents until a Shared Understanding Packet is
-confirmed or the user exits grill mode.
+Keep changes inside the accepted scope. Get confirmation before destructive,
+credential-sensitive, paid, public, or external-system actions not already
+authorized. Match evidence and verification to risk, and do not claim behavior
+or completion beyond what the checks demonstrate.
 
-Claude model profile: default is ${CODEX_PROFILE}. performance-first uses
-role-optimized agents: routine Explorer, Designer, and Worker use sonnet with
-medium effort; Judge and Reviewer use opus with high effort; Deep Judge/Reviewer
-use opus with xhigh effort. cost-first downshifts routine Explorer, Designer,
-and Worker to haiku with medium effort. Use project-local Teamwork init mode
-only for explicit overrides.
-
-Bootstrap safety: required environment variables, paths, commands, ports, model
-names, hyperparameters, credentials, configs, execution modes, and invariants
-must be explicit in user input, project instructions, source/config, tests, or
-an accepted plan. Routine reversible defaults remain allowed; code/runtime
-defaults or fallbacks may not mask missing required state. Ask once when the
-user can supply a missing value; otherwise block and report what was checked.
-
-Code maintenance: every code write path starts by understanding the existing
-owner, control flow, tests/config, and invariants. Prefer changing or deleting
-the current path; add branches, modes, wrappers, or fallback only when accepted
-behavior requires and verifies them. Keep logic direct and fail fast when state
-is absent.
-
-Remote execution: assume substantial code execution runs on the configured
-remote server when project instructions or server inventory identify one. The
-local environment is for editing, inspection, basic tests, syntax checks, and
-lightweight validation. Before remote jobs, verify host, repository path,
-branch, and command scope; do not invent missing execution targets.
+Delegation within the accepted scope is authorized, but use it only for
+independent work whose evidence, time, or context-isolation value exceeds
+coordination cost. The main agent owns integration and final verification.
+Installed agent files own model mappings; active profile:
+${CODEX_PROFILE}. Use project-local Teamwork init only for explicit overrides.
 <!-- TEAMWORK_CLAUDE_GLOBAL_END -->
 POLICY
 }
@@ -233,57 +166,26 @@ write_teamwork_cursor_global_policy() {
 
 Paste this block into Cursor Settings → Rules → User Rules.
 
-Subagents: this is the user's explicit standing authorization and request to
-use Task subagents, delegation, and parallel agent work only when Teamwork
-dispatch policy says the task is non-lightweight, independent, and worth the
-extra agent cost.
-Act by default: make ordinary decisions yourself — tool/MCP choice, naming,
-formatting, safe reversible defaults, and equivalent approaches. Keep work local
-for quick answers, tiny edits, one CodeGraph-answerable structural question,
-tight critical-path work, overlapping write ownership, destructive or
-credential-sensitive actions, or higher subagent context cost than benefit.
+Act by default within the user's request. Answer, research, diagnose, plan, and
+review are read-only unless the user also authorizes a change. Make routine,
+reversible choices yourself; ask only when a remaining user decision could
+materially change scope, acceptance, public behavior, risk, or an irreversible
+action. Grill/question-first behavior activates only when explicitly requested.
 
-Ask when uncertainty matters: for uncertain, complex, or non-lightweight tasks,
-ask the next decision/risk question before planning or acting when the answer
-could change scope, acceptance, public behavior, contracts, architecture, risk,
-verification, or an irreversible/destructive action. Do not interrupt for
-routine tool, MCP, or approach choices. Missing required human input is a
-question first, a blocker only when it cannot be obtained.
+Required runtime values and invariants must come from the user, project
+instructions, source/config, tests, or an accepted plan. Do not invent them or
+hide their absence behind a fallback; inspect first, then ask or block.
 
-Grill mode: when the user explicitly asks to grill, grill-me, question-first,
-stress-test, challenge assumptions, ask before acting, or direct equivalents
-such as "先问清楚", suspend act-by-default for that task. Ask at least one
-decision or risk question with a recommended answer, then stop. Inspect
-available facts before asking when facts are discoverable; do not plan,
-synthesize research, choose design, edit, start a goal, or dispatch
-planning/design/execution agents until a Shared Understanding Packet is
-confirmed or the user exits grill mode.
+Keep changes inside the accepted scope. Get confirmation before destructive,
+credential-sensitive, paid, public, or external-system actions not already
+authorized. Match evidence and verification to risk, and do not claim behavior
+or completion beyond what the checks demonstrate.
 
-Cursor model profile: default is ${CODEX_PROFILE}. performance-first uses
-claude-sonnet-4-6 for Explorer and Designer, composer-2.5-fast for Worker, and
-claude-opus-4-8-thinking-high for Judge, Reviewer, and Deep variants.
-cost-first downshifts routine Explorer, Designer, and Worker to
-composer-2.5-fast while keeping review tiers on claude-opus-4-8-thinking-high.
-Use project-local Teamwork init mode only for explicit overrides.
-
-Bootstrap safety: required environment variables, paths, commands, ports, model
-names, hyperparameters, credentials, configs, execution modes, and invariants
-must be explicit in user input, project instructions, source/config, tests, or
-an accepted plan. Routine reversible defaults remain allowed; code/runtime
-defaults or fallbacks may not mask missing required state. Ask once when the
-user can supply a missing value; otherwise block and report what was checked.
-
-Code maintenance: every code write path starts by understanding the existing
-owner, control flow, tests/config, and invariants. Prefer changing or deleting
-the current path; add branches, modes, wrappers, or fallback only when accepted
-behavior requires and verifies them. Keep logic direct and fail fast when state
-is absent.
-
-Remote execution: assume substantial code execution runs on the configured
-remote server when project instructions or server inventory identify one. The
-local environment is for editing, inspection, basic tests, syntax checks, and
-lightweight validation. Before remote jobs, verify host, repository path,
-branch, and command scope; do not invent missing execution targets.
+Delegation within the accepted scope is authorized, but use it only for
+independent work whose evidence, time, or context-isolation value exceeds
+coordination cost. The main agent owns integration and final verification.
+Installed agent files own model mappings; active profile:
+${CODEX_PROFILE}. Use project-local Teamwork init only for explicit overrides.
 <!-- TEAMWORK_CURSOR_GLOBAL_END -->
 POLICY
 }
@@ -318,7 +220,7 @@ copy_teamwork_cursor_global_policy() {
 
 validate_codex_profile() {
   case "$CODEX_PROFILE" in
-    performance-first|cost-first|gpt55-high|gpt55-xhigh)
+    performance-first|cost-first|gpt56-role|gpt55-high|gpt55-xhigh)
       ;;
     *)
       echo "Unknown profile: $CODEX_PROFILE" >&2
@@ -486,6 +388,18 @@ install_agent_file() {
 codex_agent_profile_values() {
   local agent="$1"
   case "$CODEX_PROFILE:$agent" in
+    gpt56-role:teamwork-explorer)
+      printf '%s %s\n' "gpt-5.6-terra" "medium"
+      ;;
+    gpt56-role:teamwork-worker)
+      printf '%s %s\n' "gpt-5.6-sol" "medium"
+      ;;
+    gpt56-role:teamwork-designer|gpt56-role:teamwork-judge|gpt56-role:teamwork-reviewer)
+      printf '%s %s\n' "gpt-5.6-sol" "high"
+      ;;
+    gpt56-role:teamwork-deep-judge|gpt56-role:teamwork-deep-reviewer)
+      printf '%s %s\n' "gpt-5.6-sol" "max"
+      ;;
     gpt55-xhigh:*)
       printf '%s %s\n' "gpt-5.5" "xhigh"
       ;;
@@ -510,7 +424,7 @@ codex_agent_profile_values() {
 claude_agent_profile_values() {
   local agent="$1"
   case "$CODEX_PROFILE:$agent" in
-    gpt55-xhigh:explore|gpt55-xhigh:designer|gpt55-xhigh:worker)
+    gpt56-role:explore|gpt56-role:designer|gpt56-role:worker|gpt55-xhigh:explore|gpt55-xhigh:designer|gpt55-xhigh:worker)
       printf '%s %s\n' "sonnet" "medium"
       ;;
     cost-first:explore|cost-first:designer|cost-first:worker)
@@ -531,10 +445,10 @@ claude_agent_profile_values() {
 cursor_agent_profile_values() {
   local agent="$1"
   case "$CODEX_PROFILE:$agent" in
-    gpt55-xhigh:worker)
+    gpt56-role:worker|gpt55-xhigh:worker)
       printf '%s\n' "composer-2.5-fast"
       ;;
-    gpt55-xhigh:explore|gpt55-xhigh:designer)
+    gpt56-role:explore|gpt56-role:designer|gpt55-xhigh:explore|gpt55-xhigh:designer)
       printf '%s\n' "claude-sonnet-4-6"
       ;;
     cost-first:explore|cost-first:designer|cost-first:worker)

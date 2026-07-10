@@ -151,7 +151,13 @@ def validate_templates(root: Path) -> None:
     for phrase in required_readme_phrases:
         require(phrase.lower() in readme.lower(), f"README template missing required language: {phrase}")
 
-    required_index_doc_phrases = ["pending", "active", "active.goal", "active.report", "topic + kind", "stage", "broad-scan"]
+    required_index_doc_phrases = [
+        "schema_version",
+        "active pointers",
+        "candidate",
+        "memory delta",
+        "external calibration alone is not a write trigger",
+    ]
     for phrase in required_index_doc_phrases:
         require(phrase.lower() in index_doc.lower(), f"index contract missing required language: {phrase}")
 

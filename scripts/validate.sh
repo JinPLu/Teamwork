@@ -99,6 +99,22 @@ fenced_block_line_count_max() {
   ' "$file" || exit 1
 }
 
+check_lean_policy() {
+  local file="$1"
+  local profile="$2"
+  local label="$3"
+  grep_required "Act by default within the user's request" "$file" "$label must preserve act-by-default"
+  grep_required 'Make routine,' "$file" "$label must permit routine reversible choices"
+  grep_required 'Grill/question-first behavior activates only when explicitly requested' "$file" \
+    "$label must keep grill mode explicit"
+  grep_required 'Do not invent them' "$file" "$label must preserve required-state safety"
+  grep_required 'evidence, time, or context-isolation value exceeds' "$file" \
+    "$label must keep delegation economic"
+  grep_required 'Installed agent files own model mappings; active profile:' "$file" \
+    "$label must keep model mappings out of global policy"
+  grep_required "^${profile}\. Use project-local" "$file" "$label must record active profile $profile"
+}
+
 git_known_package_file() {
   local path="$1"
   git -C "$ROOT" ls-files --error-unmatch "$path" >/dev/null 2>&1 && return 0
@@ -249,17 +265,17 @@ actual_reference_inventory="$(
 [[ -f "$ROOT/evals/teamwork/README.md" ]] || fail "missing evals/teamwork/README.md"
 git_known_package_file "evals/teamwork/README.md" \
   || fail "evals/teamwork/README.md is not known to git; use git add -N before release validation"
-for eval_dir in cases rubrics ledgers outputs; do
+for eval_dir in cases live-cases rubrics ledgers outputs; do
   [[ -d "$ROOT/evals/teamwork/$eval_dir" ]] || fail "missing evals/teamwork/$eval_dir/"
 done
 while IFS= read -r eval_file; do
   rel="${eval_file#"$ROOT"/}"
   git_known_package_file "$rel" \
     || fail "$rel is not known to git; use git add -N before release validation"
-done < <(find "$ROOT/evals/teamwork/cases" "$ROOT/evals/teamwork/rubrics" "$ROOT/evals/teamwork/ledgers" "$ROOT/evals/teamwork/outputs" -type f | sort)
+done < <(find "$ROOT/evals/teamwork/cases" "$ROOT/evals/teamwork/live-cases" "$ROOT/evals/teamwork/rubrics" "$ROOT/evals/teamwork/ledgers" "$ROOT/evals/teamwork/outputs" -type f | sort)
 [[ -f "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" ]] \
   || fail "missing question-first eval output samples"
-for case_id in question-first-explicit-grill question-first-explicit-lightweight-grill question-first-complex-uncertainty question-first-lightweight-control; do
+for case_id in complex-autonomy-control question-first-explicit-grill question-first-explicit-lightweight-grill question-first-complex-uncertainty question-first-lightweight-control; do
   [[ -f "$ROOT/evals/teamwork/cases/$case_id.dev.json" ]] \
     || fail "missing question-first eval case: $case_id"
   grep_required "\"case_id\":\"$case_id\"" "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" \
@@ -275,6 +291,22 @@ grep_required 'Facts checked:' "$ROOT/evals/teamwork/outputs/question-first/dev.
 git_known_package_file "scripts/eval-teamwork.py" \
   || fail "scripts/eval-teamwork.py is not known to git; use git add -N before release validation"
 python3 "$ROOT/scripts/eval-teamwork.py" --split dev >/dev/null
+[[ -x "$ROOT/scripts/run-teamwork-live-eval.py" ]] || fail "live eval runner must be executable"
+git_known_package_file "scripts/run-teamwork-live-eval.py" \
+  || fail "scripts/run-teamwork-live-eval.py is not known to git; use git add -N before release validation"
+python3 -m py_compile "$ROOT/scripts/run-teamwork-live-eval.py"
+live_eval_tmp="$(mktemp -d)"
+CLEANUP_PATHS+=("$live_eval_tmp")
+python3 "$ROOT/scripts/run-teamwork-live-eval.py" \
+  --arm validate-dry-run \
+  --model gpt-5.6-sol \
+  --effort max \
+  --workdir "$ROOT" \
+  --output "$live_eval_tmp/output.jsonl" \
+  --cases "$ROOT/evals/teamwork/live-cases/lightweight-pilot.json" \
+  --repeats 1 \
+  --timeout-seconds 60 \
+  --dry-run >/dev/null
 [[ -f "$ROOT/scripts/optimize-teamwork.py" ]] || fail "missing scripts/optimize-teamwork.py"
 git_known_package_file "scripts/optimize-teamwork.py" \
   || fail "scripts/optimize-teamwork.py is not known to git; use git add -N before release validation"
@@ -477,295 +509,125 @@ for skill in "${SKILLS[@]}"; do
   fenced_block_line_count_max "$ROOT/skills/$skill/SKILL.md" 20 "$skill must not embed large fenced templates"
 done
 
-# --- Router + stage anchors ---
-grep_required 'references/workflow-contract.md' "$ENTRYPOINT" "using-teamwork must reference shared workflow contract"
-grep_required 'routing-policy.md' "$ENTRYPOINT" "using-teamwork must reference routing policy for ambiguous intent"
-grep_required 'references/subagent-dispatch.md' "$ENTRYPOINT" "using-teamwork must reference subagent dispatch"
-grep_required 'grill-mode.md' "$ENTRYPOINT" "using-teamwork must reference grill mode for explicit question-first prompts"
-for skill in teamwork-debug teamwork-init teamwork-goal teamwork-research teamwork-plan teamwork-execute teamwork-review; do
-  grep_absent '`references/' "$skill must not use sibling-local reference paths" "$ROOT/skills/$skill/SKILL.md"
-  grep_absent '^- `references/' "$skill must not list sibling-local reference paths" "$ROOT/skills/$skill/SKILL.md"
-  grep_required 'skills/using-teamwork/references/workflow-contract.md' "$ROOT/skills/$skill/SKILL.md" "$skill must reference shared workflow contract"
+# --- Lean runtime contracts ---
+grep_required 'references/workflow-contract.md' "$ENTRYPOINT" "router must reference the shared workflow contract"
+grep_required 'routing-policy.md' "$ENTRYPOINT" "router must load routing policy only for unclear routes"
+grep_required 'grill-mode.md' "$ENTRYPOINT" "router must keep explicit grill mode discoverable"
+grep_required 'clear tasks stay native' "$ENTRYPOINT" "router must preserve the native fast path"
+grep_required 'Only an explicit grill/question-first request' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must not infer grill mode from complexity"
+grep_required 'routine reversible' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must allow routine autonomous choices"
+grep_required 'Do not invent required state' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must preserve bootstrap safety"
+grep_required 'Fresh review is required only for the high-risk row' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must risk-gate fresh review"
+
+for skill in teamwork-research teamwork-debug teamwork-plan teamwork-execute teamwork-review teamwork-goal; do
+  file="$ROOT/skills/$skill/SKILL.md"
+  for heading in '## Outcome' '## Enter When' '## Do And Boundaries' '## Done When' '## Escalate' '## Conditional Protocols'; do
+    grep_required "$heading" "$file" "$skill must use the compact stage-card contract"
+  done
+  grep_required 'skills/using-teamwork/references/' "$file" "$skill must resolve shared reference paths"
+  word_count_max "$file" 340 "$skill stage card should remain lean"
 done
-grep_required 'Debug' "$ENTRYPOINT" "using-teamwork router must name the Debug stage"
-grep_required 'skills/teamwork-debug/SKILL.md' "$ENTRYPOINT" "using-teamwork router must reference teamwork-debug"
-grep_required 'skills/using-teamwork/references/workflow-contract.md' "$ROOT/skills/teamwork-debug/SKILL.md" "teamwork-debug must reference shared workflow contract"
-grep_required 'debug-mode.md' "$ROOT/skills/teamwork-debug/SKILL.md" "teamwork-debug must reference the shared debug protocol"
-grep_required 'verification-patterns.md' "$ROOT/skills/teamwork-debug/SKILL.md" "teamwork-debug must reference verification patterns"
-grep_required 'verification-patterns.md' "$ROOT/skills/teamwork-plan/SKILL.md" "teamwork-plan must reference verification patterns"
-grep_required 'verification-patterns.md' "$ROOT/skills/teamwork-execute/SKILL.md" "teamwork-execute must reference verification patterns"
-grep_required 'verification-patterns.md' "$ROOT/skills/teamwork-review/SKILL.md" "teamwork-review must reference verification patterns"
-grep_required 'review-lenses.md' "$ROOT/skills/teamwork-review/SKILL.md" "teamwork-review must reference review lenses"
-grep_required 'repro-surface framing' "$ROOT/skills/teamwork-research/SKILL.md" "research trigger must stop before runtime diagnosis"
-grep_required 'one bounded micro-debug pass' "$ROOT/skills/teamwork-execute/SKILL.md" "execute must bound local micro-debugging"
+
+grep_required 'only for explicit' "$ROOT/skills/teamwork-research/SKILL.md" "research must condition grill mode"
+grep_required 'as the evidence warrants' "$ROOT/skills/teamwork-debug/SKILL.md" \
+  "debug must avoid a fixed hypothesis quota"
+grep_required 'table or diagram only when it materially clarifies' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "plan formatting must be conditional"
+grep_required 'smallest direct change' "$ROOT/skills/teamwork-execute/SKILL.md" "execute must preserve direct implementation"
+grep_required 'eval-gate.md.*only when that gate applies' "$ROOT/skills/teamwork-review/SKILL.md" \
+  "review must condition package eval policy"
+grep_required 'Do not invent a fixed iteration budget' "$ROOT/skills/teamwork-goal/SKILL.md" \
+  "goal must not invent a numeric budget"
+
 for anchor in Repro Hypotheses Instrumentation 'Runtime Evidence' Cleanup; do
-  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/debug-mode.md" "debug-mode must lock $anchor"
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/debug-mode.md" "debug protocol must preserve $anchor"
 done
-grep_required 'Wrong-surface or inconclusive checks are not a pass' "$ROOT/skills/using-teamwork/references/debug-mode.md" "debug-mode must preserve same-surface verification"
-for anchor in 'Verification Strength' 'Baseline / Treatment' 'VERIFIED' 'NOT VERIFIED' 'INCONCLUSIVE'; do
-  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/verification-patterns.md" "verification patterns must lock $anchor"
+for anchor in 'Verification Strength' 'VERIFIED' 'NOT VERIFIED' 'INCONCLUSIVE'; do
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/verification-patterns.md" \
+    "verification protocol must preserve $anchor"
 done
-for anchor in Deslop 'Strict Maintainability' 'Reviewer Comprehension' 'Multi-Lens Review'; do
-  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/review-lenses.md" "review lenses must lock $anchor"
+grep_required 'Source counts and packet sizes are heuristics, not gates' \
+  "$ROOT/skills/using-teamwork/references/research-protocol.md" "research depth must be adaptive"
+grep_required 'only when breadth makes' "$ROOT/skills/using-teamwork/references/research-protocol.md" \
+  "research matrices must be conditional"
+grep_required 'not an acceptance' \
+  "$ROOT/skills/using-teamwork/references/plan-output.md" "plan format must remain flexible"
+grep_required 'External calibration alone is not a write trigger' \
+  "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact creation must be materiality-gated"
+grep_required 'Goal Invariants' "$ROOT/skills/using-teamwork/references/goal-iteration.md" \
+  "goal protocol must preserve goal invariants"
+grep_required 'strategy delta' "$ROOT/skills/using-teamwork/references/goal-iteration.md" \
+  "goal retries must change strategy after failed evidence"
+grep_required 'no-progress stop' "$ROOT/skills/using-teamwork/references/goal-iteration.md" \
+  "goal protocol must bound unbudgeted retries"
+
+for role in Explorer Designer Judge Worker Reviewer; do
+  grep_required "## $role" "$ROOT/skills/using-teamwork/references/role-playbook.md" "role playbook must define $role"
 done
-grep_required 'No silent defaults or invariant-masking fallback' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must define invariant-masking fallback"
-grep_required 'Ask when uncertainty matters' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must ask on meaningful uncertainty"
-grep_required 'ask the next decision/risk question before planning or acting' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must ask before planning on complex uncertainty"
-grep_required 'Grill mode overrides act-by-default only when explicit' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must scope grill mode override"
-grep_required 'research-synthesize, plan, design-select, dispatch' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must gate grill before research/design/dispatch"
-grep_required 'Shared Understanding Packet' "$ROOT/skills/using-teamwork/references/grill-mode.md" "grill mode must require a handoff packet"
-grep_required 'Ask at least one decision or risk question' "$ROOT/skills/using-teamwork/references/grill-mode.md" "grill mode must force at least one question"
-grep_required 'grill-me' "$ROOT/skills/using-teamwork/references/grill-mode.md" "grill mode must recognize named grill-me requests"
-grep_required '先问清楚' "$ROOT/skills/using-teamwork/references/grill-mode.md" "grill mode must recognize direct non-English question-first equivalents"
-grep_required 'then stop' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must stop after the grill question"
-grep_required 'synthesize research, choose design' "$ENTRYPOINT" "using-teamwork must block research/design during active grill mode"
-grep_required 'do not fan out' "$ROOT/skills/teamwork-research/SKILL.md" "research must not fan out during active question-first override"
-grep_required 'research conclusion' "$ROOT/skills/teamwork-research/SKILL.md" "research must not synthesize during active question-first override"
-grep_required 'grill-mode.md' "$ROOT/skills/teamwork-debug/SKILL.md" "debug must reference grill mode for active question-first override"
-grep_required 'only gather facts needed to frame' "$ROOT/skills/teamwork-debug/SKILL.md" "debug must not diagnose past active question-first override"
-grep_required 'Do not dispatch Designer/Judge' "$ROOT/skills/teamwork-plan/SKILL.md" "plan must not dispatch design/judge while grill packet is missing"
-grep_required 'implement or dispatch Workers' "$ROOT/skills/teamwork-execute/SKILL.md" "execute must block implementation while grill packet is missing"
-grep_required 'delegated bypass' "$ROOT/skills/teamwork-review/SKILL.md" "review must catch subagent bypass of question-first override"
-grep_required 'iteration loop' "$ROOT/skills/teamwork-goal/SKILL.md" "goal must block iteration while question-first override is active"
-grep_required 'cross-cutting interaction' "$ROOT/skills/teamwork-init/SKILL.md" "init must preserve question-first as cross-cutting behavior"
-grep_required 'question-first override' "$ROOT/skills/teamwork-update/SKILL.md" "update must require eval coverage for question-first changes"
-[[ ! -e "$ROOT/skills/teamwork-grill" ]] || fail "question-first override must not become a peer teamwork-grill skill"
-grep_absent 'teamwork-grill)' "install skill list must not add a peer teamwork-grill skill" "$ROOT/install.sh"
-for platform in codex cursor claude; do
-  case "$platform" in
-    codex)
-      prefix="$ROOT/templates/codex-agents/teamwork-"
-      explorer="${prefix}explorer.toml"
-      worker="${prefix}worker.toml"
-      designer="${prefix}designer.toml"
-      judge="${prefix}judge.toml"
-      reviewer="${prefix}reviewer.toml"
-      deep_judge="${prefix}deep-judge.toml"
-      deep_reviewer="${prefix}deep-reviewer.toml"
-      ;;
-    cursor)
-      prefix="$ROOT/templates/cursor-agents/"
-      explorer="${prefix}explore.md"
-      worker="${prefix}worker.md"
-      designer="${prefix}designer.md"
-      judge="${prefix}judge.md"
-      reviewer="${prefix}code-reviewer.md"
-      deep_judge="${prefix}deep-judge.md"
-      deep_reviewer="${prefix}deep-reviewer.md"
-      ;;
-    claude)
-      prefix="$ROOT/templates/claude-agents/"
-      explorer="${prefix}explore.md"
-      worker="${prefix}worker.md"
-      designer="${prefix}designer.md"
-      judge="${prefix}judge.md"
-      reviewer="${prefix}code-reviewer.md"
-      deep_judge="${prefix}deep-judge.md"
-      deep_reviewer="${prefix}deep-reviewer.md"
-      ;;
-  esac
-  grep_required 'active grill/question-first override' "$explorer" "$platform Explorer must honor active question-first override"
-  grep_required 'gather facts only' "$explorer" "$platform Explorer must stay fact-only during active question-first override"
-  grep_required 'active grill/question-first override' "$worker" "$platform Worker must honor active question-first override"
-  grep_required 'block instead of editing' "$worker" "$platform Worker must block edits during active question-first override"
-  grep_required 'active grill/question-first override' "$designer" "$platform Designer must honor active question-first override"
-  grep_required 'explicit exit' "$designer" "$platform Designer must allow explicit exit from question-first override"
-  grep_required 'active grill/question-first override' "$judge" "$platform Judge must honor active question-first override"
-  grep_required 'explicit exit' "$judge" "$platform Judge must allow explicit exit from question-first override"
-  grep_required 'active grill/question-first override' "$deep_judge" "$platform Deep Judge must honor active question-first override"
-  grep_required 'explicit exit' "$deep_judge" "$platform Deep Judge must allow explicit exit from question-first override"
-  grep_required 'subagent bypass' "$reviewer" "$platform Reviewer must catch subagent bypass"
-  grep_required 'subagent bypass' "$deep_reviewer" "$platform Deep Reviewer must catch subagent bypass"
+grep_required 'existing path' "$ROOT/skills/using-teamwork/references/role-playbook.md" \
+  "Worker must prefer the existing owner"
+grep_required 'Same-context verification is sufficient elsewhere' "$ROOT/skills/using-teamwork/references/role-playbook.md" \
+  "Reviewer must not require fresh context universally"
+
+grep_required '## Prompt' "$ROOT/skills/using-teamwork/references/subagent-contract.md" \
+  "subagent contract must define a compact base prompt"
+grep_required '## Base Result' "$ROOT/skills/using-teamwork/references/subagent-contract.md" \
+  "subagent contract must define a compact base result"
+grep_required 'accept | revise | blocked' "$ROOT/skills/using-teamwork/references/subagent-contract.md" \
+  "Reviewer verdict enum must remain stable"
+grep_required 'only when they' "$ROOT/skills/using-teamwork/references/subagent-contract.md" \
+  "subagent packets must remain conditional"
+for anchor in agent_type subagent_type 'Custom agent' effort 'gpt-5.6-sol.*max'; do
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" \
+    "subagent dispatch must preserve platform/profile anchor: $anchor"
 done
-grep_required 'Required Values / Invariants' "$ROOT/skills/using-teamwork/references/plan-output.md" "plan output must lock required values and invariants"
-grep_required 'Every code write path starts' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must make code maintenance write-path-wide"
-grep_required 'For every code diff, apply the code-maintenance baseline' "$ROOT/skills/teamwork-review/SKILL.md" "review must apply code-maintenance baseline to every code diff"
-grep_required 'tests/config, invariants, and verification commands before edits' "$ROOT/skills/using-teamwork/references/role-playbook.md" "role playbook Worker must include tests/config in edit preflight"
-grep_required 'For every code diff, apply the code-maintenance baseline' "$ROOT/skills/using-teamwork/references/role-playbook.md" "role playbook Reviewer must check code maintenance for every code diff"
-grep_required 'For every code edit, first identify' "$ROOT/templates/codex-agents/teamwork-worker.toml" "Codex Worker must apply code maintenance before every edit"
-grep_required 'For every code edit, first identify' "$ROOT/templates/cursor-agents/worker.md" "Cursor Worker must apply code maintenance before every edit"
-grep_required 'For every code edit, first identify' "$ROOT/templates/claude-agents/worker.md" "Claude Worker must apply code maintenance before every edit"
-grep_required 'For every code diff, apply the code-maintenance baseline' "$ROOT/templates/codex-agents/teamwork-reviewer.toml" "Codex Reviewer must check code maintenance for every code diff"
-grep_required 'For every code diff, apply the code-maintenance baseline' "$ROOT/templates/cursor-agents/code-reviewer.md" "Cursor Reviewer must check code maintenance for every code diff"
-grep_required 'For every code diff, apply the code-maintenance baseline' "$ROOT/templates/claude-agents/code-reviewer.md" "Claude Reviewer must check code maintenance for every code diff"
-grep_required 'Fail fast rather than invent fallback behavior' "$ROOT/skills/teamwork-execute/SKILL.md" "execute must fail fast instead of masking invariants"
-grep_required 'Allowed Fail-Fast Checks' "$ROOT/skills/using-teamwork/references/review-lenses.md" "review lenses must distinguish fail-fast from defensive masking"
-grep_required 'fallback masking' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must catch fallback masking"
+grep_required 'no fixed prompt-level cap' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" \
+  "Worker waves must be bounded by economics rather than a fixed quota"
+
+# --- Lean role templates ---
+while IFS= read -r template; do
+  [[ "$(grep -c 'grill/question-first' "$template")" -eq 1 ]] \
+    || fail "agent template must contain exactly one grill guard: ${template#"$ROOT/"}"
+  word_count_max "$template" 260 "agent template should remain lean: ${template#"$ROOT/"}"
+done < <(find "$ROOT/templates/codex-agents" "$ROOT/templates/cursor-agents" "$ROOT/templates/claude-agents" -type f | sort)
+grep_absent 'Shared Understanding Packet\|Native Fields\|Option Matrix' \
+  "agent templates must not restore fixed packet ceremony" \
+  "$ROOT/templates/codex-agents" "$ROOT/templates/cursor-agents" "$ROOT/templates/claude-agents"
+for template in \
+  "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
+  "$ROOT/templates/cursor-agents/explore.md" \
+  "$ROOT/templates/claude-agents/explore.md"; do
+  grep_required 'full source census' "$template" "Explorer must mention the optional census"
+  grep_required 'deep research' "$template" "Explorer source census must be conditional"
+done
+for template in \
+  "$ROOT/templates/codex-agents/teamwork-designer.toml" \
+  "$ROOT/templates/cursor-agents/designer.md" \
+  "$ROOT/templates/claude-agents/designer.md"; do
+  grep_required 'genuine alternatives' "$template" "Designer alternatives must reflect real tradeoffs"
+done
+for template in \
+  "$ROOT/templates/codex-agents/teamwork-worker.toml" \
+  "$ROOT/templates/cursor-agents/worker.md" \
+  "$ROOT/templates/claude-agents/worker.md"; do
+  grep_required 'Use TDD when a focused test' "$template" "Worker TDD must be conditional"
+done
+
 grep_absent 'teamwork-quality' "Teamwork must not add a separate quality stage" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/install.sh"
 grep_absent 'teamwork-deslop' "Teamwork must not add a separate deslop stage" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/install.sh"
-for anchor in 'Natural Signals' 'Tie-Breakers' 'User does not need to say' 'Symptom with unknown cause'; do
-  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/routing-policy.md" "routing policy must lock $anchor"
-done
-grep_absent 'Stage: teamwork-debug' "subagent contract must not define stage-local Debug output" "$ROOT/skills/using-teamwork/references/subagent-contract.md"
-grep_absent 'Debug Findings Output' "subagent contract must not define stage-local Debug output" "$ROOT/skills/using-teamwork/references/subagent-contract.md"
+[[ ! -e "$ROOT/skills/teamwork-grill" ]] || fail "question-first override must not become a peer teamwork-grill skill"
+grep_absent 'teamwork-grill)' "install skill list must not add a peer teamwork-grill skill" "$ROOT/install.sh"
 
 grep_required 'check-update.md' "$ROOT/skills/teamwork-init/SKILL.md" "teamwork-init must reference check-update"
 grep_required 'check-update.md' "$ROOT/skills/teamwork-update/SKILL.md" "teamwork-update must reference check-update"
 grep_required 'check-update.sh' "$ROOT/skills/teamwork-update/SKILL.md" "teamwork-update must reference check-update script"
 [[ -x "$ROOT/scripts/check-update.sh" ]] || fail "check-update script must be executable"
-grep_required 'teamwork-debug' "$ROOT/scripts/check-update.sh" "check-update inventory must include teamwork-debug"
-grep_required 'skills_content_status' "$ROOT/scripts/check-update.sh" "check-update must detect installed skill content drift"
-grep_required 'agents_content_status' "$ROOT/scripts/check-update.sh" "check-update must detect installed agent content drift"
-grep_required 'Ask when uncertainty matters' "$ROOT/scripts/check-update.sh" "check-update policy status must detect stale uncertainty asking policy"
-grep_required 'synthesize research, choose design' "$ROOT/scripts/check-update.sh" "check-update policy status must detect stale grill policy"
-grep_required 'grill-me' "$ROOT/scripts/check-update.sh" "check-update policy status must detect stale grill-me policy"
-grep_required 'Verdict: accept | revise | blocked' "$ROOT/skills/teamwork-review/SKILL.md" "review skill verdict enum must match Reviewer Verdict Packet"
-grep_absent 'Verdict: pass | pass-with-notes' "review skill must not use stale verdict enum" "$ROOT/skills/teamwork-review/SKILL.md"
-grep_required 'Reject delegated tracks without a returned packet or blocker rationale' "$ROOT/skills/teamwork-review/SKILL.md" "review skill must require delegated track accounting"
-grep_required 'returned dispatch packets or continuity' "$ROOT/skills/teamwork-research/SKILL.md" "research handoff must report delegated track packets"
-grep_required 'record returned packets or blockers' "$ROOT/skills/teamwork-execute/SKILL.md" "execute skill must report Worker packets and blockers"
-grep_required 'delegated packets or blockers' "$ROOT/skills/teamwork-goal/SKILL.md" "goal loop must report delegated track packets"
-
-# --- Shared contract anchors ---
-grep_required 'returns one packet, then stop' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must define bounded subagent lifecycle"
-grep_required 'records returned' "$ROOT/skills/using-teamwork/references/workflow-contract.md" "workflow contract must require delegated track accounting"
-
-# --- Subagent dispatch anchors ---
-grep_required 'When To Dispatch' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" "subagent dispatch must document when to dispatch"
-grep_required 'returns one packet, then stop' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" "subagent dispatch must define bounded lifecycle"
-grep_required 'records returned packets and blockers' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" "subagent dispatch must require packet accounting"
-grep_required 'agent_type' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" "subagent dispatch must map Codex fields"
-grep_required 'subagent_type' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" "subagent dispatch must map Cursor fields"
-grep_required 'Custom agent' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" "subagent dispatch must map Cursor custom agents"
-grep_required 'effort' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" "subagent dispatch must document Claude effort"
-
-# --- Subagent contract anchors ---
-grep_required 'Worker Completion Packet' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must define Worker packet"
-grep_required 'Reviewer Verdict Packet' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must define Reviewer packet"
-grep_required 'Verdict: accept | revise | blocked' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract verdict enum"
-grep_required 'Status: done | done_with_concerns | blocked | needs_context' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract worker status enum"
-grep_required 'Returned Packet or Blocker' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must record returned packets or blockers"
-grep_required 'Status: dispatched | returned | blocked | skipped_after_discovery' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must define dispatch accounting statuses"
-grep_required 'Memory Delta Candidate' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must document optional Memory Delta Candidate"
-grep_required 'Subagents propose memory candidates only' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must prevent subagents from promoting memory"
-
-# --- Role playbook anchors ---
-for role in Explorer Designer Judge Worker Reviewer; do
-  grep_required "## $role" "$ROOT/skills/using-teamwork/references/role-playbook.md" "role playbook must define $role"
-done
-grep_required 'research-protocol.md' "$ROOT/skills/using-teamwork/references/role-playbook.md" "role playbook Explorer must point to research protocol"
-
-# --- Memory + review anchors ---
-grep_required 'Memory Delta' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must define Memory Delta"
-grep_required 'Search Keys' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must define Search Keys"
-grep_required 'docs/teamwork/index.json' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must document index routing"
-grep_required 'schema_version' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must document index schema"
-grep_required 'active.goal' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must document active.goal"
-grep_required 'active.report' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must document active.report"
-grep_required 'Structured Bodies' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must require structured artifact bodies"
-grep_required 'Research artifacts should' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must require research matrices"
-grep_required 'Report artifacts should' "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact protocol must require report tables"
-grep_required 'Seed Expansion' "$ROOT/skills/teamwork-research/SKILL.md" "research skill must require seeded-source expansion"
-grep_required 'Seed Expansion' "$ROOT/skills/using-teamwork/references/research-protocol.md" "research protocol must define Seed Expansion"
-grep_required 'Coverage Audit' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "Explorer packet must carry coverage audit"
-grep_required 'broad/seeded research' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must catch shallow seeded research"
-grep_required 'Evidence Matrix' "$ROOT/skills/using-teamwork/references/research-protocol.md" "research protocol must require evidence matrix"
-grep_required 'Option Matrix' "$ROOT/skills/using-teamwork/references/research-protocol.md" "research protocol must require option matrix"
-grep_required 'Goal Proposal' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must define Goal Proposal"
-grep_required 'Research + Plan Adequacy Gate' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must define adequacy gate"
-grep_required 'Goal Invariants' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must preserve Goal Invariants"
-grep_required 'Replay Preflight' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must require Replay Preflight"
-grep_required 'Attempt Record' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must require Attempt Record"
-grep_required 'Failure Reflection' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must require Failure Reflection"
-grep_required 'Mermaid for' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration reports must use diagrams when branching"
-grep_required 'reject` is not a lifecycle verdict' "$ROOT/skills/using-teamwork/references/goal-iteration.md" "goal iteration must forbid reject as lifecycle verdict"
-grep_required 'returned packet status, and blocker rationale' "$ROOT/skills/using-teamwork/references/plan-output.md" "plan output must include dispatch accounting evidence"
-grep_required 'Goal Anchor' "$ROOT/skills/using-teamwork/references/plan-output.md" "plan output must include Goal Anchor"
-grep_required 'Durable memory check' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must include durable memory materiality checks"
-grep_required 'Memory promotion check' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must include memory promotion checks"
-grep_required 'candidate memory' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must keep external memory candidate-scoped"
-grep_required 'Manual smoke evidence captures source' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must include manual smoke evidence fields"
-grep_required 'returned packets, and blocker rationale' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must require dispatch accounting"
-grep_required 'Drift Verdict' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must require goal drift verdict"
-grep_required 'Retry Verdict' "$ROOT/skills/using-teamwork/references/review-checks.md" "review checks must require goal retry verdict"
-grep_required 'Goal Anchor' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must define Goal Anchor"
-grep_required 'Drift Verdict' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must define Drift Verdict"
-grep_required 'Retry Verdict' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must define Retry Verdict"
-grep_required 'reject` is not a lifecycle verdict' "$ROOT/skills/using-teamwork/references/subagent-contract.md" "subagent contract must forbid reject as lifecycle verdict"
-
-python3 - "$ROOT" <<'PY'
-import pathlib
-import re
-import sys
-
-root = pathlib.Path(sys.argv[1])
-allowed = {"accept", "revise", "blocked"}
-bad_packet = "Role: Reviewer\nVerdict: reject\n"
-ok_packet = "Role: Reviewer\nVerdict: revise\n"
-bad_match = re.search(r"^Verdict:\s*(\w+)\b", bad_packet, re.M)
-ok_match = re.search(r"^Verdict:\s*(\w+)\b", ok_packet, re.M)
-if not bad_match or bad_match.group(1) in allowed:
-    raise SystemExit("FAIL: goal continuity smoke must catch reject lifecycle verdict")
-if not ok_match or ok_match.group(1) not in allowed:
-    raise SystemExit("FAIL: goal continuity smoke must allow revise lifecycle verdict")
-
-required = {
-    "skills/using-teamwork/references/goal-iteration.md": [
-        "Goal Invariants", "Replay Preflight", "Attempt Record", "Failure Reflection", "Do Not Repeat"
-    ],
-    "skills/using-teamwork/references/plan-output.md": [
-        "Goal Anchor", "Drift Verdict", "Retry Verdict", "Replay Preflight"
-    ],
-    "skills/using-teamwork/references/subagent-contract.md": [
-        "Goal Anchor", "Prior Attempts Reviewed", "Drift Verdict", "Retry Verdict"
-    ],
-}
-for rel, phrases in required.items():
-    text = (root / rel).read_text()
-    missing = [phrase for phrase in phrases if phrase not in text]
-    if missing:
-        raise SystemExit(f"FAIL: {rel} missing goal continuity anchors: {', '.join(missing)}")
-
-for rel in [
-    "skills/teamwork-review/SKILL.md",
-    "skills/using-teamwork/references/subagent-contract.md",
-]:
-    text = (root / rel).read_text()
-    if re.search(r"^Verdict:\s*reject\b", text, re.M):
-        raise SystemExit(f"FAIL: {rel} defines reject as a lifecycle verdict")
-
-def goal_retry_errors(text):
-    failed = re.search(r"^Attempt Result:\s*(failed|partial|blocked|no-progress)\b", text, re.M)
-    if not failed:
-        return []
-    required_fields = [
-        "Goal Invariants",
-        "Attempt Record",
-        "Failure Reflection",
-        "Replay Preflight",
-        "Do Not Repeat",
-        "Strategy Delta",
-    ]
-    errors = [field for field in required_fields if not re.search(rf"^{re.escape(field)}:", text, re.M)]
-    invariants = re.search(r"^Goal Invariants:\s*(.+)$", text, re.M)
-    invariant_text = invariants.group(1) if invariants else ""
-    for term in ["不要过严过滤", "数据飞轮"]:
-        if term in text and term not in invariant_text:
-            errors.append(f"Goal Invariants missing {term}")
-    return errors
-
-bad_storyboard = """Goal Text: 端到端视频生成一致性诊断与优化
-User Constraint: 不要过严过滤
-Data Flywheel: 数据飞轮
-Attempt Result: failed
-Next Plan: reclassify cases
-"""
-if not goal_retry_errors(bad_storyboard):
-    raise SystemExit("FAIL: goal continuity smoke must fail missing invariants/replay fields")
-
-good_storyboard = """Goal Text: 端到端视频生成一致性诊断与优化
-Goal Invariants: 端到端视频生成一致性诊断与优化; 不要过严过滤; 数据飞轮; remaining cases clean
-Attempt Result: failed
-Attempt Record: v20 kept weak cases but reject mixed unreviewed, ablation-only, readability-unchecked buckets
-Failure Reflection: over-strict bucket semantics hid usable data; evidence delta from v5/v6/v8/v9/v20 reviewed
-Replay Preflight: active goal/report and prior attempts reviewed
-Do Not Repeat: use reject as catch-all lifecycle verdict or data bucket
-Strategy Delta: split lifecycle verdict from data buckets and preserve weak/review candidates
-"""
-good_errors = goal_retry_errors(good_storyboard)
-if good_errors:
-    raise SystemExit(f"FAIL: goal continuity smoke rejected valid Storyboard fixture: {', '.join(good_errors)}")
-PY
+grep_required 'skills_content_status' "$ROOT/scripts/check-update.sh" "check-update must detect installed skill drift"
+grep_required 'agents_content_status' "$ROOT/scripts/check-update.sh" "check-update must detect installed agent drift"
 
 if git -C "$ROOT" grep -n -E 'raoctl|RAO|Stop hook|/rao:|/teamwork:' \
   -- ':!scripts/validate.sh' >/tmp/teamwork-retired-grep.$$; then
@@ -837,38 +699,7 @@ grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$tmp/home/.codex/AGENTS.md
   "Codex install must create Teamwork global AGENTS block"
 grep_required 'Teamwork Codex Global Policy' "$tmp/home/.codex/AGENTS.md" \
   "Codex install must write Teamwork global policy heading"
-grep_required 'Act by default:' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must prioritize acting by default"
-grep_required 'Ask when uncertainty matters:' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must ask on meaningful uncertainty"
-grep_required 'ask the next decision/risk question before planning or acting' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must ask before planning on complex uncertainty"
-grep_required 'Grill mode:' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must document explicit grill mode override"
-grep_required 'grill-me' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must recognize named grill-me requests"
-grep_required '先问清楚' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must recognize non-English question-first equivalents"
-grep_required 'then stop' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must stop after the grill question"
-grep_required 'available facts before asking' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must inspect discoverable facts before grill questions"
-grep_required 'synthesize research, choose design' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must gate research/design during grill mode"
-grep_required 'Code maintenance: every code write path starts' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must make code maintenance write-path-wide"
-grep_required 'Reasoning discipline:' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must require reasoning discipline"
-grep_required 'Minimize optional commentary' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must minimize optional commentary"
-grep_required 'Codex model profile: default is performance-first' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must record performance-first profile"
-grep_required 'Bootstrap safety:' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must include bootstrap no-silent-defaults safety"
-grep_required 'Remote execution:' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must include remote execution default"
-grep_required 'do not invent missing execution targets' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must forbid invented remote targets"
+check_lean_policy "$tmp/home/.codex/AGENTS.md" performance-first "Codex global policy"
 
 agents_preserve_home="$tmp/home-agents-preserve"
 mkdir -p "$agents_preserve_home/.codex"
@@ -892,30 +723,8 @@ grep_required 'Personal rule before.' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must preserve user content"
 grep_required '<!-- CODEGRAPH_START -->' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must preserve CodeGraph block"
-grep_required 'Act by default:' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must replace managed block"
-grep_required 'Ask when uncertainty matters:' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must refresh uncertainty asking policy"
-grep_required 'ask the next decision/risk question before planning or acting' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must ask before planning on complex uncertainty"
-grep_required 'Grill mode:' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must preserve grill mode override"
-grep_required 'grill-me' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must refresh named grill-me trigger"
-grep_required 'then stop' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must refresh grill stop gate"
-grep_required 'available facts before asking' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must preserve fact inspection before grill questions"
-grep_required 'synthesize research, choose design' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must refresh expanded grill anchor"
-grep_required 'Code maintenance: every code write path starts' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must refresh code maintenance anchor"
-grep_required 'Reasoning discipline:' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must require reasoning discipline"
-grep_required 'Minimize optional commentary' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must minimize optional commentary"
-grep_required 'Bootstrap safety:' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must include bootstrap no-silent-defaults safety"
+check_lean_policy "$agents_preserve_home/.codex/AGENTS.md" performance-first \
+  "refreshed Codex global policy"
 grep_absent 'old managed content' \
   "Codex global policy install must replace old managed content" \
   "$agents_preserve_home/.codex/AGENTS.md"
@@ -930,22 +739,7 @@ codex_policy_out="$tmp/codex-policy.out"
 HOME="$tmp/home-codex-policy" "$ROOT/install.sh" codex-policy > "$codex_policy_out"
 grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$codex_policy_out" \
   "codex-policy target must print Teamwork global policy start marker"
-grep_required 'Ask when uncertainty matters:' "$codex_policy_out" \
-  "codex-policy target must print uncertainty asking policy"
-grep_required 'synthesize research, choose design' "$codex_policy_out" \
-  "codex-policy target must print expanded grill policy"
-grep_required 'grill-me' "$codex_policy_out" \
-  "codex-policy target must print named grill-me trigger"
-grep_required 'then stop' "$codex_policy_out" \
-  "codex-policy target must print grill stop gate"
-grep_required 'Codex model profile: default is performance-first' "$codex_policy_out" \
-  "codex-policy target must render performance-first profile"
-grep_required 'Bootstrap safety:' "$codex_policy_out" \
-  "codex-policy target must print bootstrap no-silent-defaults safety"
-grep_required 'Code maintenance: every code write path starts' "$codex_policy_out" \
-  "codex-policy target must print code maintenance policy"
-grep_required 'Reasoning discipline:' "$codex_policy_out" \
-  "codex-policy target must print reasoning discipline"
+check_lean_policy "$codex_policy_out" performance-first "codex-policy output"
 [[ ! -e "$tmp/home-codex-policy/.codex/AGENTS.md" ]] \
   || fail "codex-policy target must not write global AGENTS policy"
 
@@ -998,14 +792,91 @@ for agent in teamwork-deep-judge teamwork-deep-reviewer; do
 done
 
 HOME="$tmp/home-codex-cost" "$ROOT/install.sh" --profile cost-first codex >/dev/null
-grep_required 'Codex model profile: default is cost-first' "$tmp/home-codex-cost/.codex/AGENTS.md" \
-  "Codex global policy must record cost-first profile"
+check_lean_policy "$tmp/home-codex-cost/.codex/AGENTS.md" cost-first "cost-first Codex policy"
 
 HOME="$tmp/home-codex-policy-cost" "$ROOT/install.sh" --profile cost-first codex-policy > "$tmp/codex-policy-cost.out"
-grep_required 'Codex model profile: default is cost-first' "$tmp/codex-policy-cost.out" \
-  "codex-policy target must render cost-first profile"
+check_lean_policy "$tmp/codex-policy-cost.out" cost-first "cost-first codex-policy output"
 [[ ! -e "$tmp/home-codex-policy-cost/.codex/AGENTS.md" ]] \
   || fail "cost-first codex-policy target must not write global AGENTS policy"
+
+HOME="$tmp/home-codex-agents-gpt56-role" "$ROOT/install.sh" --profile gpt56-role codex-agents >/dev/null
+grep_required '^model = "gpt-5.6-terra"$' "$tmp/home-codex-agents-gpt56-role/.codex/agents/teamwork-explorer.toml" \
+  "gpt56-role Explorer must use gpt-5.6-terra"
+grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents-gpt56-role/.codex/agents/teamwork-explorer.toml" \
+  "gpt56-role Explorer must use medium reasoning"
+grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents-gpt56-role/.codex/agents/teamwork-worker.toml" \
+  "gpt56-role Worker must use gpt-5.6-sol"
+grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents-gpt56-role/.codex/agents/teamwork-worker.toml" \
+  "gpt56-role Worker must use medium reasoning"
+for agent in teamwork-designer teamwork-judge teamwork-reviewer; do
+  grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents-gpt56-role/.codex/agents/$agent.toml" \
+    "gpt56-role must render gpt-5.6-sol for $agent"
+  grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-gpt56-role/.codex/agents/$agent.toml" \
+    "gpt56-role must render high reasoning for $agent"
+done
+for agent in teamwork-deep-judge teamwork-deep-reviewer; do
+  grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents-gpt56-role/.codex/agents/$agent.toml" \
+    "gpt56-role must render gpt-5.6-sol for $agent"
+  grep_required '^model_reasoning_effort = "max"$' "$tmp/home-codex-agents-gpt56-role/.codex/agents/$agent.toml" \
+    "gpt56-role must render max reasoning for $agent"
+done
+
+HOME="$tmp/home-codex-gpt56-role" "$ROOT/install.sh" --profile gpt56-role codex >/dev/null
+check_lean_policy "$tmp/home-codex-gpt56-role/.codex/AGENTS.md" gpt56-role "gpt56-role Codex policy"
+grep_absent 'gpt-5.6-terra medium for Explorer' \
+  "global policy must defer exact GPT-5.6 mappings to agent files" \
+  "$tmp/home-codex-gpt56-role/.codex/AGENTS.md"
+
+HOME="$tmp/home-codex-policy-gpt56-role" "$ROOT/install.sh" --profile gpt56-role codex-policy > "$tmp/codex-policy-gpt56-role.out"
+check_lean_policy "$tmp/codex-policy-gpt56-role.out" gpt56-role "gpt56-role codex-policy output"
+[[ ! -e "$tmp/home-codex-policy-gpt56-role/.codex/AGENTS.md" ]] \
+  || fail "gpt56-role codex-policy target must not write global AGENTS policy"
+
+project_codex_gpt56_role="$tmp/project-codex-gpt56-role"
+mkdir -p "$project_codex_gpt56_role"
+HOME="$tmp/home-project-codex-gpt56-role" "$ROOT/install.sh" --profile gpt56-role --project-root "$project_codex_gpt56_role" project-codex-agents >/dev/null
+grep_required '^model = "gpt-5.6-terra"$' "$project_codex_gpt56_role/.codex/agents/teamwork-explorer.toml" \
+  "project-codex-agents must render gpt-5.6-terra for Explorer"
+grep_required '^model = "gpt-5.6-sol"$' "$project_codex_gpt56_role/.codex/agents/teamwork-worker.toml" \
+  "project-codex-agents must render gpt-5.6-sol for Worker"
+grep_required '^model_reasoning_effort = "max"$' "$project_codex_gpt56_role/.codex/agents/teamwork-deep-reviewer.toml" \
+  "project-codex-agents must render max for Deep Reviewer"
+[[ ! -e "$project_codex_gpt56_role/.cursor" ]] \
+  || fail "project-codex-agents must not write Cursor project agents"
+[[ ! -e "$project_codex_gpt56_role/.claude" ]] \
+  || fail "project-codex-agents must not write Claude project agents"
+
+HOME="$tmp/home-cursor-gpt56-role" "$ROOT/install.sh" --profile gpt56-role cursor-agents >/dev/null
+for agent in explore designer; do
+  grep_required '^model: claude-sonnet-4-6$' "$tmp/home-cursor-gpt56-role/.cursor/agents/$agent.md" \
+    "gpt56-role must preserve Cursor performance model for $agent"
+done
+grep_required '^model: composer-2.5-fast$' "$tmp/home-cursor-gpt56-role/.cursor/agents/worker.md" \
+  "gpt56-role must preserve Cursor performance model for Worker"
+for agent in judge code-reviewer deep-judge deep-reviewer; do
+  grep_required '^model: claude-opus-4-8-thinking-high$' "$tmp/home-cursor-gpt56-role/.cursor/agents/$agent.md" \
+    "gpt56-role must preserve Cursor review model for $agent"
+done
+
+HOME="$tmp/home-claude-gpt56-role" "$ROOT/install.sh" --profile gpt56-role claude-agents >/dev/null
+for agent in explore designer worker; do
+  grep_required '^model: sonnet$' "$tmp/home-claude-gpt56-role/.claude/agents/$agent.md" \
+    "gpt56-role must preserve Claude performance model for $agent"
+  grep_required '^effort: medium$' "$tmp/home-claude-gpt56-role/.claude/agents/$agent.md" \
+    "gpt56-role must preserve Claude medium effort for $agent"
+done
+for agent in judge code-reviewer; do
+  grep_required '^model: opus$' "$tmp/home-claude-gpt56-role/.claude/agents/$agent.md" \
+    "gpt56-role must preserve Claude review model for $agent"
+  grep_required '^effort: high$' "$tmp/home-claude-gpt56-role/.claude/agents/$agent.md" \
+    "gpt56-role must preserve Claude high effort for $agent"
+done
+for agent in deep-judge deep-reviewer; do
+  grep_required '^model: opus$' "$tmp/home-claude-gpt56-role/.claude/agents/$agent.md" \
+    "gpt56-role must preserve Claude deep model for $agent"
+  grep_required '^effort: xhigh$' "$tmp/home-claude-gpt56-role/.claude/agents/$agent.md" \
+    "gpt56-role must preserve Claude deep effort for $agent"
+done
 
 HOME="$tmp/home-codex-agents-high" "$ROOT/install.sh" --profile gpt55-high codex-agents >/dev/null
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
@@ -1016,14 +887,10 @@ for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge 
 done
 
 HOME="$tmp/home-codex-high" "$ROOT/install.sh" --profile gpt55-high codex >/dev/null
-grep_required 'Codex model profile: default is gpt55-high' "$tmp/home-codex-high/.codex/AGENTS.md" \
-  "Codex global policy must record gpt55-high profile"
-grep_required 'gpt55-high forces every Codex Teamwork subagent to gpt-5.5 with high' "$tmp/home-codex-high/.codex/AGENTS.md" \
-  "Codex global policy must describe gpt55-high behavior"
+check_lean_policy "$tmp/home-codex-high/.codex/AGENTS.md" gpt55-high "gpt55-high Codex policy"
 
 HOME="$tmp/home-codex-policy-high" "$ROOT/install.sh" --profile gpt55-high codex-policy > "$tmp/codex-policy-high.out"
-grep_required 'Codex model profile: default is gpt55-high' "$tmp/codex-policy-high.out" \
-  "codex-policy target must render gpt55-high profile"
+check_lean_policy "$tmp/codex-policy-high.out" gpt55-high "gpt55-high codex-policy output"
 [[ ! -e "$tmp/home-codex-policy-high/.codex/AGENTS.md" ]] \
   || fail "gpt55-high codex-policy target must not write global AGENTS policy"
 
@@ -1050,14 +917,10 @@ for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge 
 done
 
 HOME="$tmp/home-codex-xhigh" "$ROOT/install.sh" --profile gpt55-xhigh codex >/dev/null
-grep_required 'Codex model profile: default is gpt55-xhigh' "$tmp/home-codex-xhigh/.codex/AGENTS.md" \
-  "Codex global policy must record gpt55-xhigh profile"
-grep_required 'gpt55-xhigh forces every Codex Teamwork subagent to gpt-5.5 with xhigh' "$tmp/home-codex-xhigh/.codex/AGENTS.md" \
-  "Codex global policy must describe gpt55-xhigh behavior"
+check_lean_policy "$tmp/home-codex-xhigh/.codex/AGENTS.md" gpt55-xhigh "gpt55-xhigh Codex policy"
 
 HOME="$tmp/home-codex-policy-xhigh" "$ROOT/install.sh" --profile gpt55-xhigh codex-policy > "$tmp/codex-policy-xhigh.out"
-grep_required 'Codex model profile: default is gpt55-xhigh' "$tmp/codex-policy-xhigh.out" \
-  "codex-policy target must render gpt55-xhigh profile"
+check_lean_policy "$tmp/codex-policy-xhigh.out" gpt55-xhigh "gpt55-xhigh codex-policy output"
 [[ ! -e "$tmp/home-codex-policy-xhigh/.codex/AGENTS.md" ]] \
   || fail "gpt55-xhigh codex-policy target must not write global AGENTS policy"
 
@@ -1175,20 +1038,7 @@ cursor_policy_out="$tmp/cursor-policy.out"
 HOME="$tmp/home-cursor-policy" "$ROOT/install.sh" cursor-policy > "$cursor_policy_out"
 grep_required '<!-- TEAMWORK_CURSOR_GLOBAL_START -->' "$cursor_policy_out" \
   "cursor-policy target must print Teamwork global policy start marker"
-grep_required 'Ask when uncertainty matters:' "$cursor_policy_out" \
-  "cursor-policy target must print uncertainty asking policy"
-grep_required 'synthesize research, choose design' "$cursor_policy_out" \
-  "cursor-policy target must print expanded grill policy"
-grep_required 'grill-me' "$cursor_policy_out" \
-  "cursor-policy target must print named grill-me trigger"
-grep_required 'then stop' "$cursor_policy_out" \
-  "cursor-policy target must print grill stop gate"
-grep_required 'available facts before asking' "$cursor_policy_out" \
-  "cursor-policy target must print fact inspection before grill questions"
-grep_required 'Code maintenance: every code write path starts' "$cursor_policy_out" \
-  "cursor-policy target must print code maintenance policy"
-grep_required 'Cursor model profile: default is performance-first' "$cursor_policy_out" \
-  "cursor-policy target must render performance-first profile"
+check_lean_policy "$cursor_policy_out" performance-first "cursor-policy output"
 [[ ! -e "$tmp/home-cursor-policy/.cursor" ]] \
   || fail "cursor-policy target must not write Cursor home files"
 
@@ -1206,18 +1056,8 @@ TEAMWORK_TEST_CLIPBOARD="$tmp/cursor-policy-copy.clipboard" \
   "$ROOT/install.sh" cursor-policy-copy > "$cursor_policy_copy_out"
 grep_required '<!-- TEAMWORK_CURSOR_GLOBAL_START -->' "$tmp/cursor-policy-copy.clipboard" \
   "cursor-policy-copy target must copy Teamwork global policy start marker"
-grep_required 'Ask when uncertainty matters:' "$tmp/cursor-policy-copy.clipboard" \
-  "cursor-policy-copy target must copy uncertainty asking policy"
-grep_required 'synthesize research, choose design' "$tmp/cursor-policy-copy.clipboard" \
-  "cursor-policy-copy target must copy expanded grill policy"
-grep_required 'grill-me' "$tmp/cursor-policy-copy.clipboard" \
-  "cursor-policy-copy target must copy named grill-me trigger"
-grep_required 'then stop' "$tmp/cursor-policy-copy.clipboard" \
-  "cursor-policy-copy target must copy grill stop gate"
-grep_required 'available facts before asking' "$tmp/cursor-policy-copy.clipboard" \
-  "cursor-policy-copy target must copy fact inspection before grill questions"
-grep_required 'Code maintenance: every code write path starts' "$tmp/cursor-policy-copy.clipboard" \
-  "cursor-policy-copy target must copy code maintenance policy"
+check_lean_policy "$tmp/cursor-policy-copy.clipboard" performance-first \
+  "cursor-policy clipboard output"
 grep_required 'Copied Teamwork Cursor global policy to clipboard.' "$cursor_policy_copy_out" \
   "cursor-policy-copy target must report clipboard copy"
 [[ ! -e "$tmp/home-cursor-policy-copy/.cursor" ]] \
@@ -1256,39 +1096,13 @@ for agent in deep-judge deep-reviewer; do
 done
 grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$tmp/home-claude/.claude/CLAUDE.md" \
   "Claude install must create Teamwork global CLAUDE block"
-grep_required 'Claude model profile: default is performance-first' "$tmp/home-claude/.claude/CLAUDE.md" \
-  "Claude global policy must record performance-first profile"
-grep_required 'Ask when uncertainty matters:' "$tmp/home-claude/.claude/CLAUDE.md" \
-  "Claude global policy must ask on meaningful uncertainty"
-grep_required 'synthesize research, choose design' "$tmp/home-claude/.claude/CLAUDE.md" \
-  "Claude global policy must gate research/design during grill mode"
-grep_required 'grill-me' "$tmp/home-claude/.claude/CLAUDE.md" \
-  "Claude global policy must recognize named grill-me requests"
-grep_required 'then stop' "$tmp/home-claude/.claude/CLAUDE.md" \
-  "Claude global policy must stop after the grill question"
-grep_required 'available facts before asking' "$tmp/home-claude/.claude/CLAUDE.md" \
-  "Claude global policy must inspect discoverable facts before grill questions"
-grep_required 'Code maintenance: every code write path starts' "$tmp/home-claude/.claude/CLAUDE.md" \
-  "Claude global policy must make code maintenance write-path-wide"
-grep_required 'Bootstrap safety:' "$tmp/home-claude/.claude/CLAUDE.md" \
-  "Claude global policy must include bootstrap no-silent-defaults safety"
+check_lean_policy "$tmp/home-claude/.claude/CLAUDE.md" performance-first "Claude global policy"
 
 claude_policy_out="$tmp/claude-policy.out"
 HOME="$tmp/home-claude-policy" "$ROOT/install.sh" claude-policy > "$claude_policy_out"
 grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$claude_policy_out" \
   "claude-policy target must print Teamwork global policy start marker"
-grep_required 'Ask when uncertainty matters:' "$claude_policy_out" \
-  "claude-policy target must print uncertainty asking policy"
-grep_required 'synthesize research, choose design' "$claude_policy_out" \
-  "claude-policy target must print expanded grill policy"
-grep_required 'grill-me' "$claude_policy_out" \
-  "claude-policy target must print named grill-me trigger"
-grep_required 'then stop' "$claude_policy_out" \
-  "claude-policy target must print grill stop gate"
-grep_required 'Code maintenance: every code write path starts' "$claude_policy_out" \
-  "claude-policy target must print code maintenance policy"
-grep_required 'Claude model profile: default is performance-first' "$claude_policy_out" \
-  "claude-policy target must render performance-first profile"
+check_lean_policy "$claude_policy_out" performance-first "claude-policy output"
 [[ ! -e "$tmp/home-claude-policy/.claude/CLAUDE.md" ]] \
   || fail "claude-policy target must not write global CLAUDE policy"
 
@@ -1320,8 +1134,8 @@ grep_required 'Personal rule before.' "$claude_preserve_home/.claude/CLAUDE.md" 
   "Claude global policy install must preserve user content"
 grep_required '<!-- CODEGRAPH_START -->' "$claude_preserve_home/.claude/CLAUDE.md" \
   "Claude global policy install must preserve CodeGraph block"
-grep_required 'Bootstrap safety:' "$claude_preserve_home/.claude/CLAUDE.md" \
-  "Claude global policy install must replace managed block"
+check_lean_policy "$claude_preserve_home/.claude/CLAUDE.md" performance-first \
+  "refreshed Claude global policy"
 grep_absent 'old managed content' \
   "Claude global policy install must replace old managed content" \
   "$claude_preserve_home/.claude/CLAUDE.md"

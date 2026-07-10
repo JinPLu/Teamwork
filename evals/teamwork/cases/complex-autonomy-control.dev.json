@@ -1,0 +1,22 @@
+{
+  "id": "complex-autonomy-control",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/workflow-contract.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Design the internal refactor now. Preserve all public behavior, keep existing configuration keys, make the smallest producer-side change, and verify the current test suite. You may inspect the repository and choose routine implementation details.",
+  "expected": {
+    "mode": "ordinary_autonomy",
+    "requires": ["inspect and proceed", "no invented user decision", "no grill ceremony"]
+  },
+  "must": [
+    "inspect available project evidence and proceed with design or execution",
+    "make routine reversible implementation choices without asking"
+  ],
+  "must_not": [
+    "ask a preference question whose answer is already fixed by the prompt",
+    "require a Shared Understanding Packet or fixed planning ceremony"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "skills/using-teamwork/references/workflow-contract.md"
+}

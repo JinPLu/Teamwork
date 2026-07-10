@@ -6,6 +6,45 @@ This changelog explains what users get after upgrading, not just which files
 changed. Version boundaries come from `VERSION` and plugin manifest updates;
 the repository currently has no git release tags.
 
+## 2.13.0 - 2026-07-10
+
+This release makes Teamwork **guardrail-first and conditionally progressive for
+GPT-5.6 instead of template-driven**.
+
+- The six core stages are now roughly 300-word stage cards. Authorization,
+  required state, evidence, scope, verification, and stop rules remain; fixed
+  hypothesis counts, mandatory tables/diagrams, mega-packets, automatic
+  artifacts, and blanket fresh review do not.
+- The router activates for explicit Teamwork, cross-stage work, or an unclear
+  next stage. Complex but sufficiently specified work proceeds; only a real
+  user-owned decision gap triggers a question, and grill mode remains explicit.
+- Cross-platform role templates are about 39% smaller. TDD, source census,
+  alternatives, fresh context, and durable memory are conditional.
+- A provenance-rich Codex live trajectory pilot can pin `gpt-5.6-sol` at
+  `medium`, `high`, or `max`; unavailable models/efforts fail explicitly and
+  never silently fall back.
+- Validation now checks semantic invariants, size budgets, and a complex-task
+  autonomy control. The `gpt56-role` Terra/Sol/Deep `max` mapping is unchanged.
+
+## 2.12.0 - 2026-07-10
+
+This release is about **adding a role-tiered GPT-5.6 profile for Codex
+subagents**.
+
+- Added `gpt56-role`: Explorer uses `gpt-5.6-terra` at `medium`; Worker uses
+  `gpt-5.6-sol` at `medium`; Designer, Judge, and Reviewer use `gpt-5.6-sol` at
+  `high`; Deep Judge/Reviewer use `gpt-5.6-sol` at `max`.
+- The profile preserves native performance-first tiers on Cursor and Claude
+  Code. Existing `performance-first`, `cost-first`, and `gpt55-*` profiles keep
+  their prior behavior.
+- The installer, readiness drift checks, project init, Codex global policy,
+  READMEs, and validation now cover the new profile without silently migrating
+  older profiles.
+- The role split follows current Codex model guidance: Terra for read-heavy
+  scans, Sol for complex implementation and judgment, and `max` for deep
+  single-task acceptance. Ultra is not pinned inside a subagent because it can
+  delegate again.
+
 ## 2.11.1 - 2026-07-08
 
 This release is about **tightening the priority boundary between question-first

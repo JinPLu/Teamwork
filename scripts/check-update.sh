@@ -196,6 +196,18 @@ agents_content_status() {
 codex_agent_profile_values() {
   local agent="$1"
   case "$(source_profile):$agent" in
+    gpt56-role:teamwork-explorer)
+      printf '%s %s\n' "gpt-5.6-terra" "medium"
+      ;;
+    gpt56-role:teamwork-worker)
+      printf '%s %s\n' "gpt-5.6-sol" "medium"
+      ;;
+    gpt56-role:teamwork-designer|gpt56-role:teamwork-judge|gpt56-role:teamwork-reviewer)
+      printf '%s %s\n' "gpt-5.6-sol" "high"
+      ;;
+    gpt56-role:teamwork-deep-judge|gpt56-role:teamwork-deep-reviewer)
+      printf '%s %s\n' "gpt-5.6-sol" "max"
+      ;;
     gpt55-xhigh:*)
       printf '%s %s\n' "gpt-5.5" "xhigh"
       ;;
@@ -220,7 +232,7 @@ codex_agent_profile_values() {
 claude_agent_profile_values() {
   local agent="$1"
   case "$(source_profile):$agent" in
-    gpt55-xhigh:explore|gpt55-xhigh:designer|gpt55-xhigh:worker)
+    gpt56-role:explore|gpt56-role:designer|gpt56-role:worker|gpt55-xhigh:explore|gpt55-xhigh:designer|gpt55-xhigh:worker)
       printf '%s %s\n' "sonnet" "medium"
       ;;
     cost-first:explore|cost-first:designer|cost-first:worker)
@@ -241,10 +253,10 @@ claude_agent_profile_values() {
 cursor_agent_profile_values() {
   local agent="$1"
   case "$(source_profile):$agent" in
-    gpt55-xhigh:worker)
+    gpt56-role:worker|gpt55-xhigh:worker)
       printf '%s\n' "composer-2.5-fast"
       ;;
-    gpt55-xhigh:explore|gpt55-xhigh:designer)
+    gpt56-role:explore|gpt56-role:designer|gpt55-xhigh:explore|gpt55-xhigh:designer)
       printf '%s\n' "claude-sonnet-4-6"
       ;;
     cost-first:explore|cost-first:designer|cost-first:worker)
@@ -309,13 +321,11 @@ policy_status() {
 
   if [[ -f "$file" ]] \
     && grep -q "$marker" "$file" \
-    && grep -q 'Ask when uncertainty matters' "$file" \
-    && grep -q 'Grill mode:' "$file" \
-    && grep -q 'grill-me' "$file" \
-    && grep -q 'then stop' "$file" \
-    && grep -q 'available facts before asking' "$file" \
-    && grep -q 'synthesize research, choose design' "$file" \
-    && grep -q 'Code maintenance: every code write path starts' "$file"; then
+    && grep -q "Act by default within the user's request" "$file" \
+    && grep -q 'routine,' "$file" \
+    && grep -q 'Grill/question-first behavior activates only when explicitly requested' "$file" \
+    && grep -q 'Do not invent them' "$file" \
+    && grep -q 'Installed agent files own model mappings; active profile:' "$file"; then
     echo "ok"
   else
     echo "missing"
@@ -535,6 +545,7 @@ print_report() {
 
   echo "--- Model mapping (best-effort) ---"
   echo "Cursor explore model: $(cursor_model_sample)"
+  echo "Expected gpt56-role Codex: Explorer=Terra/medium, Worker=Sol/medium, Designer/Judge/Reviewer=Sol/high, Deep=Sol/max"
   echo "Expected cost-first routine: composer-2.5-fast"
   echo "Expected performance-first explore: claude-sonnet-4-6"
   echo

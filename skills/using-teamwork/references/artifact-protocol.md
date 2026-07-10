@@ -1,104 +1,73 @@
 # Artifact Protocol
 
-Write durable artifacts only when a trigger applies. Default to lightweight native flow.
+Durable artifacts preserve evidence or state that must outlive the current
+turn. Ordinary answers, one-turn external lookups, and bounded local changes do
+not create artifacts.
 
-## Artifact Triggers
+## Triggers
 
-Write `docs/teamwork/research/YYYY-MM-DD-<slug>.md` when research will be reused, feeds a durable plan, supports goal-mode iteration, uses external calibration, or justifies a non-trivial reusable recommendation.
+- `docs/teamwork/research/YYYY-MM-DD-<slug>.md`: reusable or cross-turn evidence,
+  research feeding a durable plan/goal, or a high-risk decision record.
+- `docs/teamwork/plans/YYYY-MM-DD-<slug>.md`: cross-turn, goal, high-risk,
+  public/shared behavior, long delegation, or an explicit repository plan.
+- `docs/teamwork/reports/YYYY-MM-DD-<slug>.md`: rolling goal attempts or a
+  non-trivial result that future work must retrieve.
 
-Write `docs/teamwork/plans/YYYY-MM-DD-<slug>.md` for goal-mode, cross-turn, cross-agent, high-risk, ambiguous, or shared behavior changes.
-
-Write `docs/teamwork/reports/YYYY-MM-DD-<slug>.md` for goal-mode rolling attempts and non-trivial conclusions that should outlive the conversation.
+External calibration alone is not a write trigger. Cite it in chat unless
+reuse, continuity, risk, or an accepted plan requires durable storage.
 
 ## Retrieval Header
-
-Start every durable artifact with:
 
 ```text
 Artifact Type: research | plan | report
 Status: active | superseded | accepted | blocked | budget-exhausted
 Last Updated: YYYY-MM-DD
-Search Keys: exact errors, commands, paths, components, dependencies, model/API names, issue/PR IDs, user terms
-Abstract: 2-4 sentences covering the problem, conclusion, and applicability boundary.
-Linked Artifacts: related paths, or none
+Search Keys: <terms that retrieve this evidence>
+Abstract: <problem, conclusion, and applicability boundary>
+Linked Artifacts: <paths or none>
 ```
 
-Add `Index Role`, `Authority`, `Applies To`, `Supersedes`, `Superseded By`, or `Verification` only when they aid retrieval. Do not use YAML frontmatter; reserve that for skill metadata only.
+Add authority, scope, supersession, or verification fields only when they aid
+retrieval. Use prose, tables, or diagrams according to the evidence; formatting
+is not an acceptance gate.
 
-## Structured Bodies
+## Retrieval
 
-Durable artifacts favor compact tables and diagrams over long prose. Use tables
-for three or more comparable facts, sources, options, attempts, decisions,
-requirements, risks, or verification checks. Use Mermaid flowcharts for
-multi-stage, branching, delegated, or goal-mode flows. Research artifacts should
-include Source/Evidence and Option/Recommendation matrices when applicable.
-Report artifacts should include Outcome, Attempt/Failure, Decision, and
-Verification tables when applicable. Keep cells short and evidence-backed.
+When durable memory is relevant, read in this order:
 
-## Artifact Retrieval
+1. `docs/teamwork/index.json`.
+2. `active.current`, then active goal/plan/report/result pointers.
+3. Linked artifact headers and abstracts.
+4. Only the bodies needed for the current decision.
 
-Before non-trivial research, plan creation, or goal failure analysis, search `docs/teamwork/{research,plans,reports}/` with all available keys: goal words, errors, component paths, package/model names, issue/PR IDs, user terms.
+For non-trivial research or goal retry, search headers with goal words, errors,
+component paths, dependencies/models, IDs, and user terms. Choose `none`,
+`reuse`, `update`, or `new`; do not create a near-duplicate artifact merely to
+record the current turn.
 
-Search `Search Keys` and headers first, then fall back to full-text:
+Goal retries read prior failed attempt evidence before repeating a hypothesis.
 
-```bash
-rg -n "^(Search Keys|Abstract|Status):|<goal|error|component>" docs/teamwork/{research,plans,reports} 2>/dev/null || true
-```
+## Native Index Boundary
 
-Choose one disposition before continuing:
+`schema_version` remains `1`. The index may contain project metadata, retrieval
+budgets, active pointers, entries, profiles, and a small pending list. Entries
+identify topic, kind, title, status, currentness, authority, path, update date,
+and summary, with optional scope, links, evidence, supersession, and search keys.
 
-- **none**: lightweight or purely local decision; state the local evidence boundary.
-- **reuse**: cite and carry forward still-valid evidence.
-- **update**: edit when topic is the same but evidence or assumptions changed.
-- **new**: create when prior work is stale, out of scope, or contradicted by new evidence.
-
-Goal-mode failure analysis must search `docs/teamwork/reports/` before repeating a hypothesis.
-
-## Native Index
-
-When durable project memory is relevant, read in this order when files exist:
-
-1. `docs/teamwork/index.json`
-2. `active.current` in index, else `docs/teamwork/current.md`
-3. Active goal pointers in index (`active.goal`, `active.report`) for goal-mode
-   and failed-goal recovery
-4. Active stage pointers in index (`active.plan`, progress, report, result)
-5. Linked artifact headers, then bodies as needed
-
-Do not broad-scan historical artifacts by default. Read full bodies only when stage-justified.
-
-### Index Schema (`schema_version: 1`)
-
-Top-level fields: `schema_version` (integer, must be `1`), `last_updated`, `project`, `source_of_truth_order`, `ignore_globs`, `budgets`, `active`, `entries`, `profiles`, `pending` (optional, capped ≤ 5).
-
-`budgets`: `default_max_files` (1–10), `default_max_artifact_bodies` (0–5), `header_first` (boolean).
-
-`active` optional keys: `current`, `design`, `plan`, `progress`, `goal`, `report`, `results` (array when present). Scalar active pointers are string paths or `null` when known absent. `active.goal` may point to the active native-goal summary or report-backed goal note; `active.report` points to the rolling attempt report.
-
-`entries` item fields: `topic`, `kind`, `title`, `status`, `currentness`, `authority`, `path`, `updated`, `summary`. Optional: `applies_to`, `linked`, `evidence_paths`, `supersedes`, `search_keys`.
-
-`kind` = result / progress / design / decision / plan / report / research / runbook  
-`status` = active / historical / superseded / blocked / candidate / accepted  
-`authority` = canonical / active-summary / supporting / candidate / historical / superseded
-
-External memory entries use `authority: candidate` or `supporting` until a reviewed Memory Delta promotes them. At most one `entries` item with `status: active` per `topic + kind`.
+External memory, docs graphs, and subagent memory proposals remain candidate
+context until the main agent verifies evidence path, currentness, scope, and
+protected-data handling.
 
 ## Memory Delta
 
-Report a memory delta when durable project memory was checked, changed, or intentionally left unchanged after a material-state question:
+Report a Memory Delta only after durable memory was checked and material state
+changed, conflicted, or was intentionally left unchanged:
 
-`Memory Delta: none | current | plan | research | decision | supersede | compact | deferred`
+`none | current | plan | research | decision | supersede | compact | deferred`
 
-Use `none` when checked with no state change. Omit for work that never touched durable memory. Use `deferred` only when a conflict blocks safe updates and the handoff names the blocker.
+Omit it when durable memory was not involved. `deferred` names the conflict or
+blocker. Subagents may propose a candidate; only the main agent updates
+canonical memory.
 
-Material delta examples: changed current result/progress/blocker/next action; changed active plan or design; accepted decision added or superseded; review found current-state inconsistency.
-
-## Memory Promotion
-
-External memory and docs graph output is candidate context until promoted. Promote only when the claim has evidence paths, currentness, scope, and protected data review.
-
-Subagents propose `Memory Delta Candidate` entries only; the main agent decides whether to update canonical Teamwork memory.
-
-## Write Boundaries
-
-Bound normal-task writes to `docs/teamwork/index.json`, `docs/teamwork/current.md`, and at most one dated artifact unless a durable trigger justifies more. `current.md` stays a compact active digest; stage artifacts hold evidence detail.
+Normal task writes stay bounded to the index/current digest and at most one
+dated artifact unless the accepted work genuinely requires more.

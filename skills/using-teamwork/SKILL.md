@@ -1,38 +1,26 @@
 ---
 name: using-teamwork
-description: Use when a task is ambiguous, non-lightweight, multi-stage, explicitly Teamwork-routed, or asks for grill/grill-me/question-first mode; infer native/research/debug/plan/execute/review/goal/init/update from intent, evidence, and risk.
+description: Use when Teamwork is explicitly requested, work must cross Teamwork stages, or the correct next stage is unclear; route to native/research/debug/plan/execute/review/goal/init/update, with grill mode only on explicit request.
 ---
 
 # Using Teamwork
 
-Teamwork sits on native tools: native capabilities execute; Teamwork adds
-evidence, dispatch, memory, and acceptance. Default to acting directly on clear
-work; escalate only when it improves correctness, continuity, or cost.
+Teamwork routes work across its stages while native tools do the work. Small,
+clear tasks stay native even when they touch several files. Do not load this
+router merely because a task is complex if its stage is already clear.
 
-Read `references/workflow-contract.md` for shared principles, `references/routing-policy.md`
-for ambiguous or uncertainty-driven questioning, and `references/grill-mode.md` for explicit
-grill/grill-me/question-first/stress-test requests.
-
-## First: can you proceed?
-
-Proceed when evidence is enough. For uncertain, complex, or non-lightweight
-tasks, ask the next decision/risk question before planning or acting when the
-answer could change scope, acceptance, public behavior, architecture, risk, or
-verification. Decide routine choices yourself.
-
-In explicit grill mode, ask at least one decision/risk question with a
-recommended answer unless the user exits or supplied a Shared Understanding
-Packet. Do not plan, synthesize research, choose design, edit, start a goal, or
-dispatch planning/design/execution agents until packet confirmation or exit.
+Read `references/workflow-contract.md` for shared safety and acceptance rules.
+Read `references/routing-policy.md` only when the next stage is unclear, and
+`references/grill-mode.md` only for an explicit grill/question-first request.
 
 ## Route
 
-Infer the route from user intent and evidence state. Outside explicit
-grill/question-first mode, small, clear tasks need no Teamwork stage — just do
-the work natively.
+Infer the next stage from intent and evidence. Outside explicit grill mode,
+proceed when the route and required state are clear; ask only when a remaining
+user decision could materially change the result.
 
-- **Native** — quick facts, one CodeGraph question, small local edits,
-  obvious fixes, simple evidence checks, or low-risk mechanical work.
+- **Native** — quick facts, structural lookup, small clear edits, obvious fixes,
+  simple checks, and low-risk mechanical work.
 - **Research** (`skills/teamwork-research/SKILL.md`) — source of truth, API
   behavior, stale facts, options, constraints, or repro surface is unclear.
 - **Debug** (`skills/teamwork-debug/SKILL.md`) — a failure, flaky run, CI log,
@@ -50,21 +38,17 @@ the work natively.
 - **Update** (`skills/teamwork-update/SKILL.md`) — Teamwork version, release,
   refresh, or installed skills/agents/policy maintenance.
 
-Users do not need to name stages. Treat stage names as optional force switches.
+Stage names are optional force switches. If one stage plainly owns the task,
+load it directly rather than keeping the router active.
 
 ## Orchestrate
 
-For non-lightweight work, fan out only when an independent track has clear
-ownership and enough evidence, time, or context-isolation value to beat its
-cost. The main agent owns scope, integration, final verification, and
-acceptance. See `references/subagent-dispatch.md`.
-
-For required acceptance of non-lightweight work, prefer a fresh-context
-Reviewer; if subagents are unavailable, say so and name the residual risk.
+Fan out only independent, clearly owned tracks whose value exceeds coordination
+cost. The main agent owns integration and final verification. Use a fresh
+Reviewer only when the risk matrix in `references/workflow-contract.md`
+requires one.
 
 ## Output
 
-Outside explicit grill/question-first mode, just answer for lightweight native
-work. Reserve `Route: ...` for non-lightweight handoffs, redirects, blockers, or
-goal/update work. Include `Memory Delta:` only when durable memory was checked
-or changed.
+For native work, just answer. Name the route only when handing work to another
+stage or reporting a redirect or blocker.

@@ -1,53 +1,47 @@
 # Research Protocol
 
-Use for evidence gathering that affects implementation, spending, public claims, current APIs, or recommendations.
+Use when current facts, source of truth, options, or external behavior must be
+resolved before a safe decision.
 
-## Modes
+## Depth
 
-- `lookup`: one stable fact or source. Answer locally with citation. Skip Search Plan and source census.
-- `research`: several sources, options, or unknowns. Synthesize concisely. Fan out queries; triage sources; label observed/inferred/claimed.
-- `deep`: high-stakes, current, or multi-domain work. Use fanout, source census, contradiction search, and coverage audit. Store overflow in artifacts.
+- **Lookup:** retrieve the smallest authoritative source that answers one fact.
+- **Research:** compare several sources or options and preserve material
+  disagreement.
+- **Deep:** use multiple source classes, contradiction search, coverage audit,
+  and isolated Explorer tracks when stakes or breadth justify the cost.
 
-Runtime diagnosis with repro, instrumentation, logs, browser state, or CI output belongs to `teamwork-debug`; research frames unknown source/repro questions and hands off when runtime evidence becomes decisive.
+Source counts and packet sizes are heuristics, not gates. Expand while a missing
+source class or contradiction could change the answer; stop when the core
+question is supported and additional retrieval would add only optional detail.
 
 ## Seed Expansion
 
-When a user gives an article/paper/URL/repo/report and asks for a field, area,
-tool, or current-state survey, treat it as seed evidence. Extract concepts,
-methods, authors, systems, claims, evals, dissent, adjacent terms; build
-perspective/query axes: overview, primary sources, implementations, benchmarks,
-critiques, failures, related concepts. Search public web only with sanitized
-concepts, not private text.
+When the user supplies a paper, URL, repository, or report as a seed for a
+broader survey, extract its concepts, claims, methods, systems, evaluations,
+dissent, and adjacent terms before choosing search axes. Treat the seed as
+evidence, not as the research boundary.
 
-## Source Census (deep mode)
+## Evidence Flow
 
-Build before broad reads: URL/path, class, primary/secondary, freshness, relevance, read/reject reason; flag UGC/summaries for cross-check. Use for >6 candidates, >10 expected sources, >3 source classes, or durable plans.
+1. State the decision question and required freshness/coverage.
+2. Prefer primary local evidence, official docs/specs/repos, papers, filings,
+   changelogs, and direct data.
+3. Parallelize independent noisy retrieval only when it saves time or protects
+   the main context.
+4. Distinguish direct evidence from material inference; record conflicts and
+   rejected sources only when they affect the conclusion.
+5. Use approved docs/search tools for current APIs and verify snippets against
+   a primary source or observed behavior when correctness depends on them.
+6. Return the conclusion, supporting evidence, material gaps/dissent, and the
+   next route if action is needed.
 
-## Flow (research and deep)
+Use a source census, evidence matrix, or citation ledger only when breadth makes
+the result easier to audit. Overflow belongs in a durable artifact only when
+artifact triggers apply.
 
-1. Clarify underspecified goals, constraints, timeframe, or output format.
-2. Write a Search Plan: source classes, primary sources, exclusions, freshness.
-3. For seeded research, run Seed Expansion before reading deeply.
-4. Fan out queries by perspectives, concepts, names, versions, failures, and dissent.
-5. Triage: prefer official docs, specs, repos, papers, filings, changelogs, and direct data over summaries.
-6. For current library/API questions, use an approved docs MCP when available; treat snippets as supporting until corroborated with primary source, tests, or verified behavior.
-7. Label evidence: observed, inferred, claimed.
-8. Run contradiction search and note Sources Rejected with reasons.
-9. Audit coverage: missing source classes, stale assumptions, language/region gaps.
-10. Produce capped Citation Ledger, Confidence, overflow artifact pointer, and route gaps to research or plan.
+## Public / Private Boundary
 
-## Public/Private Safety
-
-Stage public web apart from private files, MCP connectors, or credentials. Never send private repo facts, customer data, or secrets into public queries. Summarize private context locally, then search public concepts.
-
-## Structured Output
-
-Use tables by default for multi-source or multi-option research:
-
-- Source Census: `Source | Class | Freshness | Relevance | Use / Reject`.
-- Evidence Matrix: `Claim | Evidence | Status | Confidence`.
-- Option Matrix: `Option | Evidence | Tradeoff | Recommendation`.
-
-Output fields: Seed Expansion when used, Queries Tried, Sources Used/Rejected,
-Contradictions, Coverage Gaps, Citation Ledger, Confidence, Artifact Pointer
-when overflow, Next Route.
+Never send private source, customer data, credentials, or proprietary prompts
+to public search. Reduce private context to sanitized public concepts locally,
+then search those concepts.

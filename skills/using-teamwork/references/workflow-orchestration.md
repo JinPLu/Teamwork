@@ -1,6 +1,8 @@
 # Workflow Orchestration
 
-Use when normal stage-routed dispatch is insufficient. This is the heavyweight exception path; ordinary non-lightweight work uses Explorer, Designer, Judge, Worker, and Reviewer from `subagent-dispatch.md`.
+Use when normal stage-routed dispatch is insufficient. This is the heavyweight
+exception path; ordinary work selects only the roles whose independent evidence,
+ownership, or risk reduction justifies their coordination cost.
 
 ## When To Escalate
 
@@ -21,7 +23,10 @@ A workflow-class run has explicit state outside the main context:
 5. **Cross-check**: use independent Reviewer/Judge agents to challenge findings.
 6. **Synthesize**: produce final evidence, residual risks, and Memory Delta.
 
-Required fields: phase plan; concurrency cap and total-agent cap; token/time budget; packet/source budget and artifact path for many-shard research; ownership map; verification gate; stop controls; progress accounting (phase, agent count, elapsed time, result summary).
+Required fields: phase plan; concurrency and ownership bounds; verification
+gate; stop controls; and compact progress accounting. Use explicit token/time or
+source budgets when the user, runtime, or accepted plan supplies them; otherwise
+use runtime limits and no-progress stops without inventing numbers.
 
 ## Platform Mapping
 
@@ -29,4 +34,5 @@ Required fields: phase plan; concurrency cap and total-agent cap; token/time bud
 - Codex: staged custom-agent waves plus durable Teamwork artifacts.
 - Cursor: background `Task` waves or project runbooks.
 
-Workflow success is never self-acceptance. Final acceptance still needs direct verification and fresh review.
+Workflow success is never self-acceptance. Final acceptance needs direct
+verification and the independent review required by the accepted risk gate.

@@ -1,7 +1,7 @@
 # Subagent Dispatch
 
-Dispatch decisions, role-capability mapping, and platform field reference.
-Prompt and packets -> `subagent-contract.md`. Swarm orchestration -> `workflow-orchestration.md`.
+Dispatch, role mapping, and platform fields. Prompt/result shape ->
+`subagent-contract.md`; swarm orchestration -> `workflow-orchestration.md`.
 
 ## When To Dispatch
 
@@ -11,9 +11,12 @@ Dispatch when tracks are independent, isolatable, or parallel:
 - **Research**: Explorer tracks for external calibration, stale assumptions, option comparison, or broad source census.
 - **Design**: Designer for ambiguous decisions; Judge for durable, risky, or delegated plans.
 - **Execute**: Worker per independent owned slice with disjoint files, components, artifacts, or verification targets.
-- **Review**: fresh Reviewer for non-trivial outputs, high-risk diffs, delegated work, public contracts, release, security, or goal mode.
+- **Review**: Reviewer when independent acceptance reduces material risk; fresh
+  context only for the high-risk cases in `workflow-contract.md`.
 
-Skip dispatch for quick facts, tiny obvious edits, tightly coupled critical-path work, unavailable tools, missing authorization, explicit user opt-out, or when subagent context cost exceeds value. When skipping affects review or acceptance, record the reason.
+Skip dispatch for quick facts, obvious edits, tightly coupled work, unavailable
+tools, missing authorization, user opt-out, or context cost above value. Record
+the reason only when it affects review or acceptance.
 
 Use CodeGraph before Explorer fanout for structural code questions.
 
@@ -92,12 +95,19 @@ Use `readonly:true` for Explorer/Judge/Reviewer; `run_in_background:true` for lo
 
 Role defaults: Explorer->`balanced` (use `frontier` for broad/ambiguous/high-risk); Designer->`balanced` (use `frontier` for architecture or public contracts); Judge->`frontier` high reasoning; Worker->`coding` or `inherited`; Reviewer->`frontier` high reasoning.
 
-`performance-first` is the default on all platforms. `gpt55-high` and
-`gpt55-xhigh` are Codex override profiles that render every Teamwork Codex agent
-as gpt-5.5 with high or xhigh reasoning; Cursor and Claude Code keep native
-performance-first model tiers.
+`performance-first` is the default on all platforms. `gpt56-role` is the
+role-tiered Codex profile: Explorer=`gpt-5.6-terra` medium;
+Worker=`gpt-5.6-sol` medium; Designer/Judge/Reviewer=`gpt-5.6-sol` high; Deep
+Judge/Reviewer=`gpt-5.6-sol` max. `gpt55-high` and `gpt55-xhigh` remain explicit
+all-agent GPT-5.5 overrides. `gpt56-role` keeps Cursor and Claude Code on their
+native performance-first model tiers; legacy profiles retain their existing
+adapter behavior.
 `./install.sh --profile <profile> <target>` renders installed agents for Codex,
 Cursor, and Claude Code.
+
+`gpt56-role` uses `max` for Deep single-task scrutiny. Treat `ultra` as a
+separate orchestration experiment, not as a silent substitute for `max`; adopt
+it only with explicit nesting, cost, ownership, and acceptance evidence.
 
 Exact model identifiers belong in installed agent definitions, runtime schemas,
 or platform docs, not in ordinary plans. When a schema does not support a field,
@@ -107,8 +117,11 @@ Use `cheap-fast` only under explicit latency/quota pressure for trivial read-onl
 
 ## Economics
 
-- **Explorer/Reviewer default max 3** parallel; cap raw evidence in packets; use artifact pointers for overflow.
-- Workers: no fixed cap; dispatch per independent track. Before dispatching **more than 3 Workers**, state ownership map, integration order, verification target, and why parallel beats serial.
+- Start with the smallest useful Explorer/Reviewer set. Before dispatching more
+  than 3 parallel agents of any role, state the ownership map, integration
+  order, verification target, and why parallel beats serial.
+- Workers have no fixed prompt-level cap; runtime limits, disjoint ownership,
+  integration cost, and the accepted plan bound the wave.
 - Use batch dispatch or worktree isolation when ownership or merge cost is unclear.
 
 ## Codex Control Plane

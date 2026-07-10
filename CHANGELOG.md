@@ -5,6 +5,30 @@
 这份 changelog 按“用户升级后会感受到什么”来写，而不是只罗列文件改动。
 版本边界以 `VERSION` 和插件 manifest 的更新为准；当前仓库没有 git release tag。
 
+## 2.13.0 - 2026-07-10
+
+这版重点是：**针对 GPT-5.6 将 Teamwork 从“流程模板驱动”改成“最小护栏 + 条件协议”。**
+
+- 六个核心阶段改为约 300 词的 stage card；保留授权、必需状态、证据、范围、验证和停止条件，删除固定假设数、强制表格/图、固定 packet、默认 artifact 与一刀切 fresh review。
+- router 只在显式 Teamwork、跨阶段或下一阶段不清楚时介入；复杂但信息充分的任务直接推进，只有真实的用户决策缺口才提问，grill mode 仍只由显式请求激活。
+- 三平台角色模板约缩短 39%；TDD、source census、alternatives、fresh context 和 durable memory 都按任务条件触发。
+- 新增 Codex live trajectory pilot runner，可固定 `gpt-5.6-sol` 与 `medium/high/max` 运行并记录完整 provenance；模型或 effort 不可用时明确失败，绝不静默降级。
+- 验证从逐句文案锁定改为语义不变量、体积预算和“复杂任务自主推进”控制样例；`gpt56-role` 的 Terra/Sol/Deep `max` 映射保持不变。
+
+## 2.12.0 - 2026-07-10
+
+这版重点是：**为 GPT-5.6 增加按角色分层的 Codex subagent profile。**
+
+- 新增 `gpt56-role`：Explorer 使用 `gpt-5.6-terra` + `medium`；Worker 使用
+  `gpt-5.6-sol` + `medium`；Designer、Judge、Reviewer 使用 `gpt-5.6-sol` +
+  `high`；Deep Judge/Reviewer 使用 `gpt-5.6-sol` + `max`。
+- 该 profile 保留 Cursor 与 Claude Code 的原生 performance-first 层级；旧
+  `performance-first`、`cost-first` 和 `gpt55-*` profile 不改变行为。
+- installer、readiness drift 检查、project init、Codex global policy、README 和
+  validation 同步支持新 profile，不发生静默迁移。
+- 角色分层遵循当前 Codex 模型指引：Terra 负责读多写少的扫描，Sol 负责复杂实现与判断，
+  `max` 留给单任务深度验收；不在 subagent 内使用会再次自动分派的 Ultra。
+
 ## 2.11.1 - 2026-07-08
 
 这版重点是：**补实 question-first / grill-me 和轻量直做之间的优先级边界。**

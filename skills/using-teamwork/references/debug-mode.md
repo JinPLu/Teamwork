@@ -11,7 +11,7 @@ Debug is an evidence loop before or around a fix:
 | Phase | Required Decision |
 |---|---|
 | Frame | Expected behavior, actual behavior, repro path, acceptance signal |
-| Hypothesize | 3-5 ranked causes and what evidence would decide them |
+| Hypothesize | Plausible causes needed to choose the next discriminating evidence; do not add causes to meet a quota |
 | Instrument | Minimal temporary probes mapped to hypotheses |
 | Reproduce | Agent-run command/test/browser/CI repro, or human-in-loop repro on the same surface |
 | Analyze | Runtime evidence confirms/rejects hypotheses and names root cause |

@@ -38,13 +38,13 @@ is missing, and attach verification evidence to non-lightweight results.
 
 | User Problem | Plain Agent / Simple Subagents | Teamwork |
 |---|---|---|
-| Shallow research | Stops at the seed source | Expands from seed source to source census, primary sources, neighboring sources, counter-evidence, and open questions |
-| Uncontrolled delegation | Parallel chats drift apart | Only independent tracks fan out; Explorer, Designer, Judge, Worker, and Reviewer return packets for the main agent to integrate |
+| Shallow research | Stops at the seed source | Expands to primary, neighboring, and counter-evidence; only deep research requires a full source census |
+| Uncontrolled delegation | Parallel chats drift apart | Only independent tracks fan out; each role returns the smallest result needed for the parent decision |
 | Weak evidence | Treats titles, summaries, filenames, `latest`, or `v2` labels as facts | Maps important claims to papers, docs, source, config, logs, tests, diffs, artifacts, or primary sources |
 | Fake fallback | Defensive defaults hide missing state | Required values must come from the user, project files, source, tests, or an accepted plan; otherwise ask, research, or stop |
-| Premature action | Starts planning or executing while the task is complex or uncertain | Complex tasks ask outcome-changing decision/risk questions first; explicit "grill-me / ask first" requests wait for Shared Understanding |
+| Premature action | Plans or executes before critical state is known | Proceeds when sufficiently specified, asks only for a real user-owned decision, and enters question-first only on an explicit request |
 | Repeated guessing | Failure just triggers another guess | Records hypothesis, verification, failure class, and next step, then refreshes research or plan adequacy when needed |
-| Unreviewable done | Completion is self-reported | Execution returns verification evidence; important outcomes enter review or goal loops |
+| Unreviewable done | Completion is self-reported | Execution returns evidence; independent review is risk-gated for releases, goals, public contracts, or delegated writes |
 
 The point is not more process. It is to make evidence, delegation, memory, and
 acceptance inspectable when the task is too large for a single linear chat.
@@ -83,7 +83,7 @@ Strictly review this output for fake success, defensive fallback, and AI bloat.
 
 `using-teamwork` decides whether to stay on the native fast path or route into
 research, debug, plan, execute, review, goal, init, or update. Small work stays
-direct; complex work loads the extra rules, subagents, and artifacts only when useful.
+direct; complex work still loads only the protocols, subagents, and artifacts its risk requires.
 
 ## Quick Install
 
@@ -92,6 +92,7 @@ Codex default install:
 ```bash
 ./install.sh              # same as ./install.sh codex
 ./install.sh codex --profile cost-first
+./install.sh codex --profile gpt56-role
 ./install.sh codex --profile gpt55-xhigh
 ```
 
@@ -108,15 +109,19 @@ Project installs and local development:
 ```bash
 ./install.sh project
 ./install.sh --project-root /path/to/project project
+./install.sh --project-root /path/to/project --profile gpt56-role project-codex-agents
 ./install.sh --project-root /path/to/project --profile gpt55-xhigh project-codex-agents
 ./install.sh --project-root /path/to/project init-project
 ./install.sh --link codex
 ```
 
 `project` installs project-local skills/agents; `init-project` runs full project
-initialization. The Codex global policy matches reasoning depth to non-trivial
-or evidence-sensitive work, reads sources and verifies when needed, and
-minimizes optional progress narration. `teamwork-init` owns project rules,
+initialization. `gpt56-role` maps Explorer to `gpt-5.6-terra/medium`, Worker to
+`gpt-5.6-sol/medium`, Designer/Judge/Reviewer to `gpt-5.6-sol/high`, and Deep
+Judge/Reviewer to `gpt-5.6-sol/max`; Cursor and Claude Code retain their native
+performance-first tiers. The Codex global policy keeps only authorization,
+required-state, scope, evidence, and delegation boundaries; installed agent
+files own model mappings. `teamwork-init` owns project rules,
 AGENTS/CODEX/CURSOR/CLAUDE, `docs/teamwork/`, and CodeGraph setup. `teamwork-update` and
 `./scripts/check-update.sh` refresh skills/agents/policy and check installed
 surfaces plus version drift.
@@ -149,6 +154,7 @@ docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 ```bash
 ./scripts/check-update.sh --project /path/to/project
 ./scripts/validate.sh
+python3 scripts/run-teamwork-live-eval.py --help
 ```
 
 ## Read More

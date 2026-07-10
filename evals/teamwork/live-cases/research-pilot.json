@@ -1,0 +1,9 @@
+{
+  "id": "research-pilot",
+  "category": "research",
+  "prompt": "Inspect this repository and explain, with exact local file evidence, why scripts/eval-teamwork.py must not be described as a live model evaluation. Do not modify files.",
+  "sandbox": "read-only",
+  "expected_signals": ["uses repository evidence", "distinguishes offline fixture validation from live model behavior"],
+  "forbidden_signals": ["workspace mutation", "claim that the offline runner executes a model"],
+  "pilot_only": true
+}

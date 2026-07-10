@@ -1,85 +1,56 @@
 # Goal Iteration
 
-Use only for `teamwork-goal` or goal failure recovery.
+Use only when the user requests convergence, repeated attempts, or an explicit
+budget. Preserve the goal while changing strategy in response to evidence.
 
-## Goal Proposal
-Return chat proposal when objective, verification, scope, or stops are unclear:
+## Goal Contract
+
+Record the objective, done evidence, scope/non-goals, protected boundaries,
+Goal Invariants, available budget or runtime limit, and blocker conditions.
+Do not invent a numeric iteration/token/time budget when none was supplied or
+provided by the runtime; use a bounded no-progress stop instead.
+
+Use a native Codex goal only when the user explicitly requests that control
+surface or accepts a Goal Proposal. Otherwise keep the accepted plan and, when
+cross-turn continuity is needed, a rolling report.
+
+## Loop
 
 ```text
-Goal Proposal:
-- Objective: <one-sentence target>
-- Done Evidence: <commands, files, artifacts, or observable acceptance checks>
-- Scope: <allowed files, behavior, or systems>
-- Non-goals: <explicit exclusions>
-- Constraints: <permissions, compatibility, cost/time, protected boundaries>
-- Goal Invariants: <persistent user constraints and acceptance meaning>
-- Iteration Budget: <default 3 if unspecified>
-- Retry Policy: <failed verification returns to research + plan adequacy>
-- Artifacts: <none | suggested paths and why>
-- Suggested Subagent Routing: <split tracks or main-agent continuity reason>
-- Goal Text: <concise target for platform handoff>
+read invariants and latest evidence
+-> research/debug if needed
+-> update the runnable plan
+-> execute
+-> verify
+-> independent review when required
+-> accept, change strategy, or stop
 ```
 
-After approval: Codex calls `create_goal` with Goal Text and keeps Goal
-Invariants in plan/report. Cursor/Claude Code initializes
-`docs/teamwork/reports/YYYY-MM-DD-<goal-slug>.md` with `Status: active`.
+After a failed, partial, blocked, or no-progress attempt, read the latest failed
+evidence and prior attempt summary before more work. Record:
 
-## Goal Invariants
-Persist across every retry, plan review, and execution review: Goal Text,
-success signal, user constraints, non-goals, protected boundaries, acceptance
-criteria, allowed strictness, budget, no-progress stop, blocker conditions.
+- what was tried and what evidence failed;
+- constraints and Goal Invariants that still hold;
+- what must not be repeated;
+- the strategy delta for the next attempt.
 
-## Controller Loop
+If there is no evidence-backed strategy delta, count no progress and stop or ask
+for direction rather than repeating the attempt.
+
+## Durable Checkpoint
+
+Create or update a rolling report only for cross-turn/resumable work, repeated
+failures, or when the user requests durable state. A compact attempt row is
+enough:
+
 ```text
-init invariants -> read active.goal/report + prior attempts
--> Replay Preflight on retry -> research/debug if needed -> plan
--> plan review -> execute -> verify -> execution review -> Attempt Record
-+ Failure Reflection when needed -> accept / adequacy gate / stop
+Attempt | Invariants | Change/hypothesis | Verification/failure | Result/next
 ```
 
-## Replay Preflight
-Before retry plan or Worker dispatch after failed, partial, blocked, or
-no-progress attempts:
-1. Read active goal/report, prior Attempt Records, latest plan/review, failed verification.
-2. Name tried hypotheses, failed evidence, live constraints, and Do Not Repeat.
-3. State strategy delta. If none, count no-progress and stop/escalate.
-4. Preserve Goal Invariants; revise or ask on conflict.
+Add a failure reflection only after failed, partial, blocked, or no-progress
+work. The report is continuity evidence, not a replacement for source, plan,
+verification, or review.
 
-## Research + Plan Adequacy Gate
-Enter on failed verification, review `revise`/`blocked`, no-progress evidence
-delta, or executor plan mismatch.
-
-Read direct evidence first: failed output, current plan, execution review, Goal
-Invariants, and rolling report rows.
-
-Classify failure: research gap; debug gap; plan insufficiency; scope error;
-over-strict blocker; implementation deviation; true blocker. True blocker =
-missing credentials/resources, destructive risk, protected-boundary conflict,
-budget exhaustion, or unresolvable user intent.
-
-Refresh research/debug evidence and update the plan except for true blockers;
-execute within budget only after Replay Preflight. Stop for true blockers,
-exhausted budget, or repeated no-progress.
-
-## Rolling Report
-```text
-docs/teamwork/reports/YYYY-MM-DD-<goal-slug>.md
-```
-
-Start with retrieval header (`Artifact Type: report`). Add Mermaid for
-branching loops, then append one table row per verification/review cycle:
-
-| Attempt | Goal Invariants Check | Hypothesis / Change | Verification / Failure | Result / Next |
-|---|---|---|---|---|
-| <n> | <preserved/conflict> | <change or test> | <command/artifact/check> | <pass/fail/blocked + decision> |
-
-## Attempt Record And Failure Reflection
-Attempt Record is mandatory after every cycle. Failure Reflection is mandatory
-for failed, partial, blocked, or no-progress attempts: class,
-evidence delta, over/under-strict risk, Do Not Repeat, and next plan constraint.
-Debug rows add repro path, hypothesis, runtime evidence, root cause status,
-cleanup status, and next route.
-
-The report is memory, not a replacement for plan, research, review, or verification.
-
-Lifecycle verdicts are `accept | revise | blocked`. `reject` is not a lifecycle verdict; use only for rejected hypotheses, options, sources, memory candidates, or data buckets, with a reason.
+Stop on verified success, exhausted explicit/runtime budget, destructive or
+credential risk, unavailable required resources, protected-boundary conflict,
+unresolved user-owned intent, or repeated no progress.

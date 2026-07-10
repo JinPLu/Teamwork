@@ -89,6 +89,11 @@ OPTIMIZER_DECISIONS = {"candidate", "accepted", "rejected", "blocked"}
 PLACEHOLDER = "not_applicable"
 GLOB_CHARS = set("*?[")
 REQUIRED_QUESTION_FIRST_CASES = {
+    "complex-autonomy-control": {
+        "inspect_and_proceed",
+        "no_grill_ceremony",
+        "no_question",
+    },
     "question-first-explicit-grill": {
         "ask_one_question",
         "recommended_answer",
@@ -472,6 +477,24 @@ def validate_question_first_outputs(case_ids: set[str]) -> int:
             direct_markers = ("directly", "make the one-line", "fix the typo")
             if not any(item in output for item in direct_markers):
                 raise EvalError(f"{display_path(output_path)}:{index}: lightweight output must indicate direct action")
+        if case_id == "complex-autonomy-control":
+            forbidden = (
+                "question:",
+                "shared understanding packet",
+                "grill",
+                "question-first",
+                "which do you prefer",
+                "would you like",
+            )
+            if "?" in data["output"] or any(item in output for item in forbidden):
+                raise EvalError(
+                    f"{display_path(output_path)}:{index}: autonomy control must not ask or add grill ceremony"
+                )
+            proceed_markers = ("inspect", "proceed", "design", "implement")
+            if not any(item in output for item in proceed_markers):
+                raise EvalError(
+                    f"{display_path(output_path)}:{index}: autonomy control must indicate inspection and action"
+                )
 
         seen.add(case_id)
         seen_platforms[case_id].add(platform)

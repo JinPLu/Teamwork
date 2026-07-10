@@ -1,6 +1,7 @@
 # Codex Usage
 
-Teamwork for Codex is the reference adapter for this open-source skill package.
+Teamwork for Codex is the reference Codex runtime profile for this open-source
+skill package.
 It helps a personal research-collaboration agent do deeper research, controlled
 delegation, coding, review, and long-running verification without turning every
 prompt into a process exercise.
@@ -19,6 +20,7 @@ to stop on missing required state, and how to attach evidence to completion.
 ```bash
 ./install.sh              # same as ./install.sh codex
 ./install.sh codex --profile cost-first
+./install.sh codex --profile gpt56-role
 ./install.sh codex --profile gpt55-high
 ./install.sh codex --profile gpt55-xhigh
 ./install.sh codex-agents
@@ -28,8 +30,9 @@ to stop on missing required state, and how to attach evidence to completion.
 
 Use `./install.sh project` or `./install.sh --project-root <path> project` for
 project-local skills and agents. Use `./install.sh --project-root <path>
---profile gpt55-high project-codex-agents` or `--profile gpt55-xhigh` when only
-Codex subagent model definitions need a high-effort override. Use
+--profile gpt56-role project-codex-agents` for the role-tiered GPT-5.6 mapping;
+use `--profile gpt55-high` or `--profile gpt55-xhigh` for explicit all-agent
+GPT-5.5 overrides. Use
 `./install.sh --link codex` while editing this checkout.
 
 ## How To Use
@@ -57,11 +60,10 @@ recorded, or `docs/teamwork/` created. Project instructions should hold local
 facts, required values, protected boundaries, and acceptance checks. Reusable
 workflow rules belong in Teamwork skills.
 
-The global Codex bootstrap block installed by `./install.sh codex` authorizes
-subagents when Teamwork dispatch policy says they are worthwhile, sets the
-profile, applies think-first discipline to non-trivial or evidence-sensitive
-work, minimizes optional commentary, and states the no-silent-defaults rule for
-required values.
+The global Codex bootstrap block installed by `./install.sh codex` stays small:
+it records authorization, required-state, scope, evidence, and delegation
+boundaries plus the active profile name. Installed agent files own exact model
+and effort mappings.
 
 ## Subagents
 
@@ -75,8 +77,8 @@ Typical roles:
 - Reviewer: fresh-context acceptance review.
 
 The main agent remains responsible for user questions, scope, integration,
-verification, and final response. Every subagent returns one packet, then stops;
-the main agent records returned packets or blocker rationale for delegated work.
+verification, and final response. Every subagent returns one bounded result,
+then stops; add role-specific fields only when they affect the parent decision.
 
 Advanced dispatch fields, role mapping, model classes, and lifecycle details
 live in `skills/using-teamwork/references/subagent-dispatch.md`. Prompt and
@@ -96,17 +98,15 @@ docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 ```
 
-Use durable artifacts for broad research, goal-mode work, failed iteration,
-delegated execution, high-risk or public behavior, and explicit repository plans.
+Use durable artifacts when evidence or state needs cross-turn reuse, supports a
+goal, records repeated failure, or justifies high-risk/public behavior.
 Do not store volatile chat progress in project instructions.
 
 ## Goal Mode
 
-The Codex runtime profile uses native Codex goals as the autonomous control
-plane. If the target is unclear, first return a chat `Goal Proposal`; after user
-approval, use native goal state for lifecycle and Teamwork artifacts for
-evidence, plan, attempts, and acceptance. Failed attempts should refresh
-research or plan adequacy before another retry.
+Use native Codex goal state when the user explicitly requests that control
+surface or accepts a Goal Proposal. Do not invent a numeric budget; use the
+user/runtime budget or stop after repeated no-progress without a new strategy.
 
 ## Updates
 
@@ -115,6 +115,7 @@ Use `teamwork-update` for both user refreshes and maintainer releases.
 ```bash
 ./scripts/check-update.sh --project <path>
 ./scripts/validate.sh
+python3 scripts/run-teamwork-live-eval.py --help
 ```
 
 User refresh updates installed skills, agents, and policy. Maintainer release

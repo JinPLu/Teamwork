@@ -1,141 +1,67 @@
 # Subagent Contract
 
-Prompt structure and compact packet schemas for dispatched subagents.
-Dispatch decisions and platform fields → `subagent-dispatch.md`.
+Use only after `subagent-dispatch.md` decides delegation has net value. The
+parent owns scope, integration, user questions, and final acceptance.
 
 ## Prompt
 
 Every delegated prompt contains four fields:
 
 ```text
-Mission:     one question, decision, slice, or review
-Owned Scope: files and components to inspect or edit
-Verify:      command, artifact, behavior, or checklist proving completion
-Stop:        return packet once, then stop; orchestrator owns integration and final acceptance
+Mission:     one question, decision, owned slice, or review
+Owned Scope: files/components to inspect or edit, plus protected boundaries
+Verify:      command, artifact, behavior, or checklist that supports the result
+Stop:        return one result and stop; the parent integrates and accepts
 ```
 
-Role Card (include when platform requires): Conceptual Role (Explorer|Designer|Judge|Worker|Reviewer); Native Fields per `subagent-dispatch.md`; Mode (read-only|workspace-write|review-only); Context Strategy (condensed-evidence-only|artifact-backed|owned-files-only|fresh-context-review|full-history-fork).
+Add role, mode, context strategy, source paths, or output details only when they
+change the work. Subagents do not expand scope, clean up unrelated code, chain
+more agents, accept the overall task, or continue monitoring after return. They
+report missing execution-critical values instead of inventing defaults or
+masking them with fallbacks.
 
-Forbidden always: scope expansion, unrelated cleanup, chaining subagents, final acceptance, monitoring after packet. Block on missing env/path/command/model/config/credentials/invariants; report, never invent defaults or mask them with fallbacks.
+Lifecycle verdicts are `accept | revise | blocked`. Reserve `rejected` for a
+hypothesis, option, source, or data item and include the reason.
 
-Lifecycle verdicts are `accept | revise | blocked`; `reject` is not a lifecycle verdict. Use rejected only for hypotheses, options, sources, memory candidates, or data buckets, with a reason.
+## Base Result
 
-## Packets
+Return the smallest result that preserves the parent's decision evidence:
 
-### Explorer Result Packet
-Use compact fields and include only evidence that affects the parent decision.
 ```text
-Role: Explorer
-Native Fields:
-Question:
-Files / Commands Read:
-Observed:
-Inferred:
-Claimed:
-Confidence:
-Dissent / Risks:
-Open Questions:
-Suggested Next Step:
-```
-Web/deep extras: Seed Expansion; Perspective Map; Search Plan; Queries Tried; Source Census; Sources Used; Sources Rejected; Coverage Audit; Citation Ledger. Cap each at 8; overflow → artifact pointer.
-
-### Designer Decision Packet
-Use compact fields and include only decisions, tradeoffs, and blockers that
-affect the parent plan.
-```text
-Role: Designer
-Native Fields:
-Decision Scope:
-Decision:
-Decision Rule:
-Option Matrix:
-Rejected Options:
-Open Questions:
+Role:
+Status or Verdict:
+Result:
+Evidence / Verification:
+Files Changed: <paths | none>
+Risks / Blockers:
+Next: <parent decision, follow-up evidence, or none>
 ```
 
-### Judge Plan Review Packet
-```text
-Role: Judge
-Native Fields:
-Verdict: accept | revise | blocked
-Plan Source:
-Evidence Adequacy:
-Protected Boundary Adequacy:
-Verification Adequacy:
-Acceptance Gap:
-Required Fixes:
-Verdict Rationale:
-```
+## Conditional Role Fields
 
-### Worker Completion Packet
-```text
-Role: Worker
-Native Fields:
-Status: done | done_with_concerns | blocked | needs_context
-Plan Source:
-Owned Scope:
-Plan Step Mapping:
-Files Changed:
-Implemented:
-Mode: behavior_change | bug_failure | mechanical | planned_implementation
-TDD Evidence:
-Failing Test / Repro Evidence:
-Root Cause Evidence:
-Hypothesis Tested:
-Instrumentation / Runtime Logs:
-Verification Commands:
-Verification Result: pass | fail | partial | not_run
-Claim Supported By Evidence: yes | no
-Review Loop Status: not_applicable | pending | spec_passed | quality_passed | final_reviewed
-Deviations:
-Protected Boundary Hits:
-Concerns / Blockers:
-Open Questions:
-```
+- **Explorer:** question, sources/files read, direct findings, material
+  inference, confidence, dissent, and coverage gap. Add a source census or
+  citation ledger only for broad/deep research.
+- **Designer:** decision, decision rule, real alternatives and tradeoffs, open
+  user-owned decisions.
+- **Judge:** plan source, evidence/scope/verification adequacy, acceptance gap,
+  and smallest required fixes.
+- **Worker:** owned scope, implemented change, focused verification, deviations,
+  protected-boundary hits, and blocker. Add repro, root-cause, TDD, or cleanup
+  evidence only when that protocol was used.
+- **Reviewer:** review target, requirements/evidence map, actionable findings
+  with severity, verification reviewed, and residual risk.
 
-### Reviewer Verdict Packet
-```text
-Role: Reviewer
-Native Fields:
-Verdict: accept | revise | blocked
-Review Target:
-Base/Head or Diff Source:
-Requirements / Evidence Map:
-Issues:
-Severity Crosswalk: blocker | major | minor
-Verification Reviewed:
-Manual Smoke Evidence:
-Routing Conformance:
-Residual Risk:
-Next Route:
-```
+For goal retries, add Goal Invariants, prior failed evidence, strategy delta,
+drift, and retry/stop verdict. For durable-memory work, subagents may propose a
+`Memory Delta Candidate`; only the parent promotes memory.
 
-Optional memory fields (add when work may change durable memory):
-```text
-Memory Delta Candidate: none | current | plan | research | decision | supersede | compact | deferred
-```
-Subagents propose memory candidates only. They do not promote or recall into canonical Teamwork artifacts.
+## Dispatch Record
 
-Optional goal-mode fields (add for goal-mode work or failed-goal recovery):
-```text
-Goal Anchor: Goal Text; Goal Invariants; active goal/report; Attempt Record source
-Replay Preflight: done | not_applicable | blocked
-Prior Attempts Reviewed:
-Drift Verdict: on_goal | drifted | unclear
-Retry Verdict: continue | replan | stop | blocked
-```
-
-## Dispatch Log
-Each subagent must return one packet, then stop. Main agent records returned
-packets and blockers in the Actual Dispatch Log.
-## Actual Dispatch Log
-Record review-relevant dispatch outcomes.
+Record only review-relevant delegation outcomes:
 
 ```text
-Actual Dispatch Log:
-- Role:
-  Native Fields:
-  Ownership:
-  Status: dispatched | returned | blocked | skipped_after_discovery
-  Returned Packet or Blocker: <packet summary | blocker rationale | skipped reason>
+- Role / ownership: <role and scope>
+  Status: returned | blocked | skipped_after_discovery
+  Result or blocker: <compact evidence-backed summary>
 ```

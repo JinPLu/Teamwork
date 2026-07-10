@@ -4,7 +4,7 @@
   "source": "synthetic",
   "target": "skills/using-teamwork/references/workflow-contract.md",
   "platforms": ["codex", "cursor", "claude"],
-  "prompt": "Redesign a cross-platform Teamwork behavior that affects routing, agents, validation, and install surfaces.",
+  "prompt": "Redesign a cross-platform Teamwork behavior that affects routing, agents, validation, and install surfaces. The public contract is undecided: should existing users keep the old behavior by default, or should the new behavior become the default even if it is breaking? Do not choose that compatibility policy for me.",
   "expected": {
     "mode": "ordinary_uncertainty",
     "requires": ["outcome-changing decision/risk question", "no Shared Understanding Packet ceremony"]

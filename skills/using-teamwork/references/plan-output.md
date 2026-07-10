@@ -1,81 +1,46 @@
 # Plan Output
 
-## Lightweight Plan
+Plans describe the destination, protected scope, proof, and stopping conditions.
+Do not add sections or formats that do not change execution.
 
-For clear small/medium work, state in chat:
+## Chat Plan
 
-```text
-Goal: <one sentence>
-Scope: <paths/components in and out>
-Steps: <short ordered bullets, or a table when 3+ comparable steps>
-Verification: <focused command/check and expected result>
-Stop: <condition that triggers ask/replan>
-```
-
-Add Dispatch Guidance or Review Need only when material. Use a compact step
-table for three or more comparable steps.
-
-## Durable Plan Contract
-
-Durable plans are pre-action specs and runbooks. Favor tables/diagrams when
-they clarify ownership, evidence, or gates. When none is warranted, say
-`Durable Plan: none` with rationale.
-
-## Durable Plan Header
+For clear bounded work, use only what is needed:
 
 ```text
-Artifact Type: plan
-Status: active | superseded | accepted | blocked
-Last Updated: YYYY-MM-DD
-Search Keys: <errors, commands, paths, components, model/API names, issue/PR IDs>
-Abstract: 2-4 sentences covering goal, selected direction, and applicability boundary.
-Linked Artifacts: <related research or report paths, or none>
+Goal:
+Scope / protected boundaries:
+Steps:
+Verification:
+Stop / replan condition:
 ```
 
-## Durable Plan Sections
+Add dispatch or independent-review guidance only when it is material.
 
-Use this order unless local convention is stronger:
+## Durable Plan
 
-1. `# <Goal> Plan` and the header above.
-2. `## 0. Current State` table:
-   `Item | Evidence / Current Conclusion`.
-3. `## 1. Flow` Mermaid `flowchart` for multi-stage, branching, delegated, or
-   goal-mode.
-4. `## 2. Scope And Requirements` table:
-   `Requirement | Required Values / Invariants | Evidence | Planned Handling | Verification`.
-5. `## 3. Execution Table`:
-   `Phase | Owner | Input | Output | Verification | Stop / Replan`.
-6. `## 4. Artifacts / Interfaces`:
-   `Artifact or File | Purpose | Required Contents / Contract`.
-7. `## 5. Gates`:
-   `Gate | Go Condition | Stop Condition`.
-8. `## 6. Dispatch / Goal Surface`:
-   `Track | Owner | Native Fields | Owned Scope | Packet / Result`.
-9. `## 7. Acceptance Checklist`:
-   `Check | Required Evidence | Strength`.
-10. `## 8. Next Actions` numbered list.
+Use a durable plan for cross-turn, goal, high-risk, public/shared behavior,
+long delegation, or an explicit repository plan. Start with the artifact header
+from `artifact-protocol.md`, then include the applicable parts below:
 
-## Goal-Mode Additions
+- current evidence and selected direction;
+- requirements, execution-critical values, and protected boundaries;
+- executable phases with ownership and outputs;
+- interfaces or artifacts whose contract matters;
+- verification and acceptance evidence;
+- stop, retry, and rollback conditions;
+- delegation or goal state when used;
+- next executable actions.
 
-In `Dispatch / Goal Surface`, name the control plane: Codex native goal, or
-Cursor/Claude rolling report. Include Goal Anchor fields: Goal Text, Goal
-Invariants, active goal/report, Attempt Record source, prior attempts reviewed,
-Drift Verdict, Retry Verdict, budget, success signal, no-progress stop,
-retry/research trigger, and acceptance review. After failed, partial,
-blocked, or no-progress attempts, include Replay Preflight and Do Not Repeat.
-The plan is the current runnable approach, not the goal state.
+Use tables or diagrams only when they materially clarify comparisons, branching,
+ownership, or state transitions. Section names and order are not an acceptance
+contract; required decisions and evidence are.
 
-For bug/failure plans, state route: `research -> plan -> execute`,
-`debug -> plan -> execute`, or `debug -> execute`. Include repro path,
-hypotheses, instrumentation, runtime evidence, cleanup, and review acceptance.
+Goal work additionally preserves Goal Invariants, prior failed evidence,
+strategy delta, success/no-progress signals, and retry/stop verdict. Bug plans
+include repro and runtime-evidence handling only when diagnosis is part of the
+plan.
 
-## Handoff Rules
-
-- Worker: execute accepted rows only; no adjacent cleanup or fallback masking.
-- Reviewer/Judge: check evidence adequacy, scope, gates, verification, and
-  acceptance criteria.
-- Actual Dispatch Log records review-relevant roles, native fields, prompt
-  packets, returned packet status, and blocker rationale.
-
-Goal-mode plans include every section. Ordinary durable plans stay concise while
-preserving state, scope, execution, verification, gates, risks, stops, and route.
+Workers execute accepted scope. Judges and Reviewers check evidence, scope,
+verification, and stop conditions. Delegation records may be compact as long as
+ownership, return/blocker, and integration status remain auditable.

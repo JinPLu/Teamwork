@@ -5,81 +5,50 @@ description: Use when the user asks to review/check a plan, artifact, diff, impl
 
 # Teamwork Review
 
-Use for non-lightweight acceptance, output/diff scrutiny, strict-quality/deslop
-checks, PR walkthroughs, and reviewer passes. Review reads evidence directly and
-never relies on summaries.
+## Outcome
 
-Read `skills/using-teamwork/references/workflow-contract.md` for evidence.
-Other refs under `skills/using-teamwork/references/`: `review-checks.md`,
-`verification-patterns.md`, `review-lenses.md`, `role-playbook.md`,
-`subagent-dispatch.md`, `subagent-contract.md`, `debug-mode.md`,
-`artifact-protocol.md`, `eval-gate.md`, and `grill-mode.md`.
+Issue an independent, evidence-based `accept`, `revise`, or `blocked` verdict
+for a plan, execution, or output. Review does not fix findings unless asked.
 
-## Rules
+## Enter When
 
-- Choose `mode: plan`, `mode: execution`, or `mode: output`.
-- Prefer a fresh-context Reviewer subagent for non-lightweight required
-  acceptance — high-risk, public-contract, delegated, security, destructive,
-  release, and goal-mode work. Same-context self-review is not acceptance.
-- Local review is fine for lightweight work, same-context checks, or when
-  subagent tools are unavailable after discovery; label any required fresh-review
-  verdict as unreviewed when no fresh review ran.
-- Inspect sources, artifacts, diff, logs, tests, command output, plan, and user
-  constraints; label key evidence `observed`, `inferred`, or `claimed`.
-- Treat executor summaries, `code-reviewer` output, git diff, CI summaries, and
-  test output as inputs, not final verdicts.
-- Do not fix issues during review unless asked.
-- Reject delegated tracks without a returned packet or blocker rationale.
-- For every code diff, apply the code-maintenance baseline: owner, flow,
-  tests/config, invariants, and no fallback masking.
-- For Teamwork package behavior changes, require fixture evals or `no relevant
-  eval case`; reject empty release split evidence; fixture evals are not live
-  model proof; check ledgers for material skill/harness decisions.
-- For SkillOpt-Lite/HarnessOpt-Lite claims, require trajectory samples,
-  baseline/treatment parity, explicit model/config or offline mode, gate
-  decision, rollback, ledger, release audit-only separation, and fresh review;
-  harness mutation also needs allowlist plus smoke and full dev gate evidence.
-- Release, high-risk harness, and public-contract package changes need fresh
-  review after validation/evals; same-context acceptance is insufficient.
-- When grill/question-first override was invoked, reject planning,
-  implementation, goal handoff, invented answers, or delegated bypass that lacks
-  a confirmed Shared Understanding Packet or explicit exit.
+Use for requested review, acceptance, diff/output scrutiny, strict-quality
+checks, PR walkthroughs, or risk-gated completion. Prefer fresh context for
+high-risk, public-contract, delegated, security, destructive, release, or goal
+acceptance; local self-review is sufficient for lightweight checks unless a
+governing gate says otherwise.
 
-## Plan Review
+## Do And Boundaries
 
-Check scope, requirements mapping, evidence, verification, Required Values /
-Invariants, accepted fallback contracts, risks, dispatch split, and boundaries.
-For goal-mode retry plans, also verify Goal Invariants, Replay Preflight, and
-Goal Anchor fields before accepting.
+Select `mode: plan`, `execution`, or `output`. Read primary sources directly:
+constraints, plan, files, diff, artifacts, logs, tests, and command output.
+Treat summaries and CI/test reports as inputs, not verdicts. Map each material
+requirement to evidence and label important claims `observed`, `inferred`, or
+`claimed`. For code, check owner/flow understanding, scope conformance,
+tests/config, invariants, fallback masking, verification strength, delegated
+packets, and touched-diff hygiene. Re-review must inspect the prior verdict,
+requested fixes, and new evidence.
 
-## Execution Review
+Classify findings as `blocker`, `major`, or `minor`; state the evidence and
+required action. Never upgrade build-only, partial, or blocked proof into live
+verification.
 
-Check diff scope, plan conformance, verification, no invariant-masking
-fallback, Actual Dispatch Log, Worker packets, dispatch economics, and hygiene.
-For re-review after `revise`, require prior verdict, fixes, evidence, and
-re-review verdict.
-For goal-mode work, require the Attempt Record, any Failure Reflection, and a
-drift/retry verdict tied to prior attempts.
-For debug-derived work, check repro, hypothesis evidence, root cause, same-surface
-post-fix verification, and instrumentation cleanup. Load `review-lenses.md` for
-strict quality, deslop, PR walkthrough, or structural regression.
+## Done When
 
-## Verdict
+Return mode, evidence read, requirements/evidence map, verification strength,
+findings, dissent/uncertainty, verdict, and concise rationale. Acceptance
+requires every gating requirement to pass or be explicitly out of scope.
 
-```text
-Mode: plan | execution | output
-Evidence Read:
-- <observed|inferred|claimed> <path/command/artifact>: <finding>
-Requirements / Evidence Map:
-- <requirement or step> -> <evidence> -> <pass|fail|partial|not reviewed>
-Verification Strength: live-verified | targeted-test-verified | build-only | blocked | failed | not_applicable
-Findings:
-- [blocker|major|minor] <issue> - <evidence> - <required action>
-Dissent / Uncertainty: <none or concern>
-Verdict: accept | revise | blocked
-Rationale: <brief evidence-based reason>
-```
+## Escalate
 
-Use `blocker`, `major`, `minor` consistently: unsafe/impossible acceptance,
-required-before-proceed, or follow-up note. Include `Memory Delta:` only when
-durable project memory was checked or changed.
+Stop and return `blocked` when required evidence or access is missing; return
+`revise` for correctable scope, quality, or proof failures.
+
+## Conditional Protocols
+
+Use `review-checks.md`, `verification-patterns.md`, and `review-lenses.md` for
+the selected review. Load `debug-mode.md` or `goal-iteration.md` only for those
+flows. Teamwork package, SkillOpt/HarnessOpt, ledger, and release rules are owned
+by `eval-gate.md`; load them only when that gate applies. Use `grill-mode.md`
+only for explicit grill/question-first mode. Paths are under
+`skills/using-teamwork/references/`.
