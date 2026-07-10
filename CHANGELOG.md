@@ -3,7 +3,7 @@
 [English](CHANGELOG.en.md)
 
 这份 changelog 按“用户升级后会感受到什么”来写，而不是只罗列文件改动。
-版本边界以 `VERSION` 和插件 manifest 的更新为准；当前仓库没有 git release tag。
+版本边界以 `VERSION`、插件 manifests 和 GitHub release tags 为准。
 
 ## 2.13.0 - 2026-07-10
 

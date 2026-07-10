@@ -3,8 +3,8 @@
 [中文](CHANGELOG.md)
 
 This changelog explains what users get after upgrading, not just which files
-changed. Version boundaries come from `VERSION` and plugin manifest updates;
-the repository currently has no git release tags.
+changed. Version boundaries come from `VERSION`, plugin manifests, and GitHub
+release tags.
 
 ## 2.13.0 - 2026-07-10
 
