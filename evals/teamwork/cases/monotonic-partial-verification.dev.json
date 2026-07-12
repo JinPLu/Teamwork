@@ -1,0 +1,22 @@
+{
+  "id": "monotonic-partial-verification",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/workflow-contract.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "One tranche passes, one fails, and a third is NOT VERIFIED. Synthesize the overall completion state without rerunning checks.",
+  "expected": {
+    "status": "partial",
+    "requires": ["preserved failed tranche", "preserved NOT VERIFIED tranche", "no unsupported completion upgrade"]
+  },
+  "must": [
+    "keep failed, NOT VERIFIED, and partial-tranche evidence visible",
+    "require new direct evidence before changing the status of an affected claim"
+  ],
+  "must_not": [
+    "convert partial evidence into overall completion through synthesis",
+    "erase negative evidence after a retry narrative or successful unrelated tranche"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Deterministic control for monotonic verification state."
+}

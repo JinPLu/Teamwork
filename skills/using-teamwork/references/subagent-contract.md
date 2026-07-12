@@ -14,11 +14,12 @@ Verify:      command, artifact, behavior, or checklist that supports the result
 Stop:        return one result and stop; the parent integrates and accepts
 ```
 
-Add role, mode, context strategy, source paths, or output details only when they
-change the work. Subagents do not expand scope, clean up unrelated code, chain
-more agents, accept the overall task, or continue monitoring after return. They
-report missing execution-critical values instead of inventing defaults or
-masking them with fallbacks.
+The prompt is one self-contained packet: include the relevant facts and source
+paths instead of relying on inherited history. Add role, mode, or output details
+only when they change the work. Subagents do not expand scope, clean up
+unrelated code, chain more agents, accept the overall task, or continue after
+return. They report missing execution-critical values instead of inventing
+defaults or masking them with fallbacks.
 
 Lifecycle verdicts are `accept | revise | blocked`. Reserve `rejected` for a
 hypothesis, option, source, or data item and include the reason.

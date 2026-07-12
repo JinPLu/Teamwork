@@ -23,6 +23,8 @@ to stop on missing required state, and how to attach evidence to completion.
 ./install.sh codex --profile gpt56-role  # compatibility alias
 ./install.sh codex --profile gpt56-high
 ./install.sh codex --profile gpt56-xhigh
+./install.sh codex --profile cost-first --notifications
+./install.sh codex --no-notifications
 ./install.sh codex-agents
 ./install.sh codex-policy
 ./install.sh all
@@ -37,6 +39,11 @@ Designer/Judge/Reviewer to `gpt-5.6-sol/high`, and Deep Judge/Reviewer to
 Use `./install.sh project` or `./install.sh --project-root <path> project` for
 project-local skills and agents. Use
 `./install.sh --link codex` while editing this checkout.
+
+Notifications are opt-in for direct installs. They play distinct OS-native
+sounds for main `Stop` and `PermissionRequest`, keep subagents silent, and never
+control continuation or inspect message content. Plugin installs load the same
+minimal hook after explicit `/hooks` trust.
 
 ## How To Use
 
@@ -87,6 +94,12 @@ Advanced dispatch fields, role mapping, model classes, and lifecycle details
 live in `skills/using-teamwork/references/subagent-dispatch.md`. Prompt and
 packet contracts live in `subagent-contract.md`.
 
+After installing agents or upgrading Codex, run
+`python3 scripts/check-codex-routing.py`. It validates the Teamwork profile
+contract, bundled model/effort support, and prompt loading without model calls
+or catalog mutation. It reports `multi_agent_version` for diagnosis but never
+uses that value as proof that a callable spawn selector exists.
+
 ## Evidence And Memory
 
 Teamwork treats repo files, source excerpts, papers, official docs, tests, logs,
@@ -118,8 +131,14 @@ Use `teamwork-update` for both user refreshes and maintainer releases.
 ```bash
 ./scripts/check-update.sh --project <path>
 ./scripts/validate.sh
+python3 scripts/check-codex-routing.py
 python3 scripts/run-teamwork-live-eval.py --help
+python3 scripts/audit-codex-sessions.py --help
 ```
+
+The session auditor reports metadata-only orchestration and cumulative token
+telemetry. Cached/replayed input is not presented as unique context or billing,
+and historical profiles require explicit session-time evidence.
 
 User refresh updates installed skills, agents, and policy. Maintainer release
 work updates `VERSION`, manifests, docs, validation, and install surfaces

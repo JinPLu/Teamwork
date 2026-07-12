@@ -56,7 +56,14 @@ The defaults are `--copy` and `performance-first`: Codex uses GPT-5.6 Terra/Sol,
 ```bash
 ./install.sh --help
 ./install.sh --profile cost-first codex
+./install.sh --notifications --profile cost-first codex
 ```
+
+`--notifications` adds user-level main-turn completion and permission-request
+sounds for Codex/Claude Code; subagents stay silent and normal installs preserve
+existing notification settings. `--no-notifications` removes only Teamwork's
+handlers. Codex plugin users explicitly trust them through `/hooks`. Cursor is
+not claimed supported until its local hook path is live-verified.
 
 For project-local installation or full project initialization:
 
@@ -122,9 +129,16 @@ To include a project-local installation in the check:
 
 ```bash
 ./scripts/validate.sh
+python3 scripts/check-codex-routing.py
 python3 scripts/eval-teamwork.py --split dev
 python3 scripts/run-teamwork-live-eval.py --help
+python3 scripts/audit-codex-sessions.py --help
 ```
+
+`check-codex-routing.py` performs read-only checks of the Teamwork agent
+contract, model/effort support in the current bundled catalog, and prompt
+loading. It does not call a model, mutate the catalog, or treat
+`multi_agent_version` as proof that the current spawn schema exposes a selector.
 
 ## Documentation
 

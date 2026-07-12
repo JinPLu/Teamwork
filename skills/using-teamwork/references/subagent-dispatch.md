@@ -5,18 +5,18 @@ Dispatch, role mapping, and platform fields. Prompt/result shape ->
 
 ## When To Dispatch
 
-Dispatch when tracks are independent, isolatable, or parallel:
+Stay native for small, clear work. Dispatch only when a bounded independent
+track's evidence, latency, or isolation value exceeds coordination cost:
 
-- **Explore**: Explorer for project/source orientation, artifact lookup, literature/source census, or evidence beyond a quick literal read.
-- **Research**: Explorer tracks for external calibration, stale assumptions, option comparison, or broad source census.
+- **Explore/Research**: Explorer for orientation, artifact lookup, external
+  calibration, stale assumptions, or evidence beyond a quick read.
 - **Design**: Designer for ambiguous decisions; Judge for durable, risky, or delegated plans.
 - **Execute**: Worker per independent owned slice with disjoint files, components, artifacts, or verification targets.
 - **Review**: Reviewer when independent acceptance reduces material risk; fresh
   context only for the high-risk cases in `workflow-contract.md`.
 
 Skip dispatch for quick facts, obvious edits, tightly coupled work, unavailable
-tools, missing authorization, user opt-out, or context cost above value. Record
-the reason only when it affects review or acceptance.
+tools, missing authority, user opt-out, or excessive context cost.
 
 Use CodeGraph before Explorer fanout for structural code questions.
 
@@ -28,21 +28,24 @@ Use CodeGraph before Explorer fanout for structural code questions.
 - **Worker**: implements owned slices; workspace-write.
 - **Reviewer**: checks completed work; read-only.
 
-Deep Judge and Deep Reviewer are severity profiles of Judge and Reviewer, not separate roles.
-
 ## Lifecycle
 
-A dispatched subagent returns one packet, then stops. It does not monitor, reopen scope, chain new subagents, or continue after returning its packet.
+A subagent returns one self-contained packet, then stops. It does not monitor,
+expand scope, chain agents, or resume after return. Give materially new work to
+a fresh agent and packet.
 
-Main agent records returned packets and blockers in the Actual Dispatch Log for
-review. Integration, final verification, and acceptance remain main-thread
-responsibilities.
+The main agent records review-relevant outcomes and owns integration,
+verification, and acceptance.
 
 ## Platform Fields
 
-Codex uses `agent_type`; Cursor uses `subagent_type`; Claude Code uses `Task`.
+Inspect the spawn schema and send only supported fields. Generic Codex uses
+`task_name`, `message`, and `fork_turns`; fresh Workers and Reviewers default to
+`fork_turns:"none"` with self-contained packets. Do not assume `agent_type`,
+`reasoning_effort`, model overrides, or other fields exist.
 
-**Codex** - role dispatch: `agent_type`, optional model/profile fields supported by the runtime, `reasoning_effort`, `fork_context:false`. Full-history fork: `fork_context:true` only (no other fields).
+**Codex custom-agent runtimes** - when the schema supports them, use installed
+role fields below. Otherwise put role, evidence bar, and stop rule in `message`.
 
 | Role | agent_type | Fallback |
 |---|---|---|
@@ -54,7 +57,7 @@ Codex uses `agent_type`; Cursor uses `subagent_type`; Claude Code uses `Task`.
 | Deep Judge | `teamwork_deep_judge` | `default` + role in prompt |
 | Deep Reviewer | `teamwork_deep_reviewer` | `default` + role in prompt |
 
-Reasoning effort: `fast`->low, `standard`->medium, `high reasoning`->high, `deep reasoning`->max.
+Effort: `fast`->low, `standard`->medium, `high reasoning`->high, `deep reasoning`->max.
 
 **Cursor** - prefer custom agents from `~/.cursor/agents/` by `name`; fallback `subagent_type` and runtime-supported model fields; no `reasoning_effort` or `fork_context`.
 
@@ -104,25 +107,26 @@ Composer 2.5/Sonnet 4.6/Opus 4.8; Claude uses current `haiku`/`sonnet`/`opus` al
 `./install.sh --profile <profile> <target>` renders installed agents for Codex,
 Cursor, and Claude Code.
 
-`performance-first` and `gpt56-role` use `max` for Deep single-task scrutiny. Treat `ultra` as a
-separate orchestration experiment, not as a silent substitute for `max`; adopt
-it only with explicit nesting, cost, ownership, and acceptance evidence.
+`performance-first` and `gpt56-role` use `max` for Deep scrutiny. Treat `ultra`
+as a separate experiment requiring explicit cost, ownership, and acceptance
+evidence.
 
 Exact model identifiers belong in installed agent definitions, runtime schemas,
 or platform docs, not in ordinary plans. When a schema does not support a field,
 omit it and express the role, evidence bar, and packet contract in the prompt.
+Diagnostics record the profile active at session time and the actual child model
+separately; never infer a historical profile from the current install marker.
 
-Use `cheap-fast` only under explicit latency/quota pressure for trivial read-only evidence. Never for Judge, Reviewer, architecture Designer, public behavior, failed-goal adequacy, or performance-first projects.
+Use `cheap-fast` only under explicit latency/quota pressure for trivial
+read-only evidence; never for risk review, architecture, public behavior,
+failed-goal adequacy, or performance-first projects.
 
 ## Economics
 
-- Start with the smallest useful Explorer/Reviewer set. Before dispatching more
-  than 3 parallel agents of any role, state the ownership map, integration
-  order, verification target, and why parallel beats serial.
+- The first wave defaults to at most two agents with disjoint ownership.
+  Integrate and assess their packets before opening another wave.
 - Workers have no fixed prompt-level cap; runtime limits, disjoint ownership,
   integration cost, and the accepted plan bound the wave.
-- Use batch dispatch or worktree isolation when ownership or merge cost is unclear.
-
 ## Codex Control Plane
 
 - Native Codex goal state is the source of truth for autonomous lifecycle.

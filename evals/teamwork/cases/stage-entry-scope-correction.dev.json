@@ -1,0 +1,22 @@
+{
+  "id": "stage-entry-scope-correction",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/workflow-contract.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Begin an execution stage, then receive a user correction that changes the protected scope while delegated work based on the old scope is outstanding.",
+  "expected": {
+    "requires": ["Stage Entry Card", "scope delta gate", "invalid packet cancellation"]
+  },
+  "must": [
+    "freeze objective, scope, oracle, truth identity, authority, and stop before stage action",
+    "pause actions outside the frozen card until authority is revised",
+    "cancel outstanding packets invalidated by the user correction and integrate only still-valid results"
+  ],
+  "must_not": [
+    "treat the correction as optional context",
+    "merge a returned result whose premises conflict with the corrected scope"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Deterministic control for stage identity and user-authoritative scope changes."
+}

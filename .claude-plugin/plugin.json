@@ -1,7 +1,7 @@
 {
   "name": "teamwork-skill",
-  "version": "2.14.0",
-  "description": "Claude Code adapter skills for evidence-first planning, execution, review, Task-subagent fan-out, profile rendering, and durable goal convergence.",
+  "version": "2.15.0",
+  "description": "Claude Code adapter skills for lean evidence-first planning, bounded Task subagents, review, durable goal convergence, and opt-in lifecycle sounds.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"

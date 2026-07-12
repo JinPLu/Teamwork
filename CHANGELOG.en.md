@@ -6,6 +6,34 @@ This changelog explains what users get after upgrading, not just which files
 changed. Version boundaries come from `VERSION`, plugin manifests, and GitHub
 release tags.
 
+## 2.15.0 - 2026-07-13
+
+This release **adds controls designed to reduce long-task context waste and
+optional notification sounds that never steer the workflow**. Comparative
+token savings remain to be measured on matched real tasks.
+
+- Fresh subagents default to no inherited history and a first wave of at most
+  two agents: one packet, one return. User corrections cancel invalid work, and
+  `NOT VERIFIED` or a completed tranche cannot become whole-goal completion.
+- A Stage Entry Card freezes objective, scope, acceptance oracle, truth
+  identity, authority, and stop rules. Generic Codex dispatch now sends only
+  fields exposed by the live runtime schema.
+- Codex profiles now state the leaf-only contract explicitly. A read-only
+  routing readiness check validates required fields, nickname uniqueness,
+  catalog model/effort support, and prompt loading without mutating the catalog
+  or treating `multi_agent_version` as spawn-selector evidence.
+- A privacy-safe Codex session auditor separates historical
+  `performance-first` evidence from current `cost-first` and labels
+  cached/replayed tokens as operational telemetry rather than billing.
+- `--notifications` installs main-turn completion and permission-request hook
+  configuration for Codex/Claude Code. Codex was live-smoked on macOS; Claude
+  was installation-tested but its runtime events remain unverified. Subagents
+  stay silent; the hook reads metadata, emits neutral JSON, and fails open.
+  Cursor remains unsupported until its local hook path is live-verified.
+- The design follows current GPT-5.6 guidance: outcome-first prompts, each rule
+  stated once, and explicit success/permission/stop conditions. Static contract
+  evals pass; matched same-task quality/resource measurement is still pending.
+
 ## 2.14.0 - 2026-07-11
 
 This release **refreshes subagent model mappings for every platform and every
