@@ -27,8 +27,6 @@ their methods; load other references only when their condition applies.
 6. **Delegate economically.** Fan out only independent, clearly owned work whose
    evidence, time, or context-isolation value exceeds coordination cost. Main
    owns scope, integration, and final verification.
-7. **Grill mode is explicit.** Only an explicit grill/question-first request
-   activates `grill-mode.md`; complexity or ambiguity alone does not.
 
 ## Stage Entry Card
 

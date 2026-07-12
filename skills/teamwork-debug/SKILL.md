@@ -46,6 +46,5 @@ missing.
 
 Use `debug-mode.md` for the diagnostic packet, `verification-patterns.md` for
 baseline/treatment proof, `subagent-dispatch.md` and `subagent-contract.md` for
-independent tracks, `artifact-protocol.md` for durable findings, and
-`grill-mode.md` only for explicit grill/question-first mode. Paths are under
+independent tracks, and `artifact-protocol.md` for durable findings. Paths are under
 `skills/using-teamwork/references/`.

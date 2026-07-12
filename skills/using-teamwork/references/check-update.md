@@ -9,6 +9,7 @@ Use with `teamwork-init` (readiness gate) and `teamwork-update` (user refresh).
 - checkout `VERSION` vs upstream GitHub `VERSION`
 - global skills/agents under `~/.codex`, `~/.cursor`, `~/.claude`
 - skill file content drift against this checkout
+- bounded Codex custom-agent routing readiness in `~/.codex/config.toml` (9 total threads: one main plus eight subagents)
 - bootstrap policy markers (Codex/Claude managed files; Cursor UI paste)
 - optional `--project PATH` for repo-local `.cursor/.codex/.claude`
 - best-effort Cursor model slug sample and CodeGraph MCP detection
@@ -29,14 +30,14 @@ Before project instruction work, run:
 ./scripts/check-update.sh --readiness --project "$PWD"
 ```
 
-When `INSTALL_READY=no`, run the printed `NEXT` equivalent directly during
-init, then continue local project initialization. Do not stop before creating or
-updating `AGENTS.md`, `docs/teamwork/`, project skills/agents, and repo-local
-CodeGraph when the CLI is available.
+When `INSTALL_READY=no`, run `NEXT` during init, then continue creating the
+local instructions, memory, skills/agents, and available CodeGraph index.
 
-Run `./install.sh cursor-policy-copy` when clipboard tooling exists; report the
-remaining manual Cursor User Rules paste because Cursor UI state cannot be
-reliably written by the installer.
+Only a user-level Codex install repairs `codex-routing`; project targets do not.
+After a change, restart Codex before a fresh role/model validation.
+
+Run `./install.sh cursor-policy-copy` when possible; report the remaining manual
+Cursor User Rules paste because the installer cannot verify UI state.
 
 Do not install external MCP/memory tools during the gate unless the user
 approves via `optional-skills.md`.
@@ -51,7 +52,8 @@ When the user asks to update or refresh Teamwork (not release a new version):
    `./install.sh --project-root "<project-path>" project` when project-local
    surfaces are stale.
 4. Use `./install.sh cursor-policy-copy` for Cursor User Rules paste when needed.
-5. Re-run `./scripts/check-update.sh` and report remaining gaps.
+5. Restart Codex when routing changed, then re-run `./scripts/check-update.sh`
+   and report remaining gaps.
 
 Do not bump `VERSION` or edit plugin manifests in user mode.
 

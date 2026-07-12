@@ -9,6 +9,7 @@ FETCH_UPSTREAM=1
 
 SKILLS=(
   using-teamwork
+  grill-me
   teamwork-debug
   teamwork-init
   teamwork-goal
@@ -114,6 +115,27 @@ notification_status() {
   esac
   python3 "$ROOT/scripts/configure-notifications.py" status \
     --config "$config" --notifier "$notifier" 2>/dev/null || echo "invalid"
+}
+
+codex_routing_status() {
+  local output status
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "unavailable"
+    return 0
+  fi
+  if output="$(python3 "$ROOT/scripts/configure-codex-routing.py" --check 2>/dev/null)"; then
+    echo "ready"
+    return 0
+  fi
+  status="$(printf '%s\n' "$output" | sed -n 's/^CODEX_ROUTING=//p' | head -n1)"
+  case "$status" in
+    missing|drift|invalid)
+      echo "$status"
+      ;;
+    *)
+      echo "invalid"
+      ;;
+  esac
 }
 
 skills_status() {
@@ -347,7 +369,7 @@ policy_status() {
     && grep -q "$marker" "$file" \
     && grep -q "Act by default within the user's request" "$file" \
     && grep -q 'routine,' "$file" \
-    && grep -q 'Grill/question-first behavior activates only when explicitly requested' "$file" \
+    && grep -q 'assistant-authored "Grill status: active"' "$file" \
     && grep -q 'Do not invent them' "$file" \
     && grep -q 'Installed agent files own model mappings; active profile:' "$file"; then
     echo "ok"
@@ -458,6 +480,7 @@ print_readiness() {
   [[ "$(agents_content_status "$HOME/.codex/agents" toml codex "${CODEX_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("codex-agent-content"); }
   [[ "$(agents_content_status "$HOME/.cursor/agents" md cursor "${CURSOR_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("cursor-agent-content"); }
   [[ "$(agents_content_status "$HOME/.claude/agents" md claude "${CLAUDE_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("claude-agent-content"); }
+  [[ "$(codex_routing_status)" == "ready" ]] || { ready=no; missing+=("codex-routing"); }
   [[ "$(policy_status codex)" == "ok" ]] || { ready=no; missing+=("codex-policy"); }
   [[ "$(policy_status claude)" == "ok" ]] || { ready=no; missing+=("claude-policy"); }
   missing+=("cursor-policy-manual")
@@ -494,6 +517,7 @@ print_readiness() {
   echo "CURSOR_VERSION=$cursor_v"
   echo "CLAUDE_VERSION=$claude_v"
   echo "CODEX_NOTIFICATIONS=$(notification_status codex)"
+  echo "CODEX_ROUTING=$(codex_routing_status)"
   echo "CLAUDE_NOTIFICATIONS=$(notification_status claude)"
   echo "CURSOR_NOTIFICATIONS=$(notification_status cursor)"
   echo "MISSING=$(IFS=,; echo "${missing[*]-}")"
@@ -564,6 +588,13 @@ print_report() {
     printf '%-8s %-8s %-12s %-8s %-14s %-8s %-18s %-12s\n' \
       "$platform" "$skills_s" "$content_s" "$agents_s" "$agent_content_s" "$policy_s" "$drift_s" "$prof_s"
   done
+  echo
+
+  echo "--- Codex custom-agent routing ---"
+  local codex_routing_s
+  codex_routing_s="$(codex_routing_status)"
+  echo "config: $codex_routing_s"
+  [[ "$codex_routing_s" == "ready" ]] || note_issue
   echo
 
   echo "--- Optional notifications ---"

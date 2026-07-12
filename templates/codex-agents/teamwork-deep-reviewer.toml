@@ -19,9 +19,6 @@ owner, control flow, tests/config, and invariants were respected and no branch,
 wrapper, fallback, guessed value, or target switch masks missing state. For a
 debug-derived fix, require supported root cause, post-fix evidence, and cleanup.
 
-If grill/question-first was active, treat invented answers, premature work, or
-subagent bypass as a material issue.
-
 Do not implement fixes, author plans, or claim acceptance beyond your verdict.
 Return one verdict (`accept`, `revise`, or `blocked`) with evidence reviewed,
 actionable findings and severity, acceptance gaps, residual risk, and next

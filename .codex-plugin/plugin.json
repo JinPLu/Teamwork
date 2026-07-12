@@ -16,13 +16,14 @@
     "workflow",
     "agents",
     "planning",
+    "grill-me",
     "review"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Deep Codex collaboration with goals, proactive custom agents, plans, and fresh review.",
-      "longDescription": "A Codex-first broad entrypoint plus dedicated stage skills for project instruction initialization, evidence gathering, question-first grill mode, native Teamwork index/current memory, goal proposal, durable artifact memory, scoped execution, native fast-path handling for lightweight work, role-subagent fan-out for valuable independent evidence/design/worker/review tracks, fresh review, package updates, and autonomous goal convergence on top of Codex native capabilities. The same protocol installs on Cursor and Claude Code as supported adapters via ./install.sh cursor or ./install.sh claude.",
+      "longDescription": "A Codex-first broad entrypoint plus a metadata-visible grill-me interaction contract with authoritative state markers, dedicated stages for project instruction initialization, evidence gathering, durable memory, scoped execution, native fast-path handling, bounded role-subagent work, fresh review, package updates, and goal convergence. The shared contract installs on Cursor and Claude Code; live parity is not implied.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -34,6 +35,7 @@
       "Design a Codex native goal with evidence, scope, retry policy, artifacts, and subagent routing.",
       "Initialize or slim project AGENTS/CODEX/CLAUDE rules with performance-first or cost-first Codex mode while preserving local evidence boundaries.",
       "Fan out valuable independent Codex work into evidence-gathering, planning, execution, and review tracks.",
+      "Grill zero to three outcome-changing user decisions and skip reversible implementation trivia.",
       "Use current role-optimized Teamwork agents proactively, including GPT-5.6 Sol max Deep Judge/Reviewer for high-risk Codex review.",
       "Map completion claims and Memory Delta status to direct evidence before accepting the result.",
       "Update Teamwork version metadata, refresh installed skills/agents/global policy, and validate the installed surface."

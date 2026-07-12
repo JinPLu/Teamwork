@@ -1,0 +1,13 @@
+{
+  "id": "grill-multiturn-continuation-exit",
+  "split": "dev",
+  "source": "trajectory",
+  "target": "skills/grill-me/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Grill me on this compatibility change before planning.",
+  "expected": {"mode": "grill_trajectory", "requires": ["second-turn continuation", "third-turn continuation", "explicit close", "exit authority"]},
+  "must": ["keep active state when answers omit trigger text", "close only from explicit proceed wording"],
+  "must_not": ["treat an answer as exit", "emit active state after close", "enact before close"],
+  "rubric": "assistance-quality",
+  "evidence": "docs/teamwork/plans/2026-07-13-grill-me-entry-and-multiturn-reliability.md"
+}

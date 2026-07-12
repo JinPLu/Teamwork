@@ -49,6 +49,5 @@ Stop and return `blocked` when required evidence or access is missing; return
 Use `review-checks.md`, `verification-patterns.md`, and `review-lenses.md` for
 the selected review. Load `debug-mode.md` or `goal-iteration.md` only for those
 flows. Teamwork package, SkillOpt/HarnessOpt, ledger, and release rules are owned
-by `eval-gate.md`; load them only when that gate applies. Use `grill-mode.md`
-only for explicit grill/question-first mode. Paths are under
+by `eval-gate.md`; load them only when that gate applies. Paths are under
 `skills/using-teamwork/references/`.

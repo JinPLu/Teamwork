@@ -39,13 +39,15 @@ verification, and acceptance.
 
 ## Platform Fields
 
-Inspect the spawn schema and send only supported fields. Generic Codex uses
-`task_name`, `message`, and `fork_turns`; fresh Workers and Reviewers default to
-`fork_turns:"none"` with self-contained packets. Do not assume `agent_type`,
-`reasoning_effort`, model overrides, or other fields exist.
+Inspect the live schema. A ready Teamwork Codex install exposes a non-reserved `teamwork`
+namespace with `agent_type`; select the installed role and use
+`fork_turns:"none"` with a self-contained fresh packet. The config checker proves
+local state only. Nine threads permit eight subagents; dispatch remains
+value-gated. If generic fields remain, label the child `parent-inherited`; put
+role, evidence bar, and stop rule in `message`.
 
-**Codex custom-agent runtimes** - when the schema supports them, use installed
-role fields below. Otherwise put role, evidence bar, and stop rule in `message`.
+**Codex custom-agent runtimes** - use the exact installed role when `agent_type`
+is callable. A full-history fork intentionally bypasses fresh role overrides.
 
 | Role | agent_type | Fallback |
 |---|---|---|

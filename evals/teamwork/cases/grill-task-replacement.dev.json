@@ -1,0 +1,13 @@
+{
+  "id": "grill-task-replacement",
+  "split": "dev",
+  "source": "trajectory",
+  "target": "skills/grill-me/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Grill me on the implementation plan.",
+  "expected": {"mode": "grill_close", "requires": ["clear task replacement closes", "exit authority", "next route"]},
+  "must": ["close when the user explicitly replaces the current task", "ground exit authority in the replacement wording"],
+  "must_not": ["keep the replaced grill task active", "invent an exit"],
+  "rubric": "assistance-quality",
+  "evidence": "docs/teamwork/plans/2026-07-13-grill-me-entry-and-multiturn-reliability.md"
+}

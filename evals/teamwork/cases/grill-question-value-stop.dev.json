@@ -1,0 +1,13 @@
+{
+  "id": "grill-question-value-stop",
+  "split": "dev",
+  "source": "bug",
+  "target": "skills/grill-me/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Grill me on a change that includes one public compatibility decision plus routine language and file-layout choices.",
+  "expected": {"mode": "grill_bounded", "requires": ["one material question", "exhausted close", "no implementation authority", "no confidence claim"]},
+  "must": ["ask only the outcome-changing compatibility question", "close when only reversible implementation choices remain", "cap the interview at three questions"],
+  "must_not": ["ask about programming language, file count, filenames, naming, or internal organization", "ask a continue checkpoint", "invent confidence", "grant implementation authority"],
+  "rubric": "assistance-quality",
+  "evidence": "User-reported low-value question and padding regression, 2026-07-13."
+}

@@ -33,9 +33,11 @@ Teamwork-managed full setup first and report gaps after. Use
 `./install.sh --project-root "<project-root>" init-project` from the Teamwork
 checkout, or perform the same steps directly when unavailable. The command
 installs missing Teamwork-managed global/project skills, agents, and policies;
-creates/updates the managed `AGENTS.md` block, `docs/teamwork/`, local ignore
-entries, and CodeGraph when the CLI exists. Context7/docs MCP is a read-only
+configures Codex custom-agent routing; creates/updates the managed `AGENTS.md`
+block, `docs/teamwork/`, local ignore entries, and CodeGraph when the CLI exists. Context7/docs MCP is a read-only
 external docs substrate, not a project index; detect and record availability.
+The routing contract uses a root-inclusive limit of 9 threads: one main thread
+plus up to eight subagents.
 
 Ask only before external MCP/skill installation, credentials, protected server
 state, destructive actions, or unresolved required values. Missing Teamwork
@@ -51,8 +53,8 @@ Before instruction work, run from the Teamwork checkout:
 ```
 
 When `INSTALL_READY=no`, run the printed `NEXT` equivalent directly as part of
-init, copy Cursor policy to the clipboard when possible, and report any
-remaining manual Cursor paste or optional substrate gaps.
+init; `codex-routing` is repaired by the user-level Codex install. Report that
+Codex must restart after a routing change, plus remaining manual/optional gaps.
 
 ## Workflow
 
@@ -83,8 +85,6 @@ remaining manual Cursor paste or optional substrate gaps.
 
 - Do not copy full external workflow, MCP, or project docs into project
   instructions.
-- Preserve grill/question-first override as a cross-cutting interaction protocol, not a Teamwork stage.
-- In active grill/question-first mode, inspect facts for the next question; do not change init surfaces until packet confirmation or exit.
 - Do not replace project evidence sources with Teamwork artifacts.
 - Do not alter protected planning, secrets, server state, or current experiment
   truth without evidence-backed user intent.

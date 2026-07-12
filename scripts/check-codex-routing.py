@@ -12,6 +12,9 @@ import subprocess
 import sys
 from typing import Any
 
+from codex_routing_config import RoutingConfigError
+from codex_routing_config import inspect_config
+
 try:
     import tomllib
 except ModuleNotFoundError:  # Python < 3.11 uses the narrow fallback below.
@@ -294,8 +297,17 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         if args.skip_prompt
         else inspect_prompt(codex, args.timeout_seconds)
     )
+    try:
+        routing = inspect_config(args.config)
+    except RoutingConfigError as exc:
+        raise CheckFailure(f"could not inspect Codex routing config: {exc}") from exc
+    report["routing"] = routing.to_dict()
+    if not routing.ready:
+        raise CheckFailure(
+            "Codex custom-agent routing is not ready: " + "; ".join(routing.issues)
+        )
     report["spawn_selector"] = (
-        "inspect the callable spawn schema; catalog multi_agent_version is not proof"
+        "config ready; a fresh callable-schema or live spawn probe remains the behavioral proof"
     )
     report["mutations"] = "none"
     report["model_calls"] = "none"
@@ -323,6 +335,9 @@ def print_text_report(report: dict[str, Any]) -> None:
     else:
         print(f"PROMPT_GLOBAL_POLICY={prompt['global_policy']}")
         print(f"PROMPT_PROJECT_INSTRUCTIONS={prompt['project_instructions']}")
+    routing = report["routing"]
+    print(f"ROUTING_CONFIG={routing['status']}")
+    print(f"ROUTING_NAMESPACE=teamwork")
     print(f"SPAWN_SELECTOR={report['spawn_selector']}")
     print("MUTATIONS=none")
     print("MODEL_CALLS=none")
@@ -341,6 +356,12 @@ def parse_args() -> argparse.Namespace:
         type=pathlib.Path,
         default=pathlib.Path.home() / ".codex" / "agents",
         help="Teamwork Codex agent directory (default: ~/.codex/agents)",
+    )
+    parser.add_argument(
+        "--config",
+        type=pathlib.Path,
+        default=pathlib.Path.home() / ".codex" / "config.toml",
+        help="Codex config path (default: ~/.codex/config.toml)",
     )
     parser.add_argument(
         "--profiles-only",

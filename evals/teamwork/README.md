@@ -47,11 +47,15 @@ model behavior. Eval output is evidence, not final acceptance.
 
 ## Maintainer-only live trajectories
 
-`scripts/run-teamwork-live-eval.py` is a separate, stdlib-only live lane. It
-runs `codex exec --ephemeral --json`, records raw events and the final answer,
-and writes provenance-rich JSONL. It never changes the model or reasoning
-effort after launch: an unavailable model, including `gpt-5.6-sol` at `max`, is
-recorded as unavailable or failed rather than silently replaced.
+`scripts/run-teamwork-live-eval.py` is a separate, stdlib-only live lane. Schema
+v2 keeps one-shot cases on `codex exec --ephemeral --json`; multi-turn cases
+start a persistent session and continue only through
+`codex exec resume <session-id> --json`. Each turn records its prompt, argv,
+events, final answer, active/closed state, usage, reported cost when available,
+and elapsed time. Execution, behavior, and model provenance have separate
+statuses; a grill contract violation fails the run, and a runtime that does not
+report the resolved model remains unavailable for live-verification claims. A
+missing session id fails without `--last` or fallback.
 
 All execution-critical inputs are explicit. Cases default to `read-only` by
 declaring it in the case file; `workspace-write` is permitted only when the
@@ -75,7 +79,13 @@ python3 scripts/run-teamwork-live-eval.py \
 Remove `--dry-run` only for an intentional maintainer experiment. Choose a new
 output path for every invocation; the runner refuses to overwrite provenance.
 Large live trajectories belong under `docs/teamwork/reports/`, not in tracked
-eval outputs.
+eval outputs. The fake-Codex integration test exercises resume argv ordering,
+session propagation, and missing-session failure without model spend:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_live_eval_runner.py
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_eval_teamwork_mutations.py
+```
 
 For prompt A/B work, compare baseline and slim arms with the same non-treatment
 configuration: model, effort, cases, repeats, sandbox, runner hash, and relevant

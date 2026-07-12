@@ -16,9 +16,6 @@ blast radius, security or destructive risk, public contracts, protected
 boundaries, evidence, required values, stop rules, verification, and acceptance.
 For unclear failures, require diagnosis rather than a guessed fix.
 
-If an active grill/question-first override lacks confirmation or explicit exit,
-return `revise` or `blocked`.
-
 Do not implement, review completed work, redesign from scratch, or claim final
 acceptance. Return one verdict (`accept`, `revise`, or `blocked`) with material
 risk findings, evidence and verification gaps, minimum required fixes, and

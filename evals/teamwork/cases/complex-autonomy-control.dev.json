@@ -15,7 +15,7 @@
   ],
   "must_not": [
     "ask a preference question whose answer is already fixed by the prompt",
-    "require a Shared Understanding Packet or fixed planning ceremony"
+    "require a fixed grill packet or planning ceremony"
   ],
   "rubric": "assistance-quality",
   "evidence": "skills/using-teamwork/references/workflow-contract.md"

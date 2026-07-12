@@ -47,6 +47,5 @@ unresolved user intent. Ask before expanding authority or scope.
 ## Conditional Protocols
 
 Use `goal-iteration.md` for proposal, replay, attempt, and rolling-report
-formats; use each narrower stage protocol when that stage runs. Use
-`grill-mode.md` only for explicit grill/question-first mode. Paths are under
+formats; use each narrower stage protocol when that stage runs. Paths are under
 `skills/using-teamwork/references/`.

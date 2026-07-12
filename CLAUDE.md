@@ -54,9 +54,15 @@ Ask for the outcome, not a workflow label:
 - execute an accepted plan or known root-cause fix;
 - debug reproducible failures with runtime evidence;
 - review for unsupported claims, defensive fallback, and AI-generated clutter;
-- continue until a target is verified, budget ends, or a real blocker appears.
+- continue until a target is verified, budget ends, or a real blocker appears;
+- select `grill-me` or say "grill me" to challenge zero to three material user
+  decisions without asking about reversible implementation details.
 
 Small questions and tiny edits stay on Claude Code's native path.
+The managed Claude policy contract instructs Claude to preserve one
+assistant-authored active marker across replies during explicit grill sessions;
+quoted marker text is inert. Real multi-turn Claude behavior is not yet
+live-verified.
 
 ## Subagents
 

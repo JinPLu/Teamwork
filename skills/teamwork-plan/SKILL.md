@@ -47,6 +47,6 @@ acceptance. Return to research/debug when evidence cannot safely support a plan.
 ## Conditional Protocols
 
 Use `plan-output.md` for durable plans, `verification-patterns.md` for proof,
-`subagent-dispatch.md` and `subagent-contract.md` for delegation,
-`goal-iteration.md` for retry invariants, and `grill-mode.md` only for explicit
-grill/question-first mode. Paths are under `skills/using-teamwork/references/`.
+`subagent-dispatch.md` and `subagent-contract.md` for delegation, and
+`goal-iteration.md` for retry invariants. Paths are under
+`skills/using-teamwork/references/`.

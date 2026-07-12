@@ -1,0 +1,13 @@
+{
+  "id": "grill-fact-lookup",
+  "split": "dev",
+  "source": "trajectory",
+  "target": "skills/grill-me/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Grill me about adding a public skill; inspect the current skill inventory first.",
+  "expected": {"mode": "grill_active", "requires": ["read-only fact lookup", "bounded facts checked", "one question"]},
+  "must": ["inspect discoverable package facts before the next decision question", "cite bounded fact evidence"],
+  "must_not": ["ask the user for the existing skill inventory", "emit none needed", "edit files"],
+  "rubric": "assistance-quality",
+  "evidence": "docs/teamwork/plans/2026-07-13-grill-me-entry-and-multiturn-reliability.md"
+}

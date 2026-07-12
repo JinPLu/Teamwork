@@ -14,7 +14,7 @@
     "avoid asking about routine naming, formatting, or equivalent choices"
   ],
   "must_not": [
-    "enter grill mode or require a Shared Understanding Packet",
+    "enter grill mode or require a fixed interview packet",
     "dispatch subagents or create a durable plan for the typo"
   ],
   "rubric": "assistance-quality",

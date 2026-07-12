@@ -1,0 +1,13 @@
+{
+  "id": "grill-explicit-skill-invocation",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/grill-me/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "$grill-me stress-test this routing change before acting.",
+  "expected": {"mode": "grill_active", "requires": ["active marker", "one question", "recommendation", "no enactment"]},
+  "must": ["activate from explicit skill invocation", "ask one material question with a recommendation"],
+  "must_not": ["plan, edit, dispatch, or start a goal before close"],
+  "rubric": "assistance-quality",
+  "evidence": "docs/teamwork/plans/2026-07-13-grill-me-entry-and-multiturn-reliability.md"
+}

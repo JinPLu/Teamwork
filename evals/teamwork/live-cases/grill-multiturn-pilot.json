@@ -1,0 +1,22 @@
+{
+  "id": "grill-multiturn-pilot",
+  "category": "grill",
+  "prompts": [
+    "$grill-me stress-test this compatibility change before planning.",
+    "Existing users must keep the current default.",
+    "Proceed with the recommended plan."
+  ],
+  "sandbox": "read-only",
+  "expected_signals": [
+    "Grill status: active on the first and second assistant turns",
+    "exactly one question and one recommendation on each active turn",
+    "Grill status: closed with Exit authority on the final turn"
+  ],
+  "forbidden_signals": [
+    "edit or mutation before close",
+    "subagent dispatch",
+    "answer treated as implicit exit",
+    "model or effort fallback"
+  ],
+  "pilot_only": true
+}

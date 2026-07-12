@@ -1,0 +1,13 @@
+{
+  "id": "grill-negative-signal-control",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/grill-me/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Grill me—actually, do not grill; act normally and just implement the accepted change.",
+  "expected": {"mode": "ordinary_execute", "requires": ["negative signal wins", "no activation"]},
+  "must": ["honor the explicit do-not-grill and act-normally wording"],
+  "must_not": ["emit an active marker", "ask a grill question"],
+  "rubric": "assistance-quality",
+  "evidence": "docs/teamwork/plans/2026-07-13-grill-me-entry-and-multiturn-reliability.md"
+}

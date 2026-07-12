@@ -40,13 +40,14 @@ cd Teamwork
 定位这个 CI 失败的根因，先用日志和复现证据确认，再修复。
 按已接受的计划执行并验证；失败要记录原因，直到通过或遇到真实 blocker。
 严格 review 这次产出，重点检查假成功、防御性 fallback 和 AI 冗余。
+grill me：只挑战会改变结果的关键决策；没有实质问题就停止，不要问语言或文件数量。
 ```
 
 ## 选择安装方式
 
 | 平台 | 命令 | 安装结果 |
 |---|---|---|
-| Codex | `./install.sh codex` | `~/.codex/skills/`、`~/.codex/agents/`，以及 `~/.codex/AGENTS.md` 中的 Teamwork 标记块 |
+| Codex | `./install.sh codex` | `~/.codex/skills/`、`~/.codex/agents/`、`~/.codex/AGENTS.md` 标记块，以及 `~/.codex/config.toml` 中有限的角色路由键 |
 | Cursor | `./install.sh cursor` | `~/.cursor/skills/`、`~/.cursor/agents/`；按终端提示复制 User Rules |
 | Claude Code | `./install.sh claude` | `~/.claude/skills/`、`~/.claude/agents/`，以及 `~/.claude/CLAUDE.md` 中的 Teamwork 标记块 |
 | 三个平台 | `./install.sh all` | 安装以上全部用户级入口 |
@@ -64,6 +65,11 @@ subagent 默认静音，普通安装不会改变现有通知配置。用 `--no-n
 只移除 Teamwork 自己的 handler。Codex plugin 用户需在 `/hooks` 明确信任；
 Cursor 本地 hook 尚未 live-verified，因此不伪装成已支持。
 
+用户级 Codex 安装会原子迁移 custom-agent 路由，使 fresh subagent 能通过
+`agent_type` 使用各角色自己的 model/effort，并将 root-inclusive 总线程上限
+设为 9（1 个主线程 + 最多 8 个 subagent）；修改后需重启 Codex。仅当该配置
+由其他系统管理时使用 `--no-codex-routing`；项目级安装不会修改用户配置。
+
 项目级安装与完整初始化：
 
 ```bash
@@ -73,7 +79,7 @@ Cursor 本地 hook 尚未 live-verified，因此不伪装成已支持。
 
 `project` 安装项目级 skills/agents；`init-project` 还会配置项目规则、`docs/teamwork/` 记忆入口和可用的 CodeGraph。维护本仓库时可使用 `./install.sh --link codex`，让已安装内容跟随 checkout 更新。
 
-安装器只管理 Teamwork 专属目录、agent 文件和带边界标记的全局 policy 块；平台自己的权限、MCP、浏览器和测试配置仍由平台及用户控制。平台细节见 [Codex](CODEX.md)、[Cursor](CURSOR.md) 和 [Claude Code](CLAUDE.md) 文档。
+安装器只管理 Teamwork 专属目录、agent 文件、带边界标记的全局 policy 块和有限的 Codex 路由键；平台自己的权限、MCP、浏览器和测试配置仍由平台及用户控制。平台细节见 [Codex](CODEX.md)、[Cursor](CURSOR.md) 和 [Claude Code](CLAUDE.md) 文档。
 
 ## 什么时候使用
 
@@ -93,6 +99,7 @@ Cursor 本地 hook 尚未 live-verified，因此不伪装成已支持。
 
 | Skill | 负责什么 |
 |---|---|
+| `grill-me` | 定义逐问式设计/计划压力测试契约；用可见 active/closed marker 表达预期状态 |
 | `teamwork-research` | 查证来源、外部约束、方案空间和 repro surface |
 | `teamwork-debug` | 用复现、日志、假设和 instrumentation 确认根因 |
 | `teamwork-plan` | 明确范围、边界、步骤、验收和停止条件 |
@@ -100,7 +107,7 @@ Cursor 本地 hook 尚未 live-verified，因此不伪装成已支持。
 | `teamwork-review` | 检查 diff、证据、质量和完成声明 |
 | `teamwork-goal` | 对明确目标持续迭代，直到完成或真正受阻 |
 
-`teamwork-init` 负责项目接入与规则瘦身，`teamwork-update` 负责安装刷新和 release hygiene。只有跨回合复用确有价值时，才写入固定位置：
+`grill-me` 是交互 skill，不是 Teamwork stage。它只问 0–3 个会改变公开行为、兼容性、架构、风险、成本或验收的用户决策；语言、文件数量/命名等可逆实现细节直接采用仓库惯例。没有合格问题时会结束访谈，但不会因此获得实施授权。该契约已通过静态与假会话测试，Codex、Cursor、Claude 的真实多轮行为与平台等价性尚未 live-verified。`teamwork-init` 负责项目接入与规则瘦身，`teamwork-update` 负责安装刷新和 release hygiene。只有跨回合复用确有价值时，才写入固定位置：
 
 ```text
 docs/teamwork/research/YYYY-MM-DD-<slug>.md
@@ -134,9 +141,9 @@ python3 scripts/run-teamwork-live-eval.py --help
 python3 scripts/audit-codex-sessions.py --help
 ```
 
-`check-codex-routing.py` 只读检查 Teamwork agent 合同、当前 bundled catalog
-中的 model/effort 支持和 prompt 装载；它不会调用模型、修改 catalog，或把
-`multi_agent_version` 误当成当前 spawn schema 已暴露 selector 的证据。
+`check-codex-routing.py` 只读检查 Teamwork agent 合同、路由配置、当前 bundled
+catalog 中的 model/effort 支持和 prompt 装载；它不会调用模型或修改 catalog。
+Codex 升级后仍需用 fresh schema/live spawn 验证真实 selector。
 
 ## 文档导航
 

@@ -16,13 +16,14 @@
     "workflow",
     "agents",
     "planning",
+    "grill-me",
     "review"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Use Teamwork's Codex-first protocol as a Claude Code Task-subagent adapter.",
-    "longDescription": "A Claude Code adapter entrypoint plus dedicated stage skills for project instruction initialization, evidence gathering, question-first grill mode, native Teamwork index/current memory, goal proposal, durable artifact memory, scoped execution, native fast-path handling for lightweight work, Task-subagent fan-out for valuable independent evidence/design/worker/review tracks, fresh review, package updates, and autonomous goal convergence on top of Claude Code native capabilities.",
+    "longDescription": "A Claude Code adapter entrypoint plus a metadata-visible grill-me interaction contract with authoritative state markers, dedicated stages for project setup, evidence, durable memory, scoped execution, native fast-path handling, bounded Task-subagent work, fresh review, package updates, and goal convergence. Live cross-platform parity is not implied.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -34,6 +35,7 @@
       "Design a goal with evidence, scope, retry policy, artifacts, and Task subagent routing.",
       "Initialize or slim project AGENTS/CLAUDE rules while preserving local evidence boundaries.",
       "Apply Teamwork's Codex-first collaboration protocol to Claude Code evidence, planning, execution, and review tracks.",
+      "Grill zero to three outcome-changing user decisions and skip reversible implementation trivia.",
       "Fan out independent investigation, scoped Worker execution, or fresh-context review through Task subagents.",
       "Map completion claims and Memory Delta status to direct evidence before accepting the result.",
       "Update Teamwork version metadata, refresh installed skills/agents/global policy, and validate the installed surface."

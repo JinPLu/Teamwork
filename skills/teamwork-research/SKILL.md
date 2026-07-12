@@ -48,6 +48,5 @@ stop when required evidence or access is unavailable.
 
 Use `research-protocol.md` for lookup/deep research, `subagent-dispatch.md` and
 `subagent-contract.md` for fan-out, `artifact-protocol.md` for durable findings,
-`optional-skills.md` for external tools, and `grill-mode.md` only for explicit
-grill/question-first mode. All paths are under
+and `optional-skills.md` for external tools. All paths are under
 `skills/using-teamwork/references/`.

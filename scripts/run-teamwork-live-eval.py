@@ -17,16 +17,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from grill_contract import active_output_violation, close_basis
 
-SCHEMA_VERSION = 1
+
+SCHEMA_VERSION = 2
 CASE_CATEGORIES = {
+    "grill",
     "lightweight",
     "missing-required-state",
     "research",
     "review-goal-sentinel",
 }
 SANDBOXES = {"read-only", "workspace-write"}
-EFFORTS = {"low", "medium", "high", "max"}
+EFFORTS = {"none", "low", "medium", "high", "xhigh", "max"}
 ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 UNAVAILABLE_RE = re.compile(
     r"(?:model[^\n]*(?:unavailable|not available|unsupported|not supported|invalid|not found|does not exist)|"
@@ -71,14 +74,14 @@ def load_case(path: Path) -> dict[str, Any]:
     required = {
         "id",
         "category",
-        "prompt",
         "sandbox",
         "expected_signals",
         "forbidden_signals",
         "pilot_only",
     }
+    allowed = required | {"prompt", "prompts"}
     missing = sorted(required - set(data))
-    unknown = sorted(set(data) - required)
+    unknown = sorted(set(data) - allowed)
     if missing:
         raise LiveEvalError(f"{path}: missing fields: {', '.join(missing)}")
     if unknown:
@@ -90,7 +93,13 @@ def load_case(path: Path) -> dict[str, Any]:
     category = require_nonempty_string(data["category"], "category", path)
     if category not in CASE_CATEGORIES:
         raise LiveEvalError(f"{path}: category must be one of {sorted(CASE_CATEGORIES)}")
-    require_nonempty_string(data["prompt"], "prompt", path)
+    if ("prompt" in data) == ("prompts" in data):
+        raise LiveEvalError(f"{path}: provide exactly one of prompt or prompts")
+    prompts = (
+        [require_nonempty_string(data["prompt"], "prompt", path)]
+        if "prompt" in data
+        else require_string_list(data["prompts"], "prompts", path)
+    )
     sandbox = require_nonempty_string(data["sandbox"], "sandbox", path)
     if sandbox not in SANDBOXES:
         raise LiveEvalError(f"{path}: sandbox must be one of {sorted(SANDBOXES)}")
@@ -98,6 +107,8 @@ def load_case(path: Path) -> dict[str, Any]:
     require_string_list(data["forbidden_signals"], "forbidden_signals", path)
     if data["pilot_only"] is not True:
         raise LiveEvalError(f"{path}: pilot_only must be true")
+    data["prompt"] = prompts[0]
+    data["prompts"] = prompts
     return data
 
 
@@ -217,11 +228,33 @@ def find_usage(value: Any) -> dict[str, Any] | None:
     return None
 
 
-def parse_events(stdout: str) -> tuple[list[Any], list[str], str | None, dict[str, Any] | None]:
+def find_reported_cost(value: Any) -> int | float | None:
+    if isinstance(value, dict):
+        for key in ("reported_cost", "cost_usd", "total_cost", "cost"):
+            candidate = value.get(key)
+            if isinstance(candidate, (int, float)) and not isinstance(candidate, bool):
+                return candidate
+        for child in value.values():
+            found = find_reported_cost(child)
+            if found is not None:
+                return found
+    elif isinstance(value, list):
+        for child in value:
+            found = find_reported_cost(child)
+            if found is not None:
+                return found
+    return None
+
+
+def parse_events(
+    stdout: str,
+) -> tuple[list[Any], list[str], str | None, dict[str, Any] | None, str | None, str | None]:
     events: list[Any] = []
     warnings: list[str] = []
     final_output: str | None = None
     usage: dict[str, Any] | None = None
+    session_id: str | None = None
+    resolved_model: str | None = None
     for line_number, line in enumerate(stdout.splitlines(), start=1):
         if not line.strip():
             continue
@@ -235,24 +268,95 @@ def parse_events(stdout: str) -> tuple[list[Any], list[str], str | None, dict[st
         found_usage = find_usage(event)
         if found_usage is not None:
             usage = found_usage
-        if isinstance(event, dict) and event.get("type") == "item.completed":
-            item = event.get("item")
-            if isinstance(item, dict) and item.get("type") == "agent_message":
-                text = item.get("text")
-                if isinstance(text, str):
-                    final_output = text
-    return events, warnings, final_output, usage
+        if isinstance(event, dict):
+            if event.get("type") in {"thread.started", "thread.resumed"}:
+                candidate = event.get("thread_id") or event.get("session_id")
+                if isinstance(candidate, str) and candidate.strip():
+                    session_id = candidate
+                model = event.get("model")
+                if isinstance(model, str) and model.strip():
+                    resolved_model = model
+            if event.get("type") == "item.completed":
+                item = event.get("item")
+                if isinstance(item, dict) and item.get("type") == "agent_message":
+                    text = item.get("text")
+                    if isinstance(text, str):
+                        final_output = text
+    return events, warnings, final_output, usage, session_id, resolved_model
+
+
+def grill_state(output: str | None) -> str:
+    lowered = (output or "").lower()
+    active = "grill status: active" in lowered
+    closed = "grill status: closed" in lowered
+    if active and closed:
+        return "invalid"
+    if active:
+        return "active"
+    if closed:
+        return "closed"
+    return "none"
+
+
+def assess_grill_behavior(turns: list[dict[str, Any]], *, dry_run: bool) -> tuple[str, list[str]]:
+    if dry_run:
+        return "not_run", []
+    violations: list[str] = []
+    if not turns:
+        return "failed", ["grill trajectory is empty"]
+
+    closed_seen = False
+    active_count = 0
+    for index, turn in enumerate(turns, start=1):
+        output = turn.get("final_output") or ""
+        lowered = output.lower()
+        state = turn.get("grill_state")
+        is_last = index == len(turns)
+        expected_state = "closed" if is_last else "active"
+        if state != expected_state:
+            violations.append(f"turn {index} must be {expected_state}, got {state}")
+        output_violation = active_output_violation(output)
+        if output_violation:
+            violations.append(f"turn {index} {output_violation}")
+        if state == "active":
+            active_count += 1
+            if closed_seen:
+                violations.append(f"turn {index} reactivated after close")
+            if lowered.count("grill status: active") != 1:
+                violations.append(f"turn {index} must contain exactly one active marker")
+            if lowered.count("question:") != 1 or output.count("?") != 1:
+                violations.append(f"turn {index} must ask exactly one labeled question")
+            for field in ("recommended:", "alternatives:"):
+                if lowered.count(field) != 1:
+                    violations.append(f"turn {index} must contain exactly one {field[:-1]} field")
+            if re.search(r"\b(?:i|we)\s+(?:edited|changed|implemented|created|wrote|dispatched|started)\b", lowered):
+                violations.append(f"turn {index} claims enactment while grill is active")
+        elif state == "closed":
+            closed_seen = True
+            if not close_basis(turn.get("prompt") or "", output):
+                violations.append(f"turn {index} lacks a valid user or exhausted close basis")
+
+        if not is_last:
+            serialized = json.dumps(turn.get("raw_events", []), ensure_ascii=False).lower()
+            if any(token in serialized for token in ('"type": "file_change"', "spawn_agent", "create_goal", "apply_patch")):
+                violations.append(f"turn {index} contains a forbidden mutation, goal, or subagent event")
+    if active_count > 3:
+        violations.append("grill trajectory exceeds the three-question hard cap")
+    return ("passed" if not violations else "failed"), violations
 
 
 def validate_record(record: dict[str, Any]) -> None:
     required = {
         "schema_version", "record_type", "timestamp_utc", "pilot_only", "status",
         "arm", "model", "effort", "case_id", "run_id", "repeat_index",
-        "case_source", "category", "prompt", "expected_signals", "forbidden_signals",
-        "sandbox", "workdir", "repo_sha", "skill_tree_sha256", "runner_sha256",
-        "worktree", "treatment", "argv", "argv_shell",
-        "config_source", "raw_events", "raw_stdout", "raw_stderr", "final_output",
-        "usage", "elapsed_seconds", "exit_code", "warnings",
+        "case_source", "category", "prompt", "prompts", "expected_signals",
+        "forbidden_signals", "sandbox", "workdir", "repo_sha", "skill_tree_sha256",
+        "runner_sha256", "worktree", "treatment", "argv", "argv_shell",
+        "config_source", "session_id", "turns", "grill_states", "raw_events",
+        "raw_stdout", "raw_stderr", "final_output", "usage", "reported_costs",
+        "elapsed_seconds", "exit_code", "warnings", "execution_status",
+        "behavioral_status", "behavior_violations", "resolved_model",
+        "model_provenance_status",
     }
     missing = sorted(required - set(record))
     if missing:
@@ -265,6 +369,16 @@ def validate_record(record: dict[str, Any]) -> None:
         raise LiveEvalError("output record has an invalid status")
     if record["effort"] not in EFFORTS or record["sandbox"] not in SANDBOXES:
         raise LiveEvalError("output record has invalid effort or sandbox")
+    if not isinstance(record["prompts"], list) or not record["prompts"]:
+        raise LiveEvalError("output record prompts must be a non-empty list")
+    if not isinstance(record["turns"], list) or not record["turns"]:
+        raise LiveEvalError("output record turns must be a non-empty list")
+    if len(record["turns"]) > len(record["prompts"]):
+        raise LiveEvalError("output record has more turns than prompts")
+    if record["status"] in {"dry_run", "completed"} and len(record["turns"]) != len(record["prompts"]):
+        raise LiveEvalError("successful output record must include every prompt turn")
+    if len(record["prompts"]) > 1 and record["status"] == "completed":
+        require_nonempty_string(record["session_id"], "session_id", Path("output"))
     if not isinstance(record["argv"], list) or not record["argv"]:
         raise LiveEvalError("output record argv must be a non-empty list")
     if not isinstance(record["raw_events"], list) or not isinstance(record["warnings"], list):
@@ -282,59 +396,56 @@ def validate_record(record: dict[str, Any]) -> None:
         raise LiveEvalError("output record treatment must match the run arm")
     if not isinstance(record["runner_sha256"], str) or not record["runner_sha256"]:
         raise LiveEvalError("output record runner_sha256 must be non-empty")
+    if record["behavioral_status"] not in {"not_applicable", "not_run", "passed", "failed"}:
+        raise LiveEvalError("output record has an invalid behavioral_status")
+    if not isinstance(record["behavior_violations"], list):
+        raise LiveEvalError("output record behavior_violations must be a list")
+    if record["model_provenance_status"] not in {"not_run", "verified", "unverified", "mismatch"}:
+        raise LiveEvalError("output record has an invalid model_provenance_status")
 
 
-def make_argv(args: argparse.Namespace, case: dict[str, Any]) -> list[str]:
+def make_start_argv(args: argparse.Namespace, case: dict[str, Any]) -> list[str]:
+    argv = [args.codex_bin, "exec"]
+    if len(case["prompts"]) == 1:
+        argv.append("--ephemeral")
+    argv.extend([
+        "--json", "--color", "never", "--model", args.model,
+        "-c", f'model_reasoning_effort="{args.effort}"',
+        "--sandbox", case["sandbox"], "--cd", str(args.workdir), "-",
+    ])
+    return argv
+
+
+def make_resume_argv(args: argparse.Namespace, session_id: str) -> list[str]:
     return [
-        args.codex_bin,
-        "exec",
-        "--ephemeral",
-        "--json",
-        "--color",
-        "never",
-        "--model",
-        args.model,
-        "-c",
-        f'model_reasoning_effort="{args.effort}"',
-        "--sandbox",
-        case["sandbox"],
-        "--cd",
-        str(args.workdir),
-        "-",
+        args.codex_bin, "exec", "resume", "--json", "--model", args.model,
+        "-c", f'model_reasoning_effort="{args.effort}"', session_id, "-",
     ]
 
 
-def run_one(
+def run_turn(
     args: argparse.Namespace,
-    case: dict[str, Any],
-    case_path: Path,
-    repeat_index: int,
-    repo_sha: str | None,
-    skill_sha: str | None,
-    provenance_warnings: list[str],
-    codex_version: str | None,
-    runner_sha: str | None,
-    worktree: dict[str, Any] | None,
+    argv: list[str],
+    prompt: str,
+    turn_index: int,
 ) -> dict[str, Any]:
-    argv = make_argv(args, case)
-    run_id = f"{args.arm}-{case['id']}-r{repeat_index}"
     started = time.monotonic()
     raw_stdout = ""
     raw_stderr = ""
     exit_code: int | None = None
     status = "dry_run"
-    warnings = list(provenance_warnings)
-
+    warnings: list[str] = []
     if not args.dry_run:
         try:
             completed = subprocess.run(
                 argv,
-                input=case["prompt"],
+                input=prompt,
                 text=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 timeout=args.timeout_seconds,
                 check=False,
+                cwd=args.workdir,
                 env=os.environ.copy(),
             )
             raw_stdout = completed.stdout
@@ -361,22 +472,124 @@ def run_one(
             raw_stderr = str(exc)
             warnings.append("codex executable could not be started")
 
-    events, parse_warnings, final_output, usage = parse_events(raw_stdout)
+    events, parse_warnings, final_output, usage, event_session_id, resolved_model = parse_events(raw_stdout)
     warnings.extend(parse_warnings)
     if raw_stderr.strip():
         warnings.append("codex exec wrote to stderr; inspect raw_stderr")
     if status == "completed" and final_output is None:
         status = "failed"
         warnings.append("zero-exit run did not contain an agent_message event")
+    return {
+        "turn_index": turn_index,
+        "prompt": prompt,
+        "status": status,
+        "argv": argv,
+        "argv_shell": shlex.join(argv),
+        "session_id": event_session_id,
+        "resolved_model": resolved_model,
+        "raw_events": events,
+        "raw_stdout": raw_stdout,
+        "raw_stderr": raw_stderr,
+        "final_output": final_output,
+        "grill_state": grill_state(final_output),
+        "usage": usage,
+        "reported_cost": find_reported_cost(events),
+        "elapsed_seconds": round(time.monotonic() - started, 6),
+        "exit_code": exit_code,
+        "warnings": warnings,
+    }
 
+
+def run_one(
+    args: argparse.Namespace,
+    case: dict[str, Any],
+    case_path: Path,
+    repeat_index: int,
+    repo_sha: str | None,
+    skill_sha: str | None,
+    provenance_warnings: list[str],
+    codex_version: str | None,
+    runner_sha: str | None,
+    worktree: dict[str, Any] | None,
+) -> dict[str, Any]:
+    run_id = f"{args.arm}-{case['id']}-r{repeat_index}"
+    started = time.monotonic()
+    session_id: str | None = None
+    turns: list[dict[str, Any]] = []
+    warnings = list(provenance_warnings)
+
+    for turn_index, prompt in enumerate(case["prompts"], start=1):
+        if turn_index == 1:
+            argv = make_start_argv(args, case)
+        else:
+            resume_id = session_id or "<session-id>"
+            argv = make_resume_argv(args, resume_id)
+        turn = run_turn(args, argv, prompt, turn_index)
+        turns.append(turn)
+        warnings.extend(f"turn {turn_index}: {item}" for item in turn["warnings"])
+        if turn_index == 1 and len(case["prompts"]) > 1 and not args.dry_run:
+            session_id = turn["session_id"]
+            if not session_id:
+                turn["status"] = "failed"
+                warnings.append("turn 1 did not return a session id; resume was not attempted")
+                break
+        elif turn_index > 1 and turn["session_id"] and turn["session_id"] != session_id:
+            turn["status"] = "failed"
+            warnings.append(f"turn {turn_index} returned a different session id")
+            break
+        if turn["status"] not in {"completed", "dry_run"}:
+            break
+
+    statuses = [turn["status"] for turn in turns]
+    if args.dry_run:
+        status = "dry_run"
+    elif "unavailable" in statuses:
+        status = "unavailable"
+    elif len(turns) == len(case["prompts"]) and all(item == "completed" for item in statuses):
+        status = "completed"
+    else:
+        status = "failed"
+
+    execution_status = status
+    if case["category"] == "grill":
+        behavioral_status, behavior_violations = assess_grill_behavior(turns, dry_run=args.dry_run)
+    else:
+        behavioral_status, behavior_violations = ("not_run", []) if args.dry_run else ("not_applicable", [])
+    resolved_models = {turn["resolved_model"] for turn in turns if turn["resolved_model"]}
+    if args.dry_run:
+        resolved_model = None
+        model_provenance_status = "not_run"
+    elif not resolved_models:
+        resolved_model = None
+        model_provenance_status = "unverified"
+    elif len(resolved_models) == 1:
+        resolved_model = next(iter(resolved_models))
+        model_provenance_status = "verified" if resolved_model == args.model else "mismatch"
+    else:
+        resolved_model = None
+        model_provenance_status = "mismatch"
+
+    if not args.dry_run and behavioral_status == "failed":
+        status = "failed"
+    if not args.dry_run and model_provenance_status in {"unverified", "mismatch"}:
+        status = "unavailable" if execution_status == "completed" else status
+        warnings.append("runtime did not verify the exact requested model slug")
+
+    first_turn = turns[0]
+    last_turn = turns[-1]
     record = {
         "schema_version": SCHEMA_VERSION,
         "record_type": "teamwork_live_trajectory",
         "timestamp_utc": utc_now(),
         "pilot_only": True,
         "status": status,
+        "execution_status": execution_status,
+        "behavioral_status": behavioral_status,
+        "behavior_violations": behavior_violations,
         "arm": args.arm,
         "model": args.model,
+        "resolved_model": resolved_model,
+        "model_provenance_status": model_provenance_status,
         "effort": args.effort,
         "case_id": case["id"],
         "run_id": run_id,
@@ -384,6 +597,7 @@ def run_one(
         "case_source": str(case_path.resolve()),
         "category": case["category"],
         "prompt": case["prompt"],
+        "prompts": case["prompts"],
         "expected_signals": case["expected_signals"],
         "forbidden_signals": case["forbidden_signals"],
         "sandbox": case["sandbox"],
@@ -393,8 +607,8 @@ def run_one(
         "runner_sha256": runner_sha,
         "worktree": worktree,
         "treatment": {"arm": args.arm, "skill_tree_sha256": skill_sha},
-        "argv": argv,
-        "argv_shell": shlex.join(argv),
+        "argv": first_turn["argv"],
+        "argv_shell": first_turn["argv_shell"],
         "config_source": {
             "runner": str(Path(__file__).resolve()),
             "runner_cli": list(sys.argv),
@@ -404,15 +618,20 @@ def run_one(
             "model_source": "--model",
             "effort_source": "--effort -> codex -c model_reasoning_effort",
             "sandbox_source": "case.sandbox",
+            "continuation": "codex exec resume <session-id> --json",
             "fallback_policy": "none",
         },
-        "raw_events": events,
-        "raw_stdout": raw_stdout,
-        "raw_stderr": raw_stderr,
-        "final_output": final_output,
-        "usage": usage,
+        "session_id": session_id,
+        "turns": turns,
+        "grill_states": [turn["grill_state"] for turn in turns],
+        "raw_events": [event for turn in turns for event in turn["raw_events"]],
+        "raw_stdout": "\n".join(turn["raw_stdout"] for turn in turns),
+        "raw_stderr": "\n".join(turn["raw_stderr"] for turn in turns),
+        "final_output": last_turn["final_output"],
+        "usage": [turn["usage"] for turn in turns],
+        "reported_costs": [turn["reported_cost"] for turn in turns],
         "elapsed_seconds": round(time.monotonic() - started, 6),
-        "exit_code": exit_code,
+        "exit_code": last_turn["exit_code"],
         "warnings": warnings,
     }
     validate_record(record)

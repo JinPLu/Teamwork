@@ -5,17 +5,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
 from typing import Any
+
+from grill_contract import active_output_violation, close_basis
 
 ROOT = Path(__file__).resolve().parents[1]
 EVAL_ROOT = ROOT / "evals" / "teamwork"
 CASE_DIR = EVAL_ROOT / "cases"
 RUBRIC_DIR = EVAL_ROOT / "rubrics"
 LEDGER_DIR = EVAL_ROOT / "ledgers"
-OUTPUT_DIR = EVAL_ROOT / "outputs"
+OUTPUT_DIR = Path(os.environ.get("TEAMWORK_EVAL_OUTPUT_DIR", EVAL_ROOT / "outputs"))
 
 REQUIRED_CASE_FIELDS = {
     "id",
@@ -102,12 +105,10 @@ REQUIRED_QUESTION_FIRST_CASES = {
         "no_dispatch",
     },
     "question-first-explicit-lightweight-grill": {
-        "ask_one_question",
-        "recommended_answer",
-        "no_plan",
-        "no_edit",
-        "no_dispatch",
-        "lightweight_grill_override",
+        "zero_questions",
+        "exhausted_close",
+        "no_edit_before_handoff",
+        "lightweight_grill_no_padding",
     },
     "question-first-complex-uncertainty": {"decision_risk_question", "no_plan_before_question"},
     "question-first-lightweight-control": {
@@ -117,16 +118,69 @@ REQUIRED_QUESTION_FIRST_CASES = {
         "no_durable_plan",
         "no_question",
     },
+    "grill-explicit-skill-invocation": {
+        "ask_one_question",
+        "recommended_answer",
+        "active_marker",
+        "no_enactment",
+    },
+    "grill-multiturn-continuation-exit": {
+        "multiturn_continuation",
+        "explicit_close",
+        "exit_authority",
+        "no_enactment",
+    },
+    "grill-fact-lookup": {
+        "facts_checked",
+        "ask_one_question",
+        "active_marker",
+    },
+    "grill-question-value-stop": {
+        "materiality_gate",
+        "bounded_questions",
+        "exhausted_close",
+        "no_implementation_authority",
+    },
+    "grill-zero-question-low-value": {
+        "zero_questions",
+        "exhausted_close",
+        "reversible_defaults",
+        "no_implementation_authority",
+    },
+    "grill-task-replacement": {
+        "explicit_close",
+        "exit_authority",
+        "task_replacement",
+    },
+    "grill-quoted-marker-control": {"quoted_marker_inert", "no_grill_ceremony"},
+    "grill-maintenance-marker-control": {"maintenance_not_activation", "no_grill_ceremony"},
+    "grill-negative-signal-control": {"negative_signal_wins", "no_grill_ceremony"},
 }
-EXPLICIT_GRILL_CASES = {
+ACTIVE_GRILL_CASES = {
     "question-first-explicit-grill",
     "question-first-explicit-lightweight-grill",
+    "grill-explicit-skill-invocation",
+    "grill-multiturn-continuation-exit",
+    "grill-fact-lookup",
+    "grill-question-value-stop",
+    "grill-zero-question-low-value",
+    "grill-task-replacement",
 }
+GRILL_CONTROL_CASES = {
+    "grill-quoted-marker-control",
+    "grill-maintenance-marker-control",
+    "grill-negative-signal-control",
+}
+PREMATURE_ENACTMENT_RE = re.compile(
+    r"\b(?:i|we)\s+(?:edited|changed|implemented|created|wrote|dispatched|started)\b",
+    re.IGNORECASE,
+)
 OUTPUT_REQUIRED_FIELDS = {
     "case_id",
-    "platform",
+    "platforms",
     "input",
     "output",
+    "trajectory",
     "expected_behavior",
     "passed",
     "fail_reason",
@@ -371,6 +425,21 @@ def validate_ledgers() -> int:
     return line_count
 
 
+def validate_output_trajectory(value: Any, path: Path, index: int) -> list[dict[str, str]]:
+    if not isinstance(value, list) or not value:
+        raise EvalError(f"{display_path(path)}:{index}: trajectory must be a non-empty list")
+    turns: list[dict[str, str]] = []
+    for turn_index, turn in enumerate(value, start=1):
+        if not isinstance(turn, dict) or set(turn) != {"user", "assistant"}:
+            raise EvalError(
+                f"{display_path(path)}:{index}: trajectory turn {turn_index} must contain only user and assistant"
+            )
+        user = require_string(turn.get("user"), "trajectory.user", path)
+        assistant = require_string(turn.get("assistant"), "trajectory.assistant", path)
+        turns.append({"user": user, "assistant": assistant})
+    return turns
+
+
 def validate_question_first_outputs(case_ids: set[str]) -> int:
     missing_cases = sorted(set(REQUIRED_QUESTION_FIRST_CASES) - case_ids)
     if missing_cases:
@@ -402,11 +471,19 @@ def validate_question_first_outputs(case_ids: set[str]) -> int:
         if case_id not in case_ids:
             raise EvalError(f"{display_path(output_path)}:{index}: output references missing case: {case_id}")
 
-        platform = require_string(data.get("platform"), "platform", output_path)
-        if platform not in PLATFORMS:
-            raise EvalError(f"{display_path(output_path)}:{index}: unknown platform: {platform}")
-        require_string(data.get("input"), "input", output_path)
-        require_string(data.get("output"), "output", output_path)
+        platforms = set(require_string_list(data.get("platforms"), "platforms", output_path))
+        unknown_platforms = sorted(platforms - PLATFORMS)
+        if unknown_platforms:
+            raise EvalError(
+                f"{display_path(output_path)}:{index}: unknown platform(s): {', '.join(unknown_platforms)}"
+            )
+        input_text = require_string(data.get("input"), "input", output_path)
+        output_text = require_string(data.get("output"), "output", output_path)
+        trajectory = validate_output_trajectory(data.get("trajectory"), output_path, index)
+        if trajectory[0]["user"] != input_text:
+            raise EvalError(f"{display_path(output_path)}:{index}: input must match the first trajectory user turn")
+        if trajectory[-1]["assistant"] != output_text:
+            raise EvalError(f"{display_path(output_path)}:{index}: output must match the final trajectory assistant turn")
 
         expected = set(require_string_list(data.get("expected_behavior"), "expected_behavior", output_path))
         required = REQUIRED_QUESTION_FIRST_CASES[case_id]
@@ -428,28 +505,78 @@ def validate_question_first_outputs(case_ids: set[str]) -> int:
         if not passed:
             raise EvalError(f"{display_path(output_path)}:{index}: question-first sample failed: {fail_reason}")
 
-        output = data["output"].lower()
-        if case_id in EXPLICIT_GRILL_CASES:
-            if output.count("question:") != 1 or data["output"].count("?") != 1:
-                raise EvalError(f"{display_path(output_path)}:{index}: explicit grill output must ask exactly one question")
-            if "facts checked:" not in output or "recommended:" not in output:
-                raise EvalError(
-                    f"{display_path(output_path)}:{index}: explicit grill output must cite facts and recommend"
-                )
+        output = output_text.lower()
+        if case_id in ACTIVE_GRILL_CASES:
             forbidden = (
                 "steps:",
-                "implementation",
-                "edit",
-                "dispatch",
                 "goal proposal",
                 "plan:",
-                "planning",
                 "subagent",
-                "worker",
                 "durable plan",
             )
-            if any(item in output for item in forbidden):
-                raise EvalError(f"{display_path(output_path)}:{index}: explicit grill output contains forbidden enactment")
+            active_count = 0
+            closed_seen = False
+            exhausted_seen = False
+            for turn_index, turn in enumerate(trajectory, start=1):
+                assistant = turn["assistant"]
+                lowered = assistant.lower()
+                is_active = "grill status: active" in lowered
+                is_closed = "grill status: closed" in lowered
+                output_violation = active_output_violation(assistant)
+                if output_violation:
+                    raise EvalError(f"{display_path(output_path)}:{index}: {output_violation}")
+                if is_active and is_closed:
+                    raise EvalError(f"{display_path(output_path)}:{index}: turn {turn_index} mixes active and closed state")
+                if is_active:
+                    if closed_seen:
+                        raise EvalError(f"{display_path(output_path)}:{index}: active marker appears after close")
+                    active_count += 1
+                    if lowered.count("grill status: active") != 1:
+                        raise EvalError(f"{display_path(output_path)}:{index}: active marker must appear exactly once per active turn")
+                    if lowered.count("question:") != 1 or assistant.count("?") != 1:
+                        raise EvalError(f"{display_path(output_path)}:{index}: active turn must ask exactly one question")
+                    if "recommended:" not in lowered or "alternatives:" not in lowered:
+                        raise EvalError(f"{display_path(output_path)}:{index}: active turn must recommend and bound alternatives")
+                    if "round:" in lowered or "none needed" in lowered:
+                        raise EvalError(f"{display_path(output_path)}:{index}: active turn contains forbidden bookkeeping")
+                    if any(item in lowered for item in forbidden):
+                        raise EvalError(f"{display_path(output_path)}:{index}: active turn contains forbidden enactment")
+                    if PREMATURE_ENACTMENT_RE.search(assistant):
+                        raise EvalError(f"{display_path(output_path)}:{index}: active turn claims premature enactment")
+                elif is_closed:
+                    closed_seen = True
+                    basis = close_basis(turn["user"], assistant)
+                    if not basis:
+                        raise EvalError(f"{display_path(output_path)}:{index}: close lacks a valid user or exhausted basis")
+                    exhausted_seen = basis == "exhausted"
+                else:
+                    raise EvalError(f"{display_path(output_path)}:{index}: grill trajectory turn lacks state marker")
+            if active_count > 3:
+                raise EvalError(f"{display_path(output_path)}:{index}: grill trajectory exceeds the three-question cap")
+            zero_question_cases = {"grill-zero-question-low-value", "question-first-explicit-lightweight-grill"}
+            if active_count < 1 and case_id not in zero_question_cases:
+                raise EvalError(f"{display_path(output_path)}:{index}: grill trajectory lacks an active turn")
+            if case_id == "question-first-explicit-grill" and active_count < 2:
+                raise EvalError(f"{display_path(output_path)}:{index}: explicit grill fixture must prove continuation")
+            if case_id == "grill-multiturn-continuation-exit" and (active_count < 3 or not closed_seen):
+                raise EvalError(f"{display_path(output_path)}:{index}: continuation fixture must have three active turns and a close")
+            if case_id == "grill-task-replacement" and (active_count != 1 or not closed_seen):
+                raise EvalError(f"{display_path(output_path)}:{index}: task replacement must close after one active turn")
+            if case_id == "grill-question-value-stop" and (active_count != 1 or not exhausted_seen):
+                raise EvalError(f"{display_path(output_path)}:{index}: value-stop fixture must ask once then close exhausted")
+            if case_id == "grill-zero-question-low-value" and (active_count != 0 or not exhausted_seen):
+                raise EvalError(f"{display_path(output_path)}:{index}: low-value fixture must close with zero questions")
+            if case_id == "question-first-explicit-lightweight-grill" and (active_count != 0 or not exhausted_seen):
+                raise EvalError(f"{display_path(output_path)}:{index}: lightweight grill must not manufacture a question")
+            if case_id == "grill-fact-lookup":
+                if not any("facts checked:" in turn["assistant"].lower() for turn in trajectory):
+                    raise EvalError(f"{display_path(output_path)}:{index}: fact lookup fixture lacks bounded evidence")
+        if case_id in GRILL_CONTROL_CASES:
+            assistant_text = "\n".join(turn["assistant"].lower() for turn in trajectory)
+            if "grill status: active" in assistant_text or "grill status: closed" in assistant_text:
+                raise EvalError(f"{display_path(output_path)}:{index}: inert marker control activated grill state")
+            if "question:" in assistant_text or any("?" in turn["assistant"] for turn in trajectory):
+                raise EvalError(f"{display_path(output_path)}:{index}: inert marker control asked a grill question")
         if case_id == "question-first-complex-uncertainty":
             if "question:" not in output:
                 raise EvalError(f"{display_path(output_path)}:{index}: complex uncertainty output must ask a question")
@@ -457,7 +584,7 @@ def validate_question_first_outputs(case_ids: set[str]) -> int:
                 raise EvalError(f"{display_path(output_path)}:{index}: complex uncertainty output planned before asking")
         if case_id == "question-first-lightweight-control":
             ceremony_forbidden = (
-                "shared understanding packet",
+                "grill status:",
                 "grill",
                 "question-first",
             )
@@ -480,7 +607,7 @@ def validate_question_first_outputs(case_ids: set[str]) -> int:
         if case_id == "complex-autonomy-control":
             forbidden = (
                 "question:",
-                "shared understanding packet",
+                "grill status:",
                 "grill",
                 "question-first",
                 "which do you prefer",
@@ -497,7 +624,7 @@ def validate_question_first_outputs(case_ids: set[str]) -> int:
                 )
 
         seen.add(case_id)
-        seen_platforms[case_id].add(platform)
+        seen_platforms[case_id].update(platforms)
         rows += 1
 
     missing_outputs = sorted(set(REQUIRED_QUESTION_FIRST_CASES) - seen)

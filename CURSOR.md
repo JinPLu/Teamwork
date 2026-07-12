@@ -48,11 +48,16 @@ Ask naturally:
 - "fan out subagents, then recommend one executable plan";
 - "execute the accepted plan and verify it";
 - "strictly review for false success, defensive fallback, and AI bloat";
-- "keep going until the target is verified or blocked".
+- "keep going until the target is verified or blocked";
+- select `grill-me` or say "grill me" to challenge zero to three material user
+  decisions without asking about reversible implementation details.
 
 Teamwork stays out of tiny edits and one-line questions. It routes into
 research, debug, planning, execution, review, or goal loops only when evidence,
 scope, delegation, verification, or memory improves the result.
+During an explicit grill session, the pasted User Rules contract instructs
+Cursor to preserve one assistant-authored active marker across replies; quoted
+marker text is inert. Real multi-turn Cursor behavior is not yet live-verified.
 
 ## Subagents
 

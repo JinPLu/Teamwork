@@ -40,6 +40,14 @@ Use `./install.sh project` or `./install.sh --project-root <path> project` for
 project-local skills and agents. Use
 `./install.sh --link codex` while editing this checkout.
 
+User-level `codex`, `all`, and `codex-agents` installs also migrate the bounded
+custom-agent routing keys in `~/.codex/config.toml`. They expose role selection
+through a non-reserved `teamwork` namespace, set the root-inclusive session
+limit to 9 threads (one main thread plus up to eight subagents), and preserve
+unrelated TOML. Use `--no-codex-routing` only when another owner manages those
+keys, and restart Codex after an update. Project-only targets never mutate user
+config.
+
 Notifications are opt-in for direct installs. They play distinct OS-native
 sounds for main `Stop` and `PermissionRequest`, keep subagents silent, and never
 control continuation or inspect message content. Plugin installs load the same
@@ -57,6 +65,8 @@ Ask normally. Teamwork routes only when the task benefits from extra structure:
   bloat;
 - keep going until a goal is verified, budget is exhausted, or a real blocker
   appears.
+- invoke `$grill-me` or say "grill me" to ask at most three outcome-changing
+  user decisions; reversible implementation details must not manufacture turns.
 
 Small facts, tiny edits, and obvious local fixes stay on Codex's native fast
 path. Teamwork should improve correctness or continuity; it should not add
@@ -72,8 +82,10 @@ workflow rules belong in Teamwork skills.
 
 The global Codex bootstrap block installed by `./install.sh codex` stays small:
 it records authorization, required-state, scope, evidence, and delegation
-boundaries plus the active profile name. Installed agent files own exact model
-and effort mappings.
+boundaries plus the active profile name. Its grill contract instructs Codex to
+preserve one authoritative assistant-authored active marker across replies;
+quoted file, fixture, or tool text is inert. This is targeted-test-verified, not
+yet live-verified. Installed agent files own exact model and effort mappings.
 
 ## Subagents
 
@@ -94,11 +106,16 @@ Advanced dispatch fields, role mapping, model classes, and lifecycle details
 live in `skills/using-teamwork/references/subagent-dispatch.md`. Prompt and
 packet contracts live in `subagent-contract.md`.
 
+With routing ready, fresh Teamwork agents use exact `agent_type` values plus
+`fork_turns:"none"`; the installed role file then owns model and effort. If the
+live schema still exposes only generic fields, record the child as
+`parent-inherited` instead of claiming that role routing occurred.
+
 After installing agents or upgrading Codex, run
 `python3 scripts/check-codex-routing.py`. It validates the Teamwork profile
-contract, bundled model/effort support, and prompt loading without model calls
-or catalog mutation. It reports `multi_agent_version` for diagnosis but never
-uses that value as proof that a callable spawn selector exists.
+contract, routing config, bundled model/effort support, and prompt loading
+without model calls or catalog mutation. Static readiness does not replace a
+fresh callable-schema or live spawn probe after a Codex upgrade.
 
 ## Evidence And Memory
 
@@ -133,6 +150,8 @@ Use `teamwork-update` for both user refreshes and maintainer releases.
 ./scripts/validate.sh
 python3 scripts/check-codex-routing.py
 python3 scripts/run-teamwork-live-eval.py --help
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_live_eval_runner.py
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_eval_teamwork_mutations.py
 python3 scripts/audit-codex-sessions.py --help
 ```
 

@@ -46,8 +46,7 @@ would affect protected/public behavior; route back to research, debug, or plan.
 ## Conditional Protocols
 
 Use `subagent-dispatch.md` and `subagent-contract.md` for Workers,
-`verification-patterns.md` for proof, `debug-mode.md` for runtime failures,
-`artifact-protocol.md` for durable memory, and `grill-mode.md` only for explicit
-grill/question-first mode. Fresh-context review is required only when the
+`verification-patterns.md` for proof, `debug-mode.md` for runtime failures, and
+`artifact-protocol.md` for durable memory. Fresh-context review is required only when the
 accepted plan or `review-checks.md` risk gates require it. Paths are under
 `skills/using-teamwork/references/`.

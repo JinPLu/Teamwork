@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENTRYPOINT="$ROOT/skills/using-teamwork/SKILL.md"
 SKILLS=(
   using-teamwork
+  grill-me
   teamwork-debug
   teamwork-init
   teamwork-goal
@@ -105,8 +106,10 @@ check_lean_policy() {
   local label="$3"
   grep_required "Act by default within the user's request" "$file" "$label must preserve act-by-default"
   grep_required 'Make routine,' "$file" "$label must permit routine reversible choices"
-  grep_required 'Grill/question-first behavior activates only when explicitly requested' "$file" \
-    "$label must keep grill mode explicit"
+  grep_required 'assistant-authored "Grill status: active"' "$file" \
+    "$label must keep authoritative grill continuation"
+  [[ "$(grep -c 'assistant-authored "Grill status: active"' "$file")" -eq 1 ]] \
+    || fail "$label must contain exactly one authoritative grill continuation guard"
   grep_required 'Do not invent them' "$file" "$label must preserve required-state safety"
   grep_required 'evidence, time, or context-isolation value exceeds' "$file" \
     "$label must keep delegation economic"
@@ -236,7 +239,7 @@ for subskill in teamwork-debug teamwork-init teamwork-goal teamwork-research tea
 done
 
 # --- Reference inventory ---
-for reference in artifact-protocol check-update debug-mode eval-gate goal-iteration grill-mode optional-skills plan-output project-init research-protocol review-checks review-lenses role-playbook routing-policy subagent-contract subagent-dispatch verification-patterns workflow-contract workflow-orchestration; do
+for reference in artifact-protocol check-update debug-mode eval-gate goal-iteration optional-skills plan-output project-init research-protocol review-checks review-lenses role-playbook routing-policy subagent-contract subagent-dispatch verification-patterns workflow-contract workflow-orchestration; do
   ref_file="$ROOT/skills/using-teamwork/references/$reference.md"
   [[ -f "$ref_file" ]] || fail "missing skills/using-teamwork/references/$reference.md"
   git_known_package_file "skills/using-teamwork/references/$reference.md" \
@@ -252,7 +255,7 @@ done
 
 expected_reference_inventory="$(
   printf '%s\n' \
-    artifact-protocol.md check-update.md debug-mode.md eval-gate.md goal-iteration.md grill-mode.md optional-skills.md plan-output.md \
+    artifact-protocol.md check-update.md debug-mode.md eval-gate.md goal-iteration.md optional-skills.md plan-output.md \
     project-init.md research-protocol.md review-checks.md review-lenses.md role-playbook.md routing-policy.md \
     subagent-contract.md subagent-dispatch.md teamwork-current-template.md \
     teamwork-index-readme-template.md teamwork-index-template.json \
@@ -279,18 +282,16 @@ while IFS= read -r eval_file; do
 done < <(find "$ROOT/evals/teamwork/cases" "$ROOT/evals/teamwork/live-cases" "$ROOT/evals/teamwork/rubrics" "$ROOT/evals/teamwork/ledgers" "$ROOT/evals/teamwork/outputs" -type f | sort)
 [[ -f "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" ]] \
   || fail "missing question-first eval output samples"
-for case_id in complex-autonomy-control question-first-explicit-grill question-first-explicit-lightweight-grill question-first-complex-uncertainty question-first-lightweight-control; do
+for case_id in complex-autonomy-control question-first-explicit-grill question-first-explicit-lightweight-grill question-first-complex-uncertainty question-first-lightweight-control grill-question-value-stop grill-zero-question-low-value; do
   [[ -f "$ROOT/evals/teamwork/cases/$case_id.dev.json" ]] \
     || fail "missing question-first eval case: $case_id"
   grep_required "\"case_id\":\"$case_id\"" "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" \
     "question-first eval outputs must include $case_id"
 done
-for platform in codex cursor claude; do
-  grep_required "\"platform\":\"$platform\"" "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" \
-    "question-first eval outputs must include $platform samples"
-done
+grep_required '"platforms":\["codex","cursor","claude"\]' "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" \
+  "question-first fixtures must declare their static cross-platform contract"
 grep_required 'Facts checked:' "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" \
-  "explicit grill output samples must cite facts checked before asking"
+  "fact-lookup grill fixture must cite bounded facts before asking"
 [[ -f "$ROOT/scripts/eval-teamwork.py" ]] || fail "missing scripts/eval-teamwork.py"
 git_known_package_file "scripts/eval-teamwork.py" \
   || fail "scripts/eval-teamwork.py is not known to git; use git add -N before release validation"
@@ -298,7 +299,26 @@ python3 "$ROOT/scripts/eval-teamwork.py" --split dev >/dev/null
 [[ -x "$ROOT/scripts/run-teamwork-live-eval.py" ]] || fail "live eval runner must be executable"
 git_known_package_file "scripts/run-teamwork-live-eval.py" \
   || fail "scripts/run-teamwork-live-eval.py is not known to git; use git add -N before release validation"
-python3 -m py_compile "$ROOT/scripts/run-teamwork-live-eval.py"
+[[ -f "$ROOT/scripts/test_live_eval_runner.py" ]] || fail "missing live eval runner tests"
+git_known_package_file "scripts/test_live_eval_runner.py" \
+  || fail "scripts/test_live_eval_runner.py is not known to git; use git add -N before release validation"
+[[ -f "$ROOT/scripts/test_eval_teamwork_mutations.py" ]] || fail "missing grill contract mutation tests"
+git_known_package_file "scripts/test_eval_teamwork_mutations.py" \
+  || fail "scripts/test_eval_teamwork_mutations.py is not known to git; use git add -N before release validation"
+[[ -f "$ROOT/scripts/grill_contract.py" ]] || fail "missing shared grill contract checks"
+git_known_package_file "scripts/grill_contract.py" \
+  || fail "scripts/grill_contract.py is not known to git; use git add -N before release validation"
+[[ -f "$ROOT/scripts/codex_routing_config.py" ]] || fail "missing Codex routing config module"
+[[ -f "$ROOT/scripts/configure-codex-routing.py" ]] || fail "missing Codex routing config CLI"
+[[ -f "$ROOT/scripts/test_codex_routing_config.py" ]] || fail "missing Codex routing config tests"
+python3 -m py_compile "$ROOT/scripts/grill_contract.py" "$ROOT/scripts/run-teamwork-live-eval.py" "$ROOT/scripts/test_live_eval_runner.py" \
+  "$ROOT/scripts/test_eval_teamwork_mutations.py" "$ROOT/scripts/codex_routing_config.py" \
+  "$ROOT/scripts/configure-codex-routing.py" "$ROOT/scripts/test_codex_routing_config.py"
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_live_eval_runner.py" >/dev/null
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_eval_teamwork_mutations.py" >/dev/null
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_routing_config.py" >/dev/null
+grep_required '"category": "grill"' "$ROOT/evals/teamwork/live-cases/grill-multiturn-pilot.json" \
+  "live evals must include a grill category"
 live_eval_tmp="$(mktemp -d)"
 CLEANUP_PATHS+=("$live_eval_tmp")
 python3 "$ROOT/scripts/run-teamwork-live-eval.py" \
@@ -307,7 +327,9 @@ python3 "$ROOT/scripts/run-teamwork-live-eval.py" \
   --effort max \
   --workdir "$ROOT" \
   --output "$live_eval_tmp/output.jsonl" \
-  --cases "$ROOT/evals/teamwork/live-cases/lightweight-pilot.json" \
+  --cases \
+    "$ROOT/evals/teamwork/live-cases/lightweight-pilot.json" \
+    "$ROOT/evals/teamwork/live-cases/grill-multiturn-pilot.json" \
   --repeats 1 \
   --timeout-seconds 60 \
   --dry-run >/dev/null
@@ -466,6 +488,9 @@ grep_required 'docs/teamwork/research/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" "R
 grep_required 'docs/teamwork/plans/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" "README must document plan artifact path"
 grep_required 'docs/teamwork/reports/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" "README must document report artifact path"
 grep_required './install.sh --link codex' "$ROOT/README.md" "README must document Codex link-mode development install"
+grep_required 'no-codex-routing' "$ROOT/README.md" "README must document Codex routing ownership opt-out"
+grep_required '最多 8 个 subagent' "$ROOT/README.md" "README must document the Codex subagent limit"
+grep_required 'grill-me' "$ROOT/README.md" "README must document the public grill-me interaction skill"
 check_markdown_local_images "$ROOT/README.md"
 grep_required '^# 更新日志' "$ROOT/CHANGELOG.md" "CHANGELOG must have a Chinese top-level heading"
 grep_required '\[English\](CHANGELOG.en.md)' "$ROOT/CHANGELOG.md" "default CHANGELOG must link to English CHANGELOG"
@@ -483,6 +508,9 @@ grep_required 'check-codex-routing.py' "$ROOT/README.en.md" \
   "English README must document Codex routing readiness"
 grep_required 'VERSION' "$ROOT/README.en.md" "English README must document package version source"
 grep_required './install.sh --link codex' "$ROOT/README.en.md" "English README must document Codex link-mode development install"
+grep_required 'no-codex-routing' "$ROOT/README.en.md" "English README must document Codex routing ownership opt-out"
+grep_required 'up to eight' "$ROOT/README.en.md" "English README must document the Codex subagent limit"
+grep_required 'grill-me' "$ROOT/README.en.md" "English README must document the public grill-me interaction skill"
 check_markdown_local_images "$ROOT/README.en.md"
 grep_required 'Codex + Cursor + Claude Code skill package' "$ROOT/AGENTS.md" "AGENTS.md must describe the package"
 grep_required 'teamwork-update' "$ROOT/AGENTS.md" "AGENTS.md must document update skill ownership"
@@ -495,11 +523,18 @@ grep_required 'teamwork-init' "$ROOT/CODEX.md" "CODEX.md must document teamwork-
 grep_required 'subagent-dispatch.md' "$ROOT/CODEX.md" "CODEX.md must point to subagent dispatch reference"
 grep_required 'check-codex-routing.py' "$ROOT/CODEX.md" \
   "CODEX.md must document Codex routing readiness"
+grep_required 'non-reserved `teamwork` namespace' "$ROOT/CODEX.md" \
+  "CODEX.md must document the custom-agent routing namespace"
+grep_required 'up to eight subagents' "$ROOT/CODEX.md" \
+  "CODEX.md must document the Codex subagent limit"
+grep_required 'grill-me' "$ROOT/CODEX.md" "CODEX.md must document explicit grill-me invocation"
+grep_required 'test_live_eval_runner.py' "$ROOT/CODEX.md" "CODEX.md must document the offline live-runner test"
 grep_required 'Task' "$ROOT/CURSOR.md" "CURSOR.md must document Cursor Task subagent policy"
 grep_required 'Goal Mode' "$ROOT/CURSOR.md" "CURSOR.md must document Cursor goal mode"
 grep_required 'subagent-dispatch.md' "$ROOT/CURSOR.md" "CURSOR.md must point to subagent dispatch reference"
 grep_required '~/.cursor/agents/' "$ROOT/CURSOR.md" "CURSOR.md must document Cursor custom agents"
 grep_required 'cursor-policy' "$ROOT/CURSOR.md" "CURSOR.md must document cursor-policy target"
+grep_required 'grill-me' "$ROOT/CURSOR.md" "CURSOR.md must document grill-me"
 grep_required 'Claude Code native capabilities' "$ROOT/CLAUDE.md" "CLAUDE.md must document native Claude Code capability policy"
 grep_required 'Task' "$ROOT/CLAUDE.md" "CLAUDE.md must document Claude Code Task subagent policy"
 grep_required 'subagent-dispatch.md' "$ROOT/CLAUDE.md" "CLAUDE.md must point to subagent dispatch reference"
@@ -508,6 +543,11 @@ grep_required 'VERSION' "$ROOT/CLAUDE.md" "CLAUDE.md must document package versi
 grep_required '~/.claude/CLAUDE.md' "$ROOT/CLAUDE.md" "CLAUDE.md must document Claude global policy"
 grep_required 'claude-policy' "$ROOT/CLAUDE.md" "CLAUDE.md must document claude-policy target"
 grep_required 'deep-judge' "$ROOT/CLAUDE.md" "CLAUDE.md must document Deep Judge agent"
+grep_required 'grill-me' "$ROOT/CLAUDE.md" "CLAUDE.md must document grill-me"
+grep_required 'codex exec resume' "$ROOT/evals/teamwork/README.md" \
+  "eval README must document persistent multi-turn Codex resume semantics"
+grep_required 'test_live_eval_runner.py' "$ROOT/evals/teamwork/README.md" \
+  "eval README must document the offline live-runner test"
 
 # --- Installer global policy ---
 grep_required 'write_teamwork_codex_global_policy()' "$ROOT/install.sh" "installer must define Teamwork Codex global policy writer"
@@ -523,12 +563,25 @@ grep_required 'cursor-agents' "$ROOT/install.sh" "installer must support cursor-
 grep_required 'cursor-policy' "$ROOT/install.sh" "installer must support cursor-policy target"
 grep_required 'cursor-policy-copy' "$ROOT/install.sh" "installer must support cursor-policy-copy target"
 grep_required 'claude-policy' "$ROOT/install.sh" "installer must support claude-policy target"
+grep_required 'configure_codex_routing' "$ROOT/install.sh" "installer must configure user-level Codex routing"
+grep_required 'no-codex-routing' "$ROOT/install.sh" "installer must expose a Codex routing opt-out"
+grep_required 'one main thread plus up to eight' "$ROOT/install.sh" \
+  "installer help must document the root-inclusive thread limit"
+grep_required 'codex_routing_status' "$ROOT/scripts/check-update.sh" "check-update must inspect Codex routing"
+grep_required 'codex-routing' "$ROOT/skills/teamwork-init/SKILL.md" "teamwork-init must repair routing readiness"
+grep_required 'restart Codex when it reports' "$ROOT/skills/teamwork-update/SKILL.md" "teamwork-update must refresh Codex routing"
+grep_required 'codex-routing' "$ROOT/skills/using-teamwork/references/check-update.md" \
+  "update readiness reference must report Codex routing drift"
+grep_required 'non-reserved `teamwork`' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" \
+  "dispatch must document the configured Codex selector"
 
 # --- Budgets ---
 [[ "$(wc -l < "$ROOT/README.md")" -le 195 ]] || fail "README should stay concise"
 [[ "$(wc -l < "$ROOT/README.en.md")" -le 200 ]] || fail "English README should stay concise"
 line_count_max "$ROOT/skills/using-teamwork/SKILL.md" 80 "using-teamwork should stay concise"
 word_count_max "$ROOT/skills/using-teamwork/SKILL.md" 450 "using-teamwork should stay concise"
+line_count_max "$ROOT/skills/grill-me/SKILL.md" 70 "grill-me should stay concise"
+word_count_max "$ROOT/skills/grill-me/SKILL.md" 430 "grill-me should stay concise"
 line_count_max "$ROOT/skills/teamwork-init/SKILL.md" 95 "teamwork-init should stay concise"
 word_count_max "$ROOT/skills/teamwork-init/SKILL.md" 650 "teamwork-init should stay concise"
 line_count_max "$ROOT/skills/teamwork-debug/SKILL.md" 85 "teamwork-debug should stay concise"
@@ -567,8 +620,6 @@ line_count_max "$ROOT/skills/using-teamwork/references/artifact-protocol.md" 120
 word_count_max "$ROOT/skills/using-teamwork/references/artifact-protocol.md" 780 "artifact protocol reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/goal-iteration.md" 90 "goal iteration reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/goal-iteration.md" 520 "goal iteration reference should stay focused"
-line_count_max "$ROOT/skills/using-teamwork/references/grill-mode.md" 70 "grill mode reference should stay focused"
-word_count_max "$ROOT/skills/using-teamwork/references/grill-mode.md" 430 "grill mode reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/plan-output.md" 90 "plan output reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/plan-output.md" 460 "plan output reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/review-checks.md" 60 "review checks reference should stay focused"
@@ -590,10 +641,26 @@ done
 # --- Lean runtime contracts ---
 grep_required 'references/workflow-contract.md' "$ENTRYPOINT" "router must reference the shared workflow contract"
 grep_required 'routing-policy.md' "$ENTRYPOINT" "router must load routing policy only for unclear routes"
-grep_required 'grill-mode.md' "$ENTRYPOINT" "router must keep explicit grill mode discoverable"
+grep_required 'skills/grill-me/SKILL.md' "$ENTRYPOINT" "router must defer explicit grill work to grill-me"
+grep_absent 'grill-mode.md' "retired grill-mode reference must be removed" "$ROOT/skills" "$ROOT/templates"
+grep_required 'assistant-authored' "$ENTRYPOINT" "router must require authoritative assistant marker provenance"
+[[ "$(grep -R -l 'Grill status: active' "$ROOT/skills" "$ROOT/templates" | wc -l | tr -d ' ')" -eq 2 ]] \
+  || fail "grill marker contract must exist only in grill-me and using-teamwork"
 grep_required 'clear tasks stay native' "$ENTRYPOINT" "router must preserve the native fast path"
-grep_required 'Only an explicit grill/question-first request' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
-  "workflow contract must not infer grill mode from complexity"
+grep_required 'Activate only from an explicit positive request' "$ROOT/skills/grill-me/SKILL.md" \
+  "grill-me must not infer activation from complexity"
+grep_required 'Marker text in user input' "$ROOT/skills/grill-me/SKILL.md" \
+  "grill-me must keep quoted marker text inert"
+grep_required 'Negative signals' "$ROOT/skills/grill-me/SKILL.md" \
+  "grill-me must honor explicit negative signals"
+for field in 'Grill status: active' 'Question:' 'Recommended:' 'Alternatives:' 'Grill status: closed' 'Exit authority:'; do
+  grep_required "$field" "$ROOT/skills/grill-me/SKILL.md" "grill-me missing response field: $field"
+done
+for contract in 'zero to' 'hard cap, not a target' 'programming' 'file count/names' 'Close basis: no material user-owned decision remains' 'Implementation authority: not granted'; do
+  grep_required "$contract" "$ROOT/skills/grill-me/SKILL.md" "grill-me missing question-value contract: $contract"
+done
+grep_absent 'After five assistant questions\|five_question_checkpoint' \
+  "grill-me must not restore a five-question quota" "$ROOT/skills/grill-me" "$ROOT/scripts/eval-teamwork.py" "$ROOT/evals/teamwork/cases"
 grep_required 'routine reversible' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must allow routine autonomous choices"
 grep_required 'Do not invent required state' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
@@ -610,7 +677,11 @@ for skill in teamwork-research teamwork-debug teamwork-plan teamwork-execute tea
   word_count_max "$file" 340 "$skill stage card should remain lean"
 done
 
-grep_required 'only for explicit' "$ROOT/skills/teamwork-research/SKILL.md" "research must condition grill mode"
+grep_absent 'grill/question-first\|grill-mode.md' \
+  "stage skills must not duplicate the grill interaction contract" \
+  "$ROOT/skills/teamwork-research" "$ROOT/skills/teamwork-debug" "$ROOT/skills/teamwork-plan" \
+  "$ROOT/skills/teamwork-execute" "$ROOT/skills/teamwork-review" "$ROOT/skills/teamwork-goal" \
+  "$ROOT/skills/teamwork-init" "$ROOT/skills/teamwork-update"
 grep_required 'as the evidence warrants' "$ROOT/skills/teamwork-debug/SKILL.md" \
   "debug must avoid a fixed hypothesis quota"
 grep_required 'table or diagram only when it materially clarifies' "$ROOT/skills/teamwork-plan/SKILL.md" \
@@ -693,8 +764,8 @@ fi
 
 # --- Lean role templates ---
 while IFS= read -r template; do
-  [[ "$(grep -c 'grill/question-first' "$template")" -eq 1 ]] \
-    || fail "agent template must contain exactly one grill guard: ${template#"$ROOT/"}"
+  ! grep -q 'grill/question-first' "$template" \
+    || fail "agent template must not duplicate the grill procedure: ${template#"$ROOT/"}"
   word_count_max "$template" 260 "agent template should remain lean: ${template#"$ROOT/"}"
 done < <(find "$ROOT/templates/codex-agents" "$ROOT/templates/cursor-agents" "$ROOT/templates/claude-agents" -type f | sort)
 grep_absent 'Shared Understanding Packet\|Native Fields\|Option Matrix' \
@@ -729,6 +800,7 @@ grep_absent 'done_with_concerns\|needs_context' \
 
 grep_absent 'teamwork-quality' "Teamwork must not add a separate quality stage" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/install.sh"
 grep_absent 'teamwork-deslop' "Teamwork must not add a separate deslop stage" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/install.sh"
+[[ -f "$ROOT/skills/grill-me/SKILL.md" ]] || fail "question-first override must have one public grill-me skill"
 [[ ! -e "$ROOT/skills/teamwork-grill" ]] || fail "question-first override must not become a peer teamwork-grill skill"
 grep_absent 'teamwork-grill)' "install skill list must not add a peer teamwork-grill skill" "$ROOT/install.sh"
 
@@ -882,6 +954,48 @@ for agent in teamwork-deep-judge teamwork-deep-reviewer; do
 done
 [[ ! -e "$tmp/home-codex-agents/.codex/AGENTS.md" ]] \
   || fail "codex-agents target must not write global AGENTS policy"
+codex_routing_config="$tmp/home-codex-agents/.codex/config.toml"
+grep_required '^\[features.multi_agent_v2\]$' "$codex_routing_config" \
+  "codex-agents must configure the Teamwork v2 routing table"
+grep_required '^enabled = true$' "$codex_routing_config" \
+  "Codex routing must enable multi_agent_v2"
+grep_required '^hide_spawn_agent_metadata = false$' "$codex_routing_config" \
+  "Codex routing must expose custom-agent metadata"
+grep_required '^tool_namespace = "teamwork"$' "$codex_routing_config" \
+  "Codex routing must avoid the reserved collaboration namespace"
+grep_required '^max_concurrent_threads_per_session = 9$' "$codex_routing_config" \
+  "Codex routing must configure eight subagent slots plus the root thread"
+python3 "$ROOT/scripts/configure-codex-routing.py" --check --config "$codex_routing_config" >/dev/null
+cp "$codex_routing_config" "$tmp/codex-routing-first.toml"
+HOME="$tmp/home-codex-agents" "$ROOT/install.sh" codex-agents >/dev/null
+cmp -s "$codex_routing_config" "$tmp/codex-routing-first.toml" \
+  || fail "Codex routing migration must be byte-idempotent"
+
+legacy_routing_home="$tmp/home-codex-routing-legacy"
+mkdir -p "$legacy_routing_home/.codex"
+printf '%s\n' \
+  '# preserve me' \
+  '[agents]' \
+  'max_threads = 4' \
+  'max_depth = 2' \
+  '' \
+  '[features]' \
+  'js_repl = false' \
+  'multi_agent_v2 = false' \
+  > "$legacy_routing_home/.codex/config.toml"
+HOME="$legacy_routing_home" "$ROOT/install.sh" codex-agents >/dev/null
+grep_required '^max_depth = 2$' "$legacy_routing_home/.codex/config.toml" \
+  "routing migration must preserve unrelated agents settings"
+grep_required '^max_concurrent_threads_per_session = 9$' "$legacy_routing_home/.codex/config.toml" \
+  "routing migration must configure eight subagent slots plus the root thread"
+grep_absent '^max_threads[[:space:]]*=' "routing migration must remove incompatible agents.max_threads" \
+  "$legacy_routing_home/.codex/config.toml"
+grep_required '^# preserve me$' "$legacy_routing_home/.codex/config.toml" \
+  "routing migration must preserve unrelated comments"
+
+HOME="$tmp/home-codex-no-routing" "$ROOT/install.sh" --no-codex-routing codex-agents >/dev/null
+[[ ! -e "$tmp/home-codex-no-routing/.codex/config.toml" ]] \
+  || fail "--no-codex-routing must preserve a missing user config"
 
 HOME="$tmp/home-codex-agents-cost" "$ROOT/install.sh" --profile cost-first codex-agents >/dev/null
 for agent in teamwork-explorer teamwork-designer; do
@@ -961,6 +1075,8 @@ grep_required '^model_reasoning_effort = "max"$' "$project_codex_gpt56_role/.cod
   || fail "project-codex-agents must not write Cursor project agents"
 [[ ! -e "$project_codex_gpt56_role/.claude" ]] \
   || fail "project-codex-agents must not write Claude project agents"
+[[ ! -e "$tmp/home-project-codex-gpt56-role/.codex/config.toml" ]] \
+  || fail "project-codex-agents must not mutate user Codex routing"
 
 HOME="$tmp/home-cursor-gpt56-role" "$ROOT/install.sh" --profile gpt56-role cursor-agents >/dev/null
 for agent in explore designer; do
@@ -1101,6 +1217,53 @@ done
 project_update="$tmp/project-update"
 mkdir -p "$project_update"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
+routing_update_config="$tmp/home-project-update/.codex/config.toml"
+sed 's/tool_namespace = "teamwork"/tool_namespace = "collaboration"/' \
+  "$routing_update_config" > "$tmp/stale-routing.toml"
+mv "$tmp/stale-routing.toml" "$routing_update_config"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-routing-stale.out"
+grep_required '^INSTALL_READY=no$' "$tmp/global-routing-stale.out" \
+  "check-update readiness must fail on stale Codex routing"
+grep_required 'codex-routing' "$tmp/global-routing-stale.out" \
+  "check-update readiness must identify stale Codex routing"
+HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-routing-ready.out"
+grep_required '^CODEX_ROUTING=ready$' "$tmp/global-routing-ready.out" \
+  "user refresh must repair Codex routing readiness"
+printf '\n# stale grill-me skill fixture\n' >> "$tmp/home-project-update/.codex/skills/grill-me/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-grill-skill-stale.out"
+grep_required '^INSTALL_READY=no$' "$tmp/global-grill-skill-stale.out" \
+  "check-update readiness must fail when installed grill-me content drifts"
+grep_required 'codex-skill-content' "$tmp/global-grill-skill-stale.out" \
+  "check-update readiness must identify global Codex skill content drift"
+HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
+rm "$tmp/home-project-update/.codex/skills/grill-me/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-codex-grill-missing.out"
+grep_required 'codex-skills' "$tmp/global-codex-grill-missing.out" \
+  "check-update readiness must identify missing Codex grill-me content"
+HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
+rm "$tmp/home-project-update/.claude/skills/grill-me/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-grill-skill-missing.out"
+grep_required '^INSTALL_READY=no$' "$tmp/global-grill-skill-missing.out" \
+  "check-update readiness must fail when installed grill-me is missing"
+grep_required 'claude-skills' "$tmp/global-grill-skill-missing.out" \
+  "check-update readiness must identify a missing global Claude skill"
+HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
+printf '\n# stale Claude grill-me fixture\n' >> "$tmp/home-project-update/.claude/skills/grill-me/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-claude-grill-stale.out"
+grep_required 'claude-skill-content' "$tmp/global-claude-grill-stale.out" \
+  "check-update readiness must identify changed Claude grill-me content"
+HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
+printf '\n# stale Cursor grill-me fixture\n' >> "$tmp/home-project-update/.cursor/skills/grill-me/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-cursor-grill-stale.out"
+grep_required 'cursor-skill-content' "$tmp/global-cursor-grill-stale.out" \
+  "check-update readiness must identify changed Cursor grill-me content"
+HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
+rm "$tmp/home-project-update/.cursor/skills/grill-me/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-cursor-grill-missing.out"
+grep_required 'cursor-skills' "$tmp/global-cursor-grill-missing.out" \
+  "check-update readiness must identify missing Cursor grill-me content"
+HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
 printf '\n# stale global agent drift fixture\n' >> "$tmp/home-project-update/.codex/agents/teamwork-worker.toml"
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --no-fetch > "$tmp/global-agent-stale-report.out" || true
 grep_required 'drift(missing=0,changed=1)' "$tmp/global-agent-stale-report.out" \
@@ -1123,7 +1286,7 @@ grep_required 'project-codex-agent-content' "$tmp/project-update-agent-stale.out
   "check-update readiness must report project agent content drift"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" --project-root "$project_update" project >/dev/null
 printf '%s\n' '0.0.0' > "$project_update/.cursor/skills/.teamwork-version"
-printf '\n# stale drift fixture\n' >> "$project_update/.cursor/skills/using-teamwork/SKILL.md"
+printf '\n# stale drift fixture\n' >> "$project_update/.cursor/skills/grill-me/SKILL.md"
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --project "$project_update" --no-fetch > "$tmp/project-update-stale.out"
 grep_required '^INSTALL_READY=no$' "$tmp/project-update-stale.out" \
   "check-update project readiness must fail on project drift"
@@ -1131,6 +1294,13 @@ grep_required 'project-version-drift' "$tmp/project-update-stale.out" \
   "check-update readiness must report project version drift"
 grep_required 'project-skill-content' "$tmp/project-update-stale.out" \
   "check-update readiness must report project skill content drift"
+HOME="$tmp/home-project-update" "$ROOT/install.sh" --project-root "$project_update" project >/dev/null
+rm "$project_update/.cursor/skills/grill-me/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --project "$project_update" --no-fetch > "$tmp/project-grill-missing.out"
+grep_required '^INSTALL_READY=no$' "$tmp/project-grill-missing.out" \
+  "check-update project readiness must fail when project grill-me is missing"
+grep_required 'project-skill-content' "$tmp/project-grill-missing.out" \
+  "check-update readiness must report missing project grill-me content"
 
 HOME="$tmp/home-invalid-profile" "$ROOT/install.sh" --profile invalid codex >/dev/null 2>&1 \
   && fail "installer must reject unsupported Codex profiles"

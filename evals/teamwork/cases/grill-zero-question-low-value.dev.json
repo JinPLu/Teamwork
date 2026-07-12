@@ -1,0 +1,13 @@
+{
+  "id": "grill-zero-question-low-value",
+  "split": "dev",
+  "source": "bug",
+  "target": "skills/grill-me/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Grill me on whether this private helper should use TypeScript and be split into two files.",
+  "expected": {"mode": "grill_exhausted", "requires": ["zero questions", "exhausted close", "repo conventions", "no implementation authority"]},
+  "must": ["close without manufacturing a question", "treat language and file layout as reversible implementation choices"],
+  "must_not": ["emit an active marker", "ask any question", "claim confidence", "grant implementation authority"],
+  "rubric": "assistance-quality",
+  "evidence": "User-reported low-value question regression, 2026-07-13."
+}
