@@ -2,29 +2,17 @@
 
 [English](CHANGELOG.en.md)
 
-这份 changelog 按“用户升级后会感受到什么”来写，而不是只罗列文件改动。
-版本边界以 `VERSION`、插件 manifests 和 GitHub release tags 为准。
+这里只记录用户能感受到的变化；实现细节见 Pull Request。
 
 ## 2.15.0 - 2026-07-13
 
-这版重点是：**加入旨在降低长任务上下文浪费的控制机制，以及不干预流程的
-可选提示音。** 实际 token 节省仍需在同任务对照中测量。
+**长任务更不容易跑偏，并可在完成或等待确认时播放提示音。**
 
-- fresh subagent 默认不继承历史，首波最多两个 agent；一次 packet、一次返回，
-  用户纠偏会取消失效任务，`NOT VERIFIED` 和局部完成不能被升级成整体完成。
-- Stage Entry Card 冻结目标、范围、验收 oracle、truth identity、权限和停止条件；
-  generic Codex spawn 只使用 runtime 实际暴露的字段，不再假设 custom-agent 参数。
-- Codex profile 现在显式声明 leaf-only；新增只读 routing readiness 检查，验证
-  必填字段、nickname 唯一性、catalog model/effort 支持和 prompt 装载，但不修改
-  catalog，也不把 `multi_agent_version` 当成 spawn selector 证据。
-- 新增隐私安全的 Codex session auditor，明确区分历史 `performance-first` 与当前
-  `cost-first`，并把 cached/replayed token 标为 operational telemetry 而非账单。
-- `--notifications` 为 Codex/Claude Code 安装主任务完成与权限请求 hook 配置；
-  Codex 已在 macOS 做 live smoke，Claude 只验证了安装，真实 runtime 事件仍待验证。
-  subagent 静音，hook 只读事件元数据、输出中性 JSON、失败不阻塞；Cursor 保持
-  unsupported。
-- 设计按 GPT-5.6 官方 guidance 进一步瘦身：结果优先、规则只写一次、显式成功/
-  权限/停止条件。静态 contract eval 已通过；同任务质量/消耗对照仍待执行。
+- 减少重复协作；用户纠正后，过时任务会停止生效。
+- 不再把局部完成或未验证结果误报为整个任务完成。
+- Codex 可选提示音只提醒主任务，后台任务保持静音。
+- 新增只读诊断工具，排查 agent 配置和异常长任务时不会输出对话正文。
+- 提示音已在 macOS 验证；Claude Code 尚未实测，Cursor 暂不支持。
 
 ## 2.14.0 - 2026-07-11
 
