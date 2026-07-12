@@ -4,6 +4,16 @@
 
 This changelog lists user-visible changes. Implementation details live in pull requests.
 
+## 2.16.0 - 2026-07-13
+
+**Adds a discoverable `grill-me` interaction and fixes Codex subagent role-model routing.**
+
+- `grill-me` is now a standalone skill that asks zero to three genuinely outcome-changing, user-owned questions. Reversible details such as language, file count, naming, and internal layout are not used to manufacture questions.
+- Multi-turn grills keep explicit active/closed state. Stop, proceed, delegated judgment, and task replacement follow the user's authority; exhausting useful questions never grants implementation permission.
+- Codex install, init, and update atomically migrate custom-agent routing so Explorer, Worker, Reviewer, and other roles use their configured model and effort instead of inheriting the root thread's reasoning tier.
+- The Codex session limit is now 9 threads: one main thread plus up to eight subagents. Project-only installs still leave user-level config untouched, and an explicit opt-out remains available.
+- Codex 0.144.0 was live-tested with eight overlapping Terra/medium Explorers and a fresh Sol/high Reviewer. Restart Codex before new tasks can load the routing change; cross-platform grill behavior remains static/offline-verified rather than claimed live.
+
 ## 2.15.0 - 2026-07-13
 
 **Long tasks are less likely to drift and can play a sound when finished or

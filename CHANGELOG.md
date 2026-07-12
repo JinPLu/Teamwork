@@ -4,6 +4,16 @@
 
 这里只记录用户能感受到的变化；实现细节见 Pull Request。
 
+## 2.16.0 - 2026-07-13
+
+**新增可发现的 `grill-me` 交互，并修复 Codex subagent 的角色模型路由。**
+
+- `grill-me` 现在是独立 skill：只询问零到三个真正影响结果、且必须由用户决定的问题；语言、文件数量、命名和内部布局等可逆细节不会被拿来凑问题。
+- 多轮 grill 会保留明确的 active/closed 状态，用户要求停止、继续执行、委托判断或切换任务时才按对应权限退出；问题耗尽不会自动授权实施。
+- Codex 安装、初始化和更新会原子迁移 custom-agent 路由，让 Explorer、Worker、Reviewer 等角色使用各自配置的 model/effort，而不是继承主线程的高推理档位。
+- Codex 会话上限调整为 9 个线程，即一个主线程加最多 8 个 subagent；项目级安装仍不会修改用户全局配置，并保留显式 opt-out。
+- Codex 0.144.0 已实测 8 个同时存活的 Explorer 使用 Terra/medium，fresh Reviewer 使用 Sol/high。重启 Codex 后新任务才会读取新的路由配置；跨平台 grill 行为仍以静态与离线验证为主。
+
 ## 2.15.0 - 2026-07-13
 
 **长任务更不容易跑偏，并可在完成或等待确认时播放提示音。**
