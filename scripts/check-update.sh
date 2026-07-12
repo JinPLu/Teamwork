@@ -92,6 +92,30 @@ read_installed_profile() {
   fi
 }
 
+notification_status() {
+  local platform="$1" config notifier
+  case "$platform" in
+    codex)
+      config="$HOME/.codex/hooks.json"
+      notifier="$HOME/.codex/teamwork/notify.py"
+      ;;
+    claude)
+      config="$HOME/.claude/settings.json"
+      notifier="$HOME/.claude/teamwork/notify.py"
+      ;;
+    cursor)
+      echo "unsupported"
+      return 0
+      ;;
+    *)
+      echo "unknown"
+      return 0
+      ;;
+  esac
+  python3 "$ROOT/scripts/configure-notifications.py" status \
+    --config "$config" --notifier "$notifier" 2>/dev/null || echo "invalid"
+}
+
 skills_status() {
   local dest_root="$1"
   local skill missing=0
@@ -469,6 +493,9 @@ print_readiness() {
   echo "CODEX_VERSION=$codex_v"
   echo "CURSOR_VERSION=$cursor_v"
   echo "CLAUDE_VERSION=$claude_v"
+  echo "CODEX_NOTIFICATIONS=$(notification_status codex)"
+  echo "CLAUDE_NOTIFICATIONS=$(notification_status claude)"
+  echo "CURSOR_NOTIFICATIONS=$(notification_status cursor)"
   echo "MISSING=$(IFS=,; echo "${missing[*]-}")"
   echo "NEXT=cd \"$ROOT\" && ./install.sh all --profile $profile${PROJECT_ROOT:+ && ./install.sh --project-root \"$PROJECT_ROOT\" project}"
   echo "CURSOR_POLICY=./install.sh cursor-policy-copy"
@@ -536,6 +563,15 @@ print_report() {
     [[ "$policy_s" == "missing" ]] && note_issue
     printf '%-8s %-8s %-12s %-8s %-14s %-8s %-18s %-12s\n' \
       "$platform" "$skills_s" "$content_s" "$agents_s" "$agent_content_s" "$policy_s" "$drift_s" "$prof_s"
+  done
+  echo
+
+  echo "--- Optional notifications ---"
+  local notification_s
+  for platform in codex cursor claude; do
+    notification_s="$(notification_status "$platform")"
+    echo "$platform: $notification_s"
+    [[ "$notification_s" != "stale" && "$notification_s" != "duplicate" && "$notification_s" != "invalid" ]] || note_issue
   done
   echo
 

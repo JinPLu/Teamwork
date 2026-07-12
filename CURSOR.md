@@ -27,6 +27,9 @@ Project-local setup:
 Skills install to `~/.cursor/skills/` or `.cursor/skills/`. Custom role agents
 install to `~/.cursor/agents/` or `.cursor/agents/`.
 
+Teamwork does not currently install Cursor sounds: the local hook path must be
+live-verified before the package claims parity with Codex/Claude Code.
+
 `performance-first` uses Sonnet 4.6 for Explorer/Designer, Composer 2.5 Fast
 for Worker, and Opus 4.8 Thinking High for review roles. `cost-first` uses base
 Composer 2.5 for routine roles. GPT-named compatibility profiles preserve these

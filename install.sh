@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_MODE="${TEAMWORK_INSTALL_MODE:-copy}"
 CODEX_PROFILE="${TEAMWORK_CODEX_PROFILE:-performance-first}"
+NOTIFICATIONS_ACTION="preserve"
 PKG_VERSION="unknown"
 if [[ -f "$ROOT/VERSION" ]]; then
   PKG_VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION")"
@@ -63,7 +64,7 @@ CODEX_AGENTS=(
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] [--profile performance-first|cost-first|gpt56-role|gpt56-high|gpt56-xhigh|gpt55-high|gpt55-xhigh] \
+  ./install.sh [--copy|--link] [--notifications|--no-notifications] [--profile performance-first|cost-first|gpt56-role|gpt56-high|gpt56-xhigh|gpt55-high|gpt55-xhigh] \
     [--project-root PATH] \
     codex|cursor|claude|all|project|init-project|project-codex-agents|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
 
@@ -89,6 +90,11 @@ Targets:
 
 Default mode is --copy. Use --link for local development when installs should
 track this checkout.
+
+Notifications are unchanged by default. --notifications installs opt-in
+ready/permission sounds for user-level Codex or Claude Code; --no-notifications
+removes only Teamwork-owned handlers. Project and Cursor notification installs
+are intentionally unsupported until their local hook contracts are live-verified.
 
 Profile defaults to performance-first on all platforms. For Codex it uses a
 GPT-5.6 role split: Terra medium for Explorer; Sol medium for Worker; Sol high
@@ -385,6 +391,39 @@ install_agent_file() {
   esac
 }
 
+configure_user_notifications() {
+  local platform="$1"
+  local config dest
+  [[ "$NOTIFICATIONS_ACTION" != "preserve" ]] || return 0
+
+  case "$platform" in
+    codex)
+      config="$HOME/.codex/hooks.json"
+      dest="$HOME/.codex/teamwork/notify.py"
+      ;;
+    claude)
+      config="$HOME/.claude/settings.json"
+      dest="$HOME/.claude/teamwork/notify.py"
+      ;;
+    *)
+      echo "Unsupported notification platform: $platform" >&2
+      exit 2
+      ;;
+  esac
+
+  if [[ "$NOTIFICATIONS_ACTION" == "install" ]]; then
+    install_agent_file "$ROOT/hooks/notify.py" "$dest"
+    python3 "$ROOT/scripts/configure-notifications.py" install \
+      --config "$config" --notifier "$dest"
+    echo "Installed Teamwork $platform notifications: $config"
+  else
+    python3 "$ROOT/scripts/configure-notifications.py" remove \
+      --config "$config" --notifier "$dest"
+    rm -f "$dest"
+    echo "Removed Teamwork $platform notifications from: $config"
+  fi
+}
+
 codex_agent_profile_values() {
   local agent="$1"
   case "$CODEX_PROFILE:$agent" in
@@ -607,6 +646,7 @@ install_codex() {
   install_skill_set "$HOME/.codex/skills" "Codex"
   install_codex_agent_set "$HOME/.codex/agents" "user"
   install_codex_global_policy
+  configure_user_notifications codex
 }
 
 install_cursor() {
@@ -619,6 +659,7 @@ install_claude() {
   install_skill_set "$HOME/.claude/skills" "Claude Code"
   install_claude_agent_set "$HOME/.claude/agents" "user Claude Code"
   install_claude_global_policy
+  configure_user_notifications claude
 }
 
 install_all() {
@@ -668,6 +709,14 @@ while [[ $# -gt 0 ]]; do
       INSTALL_MODE="link"
       shift
       ;;
+    --notifications)
+      NOTIFICATIONS_ACTION="install"
+      shift
+      ;;
+    --no-notifications)
+      NOTIFICATIONS_ACTION="remove"
+      shift
+      ;;
     --project-root)
       [[ $# -ge 2 ]] || { echo "--project-root requires a path." >&2; usage; exit 2; }
       PROJECT_ROOT="$(cd "$2" && pwd)"
@@ -708,6 +757,18 @@ while [[ $# -gt 0 ]]; do
 done
 
 validate_codex_profile
+
+if [[ "$NOTIFICATIONS_ACTION" != "preserve" ]]; then
+  case "${TARGET:-codex}" in
+    codex|claude|all)
+      ;;
+    *)
+      echo "Notification flags are supported only with codex, claude, or all user targets." >&2
+      usage
+      exit 2
+      ;;
+  esac
+fi
 
 if [[ -n "$PROJECT_ROOT" && "${TARGET:-codex}" != "project" && "${TARGET:-codex}" != "init-project" && "${TARGET:-codex}" != "project-codex-agents" ]]; then
   echo "--project-root is valid only with the project, project-codex-agents, and init-project targets." >&2

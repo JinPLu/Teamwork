@@ -56,7 +56,13 @@ cd Teamwork
 ```bash
 ./install.sh --help
 ./install.sh --profile cost-first codex
+./install.sh --notifications --profile cost-first codex
 ```
+
+`--notifications` 为用户级 Codex/Claude Code 安装主任务完成音和权限请求音；
+subagent 默认静音，普通安装不会改变现有通知配置。用 `--no-notifications`
+只移除 Teamwork 自己的 handler。Codex plugin 用户需在 `/hooks` 明确信任；
+Cursor 本地 hook 尚未 live-verified，因此不伪装成已支持。
 
 项目级安装与完整初始化：
 
@@ -122,9 +128,15 @@ git pull --ff-only
 
 ```bash
 ./scripts/validate.sh
+python3 scripts/check-codex-routing.py
 python3 scripts/eval-teamwork.py --split dev
 python3 scripts/run-teamwork-live-eval.py --help
+python3 scripts/audit-codex-sessions.py --help
 ```
+
+`check-codex-routing.py` 只读检查 Teamwork agent 合同、当前 bundled catalog
+中的 model/effort 支持和 prompt 装载；它不会调用模型、修改 catalog，或把
+`multi_agent_version` 误当成当前 spawn schema 已暴露 selector 的证据。
 
 ## 文档导航
 

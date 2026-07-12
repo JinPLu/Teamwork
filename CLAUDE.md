@@ -14,6 +14,8 @@ manifests.
 ```bash
 ./install.sh claude
 ./install.sh claude --profile cost-first
+./install.sh claude --profile cost-first --notifications
+./install.sh claude --no-notifications
 ./install.sh claude-agents
 ./install.sh claude-policy
 ./install.sh all
@@ -30,6 +32,12 @@ Skills install to `~/.claude/skills/`. Subagents install to
 `~/.claude/agents/` or `.claude/agents/`. `./install.sh claude` also maintains
 the Teamwork-managed bootstrap block in `~/.claude/CLAUDE.md`; `claude-policy`
 prints the same block for review.
+
+Notifications are opt-in for direct installs and use one fail-open hook for
+main `Stop` and `PermissionRequest`; subagents stay silent and message content
+is not inspected. Installation is covered by isolated tests; live Claude event
+delivery was not verified in this release. Plugin activation follows Claude
+Code's hook trust controls.
 
 Claude Code agents use the current `haiku`, `sonnet`, and `opus` aliases rather
 than pinned historical model IDs. `performance-first` uses Sonnet for routine

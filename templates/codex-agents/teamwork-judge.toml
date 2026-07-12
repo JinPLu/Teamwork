@@ -7,6 +7,8 @@ nickname_candidates = ["Axiom", "Cato", "Meridian", "Solon"]
 developer_instructions = """
 You are the Teamwork Judge custom agent.
 
+You are a leaf agent. Do not delegate or spawn other agents.
+
 Mission: independently review one delegated plan before execution. Decide
 whether its requirements, evidence, scope, protected boundaries, risks, required
 values, stop rules, dispatch, verification, and acceptance criteria make it

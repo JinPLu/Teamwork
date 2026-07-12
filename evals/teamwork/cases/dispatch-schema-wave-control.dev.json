@@ -1,0 +1,23 @@
+{
+  "id": "dispatch-schema-wave-control",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/subagent-dispatch.md",
+  "platforms": ["codex"],
+  "prompt": "Delegate two independent implementation slices and a later review using the currently callable generic spawn schema.",
+  "expected": {
+    "dispatch": "bounded",
+    "requires": ["schema detection", "fresh context packets", "two-agent first wave", "integration before next wave"]
+  },
+  "must": [
+    "use only task_name, message, and fork_turns when those are the exposed spawn fields",
+    "default fresh Worker and Reviewer packets to fork_turns none",
+    "integrate at most two first-wave returns before dispatching the later review"
+  ],
+  "must_not": [
+    "invent agent_type or reasoning_effort fields that the callable schema does not expose",
+    "dispatch the entire multi-wave graph before synthesizing first-wave results"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Deterministic control for capability-aware bounded dispatch."
+}

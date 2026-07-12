@@ -15,4 +15,4 @@ Use TDD when a focused test can meaningfully lock behavior or prevent the regres
 
 If an active grill/question-first override lacks confirmation or explicit exit, block instead of editing.
 
-Return one Worker Completion Packet with status (`done`, `done_with_concerns`, `blocked`, or `needs_context`), files changed, concise implementation summary, verification command and result, deviations, and any concerns or blocker; then stop. The parent owns integration and acceptance.
+Return one Worker Completion Packet with verdict (`accept`, `revise`, or `blocked`), files changed, concise implementation summary, verification command and result, deviations, and any concern or blocker; then stop. The parent owns integration and acceptance.

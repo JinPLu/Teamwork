@@ -30,6 +30,25 @@ their methods; load other references only when their condition applies.
 7. **Grill mode is explicit.** Only an explicit grill/question-first request
    activates `grill-mode.md`; complexity or ambiguity alone does not.
 
+## Stage Entry Card
+
+Before a Teamwork stage acts, freeze the smallest useful card:
+
+```text
+Objective:      outcome to produce
+Scope:          owned surface and protected boundaries
+Oracle:         evidence that decides success
+Truth identity: source/config/artifact version the work relies on
+Authority:      permitted reads, writes, and external effects
+Stop:           completion, handoff, or blocker condition
+```
+
+Keep the card in the current prompt or accepted artifact; do not create ceremony
+for native fast-path work. A proposed action outside the frozen card is a scope
+delta: pause that action and obtain revised authority before proceeding. A user
+correction supersedes conflicting premises and cancels any outstanding packet
+made invalid by it; integrate only still-valid results.
+
 ## Risk Matrix
 
 | Risk | Process | Acceptance |
@@ -51,6 +70,11 @@ model, API, or field behavior could have changed.
 A dispatched subagent returns a bounded result; the main agent integrates it
 and verifies the combined state. Same-context verification is sufficient for
 low- and medium-risk work. Fresh review is required only for the high-risk row.
+
+Evidence state is monotonic: keep `NOT VERIFIED`, failed, blocked, and
+partial-tranche results visible until new direct evidence changes that exact claim.
+Never upgrade them through synthesis, retry narration, or a broader completion
+claim.
 
 Create durable artifacts only when work is reusable, cross-turn, high-risk,
 public, explicitly planned, or goal-mode; see `artifact-protocol.md`.

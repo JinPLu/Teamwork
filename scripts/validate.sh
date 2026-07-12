@@ -174,9 +174,13 @@ for retired in "${RETIRED_SKILLS[@]}"; do
   [[ ! -d "$ROOT/skills/$retired" ]] || fail "retired skill directory still exists: skills/$retired"
 done
 
-for removed in "commands" "hooks" "bin/raoctl.py"; do
+for removed in "commands" "bin/raoctl.py"; do
   [[ ! -e "$ROOT/$removed" ]] || fail "removed runtime surface still exists: $removed"
 done
+expected_hook_inventory="$(printf '%s\n' hooks.json notify.py | sort)"
+actual_hook_inventory="$(find "$ROOT/hooks" -maxdepth 1 -type f -exec basename {} \; | sort)"
+[[ "$actual_hook_inventory" == "$expected_hook_inventory" ]] \
+  || fail "hooks/ must contain only the notification contract: hooks.json notify.py"
 if git -C "$ROOT" ls-files '.cursor' 2>/dev/null | grep -q .; then
   fail ".cursor/ must not be tracked; use ./install.sh project for local project skills"
 fi
@@ -381,10 +385,80 @@ if claude.get("version") != version:
     raise SystemExit("FAIL: Claude manifest version must match VERSION")
 PY
 
+# --- Notification hooks and private session audit ---
+for hook_file in hooks/hooks.json hooks/notify.py scripts/configure-notifications.py scripts/test_notify_hook.py scripts/audit-codex-sessions.py; do
+  [[ -f "$ROOT/$hook_file" ]] || fail "missing $hook_file"
+  git_known_package_file "$hook_file" \
+    || fail "$hook_file is not known to git; use git add -N before release validation"
+done
+python3 -m json.tool "$ROOT/hooks/hooks.json" >/dev/null
+python3 - "$ROOT" <<'PY'
+import json
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+data = json.loads((root / "hooks/hooks.json").read_text())
+hooks = data.get("hooks")
+if set(hooks or {}) != {"Stop", "PermissionRequest"}:
+    raise SystemExit("FAIL: hooks.json must contain only Stop and PermissionRequest")
+for event, groups in hooks.items():
+    if len(groups) != 1 or set(groups[0]) != {"hooks"}:
+        raise SystemExit(f"FAIL: {event} must have one minimal matcher-free group")
+    handlers = groups[0]["hooks"]
+    if len(handlers) != 1 or handlers[0].get("type") != "command":
+        raise SystemExit(f"FAIL: {event} must have one command handler")
+    command = handlers[0].get("command", "")
+    if "hooks/notify.py" not in command:
+        raise SystemExit(f"FAIL: {event} must call hooks/notify.py")
+    if any(field in handlers[0] for field in ("decision", "continue", "reason", "prompt")):
+        raise SystemExit(f"FAIL: {event} hook must not control workflow")
+PY
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_notify_hook.py" >/dev/null
+python3 -m py_compile \
+  "$ROOT/hooks/notify.py" \
+  "$ROOT/scripts/configure-notifications.py" \
+  "$ROOT/scripts/audit-codex-sessions.py" \
+  "$ROOT/scripts/test_notify_hook.py"
+
+audit_tmp="$(mktemp -d)"
+CLEANUP_PATHS+=("$audit_tmp")
+audit_root_id="11111111-1111-4111-8111-111111111111"
+audit_child_id="22222222-2222-4222-8222-222222222222"
+printf '%s\n' \
+  "{\"type\":\"session_meta\",\"payload\":{\"id\":\"$audit_root_id\",\"timestamp\":\"2026-07-13T00:00:00Z\",\"thread_source\":\"user\"}}" \
+  '{"type":"turn_context","payload":{"model":"gpt-5.6-sol","effort":"high"}}' \
+  '{"type":"response_item","payload":{"type":"function_call","name":"spawn_agent","arguments":"{\"task_name\":\"worker\",\"fork_turns\":\"none\",\"message\":\"redacted fixture\"}"}}' \
+  "{\"type\":\"event_msg\",\"payload\":{\"type\":\"sub_agent_activity\",\"kind\":\"started\",\"agent_thread_id\":\"$audit_child_id\",\"agent_path\":\"/root/worker\"}}" \
+  '{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":100,"cached_input_tokens":80,"output_tokens":10,"reasoning_output_tokens":2,"total_tokens":110},"model_context_window":1000}}}' \
+  > "$audit_tmp/rollout-$audit_root_id.jsonl"
+printf '%s\n' \
+  "{\"type\":\"session_meta\",\"payload\":{\"id\":\"$audit_child_id\",\"parent_thread_id\":\"$audit_root_id\",\"thread_source\":\"subagent\",\"source\":{\"subagent\":{\"thread_spawn\":{\"parent_thread_id\":\"$audit_root_id\",\"agent_path\":\"/root/worker\",\"agent_role\":null}}}}}" \
+  '{"type":"turn_context","payload":{"model":"gpt-5.6-sol","effort":"high"}}' \
+  '{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":50,"cached_input_tokens":40,"output_tokens":5,"reasoning_output_tokens":1,"total_tokens":55},"model_context_window":1000}}}' \
+  > "$audit_tmp/rollout-$audit_child_id.jsonl"
+python3 "$ROOT/scripts/audit-codex-sessions.py" \
+  --sessions-root "$audit_tmp" \
+  --profile "$audit_root_id=performance-first" \
+  --json "$audit_root_id" > "$audit_tmp/report.json"
+python3 - "$audit_tmp/report.json" <<'PY'
+import json
+import pathlib
+import sys
+
+report = json.loads(pathlib.Path(sys.argv[1]).read_text())["reports"][0]
+assert report["profile_at_session_time"]["value"] == "performance-first"
+assert report["root"]["fork_modes"] == {"none": 1}
+assert len(report["direct_children"]) == 1
+assert report["direct_children"][0]["model_attribution"] == "generic-or-parent-inherited"
+assert report["aggregate"]["operational_token_telemetry"]["total_tokens"] == 165
+PY
+
 # --- Top-level docs ---
 grep_required 'Codex + Cursor + Claude Code' "$ROOT/README.md" "README must state Codex + Cursor + Claude Code positioning"
 grep_required 'teamwork-update' "$ROOT/README.md" "README must document teamwork-update"
 grep_required 'check-update.sh' "$ROOT/README.md" "README must document check-update script"
+grep_required 'check-codex-routing.py' "$ROOT/README.md" "README must document Codex routing readiness"
 grep_required 'teamwork-init' "$ROOT/README.md" "README must document teamwork-init"
 grep_required 'VERSION' "$ROOT/README.md" "README must document package version source"
 grep_required '\[English\](README.en.md)' "$ROOT/README.md" "default README must link to English README"
@@ -405,6 +479,8 @@ grep_required '\[中文\](README.md)' "$ROOT/README.en.md" "English README must 
 grep_required 'Codex + Cursor + Claude Code' "$ROOT/README.en.md" "English README must state Codex + Cursor + Claude Code positioning"
 grep_required 'teamwork-update' "$ROOT/README.en.md" "English README must document teamwork-update"
 grep_required 'check-update.sh' "$ROOT/README.en.md" "English README must document check-update script"
+grep_required 'check-codex-routing.py' "$ROOT/README.en.md" \
+  "English README must document Codex routing readiness"
 grep_required 'VERSION' "$ROOT/README.en.md" "English README must document package version source"
 grep_required './install.sh --link codex' "$ROOT/README.en.md" "English README must document Codex link-mode development install"
 check_markdown_local_images "$ROOT/README.en.md"
@@ -417,6 +493,8 @@ grep_required 'Codex runtime profile' "$ROOT/CODEX.md" "CODEX.md must identify i
 grep_required 'VERSION' "$ROOT/CODEX.md" "CODEX.md must document package version source"
 grep_required 'teamwork-init' "$ROOT/CODEX.md" "CODEX.md must document teamwork-init"
 grep_required 'subagent-dispatch.md' "$ROOT/CODEX.md" "CODEX.md must point to subagent dispatch reference"
+grep_required 'check-codex-routing.py' "$ROOT/CODEX.md" \
+  "CODEX.md must document Codex routing readiness"
 grep_required 'Task' "$ROOT/CURSOR.md" "CURSOR.md must document Cursor Task subagent policy"
 grep_required 'Goal Mode' "$ROOT/CURSOR.md" "CURSOR.md must document Cursor goal mode"
 grep_required 'subagent-dispatch.md' "$ROOT/CURSOR.md" "CURSOR.md must point to subagent dispatch reference"
@@ -588,6 +666,31 @@ done
 grep_required 'no fixed prompt-level cap' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" \
   "Worker waves must be bounded by economics rather than a fixed quota"
 
+# --- Codex agent routing readiness contract ---
+[[ -f "$ROOT/scripts/check-codex-routing.py" ]] \
+  || fail "missing scripts/check-codex-routing.py"
+python3 -m py_compile "$ROOT/scripts/check-codex-routing.py"
+python3 "$ROOT/scripts/check-codex-routing.py" \
+  --agents-dir "$ROOT/templates/codex-agents" --profiles-only >/dev/null
+
+codex_profile_tmp="$(mktemp -d)"
+CLEANUP_PATHS+=("$codex_profile_tmp")
+cp "$ROOT"/templates/codex-agents/*.toml "$codex_profile_tmp/"
+python3 - "$codex_profile_tmp/other-agent.toml" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+path.write_text(
+    'name = "other_agent"\nnickname_candidates = ["Atlas"]\n',
+    encoding="utf-8",
+)
+PY
+if python3 "$ROOT/scripts/check-codex-routing.py" \
+  --agents-dir "$codex_profile_tmp" --profiles-only >/dev/null 2>&1; then
+  fail "Codex profile validation must reject duplicate nicknames"
+fi
+
 # --- Lean role templates ---
 while IFS= read -r template; do
   [[ "$(grep -c 'grill/question-first' "$template")" -eq 1 ]] \
@@ -615,7 +718,14 @@ for template in \
   "$ROOT/templates/cursor-agents/worker.md" \
   "$ROOT/templates/claude-agents/worker.md"; do
   grep_required 'Use TDD when a focused test' "$template" "Worker TDD must be conditional"
+  for verdict in accept revise blocked; do
+    grep_required "$verdict" "$template" \
+      "Worker completion verdicts must match the shared subagent contract: $verdict"
+  done
 done
+grep_absent 'done_with_concerns\|needs_context' \
+  "agent templates must not restore retired lifecycle verdicts" \
+  "$ROOT/templates/codex-agents" "$ROOT/templates/cursor-agents" "$ROOT/templates/claude-agents"
 
 grep_absent 'teamwork-quality' "Teamwork must not add a separate quality stage" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/install.sh"
 grep_absent 'teamwork-deslop' "Teamwork must not add a separate deslop stage" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/install.sh"
