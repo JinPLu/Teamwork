@@ -2,20 +2,20 @@
 
 [中文](CHANGELOG.md)
 
-This changelog lists user-visible changes. Implementation details live in pull requests.
+This changelog lists user-visible changes. Implementation details live in Git commits or pull requests.
 
 ## 2.17.0 - 2026-07-13
 
 **Directly addresses plans that get reviewed over and over yet still take hours to converge.**
 
 - **Important decisions align earlier.** A non-simple Plan inspects repository and configuration evidence first, then asks one genuinely user-owned question at a time with a recommendation. A short Decision Summary appears before the final Plan, reducing late discovery that the task was heading in the wrong direction.
-- **Review no longer restarts indefinitely.** Each task gets one full review. After fixes, the same Reviewer performs one delta recheck limited to the original findings, declared fixes, and fix-introduced regressions instead of rescanning everything and opening another review cycle.
+- **Review no longer restarts indefinitely.** A task that needs independent acceptance gets at most one full review. After fixes, the same Reviewer performs one delta recheck limited to the original findings, declared fixes, and fix-introduced regressions instead of rescanning everything and opening another review cycle. Simple tasks may still self-verify directly.
 - **No blocker means a clear finish.** Only a failed accepted criterion, protected-boundary breach, regression, or missing gating evidence can be a `BLOCKER`. Preferences, opportunistic improvements, and out-of-scope ideas remain visible without keeping the task permanently unaccepted.
 - **Fixing one problem no longer restarts from Plan.** Known fixes return directly to Execute; unknown causes return to Debug; only a user-accepted scope change returns to Plan. Failed verification reruns only the affected stage.
-- **The target cannot silently move during execution.** Plan, Execute, Review, and Goal inherit one versioned Task Contract with stable acceptance criteria. Every scope change must be explicit and versioned.
+- **The target cannot silently move during execution.** For non-simple, multi-stage Teamwork work, Plan, Execute, Review, and Goal inherit one versioned Task Contract with stable acceptance criteria. Every scope change must be explicit and versioned. Simple tasks do not need this contract.
 - **The conversation is quieter.** Progress updates report only new decisions, blockers, verification results, and completion rather than repeatedly restating the plan or announcing another review.
 
-Plan and Review have not been removed, and Codex role-model tiers have not been lowered. This release reduces workflow repetition, rework, and convergence time; it does not promise to eliminate GPT-5.6 Sol/high single-call latency.
+Plan and Review have not been removed, and Codex role-model tiers have not been lowered. This release reduces workflow repetition, rework, and convergence time; it does not promise to eliminate GPT-5.6 Sol/high single-call latency. Compared with 2.16, this release removes the fixed zero-to-three question count and active/closed status ceremony in favor of asking only when a question is valuable; the 2.16 entry below records the historical behavior at that time.
 
 ## 2.16.0 - 2026-07-13
 
@@ -57,150 +57,74 @@ profile**.
 
 ## 2.13.0 - 2026-07-10
 
-This release makes Teamwork **guardrail-first and conditionally progressive for
-GPT-5.6 instead of template-driven**.
+This release is about **keeping quality for complex work without burdening simple tasks**.
 
-- The six core stages are now roughly 300-word stage cards. Authorization,
-  required state, evidence, scope, verification, and stop rules remain; fixed
-  hypothesis counts, mandatory tables/diagrams, mega-packets, automatic
-  artifacts, and blanket fresh review do not.
-- The router activates for explicit Teamwork, cross-stage work, or an unclear
-  next stage. Complex but sufficiently specified work proceeds; only a real
-  user-owned decision gap triggers a question, and grill mode remains explicit.
-- Cross-platform role templates are about 39% smaller. TDD, source census,
-  alternatives, fresh context, and durable memory are conditional.
-- A provenance-rich Codex live trajectory pilot can pin `gpt-5.6-sol` at
-  `medium`, `high`, or `max`; unavailable models/efforts fail explicitly and
-  never silently fall back.
-- Validation now checks semantic invariants, size budgets, and a complex-task
-  autonomy control. The `gpt56-role` Terra/Sol/Deep `max` mapping is unchanged.
+- Well-specified tasks proceed directly instead of being forced to list hypotheses, draw tables, create durable records, or start independent review merely to satisfy a template.
+- Only decisions that materially change the outcome and genuinely belong to the user interrupt progress. Test-first work, alternatives, durable memory, and fresh review now activate according to risk.
+- Core collaboration instructions are substantially shorter across all three platforms, reducing the context spent rereading and restating process.
+- Codex adds the role-tiered `gpt56-role`: Explorer uses Terra/medium, Worker uses Sol/medium, design and acceptance roles use Sol/high, and a few deep acceptance tasks use Sol/max instead of every role inheriting one high reasoning tier.
+- When a model or reasoning tier is explicitly pinned but unavailable, the run fails clearly instead of silently switching models or lowering effort.
 
-## 2.12.0 - 2026-07-10
-
-This release is about **adding a role-tiered GPT-5.6 profile for Codex
-subagents**.
-
-- Added `gpt56-role`: Explorer uses `gpt-5.6-terra` at `medium`; Worker uses
-  `gpt-5.6-sol` at `medium`; Designer, Judge, and Reviewer use `gpt-5.6-sol` at
-  `high`; Deep Judge/Reviewer use `gpt-5.6-sol` at `max`.
-- The profile preserves native performance-first tiers on Cursor and Claude
-  Code. Existing `performance-first`, `cost-first`, and `gpt55-*` profiles keep
-  their prior behavior.
-- The installer, readiness drift checks, project init, Codex global policy,
-  READMEs, and validation now cover the new profile without silently migrating
-  older profiles.
-- The role split follows current Codex model guidance: Terra for read-heavy
-  scans, Sol for complex implementation and judgment, and `max` for deep
-  single-task acceptance. Ultra is not pinned inside a subagent because it can
-  delegate again.
+`2.12.0` was not released separately; the role-tiering capabilities shipped as part of `2.13.0`.
 
 ## 2.11.1 - 2026-07-08
 
-This release is about **tightening the priority boundary between question-first
-/ grill-me and lightweight direct action**.
+This release is about **keeping small tasks direct without ignoring an explicit “ask me first” request**.
 
-- Lightweight tasks still default to direct action, but `using-teamwork` and the
-  routing policy now state explicitly that `grill-me` / question-first overrides
-  the lightweight fast path.
-- Added a "simple task + explicit grill-me" eval fixture so one-line typo tasks
-  cannot bypass the question-first override.
-- Hardened the lightweight control sample checks: they now reject extra
-  questions, grill ceremony, subagent dispatch, and durable plans instead of
-  relying on a narrow keyword check.
-- Init/update skills now include active grill/question-first maintenance guards
-  before install or release changes continue.
+- Lightweight work such as a one-line fix still completes directly without extra questions, subagents, or durable plans.
+- If you explicitly request `grill-me`, discussion first, or challenged assumptions, that instruction wins even when the task is small.
+- Install and update work no longer continues past an unanswered material decision, preventing maintenance actions from bypassing confirmation.
+- New lightweight regressions prevent future releases from reintroducing unnecessary questions, plans, or delegation.
 
 ## 2.11.0 - 2026-07-08
 
-This release is about **turning question-first / grill-me into a cross-stage interaction protocol and making installed-surface drift checks more trustworthy**.
+This release is about **confirming outcome-changing decisions first and making stale installs easier to detect**.
 
-- Complex, uncertain, or non-lightweight tasks now ask an outcome-changing
-  decision/risk question before planning or execution. Explicit `grill-me` /
-  question-first requests inspect discoverable facts first, ask one recommended
-  question, then stop until confirmation or exit.
-- Research, debug, plan, execute, review, goal, init, update, and the
-  Codex/Cursor/Claude Explorer, Designer, Judge, Worker, and Reviewer templates
-  now share question-first override guards.
-- Added question-first eval fixtures and three-platform static samples covering
-  explicit grill, ordinary complex uncertainty, and lightweight direct-action
-  control. The docs now state these are offline fixture/static-sample gates, not
-  proof of live model behavior.
-- `check-update.sh` now renders expected agent files from the installer profile
-  and compares them byte-for-byte, so readiness and the normal report detect
-  global/project agent content drift.
-- Update/init commands are now directly runnable: project-local refresh uses
-  `--project-root`, profile examples include `<profile> <target>`, and policy
-  output targets no longer rewrite the checkout `.teamwork-profile`.
-- Added the `gpt55-high` profile to pin Codex Teamwork subagents to gpt-5.5 high
-  reasoning.
+- For complex or uncertain work, Teamwork inspects repository and configuration evidence first, then brings back only unresolved user decisions with a recommendation.
+- Research, Debug, Plan, Execute, Review, and Goal use the same confirmation boundary so one stage cannot keep acting after another promised to wait.
+- Dedicated simple-task controls prevent ordinary requests from turning into unnecessary interviews. These offline checks are not presented as proof of live platform behavior.
+- `check-update.sh` can detect actual global and project skill/agent content drift instead of comparing version numbers alone.
+- Project update commands and profile examples are directly runnable, and a new `gpt55-high` option can pin Codex subagents to GPT-5.5/high.
 
 ## 2.10.0 - 2026-07-08
 
-This release is about **giving Teamwork a reusable SkillOpt-Lite/HarnessOpt-Lite candidate loop foundation**.
+This release is about **making prompt optimization repeatable instead of subjective**.
 
-- Added `scripts/optimize-teamwork.py` to initialize optimizer workspaces, export
-  result JSONL into file-native markdown samples, summarize scores, and apply a
-  deterministic candidate gate.
-- `scripts/eval-teamwork.py` now supports an optional `optimizer-candidates.jsonl`
-  schema plus a standalone `--optimizer-ledger` validator; real candidates must
-  carry provider/model/config, baseline/treatment, rollback, validation, reviewer,
-  and related evidence instead of `not_applicable` placeholders.
-- `scripts/validate.sh` now smokes the optimizer helper, valid/invalid candidate
-  ledgers, score summaries, and gate decisions while cleaning temporary files.
-- Review/update/eval-gate rules now state that actual SkillOpt-Lite/HarnessOpt-Lite
-  participation requires trajectory samples, same-case baseline/treatment, gate,
-  rollback, ledger, release audit, and fresh review.
-- This is a verifiable optimization-pipeline foundation; it does not claim the
-  scaffold itself is a completed real optimizer pilot.
+- Maintainers can run the previous and candidate behavior on the same tasks before deciding whether to accept a change.
+- Every candidate must record its model, configuration, verification, rollback path, and independent review instead of showcasing only the best output.
+- Accepted and rejected candidates remain recorded so failed directions are not rediscovered and repeated later.
+- The optimization tooling is limited to Teamwork maintenance and does not add another stage to ordinary user tasks.
+- This release provides verifiable optimization infrastructure; it does not claim that Teamwork has already completed an automatic real-world optimization run.
 
 ## 2.9.0 - 2026-07-08
 
-This release is about **using a file-native harness to govern and improve Teamwork's own skill behavior**.
+This release is about **giving Teamwork's own behavior upgrades reusable regression checks**.
 
-- Added `evals/teamwork/` with tracked cases, rubrics, and ledgers for reusable
-  behavior expectations across lightweight native controls, complex coding,
-  debug, research, review, goal, release gates, and platform scope.
-- Added `scripts/eval-teamwork.py`, an offline no-model runner that validates
-  eval fixtures, dev/release splits, target surfaces, rubrics, and ledger schemas.
-- `scripts/validate.sh` now checks the eval harness inventory and runs the dev
-  split so skill/harness assets cannot drift silently.
-- Added `eval-gate.md`, which makes evals maintenance evidence rather than a new
-  runtime stage; ordinary lightweight user tasks are not forced through evals.
-- `teamwork-review` and `teamwork-update` now require eval, ledger, and non-empty
-  release split evidence for package behavior and release changes.
+- New cases cover simple tasks staying lightweight, complex coding, debugging, research, review, long-running goals, and cross-platform boundaries.
+- The checks run fully offline without model calls, so maintainers can quickly catch accidentally broken rules or install assets.
+- Behavior releases now require development evidence, a release audit, and recorded acceptance or rejection instead of shipping because a change merely looks good.
+- Evaluation governs Teamwork maintenance only; it does not become a new stage in ordinary user work.
+- Offline checks prove consistency with the recorded cases, not real Codex, Cursor, or Claude runtime behavior.
 
 ## 2.8.1 - 2026-07-08
 
-This release is about **making grill mode and code-maintenance rules reach every critical execution entrypoint**.
+This release is about **making “discuss first” and code-quality rules apply during execution, not only in planning**.
 
-- `grill me` now pauses research synthesis, design selection, goal handoff,
-  edits, and planning/design/execution agent dispatch, not only planning and implementation.
-- Research, plan, goal, review, Designer, Judge, Worker, and Reviewer rules now
-  share the Shared Understanding Packet precondition before synthesis, direction
-  choice, or delegation.
-- Code maintenance is now a precondition for every code write path: understand
-  owner, control flow, tests/config, and invariants before editing the current path.
-  Reviewers check that baseline for every code diff.
-- `check-update.sh` and validation now inspect policy and agent content anchors,
-  so stale installed global/project surfaces are detected.
-- Codex, Cursor, and Claude Code global policies, agent templates, and
-  project-local installs now share the hardened rules.
+- When you ask to discuss first, dependent conclusions, direction choices, edits, and delegation wait for confirmation instead of only pausing code generation.
+- Before editing code, Teamwork identifies the existing owner, control flow, tests, and configuration, reducing parallel implementations in the wrong place.
+- Reviewers check unsupported branches, defaults, and fallback paths so a fix does not create more maintenance burden.
+- Update checks can detect stale installed skills, agents, or global policy.
+- Codex, Cursor, and Claude Code share the same confirmation and code-maintenance boundaries.
 
 ## 2.8.0 - 2026-07-08
 
-This release is about **actually asking first when the user explicitly asks to be grilled**.
+This release is about **actually stopping to discuss when you explicitly ask to be grilled**.
 
-- Added an explicit grill/question-first protocol: when the user says grill me,
-  ask before acting, challenge assumptions, or similar, Teamwork must ask at
-  least one decision/risk question and include a recommended answer.
-- Grill mode pauses planning, implementation, goal start, and Worker dispatch
-  until the user confirms a Shared Understanding Packet or explicitly exits grill mode.
-- Plan, execute, goal, review, and debug stages now share the constraint so the
-  system does not claim it will clarify first and then immediately start doing.
-- `check-update.sh` now checks installed skill file content drift, including
-  project-local skill content drift; validation adds a regression for that path.
-- Installed Codex, Cursor, and Claude Code global policies now include grill
-  mode and a leaner dispatch boundary.
+- When you say grill me, ask first, or challenge assumptions, Teamwork asks at least one outcome-changing question and recommends an answer.
+- Planning, implementation, long-running Goal work, and Worker delegation wait until you confirm or explicitly exit.
+- Debug, Plan, Execute, Review, and Goal share the same pause rule, preventing background action after a promise to discuss first.
+- Update checks begin comparing installed skill content, detecting cases where the version matches but the rules are still stale.
+- Codex, Cursor, and Claude Code global installs share this interaction boundary.
 
 ## 2.7.1 - 2026-07-07
 
