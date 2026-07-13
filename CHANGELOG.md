@@ -4,6 +4,15 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 2.19.0 - 2026-07-13
+
+**完整初始化和更新现在会把提示音真正安装、复查并纳入持续维护。**
+
+- `install.sh all` 和 `init-project` 默认安装 Codex/Claude Code 的主任务完成音与权限请求音；直接平台安装仍保持显式 opt-in，`--no-notifications` 可退出且只移除 Teamwork 自己的处理器。
+- `check-update.sh` 不再把“配置文件里已有 hook”误报为可用；它会通过 Codex 运行时区分已信任、待审核和无法核验，并在待审核时给出 `/hooks` 操作。
+- `teamwork-init` 和 `teamwork-update` 会核对精确的 Teamwork 通知命令，并且只逐项信任 `Stop` 与 `PermissionRequest`，不会使用 trust-all 或顺带信任其他 hook。
+- 新增默认安装、显式退出、运行时信任状态和重复 hook 顺序的回归覆盖；macOS 实际提示音已验证。
+
 ## 2.18.0 - 2026-07-13
 
 **提问更贴近实际工作，不再为维持流程状态而增加额外负担。**

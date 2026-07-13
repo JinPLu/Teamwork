@@ -25,16 +25,13 @@ gpt56-xhigh | gpt55-high | gpt55-xhigh`. Refresh installed agents with
 
 ## Full Project Init Default
 
-For setup/init requests, behave like a project `/init`: install the
-Teamwork-managed full setup first and report gaps after. Use
-`./install.sh --project-root "<project-root>" init-project` from the Teamwork
-checkout, or perform the same steps directly when unavailable. The command
-installs missing Teamwork-managed global/project skills, agents, and policies;
-configures Codex custom-agent routing; creates/updates the managed `AGENTS.md`
-block, `docs/teamwork/`, local ignore entries, and CodeGraph when the CLI exists. Context7/docs MCP is a read-only
-external docs substrate, not a project index; detect and record availability.
-The routing contract uses a root-inclusive limit of 9 threads: one main thread
-plus up to eight subagents.
+For setup/init, install the full setup first and report gaps after. Run
+`./install.sh --project-root "<project-root>" init-project` from Teamwork, or
+perform the same steps directly. It installs global/project skills, agents,
+policies, routing, Codex/Claude notifications, managed project files, and
+CodeGraph when available. `--no-notifications` is an explicit opt-out.
+Context7/docs MCP is read-only external docs, not a project index. Routing
+allows 9 threads total: one main plus eight subagents.
 
 Ask only before external MCP/skill installation, credentials, protected server
 state, destructive actions, or unresolved required values. Missing Teamwork
@@ -78,6 +75,9 @@ available. Restart after routing changes and report remaining gaps.
 9. For bootstrap policy, install managed Codex/Claude policy and Cursor agents;
    copy Cursor User Rules when possible. Project files hold only local facts,
    required values, or opt-outs. Report `Bootstrap policy:` and `Init Mode:`.
+   For `CODEX_NOTIFICATIONS=review-required`, verify the exact command in
+   `/hooks` and trust only `Stop` and `PermissionRequest` individually; never
+   trust-all. Otherwise report the human action.
 10. When Teamwork memory exists, keep a short pointer to
    `docs/teamwork/README.md`; do not inline the runtime narrative.
 11. For full-setup requests, return the Capability Matrix from `project-init.md`.

@@ -157,6 +157,92 @@ class NotifyHookTests(unittest.TestCase):
             self.assertEqual(configure.status(configure.load_config(config), command), "disabled")
             self.assertEqual(configure.load_config(config)["theme"], "dark")
 
+    def runtime_result(self, trust_status: str = "trusted") -> dict:
+        command = "python3 /tmp/teamwork/notify.py"
+        return {
+            "data": [
+                {
+                    "cwd": "/tmp/project",
+                    "hooks": [
+                        {
+                            "eventName": event,
+                            "command": command,
+                            "trustStatus": trust_status,
+                            "isManaged": False,
+                        }
+                        for event in ("stop", "permissionRequest")
+                    ],
+                }
+            ]
+        }
+
+    def test_codex_runtime_status_requires_hook_review(self) -> None:
+        command = "python3 /tmp/teamwork/notify.py"
+        self.assertEqual(
+            configure.codex_runtime_status(
+                self.runtime_result("untrusted"), command, Path("/tmp/project")
+            ),
+            "review-required",
+        )
+
+    def test_codex_runtime_status_accepts_trusted_exact_hooks(self) -> None:
+        command = "python3 /tmp/teamwork/notify.py"
+        self.assertEqual(
+            configure.codex_runtime_status(
+                self.runtime_result(), command, Path("/tmp/project")
+            ),
+            "installed",
+        )
+
+    def test_codex_runtime_status_rejects_incomplete_discovery(self) -> None:
+        command = "python3 /tmp/teamwork/notify.py"
+        result = self.runtime_result()
+        result["data"][0]["hooks"].pop()
+        self.assertEqual(
+            configure.codex_runtime_status(
+                result, command, Path("/tmp/project")
+            ),
+            "runtime-unverified",
+        )
+
+    def test_codex_runtime_status_reports_untrusted_duplicates(self) -> None:
+        command = "python3 /tmp/teamwork/notify.py"
+        result = self.runtime_result("untrusted")
+        result["data"][0]["hooks"].extend(
+            {
+                "eventName": event,
+                "command": command,
+                "trustStatus": "trusted",
+                "isManaged": False,
+            }
+            for event in ("stop", "permissionRequest")
+        )
+        self.assertEqual(
+            configure.codex_runtime_status(
+                result, command, Path("/tmp/project")
+            ),
+            "duplicate",
+        )
+
+    def test_codex_runtime_status_reports_trusted_duplicates(self) -> None:
+        command = "python3 /tmp/teamwork/notify.py"
+        result = self.runtime_result("trusted")
+        result["data"][0]["hooks"].extend(
+            {
+                "eventName": event,
+                "command": command,
+                "trustStatus": "trusted",
+                "isManaged": False,
+            }
+            for event in ("permissionRequest", "stop")
+        )
+        self.assertEqual(
+            configure.codex_runtime_status(
+                result, command, Path("/tmp/project")
+            ),
+            "duplicate",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -8,7 +8,9 @@ PROFILE_VALUE=""
 RUN_CODEGRAPH="${TEAMWORK_INIT_CODEGRAPH:-1}"
 INSTALL_GLOBAL=1
 COPY_CURSOR_POLICY="${TEAMWORK_INIT_CURSOR_POLICY_COPY:-1}"
+NOTIFICATIONS_ACTION="${TEAMWORK_NOTIFICATIONS_ACTION:-preserve}"
 GLOBAL_INSTALL_RC=0
+unset TEAMWORK_NOTIFICATIONS_ACTION
 
 usage() {
   cat <<'USAGE'
@@ -18,6 +20,8 @@ Usage:
 Initializes a project with full Teamwork defaults:
   - global Codex/Cursor/Claude skills, agents, and managed policies
   - Codex custom-agent routing
+  - user-level Codex and Claude Code notifications (use --no-notifications on
+    the install.sh init-project entrypoint to opt out)
   - project .cursor/.codex/.claude skills and agents
   - AGENTS.md Teamwork managed block
   - docs/teamwork/ runtime memory entrypoint
@@ -75,19 +79,15 @@ require_python() {
 }
 
 install_global_surfaces() {
+  local args=()
   if (( INSTALL_GLOBAL == 0 )); then
     echo "Global Teamwork surfaces: skipped (--project-only)"
     return 0
   fi
-  if [[ -n "$INSTALL_MODE_FLAG" && -n "$PROFILE_VALUE" ]]; then
-    "$TEAMWORK_ROOT/install.sh" "$INSTALL_MODE_FLAG" --profile "$PROFILE_VALUE" all
-  elif [[ -n "$INSTALL_MODE_FLAG" ]]; then
-    "$TEAMWORK_ROOT/install.sh" "$INSTALL_MODE_FLAG" all
-  elif [[ -n "$PROFILE_VALUE" ]]; then
-    "$TEAMWORK_ROOT/install.sh" --profile "$PROFILE_VALUE" all
-  else
-    "$TEAMWORK_ROOT/install.sh" all
-  fi
+  [[ -n "$INSTALL_MODE_FLAG" ]] && args+=("$INSTALL_MODE_FLAG")
+  [[ -n "$PROFILE_VALUE" ]] && args+=(--profile "$PROFILE_VALUE")
+  TEAMWORK_NOTIFICATIONS_ACTION="$NOTIFICATIONS_ACTION" \
+    "$TEAMWORK_ROOT/install.sh" "${args[@]}" all
 }
 
 install_project_surfaces() {

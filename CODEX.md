@@ -57,10 +57,14 @@ discoverable facts first, owns safe reversible implementation details, and
 pauses only work that depends on the answer while independent read-only work may
 continue.
 
-Notifications are opt-in for direct installs. They play distinct OS-native
+Notifications are opt-in for direct platform installs and enabled by default
+for full `all` and `init-project` installs. They play distinct OS-native
 sounds for main `Stop` and `PermissionRequest`, keep subagents silent, and never
-control continuation or inspect message content. Plugin installs load the same
-minimal hook after explicit `/hooks` trust.
+control continuation or inspect message content. After either a direct or plugin
+install, open Codex CLI, run `/hooks`, and trust the exact Teamwork hook
+definitions; Codex skips unreviewed command hooks. For direct installs,
+`check-update.sh` reports `review-required` until that user-owned trust step is
+complete. Plugin-only hook trust remains visible through Codex `/hooks`.
 
 ## How To Use
 

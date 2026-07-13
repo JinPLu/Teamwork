@@ -11,12 +11,11 @@ Use for package refresh and maintenance. Read
 
 ## Modes
 
-- **User refresh** — run `./scripts/check-update.sh --project "<path>"`; report
-  upstream drift, pull only with repository-update authority, install stale
-  global/project surfaces with the checkout profile, copy Cursor policy when
-  needed, then recheck. Restart Codex after routing changes. Native interaction
-  tools are runtime capabilities and are never enabled by Teamwork. Do not edit
-  `VERSION`, manifests, or changelogs.
+- **User refresh** — run `check-update.sh`; report drift and pull only with
+  repository-update authority. Always run `install.sh all --profile <profile>`
+  (notifications default; honor `--no-notifications`), refresh stale project
+  surfaces, copy Cursor policy, and recheck. Restart after routing changes.
+  Native interaction tools are never enabled by Teamwork. Never edit release metadata.
 - **Maintainer release** — change Teamwork itself using the release unit below.
 
 ## Release Unit
@@ -40,9 +39,10 @@ contracts without a migration. Skill frontmatter remains `name` and
 3. Run relevant dev eval, `./scripts/validate.sh`, non-empty release eval, and
    fresh release review. Apply the stronger ledger/trajectory gates only to
    SkillOpt-Lite or HarnessOpt-Lite claims.
-4. Run `./install.sh all`, project install when applicable, then
-   `./scripts/check-update.sh`; pre-publication tag/Release drift is expected and
-   must be recorded.
+4. Run `install.sh all`, applicable project install, then `check-update.sh`;
+   record expected pre-publication drift. For `review-required`, when authorized
+   and interactive, verify the command in `/hooks` and individually trust only
+   `Stop` and `PermissionRequest`—never trust-all; otherwise report the action.
 5. Stay on the current branch unless the user requests a branch/PR, protection
    requires one, or the user accepts isolation. The default branch alone never
    justifies an `agent/*` branch.

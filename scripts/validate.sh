@@ -900,6 +900,11 @@ grep_required 'check-update.sh' "$ROOT/skills/teamwork-update/SKILL.md" "teamwor
 [[ -x "$ROOT/scripts/check-update.sh" ]] || fail "check-update script must be executable"
 grep_required 'skills_content_status' "$ROOT/scripts/check-update.sh" "check-update must detect installed skill drift"
 grep_required 'agents_content_status' "$ROOT/scripts/check-update.sh" "check-update must detect installed agent drift"
+grep_required 'review-required' "$ROOT/scripts/check-update.sh" "check-update must surface untrusted Codex notification hooks"
+grep_required 'run /hooks' "$ROOT/install.sh" "notification install must preserve the Codex hook trust boundary"
+grep_required 'all|init-project' "$ROOT/install.sh" "full installs must enable Teamwork notifications by default"
+grep_required 'trust-all' "$ROOT/skills/teamwork-init/SKILL.md" "teamwork-init must trust only exact Teamwork hooks"
+grep_required 'trust-all' "$ROOT/skills/teamwork-update/SKILL.md" "teamwork-update must trust only exact Teamwork hooks"
 
 if git -C "$ROOT" grep -n -E 'raoctl|RAO|Stop hook|/rao:|/teamwork:' \
   -- ':!scripts/validate.sh' >/tmp/teamwork-retired-grep.$$; then
@@ -1691,10 +1696,28 @@ python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/ind
 [[ -f "$tmp/home-init-project/.cursor/agents/worker.md" ]] || fail "init-project must install global Cursor agents by default"
 [[ -f "$tmp/home-init-project/.claude/CLAUDE.md" ]] || fail "init-project must install global Claude policy by default"
 [[ -f "$tmp/home-init-project/.claude/agents/worker.md" ]] || fail "init-project must install global Claude agents by default"
+[[ -f "$tmp/home-init-project/.codex/teamwork/notify.py" ]] || fail "init-project must install Codex notifications by default"
+[[ -f "$tmp/home-init-project/.claude/teamwork/notify.py" ]] || fail "init-project must install Claude notifications by default"
+[[ "$(python3 "$ROOT/scripts/configure-notifications.py" status \
+  --config "$tmp/home-init-project/.codex/hooks.json" \
+  --notifier "$tmp/home-init-project/.codex/teamwork/notify.py")" == "installed" ]] \
+  || fail "init-project must configure Codex notifications by default"
+[[ "$(python3 "$ROOT/scripts/configure-notifications.py" status \
+  --config "$tmp/home-init-project/.claude/settings.json" \
+  --notifier "$tmp/home-init-project/.claude/teamwork/notify.py")" == "installed" ]] \
+  || fail "init-project must configure Claude notifications by default"
 [[ -d "$init_root/.cursor/skills/using-teamwork" ]] || fail "init-project must install project skills"
 [[ -f "$init_root/.codex/agents/teamwork-worker.toml" ]] || fail "init-project must install Codex agents"
 [[ -f "$init_root/.cursor/agents/worker.md" ]] || fail "init-project must install project Cursor agents"
 [[ -f "$init_root/.claude/agents/worker.md" ]] || fail "init-project must install project Claude agents"
+HOME="$tmp/home-init-project" \
+  TEAMWORK_INIT_CODEGRAPH=0 \
+  TEAMWORK_INIT_CURSOR_POLICY_COPY=0 \
+  "$ROOT/install.sh" --copy --no-notifications --project-root "$init_root" init-project >/dev/null
+[[ ! -e "$tmp/home-init-project/.codex/teamwork/notify.py" ]] \
+  || fail "init-project --no-notifications must remove only Teamwork Codex notifications"
+[[ ! -e "$tmp/home-init-project/.claude/teamwork/notify.py" ]] \
+  || fail "init-project --no-notifications must remove only Teamwork Claude notifications"
 
 global_failure_root="$tmp/init-project-global-failure"
 global_failure_home="$tmp/home-init-project-global-failure"

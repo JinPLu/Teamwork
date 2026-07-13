@@ -95,7 +95,7 @@ read_installed_profile() {
 }
 
 notification_status() {
-  local platform="$1" config notifier
+  local platform="$1" config notifier base
   case "$platform" in
     codex)
       config="$HOME/.codex/hooks.json"
@@ -114,8 +114,18 @@ notification_status() {
       return 0
       ;;
   esac
-  python3 "$ROOT/scripts/configure-notifications.py" status \
-    --config "$config" --notifier "$notifier" 2>/dev/null || echo "invalid"
+  if ! base="$(python3 "$ROOT/scripts/configure-notifications.py" status \
+    --config "$config" --notifier "$notifier" 2>/dev/null)"; then
+    echo "invalid"
+    return 0
+  fi
+  if [[ "$platform" == "codex" && "$base" == "installed" ]]; then
+    python3 "$ROOT/scripts/configure-notifications.py" status \
+      --config "$config" --notifier "$notifier" \
+      --codex-runtime --cwd "$ROOT" 2>/dev/null || echo "runtime-unverified"
+    return 0
+  fi
+  echo "$base"
 }
 
 codex_routing_status() {
@@ -671,11 +681,14 @@ print_report() {
   echo
 
   echo "--- Optional notifications ---"
-  local notification_s
+  local notification_s codex_notification_s=""
   for platform in codex cursor claude; do
     notification_s="$(notification_status "$platform")"
+    [[ "$platform" == "codex" ]] && codex_notification_s="$notification_s"
     echo "$platform: $notification_s"
-    [[ "$notification_s" != "stale" && "$notification_s" != "duplicate" && "$notification_s" != "invalid" ]] || note_issue
+    [[ "$notification_s" != "stale" && "$notification_s" != "duplicate" \
+      && "$notification_s" != "invalid" && "$notification_s" != "review-required" \
+      && "$notification_s" != "runtime-unverified" ]] || note_issue
   done
   echo
 
@@ -740,6 +753,11 @@ print_report() {
     echo "3. cd \"$ROOT\" && ./install.sh --project-root \"$PROJECT_ROOT\" project"
   fi
   echo "4. Restart Codex after routing changes"
+  if [[ "$codex_notification_s" == "review-required" ]]; then
+    echo "4a. Open Codex CLI, run /hooks, and trust the Teamwork Stop and PermissionRequest hooks"
+  elif [[ "$codex_notification_s" == "runtime-unverified" ]]; then
+    echo "4a. Open Codex CLI and run /hooks to inspect Teamwork notification hook status"
+  fi
   echo "5. ./install.sh cursor-policy-copy  # copy, then paste into Cursor User Rules"
   echo "6. ./scripts/validate.sh       # maintainer or post-release sanity"
   if [[ -n "$remote_tag" && "$remote_tag" != "$source_version" ]] \

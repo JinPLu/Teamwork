@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INSTALL_MODE="${TEAMWORK_INSTALL_MODE:-copy}"
 CODEX_PROFILE="${TEAMWORK_CODEX_PROFILE:-performance-first}"
-NOTIFICATIONS_ACTION="preserve"
+NOTIFICATIONS_ACTION="${TEAMWORK_NOTIFICATIONS_ACTION:-preserve}"
 CODEX_ROUTING_ACTION="${TEAMWORK_CODEX_ROUTING:-configure}"
 PKG_VERSION="unknown"
 if [[ -f "$ROOT/VERSION" ]]; then
@@ -94,10 +94,12 @@ Targets:
 Default mode is --copy. Use --link for local development when installs should
 track this checkout.
 
-Notifications are unchanged by default. --notifications installs opt-in
-ready/permission sounds for user-level Codex or Claude Code; --no-notifications
-removes only Teamwork-owned handlers. Project and Cursor notification installs
-are intentionally unsupported until their local hook contracts are live-verified.
+Full installs (`all` and `init-project`) install ready/permission sounds for
+user-level Codex and Claude Code by default. Direct platform installs leave
+notifications unchanged unless --notifications or --no-notifications is used.
+--no-notifications removes only Teamwork-owned handlers. Project and Cursor
+notification installs are intentionally unsupported until their local hook
+contracts are live-verified.
 
 User-level Codex installs configure ~/.codex/config.toml so the runtime can
 select installed Teamwork agent roles and run one main thread plus up to eight
@@ -435,6 +437,9 @@ configure_user_notifications() {
     python3 "$ROOT/scripts/configure-notifications.py" install \
       --config "$config" --notifier "$dest"
     echo "Installed Teamwork $platform notifications: $config"
+    if [[ "$platform" == "codex" ]]; then
+      echo "Codex notification review required: open Codex CLI, run /hooks, and trust the Teamwork Stop and PermissionRequest hooks."
+    fi
   else
     python3 "$ROOT/scripts/configure-notifications.py" remove \
       --config "$config" --notifier "$dest"
@@ -711,6 +716,7 @@ install_project() {
 init_project() {
   local base="${PROJECT_ROOT:-$PWD}"
   TEAMWORK_CODEX_ROUTING="$CODEX_ROUTING_ACTION" \
+  TEAMWORK_NOTIFICATIONS_ACTION="$NOTIFICATIONS_ACTION" \
   "$ROOT/scripts/init-project.sh" \
     "--$INSTALL_MODE" \
     --profile "$CODEX_PROFILE" \
@@ -800,6 +806,23 @@ done
 
 validate_codex_profile
 
+case "$NOTIFICATIONS_ACTION" in
+  preserve|install|remove)
+    ;;
+  *)
+    echo "TEAMWORK_NOTIFICATIONS_ACTION must be preserve, install, or remove." >&2
+    exit 2
+    ;;
+esac
+
+case "${TARGET:-codex}" in
+  all|init-project)
+    if [[ "$NOTIFICATIONS_ACTION" == "preserve" ]]; then
+      NOTIFICATIONS_ACTION="install"
+    fi
+    ;;
+esac
+
 case "$CODEX_ROUTING_ACTION" in
   configure|preserve)
     ;;
@@ -811,10 +834,10 @@ esac
 
 if [[ "$NOTIFICATIONS_ACTION" != "preserve" ]]; then
   case "${TARGET:-codex}" in
-    codex|claude|all)
+    codex|claude|all|init-project)
       ;;
     *)
-      echo "Notification flags are supported only with codex, claude, or all user targets." >&2
+      echo "Notification flags are supported only with codex, claude, all, or init-project targets." >&2
       usage
       exit 2
       ;;

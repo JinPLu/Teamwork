@@ -4,6 +4,15 @@
 
 This changelog lists user-visible changes. Implementation details live in Git commits or pull requests.
 
+## 2.19.0 - 2026-07-13
+
+**Full initialization and updates now install, verify, and continuously maintain lifecycle sounds.**
+
+- `install.sh all` and `init-project` install main-turn completion and permission-request sounds for Codex/Claude Code by default. Direct platform installs remain opt-in, while `--no-notifications` removes only Teamwork-owned handlers.
+- `check-update.sh` no longer treats hook definitions in a config file as proof they can run. It queries the Codex runtime and distinguishes trusted, review-required, and unverifiable states, with a `/hooks` action when review is needed.
+- `teamwork-init` and `teamwork-update` verify the exact Teamwork notifier command and trust only `Stop` and `PermissionRequest` individually—never trust-all or unrelated hooks.
+- Regression coverage now includes default installation, explicit opt-out, runtime trust state, and duplicate-hook ordering; the macOS sound path was also verified live.
+
 ## 2.18.0 - 2026-07-13
 
 **Questions now follow the work instead of creating extra workflow state.**
