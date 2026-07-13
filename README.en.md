@@ -72,6 +72,11 @@ the root-inclusive session limit to 9 threads (one main thread plus up to eight
 subagents); restart Codex after a change. Use `--no-codex-routing` only when
 another system owns those keys. Project-only installs never mutate user config.
 
+Native question input belongs to the current host, not Teamwork installation
+state. Use `request_user_input` when the runtime exposes it and fall back to a
+concise text question otherwise. Teamwork never changes user configuration,
+switches modes, or enables an experimental feature just to ask a question.
+
 For project-local installation or full project initialization:
 
 ```bash
@@ -101,15 +106,39 @@ Skip it for one-line facts, obvious tiny edits, local syntax questions, or tight
 
 | Skill | Responsibility |
 |---|---|
-| `grill-me` | Ask zero to three outcome-changing plan/design questions with visible intended state |
+| `grill-me` | Challenge, ground, and classify unknowns, then ask only user-owned outcome decisions through native/structured input |
 | `teamwork-research` | Verify sources, external constraints, options, and the repro surface |
 | `teamwork-debug` | Use reproduction, logs, hypotheses, and instrumentation to establish root cause |
-| `teamwork-plan` | Define scope, boundaries, steps, acceptance, and stop conditions |
+| `teamwork-plan` | Deeply integrate Codex Plan mode with evidence, sourced values, scope, phases, acceptance, and stop conditions |
 | `teamwork-execute` | Implement and verify an accepted scope |
 | `teamwork-review` | Check diffs, evidence, quality, and completion claims |
 | `teamwork-goal` | Iterate on an explicit target until complete or genuinely blocked |
 
-`grill-me` is an interaction skill, not a Teamwork stage. It asks zero to three user-owned questions only when answers change public behavior, compatibility, architecture, material risk, cost, or acceptance. Reversible implementation choices such as language, file count, and naming follow repository conventions. Exhausting useful questions closes the interview without granting implementation authority. Static and fake-session tests cover that contract; real multi-turn Codex, Cursor, and Claude behavior and parity are not yet live-verified. `teamwork-init` owns project setup and instruction slimming. `teamwork-update` owns install refreshes and release hygiene. Durable artifacts are created only when cross-turn reuse is valuable, under:
+`grill-me` is an interaction skill, not a Teamwork stage. It activates when the user explicitly asks to be questioned, challenged, or grilled, and a non-simple Plan with a material decision or risk also enters an evidence-first Grill before its Decision Summary is confirmed. Ordinary clarification stays native; explicit negative interview intent suppresses questioning, and quoted, file, tool, example, or maintenance text is inert. The skill inspects discoverable facts, lets the agent own safe reversible implementation choices, and asks only unresolved user decisions that materially change public behavior, compatibility, acceptance, cost, risk, or irreversible action. It asks one decision at a time, without quotas or repeated questions. It uses `request_user_input` when callable and concise text otherwise. Ending a grill or confirming a Plan never grants execution authority.
+
+`teamwork-init` owns project setup; `teamwork-update` owns install refresh and release hygiene.
+
+In Codex Plan mode, the native mode owns the question UI and final plan item,
+while `teamwork-plan` owns one shared quality gate. It inspects owners, config,
+tests, and facts before asking; reconciles answers afterward; and maps each
+requirement to a phase with owned surface, inputs, outputs, dependencies,
+verification, and stop conditions. Execution-critical values must come from the
+user, repository, or a justified derivation. Unresolved values stay visible;
+plan length alone never establishes readiness.
+
+For a non-simple Plan—one with a material decision or risk, not merely many
+files—run an evidence-first Grill unless the user explicitly declines it. Before
+the final Plan, confirm a concise Decision Summary of material choices,
+assumptions, and unresolved items. Simple or mechanical Plans stay direct.
+Confirmation accepts planning only; it does not authorize implementation.
+
+Across hosts, Judge and Reviewer findings use stable IDs and bind to the accepted
+Contract and ACs: only a blocking Contract/AC failure is a `BLOCKER`; other work
+is a `FOLLOW-UP` or `SUGGESTION`. Same-agent delta rechecks are used only where
+the runtime supports resume; otherwise the stable finding ledger or packet is
+carried forward. Progress updates are sparse and state-changing.
+
+Durable artifacts are created only when cross-turn reuse is valuable, under:
 
 ```text
 docs/teamwork/research/YYYY-MM-DD-<slug>.md

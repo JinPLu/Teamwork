@@ -55,8 +55,11 @@ explicit. This installs Teamwork-managed global and project skills/agents/
 policies by default, then writes the managed `AGENTS.md` block,
 `docs/teamwork/` README/index/current files, local `.gitignore` entries, and
 `codegraph init -i` when the CLI already exists. Cursor manual paste, missing
-CodeGraph CLI, or missing Context7/docs MCP is a reported gap, not a stop
-condition. Do not install external MCP/tools without approval.
+CodeGraph CLI or missing Context7/docs MCP is a capability gap, not a stop
+condition. Native interaction tools are used when the current host exposes them;
+project init never enables them. A global configuration failure is reported
+after project surfaces are installed. Do not install external MCP/tools without
+approval.
 
 ## Full Feature Capability Matrix
 

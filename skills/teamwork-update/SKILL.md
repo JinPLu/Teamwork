@@ -11,19 +11,17 @@ Use for package refresh and maintenance. Read `skills/using-teamwork/references/
 
 Pick from user intent:
 
-- **User refresh** — run `./scripts/check-update.sh --project "<path>"`; pull
-  when upstream is newer; run `./install.sh all` with the checkout profile
-  unless explicitly overridden; add `./install.sh --project-root "<path>"
-  project` for stale project rows; run `./install.sh cursor-policy-copy` when
-  needed; re-run check-update. The user-level Codex install migrates custom-agent
-  routing with a 9-thread limit (eight subagents); restart Codex when it reports
-  a config update.
-  Do not bump `VERSION` or edit plugin manifests.
+- **User refresh** — run `./scripts/check-update.sh --project "<path>"`; pull if
+  upstream is newer; install stale global/project surfaces with the checkout
+  profile; copy Cursor policy when needed; then recheck. The Codex install
+  migrates 9-thread routing; restart Codex when routing changes. Native
+  interaction tools are runtime capabilities and are never enabled by Teamwork.
+  Do not bump `VERSION` or manifests.
 - **Maintainer release** — change Teamwork itself (below).
 
 ## Version Source
 
-- `VERSION` is the package version source of truth; both plugin manifests use it.
+- `VERSION` is the package version source of truth; plugin manifests use it.
 - Skill frontmatter stays limited to `name` and `description`.
 - Semantic versioning:
   - patch: docs, wording, validation, or installer fixes with no behavior change;
@@ -33,15 +31,17 @@ Pick from user intent:
 
 ## Maintainer Workflow
 
-1. Inspect `VERSION`, plugin manifests, install/validation/check-update scripts,
-   README files, and affected skills.
+1. Inspect `VERSION`, manifests, install/validation/check-update scripts, docs, and affected skills.
 2. Choose the smallest justified semver bump and record why.
 3. Update `VERSION` and both `plugin.json` together.
 4. Update README/CODEX/CURSOR/CLAUDE/AGENTS only for user-visible changes.
-5. For behavior, harness, interaction-skill, or release-gate changes, run `python3 scripts/eval-teamwork.py --split dev`; route unclear failures to Debug and cite accepted/rejected ledger deltas.
+5. For behavior, harness, interaction-skill, or gate changes, run the dev eval;
+   route unclear failures to Debug and cite ledger deltas.
 6. Run `./scripts/validate.sh`, then `./install.sh all`; add `./install.sh --project-root "<project-root>" project` for project-local installs.
 7. Before release/version claims, run `python3 scripts/eval-teamwork.py --split release`; the split must be non-empty.
-8. For SkillOpt-Lite/HarnessOpt-Lite participation claims, require trajectory samples, same-case baseline/treatment, explicit model/config or offline mode, gate decision, rollback, ledger, fresh review, and release split as audit-only; harness mutation additionally needs allowlist plus smoke and full dev gates.
+8. SkillOpt-Lite/HarnessOpt-Lite claims require trajectories, same-case arms,
+   explicit runtime, gate, rollback, ledger, fresh review, and audit-only release
+   split; harness mutation also needs an allowlist, smoke, and full dev gates.
 9. Run `./scripts/check-update.sh` and confirm installed surfaces and Codex
    routing match `VERSION`.
 10. For release, verify GitHub remote and tag/release state before pushing;

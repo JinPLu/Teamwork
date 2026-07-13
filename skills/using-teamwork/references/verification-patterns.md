@@ -45,6 +45,9 @@ proof. For explicit "verify this" requests, return one claim verdict:
   behavioral verification.
 - Map every acceptance criterion to evidence: command, artifact, observation,
   result, and strength.
+- Keep an acceptance trace: criterion -> candidate change/no-change rationale
+  -> direct evidence -> result -> strength. Preserve a failed, blocked, or
+  partial result for that same criterion until new direct evidence changes it.
 - For manual smoke, record source, steps, observed state, pass/fail, and any
   artifact path.
 - Preserve negative results. `NOT VERIFIED`, `failed`, and `blocked` are useful.

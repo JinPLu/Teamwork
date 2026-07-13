@@ -18,12 +18,19 @@ credentials, paths, ports, models, and configs must be explicit or discoverable.
 
 ## Do And Boundaries
 
-Re-read the accepted scope and inspect the existing owner, control flow,
-tests/config, and invariants before editing. Name touched paths, then change the
-current producer-side path rather than adding a parallel mode, wrapper, broad
-catch, alias, or fallback that masks missing state. Keep unrelated user changes
-intact. Delegate only independent tracks with disjoint ownership; integrate all
-returned packets before completion.
+Re-read the accepted Task Contract and inspect owner/flow, tests/config, and
+invariants. Change the current producer path; avoid masking wrappers, fallbacks,
+or guessed state. Preserve unrelated changes and delegate only disjoint ownership.
+
+Maintain `AC -> change/no-change -> evidence -> result/strength`. Before acting,
+classify discoveries:
+
+- `regression` or `contract_violation`: fix in scope or return `revise`/`blocked`;
+- `pre_existing`: record without attributing or silently repairing it;
+- `scope_delta`: pause and obtain an accepted Contract/version change; or
+- `suggestion`: record without editing.
+
+Failed AC evidence stays failed until direct evidence changes that AC.
 
 Verify against the acceptance signal, adding broader checks when planned or
 shared/public behavior changed. Report commands, artifacts, diffs, or observed
@@ -34,9 +41,8 @@ touched-diff slop.
 
 ## Done When
 
-Return changed paths, plan/scope source, verification and cleanup evidence,
-delegation results or continuity rationale, deviations, residual risk, and
-blockers. No delegated track may remain open.
+Return changed paths, Contract source, AC trace, proof, discovery classes,
+delegation state, deviations, residual risk, and blockers. No track remains open.
 
 ## Escalate
 

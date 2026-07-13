@@ -4,6 +4,16 @@
 
 This changelog lists user-visible changes. Implementation details live in pull requests.
 
+## 2.17.0 - 2026-07-13
+
+**Plan and Review remain, but decisions align earlier and the workflow converges faster.**
+
+- Non-simple Plans with a material decision or risk automatically enter evidence-first Grill. Each turn asks at most one genuinely user-owned choice, followed by a concise Decision Summary before the final Plan. Confirming a Plan never authorizes implementation.
+- Plan, Execute, Review, and Goal now inherit one versioned Task Contract with stable acceptance criteria. Scope changes require an explicit Contract version change instead of silently moving the target during execution.
+- Review converges through one full pass and one same-Reviewer delta recheck. Finding IDs remain stable; no open `BLOCKER` requires acceptance, while preferences, follow-ups, and out-of-scope opportunities cannot repeatedly block completion.
+- Goal retries only the affected stage: known fixes return to Execute, unknown causes return to Debug, and only an accepted scope change returns to Plan. Progress updates report material state changes only.
+- Deterministic Contract/Finding validation and focused eval cases reject task or AC drift, recursive rechecks, unrelated new findings, and undeclared fix regressions. Existing Codex role-model tiers remain unchanged; this release does not claim to eliminate single-call GPT-5.6 Sol/high latency.
+
 ## 2.16.0 - 2026-07-13
 
 **Adds a discoverable `grill-me` interaction and fixes Codex subagent role-model routing.**

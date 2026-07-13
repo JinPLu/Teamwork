@@ -1,0 +1,18 @@
+{
+  "id": "grill-reversibility-ownership-contrast",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/grill-me/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Grill me on choosing a reversible internal cache default and separately deciding whether destructive cleanup becomes the public default.",
+  "expected": {"mode": "grill_semantic_contrast", "requires": ["agent-owned reversible default", "user-owned destructive public default"]},
+  "must": ["choose the reversible cache default from evidence", "ask about the destructive public behavior"],
+  "must_not": ["ask about the reversible internal default", "silently enable destructive behavior"],
+  "candidates": [
+    {"candidate_id": "internal_cache_default", "owner": "agent", "grounding_required": true, "expected_action": "decide"},
+    {"candidate_id": "destructive_public_default", "owner": "user-decision", "grounding_required": true, "expected_action": "ask"}
+  ],
+  "expected_asked_candidates": ["destructive_public_default"],
+  "rubric": "assistance-quality",
+  "evidence": "docs/teamwork/plans/2026-07-13-grill-me-structured-decision-redesign.md"
+}

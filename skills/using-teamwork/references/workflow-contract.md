@@ -9,6 +9,14 @@ their methods; load other references only when their condition applies.
    choices and proceed. Answer, research, diagnose, plan, and review do not
    authorize writes. Ask only when a remaining user decision could materially
    change scope, acceptance, public behavior, risk, or an irreversible action.
+   Ordinary clarification never activates `grill-me`. Interaction transport is
+   host-owned: use structured input when callable and concise text otherwise;
+   Teamwork never enables or emulates a host capability.
+   An explicit grill blocks only work dependent on an unresolved decision.
+   Valuable read-only evidence gathering may continue when no answer can
+   invalidate it; the root retains user-question ownership. Answering or closing
+   by itself grants no route/effect authority or erases inherited authority;
+   separately explicit wording may grant, revoke, or narrow it.
 2. **Do not invent required state.** Required runtime values and invariants must
    come from the user, project instructions, source/config, tests, or an accepted
    plan. Inspect first; then ask when the user can supply the gap, otherwise
@@ -28,24 +36,35 @@ their methods; load other references only when their condition applies.
    evidence, time, or context-isolation value exceeds coordination cost. Main
    owns scope, integration, and final verification.
 
-## Stage Entry Card
+## Task Contract
 
-Before a Teamwork stage acts, freeze the smallest useful card:
+For non-native Teamwork work, establish one task-level contract before the
+first stage acts. Keep its Task Contract ID stable for the task and begin at
+version `v1`; later stages inherit it rather than refreezing a stage card. Native
+simple fast-path work needs no durable contract ceremony.
 
 ```text
-Objective:      outcome to produce
-Scope:          owned surface and protected boundaries
-Oracle:         evidence that decides success
+Task Contract ID: stable task identifier
+Version:        v1
+Goal:           outcome to produce
+Decision:       confirmed approach and material rejected alternatives
+Scope:          owned surface, non-goals, and protected boundaries
+Invariants:     behavior or constraints every stage must preserve
+Acceptance:     stable AC IDs mapped to change, evidence, and verification
 Truth identity: source/config/artifact version the work relies on
 Authority:      permitted reads, writes, and external effects
+Open blockers:  unresolved dependencies and affected actions
+Replan:         evidence or Scope Delta that creates a new version
 Stop:           completion, handoff, or blocker condition
 ```
 
-Keep the card in the current prompt or accepted artifact; do not create ceremony
-for native fast-path work. A proposed action outside the frozen card is a scope
-delta: pause that action and obtain revised authority before proceeding. A user
-correction supersedes conflicting premises and cancels any outstanding packet
-made invalid by it; integrate only still-valid results.
+Keep the contract in the current prompt or accepted artifact. A proposed action
+outside it requires an explicit Scope Delta: new work, necessity, excluded
+alternatives, cost/risk, changed acceptance evidence, and smallest next action.
+Pause that action and obtain revised authority before proceeding, then issue the
+same Task Contract ID at the next version. A user correction supersedes conflicting
+premises and cancels any outstanding packet made invalid by it; integrate only
+still-valid results.
 
 ## Risk Matrix
 

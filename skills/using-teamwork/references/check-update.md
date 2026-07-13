@@ -16,11 +16,12 @@ Use with `teamwork-init` (readiness gate) and `teamwork-update` (user refresh).
 
 Flags:
 
-- `--readiness` — compact output for init (`INSTALL_READY`, `MISSING`, `NEXT`)
+- `--readiness` — compact init output (`INSTALL_READY`, `MISSING`, `NEXT`)
 - `--project PATH` — include project-local install rows
 - `--no-fetch` — skip git fetch and remote VERSION lookup
 
-Exit `0` when current; `1` when stale/missing surfaces need action.
+Normal report mode exits `0` when current and `1` when surfaces need action;
+readiness reports convergence through `INSTALL_READY`.
 
 ## Init Readiness
 
@@ -30,17 +31,17 @@ Before project instruction work, run:
 ./scripts/check-update.sh --readiness --project "$PWD"
 ```
 
-When `INSTALL_READY=no`, run `NEXT` during init, then continue creating the
-local instructions, memory, skills/agents, and available CodeGraph index.
+When `INSTALL_READY=no`, run `NEXT`, then continue local instructions, memory,
+skills/agents, and any available CodeGraph index.
 
-Only a user-level Codex install repairs `codex-routing`; project targets do not.
-After a change, restart Codex before a fresh role/model validation.
+Only a user-level Codex install repairs `codex-routing`. Native interaction
+tools belong to the current host/runtime; use them when callable and never
+handwrite config to expose them. Restart Codex after a routing change.
 
-Run `./install.sh cursor-policy-copy` when possible; report the remaining manual
-Cursor User Rules paste because the installer cannot verify UI state.
+Run `./install.sh cursor-policy-copy` when possible; report the unverifiable
+manual Cursor User Rules paste.
 
-Do not install external MCP/memory tools during the gate unless the user
-approves via `optional-skills.md`.
+Do not install external MCP/memory tools during the gate without user approval.
 
 ## User Update Mode
 
@@ -48,12 +49,10 @@ When the user asks to update or refresh Teamwork (not release a new version):
 
 1. Run `./scripts/check-update.sh --project "$PWD"` (or without `--project`).
 2. If checkout is behind upstream, `git pull` in the Teamwork repo with approval.
-3. Run `./install.sh all --profile <profile>`; add
-   `./install.sh --project-root "<project-path>" project` when project-local
-   surfaces are stale.
+3. Run `./install.sh all --profile <profile>`; when project surfaces are stale,
+   add `./install.sh --project-root "<project-path>" project`.
 4. Use `./install.sh cursor-policy-copy` for Cursor User Rules paste when needed.
-5. Restart Codex when routing changed, then re-run `./scripts/check-update.sh`
-   and report remaining gaps.
+5. Restart Codex after routing changes; rerun the check and report gaps.
 
 Do not bump `VERSION` or edit plugin manifests in user mode.
 
@@ -65,6 +64,5 @@ after `./install.sh all` to confirm surfaces match the new `VERSION`.
 
 ## Out of Scope
 
-Project package managers (npm, pip, cargo), non-Teamwork MCP plugins, and live
-platform model catalogs are not checked. Route those to native tooling or
-`teamwork-research` when the user asks explicitly.
+Project package managers, non-Teamwork MCP plugins, and live platform catalogs
+are not checked; route them to native tooling or `teamwork-research` on request.

@@ -5,9 +5,14 @@
   "target": "skills/grill-me/SKILL.md",
   "platforms": ["codex", "cursor", "claude"],
   "prompt": "$grill-me stress-test this routing change before acting.",
-  "expected": {"mode": "grill_active", "requires": ["active marker", "one question", "recommendation", "no enactment"]},
+  "expected": {"mode": "grill_semantic", "requires": ["explicit activation", "one material question", "recommendation", "no enactment"]},
   "must": ["activate from explicit skill invocation", "ask one material question with a recommendation"],
-  "must_not": ["plan, edit, dispatch, or start a goal before close"],
+  "must_not": ["plan, edit, dispatch, or start a goal before the answer"],
+  "candidates": [
+    {"candidate_id": "activation_boundary", "owner": "user-decision", "grounding_required": true, "expected_action": "ask"},
+    {"candidate_id": "skill_filename", "owner": "agent", "grounding_required": true, "expected_action": "decide"}
+  ],
+  "expected_asked_candidates": ["activation_boundary"],
   "rubric": "assistance-quality",
   "evidence": "docs/teamwork/plans/2026-07-13-grill-me-entry-and-multiturn-reliability.md"
 }

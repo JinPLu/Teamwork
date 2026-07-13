@@ -19,7 +19,10 @@ paths instead of relying on inherited history. Add role, mode, or output details
 only when they change the work. Subagents do not expand scope, clean up
 unrelated code, chain more agents, accept the overall task, or continue after
 return. They report missing execution-critical values instead of inventing
-defaults or masking them with fallbacks.
+defaults or masking them with fallbacks. A sole recheck exception may reuse the
+same initial Judge/Reviewer thread once, with its prior finding IDs, claimed
+fixes, and new direct evidence; it must inspect no unrelated surface, delegate
+nothing, and return again immediately.
 
 Lifecycle verdicts are `accept | revise | blocked`. Reserve `rejected` for a
 hypothesis, option, source, or data item and include the reason.
@@ -47,11 +50,15 @@ Next: <parent decision, follow-up evidence, or none>
   user-owned decisions.
 - **Judge:** plan source, evidence/scope/verification adequacy, acceptance gap,
   and smallest required fixes.
-- **Worker:** owned scope, implemented change, focused verification, deviations,
+- **Worker:** owned scope, acceptance-criterion change/evidence map, focused
+  verification, discovery classification (`regression`, `contract_violation`,
+  `pre_existing`, `scope_delta`, or `suggestion`), deviations,
   protected-boundary hits, and blocker. Add repro, root-cause, TDD, or cleanup
   evidence only when that protocol was used.
-- **Reviewer:** review target, requirements/evidence map, actionable findings
-  with severity, verification reviewed, and residual risk.
+- **Reviewer:** review target, fresh/recheck status, requirements/evidence map,
+  stable-ID actionable findings classified `BLOCKER`, `FOLLOW-UP`,
+  `SUGGESTION`, or `SCOPE_DELTA`, verification reviewed, and residual risk.
+  No open `BLOCKER` requires `ACCEPT`; follow-ups do not block acceptance.
 
 For goal retries, add Goal Invariants, prior failed evidence, strategy delta,
 drift, and retry/stop verdict. For durable-memory work, subagents may propose a

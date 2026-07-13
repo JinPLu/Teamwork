@@ -45,17 +45,47 @@ split/platform/source values, target paths, rubrics, ledgers, and non-empty
 behavior expectations. It does not execute Codex, Cursor, Claude, or prove live
 model behavior. Eval output is evidence, not final acceptance.
 
+The Codex Plan-mode fixture treats native Plan mode as the interaction
+transport and `teamwork-plan` as the quality gate. It rejects question-only
+completion, unsourced locked values, and phases without ownership or proof. This
+is a static contract; live Plan-mode quality still requires a fresh app-server
+trajectory with `collaborationMode` set to Plan.
+
+Plan-to-Grill and convergence fixtures are offline contract cases. They cover
+evidence-first conditional Grill entry, one-at-a-time user decisions, Decision
+Summary confirmation before a final plan, distinct implementation authority,
+stable plan/review identities, bounded delta rechecks, Contract versioning only
+for accepted scope deltas, and affected-stage goal retries. They validate
+fixture shape and intended contract only; they do not prove a live model follows
+the protocol.
+
+Explicit grill cases label every candidate with an internal fixture key, owner
+(`evidence`, `agent`, `user-decision`, `required-input`, or `confirmation`),
+grounding requirement, and expected action. Per-turn annotations identify which
+user-owned candidates an authored answer asks about; those keys are test-oracle
+metadata, not a user-visible protocol. Paired private/public,
+internal/package, observable/preference, threshold, and reversibility cases
+test semantic ownership; global language, filename, naming, or confidence word
+bans are not treated as a materiality oracle. These authored contrasts remain
+static, targeted contract fixtures, not evidence that any model makes the same
+judgment or that a native adapter is available.
+
 ## Maintainer-only live trajectories
 
 `scripts/run-teamwork-live-eval.py` is a separate, stdlib-only live lane. Schema
-v2 keeps one-shot cases on `codex exec --ephemeral --json`; multi-turn cases
+v5 keeps one-shot cases on `codex exec --ephemeral --json`; multi-turn cases
 start a persistent session and continue only through
 `codex exec resume <session-id> --json`. Each turn records its prompt, argv,
-events, final answer, active/closed state, usage, reported cost when available,
-and elapsed time. Execution, behavior, and model provenance have separate
-statuses; a grill contract violation fails the run, and a runtime that does not
-report the resolved model remains unavailable for live-verification claims. A
-missing session id fails without `--last` or fallback.
+events, final answer, controller state, usage, reported cost when available, and
+elapsed time. The record also exposes prompts consumed/remaining and the exact
+termination reason. The recorder checks only bounded question count, absence of
+retired grill ceremony, and read-only event structure. Question ownership and
+usefulness require separate semantic review. Execution, structure, and model
+provenance have separate statuses; suspension is inconclusive, and a runtime
+that does not report the resolved model remains unavailable for live-verification
+claims. This lane measures only its recorded Codex host/model/mode trajectory;
+it does not establish Cursor or Claude parity. A missing session id fails
+without `--last` or fallback.
 
 All execution-critical inputs are explicit. Cases default to `read-only` by
 declaring it in the case file; `workspace-write` is permitted only when the
@@ -86,6 +116,19 @@ session propagation, and missing-session failure without model spend:
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_live_eval_runner.py
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_eval_teamwork_mutations.py
 ```
+
+`scripts/codex_app_server_user_input.py` separately probes the Codex app-server
+`request_user_input` lifecycle when that capability is callable. It never mounts
+a skill, configures Codex, checks a CLI version, or treats native transport as
+proof of grill semantics. The ordinary, explicit-grill, zero-question, and
+simple-control scenarios state bounded behavioral expectations; question
+quality remains `not_evaluated` until a human or model reviewer inspects an
+opted-in run. By default the probe retains hashes and sanitized structure, never
+assistant prose, native-question text, or user answers. Its fake-server test is
+offline; an intentional live smoke must supply explicit `--model`, `--effort`,
+`--repeats`, and `--timeout-seconds` values. `--review-dir` explicitly writes
+native questions, rejected question payloads, and delimited assistant items to
+a temporary reviewer directory; the caller must delete it after review.
 
 For prompt A/B work, compare baseline and slim arms with the same non-treatment
 configuration: model, effort, cases, repeats, sandbox, runner hash, and relevant

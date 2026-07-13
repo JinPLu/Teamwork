@@ -367,11 +367,11 @@ policy_status() {
 
   if [[ -f "$file" ]] \
     && grep -q "$marker" "$file" \
-    && grep -q "Act by default within the user's request" "$file" \
-    && grep -q 'routine,' "$file" \
-    && grep -q 'assistant-authored "Grill status: active"' "$file" \
-    && grep -q 'Do not invent them' "$file" \
-    && grep -q 'Installed agent files own model mappings; active profile:' "$file"; then
+    && grep -q "Work within the user's request" "$file" \
+    && grep -q 'Make routine reversible choices' "$file" \
+    && grep -q 'Route explicit grill/question-first' "$file" \
+    && grep -q 'Do not invent or hide their absence' "$file" \
+    && grep -q 'Installed agent files own model mappings' "$file"; then
     echo "ok"
   else
     echo "missing"
@@ -666,8 +666,9 @@ print_report() {
   if [[ -n "$PROJECT_ROOT" ]]; then
     echo "3. cd \"$ROOT\" && ./install.sh --project-root \"$PROJECT_ROOT\" project"
   fi
-  echo "4. ./install.sh cursor-policy-copy  # copy, then paste into Cursor User Rules"
-  echo "5. ./scripts/validate.sh       # maintainer or post-release sanity"
+  echo "4. Restart Codex after routing changes"
+  echo "5. ./install.sh cursor-policy-copy  # copy, then paste into Cursor User Rules"
+  echo "6. ./scripts/validate.sh       # maintainer or post-release sanity"
   echo
 
   if (( ISSUES > 0 )); then

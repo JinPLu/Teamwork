@@ -1,0 +1,17 @@
+{
+  "id": "ordinary-material-clarification-control",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/workflow-contract.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Help me rename a public CLI command. Whether existing scripts must keep working is undecided. Inspect what you can, then ask only that compatibility question before changing anything. This is ordinary work, not a grill or question-first stress test.",
+  "expected": {"mode": "ordinary_material_clarification", "requires": ["one material question", "no grill ceremony", "no enactment before the answer"]},
+  "must": ["inspect discoverable compatibility evidence", "ask exactly one ordinary clarification about existing-script compatibility"],
+  "must_not": ["activate grill-me", "emit grill ceremony", "change files before the answer"],
+  "candidates": [
+    {"candidate_id": "public_cli_compatibility", "owner": "user-decision", "grounding_required": true, "expected_action": "ask"}
+  ],
+  "expected_asked_candidates": ["public_cli_compatibility"],
+  "rubric": "assistance-quality",
+  "evidence": "skills/using-teamwork/references/workflow-contract.md"
+}

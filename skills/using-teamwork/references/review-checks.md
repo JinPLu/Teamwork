@@ -15,9 +15,8 @@ Check that:
 - high-risk or durable work has appropriate stop, rollback, and review gates;
 - explicit question-first work has a confirmed exit before enactment.
 
-Return the smallest revision that makes the plan runnable. Block only for
-missing authority, critical evidence/resources, or a protected-boundary
-conflict.
+Return the smallest runnable revision. Block only for missing authority,
+critical evidence/resources, or protected-boundary conflict.
 
 ## Execution Review
 
@@ -34,10 +33,28 @@ Check that:
 - durable memory changed only when its protocol was triggered;
 - goal work preserves invariants and changes strategy after failed evidence.
 
+Build an acceptance map before reaching a verdict: each accepted criterion ->
+candidate change/no-change rationale -> direct evidence -> result -> strength.
+Classify a discovery as `regression`, `contract_violation`, `pre_existing`,
+`scope_delta`, or `suggestion`. Only a regression or contract violation against
+accepted scope can become a blocking acceptance failure from that discovery
+classification; failed gating evidence is also a blocker. Preserve direct
+evidence for pre-existing issues and do not make scope delta work implicit.
+
+An initial Judge/Reviewer acceptance review is fresh and limited to accepted
+criteria, protected boundaries, and direct evidence. Give each material finding
+a stable ID and one class: `BLOCKER`, `FOLLOW-UP`, `SUGGESTION`, or `SCOPE_DELTA`.
+Other classes are non-blocking. If a scope delta is required for an accepted AC,
+that failed AC stays a `BLOCKER`; otherwise no open `BLOCKER` means `ACCEPT`.
+
+One corrective recheck may reuse the initial Judge/Reviewer thread. Restrict it
+to prior finding IDs, claimed fixes, and direct evidence of a fix-introduced
+regression; it is not a fresh full rescan, a monitoring loop, or authority for
+recursive delegation/rechecks.
+
 Use `review-lenses.md` for strict maintainability/deslop review,
 `verification-patterns.md` for behavior/performance/parity claims,
 `debug-mode.md` for debug-derived fixes, and `eval-gate.md` only for Teamwork
 package or harness behavior changes.
 
-If acceptance fails, state the actionable finding and next route: research,
-plan revision, implementation correction, or true blocker.
+If acceptance fails, state its finding and route: research, plan, fix, or blocker.

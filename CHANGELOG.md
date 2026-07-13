@@ -4,6 +4,16 @@
 
 这里只记录用户能感受到的变化；实现细节见 Pull Request。
 
+## 2.17.0 - 2026-07-13
+
+**Plan 和 Review 仍然保留，但会更早对齐决策、更快收敛。**
+
+- 含实质决策或风险的非简单 Plan 会自动进入 evidence-first Grill；每次只确认一个真正属于用户的选择，并在最终 Plan 前确认简洁的 Decision Summary。确认 Plan 不会自动授权实施。
+- Plan、Execute、Review 和 Goal 现在继承同一个版本化 Task Contract 与稳定验收条件；范围变化必须显式升级 Contract，避免执行过程中悄悄改目标。
+- Review 收敛为一次完整审查和同一 Reviewer 的一次增量复查。Finding ID 保持稳定；没有开放 `BLOCKER` 时必须接受，偏好、后续建议和范围外机会不会反复阻断。
+- Goal 失败只重跑受影响阶段：已知修复回 Execute，未知原因回 Debug，只有已接受的范围变化才回 Plan。进度更新只报告实质状态变化。
+- 新增确定性 Contract/Finding 校验和对应评测，阻止任务身份或验收条件漂移、递归复查、无关新 Finding 与未声明的修复回归。Codex 的现有角色模型档位保持不变；本版本不声称解决 GPT-5.6 Sol/high 的单次模型延迟。
+
 ## 2.16.0 - 2026-07-13
 
 **新增可发现的 `grill-me` 交互，并修复 Codex subagent 的角色模型路由。**

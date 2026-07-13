@@ -70,6 +70,10 @@ Cursor 本地 hook 尚未 live-verified，因此不伪装成已支持。
 设为 9（1 个主线程 + 最多 8 个 subagent）；修改后需重启 Codex。仅当该配置
 由其他系统管理时使用 `--no-codex-routing`；项目级安装不会修改用户配置。
 
+原生提问能力由当前宿主提供，不属于 Teamwork 安装状态。运行时有
+`request_user_input` 就直接使用；没有时回退为简洁文本。Teamwork 不会为了提问
+修改用户配置、切换模式或启用实验特性。
+
 项目级安装与完整初始化：
 
 ```bash
@@ -99,15 +103,25 @@ Cursor 本地 hook 尚未 live-verified，因此不伪装成已支持。
 
 | Skill | 负责什么 |
 |---|---|
-| `grill-me` | 定义逐问式设计/计划压力测试契约；用可见 active/closed marker 表达预期状态 |
+| `grill-me` | 先质疑、查证并分类未知，只把真正属于用户的结果性决策交给原生/结构化问答 |
 | `teamwork-research` | 查证来源、外部约束、方案空间和 repro surface |
 | `teamwork-debug` | 用复现、日志、假设和 instrumentation 确认根因 |
-| `teamwork-plan` | 明确范围、边界、步骤、验收和停止条件 |
+| `teamwork-plan` | 深度接管 Codex Plan mode 的证据、关键值来源、范围、阶段、验收和停止条件 |
 | `teamwork-execute` | 在已接受范围内实现并验证 |
 | `teamwork-review` | 检查 diff、证据、质量和完成声明 |
 | `teamwork-goal` | 对明确目标持续迭代，直到完成或真正受阻 |
 
-`grill-me` 是交互 skill，不是 Teamwork stage。它只问 0–3 个会改变公开行为、兼容性、架构、风险、成本或验收的用户决策；语言、文件数量/命名等可逆实现细节直接采用仓库惯例。没有合格问题时会结束访谈，但不会因此获得实施授权。该契约已通过静态与假会话测试，Codex、Cursor、Claude 的真实多轮行为与平台等价性尚未 live-verified。`teamwork-init` 负责项目接入与规则瘦身，`teamwork-update` 负责安装刷新和 release hygiene。只有跨回合复用确有价值时，才写入固定位置：
+`grill-me` 是交互 skill，不是 Teamwork stage。用户明确要求先提问、挑战或 grill 时会激活；存在实质决策或风险的非简单 Plan 也会自动进入 evidence-first Grill，并在最终计划前确认 Decision Summary。普通澄清仍走平台原生路径，明确拒绝访谈时不追问，引用、文件、工具、示例或维护文本也不会触发。它先查清可发现事实，再由 agent 承担安全可逆的实现选择，只询问仍会实质改变公开行为、兼容性、验收、成本、风险或不可逆操作的用户决策。默认一次问一个；不凑数、不重复已回答的问题。宿主提供 `request_user_input` 时直接使用，否则简洁文本降级。结束 grill 或确认计划都不授权执行。
+
+`teamwork-init` 负责项目接入，`teamwork-update` 负责安装刷新和 release hygiene。
+
+在 Codex Plan mode 中，原生模式负责提问 UI 和最终 plan item，`teamwork-plan` 负责同一条计划链的质量门：先查当前 owner、配置、测试和事实源，再只询问真正属于用户的关键决策；回答后重新对齐证据，并把每项需求映射到有 owner、输入、产物、依赖、验证和停止条件的阶段。所有执行关键数值必须来自用户、仓库或可解释推导，未解决值保持显式，不因计划写得很长就视为充分。
+
+对非简单 Plan（判断标准是存在实质决策或风险，而不是文件数量），除非用户明确拒绝，否则先进行 evidence-first Grill；在最终 Plan 前确认一份简洁的 Decision Summary，列出实质选择、假设和未解决项。简单或机械 Plan 可直接进行。确认只接受计划，不授权实施。
+
+跨平台的 Judge/Reviewer 都以稳定 ID 记录并绑定已接受的 Contract 与 AC：只有阻塞 Contract/AC 的问题才是 `BLOCKER`，其他工作标为 `FOLLOW-UP` 或 `SUGGESTION`。只有运行时确实支持同一 agent resume 才做 delta recheck；否则传递稳定 finding ledger 或 packet。进度更新保持稀疏，只报告实质状态变化。
+
+只有跨回合复用确有价值时，才写入固定位置：
 
 ```text
 docs/teamwork/research/YYYY-MM-DD-<slug>.md

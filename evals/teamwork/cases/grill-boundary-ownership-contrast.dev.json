@@ -1,0 +1,18 @@
+{
+  "id": "grill-boundary-ownership-contrast",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/grill-me/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Grill me on splitting one internal file and separately moving a supported import into a new published package.",
+  "expected": {"mode": "grill_semantic_contrast", "requires": ["agent-owned internal layout", "user-owned package boundary"]},
+  "must": ["decide the internal split from maintainability evidence", "ask about the published package and import compatibility boundary"],
+  "must_not": ["ask how many internal files to create", "silently change the supported package boundary"],
+  "candidates": [
+    {"candidate_id": "internal_file_split", "owner": "agent", "grounding_required": true, "expected_action": "decide"},
+    {"candidate_id": "published_package_boundary", "owner": "user-decision", "grounding_required": true, "expected_action": "ask"}
+  ],
+  "expected_asked_candidates": ["published_package_boundary"],
+  "rubric": "assistance-quality",
+  "evidence": "docs/teamwork/plans/2026-07-13-grill-me-structured-decision-redesign.md"
+}

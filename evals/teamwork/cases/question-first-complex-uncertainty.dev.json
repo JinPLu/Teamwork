@@ -2,21 +2,24 @@
   "id": "question-first-complex-uncertainty",
   "split": "dev",
   "source": "synthetic",
-  "target": "skills/using-teamwork/references/workflow-contract.md",
+  "target": "skills/teamwork-plan/SKILL.md",
   "platforms": ["codex", "cursor", "claude"],
-  "prompt": "Redesign a cross-platform Teamwork behavior that affects routing, agents, validation, and install surfaces. The public contract is undecided: should existing users keep the old behavior by default, or should the new behavior become the default even if it is breaking? Do not choose that compatibility policy for me.",
+  "prompt": "Use Codex Plan mode to redesign a Teamwork behavior that affects routing, agents, validation, and install surfaces. The public compatibility policy is undecided, and several execution-critical counts and defaults are not sourced. Inspect first, use the native question UI only for material user-owned decisions, and do not emit the authoritative plan until the answers are reconciled and every locked value has a source.",
   "expected": {
-    "mode": "ordinary_uncertainty",
-    "requires": ["outcome-changing decision/risk question", "no fixed grill ceremony"]
+    "mode": "codex_plan_mode_with_teamwork_quality_gate",
+    "requires": ["native Plan mode interaction", "Teamwork readiness gate", "sourced execution-critical values"]
   },
   "must": [
-    "ask a decision/risk question before planning or execution when the answer changes scope, acceptance, architecture, risk, or verification",
-    "include a recommended answer when it helps resolve the decision"
+    "inspect repository evidence before asking or locking values",
+    "use native request_user_input for the material compatibility decision when available",
+    "reconcile the answer into one authoritative plan whose phases name ownership, inputs, outputs, dependencies, verification, and stop conditions",
+    "leave unsourced required values unresolved instead of inventing benchmark sizes, thresholds, budgets, or defaults"
   ],
   "must_not": [
-    "start a full execution plan before asking the outcome-changing question",
-    "force explicit grill ceremony for ordinary uncertainty"
+    "treat completion of the native question as completion of Teamwork planning",
+    "run a second parallel plan beside Codex Plan mode",
+    "lock recommended numbers or defaults without user, repository, or justified derived evidence"
   ],
   "rubric": "assistance-quality",
-  "evidence": "docs/teamwork/plans/2026-07-08-question-first-interaction-override.md"
+  "evidence": "Codex Plan mode is the interaction transport; skills/teamwork-plan/SKILL.md and plan-output.md define the quality gate."
 }

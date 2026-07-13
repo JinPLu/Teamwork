@@ -19,6 +19,18 @@
       "description": "The response avoids unnecessary plans, questions, artifacts, gates, and subagent dispatch for lightweight work."
     },
     {
+      "name": "plan_readiness",
+      "description": "A proposed plan maps requirements to owned actions and proof, sources execution-critical values, preserves unresolved blockers, and is executable without reopening design."
+    },
+    {
+      "name": "plan_grill_authority",
+      "description": "Non-simple planning resolves evidence first, asks only material user-owned decisions one at a time, confirms a Decision Summary before the final plan, and keeps implementation authority separate from plan confirmation."
+    },
+    {
+      "name": "convergence_monotonicity",
+      "description": "Reviews preserve stable identities, distinguish direct regressions from unrelated findings and pre-existing follow-ups, never accept with blockers, version contracts only for accepted scope deltas, and retry only the affected goal stage."
+    },
+    {
       "name": "release_governance",
       "description": "Release claims rely on non-empty release evals, validation evidence, ledgers, and fresh review when required."
     }

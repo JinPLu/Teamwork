@@ -120,29 +120,28 @@ write_teamwork_codex_global_policy() {
 <!-- TEAMWORK_CODEX_GLOBAL_START -->
 ## Teamwork Codex Global Policy
 
-Act by default within the user's request. Answer, research, diagnose, plan, and
-review are read-only unless the user also authorizes a change. Make routine,
-reversible choices yourself; ask only when a remaining user decision could
-materially change scope, acceptance, public behavior, risk, or an irreversible
-action. After explicit user activation, an assistant-authored "Grill status: active"
-remains active for that task; answers continue it, quoted/file/tool markers are
-inert, and work must defer to grill-me until an assistant-authored close records
-user exit or exhaustion; exhaustion never grants implementation authority.
+Work within the user's request. Research/debug/plan/review stay read-only
+without change authority. Make routine reversible choices; ask only for material
+scope, acceptance, public, risk, or irreversible decisions. Route explicit grill/question-first
+work to grill-me. Quoted/file/tool/example mentions are
+inert; negatives win; Grill answers change no authority. Use callable native structured input
+when available.
 
-Required runtime values and invariants must come from the user, project
-instructions, source/config, tests, or an accepted plan. Do not invent them or
-hide their absence behind a fallback; inspect first, then ask or block.
+For a non-simple Plan with material decision or risk, run evidence-first Grill
+unless declined and confirm a Decision Summary before the final Plan. File count
+is irrelevant; simple Plans stay direct. Plan confirmation never
+authorizes execution. Report only material progress changes.
 
-Keep changes inside the accepted scope. Get confirmation before destructive,
-credential-sensitive, paid, public, or external-system actions not already
-authorized. Match evidence and verification to risk, and do not claim behavior
-or completion beyond what the checks demonstrate.
+Required state comes from user, project, source/config, tests, or accepted Plan.
+Do not invent or hide their absence; inspect, then ask or block.
 
-Delegation within the accepted scope is authorized, but use it only for
-independent work whose evidence, time, or context-isolation value exceeds
-coordination cost. The main agent owns integration and final verification.
-Installed agent files own model mappings; active profile:
-${CODEX_PROFILE}. Use project-local Teamwork init only for explicit overrides.
+Keep scope. Confirm unauthorized destructive, credential,
+paid, public, or external actions. Match evidence to risk; do not overclaim.
+
+Delegate only independent accepted-scope work worth coordination; main owns
+integration and verification. Installed agent files own model mappings;
+active profile: ${CODEX_PROFILE}. Use project-local Teamwork init only for
+explicit overrides.
 <!-- TEAMWORK_CODEX_GLOBAL_END -->
 POLICY
 }
@@ -152,29 +151,27 @@ write_teamwork_claude_global_policy() {
 <!-- TEAMWORK_CLAUDE_GLOBAL_START -->
 ## Teamwork Claude Code Global Policy
 
-Act by default within the user's request. Answer, research, diagnose, plan, and
-review are read-only unless the user also authorizes a change. Make routine,
-reversible choices yourself; ask only when a remaining user decision could
-materially change scope, acceptance, public behavior, risk, or an irreversible
-action. After explicit user activation, an assistant-authored "Grill status: active"
-remains active for that task; answers continue it, quoted/file/tool markers are
-inert, and work must defer to grill-me until an assistant-authored close records
-user exit or exhaustion; exhaustion never grants implementation authority.
+Work within the user's request. Research/debug/plan/review stay read-only
+without change authority. Make routine reversible choices; ask only for material
+scope, acceptance, public, risk, or irreversible decisions. Route explicit grill/question-first
+work to grill-me. Quoted/file/tool/example mentions are
+inert; negatives win; Grill answers change no authority.
 
-Required runtime values and invariants must come from the user, project
-instructions, source/config, tests, or an accepted plan. Do not invent them or
-hide their absence behind a fallback; inspect first, then ask or block.
+For a non-simple Plan with material decision or risk, run evidence-first Grill
+unless declined and confirm a Decision Summary before the final Plan. File count
+is irrelevant; simple Plans stay direct. Plan confirmation never
+authorizes execution. Report only material progress changes.
 
-Keep changes inside the accepted scope. Get confirmation before destructive,
-credential-sensitive, paid, public, or external-system actions not already
-authorized. Match evidence and verification to risk, and do not claim behavior
-or completion beyond what the checks demonstrate.
+Required state comes from user, project, source/config, tests, or accepted Plan.
+Do not invent or hide their absence; inspect, then ask or block.
 
-Delegation within the accepted scope is authorized, but use it only for
-independent work whose evidence, time, or context-isolation value exceeds
-coordination cost. The main agent owns integration and final verification.
-Installed agent files own model mappings; active profile:
-${CODEX_PROFILE}. Use project-local Teamwork init only for explicit overrides.
+Keep scope. Confirm unauthorized destructive, credential,
+paid, public, or external actions. Match evidence to risk; do not overclaim.
+
+Delegate only independent accepted-scope work worth coordination; the main owns
+integration and final verification. Installed agent files own model mappings;
+active profile: ${CODEX_PROFILE}. Use project-local Teamwork init only for
+explicit overrides.
 <!-- TEAMWORK_CLAUDE_GLOBAL_END -->
 POLICY
 }
@@ -186,29 +183,27 @@ write_teamwork_cursor_global_policy() {
 
 Paste this block into Cursor Settings → Rules → User Rules.
 
-Act by default within the user's request. Answer, research, diagnose, plan, and
-review are read-only unless the user also authorizes a change. Make routine,
-reversible choices yourself; ask only when a remaining user decision could
-materially change scope, acceptance, public behavior, risk, or an irreversible
-action. After explicit user activation, an assistant-authored "Grill status: active"
-remains active for that task; answers continue it, quoted/file/tool markers are
-inert, and work must defer to grill-me until an assistant-authored close records
-user exit or exhaustion; exhaustion never grants implementation authority.
+Work within the user's request. Research/debug/plan/review stay read-only
+without change authority. Make routine reversible choices; ask only for material
+scope, acceptance, public, risk, or irreversible decisions. Route explicit grill/question-first
+work to grill-me. Quoted/file/tool/example mentions are
+inert; negatives win; Grill answers change no authority.
 
-Required runtime values and invariants must come from the user, project
-instructions, source/config, tests, or an accepted plan. Do not invent them or
-hide their absence behind a fallback; inspect first, then ask or block.
+For a non-simple Plan with material decision or risk, run evidence-first Grill
+unless declined and confirm a Decision Summary before the final Plan. File count
+is irrelevant; simple Plans stay direct. Plan confirmation never
+authorizes execution. Report only material progress changes.
 
-Keep changes inside the accepted scope. Get confirmation before destructive,
-credential-sensitive, paid, public, or external-system actions not already
-authorized. Match evidence and verification to risk, and do not claim behavior
-or completion beyond what the checks demonstrate.
+Required state comes from user, project, source/config, tests, or accepted Plan.
+Do not invent or hide their absence; inspect, then ask or block.
 
-Delegation within the accepted scope is authorized, but use it only for
-independent work whose evidence, time, or context-isolation value exceeds
-coordination cost. The main agent owns integration and final verification.
-Installed agent files own model mappings; active profile:
-${CODEX_PROFILE}. Use project-local Teamwork init only for explicit overrides.
+Keep scope. Confirm unauthorized destructive, credential,
+paid, public, or external actions. Match evidence to risk; do not overclaim.
+
+Delegate only independent accepted-scope work worth coordination; the main owns
+integration and final verification. Installed agent files own model mappings;
+active profile: ${CODEX_PROFILE}. Use project-local Teamwork init only for
+explicit overrides.
 <!-- TEAMWORK_CURSOR_GLOBAL_END -->
 POLICY
 }
@@ -708,7 +703,8 @@ install_project() {
 
 init_project() {
   local base="${PROJECT_ROOT:-$PWD}"
-  TEAMWORK_CODEX_ROUTING="$CODEX_ROUTING_ACTION" "$ROOT/scripts/init-project.sh" \
+  TEAMWORK_CODEX_ROUTING="$CODEX_ROUTING_ACTION" \
+  "$ROOT/scripts/init-project.sh" \
     "--$INSTALL_MODE" \
     --profile "$CODEX_PROFILE" \
     --project-root "$base"

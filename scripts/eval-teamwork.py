@@ -11,7 +11,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from grill_contract import active_output_violation, close_basis
+from grill_contract import (
+    has_legacy_grill_ceremony,
+    question_count,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 EVAL_ROOT = ROOT / "evals" / "teamwork"
@@ -37,6 +40,7 @@ SOURCES = {"synthetic", "trajectory", "bug", "review", "release"}
 PLATFORMS = {"codex", "cursor", "claude"}
 TARGET_PREFIXES = ("skills/", "evals/teamwork/", "scripts/eval-teamwork.py")
 ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+CANDIDATE_ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 LEDGER_SCHEMAS = {
     "accepted.jsonl": {
         "date",
@@ -98,19 +102,25 @@ REQUIRED_QUESTION_FIRST_CASES = {
         "no_question",
     },
     "question-first-explicit-grill": {
-        "ask_one_question",
-        "recommended_answer",
-        "no_plan",
-        "no_edit",
-        "no_dispatch",
+        "material_question",
+        "ownership_oracle",
+        "no_legacy_ceremony",
+        "no_enactment",
     },
     "question-first-explicit-lightweight-grill": {
         "zero_questions",
-        "exhausted_close",
-        "no_edit_before_handoff",
-        "lightweight_grill_no_padding",
+        "agent_owned_choices",
+        "authority_preserved",
+        "no_legacy_ceremony",
+        "no_padding",
     },
-    "question-first-complex-uncertainty": {"decision_risk_question", "no_plan_before_question"},
+    "question-first-complex-uncertainty": {
+        "decision_risk_question",
+        "native_when_callable",
+        "teamwork_plan_quality_gate",
+        "sourced_critical_values",
+        "no_plan_before_question",
+    },
     "question-first-lightweight-control": {
         "direct_lightweight",
         "no_grill_ceremony",
@@ -118,63 +128,93 @@ REQUIRED_QUESTION_FIRST_CASES = {
         "no_durable_plan",
         "no_question",
     },
+    "ordinary-material-clarification-control": {
+        "ordinary_clarification",
+        "material_user_decision",
+        "no_grill_ceremony",
+        "no_enactment",
+    },
     "grill-explicit-skill-invocation": {
-        "ask_one_question",
-        "recommended_answer",
-        "active_marker",
+        "material_question",
+        "no_legacy_ceremony",
+        "no_enactment",
+    },
+    "grill-chinese-explicit-intent": {
+        "material_question",
+        "chinese_explicit_activation",
+        "no_legacy_ceremony",
         "no_enactment",
     },
     "grill-multiturn-continuation-exit": {
         "multiturn_continuation",
-        "explicit_close",
-        "exit_authority",
+        "question_order",
+        "authority_preserved",
         "no_enactment",
     },
     "grill-fact-lookup": {
         "facts_checked",
-        "ask_one_question",
-        "active_marker",
+        "material_question",
     },
     "grill-question-value-stop": {
-        "materiality_gate",
-        "bounded_questions",
-        "exhausted_close",
-        "no_implementation_authority",
+        "ownership_oracle",
+        "expected_asked_candidates",
+        "normal_completion",
+        "no_new_authority",
     },
     "grill-zero-question-low-value": {
         "zero_questions",
-        "exhausted_close",
-        "reversible_defaults",
-        "no_implementation_authority",
+        "agent_owned_choices",
+        "no_new_authority",
     },
     "grill-task-replacement": {
-        "explicit_close",
-        "exit_authority",
+        "old_task_stops",
+        "no_new_authority",
         "task_replacement",
     },
+    "grill-language-ownership-contrast": {"ownership_contrast", "expected_asked_candidates"},
+    "grill-rename-ownership-contrast": {"ownership_contrast", "expected_asked_candidates"},
+    "grill-boundary-ownership-contrast": {"ownership_contrast", "expected_asked_candidates"},
+    "grill-observable-preference-contrast": {"ownership_contrast", "expected_asked_candidates"},
+    "grill-threshold-evidence-contrast": {"evidence_owned", "zero_questions"},
+    "grill-reversibility-ownership-contrast": {"ownership_contrast", "expected_asked_candidates"},
     "grill-quoted-marker-control": {"quoted_marker_inert", "no_grill_ceremony"},
+    "grill-file-tool-marker-control": {"file_tool_marker_inert", "no_grill_ceremony"},
     "grill-maintenance-marker-control": {"maintenance_not_activation", "no_grill_ceremony"},
     "grill-negative-signal-control": {"negative_signal_wins", "no_grill_ceremony"},
 }
-ACTIVE_GRILL_CASES = {
+GRILL_SEMANTIC_CASES = {
     "question-first-explicit-grill",
     "question-first-explicit-lightweight-grill",
     "grill-explicit-skill-invocation",
+    "grill-chinese-explicit-intent",
     "grill-multiturn-continuation-exit",
     "grill-fact-lookup",
     "grill-question-value-stop",
     "grill-zero-question-low-value",
     "grill-task-replacement",
+    "grill-language-ownership-contrast",
+    "grill-rename-ownership-contrast",
+    "grill-boundary-ownership-contrast",
+    "grill-observable-preference-contrast",
+    "grill-threshold-evidence-contrast",
+    "grill-reversibility-ownership-contrast",
 }
+ORDINARY_MATERIAL_CASE = "ordinary-material-clarification-control"
+SEMANTIC_QUESTION_CASES = GRILL_SEMANTIC_CASES | {ORDINARY_MATERIAL_CASE}
 GRILL_CONTROL_CASES = {
     "grill-quoted-marker-control",
+    "grill-file-tool-marker-control",
     "grill-maintenance-marker-control",
     "grill-negative-signal-control",
 }
-PREMATURE_ENACTMENT_RE = re.compile(
-    r"\b(?:i|we)\s+(?:edited|changed|implemented|created|wrote|dispatched|started)\b",
-    re.IGNORECASE,
-)
+SEMANTIC_OWNERS = {"evidence", "agent", "user-decision", "required-input", "confirmation"}
+EXPECTED_ACTION_BY_OWNER = {
+    "evidence": "resolve",
+    "agent": "decide",
+    "user-decision": "ask",
+    "required-input": "request-input",
+    "confirmation": "confirm-later",
+}
 OUTPUT_REQUIRED_FIELDS = {
     "case_id",
     "platforms",
@@ -185,6 +225,28 @@ OUTPUT_REQUIRED_FIELDS = {
     "passed",
     "fail_reason",
 }
+STATIC_FIXTURE_EVIDENCE_TIER = "static-authored-contract-fixture"
+ORDINARY_ACTION_RE = re.compile(
+    r"(?im)(?:"
+    r"\b(?:plan|planning|steps?|edit(?:ed|ing|s)?|implement(?:ation|ed|ing|s)?|"
+    r"enact(?:ment|ed|ing|s)?|execut(?:e|ed|ing|ion|es)|proceed(?:ed|ing|s)?|"
+    r"updat(?:e|ed|ing|es)|modif(?:y|ied|ying|ies)|creat(?:e|ed|ing|es)|"
+    r"delet(?:e|ed|ing|es)|wrote|written)\b"
+    r"|^\s*(?:edited|changed|implemented|updated|modified|wrote|created|deleted)\b"
+    r"|\b(?:i|we)(?:\s+have|'ve)?\s+"
+    r"(?:edited|changed|implemented|renamed|updated|modified|wrote|created|deleted)\b"
+    r"|\b(?:i|we)\s+(?:will|shall|am going to|are going to)\s+"
+    r"(?:edit|change|implement|rename|update|modify|write|create|delete|execute|proceed)\b"
+    r")"
+)
+SEMANTIC_ENACTMENT_RE = re.compile(
+    r"(?i)\b(?:i|we)(?:\s+have|'ve|\s+will|\s+shall|\s+am going to|\s+are going to)\s+"
+    r"(?:edit|change|implement|rename|update|modify|write|create|delete|execute|proceed)\b"
+)
+AUTHORITY_GRANT_RE = re.compile(
+    r"(?i)\b(?:implementation\s+)?authority\s+(?:is\s+)?granted\b|"
+    r"\b(?:now\s+)?authorized\s+to\s+(?:edit|implement|execute|proceed)\b"
+)
 
 
 class EvalError(Exception):
@@ -315,6 +377,85 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
     ):
         raise EvalError(f"{display_path(path)}: evidence must be a non-empty string or string list")
 
+    if case_id in SEMANTIC_QUESTION_CASES:
+        retired = sorted(
+            {"expected_question_ids", "blocked_route", "expected_close"} & set(data)
+        )
+        if retired:
+            raise EvalError(
+                f"{display_path(path)}: retired grill protocol fields remain: {', '.join(retired)}"
+            )
+        candidates = data.get("candidates")
+        if not isinstance(candidates, list) or not candidates:
+            raise EvalError(f"{display_path(path)}: candidates must be a non-empty list")
+        candidate_ids: set[str] = set()
+        user_decision_ids: set[str] = set()
+        for candidate_index, candidate in enumerate(candidates, start=1):
+            if not isinstance(candidate, dict):
+                raise EvalError(
+                    f"{display_path(path)}: candidate {candidate_index} must be an object"
+                )
+            required_candidate_fields = {
+                "candidate_id", "owner", "grounding_required", "expected_action"
+            }
+            if set(candidate) != required_candidate_fields:
+                raise EvalError(
+                    f"{display_path(path)}: candidate {candidate_index} must contain exactly "
+                    f"{sorted(required_candidate_fields)}"
+                )
+            candidate_id = require_string(
+                candidate.get("candidate_id"), "candidate_id", path
+            )
+            if not CANDIDATE_ID_RE.fullmatch(candidate_id):
+                raise EvalError(
+                    f"{display_path(path)}: candidate_id must be snake_case: {candidate_id}"
+                )
+            if candidate_id in candidate_ids:
+                raise EvalError(f"{display_path(path)}: duplicate candidate_id: {candidate_id}")
+            candidate_ids.add(candidate_id)
+            owner = require_string(candidate.get("owner"), "owner", path)
+            if owner not in SEMANTIC_OWNERS:
+                raise EvalError(
+                    f"{display_path(path)}: candidate owner must be one of {sorted(SEMANTIC_OWNERS)}"
+                )
+            if not isinstance(candidate.get("grounding_required"), bool):
+                raise EvalError(
+                    f"{display_path(path)}: candidate grounding_required must be boolean"
+                )
+            expected_action = require_string(
+                candidate.get("expected_action"), "expected_action", path
+            )
+            if expected_action != EXPECTED_ACTION_BY_OWNER[owner]:
+                raise EvalError(
+                    f"{display_path(path)}: {candidate_id} owner {owner} requires action "
+                    f"{EXPECTED_ACTION_BY_OWNER[owner]}, got {expected_action}"
+                )
+            if owner == "user-decision":
+                user_decision_ids.add(candidate_id)
+
+        expected_asked = data.get("expected_asked_candidates")
+        if not isinstance(expected_asked, list) or not all(
+            isinstance(item, str) and CANDIDATE_ID_RE.fullmatch(item)
+            for item in expected_asked
+        ):
+            raise EvalError(
+                f"{display_path(path)}: expected_asked_candidates must be a snake_case string list"
+            )
+        if len(expected_asked) != len(set(expected_asked)):
+            raise EvalError(f"{display_path(path)}: expected_asked_candidates must be unique")
+        unknown_asked = sorted(set(expected_asked) - user_decision_ids)
+        if unknown_asked:
+            raise EvalError(
+                f"{display_path(path)}: expected question is not user-owned: "
+                f"{', '.join(unknown_asked)}"
+            )
+        if case_id == ORDINARY_MATERIAL_CASE:
+            if len(candidates) != 1 or expected_asked != ["public_cli_compatibility"]:
+                raise EvalError(
+                    f"{display_path(path)}: ordinary material clarification must define only "
+                    "the public_cli_compatibility user decision"
+                )
+
     rubric = data.get("rubric")
     if rubric is not None:
         rubric_id = require_string(rubric, "rubric", path)
@@ -425,22 +566,66 @@ def validate_ledgers() -> int:
     return line_count
 
 
-def validate_output_trajectory(value: Any, path: Path, index: int) -> list[dict[str, str]]:
+def validate_output_trajectory(value: Any, path: Path, index: int) -> list[dict[str, Any]]:
     if not isinstance(value, list) or not value:
         raise EvalError(f"{display_path(path)}:{index}: trajectory must be a non-empty list")
-    turns: list[dict[str, str]] = []
+    turns: list[dict[str, Any]] = []
     for turn_index, turn in enumerate(value, start=1):
-        if not isinstance(turn, dict) or set(turn) != {"user", "assistant"}:
+        if not isinstance(turn, dict) or not {"user", "assistant"}.issubset(turn):
             raise EvalError(
-                f"{display_path(path)}:{index}: trajectory turn {turn_index} must contain only user and assistant"
+                f"{display_path(path)}:{index}: trajectory turn {turn_index} must contain user and assistant"
+            )
+        unknown = sorted(set(turn) - {"user", "assistant", "asked_candidates"})
+        if unknown:
+            raise EvalError(
+                f"{display_path(path)}:{index}: trajectory turn {turn_index} has unknown fields: "
+                f"{', '.join(unknown)}"
             )
         user = require_string(turn.get("user"), "trajectory.user", path)
         assistant = require_string(turn.get("assistant"), "trajectory.assistant", path)
-        turns.append({"user": user, "assistant": assistant})
+        asked = turn.get("asked_candidates", [])
+        if not isinstance(asked, list) or not all(
+            isinstance(item, str) and CANDIDATE_ID_RE.fullmatch(item) for item in asked
+        ):
+            raise EvalError(
+                f"{display_path(path)}:{index}: trajectory turn {turn_index} "
+                "asked_candidates must be a snake_case string list"
+            )
+        turns.append({"user": user, "assistant": assistant, "asked_candidates": asked})
     return turns
 
 
-def validate_question_first_outputs(case_ids: set[str]) -> int:
+def is_public_cli_compatibility_question(text: str) -> bool:
+    question_marks = [match.start() for match in re.finditer(r"[?？]", text)]
+    if len(question_marks) != 1:
+        return False
+    mark_index = question_marks[0]
+    sentence_boundaries = (".", "!", "！", "?", "？", "\n")
+    sentence_start = max(
+        (text.rfind(boundary, 0, mark_index) for boundary in sentence_boundaries),
+        default=-1,
+    )
+    lowered = text[sentence_start + 1 : mark_index + 1].lower()
+    public_cli = bool(re.search(r"\bpublic\b", lowered)) and bool(
+        re.search(r"\b(?:cli|command)\b", lowered)
+    )
+    compatibility = bool(
+        re.search(r"\bcompatib\w*\b", lowered)
+        or re.search(r"\b(?:keep|continue)\w*\s+(?:to\s+)?work(?:ing)?\b", lowered)
+        or re.search(
+            r"\bexisting scripts?\b.{0,48}\b(?:work\w*|break\w*|migrat\w*|preserv\w*|support\w*)\b",
+            lowered,
+        )
+        or re.search(
+            r"\b(?:work\w*|break\w*|migrat\w*|preserv\w*|support\w*)\b.{0,48}\bexisting scripts?\b",
+            lowered,
+        )
+    )
+    return public_cli and compatibility
+
+
+def validate_question_first_outputs(cases_by_id: dict[str, dict[str, Any]]) -> int:
+    case_ids = set(cases_by_id)
     missing_cases = sorted(set(REQUIRED_QUESTION_FIRST_CASES) - case_ids)
     if missing_cases:
         raise EvalError(f"missing question-first case(s): {', '.join(missing_cases)}")
@@ -470,6 +655,7 @@ def validate_question_first_outputs(case_ids: set[str]) -> int:
             raise EvalError(f"{display_path(output_path)}:{index}: unexpected question-first case_id: {case_id}")
         if case_id not in case_ids:
             raise EvalError(f"{display_path(output_path)}:{index}: output references missing case: {case_id}")
+        case = cases_by_id[case_id]
 
         platforms = set(require_string_list(data.get("platforms"), "platforms", output_path))
         unknown_platforms = sorted(platforms - PLATFORMS)
@@ -504,81 +690,65 @@ def validate_question_first_outputs(case_ids: set[str]) -> int:
             raise EvalError(f"{display_path(output_path)}:{index}: passing row must have empty fail_reason")
         if not passed:
             raise EvalError(f"{display_path(output_path)}:{index}: question-first sample failed: {fail_reason}")
+        evidence_tier = data.get("evidence_tier", STATIC_FIXTURE_EVIDENCE_TIER)
+        if evidence_tier != STATIC_FIXTURE_EVIDENCE_TIER:
+            raise EvalError(
+                f"{display_path(output_path)}:{index}: authored trajectory may only declare "
+                f"evidence_tier={STATIC_FIXTURE_EVIDENCE_TIER!r}; it is not live model evidence"
+            )
 
         output = output_text.lower()
-        if case_id in ACTIVE_GRILL_CASES:
-            forbidden = (
-                "steps:",
-                "goal proposal",
-                "plan:",
-                "subagent",
-                "durable plan",
-            )
-            active_count = 0
-            closed_seen = False
-            exhausted_seen = False
+        if case_id in SEMANTIC_QUESTION_CASES:
+            observed_asked: list[str] = []
             for turn_index, turn in enumerate(trajectory, start=1):
                 assistant = turn["assistant"]
-                lowered = assistant.lower()
-                is_active = "grill status: active" in lowered
-                is_closed = "grill status: closed" in lowered
-                output_violation = active_output_violation(assistant)
-                if output_violation:
-                    raise EvalError(f"{display_path(output_path)}:{index}: {output_violation}")
-                if is_active and is_closed:
-                    raise EvalError(f"{display_path(output_path)}:{index}: turn {turn_index} mixes active and closed state")
-                if is_active:
-                    if closed_seen:
-                        raise EvalError(f"{display_path(output_path)}:{index}: active marker appears after close")
-                    active_count += 1
-                    if lowered.count("grill status: active") != 1:
-                        raise EvalError(f"{display_path(output_path)}:{index}: active marker must appear exactly once per active turn")
-                    if lowered.count("question:") != 1 or assistant.count("?") != 1:
-                        raise EvalError(f"{display_path(output_path)}:{index}: active turn must ask exactly one question")
-                    if "recommended:" not in lowered or "alternatives:" not in lowered:
-                        raise EvalError(f"{display_path(output_path)}:{index}: active turn must recommend and bound alternatives")
-                    if "round:" in lowered or "none needed" in lowered:
-                        raise EvalError(f"{display_path(output_path)}:{index}: active turn contains forbidden bookkeeping")
-                    if any(item in lowered for item in forbidden):
-                        raise EvalError(f"{display_path(output_path)}:{index}: active turn contains forbidden enactment")
-                    if PREMATURE_ENACTMENT_RE.search(assistant):
-                        raise EvalError(f"{display_path(output_path)}:{index}: active turn claims premature enactment")
-                elif is_closed:
-                    closed_seen = True
-                    basis = close_basis(turn["user"], assistant)
-                    if not basis:
-                        raise EvalError(f"{display_path(output_path)}:{index}: close lacks a valid user or exhausted basis")
-                    exhausted_seen = basis == "exhausted"
-                else:
-                    raise EvalError(f"{display_path(output_path)}:{index}: grill trajectory turn lacks state marker")
-            if active_count > 3:
-                raise EvalError(f"{display_path(output_path)}:{index}: grill trajectory exceeds the three-question cap")
-            zero_question_cases = {"grill-zero-question-low-value", "question-first-explicit-lightweight-grill"}
-            if active_count < 1 and case_id not in zero_question_cases:
-                raise EvalError(f"{display_path(output_path)}:{index}: grill trajectory lacks an active turn")
-            if case_id == "question-first-explicit-grill" and active_count < 2:
-                raise EvalError(f"{display_path(output_path)}:{index}: explicit grill fixture must prove continuation")
-            if case_id == "grill-multiturn-continuation-exit" and (active_count < 3 or not closed_seen):
-                raise EvalError(f"{display_path(output_path)}:{index}: continuation fixture must have three active turns and a close")
-            if case_id == "grill-task-replacement" and (active_count != 1 or not closed_seen):
-                raise EvalError(f"{display_path(output_path)}:{index}: task replacement must close after one active turn")
-            if case_id == "grill-question-value-stop" and (active_count != 1 or not exhausted_seen):
-                raise EvalError(f"{display_path(output_path)}:{index}: value-stop fixture must ask once then close exhausted")
-            if case_id == "grill-zero-question-low-value" and (active_count != 0 or not exhausted_seen):
-                raise EvalError(f"{display_path(output_path)}:{index}: low-value fixture must close with zero questions")
-            if case_id == "question-first-explicit-lightweight-grill" and (active_count != 0 or not exhausted_seen):
-                raise EvalError(f"{display_path(output_path)}:{index}: lightweight grill must not manufacture a question")
+                asked = turn["asked_candidates"]
+                marks = question_count(assistant)
+                if len(asked) > 1 or marks > 1:
+                    raise EvalError(
+                        f"{display_path(output_path)}:{index}: turn {turn_index} asks more than one decision"
+                    )
+                if bool(asked) != (marks == 1):
+                    raise EvalError(
+                        f"{display_path(output_path)}:{index}: turn {turn_index} question text and "
+                        "asked_candidates annotation disagree"
+                    )
+                if has_legacy_grill_ceremony(assistant):
+                    raise EvalError(
+                        f"{display_path(output_path)}:{index}: turn {turn_index} exposes "
+                        "the superseded grill packet/state protocol"
+                    )
+                if SEMANTIC_ENACTMENT_RE.search(assistant):
+                    raise EvalError(
+                        f"{display_path(output_path)}:{index}: turn {turn_index} enacts work "
+                        "inside the question-first fixture"
+                    )
+                if AUTHORITY_GRANT_RE.search(assistant):
+                    raise EvalError(
+                        f"{display_path(output_path)}:{index}: turn {turn_index} invents "
+                        "implementation authority"
+                    )
+                observed_asked.extend(asked)
+            expected_asked = case["expected_asked_candidates"]
+            if observed_asked != expected_asked:
+                raise EvalError(
+                    f"{display_path(output_path)}:{index}: asked candidates {observed_asked} "
+                    f"do not match semantic oracle {expected_asked}"
+                )
             if case_id == "grill-fact-lookup":
-                if not any("facts checked:" in turn["assistant"].lower() for turn in trajectory):
+                if not any(
+                    "skills/ and install.sh inventories" in turn["assistant"]
+                    for turn in trajectory
+                ):
                     raise EvalError(f"{display_path(output_path)}:{index}: fact lookup fixture lacks bounded evidence")
         if case_id in GRILL_CONTROL_CASES:
             assistant_text = "\n".join(turn["assistant"].lower() for turn in trajectory)
-            if "grill status: active" in assistant_text or "grill status: closed" in assistant_text:
-                raise EvalError(f"{display_path(output_path)}:{index}: inert marker control activated grill state")
-            if "question:" in assistant_text or any("?" in turn["assistant"] for turn in trajectory):
+            if has_legacy_grill_ceremony(assistant_text):
+                raise EvalError(f"{display_path(output_path)}:{index}: inert control emitted grill ceremony")
+            if any(question_count(turn["assistant"]) for turn in trajectory):
                 raise EvalError(f"{display_path(output_path)}:{index}: inert marker control asked a grill question")
         if case_id == "question-first-complex-uncertainty":
-            if "question:" not in output:
+            if question_count(output_text) != 1:
                 raise EvalError(f"{display_path(output_path)}:{index}: complex uncertainty output must ask a question")
             if "steps:" in output or "implementation" in output:
                 raise EvalError(f"{display_path(output_path)}:{index}: complex uncertainty output planned before asking")
@@ -596,6 +766,10 @@ def validate_question_first_outputs(case_ids: set[str]) -> int:
                 "durable plan",
                 "plan:",
                 "planning",
+                "tool call",
+                "code executor",
+                "shell",
+                "terminal",
             )
             if "?" in data["output"] or any(item in output for item in ceremony_forbidden):
                 raise EvalError(f"{display_path(output_path)}:{index}: lightweight output must not use grill ceremony")
@@ -621,6 +795,41 @@ def validate_question_first_outputs(case_ids: set[str]) -> int:
             if not any(item in output for item in proceed_markers):
                 raise EvalError(
                     f"{display_path(output_path)}:{index}: autonomy control must indicate inspection and action"
+                )
+        if case_id == ORDINARY_MATERIAL_CASE:
+            if len(trajectory) != 1:
+                raise EvalError(
+                    f"{display_path(output_path)}:{index}: ordinary material clarification "
+                    "must contain exactly one assistant turn"
+                )
+            question_marks = question_count(output_text)
+            if question_marks != 1:
+                raise EvalError(
+                    f"{display_path(output_path)}:{index}: ordinary material clarification "
+                    "must contain exactly one question mark"
+                )
+            if has_legacy_grill_ceremony(output_text):
+                raise EvalError(
+                    f"{display_path(output_path)}:{index}: ordinary material clarification "
+                    "must not emit grill packet/state ceremony"
+                )
+            if re.search(
+                r"(?im)^\s*(?:question|recommended|options|other):",
+                output_text,
+            ) or len(re.findall(r"(?m)^\s*[-*]\s+\S+", output_text)) >= 2:
+                raise EvalError(
+                    f"{display_path(output_path)}:{index}: ordinary material clarification "
+                    "must be one concise question, not a choice card"
+                )
+            if ORDINARY_ACTION_RE.search(output_text):
+                raise EvalError(
+                    f"{display_path(output_path)}:{index}: ordinary material clarification "
+                    "must not plan, edit, or enact the change"
+                )
+            if not is_public_cli_compatibility_question(output_text):
+                raise EvalError(
+                    f"{display_path(output_path)}:{index}: ordinary material clarification "
+                    "must ask the public CLI compatibility question"
                 )
 
         seen.add(case_id)
@@ -648,12 +857,14 @@ def selected_cases(selection: str) -> list[dict[str, Any]]:
     if not cases:
         raise EvalError("no cases found")
     seen: set[str] = set()
+    cases_by_id: dict[str, dict[str, Any]] = {}
     for case in cases:
         case_id = case["id"]
         if case_id in seen:
             raise EvalError(f"duplicate case id: {case_id}")
         seen.add(case_id)
-    output_rows = validate_question_first_outputs(seen)
+        cases_by_id[case_id] = case
+    output_rows = validate_question_first_outputs(cases_by_id)
     if selection == "all":
         selected = cases
         missing_splits = sorted(split for split in SPLITS if not any(case["split"] == split for case in cases))

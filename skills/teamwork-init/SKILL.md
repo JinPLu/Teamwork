@@ -5,14 +5,12 @@ description: Use when setting up, auditing, or slimming project agent instructio
 
 # Teamwork Init
 
-Use for project workflow setup, instruction slimming, and migration into
-Teamwork. Leave only local facts, evidence sources, boundaries, and acceptance
-checks needed to apply Teamwork.
+Set up or slim project instructions. Retain facts, evidence, boundaries, and
+acceptance checks.
 
-Read as needed: `skills/using-teamwork/references/check-update.md` for
-readiness, `skills/using-teamwork/references/workflow-contract.md` for
-evidence, `skills/using-teamwork/references/project-init.md` for layering/MCP,
-and artifact/optional references only when their trigger applies.
+Read as needed: `skills/using-teamwork/references/check-update.md` for readiness,
+`workflow-contract.md` for evidence, `project-init.md` for layering/MCP, and
+artifact/optional references only when triggered.
 
 ## Init Mode
 
@@ -22,9 +20,8 @@ Worker, Sol high for Designer/Judge/Reviewer, and Sol max for Deep roles on
 Codex. `cost-first` uses Luna/Terra/Sol plus native low-cost adapter models.
 `gpt56-high` and `gpt56-xhigh` pin Codex to Sol. `gpt56-role` and legacy
 `gpt55-*` names are GPT-5.6 compatibility aliases. Record `Init Mode: global-default | performance-first | cost-first | gpt56-role | gpt56-high |
-gpt56-xhigh | gpt55-high | gpt55-xhigh`;
-add a project-local rule only for overrides. Refresh installed agents with
-`./install.sh --profile <profile> all` when model overrides change.
+gpt56-xhigh | gpt55-high | gpt55-xhigh`. Refresh installed agents with
+`./install.sh --profile <profile> all` when overrides change.
 
 ## Full Project Init Default
 
@@ -52,16 +49,20 @@ Before instruction work, run from the Teamwork checkout:
 ./scripts/check-update.sh --readiness --project "<project-root>"
 ```
 
-When `INSTALL_READY=no`, run the printed `NEXT` equivalent directly as part of
-init; `codex-routing` is repaired by the user-level Codex install. Report that
-Codex must restart after a routing change, plus remaining manual/optional gaps.
+When `INSTALL_READY=no`, run `NEXT`; user-level Codex installs repair
+`codex-routing`.
+Native interaction tools are host capabilities, not Teamwork installation
+requirements: use them when callable and never change user config to make them
+available. Restart after routing changes and report remaining gaps.
 
 ## Workflow
 
 1. Run the Install Readiness Check; report `Install readiness:` without hard
    gating local files.
 2. Run `./install.sh --project-root "<project-root>" init-project`, or create
-   the same local surfaces directly when needed.
+   the same local surfaces directly when needed. Project surfaces continue even
+   when the global install returns an actionable configuration failure; report
+   that failure after local setup.
 3. Inspect real project context: local instruction files, README guidance,
    `docs/teamwork/` artifacts, and user-provided plans.
 4. Classify content as workflow, project fact, current state, appendix, or
@@ -91,5 +92,4 @@ Codex must restart after a routing change, plus remaining manual/optional gaps.
 - Do not install external tooling without approval. Initializing repo-local
   CodeGraph is allowed when the CLI already exists; otherwise report the gap.
 
-Return changed files, audit decisions, migration rationale, verification, and
-human decisions. Include `Memory Delta:` only when durable memory was checked or changed.
+Return changed files, audit decisions, migration rationale, verification, and human decisions. Include `Memory Delta:` only when durable memory was checked or changed.

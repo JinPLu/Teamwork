@@ -5,6 +5,11 @@ presentation optimized for human review. These lenses are gated: ordinary review
 does not become opportunistic refactor. Review identifies slop; edit-producing
 cleanup belongs to execute/Worker only when requested or accepted.
 
+Apply these lenses only to accepted scope and protected boundaries. Report an
+unaccepted cleanup as `SUGGESTION` or `SCOPE_DELTA`, not as a reason to expand
+the candidate. A real introduced structural or security regression remains a
+`BLOCKER` with its stable finding ID and direct evidence.
+
 ## Deslop
 
 Use for explicit deslop/AI-code cleanup requests, or touched-diff residue after

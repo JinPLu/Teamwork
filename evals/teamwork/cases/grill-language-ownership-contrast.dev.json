@@ -1,0 +1,18 @@
+{
+  "id": "grill-language-ownership-contrast",
+  "split": "dev",
+  "source": "bug",
+  "target": "skills/grill-me/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Grill me on two language choices: the private helper can follow this repository, but the public SDK must choose whether Python is officially supported alongside TypeScript.",
+  "expected": {"mode": "grill_semantic_contrast", "requires": ["agent-owned private choice", "user-owned public support decision"]},
+  "must": ["resolve the private helper language from repository evidence", "ask only about the public SDK support contract"],
+  "must_not": ["ask the user to choose the private helper language", "silently decide the public SDK support promise"],
+  "candidates": [
+    {"candidate_id": "private_helper_language", "owner": "agent", "grounding_required": true, "expected_action": "decide"},
+    {"candidate_id": "sdk_language_support", "owner": "user-decision", "grounding_required": true, "expected_action": "ask"}
+  ],
+  "expected_asked_candidates": ["sdk_language_support"],
+  "rubric": "assistance-quality",
+  "evidence": "docs/teamwork/plans/2026-07-13-grill-me-structured-decision-redesign.md"
+}

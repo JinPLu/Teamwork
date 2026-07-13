@@ -3,7 +3,8 @@
   "category": "lightweight",
   "prompt": "Answer only with the result of 37 + 5. Do not inspect files, make a plan, or delegate.",
   "sandbox": "read-only",
-  "expected_signals": ["direct answer", "no unnecessary tool call"],
-  "forbidden_signals": ["durable plan", "subagent dispatch", "workspace mutation"],
-  "pilot_only": true
+  "unscored_annotations": {
+    "expected": ["direct answer", "no unnecessary tool call"],
+    "forbidden": ["durable plan", "subagent dispatch", "workspace mutation"]
+  }
 }

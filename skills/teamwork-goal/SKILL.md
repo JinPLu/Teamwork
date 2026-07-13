@@ -1,6 +1,6 @@
 ---
 name: teamwork-goal
-description: Use when the user asks to keep going, run until it passes, fix until green, iterate until done, converge on a verifiable target, or work within an explicit budget.
+description: Use when the user asks to keep going, fix until green, converge on a verifiable target, or work within an explicit budget.
 ---
 
 # Teamwork Goal
@@ -24,13 +24,14 @@ Use Codex native goal state when available; otherwise keep a rolling report in
 Invariants, verification, and the budget supplied by the user/runtime or
 accepted plan. Do not invent a fixed iteration budget.
 
-Before retrying, run Replay Preflight: identify prior attempts, current evidence,
-do-not-repeat constraints, and the strategy delta.
-Route broad unknowns to research, reproducible unknown-cause failures to debug,
-scope decisions to plan, changes to execute, and acceptance to review. After
-each verify/review cycle, append the attempt result; failures and no-progress
-cycles also record why and what must change. Accept only when focused
-verification and the required review pass.
+Before retrying, identify the preserved Contract/Invariants, failed claim and
+stage, prior evidence, do-not-repeat constraints, and strategy delta. Keep the
+Contract version; only an accepted scope delta re-enters Plan.
+
+Route only the affected stage: broad gaps to research, unknown-cause failures to
+debug, known fixes to execute, and changed/final acceptance to review. Do not
+replay the full workflow. Record each result and strategy change; accept only on
+focused proof and required review.
 
 ## Done When
 

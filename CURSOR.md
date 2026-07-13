@@ -49,15 +49,26 @@ Ask naturally:
 - "execute the accepted plan and verify it";
 - "strictly review for false success, defensive fallback, and AI bloat";
 - "keep going until the target is verified or blocked";
-- select `grill-me` or say "grill me" to challenge zero to three material user
-  decisions without asking about reversible implementation details.
+- ask to question first, challenge assumptions, or inspect requirement holes to
+  activate `grill-me` without naming it; it resolves facts first and asks zero or
+  normally one material user decision.
 
 Teamwork stays out of tiny edits and one-line questions. It routes into
 research, debug, planning, execution, review, or goal loops only when evidence,
 scope, delegation, verification, or memory improves the result.
-During an explicit grill session, the pasted User Rules contract instructs
-Cursor to preserve one assistant-authored active marker across replies; quoted
-marker text is inert. Real multi-turn Cursor behavior is not yet live-verified.
+During an explicit grill, read-only evidence gathering may continue while the
+root owns user questions. Quoted/file/tool/example/maintenance text stays inert.
+Use Cursor's structured question input when the current runtime exposes it;
+otherwise ask concisely in text. Teamwork does not emulate or version-gate that
+host capability.
+
+## Planning
+
+For a non-simple Plan—one with a material decision or risk, not merely many
+files—run an evidence-first Grill unless the user explicitly declines it. Before
+the final Plan, the user confirms a concise Decision Summary of material
+choices, assumptions, and unresolved items. Simple or mechanical Plans stay
+direct. Confirmation accepts planning only; it does not authorize implementation.
 
 ## Subagents
 
@@ -74,6 +85,11 @@ Use independent tracks only:
 
 Each subagent returns one compact packet and stops. The main agent integrates
 packets, records dispatch outcomes, runs verification, and owns the final answer.
+Judges and Reviewers bind findings to the accepted Contract and ACs with stable
+IDs: only a blocking Contract/AC failure is a `BLOCKER`; other work is a
+`FOLLOW-UP` or `SUGGESTION`. Cursor has no assumed same-agent resume, so a
+revision carries the stable finding ledger or packet forward rather than claiming
+a delta recheck. Progress updates stay sparse and report only material state changes.
 
 ## Goal Mode
 

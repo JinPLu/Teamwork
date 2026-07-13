@@ -1,154 +1,217 @@
 #!/usr/bin/env python3
-"""Mutation tests for grill trajectory false-positive resistance."""
+"""Mutation checks for the capability-first static question fixtures."""
 
 from __future__ import annotations
 
 import copy
+import importlib.util
 import json
 import os
-import re
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
-from pathlib import Path
-from typing import Callable
-
-from grill_contract import active_output_violation, close_basis, exit_authority_is_grounded
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EVAL = ROOT / "scripts" / "eval-teamwork.py"
-SOURCE = ROOT / "evals" / "teamwork" / "outputs" / "question-first" / "dev.jsonl"
+SCRIPT = ROOT / "scripts" / "eval-teamwork.py"
+OUTPUT = ROOT / "evals" / "teamwork" / "outputs" / "question-first" / "dev.jsonl"
+
+SPEC = importlib.util.spec_from_file_location("eval_teamwork", SCRIPT)
+assert SPEC and SPEC.loader
+EVAL = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(EVAL)
 
 
-class GrillMutationTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.rows = [json.loads(line) for line in SOURCE.read_text(encoding="utf-8").splitlines() if line.strip()]
-
-    def assert_rejected(self, case_id: str, mutate: Callable[[dict], None]) -> None:
-        rows = copy.deepcopy(self.rows)
+class StaticOutputMutationTests(unittest.TestCase):
+    def mutate_row(self, case_id: str, mutate) -> subprocess.CompletedProcess[str]:
+        rows = [json.loads(line) for line in OUTPUT.read_text(encoding="utf-8").splitlines()]
         row = next(item for item in rows if item["case_id"] == case_id)
         mutate(row)
-        with tempfile.TemporaryDirectory() as temp:
-            output = Path(temp) / "question-first"
-            output.mkdir()
-            (output / "dev.jsonl").write_text(
-                "\n".join(json.dumps(item, separators=(",", ":")) for item in rows) + "\n",
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / "question-first"
+            target.mkdir(parents=True)
+            (target / "dev.jsonl").write_text(
+                "\n".join(json.dumps(item, ensure_ascii=False) for item in rows) + "\n",
                 encoding="utf-8",
             )
             env = os.environ.copy()
-            env["TEAMWORK_EVAL_OUTPUT_DIR"] = temp
-            completed = subprocess.run(
-                [sys.executable, str(EVAL), "--split", "dev"],
-                cwd=ROOT,
-                env=env,
+            env["TEAMWORK_EVAL_OUTPUT_DIR"] = str(root)
+            return subprocess.run(
+                [sys.executable, str(SCRIPT), "--split", "dev"],
                 text=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 check=False,
+                env=env,
+                cwd=ROOT,
             )
-        self.assertNotEqual(completed.returncode, 0, completed.stdout)
 
-    def test_missing_active_marker(self) -> None:
-        self.assert_rejected("question-first-explicit-grill", lambda row: row["trajectory"][0].update(assistant="Question: Keep compatibility?\nRecommended: Yes.\nAlternatives: No."))
+    def assert_rejected(self, result: subprocess.CompletedProcess[str], text: str) -> None:
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn(text, result.stderr)
 
-    def test_two_questions(self) -> None:
-        self.assert_rejected("question-first-explicit-grill", lambda row: row["trajectory"][0].update(assistant=row["trajectory"][0]["assistant"] + "\nQuestion: Also migrate now?"))
+    @staticmethod
+    def set_last_output(row: dict, text: str) -> None:
+        row["trajectory"][-1]["assistant"] = text
+        row["output"] = text
 
-    def test_missing_recommendation(self) -> None:
-        self.assert_rejected("question-first-explicit-grill", lambda row: row["trajectory"][0].update(assistant=row["trajectory"][0]["assistant"].replace("Recommended:", "Suggestion:")))
-
-    def test_premature_plan_or_edit(self) -> None:
+    def test_legacy_packet_marker_is_rejected(self) -> None:
         def mutate(row: dict) -> None:
-            row["trajectory"][0]["assistant"] += "\nI edited the file and wrote the implementation."
-        self.assert_rejected("question-first-explicit-grill", mutate)
+            text = "Grill status: active\n" + row["trajectory"][0]["assistant"]
+            row["trajectory"][0]["assistant"] = text
+            row["output"] = text
 
-    def test_answer_treated_as_exit(self) -> None:
-        def mutate(row: dict) -> None:
-            row["trajectory"][1]["assistant"] = "Grill status: closed\nExit authority: User chose compatibility."
-        self.assert_rejected("grill-multiturn-continuation-exit", mutate)
-
-    def test_close_without_grounded_authority(self) -> None:
-        def mutate(row: dict) -> None:
-            row["trajectory"][-1]["assistant"] = row["trajectory"][-1]["assistant"].replace(
-                "Exit authority: User said proceed with the plan.",
-                "Exit authority: The assistant selected the plan independently.",
-            )
-            row["output"] = row["trajectory"][-1]["assistant"]
-        self.assert_rejected("grill-multiturn-continuation-exit", mutate)
-
-    def test_quoted_marker_activation(self) -> None:
-        self.assert_rejected("grill-quoted-marker-control", lambda row: row["trajectory"][0].update(assistant="Grill status: active\nQuestion: Continue?\nRecommended: Yes.\nAlternatives: Stop."))
-
-    def test_bookkeeping_fields(self) -> None:
-        self.assert_rejected("question-first-explicit-grill", lambda row: row["trajectory"][0].update(assistant=row["trajectory"][0]["assistant"] + "\nRound: 1\nFacts checked: none needed"))
-
-    def test_active_after_close(self) -> None:
-        def mutate(row: dict) -> None:
-            row["trajectory"].append({"user": "One more thing.", "assistant": "Grill status: active\nQuestion: Reopen?\nRecommended: No.\nAlternatives: Yes."})
-            row["output"] = row["trajectory"][-1]["assistant"]
-        self.assert_rejected("grill-task-replacement", mutate)
-
-    def test_negation_question_and_continuation_override_exit_keywords(self) -> None:
-        pairs = (
-            ("Do not implement yet; keep grilling me.", "Exit authority: User said implement."),
-            ("Should we proceed, or continue grilling?", "Exit authority: User said proceed."),
-            ("不要执行，继续问我。", "Exit authority: 用户要求执行。"),
-        )
-        for user, assistant in pairs:
-            with self.subTest(user=user):
-                self.assertFalse(exit_authority_is_grounded(user, assistant))
-                def mutate(row: dict, user_text: str = user, authority: str = assistant) -> None:
-                    row["trajectory"][-1]["user"] = user_text
-                    row["trajectory"][-1]["assistant"] = re.sub(
-                        r"(?im)^Exit authority:.*$", authority, row["trajectory"][-1]["assistant"]
-                    )
-                    row["output"] = row["trajectory"][-1]["assistant"]
-                self.assert_rejected("grill-multiturn-continuation-exit", mutate)
-
-    def test_reversible_implementation_question_is_rejected(self) -> None:
-        def mutate(row: dict) -> None:
-            row["trajectory"][0]["assistant"] = (
-                "Grill status: active\nQuestion: Which programming language and how many files should I use?\n"
-                "Recommended: TypeScript in two files.\nAlternatives: Python or one file."
-            )
-        self.assert_rejected("question-first-explicit-grill", mutate)
-        self.assertIsNotNone(active_output_violation("Question: Which programming language should I use?"))
-
-    def test_confidence_claim_is_rejected(self) -> None:
         self.assert_rejected(
-            "question-first-explicit-grill",
-            lambda row: row["trajectory"][0].update(
-                assistant=row["trajectory"][0]["assistant"] + "\nConfidence: 90%"
-            ),
+            self.mutate_row("grill-rename-ownership-contrast", mutate),
+            "superseded grill packet/state protocol",
         )
 
-    def test_fourth_question_exceeds_hard_cap(self) -> None:
+    def test_question_annotation_must_match_visible_question(self) -> None:
         def mutate(row: dict) -> None:
-            row["trajectory"].insert(
-                -1,
+            row["trajectory"][0]["asked_candidates"] = []
+
+        self.assert_rejected(
+            self.mutate_row("grill-rename-ownership-contrast", mutate),
+            "question text and asked_candidates annotation disagree",
+        )
+
+    def test_semantic_oracle_rejects_agent_owned_question(self) -> None:
+        def mutate(row: dict) -> None:
+            row["trajectory"][0]["asked_candidates"] = ["private_symbol_rename"]
+
+        self.assert_rejected(
+            self.mutate_row("grill-rename-ownership-contrast", mutate),
+            "do not match semantic oracle",
+        )
+
+    def test_one_decision_per_turn_is_enforced_without_a_global_quota(self) -> None:
+        def mutate(row: dict) -> None:
+            text = row["output"] + " Should the alias last two releases?"
+            self.set_last_output(row, text)
+
+        self.assert_rejected(
+            self.mutate_row("grill-rename-ownership-contrast", mutate),
+            "asks more than one decision",
+        )
+
+    def test_zero_question_case_cannot_manufacture_a_question(self) -> None:
+        def mutate(row: dict) -> None:
+            self.set_last_output(row, row["output"] + " Should we ask anyway?")
+
+        self.assert_rejected(
+            self.mutate_row("grill-zero-question-low-value", mutate),
+            "question text and asked_candidates annotation disagree",
+        )
+
+    def test_question_first_fixture_cannot_enact_work(self) -> None:
+        def mutate(row: dict) -> None:
+            self.set_last_output(row, row["output"] + " I will implement it now.")
+
+        self.assert_rejected(
+            self.mutate_row("grill-rename-ownership-contrast", mutate),
+            "enacts work inside the question-first fixture",
+        )
+
+    def test_completion_cannot_invent_implementation_authority(self) -> None:
+        def mutate(row: dict) -> None:
+            self.set_last_output(row, row["output"] + " Implementation authority is granted.")
+
+        self.assert_rejected(
+            self.mutate_row("grill-zero-question-low-value", mutate),
+            "invents implementation authority",
+        )
+
+    def test_ordinary_question_rejects_choice_card_ceremony(self) -> None:
+        def mutate(row: dict) -> None:
+            self.set_last_output(row, row["output"] + "\nOptions:\n- Keep alias\n- Break scripts")
+
+        self.assert_rejected(
+            self.mutate_row("ordinary-material-clarification-control", mutate),
+            "must be one concise question, not a choice card",
+        )
+
+    def test_ordinary_question_must_target_public_cli_compatibility(self) -> None:
+        def mutate(row: dict) -> None:
+            self.set_last_output(row, "Should the helper use Python?")
+
+        self.assert_rejected(
+            self.mutate_row("ordinary-material-clarification-control", mutate),
+            "must ask the public CLI compatibility question",
+        )
+
+    def test_lightweight_control_rejects_question_and_code_toolchain(self) -> None:
+        def question(row: dict) -> None:
+            self.set_last_output(row, "Should I fix the typo?")
+
+        self.assert_rejected(
+            self.mutate_row("question-first-lightweight-control", question),
+            "must not use grill ceremony",
+        )
+
+        def toolchain(row: dict) -> None:
+            self.set_last_output(row, "I will use a shell directly for the typo fix.")
+
+        self.assert_rejected(
+            self.mutate_row("question-first-lightweight-control", toolchain),
+            "must not plan or dispatch",
+        )
+
+    def test_authored_fixture_cannot_claim_live_model_evidence(self) -> None:
+        def mutate(row: dict) -> None:
+            row["evidence_tier"] = "live-verified"
+
+        self.assert_rejected(
+            self.mutate_row("grill-rename-ownership-contrast", mutate),
+            "it is not live model evidence",
+        )
+
+
+class CaseSchemaMutationTests(unittest.TestCase):
+    def load_case(self, name: str) -> dict:
+        return json.loads(
+            (ROOT / "evals" / "teamwork" / "cases" / name).read_text(encoding="utf-8")
+        )
+
+    def validate(self, data: dict) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / f"{data['id']}.dev.json"
+            path.write_text(json.dumps(data), encoding="utf-8")
+            EVAL.validate_case(path, {"assistance-quality"})
+
+    def test_expected_question_must_be_user_owned(self) -> None:
+        data = self.load_case("grill-rename-ownership-contrast.dev.json")
+        data["expected_asked_candidates"] = ["private_symbol_rename"]
+        with self.assertRaisesRegex(EVAL.EvalError, "expected question is not user-owned"):
+            self.validate(data)
+
+    def test_retired_protocol_fields_are_rejected(self) -> None:
+        for field, value in (
+            ("expected_question_ids", ["public_cli_rename"]),
+            ("blocked_route", "plan"),
+            ("expected_close", {"format": "concise"}),
+        ):
+            with self.subTest(field=field):
+                data = self.load_case("grill-rename-ownership-contrast.dev.json")
+                data[field] = value
+                with self.assertRaisesRegex(EVAL.EvalError, "retired grill protocol fields"):
+                    self.validate(data)
+
+    def test_internal_oracle_has_no_fixed_three_decision_ceiling(self) -> None:
+        data = self.load_case("grill-rename-ownership-contrast.dev.json")
+        for index in range(2, 5):
+            candidate = f"public_choice_{index}"
+            data["candidates"].append(
                 {
-                    "user": "Keep asking.",
-                    "assistant": "Grill status: active\nQuestion: Should another public default change?\nRecommended: No, because compatibility should remain stable.\nAlternatives: Change it, or add an opt-in flag.",
-                },
+                    "candidate_id": candidate,
+                    "owner": "user-decision",
+                    "grounding_required": True,
+                    "expected_action": "ask",
+                }
             )
-        self.assert_rejected("grill-multiturn-continuation-exit", mutate)
-
-    def test_exhausted_close_cannot_grant_implementation_authority(self) -> None:
-        def mutate(row: dict) -> None:
-            row["trajectory"][-1]["assistant"] = row["trajectory"][-1]["assistant"].replace(
-                "Implementation authority: not granted", "Implementation authority: granted"
-            )
-            row["output"] = row["trajectory"][-1]["assistant"]
-        self.assert_rejected("grill-question-value-stop", mutate)
-        self.assertIsNone(
-            close_basis(
-                "Keep the default.",
-                "Grill status: closed\nClose basis: no material user-owned decision remains\nImplementation authority: granted",
-            )
-        )
+            data["expected_asked_candidates"].append(candidate)
+        self.validate(data)
 
 
 if __name__ == "__main__":

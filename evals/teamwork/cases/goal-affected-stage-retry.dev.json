@@ -1,0 +1,25 @@
+{
+  "id": "goal-affected-stage-retry",
+  "split": "dev",
+  "source": "trajectory",
+  "target": "skills/teamwork-goal/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Continue an accepted convergence goal after focused verification fails on a known implementation defect. The Task Contract and Goal Invariants are unchanged, prior research and plan evidence remain valid, and the failure supplies an evidence-backed local fix strategy. Record the retry and continue until the affected claim can be verified.",
+  "expected": {
+    "route": "goal_execute_verify",
+    "requires": ["Replay Preflight", "affected-stage-only retry", "preserved Contract version", "strategy delta", "attempt record"]
+  },
+  "must": [
+    "read the prior failed claim, Contract version, Goal Invariants, and attempt evidence before retrying",
+    "route the known local fix only through Execute and focused verification",
+    "preserve the existing Contract version because neither scope nor contract changed",
+    "record the evidence-backed strategy delta and retry result"
+  ],
+  "must_not": [
+    "replay Research, Plan, Execute, and Review as a default convergence loop",
+    "re-enter Plan or create a new Contract version solely because focused verification failed",
+    "retry without naming changed evidence, hypothesis, affected claim, and next stage"
+  ],
+  "rubric": "behavioral-contracts",
+  "evidence": "Trajectory-derived convergence control: retries preserve valid work and re-enter only the stage affected by the evidence."
+}

@@ -55,14 +55,23 @@ Ask for the outcome, not a workflow label:
 - debug reproducible failures with runtime evidence;
 - review for unsupported claims, defensive fallback, and AI-generated clutter;
 - continue until a target is verified, budget ends, or a real blocker appears;
-- select `grill-me` or say "grill me" to challenge zero to three material user
-  decisions without asking about reversible implementation details.
+- explicitly ask to be questioned, challenged, or grilled before action to
+  activate `grill-me`; it resolves facts first and asks one unresolved material
+  user decision at a time.
 
 Small questions and tiny edits stay on Claude Code's native path.
-The managed Claude policy contract instructs Claude to preserve one
-assistant-authored active marker across replies during explicit grill sessions;
-quoted marker text is inert. Real multi-turn Claude behavior is not yet
-live-verified.
+The managed Claude policy permits read-only evidence while the root owns user
+questions and keeps quoted/file/tool/example/maintenance text inert. Use a
+structured question tool when the current runtime exposes one; otherwise ask
+concisely in text. Teamwork does not emulate or version-gate that host capability.
+
+## Planning
+
+For a non-simple Plan—one with a material decision or risk, not merely many
+files—run an evidence-first Grill unless the user explicitly declines it. Before
+the final Plan, the user confirms a concise Decision Summary of material
+choices, assumptions, and unresolved items. Simple or mechanical Plans stay
+direct. Confirmation accepts planning only; it does not authorize implementation.
 
 ## Subagents
 
@@ -80,6 +89,11 @@ agents:
 
 Every subagent returns one packet and stops. The main agent owns integration,
 verification, memory decisions, and the final response.
+Judges and Reviewers bind findings to the accepted Contract and ACs with stable
+IDs: only a blocking Contract/AC failure is a `BLOCKER`; other work is a
+`FOLLOW-UP` or `SUGGESTION`. Claude Code has no assumed same-agent resume, so a
+revision carries the stable finding ledger or packet forward rather than claiming
+a delta recheck. Progress updates stay sparse and report only material state changes.
 
 Shared dispatch and model-class rules live in
 `skills/using-teamwork/references/subagent-dispatch.md`. Prompt and packet

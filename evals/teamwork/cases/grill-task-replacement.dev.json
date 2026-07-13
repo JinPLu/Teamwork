@@ -5,9 +5,13 @@
   "target": "skills/grill-me/SKILL.md",
   "platforms": ["codex", "cursor", "claude"],
   "prompt": "Grill me on the implementation plan.",
-  "expected": {"mode": "grill_close", "requires": ["clear task replacement closes", "exit authority", "next route"]},
-  "must": ["close when the user explicitly replaces the current task", "ground exit authority in the replacement wording"],
-  "must_not": ["keep the replaced grill task active", "invent an exit"],
+  "expected": {"mode": "task_replacement", "requires": ["old question-first task stops", "new request is handled normally", "authority remains explicit"]},
+  "must": ["stop the replaced question-first task when the user supplies a new task", "preserve only authority present in the replacement wording"],
+  "must_not": ["continue asking about the replaced task", "invent authority"],
+  "candidates": [
+    {"candidate_id": "acceptance_failure", "owner": "user-decision", "grounding_required": true, "expected_action": "ask"}
+  ],
+  "expected_asked_candidates": ["acceptance_failure"],
   "rubric": "assistance-quality",
   "evidence": "docs/teamwork/plans/2026-07-13-grill-me-entry-and-multiturn-reliability.md"
 }

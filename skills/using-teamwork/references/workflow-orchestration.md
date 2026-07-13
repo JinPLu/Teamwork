@@ -36,3 +36,15 @@ use runtime limits and no-progress stops without inventing numbers.
 
 Workflow success is never self-acceptance. Final acceptance needs direct
 verification and the independent review required by the accepted risk gate.
+
+## Goal Retry Routing
+
+For a goal retry, preserve the Task Contract version and Goal Invariants while
+the failed claim remains in scope. Dispatch only the affected stage: Debug for
+an unknown-cause reproducible failure, Execute for a known fix, and Research
+only for a broad evidence gap. Re-enter Plan only after an accepted scope or
+Contract delta creates a new Contract version. Re-run Review only when
+acceptance claims changed or the final risk gate requires it. A failed targeted
+check without either condition must not replay the full workflow. Record the
+evidence-backed strategy delta; stop on repeated no progress rather than
+repeating the same route.

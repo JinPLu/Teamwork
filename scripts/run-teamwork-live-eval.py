@@ -17,10 +17,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from grill_contract import active_output_violation, close_basis
+from grill_contract import (
+    event_class,
+    has_legacy_grill_ceremony,
+    question_count,
+    readonly_event_violations,
+)
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 5
 CASE_CATEGORIES = {
     "grill",
     "lightweight",
@@ -75,9 +80,7 @@ def load_case(path: Path) -> dict[str, Any]:
         "id",
         "category",
         "sandbox",
-        "expected_signals",
-        "forbidden_signals",
-        "pilot_only",
+        "unscored_annotations",
     }
     allowed = required | {"prompt", "prompts"}
     missing = sorted(required - set(data))
@@ -103,10 +106,11 @@ def load_case(path: Path) -> dict[str, Any]:
     sandbox = require_nonempty_string(data["sandbox"], "sandbox", path)
     if sandbox not in SANDBOXES:
         raise LiveEvalError(f"{path}: sandbox must be one of {sorted(SANDBOXES)}")
-    require_string_list(data["expected_signals"], "expected_signals", path)
-    require_string_list(data["forbidden_signals"], "forbidden_signals", path)
-    if data["pilot_only"] is not True:
-        raise LiveEvalError(f"{path}: pilot_only must be true")
+    annotations = data["unscored_annotations"]
+    if not isinstance(annotations, dict):
+        raise LiveEvalError(f"{path}: unscored_annotations must be an object")
+    for name in ("expected", "forbidden"):
+        require_string_list(annotations.get(name), f"unscored_annotations.{name}", path)
     data["prompt"] = prompts[0]
     data["prompts"] = prompts
     return data
@@ -246,9 +250,14 @@ def find_reported_cost(value: Any) -> int | float | None:
     return None
 
 
-def parse_events(
-    stdout: str,
-) -> tuple[list[Any], list[str], str | None, dict[str, Any] | None, str | None, str | None]:
+def parse_events(stdout: str) -> tuple[
+    list[Any],
+    list[str],
+    str | None,
+    dict[str, Any] | None,
+    str | None,
+    str | None,
+]:
     events: list[Any] = []
     warnings: list[str] = []
     final_output: str | None = None
@@ -282,81 +291,68 @@ def parse_events(
                     text = item.get("text")
                     if isinstance(text, str):
                         final_output = text
-    return events, warnings, final_output, usage, session_id, resolved_model
+    return (
+        events,
+        warnings,
+        final_output,
+        usage,
+        session_id,
+        resolved_model,
+    )
 
 
-def grill_state(output: str | None) -> str:
-    lowered = (output or "").lower()
-    active = "grill status: active" in lowered
-    closed = "grill status: closed" in lowered
-    if active and closed:
-        return "invalid"
-    if active:
-        return "active"
-    if closed:
-        return "closed"
-    return "none"
+def assess_structure(
+    turns: list[dict[str, Any]], *, category: str, dry_run: bool
+) -> tuple[str, list[str]]:
+    """Check read-only safety everywhere and grill-only visible structure.
 
+    Question ownership and usefulness require semantic review.  This recorder
+    intentionally does not infer them from packet labels or stable IDs.
+    """
 
-def assess_grill_behavior(turns: list[dict[str, Any]], *, dry_run: bool) -> tuple[str, list[str]]:
     if dry_run:
         return "not_run", []
     violations: list[str] = []
     if not turns:
-        return "failed", ["grill trajectory is empty"]
-
-    closed_seen = False
-    active_count = 0
+        return "failed", ["trajectory is empty"]
     for index, turn in enumerate(turns, start=1):
         output = turn.get("final_output") or ""
-        lowered = output.lower()
-        state = turn.get("grill_state")
-        is_last = index == len(turns)
-        expected_state = "closed" if is_last else "active"
-        if state != expected_state:
-            violations.append(f"turn {index} must be {expected_state}, got {state}")
-        output_violation = active_output_violation(output)
-        if output_violation:
-            violations.append(f"turn {index} {output_violation}")
-        if state == "active":
-            active_count += 1
-            if closed_seen:
-                violations.append(f"turn {index} reactivated after close")
-            if lowered.count("grill status: active") != 1:
-                violations.append(f"turn {index} must contain exactly one active marker")
-            if lowered.count("question:") != 1 or output.count("?") != 1:
-                violations.append(f"turn {index} must ask exactly one labeled question")
-            for field in ("recommended:", "alternatives:"):
-                if lowered.count(field) != 1:
-                    violations.append(f"turn {index} must contain exactly one {field[:-1]} field")
-            if re.search(r"\b(?:i|we)\s+(?:edited|changed|implemented|created|wrote|dispatched|started)\b", lowered):
-                violations.append(f"turn {index} claims enactment while grill is active")
-        elif state == "closed":
-            closed_seen = True
-            if not close_basis(turn.get("prompt") or "", output):
-                violations.append(f"turn {index} lacks a valid user or exhausted close basis")
-
-        if not is_last:
-            serialized = json.dumps(turn.get("raw_events", []), ensure_ascii=False).lower()
-            if any(token in serialized for token in ('"type": "file_change"', "spawn_agent", "create_goal", "apply_patch")):
-                violations.append(f"turn {index} contains a forbidden mutation, goal, or subagent event")
-    if active_count > 3:
-        violations.append("grill trajectory exceeds the three-question hard cap")
-    return ("passed" if not violations else "failed"), violations
+        raw_events = turn.get("raw_events", [])
+        if category == "grill":
+            if has_legacy_grill_ceremony(output):
+                violations.append(
+                    f"turn {index} exposes the superseded grill packet/state protocol"
+                )
+            if question_count(output) > 1:
+                violations.append(f"turn {index} asks more than one textual question")
+        for violation in readonly_event_violations(raw_events):
+            violations.append(f"turn {index} {violation}")
+        if category == "lightweight":
+            for event_index, event in enumerate(raw_events, start=1):
+                if event_class(event) not in {
+                    "transport", "internal", "assistant-message"
+                }:
+                    violations.append(
+                        f"turn {index} event {event_index} enters the code/toolchain path"
+                    )
+    if violations:
+        return "failed", list(dict.fromkeys(violations))
+    return "passed", []
 
 
 def validate_record(record: dict[str, Any]) -> None:
     required = {
-        "schema_version", "record_type", "timestamp_utc", "pilot_only", "status",
+        "schema_version", "record_type", "timestamp_utc", "status",
         "arm", "model", "effort", "case_id", "run_id", "repeat_index",
-        "case_source", "category", "prompt", "prompts", "expected_signals",
-        "forbidden_signals", "sandbox", "workdir", "repo_sha", "skill_tree_sha256",
+        "case_source", "category", "prompt", "prompts", "unscored_annotations",
+        "sandbox", "workdir", "repo_sha", "skill_tree_sha256",
         "runner_sha256", "worktree", "treatment", "argv", "argv_shell",
-        "config_source", "session_id", "turns", "grill_states", "raw_events",
+        "config_source", "session_id", "turns", "question_counts", "raw_events",
         "raw_stdout", "raw_stderr", "final_output", "usage", "reported_costs",
         "elapsed_seconds", "exit_code", "warnings", "execution_status",
-        "behavioral_status", "behavior_violations", "resolved_model",
-        "model_provenance_status",
+        "structural_status", "structural_violations", "resolved_model",
+        "model_provenance_status", "prompts_consumed", "prompts_remaining",
+        "termination_reason",
     }
     missing = sorted(required - set(record))
     if missing:
@@ -365,8 +361,10 @@ def validate_record(record: dict[str, Any]) -> None:
         raise LiveEvalError("output record has the wrong schema_version")
     if record["record_type"] != "teamwork_live_trajectory":
         raise LiveEvalError("output record has the wrong record_type")
-    if record["status"] not in {"dry_run", "completed", "failed", "unavailable"}:
+    if record["status"] not in {"dry_run", "completed", "failed", "unavailable", "inconclusive"}:
         raise LiveEvalError("output record has an invalid status")
+    if not isinstance(record["unscored_annotations"], dict):
+        raise LiveEvalError("output record unscored_annotations must be an object")
     if record["effort"] not in EFFORTS or record["sandbox"] not in SANDBOXES:
         raise LiveEvalError("output record has invalid effort or sandbox")
     if not isinstance(record["prompts"], list) or not record["prompts"]:
@@ -375,9 +373,14 @@ def validate_record(record: dict[str, Any]) -> None:
         raise LiveEvalError("output record turns must be a non-empty list")
     if len(record["turns"]) > len(record["prompts"]):
         raise LiveEvalError("output record has more turns than prompts")
-    if record["status"] in {"dry_run", "completed"} and len(record["turns"]) != len(record["prompts"]):
-        raise LiveEvalError("successful output record must include every prompt turn")
-    if len(record["prompts"]) > 1 and record["status"] == "completed":
+    if record["prompts_consumed"] != len(record["turns"]):
+        raise LiveEvalError("output record prompts_consumed must match executed turns")
+    if record["prompts_remaining"] != len(record["prompts"]) - len(record["turns"]):
+        raise LiveEvalError("output record prompts_remaining must match queued prompts")
+    require_nonempty_string(record["termination_reason"], "termination_reason", Path("output"))
+    if record["status"] == "completed" and record["prompts_remaining"]:
+        raise LiveEvalError("successful runs must consume every queued prompt")
+    if len(record["turns"]) > 1 and record["status"] == "completed":
         require_nonempty_string(record["session_id"], "session_id", Path("output"))
     if not isinstance(record["argv"], list) or not record["argv"]:
         raise LiveEvalError("output record argv must be a non-empty list")
@@ -396,10 +399,14 @@ def validate_record(record: dict[str, Any]) -> None:
         raise LiveEvalError("output record treatment must match the run arm")
     if not isinstance(record["runner_sha256"], str) or not record["runner_sha256"]:
         raise LiveEvalError("output record runner_sha256 must be non-empty")
-    if record["behavioral_status"] not in {"not_applicable", "not_run", "passed", "failed"}:
-        raise LiveEvalError("output record has an invalid behavioral_status")
-    if not isinstance(record["behavior_violations"], list):
-        raise LiveEvalError("output record behavior_violations must be a list")
+    if record["structural_status"] not in {"not_applicable", "not_run", "passed", "failed"}:
+        raise LiveEvalError("output record has an invalid structural_status")
+    if not isinstance(record["structural_violations"], list):
+        raise LiveEvalError("output record structural_violations must be a list")
+    if not isinstance(record["question_counts"], list) or not all(
+        isinstance(value, int) and value >= 0 for value in record["question_counts"]
+    ):
+        raise LiveEvalError("output record question_counts must be non-negative integers")
     if record["model_provenance_status"] not in {"not_run", "verified", "unverified", "mismatch"}:
         raise LiveEvalError("output record has an invalid model_provenance_status")
 
@@ -472,7 +479,14 @@ def run_turn(
             raw_stderr = str(exc)
             warnings.append("codex executable could not be started")
 
-    events, parse_warnings, final_output, usage, event_session_id, resolved_model = parse_events(raw_stdout)
+    (
+        events,
+        parse_warnings,
+        final_output,
+        usage,
+        event_session_id,
+        resolved_model,
+    ) = parse_events(raw_stdout)
     warnings.extend(parse_warnings)
     if raw_stderr.strip():
         warnings.append("codex exec wrote to stderr; inspect raw_stderr")
@@ -491,7 +505,7 @@ def run_turn(
         "raw_stdout": raw_stdout,
         "raw_stderr": raw_stderr,
         "final_output": final_output,
-        "grill_state": grill_state(final_output),
+        "question_count": question_count(final_output),
         "usage": usage,
         "reported_cost": find_reported_cost(events),
         "elapsed_seconds": round(time.monotonic() - started, 6),
@@ -517,6 +531,7 @@ def run_one(
     session_id: str | None = None
     turns: list[dict[str, Any]] = []
     warnings = list(provenance_warnings)
+    termination_reason: str | None = None
 
     for turn_index, prompt in enumerate(case["prompts"], start=1):
         if turn_index == 1:
@@ -524,37 +539,47 @@ def run_one(
         else:
             resume_id = session_id or "<session-id>"
             argv = make_resume_argv(args, resume_id)
-        turn = run_turn(args, argv, prompt, turn_index)
+        turn = run_turn(
+            args,
+            argv,
+            prompt,
+            turn_index,
+        )
         turns.append(turn)
         warnings.extend(f"turn {turn_index}: {item}" for item in turn["warnings"])
+        if turn_index > 1 and turn["session_id"] and turn["session_id"] != session_id:
+            turn["status"] = "failed"
+            warnings.append(f"turn {turn_index} returned a different session id")
+            termination_reason = "session-mismatch"
+            break
         if turn_index == 1 and len(case["prompts"]) > 1 and not args.dry_run:
             session_id = turn["session_id"]
             if not session_id:
                 turn["status"] = "failed"
                 warnings.append("turn 1 did not return a session id; resume was not attempted")
+                termination_reason = "missing-session"
                 break
-        elif turn_index > 1 and turn["session_id"] and turn["session_id"] != session_id:
-            turn["status"] = "failed"
-            warnings.append(f"turn {turn_index} returned a different session id")
-            break
         if turn["status"] not in {"completed", "dry_run"}:
+            termination_reason = f"turn-{turn['status']}"
             break
+
+    if termination_reason is None:
+        termination_reason = "dry-run-prompts-exhausted" if args.dry_run else "prompts-exhausted"
 
     statuses = [turn["status"] for turn in turns]
     if args.dry_run:
         status = "dry_run"
     elif "unavailable" in statuses:
         status = "unavailable"
-    elif len(turns) == len(case["prompts"]) and all(item == "completed" for item in statuses):
+    elif all(item == "completed" for item in statuses) and len(turns) == len(case["prompts"]):
         status = "completed"
     else:
         status = "failed"
 
     execution_status = status
-    if case["category"] == "grill":
-        behavioral_status, behavior_violations = assess_grill_behavior(turns, dry_run=args.dry_run)
-    else:
-        behavioral_status, behavior_violations = ("not_run", []) if args.dry_run else ("not_applicable", [])
+    structural_status, structural_violations = assess_structure(
+        turns, category=case["category"], dry_run=args.dry_run
+    )
     resolved_models = {turn["resolved_model"] for turn in turns if turn["resolved_model"]}
     if args.dry_run:
         resolved_model = None
@@ -569,7 +594,7 @@ def run_one(
         resolved_model = None
         model_provenance_status = "mismatch"
 
-    if not args.dry_run and behavioral_status == "failed":
+    if not args.dry_run and structural_status == "failed":
         status = "failed"
     if not args.dry_run and model_provenance_status in {"unverified", "mismatch"}:
         status = "unavailable" if execution_status == "completed" else status
@@ -581,11 +606,10 @@ def run_one(
         "schema_version": SCHEMA_VERSION,
         "record_type": "teamwork_live_trajectory",
         "timestamp_utc": utc_now(),
-        "pilot_only": True,
         "status": status,
         "execution_status": execution_status,
-        "behavioral_status": behavioral_status,
-        "behavior_violations": behavior_violations,
+        "structural_status": structural_status,
+        "structural_violations": structural_violations,
         "arm": args.arm,
         "model": args.model,
         "resolved_model": resolved_model,
@@ -598,8 +622,10 @@ def run_one(
         "category": case["category"],
         "prompt": case["prompt"],
         "prompts": case["prompts"],
-        "expected_signals": case["expected_signals"],
-        "forbidden_signals": case["forbidden_signals"],
+        "prompts_consumed": len(turns),
+        "prompts_remaining": len(case["prompts"]) - len(turns),
+        "termination_reason": termination_reason,
+        "unscored_annotations": case["unscored_annotations"],
         "sandbox": case["sandbox"],
         "workdir": str(args.workdir),
         "repo_sha": repo_sha,
@@ -620,10 +646,11 @@ def run_one(
             "sandbox_source": "case.sandbox",
             "continuation": "codex exec resume <session-id> --json",
             "fallback_policy": "none",
+            "semantic_scoring": "external review required",
         },
         "session_id": session_id,
         "turns": turns,
-        "grill_states": [turn["grill_state"] for turn in turns],
+        "question_counts": [turn["question_count"] for turn in turns],
         "raw_events": [event for turn in turns for event in turn["raw_events"]],
         "raw_stdout": "\n".join(turn["raw_stdout"] for turn in turns),
         "raw_stderr": "\n".join(turn["raw_stderr"] for turn in turns),

@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "2.16.0",
+  "version": "2.17.0",
   "description": "Claude Code adapter skills for lean evidence-first planning, bounded Task subagents, review, durable goal convergence, and opt-in lifecycle sounds.",
   "author": {
     "name": "JinPLu",
@@ -23,7 +23,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Use Teamwork's Codex-first protocol as a Claude Code Task-subagent adapter.",
-    "longDescription": "A Claude Code adapter entrypoint plus a metadata-visible grill-me interaction contract with authoritative state markers, dedicated stages for project setup, evidence, durable memory, scoped execution, native fast-path handling, bounded Task-subagent work, fresh review, package updates, and goal convergence. Live cross-platform parity is not implied.",
+    "longDescription": "A Claude Code adapter entrypoint plus a lean explicit grill-me interaction skill, dedicated stages for project setup, evidence, durable memory, scoped execution, native fast-path handling, bounded Task-subagent work, fresh review, package updates, and goal convergence. Each host uses its callable interaction tools and falls back to concise text.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -35,7 +35,7 @@
       "Design a goal with evidence, scope, retry policy, artifacts, and Task subagent routing.",
       "Initialize or slim project AGENTS/CLAUDE rules while preserving local evidence boundaries.",
       "Apply Teamwork's Codex-first collaboration protocol to Claude Code evidence, planning, execution, and review tracks.",
-      "Grill zero to three outcome-changing user decisions and skip reversible implementation trivia.",
+      "Ground facts, classify ownership, and ask only unresolved outcome-changing user decisions, normally one at a time.",
       "Fan out independent investigation, scoped Worker execution, or fresh-context review through Task subagents.",
       "Map completion claims and Memory Delta status to direct evidence before accepting the result.",
       "Update Teamwork version metadata, refresh installed skills/agents/global policy, and validate the installed surface."

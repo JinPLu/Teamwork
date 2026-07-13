@@ -1,231 +1,299 @@
 #!/usr/bin/env python3
-"""Integration tests for resumable Teamwork live-eval trajectories."""
+"""Focused tests for the capability-first live recorder and grill helpers."""
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
-from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "run-teamwork-live-eval.py"
-SESSION_ID = "11111111-1111-4111-8111-111111111111"
+SCRIPTS = ROOT / "scripts"
+sys.path.insert(0, str(SCRIPTS))
 
-
-FAKE_CODEX = f'''#!/usr/bin/env python3
-import json
-import os
-import sys
-
-if sys.argv[1:] == ["--version"]:
-    print("codex-fake 1.0")
-    raise SystemExit(0)
-
-prompt = sys.stdin.read()
-with open(os.environ["TEAMWORK_FAKE_CODEX_LOG"], "a", encoding="utf-8") as handle:
-    handle.write(json.dumps({{"argv": sys.argv[1:], "prompt": prompt}}) + "\\n")
-
-is_resume = len(sys.argv) > 2 and sys.argv[1:3] == ["exec", "resume"]
-mode = os.environ.get("TEAMWORK_FAKE_MODE", "success")
-if is_resume and mode == "resume-failure":
-    print("resume failed", file=sys.stderr)
-    raise SystemExit(7)
-if not is_resume and os.environ.get("TEAMWORK_FAKE_NO_SESSION") != "1":
-    print(json.dumps({{"type": "thread.started", "thread_id": "{SESSION_ID}", "model": "gpt-5.6-sol"}}))
-if is_resume and mode == "different-session":
-    print(json.dumps({{"type": "thread.resumed", "thread_id": "22222222-2222-4222-8222-222222222222", "model": "gpt-5.6-sol"}}))
-if not is_resume and mode == "mutation-event":
-    print(json.dumps({{"type": "item.completed", "item": {{"type": "file_change", "path": "README.md"}}}}))
-message = (
-    "Grill status: closed\\nNext route: plan\\nExit authority: User said proceed."
-    if is_resume
-    else "Grill status: active\\nQuestion: Keep compatibility?\\nRecommended: Yes.\\nAlternatives: Break it or defer it."
+from grill_contract import (  # noqa: E402
+    event_class,
+    has_legacy_grill_ceremony,
+    question_count,
+    readonly_event_violations,
+    synthetic_event,
 )
-if is_resume and mode.startswith("bad-authority"):
-    message = "Grill status: closed\\nNext route: plan\\nExit authority: The assistant selected the plan independently."
-if mode == "bad-behavior":
-    message = "I edited the file and finished."
-if not is_resume and mode == "low-value-question":
-    message = "Grill status: active\\nQuestion: Which programming language and how many files should I use?\\nRecommended: TypeScript in two files.\\nAlternatives: Python or one file."
-if not is_resume and mode == "confidence-claim":
-    message += "\\nConfidence: 90%"
-if not is_resume and mode == "exhausted-zero":
-    message = "Grill status: closed\\nClose basis: no material user-owned decision remains\\nImplementation authority: not granted"
-if mode != "missing-message":
-    print(json.dumps({{"type": "item.completed", "item": {{"type": "agent_message", "text": message}}}}))
-'''
+
+SPEC = importlib.util.spec_from_file_location(
+    "run_teamwork_live_eval", SCRIPTS / "run-teamwork-live-eval.py"
+)
+assert SPEC and SPEC.loader
+RUNNER = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(RUNNER)
 
 
-class LiveEvalRunnerTests(unittest.TestCase):
+def command_event(command: str) -> dict[str, object]:
+    return {
+        "type": "item.completed",
+        "item": {"type": "command_execution", "command": command},
+    }
+
+
+class GrillContractTests(unittest.TestCase):
+    def test_question_count_is_transport_neutral(self) -> None:
+        self.assertEqual(question_count("Keep compatibility?"), 1)
+        self.assertEqual(question_count("保留兼容性？"), 1)
+        self.assertEqual(question_count("No user decision remains."), 0)
+
+    def test_legacy_packet_fields_are_rejected_without_banning_plain_questions(self) -> None:
+        self.assertTrue(has_legacy_grill_ceremony("Grill status: active\nQuestion?"))
+        self.assertTrue(has_legacy_grill_ceremony("Decision ID: public_default"))
+        self.assertTrue(has_legacy_grill_ceremony("Close reason: exhausted"))
+        self.assertFalse(
+            has_legacy_grill_ceremony(
+                "Should existing scripts keep working? I recommend preserving compatibility."
+            )
+        )
+
+    def test_raw_payload_claims_do_not_bypass_fail_closed_classification(self) -> None:
+        claimed = {"event_class": "read", "read_only": True}
+        self.assertEqual(event_class(claimed), "unknown-runtime")
+        self.assertTrue(readonly_event_violations([claimed]))
+
+    def test_allowlisted_commands_are_read_only_and_mutations_fail(self) -> None:
+        safe = [
+            command_event("rg -n request_user_input skills"),
+            command_event("sed -n '1,40p' skills/grill-me/SKILL.md"),
+            command_event("git diff -- skills/grill-me/SKILL.md"),
+        ]
+        self.assertEqual(readonly_event_violations(safe), [])
+        for command in (
+            "touch changed.txt",
+            "rm -f changed.txt",
+            "rg --pre 'touch /tmp/pwn' pattern .",
+            "git diff --output=/tmp/leak",
+            "echo x > changed.txt",
+        ):
+            with self.subTest(command=command):
+                self.assertTrue(readonly_event_violations([command_event(command)]))
+
+    def test_synthetic_events_are_test_only_and_unknown_names_fail(self) -> None:
+        self.assertEqual(readonly_event_violations([synthetic_event("read")]), [])
+        self.assertTrue(readonly_event_violations([synthetic_event("mutation")]))
+        with self.assertRaises(ValueError):
+            synthetic_event("invented")
+
+
+class LiveRecorderTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.tempdir = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tempdir.cleanup)
-        self.temp = Path(self.tempdir.name)
-        self.fake = self.temp / "codex-fake"
-        self.fake.write_text(FAKE_CODEX, encoding="utf-8")
-        self.fake.chmod(0o755)
-        self.log = self.temp / "calls.jsonl"
-        self.case = self.temp / "case.json"
-        self.case.write_text(
-            json.dumps(
-                {
-                    "id": "grill-runner-test",
-                    "category": "grill",
-                    "prompts": ["grill me", "proceed"],
-                    "sandbox": "read-only",
-                    "expected_signals": ["active then closed"],
-                    "forbidden_signals": ["fallback"],
-                    "pilot_only": True,
-                }
+        self.temporary = tempfile.TemporaryDirectory()
+        self.tmp = Path(self.temporary.name)
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def write_case(
+        self,
+        *,
+        prompts: list[str] | None = None,
+        category: str = "grill",
+        extra: dict[str, object] | None = None,
+    ) -> Path:
+        case: dict[str, object] = {
+            "id": "capability-first",
+            "category": category,
+            "sandbox": "read-only",
+            "unscored_annotations": {
+                "expected": ["semantic review required"],
+                "forbidden": ["workspace mutation"],
+            },
+        }
+        values = prompts or ["Ask one material question before acting."]
+        if len(values) == 1:
+            case["prompt"] = values[0]
+        else:
+            case["prompts"] = values
+        if extra:
+            case.update(extra)
+        path = self.tmp / "case.json"
+        path.write_text(json.dumps(case), encoding="utf-8")
+        return path
+
+    def write_fake_codex(
+        self,
+        *,
+        first_text: str = "Should existing scripts keep working?",
+        resumed_text: str = "No additional material decision remains.",
+        include_session: bool = True,
+        resolved_model: str | None = None,
+        command: str | None = None,
+    ) -> Path:
+        script = self.tmp / "codex"
+        model_expr = repr(resolved_model)
+        script.write_text(
+            textwrap.dedent(
+                f"""\
+                #!/usr/bin/env python3
+                import json
+                import sys
+
+                args = sys.argv[1:]
+                if args == ["--version"]:
+                    print("codex-cli test")
+                    raise SystemExit(0)
+                resumed = len(args) >= 2 and args[:2] == ["exec", "resume"]
+                requested = args[args.index("--model") + 1] if "--model" in args else "unknown"
+                model = {model_expr} or requested
+                event = {{"type": "thread.resumed" if resumed else "thread.started", "model": model}}
+                if {include_session!r}:
+                    event["thread_id"] = "thread-1"
+                print(json.dumps(event))
+                if {command!r} is not None:
+                    print(json.dumps({{"type": "item.completed", "item": {{"type": "command_execution", "command": {command!r}}}}}))
+                text = {resumed_text!r} if resumed else {first_text!r}
+                print(json.dumps({{"type": "item.completed", "item": {{"type": "agent_message", "text": text}}}}))
+                print(json.dumps({{"type": "turn.completed", "usage": {{"input_tokens": 1, "output_tokens": 1}}}}))
+                """
             ),
             encoding="utf-8",
         )
+        script.chmod(0o755)
+        return script
 
-    def run_runner(self, *, mode: str = "success", no_session: bool = False, final_prompt: str | None = None, prompts: list[str] | None = None) -> tuple[subprocess.CompletedProcess[str], dict]:
-        output = self.temp / f"{mode}-{'missing-session' if no_session else 'record'}.jsonl"
-        env = os.environ.copy()
-        env["TEAMWORK_FAKE_CODEX_LOG"] = str(self.log)
-        if no_session:
-            env["TEAMWORK_FAKE_NO_SESSION"] = "1"
-        env["TEAMWORK_FAKE_MODE"] = mode
-        case_path = self.case
-        if final_prompt is not None or prompts is not None:
-            data = json.loads(self.case.read_text(encoding="utf-8"))
-            if prompts is not None:
-                data["prompts"] = prompts
-            elif final_prompt is not None:
-                data["prompts"][-1] = final_prompt
-            case_path = self.temp / f"{mode}-case.json"
-            case_path.write_text(json.dumps(data), encoding="utf-8")
-        completed = subprocess.run(
-            [
-                sys.executable,
-                str(RUNNER),
-                "--arm", "test",
-                "--model", "gpt-5.6-sol",
-                "--effort", "high",
-                "--workdir", str(ROOT),
-                "--output", str(output),
-                "--cases", str(case_path),
-                "--repeats", "1",
-                "--timeout-seconds", "10",
-                "--codex-bin", str(self.fake),
-            ],
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            env=env,
-            check=False,
-        )
-        self.assertTrue(output.is_file(), completed.stderr or completed.stdout)
-        record = json.loads(output.read_text(encoding="utf-8").splitlines()[0])
-        return completed, record
+    def run_cli(
+        self,
+        case: Path,
+        *,
+        codex: Path | None = None,
+        dry_run: bool = False,
+        output_name: str = "output.jsonl",
+    ) -> subprocess.CompletedProcess[str]:
+        output = self.tmp / output_name
+        argv = [
+            sys.executable,
+            str(SCRIPTS / "run-teamwork-live-eval.py"),
+            "--arm",
+            "test",
+            "--model",
+            "gpt-test",
+            "--effort",
+            "medium",
+            "--workdir",
+            str(ROOT),
+            "--output",
+            str(output),
+            "--cases",
+            str(case),
+            "--repeats",
+            "1",
+            "--timeout-seconds",
+            "10",
+        ]
+        if codex is not None:
+            argv.extend(["--codex-bin", str(codex)])
+        if dry_run:
+            argv.append("--dry-run")
+        return subprocess.run(argv, text=True, capture_output=True, check=False)
 
-    def test_multiturn_uses_explicit_session_resume(self) -> None:
-        completed, record = self.run_runner()
-        self.assertEqual(completed.returncode, 0, completed.stderr)
-        calls = [json.loads(line) for line in self.log.read_text(encoding="utf-8").splitlines()]
-        self.assertEqual([call["prompt"] for call in calls], ["grill me", "proceed"])
-        self.assertNotIn("--ephemeral", calls[0]["argv"])
+    def read_record(self, name: str = "output.jsonl") -> dict[str, object]:
+        return json.loads((self.tmp / name).read_text(encoding="utf-8"))
+
+    def test_case_schema_has_no_pilot_or_state_machine_field(self) -> None:
+        case = self.write_case()
+        loaded = RUNNER.load_case(case)
+        self.assertNotIn("pilot_only", loaded)
+        stale = self.write_case(extra={"pilot_only": True})
+        with self.assertRaisesRegex(RUNNER.LiveEvalError, "unknown fields: pilot_only"):
+            RUNNER.load_case(stale)
+
+    def test_dry_run_records_provenance_without_claiming_semantics(self) -> None:
+        case = self.write_case()
+        result = self.run_cli(case, dry_run=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        record = self.read_record()
+        self.assertEqual(record["schema_version"], 5)
+        self.assertEqual(record["structural_status"], "not_run")
+        self.assertEqual(record["question_counts"], [0])
         self.assertEqual(
-            calls[1]["argv"],
-            ["exec", "resume", "--json", "--model", "gpt-5.6-sol", "-c", 'model_reasoning_effort="high"', SESSION_ID, "-"],
+            record["config_source"]["semantic_scoring"], "external review required"
         )
-        self.assertNotIn("--last", calls[1]["argv"])
-        self.assertEqual(record["schema_version"], 2)
+        self.assertEqual(record["config_source"]["fallback_policy"], "none")
+
+    def test_multiturn_resume_consumes_every_prompt(self) -> None:
+        case = self.write_case(prompts=["Grill me first.", "Keep compatibility."])
+        result = self.run_cli(case, codex=self.write_fake_codex())
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        record = self.read_record()
         self.assertEqual(record["status"], "completed")
-        self.assertEqual(record["session_id"], SESSION_ID)
-        self.assertEqual(record["resolved_model"], "gpt-5.6-sol")
-        self.assertEqual(record["model_provenance_status"], "verified")
-        self.assertEqual(record["behavioral_status"], "passed")
-        self.assertEqual(record["behavior_violations"], [])
-        self.assertEqual(record["grill_states"], ["active", "closed"])
-        self.assertEqual(len(record["turns"]), 2)
-        for index, turn in enumerate(record["turns"], start=1):
-            self.assertEqual(turn["turn_index"], index)
-            for field in ("argv_shell", "elapsed_seconds", "raw_events", "resolved_model"):
-                self.assertIn(field, turn)
+        self.assertEqual(record["prompts_consumed"], 2)
+        self.assertEqual(record["prompts_remaining"], 0)
+        self.assertEqual(record["question_counts"], [1, 0])
+        self.assertEqual(record["structural_status"], "passed")
+        self.assertEqual(record["session_id"], "thread-1")
 
-    def test_missing_session_fails_without_resume_fallback(self) -> None:
-        completed, record = self.run_runner(no_session=True)
-        self.assertEqual(completed.returncode, 1)
-        calls = [json.loads(line) for line in self.log.read_text(encoding="utf-8").splitlines()]
-        self.assertEqual(len(calls), 1)
-        self.assertEqual(record["status"], "failed")
-        self.assertEqual(len(record["turns"]), 1)
-        self.assertTrue(any("resume was not attempted" in item for item in record["warnings"]))
-
-    def test_resume_failure_propagates(self) -> None:
-        completed, record = self.run_runner(mode="resume-failure")
-        self.assertEqual(completed.returncode, 1)
-        self.assertEqual(record["execution_status"], "failed")
-        self.assertEqual(record["status"], "failed")
-
-    def test_different_resume_session_fails(self) -> None:
-        completed, record = self.run_runner(mode="different-session")
-        self.assertEqual(completed.returncode, 1)
-        self.assertEqual(record["status"], "failed")
-        self.assertTrue(any("different session id" in item for item in record["warnings"]))
-
-    def test_missing_agent_message_fails(self) -> None:
-        completed, record = self.run_runner(mode="missing-message")
-        self.assertEqual(completed.returncode, 1)
-        self.assertEqual(record["execution_status"], "failed")
-        self.assertTrue(any("agent_message" in item for item in record["warnings"]))
-
-    def test_bad_behavior_fails_even_when_commands_succeed(self) -> None:
-        completed, record = self.run_runner(mode="bad-behavior")
-        self.assertEqual(completed.returncode, 1)
-        self.assertEqual(record["execution_status"], "completed")
-        self.assertEqual(record["behavioral_status"], "failed")
-        self.assertEqual(record["status"], "failed")
-        self.assertTrue(record["behavior_violations"])
-
-    def test_mutation_event_before_close_fails_behavior(self) -> None:
-        completed, record = self.run_runner(mode="mutation-event")
-        self.assertEqual(completed.returncode, 1)
-        self.assertEqual(record["behavioral_status"], "failed")
-        self.assertTrue(any("forbidden mutation" in item for item in record["behavior_violations"]))
-
-    def test_close_authority_requires_explicit_user_exit_signal(self) -> None:
-        completed, record = self.run_runner(mode="bad-authority")
-        self.assertEqual(completed.returncode, 1)
-        self.assertEqual(record["behavioral_status"], "failed")
-        self.assertTrue(any("valid user or exhausted close basis" in item for item in record["behavior_violations"]))
-
-    def test_negated_question_and_continuation_do_not_authorize_close(self) -> None:
-        prompts = {
-            "bad-authority-negated": "Do not implement yet; keep grilling me.",
-            "bad-authority-question": "Should we proceed, or continue grilling?",
-            "bad-authority-chinese": "不要执行，继续问我。",
-        }
-        for mode, prompt in prompts.items():
-            with self.subTest(prompt=prompt):
-                completed, record = self.run_runner(mode=mode, final_prompt=prompt)
-                self.assertEqual(completed.returncode, 1)
-                self.assertEqual(record["behavioral_status"], "failed")
-
-    def test_low_value_question_and_confidence_claim_fail_behavior(self) -> None:
-        for mode in ("low-value-question", "confidence-claim"):
-            with self.subTest(mode=mode):
-                completed, record = self.run_runner(mode=mode)
-                self.assertEqual(completed.returncode, 1)
-                self.assertEqual(record["behavioral_status"], "failed")
-
-    def test_zero_question_exhausted_close_is_valid_but_grants_no_action(self) -> None:
-        completed, record = self.run_runner(
-            mode="exhausted-zero",
-            prompts=["Grill me on language and file count for a private helper."],
+    def test_missing_session_stops_before_resume(self) -> None:
+        case = self.write_case(prompts=["First", "Second"])
+        result = self.run_cli(
+            case, codex=self.write_fake_codex(include_session=False)
         )
-        self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertEqual(record["grill_states"], ["closed"])
-        self.assertEqual(record["behavioral_status"], "passed")
-        self.assertIn("Implementation authority: not granted", record["final_output"])
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        record = self.read_record()
+        self.assertEqual(record["termination_reason"], "missing-session")
+        self.assertEqual(record["prompts_consumed"], 1)
+
+    def test_legacy_ceremony_fails_structural_gate(self) -> None:
+        case = self.write_case()
+        result = self.run_cli(
+            case,
+            codex=self.write_fake_codex(
+                first_text="Grill status: active\nShould compatibility remain?"
+            ),
+        )
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        record = self.read_record()
+        self.assertEqual(record["structural_status"], "failed")
+        self.assertTrue(record["structural_violations"])
+
+    def test_mutating_command_fails_read_only_gate(self) -> None:
+        case = self.write_case()
+        result = self.run_cli(
+            case, codex=self.write_fake_codex(command="touch changed.txt")
+        )
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        record = self.read_record()
+        self.assertEqual(record["structural_status"], "failed")
+
+    def test_lightweight_case_rejects_even_a_read_only_code_tool(self) -> None:
+        case = self.write_case(category="lightweight")
+        result = self.run_cli(
+            case, codex=self.write_fake_codex(command="rg -n Teamwork README.md")
+        )
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        record = self.read_record()
+        self.assertEqual(record["structural_status"], "failed")
+        self.assertTrue(
+            any("code/toolchain" in item for item in record["structural_violations"])
+        )
+
+    def test_model_mismatch_is_recorded_without_fallback(self) -> None:
+        case = self.write_case(category="lightweight")
+        result = self.run_cli(
+            case, codex=self.write_fake_codex(resolved_model="different-model")
+        )
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        record = self.read_record()
+        self.assertEqual(record["model_provenance_status"], "mismatch")
+        self.assertEqual(record["status"], "unavailable")
+        self.assertIn("--model gpt-test", record["argv_shell"])
+
+    def test_existing_output_is_never_overwritten(self) -> None:
+        case = self.write_case()
+        (self.tmp / "output.jsonl").write_text("keep\n", encoding="utf-8")
+        result = self.run_cli(case, dry_run=True)
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual((self.tmp / "output.jsonl").read_text(), "keep\n")
 
 
 if __name__ == "__main__":

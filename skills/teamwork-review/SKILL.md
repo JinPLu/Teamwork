@@ -12,32 +12,34 @@ for a plan, execution, or output. Review does not fix findings unless asked.
 
 ## Enter When
 
-Use for requested review, acceptance, diff/output scrutiny, strict-quality
-checks, PR walkthroughs, or risk-gated completion. Prefer fresh context for
-high-risk, public-contract, delegated, security, destructive, release, or goal
-acceptance; local self-review is sufficient for lightweight checks unless a
-governing gate says otherwise.
+Use for requested review, acceptance, diff/output scrutiny, strict quality, or
+risk-gated completion. An initial Judge/Reviewer is fresh and acceptance-bound:
+give it the Contract, candidate, and direct evidence. Fresh context is required
+for high-risk, public-contract, delegated, security, destructive, release, or
+goal acceptance; lightweight checks may self-review when none is required.
 
 ## Do And Boundaries
 
-Select `mode: plan`, `execution`, or `output`. Read primary sources directly:
-constraints, plan, files, diff, artifacts, logs, tests, and command output.
-Treat summaries and CI/test reports as inputs, not verdicts. Map each material
-requirement to evidence and label important claims `observed`, `inferred`, or
-`claimed`. For code, check owner/flow understanding, scope conformance,
-tests/config, invariants, fallback masking, verification strength, delegated
-packets, and touched-diff hygiene. Re-review must inspect the prior verdict,
-requested fixes, and new evidence.
+Select plan/execution/output mode. Read primary sources; summaries and test
+reports are inputs, not verdicts. Map ACs to evidence and inspect scope,
+owner/flow, tests/config, invariants, masking fallbacks, proof, and diff hygiene.
+Unaccepted work becomes a scope delta or follow-up, never an implicit gate.
 
-Classify findings as `blocker`, `major`, or `minor`; state the evidence and
-required action. Never upgrade build-only, partial, or blocked proof into live
-verification.
+Give findings stable IDs and one class: `BLOCKER`, `FOLLOW-UP`, `SUGGESTION`, or
+`SCOPE_DELTA`. A blocker is a failed AC, boundary breach, regression, or missing
+gating evidence. Other classes are non-blocking; if a scope delta is required to
+satisfy a current AC, that AC remains a blocker. State evidence, affected AC,
+and route. Never upgrade weak or blocked proof.
+
+Permit one corrective recheck in the same Judge/Reviewer thread. Inspect only
+prior IDs, claimed fixes, fix regressions, or new direct evidence—no full rescan,
+delegation, monitoring, or recursive recheck. Remaining blockers stay open.
 
 ## Done When
 
-Return mode, evidence read, requirements/evidence map, verification strength,
-findings, dissent/uncertainty, verdict, and concise rationale. Acceptance
-requires every gating requirement to pass or be explicitly out of scope.
+Return mode, fresh/recheck status, AC/evidence map, proof strength, findings,
+uncertainty, verdict, and rationale. No open `BLOCKER` requires `ACCEPT`; name
+each AC's actual evidence state.
 
 ## Escalate
 

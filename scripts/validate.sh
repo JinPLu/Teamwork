@@ -104,18 +104,21 @@ check_lean_policy() {
   local file="$1"
   local profile="$2"
   local label="$3"
-  grep_required "Act by default within the user's request" "$file" "$label must preserve act-by-default"
-  grep_required 'Make routine,' "$file" "$label must permit routine reversible choices"
-  grep_required 'assistant-authored "Grill status: active"' "$file" \
-    "$label must keep authoritative grill continuation"
-  [[ "$(grep -c 'assistant-authored "Grill status: active"' "$file")" -eq 1 ]] \
-    || fail "$label must contain exactly one authoritative grill continuation guard"
-  grep_required 'Do not invent them' "$file" "$label must preserve required-state safety"
-  grep_required 'evidence, time, or context-isolation value exceeds' "$file" \
+  word_count_max "$file" 190 "$label must remain a guard-only global policy"
+  grep_required "Work within the user's request" "$file" "$label must preserve request scope"
+  grep_required 'Make routine reversible choices' "$file" "$label must permit routine reversible choices"
+  grep_required 'Route explicit grill/question-first' "$file" \
+    "$label must route explicit grill intent"
+  grep_required 'Do not invent or hide their absence' "$file" "$label must preserve required-state safety"
+  grep_required 'Delegate only independent accepted-scope work worth coordination' "$file" \
     "$label must keep delegation economic"
-  grep_required 'Installed agent files own model mappings; active profile:' "$file" \
+  grep_required 'Installed agent files own model mappings' "$file" \
     "$label must keep model mappings out of global policy"
-  grep_required "^${profile}\. Use project-local" "$file" "$label must record active profile $profile"
+  grep_required "active profile: ${profile}\. Use project-local" "$file" "$label must record active profile $profile"
+  if [[ "$label" == *Cursor* || "$label" == *Claude* ]]; then
+    ! grep -Eq 'request_user_input|Codex CLI|Codex native|every material user decision|grill ceremony|text choice card' "$file" \
+      || fail "$label must not contain Codex-native adapter wording"
+  fi
 }
 
 git_known_package_file() {
@@ -246,6 +249,10 @@ for reference in artifact-protocol check-update debug-mode eval-gate goal-iterat
     || fail "skills/using-teamwork/references/$reference.md is not known to git; use git add -N before release validation"
 done
 
+[[ ! -d "$ROOT/skills/grill-me/references" ]] \
+  || [[ -z "$(find "$ROOT/skills/grill-me/references" -type f -print -quit)" ]] \
+  || fail "grill-me must keep its complete semantic contract in the lean SKILL.md"
+
 for template in teamwork-index-template.json teamwork-index-readme-template.md teamwork-current-template.md; do
   template_file="$ROOT/skills/using-teamwork/references/$template"
   [[ -f "$template_file" ]] || fail "missing skills/using-teamwork/references/$template"
@@ -282,7 +289,7 @@ while IFS= read -r eval_file; do
 done < <(find "$ROOT/evals/teamwork/cases" "$ROOT/evals/teamwork/live-cases" "$ROOT/evals/teamwork/rubrics" "$ROOT/evals/teamwork/ledgers" "$ROOT/evals/teamwork/outputs" -type f | sort)
 [[ -f "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" ]] \
   || fail "missing question-first eval output samples"
-for case_id in complex-autonomy-control question-first-explicit-grill question-first-explicit-lightweight-grill question-first-complex-uncertainty question-first-lightweight-control grill-question-value-stop grill-zero-question-low-value; do
+for case_id in complex-autonomy-control ordinary-material-clarification-control question-first-explicit-grill question-first-explicit-lightweight-grill question-first-complex-uncertainty question-first-lightweight-control grill-question-value-stop grill-zero-question-low-value grill-language-ownership-contrast grill-rename-ownership-contrast grill-boundary-ownership-contrast grill-observable-preference-contrast grill-threshold-evidence-contrast grill-reversibility-ownership-contrast; do
   [[ -f "$ROOT/evals/teamwork/cases/$case_id.dev.json" ]] \
     || fail "missing question-first eval case: $case_id"
   grep_required "\"case_id\":\"$case_id\"" "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" \
@@ -290,8 +297,8 @@ for case_id in complex-autonomy-control question-first-explicit-grill question-f
 done
 grep_required '"platforms":\["codex","cursor","claude"\]' "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" \
   "question-first fixtures must declare their static cross-platform contract"
-grep_required 'Facts checked:' "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" \
-  "fact-lookup grill fixture must cite bounded facts before asking"
+grep_required 'skills/ and install.sh inventories' "$ROOT/evals/teamwork/outputs/question-first/dev.jsonl" \
+  "fact-lookup grill fixture must cite bounded evidence before asking"
 [[ -f "$ROOT/scripts/eval-teamwork.py" ]] || fail "missing scripts/eval-teamwork.py"
 git_known_package_file "scripts/eval-teamwork.py" \
   || fail "scripts/eval-teamwork.py is not known to git; use git add -N before release validation"
@@ -311,12 +318,21 @@ git_known_package_file "scripts/grill_contract.py" \
 [[ -f "$ROOT/scripts/codex_routing_config.py" ]] || fail "missing Codex routing config module"
 [[ -f "$ROOT/scripts/configure-codex-routing.py" ]] || fail "missing Codex routing config CLI"
 [[ -f "$ROOT/scripts/test_codex_routing_config.py" ]] || fail "missing Codex routing config tests"
+[[ -x "$ROOT/scripts/codex_app_server_user_input.py" ]] || fail "missing Codex app-server user-input harness"
+[[ -f "$ROOT/scripts/test_codex_app_server_user_input.py" ]] || fail "missing Codex app-server user-input tests"
 python3 -m py_compile "$ROOT/scripts/grill_contract.py" "$ROOT/scripts/run-teamwork-live-eval.py" "$ROOT/scripts/test_live_eval_runner.py" \
   "$ROOT/scripts/test_eval_teamwork_mutations.py" "$ROOT/scripts/codex_routing_config.py" \
-  "$ROOT/scripts/configure-codex-routing.py" "$ROOT/scripts/test_codex_routing_config.py"
+  "$ROOT/scripts/configure-codex-routing.py" "$ROOT/scripts/test_codex_routing_config.py" \
+  "$ROOT/scripts/codex_app_server_user_input.py" "$ROOT/scripts/test_codex_app_server_user_input.py"
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_live_eval_runner.py" >/dev/null
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_eval_teamwork_mutations.py" >/dev/null
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_routing_config.py" >/dev/null
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_app_server_user_input.py" >/dev/null
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_teamwork_contract.py" >/dev/null
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_teamwork_findings.py" >/dev/null
+grep_absent 'parse_close_packet\|expected_question_ids\|expected_close\|blocked_route\|pilot_only\|activation_evidence' \
+  "active grill eval code must not restore the retired lifecycle or native-promotion schema" \
+  "$ROOT/scripts/run-teamwork-live-eval.py" "$ROOT/scripts/codex_app_server_user_input.py"
 grep_required '"category": "grill"' "$ROOT/evals/teamwork/live-cases/grill-multiturn-pilot.json" \
   "live evals must include a grill category"
 live_eval_tmp="$(mktemp -d)"
@@ -565,13 +581,24 @@ grep_required 'cursor-policy-copy' "$ROOT/install.sh" "installer must support cu
 grep_required 'claude-policy' "$ROOT/install.sh" "installer must support claude-policy target"
 grep_required 'configure_codex_routing' "$ROOT/install.sh" "installer must configure user-level Codex routing"
 grep_required 'no-codex-routing' "$ROOT/install.sh" "installer must expose a Codex routing opt-out"
+grep_absent 'configure_codex_native_questions\|codex-native-questions\|default_mode_request_user_input\|code_mode_only' \
+  "installer must not own or mutate the host native-input capability" "$ROOT/install.sh"
 grep_required 'one main thread plus up to eight' "$ROOT/install.sh" \
   "installer help must document the root-inclusive thread limit"
 grep_required 'codex_routing_status' "$ROOT/scripts/check-update.sh" "check-update must inspect Codex routing"
 grep_required 'codex-routing' "$ROOT/skills/teamwork-init/SKILL.md" "teamwork-init must repair routing readiness"
-grep_required 'restart Codex when it reports' "$ROOT/skills/teamwork-update/SKILL.md" "teamwork-update must refresh Codex routing"
+grep_required 'Native interaction tools are host capabilities' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must keep interaction capability host-owned"
+grep_required 'never enabled by Teamwork' "$ROOT/skills/teamwork-update/SKILL.md" \
+  "teamwork-update must keep interaction capability runtime-owned"
 grep_required 'codex-routing' "$ROOT/skills/using-teamwork/references/check-update.md" \
   "update readiness reference must report Codex routing drift"
+grep_required 'tools belong to the current host/runtime' "$ROOT/skills/using-teamwork/references/check-update.md" \
+  "update readiness reference must keep interaction capability host-owned"
+grep_absent 'default_mode_request_user_input\|codex-native-questions\|configure-codex-native-questions\|code_mode_only' \
+  "Teamwork runtime surfaces must not enable a host interaction feature" \
+  "$ROOT/install.sh" "$ROOT/scripts/check-update.sh" "$ROOT/scripts/init-project.sh" \
+  "$ROOT/skills/teamwork-init" "$ROOT/skills/teamwork-update" "$ROOT/skills/using-teamwork/references/check-update.md"
 grep_required 'non-reserved `teamwork`' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" \
   "dispatch must document the configured Codex selector"
 
@@ -580,8 +607,8 @@ grep_required 'non-reserved `teamwork`' "$ROOT/skills/using-teamwork/references/
 [[ "$(wc -l < "$ROOT/README.en.md")" -le 200 ]] || fail "English README should stay concise"
 line_count_max "$ROOT/skills/using-teamwork/SKILL.md" 80 "using-teamwork should stay concise"
 word_count_max "$ROOT/skills/using-teamwork/SKILL.md" 450 "using-teamwork should stay concise"
-line_count_max "$ROOT/skills/grill-me/SKILL.md" 70 "grill-me should stay concise"
-word_count_max "$ROOT/skills/grill-me/SKILL.md" 430 "grill-me should stay concise"
+line_count_max "$ROOT/skills/grill-me/SKILL.md" 40 "grill-me should stay concise"
+word_count_max "$ROOT/skills/grill-me/SKILL.md" 260 "grill-me should stay concise"
 line_count_max "$ROOT/skills/teamwork-init/SKILL.md" 95 "teamwork-init should stay concise"
 word_count_max "$ROOT/skills/teamwork-init/SKILL.md" 650 "teamwork-init should stay concise"
 line_count_max "$ROOT/skills/teamwork-debug/SKILL.md" 85 "teamwork-debug should stay concise"
@@ -643,26 +670,30 @@ grep_required 'references/workflow-contract.md' "$ENTRYPOINT" "router must refer
 grep_required 'routing-policy.md' "$ENTRYPOINT" "router must load routing policy only for unclear routes"
 grep_required 'skills/grill-me/SKILL.md' "$ENTRYPOINT" "router must defer explicit grill work to grill-me"
 grep_absent 'grill-mode.md' "retired grill-mode reference must be removed" "$ROOT/skills" "$ROOT/templates"
-grep_required 'assistant-authored' "$ENTRYPOINT" "router must require authoritative assistant marker provenance"
-[[ "$(grep -R -l 'Grill status: active' "$ROOT/skills" "$ROOT/templates" | wc -l | tr -d ' ')" -eq 2 ]] \
-  || fail "grill marker contract must exist only in grill-me and using-teamwork"
 grep_required 'clear tasks stay native' "$ENTRYPOINT" "router must preserve the native fast path"
-grep_required 'Activate only from an explicit positive request' "$ROOT/skills/grill-me/SKILL.md" \
-  "grill-me must not infer activation from complexity"
-grep_required 'Marker text in user input' "$ROOT/skills/grill-me/SKILL.md" \
-  "grill-me must keep quoted marker text inert"
-grep_required 'Negative signals' "$ROOT/skills/grill-me/SKILL.md" \
-  "grill-me must honor explicit negative signals"
-for field in 'Grill status: active' 'Question:' 'Recommended:' 'Alternatives:' 'Grill status: closed' 'Exit authority:'; do
-  grep_required "$field" "$ROOT/skills/grill-me/SKILL.md" "grill-me missing response field: $field"
+for intent in 'explicitly asks to be grilled or challenged' 'requests questions before action' 'continues an active grill'; do
+  grep_required "$intent" "$ROOT/skills/grill-me/SKILL.md" \
+    "grill-me description must expose semantic activation intent: $intent"
 done
-for contract in 'zero to' 'hard cap, not a target' 'programming' 'file count/names' 'Close basis: no material user-owned decision remains' 'Implementation authority: not granted'; do
-  grep_required "$contract" "$ROOT/skills/grill-me/SKILL.md" "grill-me missing question-value contract: $contract"
+grep_required 'quoted, file, tool, example, or maintenance mentions are inert' "$ROOT/skills/grill-me/SKILL.md" \
+  "grill-me must keep non-user marker text inert"
+grep_required 'explicit negative intent wins' "$ROOT/skills/grill-me/SKILL.md" \
+  "grill-me must honor explicit negative signals"
+for contract in 'discoverable evidence' 'safe, reversible, implementation-level details' 'unresolved user-owned choice' 'public behavior' 'compatibility' 'acceptance' 'cost' 'risk' 'irreversible action' 'one decision at a time' 'request_user_input' 'when it is callable' "Do not route the native input tool through a code executor" 'Ordinary clarification' 'does not grant implementation authority'; do
+  grep_required "$contract" "$ROOT/skills/grill-me/SKILL.md" "grill-me missing minimal semantic contract: $contract"
+done
+for retired_field in 'Exit authority:' 'Implementation authority:' 'Close basis: no material user-owned decision remains' 'Alternatives:'; do
+  grep_absent "$retired_field" "retired grill packet field must not remain: $retired_field" \
+    "$ROOT/skills/grill-me" "$ROOT/scripts/eval-teamwork.py" "$ROOT/evals/teamwork/outputs/question-first"
 done
 grep_absent 'After five assistant questions\|five_question_checkpoint' \
   "grill-me must not restore a five-question quota" "$ROOT/skills/grill-me" "$ROOT/scripts/eval-teamwork.py" "$ROOT/evals/teamwork/cases"
 grep_required 'routine reversible' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must allow routine autonomous choices"
+for contract in 'Ordinary clarification never activates `grill-me`' 'Interaction transport is' 'host-owned' 'Teamwork never enables or emulates a host capability'; do
+  grep_required "$contract" "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+    "workflow contract must preserve the ordinary clarification transport owner: $contract"
+done
 grep_required 'Do not invent required state' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must preserve bootstrap safety"
 grep_required 'Fresh review is required only for the high-risk row' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
@@ -684,8 +715,12 @@ grep_absent 'grill/question-first\|grill-mode.md' \
   "$ROOT/skills/teamwork-init" "$ROOT/skills/teamwork-update"
 grep_required 'as the evidence warrants' "$ROOT/skills/teamwork-debug/SKILL.md" \
   "debug must avoid a fixed hypothesis quota"
-grep_required 'table or diagram only when it materially clarifies' "$ROOT/skills/teamwork-plan/SKILL.md" \
+grep_required 'diagram only when it materially clarifies comparison' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "plan formatting must be conditional"
+grep_required 'whenever Codex is in Plan mode' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "teamwork-plan metadata must trigger in Codex Plan mode"
+grep_required 'native bridge and readiness gate' "$ROOT/skills/teamwork-plan/SKILL.md" \
+  "teamwork-plan must bind Codex Plan mode to the Teamwork quality gate"
 grep_required 'smallest direct change' "$ROOT/skills/teamwork-execute/SKILL.md" "execute must preserve direct implementation"
 grep_required 'eval-gate.md.*only when that gate applies' "$ROOT/skills/teamwork-review/SKILL.md" \
   "review must condition package eval policy"
@@ -705,6 +740,14 @@ grep_required 'only when breadth makes' "$ROOT/skills/using-teamwork/references/
   "research matrices must be conditional"
 grep_required 'not an acceptance' \
   "$ROOT/skills/using-teamwork/references/plan-output.md" "plan format must remain flexible"
+for anchor in 'Codex Plan Mode Bridge' 'request_user_input' 'execution-critical value' 'Readiness gate'; do
+  grep_required "$anchor" "$ROOT/skills/using-teamwork/references/plan-output.md" \
+    "Codex Plan mode bridge must preserve $anchor"
+done
+for tag in native_when_callable teamwork_plan_quality_gate sourced_critical_values; do
+  grep_required "$tag" "$ROOT/scripts/eval-teamwork.py" \
+    "Plan mode integration fixture must require $tag"
+done
 grep_required 'External calibration alone is not a write trigger' \
   "$ROOT/skills/using-teamwork/references/artifact-protocol.md" "artifact creation must be materiality-gated"
 grep_required 'Goal Invariants' "$ROOT/skills/using-teamwork/references/goal-iteration.md" \
@@ -836,6 +879,16 @@ restore_validate_state() {
   fi
 }
 trap restore_validate_state EXIT
+mkdir -p "$tmp/bin"
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'mkdir -p "$HOME"' \
+  'printf "%s\n" "$*" >> "$HOME/.fake-codex-invocations"' \
+  'exit 99' \
+  > "$tmp/bin/codex"
+chmod +x "$tmp/bin/codex"
+export PATH="$tmp/bin:$PATH"
 retired_teamwork_dir="$tmp/home/.codex/skills/teamwork"
 mkdir -p "$retired_teamwork_dir/references"
 printf '%s\n' '---' 'name: teamwork' 'description: Use when selecting a Teamwork stage.' '---' > "$retired_teamwork_dir/SKILL.md"
@@ -844,6 +897,8 @@ while IFS= read -r ref_file; do
   printf '%s\n' "retired $reference" > "$retired_teamwork_dir/references/$reference"
 done < <(find "$ROOT/skills/using-teamwork/references" -maxdepth 1 -type f | sort)
 HOME="$tmp/home" "$ROOT/install.sh" >/dev/null
+[[ ! -e "$tmp/home/.fake-codex-invocations" ]] \
+  || fail "Codex install must not invoke the host CLI to manage interaction capabilities"
 [[ ! -e "$retired_teamwork_dir" ]] || fail "Codex install must remove old copied teamwork skill"
 for skill in "${SKILLS[@]}"; do
   [[ -f "$tmp/home/.codex/skills/$skill/SKILL.md" ]] || fail "Codex install missing $skill"
@@ -857,6 +912,9 @@ done
   || fail "Codex install must write .teamwork-profile"
 HOME="$tmp/home" "$ROOT/scripts/check-update.sh" --readiness --no-fetch >/dev/null \
   || fail "check-update readiness must succeed after fresh install"
+[[ ! -e "$tmp/home/.fake-codex-invocations" ]] \
+  || fail "readiness must not invoke the host CLI to manage interaction capabilities"
+
 [[ -f "$tmp/home/.codex/skills/using-teamwork/references/workflow-contract.md" ]] \
   || fail "Codex install must copy using-teamwork references"
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
@@ -882,6 +940,8 @@ grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$tmp/home/.codex/AGENTS.md
 grep_required 'Teamwork Codex Global Policy' "$tmp/home/.codex/AGENTS.md" \
   "Codex install must write Teamwork global policy heading"
 check_lean_policy "$tmp/home/.codex/AGENTS.md" performance-first "Codex global policy"
+grep_required 'Use callable native structured input' "$tmp/home/.codex/AGENTS.md" \
+  "Codex global policy must defer transport to the callable host capability"
 
 agents_preserve_home="$tmp/home-agents-preserve"
 mkdir -p "$agents_preserve_home/.codex"
@@ -907,6 +967,8 @@ grep_required '<!-- CODEGRAPH_START -->' "$agents_preserve_home/.codex/AGENTS.md
   "Codex global policy install must preserve CodeGraph block"
 check_lean_policy "$agents_preserve_home/.codex/AGENTS.md" performance-first \
   "refreshed Codex global policy"
+grep_required 'Use callable native structured input' "$agents_preserve_home/.codex/AGENTS.md" \
+  "refreshed Codex policy must defer transport to the callable host capability"
 grep_absent 'old managed content' \
   "Codex global policy install must replace old managed content" \
   "$agents_preserve_home/.codex/AGENTS.md"
@@ -918,10 +980,16 @@ grep_absent 'All code runs on a remote server' \
   "$agents_preserve_home/.codex/AGENTS.md"
 
 codex_policy_out="$tmp/codex-policy.out"
-HOME="$tmp/home-codex-policy" "$ROOT/install.sh" codex-policy > "$codex_policy_out"
+codex_policy_err="$tmp/codex-policy.err"
+HOME="$tmp/home-codex-policy" "$ROOT/install.sh" codex-policy \
+  > "$codex_policy_out" 2> "$codex_policy_err"
+[[ ! -s "$codex_policy_err" ]] \
+  || fail "codex-policy target must render without shell-expansion errors"
 grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$codex_policy_out" \
   "codex-policy target must print Teamwork global policy start marker"
 check_lean_policy "$codex_policy_out" performance-first "codex-policy output"
+grep_required 'Use callable native structured input' "$codex_policy_out" \
+  "codex-policy output must defer transport to the callable host capability"
 [[ ! -e "$tmp/home-codex-policy/.codex/AGENTS.md" ]] \
   || fail "codex-policy target must not write global AGENTS policy"
 
@@ -1023,9 +1091,13 @@ done
 
 HOME="$tmp/home-codex-cost" "$ROOT/install.sh" --profile cost-first codex >/dev/null
 check_lean_policy "$tmp/home-codex-cost/.codex/AGENTS.md" cost-first "cost-first Codex policy"
+grep_required 'Use callable native structured input' "$tmp/home-codex-cost/.codex/AGENTS.md" \
+  "cost-first Codex policy must defer transport to the callable host capability"
 
 HOME="$tmp/home-codex-policy-cost" "$ROOT/install.sh" --profile cost-first codex-policy > "$tmp/codex-policy-cost.out"
 check_lean_policy "$tmp/codex-policy-cost.out" cost-first "cost-first codex-policy output"
+grep_required 'Use callable native structured input' "$tmp/codex-policy-cost.out" \
+  "cost-first codex-policy output must defer transport to the callable host capability"
 [[ ! -e "$tmp/home-codex-policy-cost/.codex/AGENTS.md" ]] \
   || fail "cost-first codex-policy target must not write global AGENTS policy"
 
@@ -1536,6 +1608,8 @@ HOME="$tmp/home-init-project" \
   TEAMWORK_INIT_CODEGRAPH=0 \
   TEAMWORK_INIT_CURSOR_POLICY_COPY=0 \
   "$ROOT/install.sh" --copy --project-root "$init_root" init-project >/dev/null
+[[ ! -e "$tmp/home-init-project/.fake-codex-invocations" ]] \
+  || fail "init-project must not invoke the host CLI to manage interaction capabilities"
 grep_required '<!-- TEAMWORK_PROJECT_START -->' "$init_root/AGENTS.md" \
   "init-project must write managed AGENTS.md block"
 grep_required 'docs/teamwork/README.md' "$init_root/AGENTS.md" \
@@ -1555,6 +1629,33 @@ python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/ind
 [[ -f "$init_root/.cursor/agents/worker.md" ]] || fail "init-project must install project Cursor agents"
 [[ -f "$init_root/.claude/agents/worker.md" ]] || fail "init-project must install project Claude agents"
 
+global_failure_root="$tmp/init-project-global-failure"
+global_failure_home="$tmp/home-init-project-global-failure"
+mkdir -p "$global_failure_root" "$global_failure_home/.codex"
+printf '# Global Failure Init Smoke\n' > "$global_failure_root/README.md"
+printf '%s\n' '[broken' 'value = [' > "$global_failure_home/.codex/config.toml"
+global_failure_rc=0
+global_failure_output="$(
+  HOME="$global_failure_home" \
+    TEAMWORK_INIT_CODEGRAPH=0 \
+    TEAMWORK_INIT_CURSOR_POLICY_COPY=0 \
+    "$ROOT/scripts/init-project.sh" --copy --project-root "$global_failure_root" 2>&1
+)" || global_failure_rc=$?
+[[ "$global_failure_rc" -ne 0 ]] \
+  || fail "init-project must report a malformed global Codex config as a failure"
+printf '%s\n' "$global_failure_output" | grep -q 'continuing with project-local setup' \
+  || fail "init-project must explain that project setup continues after global failure"
+[[ -f "$global_failure_root/.codex/agents/teamwork-worker.toml" ]] \
+  || fail "global config failure must not prevent project Codex agents"
+[[ -f "$global_failure_root/.cursor/skills/using-teamwork/SKILL.md" ]] \
+  || fail "global config failure must not prevent project skills"
+[[ -f "$global_failure_root/docs/teamwork/index.json" ]] \
+  || fail "global config failure must not prevent project memory"
+grep_required '<!-- TEAMWORK_PROJECT_START -->' "$global_failure_root/AGENTS.md" \
+  "global config failure must not prevent project instructions"
+[[ ! -e "$global_failure_home/.fake-codex-invocations" ]] \
+  || fail "failed global init must not invoke Codex to manage interaction capability"
+
 invalid_root="$tmp/init-project-invalid-index"
 mkdir -p "$invalid_root/docs/teamwork"
 printf '# Invalid Index Smoke\n' > "$invalid_root/README.md"
@@ -1567,7 +1668,8 @@ invalid_output="$(
 )"
 printf '%s\n' "$invalid_output" | grep -q 'Teamwork memory: index invalid' \
   || fail "init-project must report invalid existing Teamwork memory index"
-
+[[ ! -e "$tmp/home-init-project-invalid/.fake-codex-invocations" ]] \
+  || fail "project-only init must not invoke the host Codex CLI"
 HOME="$tmp/home-agents" "$ROOT/install.sh" --link claude-agents >/dev/null
 for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do
   [[ -L "$tmp/home-agents/.claude/agents/$agent.md" ]] \

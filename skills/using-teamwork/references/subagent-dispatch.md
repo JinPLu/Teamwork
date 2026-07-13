@@ -31,20 +31,23 @@ Use CodeGraph before Explorer fanout for structural code questions.
 ## Lifecycle
 
 A subagent returns one self-contained packet, then stops. It does not monitor,
-expand scope, chain agents, or resume after return. Give materially new work to
-a fresh agent and packet.
+expand scope, chain agents, or resume after return. The sole exception is one
+parent-directed corrective recheck in the same initial Judge/Reviewer thread;
+that thread may inspect only its prior finding IDs, claimed fixes, and
+fix-introduced regressions or new direct evidence. It cannot dispatch, monitor,
+or request another recheck. Give materially new work to a fresh agent and
+packet.
 
 The main agent records review-relevant outcomes and owns integration,
 verification, and acceptance.
 
 ## Platform Fields
 
-Inspect the live schema. A ready Teamwork Codex install exposes a non-reserved `teamwork`
-namespace with `agent_type`; select the installed role and use
-`fork_turns:"none"` with a self-contained fresh packet. The config checker proves
-local state only. Nine threads permit eight subagents; dispatch remains
-value-gated. If generic fields remain, label the child `parent-inherited`; put
-role, evidence bar, and stop rule in `message`.
+Inspect the live schema. A ready Codex install exposes a non-reserved `teamwork`
+namespace with `agent_type`; select the installed role with `fork_turns:"none"`
+and a self-contained packet.
+The config checker proves local state only. If fields remain generic, label the
+child `parent-inherited` and put its role and stop rule in `message`.
 
 **Codex custom-agent runtimes** - use the exact installed role when `agent_type`
 is callable. A full-history fork intentionally bypasses fresh role overrides.
@@ -61,7 +64,8 @@ is callable. A full-history fork intentionally bypasses fresh role overrides.
 
 Effort: `fast`->low, `standard`->medium, `high reasoning`->high, `deep reasoning`->max.
 
-**Cursor** - prefer custom agents from `~/.cursor/agents/` by `name`; fallback `subagent_type` and runtime-supported model fields; no `reasoning_effort` or `fork_context`.
+**Cursor** - prefer `~/.cursor/agents/` names; otherwise use supported
+`subagent_type` and model fields. It has no `reasoning_effort` or `fork_context`.
 
 | Role | Custom agent | Fallback subagent_type |
 |---|---|---|
@@ -73,9 +77,11 @@ Effort: `fast`->low, `standard`->medium, `high reasoning`->high, `deep reasoning
 | Deep Judge | `deep-judge` | `generalPurpose` + role in prompt |
 | Deep Reviewer | `deep-reviewer` | `code-reviewer` + role in prompt |
 
-Use `readonly:true` for Explorer/Judge/Reviewer; `run_in_background:true` for long tracks; `resume:"self"` for full-history fork; `best-of-n-runner` for parallel Worker experiments.
+Use `readonly:true` for read-only roles, `run_in_background:true` for long
+tracks, and `resume:"self"` only for a full-history fork.
 
-**Claude Code** - prefer custom agents from `~/.claude/agents/` by `name`; fallback `Task` with `general-purpose` and role in prompt. Model, `effort`, tool allowlist, and `isolation: worktree` live on the agent definition, not per Task call.
+**Claude Code** - prefer `~/.claude/agents/` names; otherwise use `Task` with
+`general-purpose`. Model, effort, tools, and isolation live on the agent definition.
 
 | Role | Custom agent | Fallback |
 |---|---|---|
@@ -113,11 +119,9 @@ Cursor, and Claude Code.
 as a separate experiment requiring explicit cost, ownership, and acceptance
 evidence.
 
-Exact model identifiers belong in installed agent definitions, runtime schemas,
-or platform docs, not in ordinary plans. When a schema does not support a field,
-omit it and express the role, evidence bar, and packet contract in the prompt.
-Diagnostics record the profile active at session time and the actual child model
-separately; never infer a historical profile from the current install marker.
+Exact model identifiers belong in installed definitions, schemas, or platform
+docs. Omit unsupported fields. Diagnostics record session profile and child
+model separately; never infer history from the current install marker.
 
 Use `cheap-fast` only under explicit latency/quota pressure for trivial
 read-only evidence; never for risk review, architecture, public behavior,

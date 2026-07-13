@@ -8,6 +8,7 @@ PROFILE_VALUE=""
 RUN_CODEGRAPH="${TEAMWORK_INIT_CODEGRAPH:-1}"
 INSTALL_GLOBAL=1
 COPY_CURSOR_POLICY="${TEAMWORK_INIT_CURSOR_POLICY_COPY:-1}"
+GLOBAL_INSTALL_RC=0
 
 usage() {
   cat <<'USAGE'
@@ -16,6 +17,7 @@ Usage:
 
 Initializes a project with full Teamwork defaults:
   - global Codex/Cursor/Claude skills, agents, and managed policies
+  - Codex custom-agent routing
   - project .cursor/.codex/.claude skills and agents
   - AGENTS.md Teamwork managed block
   - docs/teamwork/ runtime memory entrypoint
@@ -384,12 +386,22 @@ copy_cursor_policy() {
   fi
 }
 
-install_global_surfaces
+if install_global_surfaces; then
+  :
+else
+  GLOBAL_INSTALL_RC=$?
+  echo "Global Teamwork surfaces: failed; continuing with project-local setup" >&2
+fi
 install_project_surfaces
 write_project_files
 validate_teamwork_memory
 init_codegraph
 detect_context7
 copy_cursor_policy
+
+if (( GLOBAL_INSTALL_RC != 0 )); then
+  echo "Teamwork project init completed locally; global setup still requires repair" >&2
+  exit "$GLOBAL_INSTALL_RC"
+fi
 
 echo "Teamwork project init complete: $PROJECT_ROOT"
