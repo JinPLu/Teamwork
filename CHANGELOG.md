@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 2.18.0 - 2026-07-13
+
+**提问更贴近实际工作，不再为维持流程状态而增加额外负担。**
+
+- **所有阶段共用一条提问边界。** Research、Debug、Plan、Execute、Review 和 Goal 都会先检查仓库、配置和已有证据；只有缺少必须由你提供的输入、观察，或结果会因你的决定而显著变化时才提问。普通澄清不需要切换到 `grill-me`。
+- **只暂停真正依赖答案的工作。** 一个分支等待确认时，独立的只读调查仍可继续，避免一个问题冻结整个任务。
+- **subagent 不再各自打断你。** subagent 只向 root 返回 Question Candidate，由 root 重新核对、合并重复问题并统一询问。
+- **删除 Task Contract 状态机。** 2.17 引入的版本号、refreeze、Stage Entry Card 及两个 JSON 生命周期校验器被移除，改用轻量 Working Facts 保存目标、范围、验收、权限、阻塞和停止条件。
+- **Review 和 Goal 继续保持收敛约束。** Review 仍使用稳定 finding ID、`BLOCKER | FOLLOW-UP | SUGGESTION` 和最多一次受限复查；Goal 仍只重试受影响分支，并且只有用户明确请求或接受 Goal Proposal 后才进入 Codex 原生 Goal 状态。
+- **发布状态更完整。** 维护者更新现在会同时核对版本、双语更新日志、安装面、远端标签和 GitHub Release；缺少标签或 Release 时只报告 `release-ready`，不会误称已发布。
+
+离线评测覆盖三平台的共享规则和安装兼容性；有限的 Codex 实测支持跨阶段提问与权限保持，但不宣称已经证明所有阶段、自然问题去重或 Cursor/Claude 的完整运行时行为。
+
 ## 2.17.0 - 2026-07-13
 
 **直接解决“一个方案反复审很多轮、跑几个小时仍不收敛”的体验问题。**

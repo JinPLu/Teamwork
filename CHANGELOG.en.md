@@ -4,6 +4,19 @@
 
 This changelog lists user-visible changes. Implementation details live in Git commits or pull requests.
 
+## 2.18.0 - 2026-07-13
+
+**Questions now follow the work instead of creating extra workflow state.**
+
+- **Every stage shares one ask boundary.** Research, Debug, Plan, Execute, Review, and Goal inspect repository, configuration, and existing evidence first. They ask only for input or observation the user must supply, or for a user-owned decision that materially changes the result. Ordinary clarification does not require switching to `grill-me`.
+- **Only dependent work pauses.** While one branch waits for an answer, independent read-only investigation may continue instead of freezing the whole task.
+- **Subagents no longer interrupt independently.** They return Question Candidates to the root, which revalidates and deduplicates them before asking the user.
+- **The Task Contract state machine is removed.** The version/refreeze lifecycle, Stage Entry Card, and two JSON lifecycle validators introduced in 2.17 are replaced by lightweight Working Facts for goal, scope, acceptance, authority, blockers, and stop conditions.
+- **Review and Goal keep their convergence safeguards.** Review retains stable finding IDs, `BLOCKER | FOLLOW-UP | SUGGESTION`, and at most one bounded corrective recheck. Goal retries only affected branches and enters Codex native Goal state only after an explicit user request or an accepted Goal Proposal.
+- **Publication state is complete and explicit.** Maintainer updates now check version metadata, both changelogs, installed surfaces, the remote tag, and the GitHub Release together. Missing tag or Release state is reported as `release-ready`, never as released.
+
+Offline evals cover the shared three-platform rules and installation compatibility. Limited Codex evidence supports cross-stage asking and authority preservation, but this release does not claim full behavior across every stage, natural question deduplication, or Cursor/Claude runtime parity.
+
 ## 2.17.0 - 2026-07-13
 
 **Directly addresses plans that get reviewed over and over yet still take hours to converge.**

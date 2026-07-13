@@ -3,17 +3,16 @@
 Use only when the user requests convergence, repeated attempts, or an explicit
 budget. Preserve the goal while changing strategy in response to evidence.
 
-## Goal Contract
+## Goal Facts
 
 Record the objective, done evidence, scope/non-goals, protected boundaries,
 Goal Invariants, available budget or runtime limit, and blocker conditions.
 Do not invent a numeric iteration/token/time budget when none was supplied or
 provided by the runtime; use a bounded no-progress stop instead.
 
-Freeze one Task Contract version for the goal and retain its Goal Invariants on
-every retry. A new Contract version exists only after an accepted scope or
-Contract delta; failed verification, a new hypothesis, or a known local fix do
-not create one.
+Retain accepted scope, criteria, authority, and Goal Invariants on every retry.
+Failed verification, a new hypothesis, or a known local fix changes strategy,
+not those facts. Return to Plan when accepted scope or criteria must change.
 
 Use a native Codex goal only when the user explicitly requests that control
 surface or accepts a Goal Proposal. Otherwise keep the accepted plan and, when
@@ -22,7 +21,7 @@ cross-turn continuity is needed, a rolling report.
 ## Loop
 
 ```text
-read Contract version, invariants, and latest failed claim
+read accepted scope, invariants, and latest failed claim
 -> select only its affected stage
 -> verify that claim
 -> review only if acceptance claims changed or the final risk gate requires it
@@ -35,7 +34,7 @@ Use the smallest evidence-backed route:
 - reproducible failure with unknown cause: Debug -> verify, then Execute if a
   known fix results;
 - broad missing evidence: Research;
-- accepted scope or Task Contract delta: Plan and a new Contract version;
+- accepted scope or criteria must change: Plan;
 - changed acceptance claim or final required risk gate: Review.
 
 Do not replay research, plan, execute, and review merely because an earlier
@@ -50,9 +49,10 @@ evidence and prior attempt summary before more work. Record:
 - the strategy delta for the next attempt.
 
 The strategy delta must name the changed evidence, hypothesis, affected claim,
-and next stage. If it cannot, count no progress and stop or ask for direction
-rather than replaying stages. Repeated no-progress attempts are a no-progress
-stop.
+and next stage. If it cannot, count no progress and stop rather than replaying
+stages. Apply the shared Ask Gate only when a user-owned required input,
+observation, or decision is what prevents a distinct next strategy. Repeated
+no-progress attempts are a no-progress stop.
 
 ## Durable Checkpoint
 

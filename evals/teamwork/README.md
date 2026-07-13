@@ -51,13 +51,14 @@ completion, unsourced locked values, and phases without ownership or proof. This
 is a static contract; live Plan-mode quality still requires a fresh app-server
 trajectory with `collaborationMode` set to Plan.
 
-Plan-to-Grill and convergence fixtures are offline contract cases. They cover
-evidence-first conditional Grill entry, one-at-a-time user decisions, Decision
-Summary confirmation before a final plan, distinct implementation authority,
-stable plan/review identities, bounded delta rechecks, Contract versioning only
-for accepted scope deltas, and affected-stage goal retries. They validate
-fixture shape and intended contract only; they do not prove a live model follows
-the protocol.
+Ask-predicate and convergence fixtures are offline behavioral contracts. They
+cover zero-question simple work, discoverable facts, required input or human
+observation in every Teamwork stage, Plan's non-simple Grill entry and Decision
+Summary, authority preservation after confirmation, root-owned deduplicated
+Question Candidates, dependent-branch-only blocking, concise text fallback,
+stable review finding IDs, blocker classification, and one bounded corrective
+recheck. They contain no persistent workflow state. They validate fixture shape
+and intended behavior only; they do not prove a live model follows it.
 
 Explicit grill cases label every candidate with an internal fixture key, owner
 (`evidence`, `agent`, `user-decision`, `required-input`, or `confirmation`),

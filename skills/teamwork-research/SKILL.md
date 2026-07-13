@@ -41,8 +41,9 @@ relevant, recommendation, dissent or gaps, artifact path or `none`, and one rout
 
 ## Escalate
 
-Ask for a user-owned decision when remaining uncertainty changes scope or risk;
-stop when required evidence or access is unavailable.
+Apply the Ask Gate in `workflow-contract.md` when research needs user-supplied
+evidence or a user-owned decision. Stop when required evidence or access is
+unavailable.
 
 ## Conditional Protocols
 

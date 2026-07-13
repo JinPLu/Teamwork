@@ -33,8 +33,7 @@ execution.
 
 ## Smart Defaults
 
-Act when evidence and authorization are enough. Ask only if a remaining user
-decision could materially change scope, acceptance, public behavior, risk, or
-an irreversible action. Missing facts route to research or debug when they are
-discoverable; required user-owned values ask or block under the workflow
-contract. Public interaction skills are selected before this stage policy.
+Act when evidence and authorization are enough. Missing facts route to research
+or debug when they are discoverable; unresolved questions follow the Ask Gate
+in `workflow-contract.md`. Public interaction skills are selected before this
+stage policy.

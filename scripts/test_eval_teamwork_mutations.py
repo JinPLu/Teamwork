@@ -178,7 +178,7 @@ class CaseSchemaMutationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / f"{data['id']}.dev.json"
             path.write_text(json.dumps(data), encoding="utf-8")
-            EVAL.validate_case(path, {"assistance-quality"})
+            EVAL.validate_case(path, {"assistance-quality", "behavioral-contracts"})
 
     def test_expected_question_must_be_user_owned(self) -> None:
         data = self.load_case("grill-rename-ownership-contrast.dev.json")
@@ -212,6 +212,72 @@ class CaseSchemaMutationTests(unittest.TestCase):
             )
             data["expected_asked_candidates"].append(candidate)
         self.validate(data)
+
+    def test_ask_predicate_case_rejects_missing_coverage(self) -> None:
+        data = self.load_case("review-bounded-recheck.dev.json")
+        data["expected"]["requires"].remove("one_corrective_recheck")
+        with self.assertRaisesRegex(EVAL.EvalError, "ask-predicate coverage missing"):
+            self.validate(data)
+
+    def test_ask_predicate_case_rejects_retired_lifecycle_terms(self) -> None:
+        data = self.load_case("goal-dependent-branch-retry.dev.json")
+        data["must"].append("Preserve the " + "Task Contract between attempts.")
+        with self.assertRaisesRegex(EVAL.EvalError, "retired lifecycle term remains"):
+            self.validate(data)
+
+    def test_review_case_locks_stable_ids_blockers_and_one_recheck(self) -> None:
+        data = self.load_case("review-bounded-recheck.dev.json")
+        self.assertEqual(
+            set(data["expected"]["requires"]),
+            {"stable_finding_ids", "review_taxonomy", "blocker_classification", "one_corrective_recheck"},
+        )
+        self.validate(data)
+
+    def test_working_facts_case_rejects_missing_dependency_behavior(self) -> None:
+        data = self.load_case("working-facts-scope-correction.dev.json")
+        data["expected"]["requires"].remove("stale_delegated_results_discarded")
+        with self.assertRaisesRegex(EVAL.EvalError, "Working Facts coverage missing"):
+            self.validate(data)
+
+    def test_active_case_rejects_retired_stage_card_language(self) -> None:
+        data = self.load_case("working-facts-scope-correction.dev.json")
+        data["must"].append("Restore the " + "Stage Entry Card before continuing.")
+        with self.assertRaisesRegex(EVAL.EvalError, "retired workflow term remains"):
+            self.validate(data)
+
+
+class SemanticSourceMutationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.review = (ROOT / "skills/teamwork-review/SKILL.md").read_text(encoding="utf-8")
+        cls.goal = (ROOT / "skills/teamwork-goal/SKILL.md").read_text(encoding="utf-8")
+        cls.role_playbook = (
+            ROOT / "skills/using-teamwork/references/role-playbook.md"
+        ).read_text(encoding="utf-8")
+
+    def test_rejects_retired_review_severity_taxonomy(self) -> None:
+        mutated = self.review.replace(
+            "one class: `BLOCKER`, `FOLLOW-UP`, or `SUGGESTION`",
+            "one class: `blocker`, `major`, or `minor`",
+        )
+        with self.assertRaisesRegex(EVAL.EvalError, "review taxonomy must be"):
+            EVAL.validate_semantic_source_text(mutated, self.goal, self.role_playbook)
+
+    def test_rejects_retired_role_playbook_severity_taxonomy(self) -> None:
+        mutated = self.role_playbook.replace(
+            "`BLOCKER | FOLLOW-UP | SUGGESTION` findings",
+            "`blocker | major | minor` findings",
+        )
+        with self.assertRaisesRegex(EVAL.EvalError, "role-playbook.md: review taxonomy must be"):
+            EVAL.validate_semantic_source_text(self.review, self.goal, mutated)
+
+    def test_rejects_goal_activation_merely_when_available(self) -> None:
+        mutated = self.goal.replace(
+            "only when the user explicitly requests Goal mode or\naccepts a Goal Proposal",
+            "when available",
+        )
+        with self.assertRaisesRegex(EVAL.EvalError, "explicit user request or accepted Goal Proposal"):
+            EVAL.validate_semantic_source_text(self.review, mutated, self.role_playbook)
 
 
 if __name__ == "__main__":

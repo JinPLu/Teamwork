@@ -1,0 +1,26 @@
+{
+  "id": "goal-dependent-branch-retry",
+  "split": "dev",
+  "source": "trajectory",
+  "target": "skills/teamwork-goal/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Continue an accepted convergence goal after focused verification fails on a known local defect while an unrelated read-only evidence track remains runnable.",
+  "expected": {
+    "route": "retry_affected_branch",
+    "requires": ["affected_branch_only", "independent_work_continues", "native_goal_authority"]
+  },
+  "must": [
+    "retry only the branch affected by the failed evidence",
+    "preserve valid prior evidence and continue independent read-only work",
+    "record the changed evidence, local strategy, and focused verification result",
+    "use native goal state only after an explicit user request or accepted Goal Proposal"
+  ],
+  "must_not": [
+    "restart every Teamwork stage by default",
+    "block unrelated work on a decision or failure it does not depend on",
+    "enter native goal state merely because the capability is available",
+    "introduce persistent lifecycle state"
+  ],
+  "rubric": "behavioral-contracts",
+  "evidence": "Trajectory fixture for affected-branch convergence without versioned workflow state."
+}

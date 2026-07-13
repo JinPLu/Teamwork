@@ -16,8 +16,8 @@ runnable. For unclear failures, require diagnosis rather than a guessed fix.
 
 Use fresh context proportional to plan risk and preserve dissent when evidence
 is thin. Identify the minimum required fixes instead of redesigning the plan.
-Treat the accepted Contract and its acceptance criteria (ACs) as binding. Give
-each finding a stable ID (for example, `J-001`); only a Contract or AC failure
+Treat the accepted scope and acceptance criteria (ACs) as binding. Give each
+finding a stable ID (for example, `J-001`); only a scope or AC failure
 that blocks execution is a `BLOCKER`, while non-blocking quality work is a
 `FOLLOW-UP` or `SUGGESTION`. Do not expand scope. On a revision, recheck prior
 finding IDs and report only deltas when this host resumes the same agent;

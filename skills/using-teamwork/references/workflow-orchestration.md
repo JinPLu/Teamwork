@@ -39,11 +39,11 @@ verification and the independent review required by the accepted risk gate.
 
 ## Goal Retry Routing
 
-For a goal retry, preserve the Task Contract version and Goal Invariants while
-the failed claim remains in scope. Dispatch only the affected stage: Debug for
+For a goal retry, preserve accepted scope, criteria, authority, and Goal
+Invariants while the failed claim remains in scope. Dispatch only the affected stage: Debug for
 an unknown-cause reproducible failure, Execute for a known fix, and Research
-only for a broad evidence gap. Re-enter Plan only after an accepted scope or
-Contract delta creates a new Contract version. Re-run Review only when
+only for a broad evidence gap. Re-enter Plan only when accepted scope or
+criteria must change. Re-run Review only when
 acceptance claims changed or the final risk gate requires it. A failed targeted
 check without either condition must not replay the full workflow. Record the
 evidence-backed strategy delta; stop on repeated no progress rather than

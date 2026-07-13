@@ -1,0 +1,24 @@
+{
+  "id": "plan-ask-readiness",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/teamwork-plan/SKILL.md",
+  "platforms": ["codex"],
+  "prompt": "Plan a non-simple public workflow change. Inspect first, resolve discoverable facts, enter Grill for any remaining material user decision, and confirm a concise Decision Summary before the final plan. Do not implement or release anything.",
+  "expected": {
+    "route": "plan_then_grill_if_needed",
+    "requires": ["non_simple_auto_grill", "decision_summary", "no_execution_authority"]
+  },
+  "must": [
+    "auto-enter Grill for a non-simple plan after evidence has resolved discoverable facts",
+    "ask only material user decisions and confirm a concise Decision Summary before the final plan",
+    "treat confirmation as acceptance of planning decisions only"
+  ],
+  "must_not": [
+    "ask for repository facts the agent can discover",
+    "treat confirmation as implementation or release authority",
+    "add lifecycle packets or persistent state"
+  ],
+  "rubric": "behavioral-contracts",
+  "evidence": "Static Codex-first Plan ask-predicate contract; it does not prove live model behavior."
+}

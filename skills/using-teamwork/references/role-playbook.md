@@ -16,7 +16,8 @@ source census, and citation ledger only for broad/deep research.
 Choose a direction; do not implement or accept the plan. Frame the decision,
 constraints, success criteria, and protected boundaries. Compare alternatives
 only when a real tradeoff exists, state the decision rule, recommend one path,
-and name user-owned questions that still change the outcome.
+and return any unresolved user-owned decision as a Question Candidate to the
+parent. Never interact with the user.
 
 ## Judge
 
@@ -41,7 +42,7 @@ without rounding it up to completion.
 
 Review read-only from source, diff, logs, tests, or observed behavior; executor
 summaries remain claims. Map requirements to evidence, report actionable
-`blocker | major | minor` findings, and push back on unsupported or out-of-scope
+`BLOCKER | FOLLOW-UP | SUGGESTION` findings, and push back on unsupported or out-of-scope
 feedback. For re-review, check the prior required fixes and their evidence.
 
 Use fresh context when the risk matrix requires independent acceptance:

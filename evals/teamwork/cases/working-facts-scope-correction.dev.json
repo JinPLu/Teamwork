@@ -1,0 +1,23 @@
+{
+  "id": "working-facts-scope-correction",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/workflow-contract.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Begin an execution stage, then receive a user correction that changes the protected scope while delegated work based on the old scope is outstanding.",
+  "expected": {
+    "requires": ["working_facts_update", "dependent_work_pauses", "stale_delegated_results_discarded"]
+  },
+  "must": [
+    "update only the Working Facts affected by the user correction",
+    "pause work invalidated by or dependent on the changed facts",
+    "discard delegated results whose premises are stale and integrate still-valid independent results"
+  ],
+  "must_not": [
+    "treat the correction as optional context",
+    "restart unaffected work or rewrite facts the correction did not change",
+    "merge a returned result whose premises conflict with the corrected scope"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Deterministic Working Facts control for user-authoritative scope corrections and dependency-scoped invalidation."
+}

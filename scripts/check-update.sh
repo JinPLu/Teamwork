@@ -55,7 +55,8 @@ Usage:
   ./scripts/check-update.sh [--readiness] [--project PATH] [--no-fetch]
 
 Report Teamwork install freshness: package version, global/project surfaces,
-bootstrap policy, agent inventory, and best-effort upstream/model drift.
+bootstrap policy, agent inventory, and best-effort upstream, remote-tag,
+GitHub-Release, and model drift.
 
 Options:
   --readiness     Compact machine-friendly output for teamwork-init gate
@@ -368,10 +369,13 @@ policy_status() {
   if [[ -f "$file" ]] \
     && grep -q "$marker" "$file" \
     && grep -q "Work within the user's request" "$file" \
-    && grep -q 'Make routine reversible choices' "$file" \
+    && grep -q 'routine reversible choices' "$file" \
     && grep -q 'Route explicit grill/question-first' "$file" \
-    && grep -q 'Do not invent or hide their absence' "$file" \
-    && grep -q 'Installed agent files own model mappings' "$file"; then
+    && grep -q 'Ask only when the user must supply' "$file" \
+    && grep -q 'Pause only dependent work' "$file" \
+    && grep -q 'Never invent or hide gaps' "$file" \
+    && grep -q 'Delegate only worthwhile independent scope' "$file" \
+    && grep -q 'agents own models; active profile' "$file"; then
     echo "ok"
   else
     echo "missing"
@@ -438,6 +442,59 @@ upstream_version() {
     remote_version="$latest_tag"
   fi
   echo "$remote_version"
+}
+
+latest_remote_tag_version() {
+  (( FETCH_UPSTREAM )) || { echo ""; return 0; }
+  command -v git >/dev/null 2>&1 || { echo ""; return 0; }
+  git ls-remote --tags "${GITHUB_REPO%.git}.git" 2>/dev/null \
+    | awk -F/ '{print $NF}' \
+    | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' \
+    | sed 's/^v//' \
+    | sort -V \
+    | tail -n1 \
+    || true
+}
+
+github_repo_slug() {
+  local slug="$GITHUB_REPO"
+  case "$slug" in
+    https://github.com/*) slug="${slug#https://github.com/}" ;;
+    http://github.com/*) slug="${slug#http://github.com/}" ;;
+    git@github.com:*) slug="${slug#git@github.com:}" ;;
+    *) return 0 ;;
+  esac
+  slug="${slug%.git}"
+  slug="${slug%/}"
+  [[ "$slug" == */* && "$slug" != */*/* ]] || return 0
+  echo "$slug"
+}
+
+latest_github_release_version() {
+  (( FETCH_UPSTREAM )) || { echo ""; return 0; }
+  local slug tag=""
+  slug="$(github_repo_slug)"
+  [[ -n "$slug" ]] || { echo ""; return 0; }
+  if command -v gh >/dev/null 2>&1; then
+    tag="$(gh api "repos/$slug/releases/latest" --jq '.tag_name' 2>/dev/null || true)"
+  fi
+  if [[ -z "$tag" ]] && command -v curl >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+    tag="$(curl -fsSL "https://api.github.com/repos/$slug/releases/latest" 2>/dev/null \
+      | python3 -c 'import json,sys; print(json.load(sys.stdin).get("tag_name", ""))' 2>/dev/null \
+      || true)"
+  fi
+  printf '%s\n' "$tag" | sed -n -E 's/^v?([0-9]+\.[0-9]+\.[0-9]+)$/\1/p'
+}
+
+release_state() {
+  local published="$1" source="$2"
+  if semver_lt "$published" "$source"; then
+    echo "stale ($published -> $source)"
+  elif [[ "$published" == "$source" ]]; then
+    echo "current"
+  else
+    echo "ahead ($published)"
+  fi
 }
 
 git_local_state() {
@@ -526,10 +583,12 @@ print_readiness() {
 }
 
 print_report() {
-  local source_version upstream profile
+  local source_version upstream profile remote_tag github_release
   source_version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
   upstream="$(upstream_version)"
   profile="$(source_profile)"
+  remote_tag="$(latest_remote_tag_version)"
+  github_release="$(latest_github_release_version)"
 
   echo "=== Teamwork Update Report ==="
   echo "Checkout: $ROOT"
@@ -548,6 +607,20 @@ print_report() {
     fi
   else
     echo "Upstream VERSION: unavailable"
+  fi
+  if [[ -n "$remote_tag" ]]; then
+    echo "Remote tag VERSION: $remote_tag"
+    echo "Remote tag status: $(release_state "$remote_tag" "$source_version")"
+    [[ "$remote_tag" == "$source_version" ]] || note_issue
+  else
+    echo "Remote tag VERSION: unavailable"
+  fi
+  if [[ -n "$github_release" ]]; then
+    echo "GitHub Release VERSION: $github_release"
+    echo "GitHub Release status: $(release_state "$github_release" "$source_version")"
+    [[ "$github_release" == "$source_version" ]] || note_issue
+  else
+    echo "GitHub Release VERSION: unavailable"
   fi
   echo
 
@@ -669,6 +742,10 @@ print_report() {
   echo "4. Restart Codex after routing changes"
   echo "5. ./install.sh cursor-policy-copy  # copy, then paste into Cursor User Rules"
   echo "6. ./scripts/validate.sh       # maintainer or post-release sanity"
+  if [[ -n "$remote_tag" && "$remote_tag" != "$source_version" ]] \
+    || [[ -n "$github_release" && "$github_release" != "$source_version" ]]; then
+    echo "7. Maintainer release: publish v$source_version and its GitHub Release after approval"
+  fi
   echo
 
   if (( ISSUES > 0 )); then

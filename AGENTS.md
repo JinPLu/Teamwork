@@ -37,15 +37,22 @@ There is no separate test suite directory; `scripts/validate.sh` is the required
 
 Keep commits scoped to one logical change. Pull requests should describe workflow impact, changed skill or runtime entrypoints, validation output, and any compatibility risk for existing Codex, Cursor, or Claude Code installs.
 
+Stay on the current branch unless the user explicitly requests a branch or pull
+request, repository protection requires one, or the user accepts isolation for
+the task. Being on the default branch alone is not a reason to create an
+`agent/*` branch. A Teamwork maintainer release is owned end to end by
+`teamwork-update`; a generic GitHub publish/PR workflow does not replace version,
+changelog, tag, or GitHub Release work.
+
 ## Agent-Specific Instructions
 
 When editing workflow behavior, update the relevant `skills/*/SKILL.md` first and keep public docs focused on user value and usage. Use `teamwork-init` for project instruction setup, slimming, MCP policy, or appendix guidance. Preserve the role separation between research, debug, plan, execute, review, and goal stages, but do not add a separate debug role or force subagents or durable artifacts for simple native platform work. Prefer direct evidence from files, logs, tests, diffs, and artifacts before changing instructions.
 
 ## Teamwork Memory
 
-Runtime memory lives under `docs/teamwork/`. Read `docs/teamwork/README.md` first,
-then follow `index.json` active pointers. Do not inline volatile progress or
-experiment state here.
+Runtime memory lives under `docs/teamwork/`. Read `docs/teamwork/index.json`
+first, then use `docs/teamwork/README.md` for the retrieval protocol and follow
+the active pointers. Do not inline volatile progress or experiment state here.
 
 <!-- TEAMWORK_PROJECT_START -->
 ## Teamwork Project Instructions

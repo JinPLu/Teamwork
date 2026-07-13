@@ -182,6 +182,35 @@ REQUIRED_QUESTION_FIRST_CASES = {
     "grill-maintenance-marker-control": {"maintenance_not_activation", "no_grill_ceremony"},
     "grill-negative-signal-control": {"negative_signal_wins", "no_grill_ceremony"},
 }
+REQUIRED_ASK_PREDICATE_CASES = {
+    "ask-native-simple-control": {"simple_native", "zero_questions"},
+    "ask-discoverable-fact-control": {"discoverable_fact", "zero_questions"},
+    "ask-required-input-research": {"research_stage", "required_input", "ask_outside_grill"},
+    "ask-required-observation-debug": {"debug_stage", "required_observation", "ask_outside_grill"},
+    "ask-required-input-execute": {"execute_stage", "required_input", "ask_outside_grill"},
+    "ask-required-observation-review": {"review_stage", "required_observation", "ask_outside_grill"},
+    "ask-required-input-goal": {"goal_stage", "required_input", "ask_outside_grill"},
+    "plan-ask-readiness": {"non_simple_auto_grill", "decision_summary", "no_execution_authority"},
+    "review-bounded-recheck": {"stable_finding_ids", "review_taxonomy", "blocker_classification", "one_corrective_recheck"},
+    "goal-dependent-branch-retry": {"affected_branch_only", "independent_work_continues", "native_goal_authority"},
+    "ask-confirmation-authority": {"confirmation_only", "no_implementation_authority", "no_release_authority"},
+    "ask-subagent-root-ownership": {"question_candidate", "root_only_asks", "deduplicate"},
+    "ask-independent-readonly-progress": {"dependent_branch_only", "independent_read_only_continues"},
+    "ask-text-fallback": {"native_unavailable", "concise_text_fallback"},
+}
+REQUIRED_WORKING_FACTS_CASES = {
+    "working-facts-scope-correction": {
+        "working_facts_update",
+        "dependent_work_pauses",
+        "stale_delegated_results_discarded",
+    },
+}
+RETIRED_ACTIVE_CASE_TERMS = (
+    "stage entry card",
+    "truth identity",
+    "frozen card",
+    "scope delta gate",
+)
 GRILL_SEMANTIC_CASES = {
     "question-first-explicit-grill",
     "question-first-explicit-lightweight-grill",
@@ -251,6 +280,65 @@ AUTHORITY_GRANT_RE = re.compile(
 
 class EvalError(Exception):
     pass
+
+
+def validate_semantic_source_text(
+    review_text: str, goal_text: str, role_playbook_text: str
+) -> None:
+    review_taxonomy = "one class: `BLOCKER`, `FOLLOW-UP`, or `SUGGESTION`"
+    if review_taxonomy not in review_text:
+        raise EvalError(
+            "skills/teamwork-review/SKILL.md: review taxonomy must be "
+            "BLOCKER, FOLLOW-UP, or SUGGESTION"
+        )
+    if re.search(
+        r"(?i)one class:\s*`blocker`\s*,\s*`major`\s*,\s*(?:or\s*)?`minor`",
+        review_text,
+    ):
+        raise EvalError(
+            "skills/teamwork-review/SKILL.md: retired blocker/major/minor taxonomy remains"
+        )
+
+    role_taxonomy = "`BLOCKER | FOLLOW-UP | SUGGESTION` findings"
+    if role_taxonomy not in role_playbook_text:
+        raise EvalError(
+            "skills/using-teamwork/references/role-playbook.md: review taxonomy must be "
+            "BLOCKER | FOLLOW-UP | SUGGESTION"
+        )
+    if re.search(
+        r"(?i)`blocker\s*\|\s*major\s*\|\s*minor`",
+        role_playbook_text,
+    ):
+        raise EvalError(
+            "skills/using-teamwork/references/role-playbook.md: retired "
+            "blocker | major | minor taxonomy remains"
+        )
+
+    normalized_goal = " ".join(goal_text.split())
+    required_goal_authority = (
+        "Use Codex native goal state only when the user explicitly requests Goal mode or "
+        "accepts a Goal Proposal"
+    )
+    if required_goal_authority not in normalized_goal:
+        raise EvalError(
+            "skills/teamwork-goal/SKILL.md: native goal state requires an explicit user "
+            "request or accepted Goal Proposal"
+        )
+    if re.search(r"(?i)native goal state.{0,80}when available", normalized_goal):
+        raise EvalError(
+            "skills/teamwork-goal/SKILL.md: native goal state must not activate merely "
+            "when available"
+        )
+
+
+def validate_semantic_sources() -> None:
+    validate_semantic_source_text(
+        (ROOT / "skills/teamwork-review/SKILL.md").read_text(encoding="utf-8"),
+        (ROOT / "skills/teamwork-goal/SKILL.md").read_text(encoding="utf-8"),
+        (ROOT / "skills/using-teamwork/references/role-playbook.md").read_text(
+            encoding="utf-8"
+        ),
+    )
 
 
 def display_path(path: Path) -> str:
@@ -377,6 +465,33 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
     ):
         raise EvalError(f"{display_path(path)}: evidence must be a non-empty string or string list")
 
+    serialized_case = json.dumps(data, sort_keys=True).lower()
+    retired_case_terms = [
+        term for term in RETIRED_ACTIVE_CASE_TERMS if term in serialized_case
+    ]
+    if retired_case_terms:
+        raise EvalError(
+            f"{display_path(path)}: retired workflow term remains: "
+            f"{', '.join(retired_case_terms)}"
+        )
+
+    if case_id in REQUIRED_WORKING_FACTS_CASES:
+        requires = data["expected"].get("requires")
+        if not isinstance(requires, list) or not all(
+            isinstance(item, str) and item.strip() for item in requires
+        ):
+            raise EvalError(
+                f"{display_path(path)}: Working Facts expected.requires must be a string list"
+            )
+        missing_working_facts = sorted(
+            REQUIRED_WORKING_FACTS_CASES[case_id] - set(requires)
+        )
+        if missing_working_facts:
+            raise EvalError(
+                f"{display_path(path)}: Working Facts coverage missing: "
+                f"{', '.join(missing_working_facts)}"
+            )
+
     if case_id in SEMANTIC_QUESTION_CASES:
         retired = sorted(
             {"expected_question_ids", "blocked_route", "expected_close"} & set(data)
@@ -455,6 +570,36 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
                     f"{display_path(path)}: ordinary material clarification must define only "
                     "the public_cli_compatibility user decision"
                 )
+
+    if case_id in REQUIRED_ASK_PREDICATE_CASES:
+        requires = data["expected"].get("requires")
+        if not isinstance(requires, list) or not all(
+            isinstance(item, str) and item.strip() for item in requires
+        ):
+            raise EvalError(
+                f"{display_path(path)}: ask-predicate expected.requires must be a string list"
+            )
+        missing_coverage = sorted(REQUIRED_ASK_PREDICATE_CASES[case_id] - set(requires))
+        if missing_coverage:
+            raise EvalError(
+                f"{display_path(path)}: ask-predicate coverage missing: "
+                f"{', '.join(missing_coverage)}"
+            )
+        serialized = json.dumps(data, sort_keys=True).lower()
+        retired_terms = (
+            "task contract",
+            "contract version",
+            "finding state",
+            "finding-state",
+            "open blocker",
+            "resolved finding",
+            "waived finding",
+        )
+        present = [term for term in retired_terms if term in serialized]
+        if present:
+            raise EvalError(
+                f"{display_path(path)}: retired lifecycle term remains: {', '.join(present)}"
+            )
 
     rubric = data.get("rubric")
     if rubric is not None:
@@ -849,6 +994,7 @@ def validate_question_first_outputs(cases_by_id: dict[str, dict[str, Any]]) -> i
 
 
 def selected_cases(selection: str) -> list[dict[str, Any]]:
+    validate_semantic_sources()
     if not CASE_DIR.is_dir():
         raise EvalError("evals/teamwork/cases/ is missing")
     known_rubrics = validate_rubrics()
@@ -864,6 +1010,9 @@ def selected_cases(selection: str) -> list[dict[str, Any]]:
             raise EvalError(f"duplicate case id: {case_id}")
         seen.add(case_id)
         cases_by_id[case_id] = case
+    missing_ask_cases = sorted(set(REQUIRED_ASK_PREDICATE_CASES) - seen)
+    if missing_ask_cases:
+        raise EvalError(f"missing ask-predicate case(s): {', '.join(missing_ask_cases)}")
     output_rows = validate_question_first_outputs(cases_by_id)
     if selection == "all":
         selected = cases

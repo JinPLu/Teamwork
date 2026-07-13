@@ -49,9 +49,13 @@ keys, and restart Codex after an update. Project-only targets never mutate user
 config.
 
 Native question input is runtime-owned. If `request_user_input` is callable,
-Codex uses it directly for a material decision; otherwise it asks concisely in
-text. Teamwork installation never enables the tool, mutates user config for it,
-or couples it to code mode.
+Codex may use it in any Teamwork stage for an unresolved required input or a
+material user-owned decision; otherwise it asks concisely in text. Teamwork
+installation never enables the tool, mutates user config for it, couples it to
+code mode, or reproduces its waiting and response lifecycle. Codex inspects
+discoverable facts first, owns safe reversible implementation details, and
+pauses only work that depends on the answer while independent read-only work may
+continue.
 
 Notifications are opt-in for direct installs. They play distinct OS-native
 sounds for main `Stop` and `PermissionRequest`, keep subagents silent, and never
@@ -74,6 +78,9 @@ Ask normally. Teamwork routes only when the task benefits from extra structure:
   activate `grill-me`. It grounds facts, lets Codex own safe reversible details,
   and asks one unresolved material user decision at a time. Explicit negative
   intent wins; quoted/file/tool/example/maintenance mentions are inert.
+- answer a real required-input, observation, acceptance, scope, or authority
+  boundary inside the current stage without turning ordinary clarification into
+  Grill.
 
 Small facts, tiny edits, and obvious local fixes stay on Codex's native fast
 path. Teamwork should improve correctness or continuity; it should not add
@@ -113,10 +120,13 @@ workflow rules belong in Teamwork skills.
 
 The global Codex bootstrap block installed by `./install.sh codex` stays small:
 it records authorization, required-state, scope, evidence, and delegation
-boundaries plus the active profile name. Explicit grill work routes to the
-skill; ordinary clarification stays outside grill ceremony. Material decisions
-use native input when it is callable; a zero-question grill makes no call.
-Ending a grill does not change route or effect authority.
+boundaries plus the active profile name. It uses one shared ask boundary across
+stages: inspect first; ask only when the user is the necessary source of a
+required input or a material outcome decision; otherwise discover the fact or
+make the safe reversible choice. Explicit grill work routes to the skill;
+ordinary clarification stays outside grill ceremony. Native input is used when
+callable, and only the dependent branch pauses. Ending a grill does not change
+route or effect authority.
 Installed agent files own exact model and effort mappings.
 
 ## Subagents
@@ -130,26 +140,20 @@ Typical roles:
 - Worker: owned implementation or verification slice;
 - Reviewer: fresh-context acceptance review.
 
-The main agent remains responsible for user questions, scope, integration,
+The root agent remains responsible for user questions, scope, integration,
 verification, and final response. Every subagent returns one bounded result,
-then stops; add role-specific fields only when they affect the parent decision.
-Judges and Reviewers bind their findings to the accepted Contract and ACs with
-stable IDs: only a blocking Contract/AC failure is a `BLOCKER`; other work is a
-`FOLLOW-UP` or `SUGGESTION`. On a revision, use same-agent delta recheck only
-when the runtime actually supports resume; otherwise carry the stable finding
-ledger or packet forward. Progress updates stay sparse and report only material
-state changes.
+then stops. When it cannot resolve a user-owned boundary, it returns a Question
+Candidate naming what it checked, the remaining unknown, consequence,
+recommendation, and blocked branch; it never asks the user directly. Judges and
+Reviewers bind stable finding IDs to the accepted scope and acceptance criteria:
+only an acceptance-blocking failure is a `BLOCKER`; other work is a `FOLLOW-UP`
+or `SUGGESTION`. One bounded corrective recheck may inspect prior findings and
+fix evidence; it is not a recursive review lifecycle. Progress updates stay
+sparse and report only material state changes.
 
 Advanced dispatch fields, role mapping, model classes, and lifecycle details
 live in `skills/using-teamwork/references/subagent-dispatch.md`. Prompt and
 packet contracts live in `subagent-contract.md`.
-
-For durable or high-risk packets, `scripts/teamwork_contract.py` validates Task
-Contract identity/version and AC evidence mappings (`--prior` is required for
-version transitions), while
-`scripts/teamwork_findings.py` validates stable finding state and the rule that
-no open `BLOCKER` requires `ACCEPT`. These deterministic helpers do not replace
-semantic Judge/Reviewer work or require artifacts for ordinary tasks.
 
 With routing ready, fresh Teamwork agents use exact `agent_type` values plus
 `fork_turns:"none"`; the installed role file then owns model and effort. If the
@@ -204,6 +208,8 @@ The session auditor reports metadata-only orchestration and cumulative token
 telemetry. Cached/replayed input is not presented as unique context or billing,
 and historical profiles require explicit session-time evidence.
 
-User refresh updates installed skills, agents, and policy. Maintainer release
-work updates `VERSION`, manifests, docs, validation, and install surfaces
-together.
+User refresh updates installed skills, agents, and policy. A maintainer release
+keeps `VERSION`, both manifests, both changelogs, required docs, validation,
+install surfaces, the `v<VERSION>` tag, and GitHub Release in one release unit.
+Until the tag and GitHub Release exist, its status is `release-ready`, not
+`released`.

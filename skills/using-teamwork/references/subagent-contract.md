@@ -1,7 +1,8 @@
 # Subagent Contract
 
 Use only after `subagent-dispatch.md` decides delegation has net value. The
-parent owns scope, integration, user questions, and final acceptance.
+parent owns scope, integration, user questions, and final acceptance. Subagents
+never interact with the user or operate an interaction lifecycle.
 
 ## Prompt
 
@@ -27,6 +28,22 @@ nothing, and return again immediately.
 Lifecycle verdicts are `accept | revise | blocked`. Reserve `rejected` for a
 hypothesis, option, source, or data item and include the reason.
 
+## Question Candidate
+
+When work encounters a possible Ask Gate trigger, do not ask. Return this compact
+candidate to the parent, which decides whether the root should ask and lets the
+host own UI, wait, timeout, and resume:
+
+```text
+Question Candidate:
+- Checked: <evidence/config/source already inspected>
+- Remaining unknown: <required input, observation, or decision>
+- Why user-owned/required: <why the agent cannot own or discover it>
+- Consequence: <dependent action, public outcome, acceptance, or authority>
+- Recommendation: <evidence-backed choice or requested observation>
+- Blocked branch: <only the dependent work>
+```
+
 ## Base Result
 
 Return the smallest result that preserves the parent's decision evidence:
@@ -46,19 +63,19 @@ Next: <parent decision, follow-up evidence, or none>
 - **Explorer:** question, sources/files read, direct findings, material
   inference, confidence, dissent, and coverage gap. Add a source census or
   citation ledger only for broad/deep research.
-- **Designer:** decision, decision rule, real alternatives and tradeoffs, open
-  user-owned decisions.
+- **Designer:** decision, decision rule, real alternatives and tradeoffs, and
+  any Question Candidate.
 - **Judge:** plan source, evidence/scope/verification adequacy, acceptance gap,
   and smallest required fixes.
 - **Worker:** owned scope, acceptance-criterion change/evidence map, focused
-  verification, discovery classification (`regression`, `contract_violation`,
-  `pre_existing`, `scope_delta`, or `suggestion`), deviations,
+  verification, discovery classification (`regression`,
+  `accepted_scope_violation`, `pre_existing`, `out_of_scope`, or `suggestion`), deviations,
   protected-boundary hits, and blocker. Add repro, root-cause, TDD, or cleanup
   evidence only when that protocol was used.
 - **Reviewer:** review target, fresh/recheck status, requirements/evidence map,
-  stable-ID actionable findings classified `BLOCKER`, `FOLLOW-UP`,
-  `SUGGESTION`, or `SCOPE_DELTA`, verification reviewed, and residual risk.
-  No open `BLOCKER` requires `ACCEPT`; follow-ups do not block acceptance.
+  stable-ID actionable findings classified `BLOCKER`, `FOLLOW-UP`, or
+  `SUGGESTION`, verification reviewed, and residual risk.
+  `ACCEPT` requires no open `BLOCKER`; follow-ups do not block acceptance.
 
 For goal retries, add Goal Invariants, prior failed evidence, strategy delta,
 drift, and retry/stop verdict. For durable-memory work, subagents may propose a

@@ -64,6 +64,9 @@ The managed Claude policy permits read-only evidence while the root owns user
 questions and keeps quoted/file/tool/example/maintenance text inert. Use a
 structured question tool when the current runtime exposes one; otherwise ask
 concisely in text. Teamwork does not emulate or version-gate that host capability.
+The same input may carry a required input or material decision inside Research,
+Debug, Execute, Review, or Goal without switching stages or entering Grill;
+only work that depends on the answer pauses.
 
 ## Planning
 
@@ -89,11 +92,12 @@ agents:
 
 Every subagent returns one packet and stops. The main agent owns integration,
 verification, memory decisions, and the final response.
-Judges and Reviewers bind findings to the accepted Contract and ACs with stable
-IDs: only a blocking Contract/AC failure is a `BLOCKER`; other work is a
-`FOLLOW-UP` or `SUGGESTION`. Claude Code has no assumed same-agent resume, so a
-revision carries the stable finding ledger or packet forward rather than claiming
-a delta recheck. Progress updates stay sparse and report only material state changes.
+Judges and Reviewers bind stable finding IDs to the accepted scope and
+acceptance criteria: only an acceptance-blocking failure is a `BLOCKER`; other
+work is a `FOLLOW-UP` or `SUGGESTION`. At most one bounded corrective recheck
+inspects prior findings and fix evidence. Subagents never ask the user directly;
+they return Question Candidates for the root to validate and deduplicate.
+Progress updates stay sparse and report only material state changes.
 
 Shared dispatch and model-class rules live in
 `skills/using-teamwork/references/subagent-dispatch.md`. Prompt and packet

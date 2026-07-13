@@ -104,17 +104,26 @@ check_lean_policy() {
   local file="$1"
   local profile="$2"
   local label="$3"
-  word_count_max "$file" 190 "$label must remain a guard-only global policy"
+  local policy_words
+  policy_words="$(awk '
+    /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_START -->/ { inside = 1 }
+    inside { print }
+    /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_END -->/ { inside = 0 }
+  ' "$file" | wc -w | tr -d ' ')"
+  [[ "$policy_words" -le 190 ]] \
+    || fail "$label must remain a guard-only global policy ($policy_words > 190)"
   grep_required "Work within the user's request" "$file" "$label must preserve request scope"
-  grep_required 'Make routine reversible choices' "$file" "$label must permit routine reversible choices"
+  grep_required 'routine reversible choices' "$file" "$label must permit routine reversible choices"
   grep_required 'Route explicit grill/question-first' "$file" \
     "$label must route explicit grill intent"
-  grep_required 'Do not invent or hide their absence' "$file" "$label must preserve required-state safety"
-  grep_required 'Delegate only independent accepted-scope work worth coordination' "$file" \
+  grep_required 'Never invent or hide gaps' "$file" "$label must preserve required-state safety"
+  grep_required 'Ask only when the user must supply' "$file" "$label must preserve the shared ask boundary"
+  grep_required 'Pause only dependent work' "$file" "$label must scope unresolved-question blocking"
+  grep_required 'Delegate only worthwhile independent scope' "$file" \
     "$label must keep delegation economic"
-  grep_required 'Installed agent files own model mappings' "$file" \
+  grep_required 'agents own models; active profile' "$file" \
     "$label must keep model mappings out of global policy"
-  grep_required "active profile: ${profile}\. Use project-local" "$file" "$label must record active profile $profile"
+  grep_required "active profile: ${profile}\. Use project-local init" "$file" "$label must record active profile $profile"
   if [[ "$label" == *Cursor* || "$label" == *Claude* ]]; then
     ! grep -Eq 'request_user_input|Codex CLI|Codex native|every material user decision|grill ceremony|text choice card' "$file" \
       || fail "$label must not contain Codex-native adapter wording"
@@ -328,8 +337,45 @@ PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_live_eval_runner.py" >/dev
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_eval_teamwork_mutations.py" >/dev/null
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_routing_config.py" >/dev/null
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_app_server_user_input.py" >/dev/null
-PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_teamwork_contract.py" >/dev/null
-PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_teamwork_findings.py" >/dev/null
+grep_required 'one class: `BLOCKER`, `FOLLOW-UP`, or `SUGGESTION`' \
+  "$ROOT/skills/teamwork-review/SKILL.md" \
+  "review taxonomy must remain BLOCKER, FOLLOW-UP, or SUGGESTION"
+grep_required '`BLOCKER | FOLLOW-UP | SUGGESTION` findings' \
+  "$ROOT/skills/using-teamwork/references/role-playbook.md" \
+  "role playbook taxonomy must remain BLOCKER | FOLLOW-UP | SUGGESTION"
+grep_absent '`blocker | major | minor`' \
+  "role playbook must not restore blocker | major | minor taxonomy" \
+  "$ROOT/skills/using-teamwork/references/role-playbook.md"
+grep_required 'Use Codex native goal state only when the user explicitly requests Goal mode or' \
+  "$ROOT/skills/teamwork-goal/SKILL.md" \
+  "native goal state must require explicit user request or accepted Goal Proposal"
+grep_required 'accepts a Goal Proposal' "$ROOT/skills/teamwork-goal/SKILL.md" \
+  "native goal state must accept an approved Goal Proposal"
+grep_absent 'native goal state.*when available' \
+  "native goal state must not activate merely when available" \
+  "$ROOT/skills/teamwork-goal/SKILL.md"
+[[ ! -e "$ROOT/scripts/teamwork_contract.py" && ! -e "$ROOT/scripts/test_teamwork_contract.py" ]] \
+  || fail "retired Task Contract validator must remain absent"
+[[ ! -e "$ROOT/scripts/teamwork_findings.py" && ! -e "$ROOT/scripts/test_teamwork_findings.py" ]] \
+  || fail "retired Finding-state validator must remain absent"
+for case_id in \
+  ask-native-simple-control ask-discoverable-fact-control \
+  ask-required-input-research ask-required-observation-debug \
+  ask-required-input-execute ask-required-observation-review ask-required-input-goal \
+  plan-ask-readiness review-bounded-recheck goal-dependent-branch-retry \
+  ask-confirmation-authority ask-subagent-root-ownership \
+  ask-independent-readonly-progress ask-text-fallback; do
+  [[ -f "$ROOT/evals/teamwork/cases/$case_id.dev.json" ]] \
+    || fail "missing ask-predicate eval case: $case_id"
+done
+while IFS= read -r active_source; do
+  if grep -Eiq 'Task Contract|Contract version|Finding-state|Finding state|FINDING_STATUSES|base_review_id|corrective delta review|Replay Preflight|Stage Entry Card|truth identity|frozen card|scope delta gate' "$active_source"; then
+    fail "retired workflow lifecycle term remains in ${active_source#"$ROOT"/}"
+  fi
+done < <(
+  find "$ROOT/skills" "$ROOT/templates" "$ROOT/evals/teamwork/cases" "$ROOT/evals/teamwork/rubrics" \
+    -type f ! -name '*.pyc' ! -path '*/__pycache__/*' | sort
+)
 grep_absent 'parse_close_packet\|expected_question_ids\|expected_close\|blocked_route\|pilot_only\|activation_evidence' \
   "active grill eval code must not restore the retired lifecycle or native-promotion schema" \
   "$ROOT/scripts/run-teamwork-live-eval.py" "$ROOT/scripts/codex_app_server_user_input.py"
@@ -493,20 +539,13 @@ assert report["aggregate"]["operational_token_telemetry"]["total_tokens"] == 165
 PY
 
 # --- Top-level docs ---
-grep_required 'Codex + Cursor + Claude Code' "$ROOT/README.md" "README must state Codex + Cursor + Claude Code positioning"
-grep_required 'teamwork-update' "$ROOT/README.md" "README must document teamwork-update"
+grep_required 'Codex、Cursor 和 Claude Code' "$ROOT/README.md" "README must name all supported platforms"
+grep_required 'Codex-first' "$ROOT/README.md" "README must state Codex-first positioning"
 grep_required 'check-update.sh' "$ROOT/README.md" "README must document check-update script"
-grep_required 'check-codex-routing.py' "$ROOT/README.md" "README must document Codex routing readiness"
-grep_required 'teamwork-init' "$ROOT/README.md" "README must document teamwork-init"
-grep_required 'VERSION' "$ROOT/README.md" "README must document package version source"
 grep_required '\[English\](README.en.md)' "$ROOT/README.md" "default README must link to English README"
-grep_required 'docs/teamwork/research/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" "README must document research artifact path"
-grep_required 'docs/teamwork/plans/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" "README must document plan artifact path"
-grep_required 'docs/teamwork/reports/YYYY-MM-DD-<slug>.md' "$ROOT/README.md" "README must document report artifact path"
-grep_required './install.sh --link codex' "$ROOT/README.md" "README must document Codex link-mode development install"
-grep_required 'no-codex-routing' "$ROOT/README.md" "README must document Codex routing ownership opt-out"
-grep_required '最多 8 个 subagent' "$ROOT/README.md" "README must document the Codex subagent limit"
-grep_required 'grill-me' "$ROOT/README.md" "README must document the public grill-me interaction skill"
+grep_required '\[Codex\](CODEX.md)' "$ROOT/README.md" "README must link to the detailed Codex guide"
+grep_required '\[Cursor\](CURSOR.md)' "$ROOT/README.md" "README must link to the detailed Cursor guide"
+grep_required '\[Claude Code\](CLAUDE.md)' "$ROOT/README.md" "README must link to the detailed Claude Code guide"
 check_markdown_local_images "$ROOT/README.md"
 grep_required '^# 更新日志' "$ROOT/CHANGELOG.md" "CHANGELOG must have a Chinese top-level heading"
 grep_required '\[English\](CHANGELOG.en.md)' "$ROOT/CHANGELOG.md" "default CHANGELOG must link to English CHANGELOG"
@@ -517,16 +556,12 @@ grep_required "## $(tr -d '[:space:]' < "$ROOT/VERSION") -" "$ROOT/CHANGELOG.en.
 [[ -f "$ROOT/README.en.md" ]] || fail "missing English README"
 git -C "$ROOT" ls-files --error-unmatch "README.en.md" >/dev/null 2>&1 || fail "README.en.md must be tracked by git"
 grep_required '\[中文\](README.md)' "$ROOT/README.en.md" "English README must link to default Chinese README"
-grep_required 'Codex + Cursor + Claude Code' "$ROOT/README.en.md" "English README must state Codex + Cursor + Claude Code positioning"
-grep_required 'teamwork-update' "$ROOT/README.en.md" "English README must document teamwork-update"
+grep_required 'Codex, Cursor, and Claude Code' "$ROOT/README.en.md" "English README must name all supported platforms"
+grep_required 'Codex-first skill package' "$ROOT/README.en.md" "English README must state Codex-first positioning"
 grep_required 'check-update.sh' "$ROOT/README.en.md" "English README must document check-update script"
-grep_required 'check-codex-routing.py' "$ROOT/README.en.md" \
-  "English README must document Codex routing readiness"
-grep_required 'VERSION' "$ROOT/README.en.md" "English README must document package version source"
-grep_required './install.sh --link codex' "$ROOT/README.en.md" "English README must document Codex link-mode development install"
-grep_required 'no-codex-routing' "$ROOT/README.en.md" "English README must document Codex routing ownership opt-out"
-grep_required 'up to eight' "$ROOT/README.en.md" "English README must document the Codex subagent limit"
-grep_required 'grill-me' "$ROOT/README.en.md" "English README must document the public grill-me interaction skill"
+grep_required '\[Codex guide\](CODEX.md)' "$ROOT/README.en.md" "English README must link to the detailed Codex guide"
+grep_required '\[Cursor guide\](CURSOR.md)' "$ROOT/README.en.md" "English README must link to the detailed Cursor guide"
+grep_required '\[Claude Code guide\](CLAUDE.md)' "$ROOT/README.en.md" "English README must link to the detailed Claude Code guide"
 check_markdown_local_images "$ROOT/README.en.md"
 grep_required 'Codex + Cursor + Claude Code skill package' "$ROOT/AGENTS.md" "AGENTS.md must describe the package"
 grep_required 'teamwork-update' "$ROOT/AGENTS.md" "AGENTS.md must document update skill ownership"
@@ -586,13 +621,25 @@ grep_absent 'configure_codex_native_questions\|codex-native-questions\|default_m
 grep_required 'one main thread plus up to eight' "$ROOT/install.sh" \
   "installer help must document the root-inclusive thread limit"
 grep_required 'codex_routing_status' "$ROOT/scripts/check-update.sh" "check-update must inspect Codex routing"
+grep_required 'latest_remote_tag_version' "$ROOT/scripts/check-update.sh" \
+  "check-update must inspect the latest remote semver tag"
+grep_required 'latest_github_release_version' "$ROOT/scripts/check-update.sh" \
+  "check-update must inspect the latest GitHub Release"
 grep_required 'codex-routing' "$ROOT/skills/teamwork-init/SKILL.md" "teamwork-init must repair routing readiness"
 grep_required 'Native interaction tools are host capabilities' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init must keep interaction capability host-owned"
 grep_required 'never enabled by Teamwork' "$ROOT/skills/teamwork-update/SKILL.md" \
   "teamwork-update must keep interaction capability runtime-owned"
+for release_contract in 'One release unit contains' 'both changelogs' '`v<VERSION>` tag' 'GitHub Release' 'report `release-ready`, not `released`' 'default branch alone never'; do
+  grep_required "$release_contract" "$ROOT/skills/teamwork-update/SKILL.md" \
+    "teamwork-update missing atomic release contract: $release_contract"
+done
+grep_required 'Being on the default branch alone is not a reason' "$ROOT/AGENTS.md" \
+  "project Git policy must not create branches only because the current branch is default"
 grep_required 'codex-routing' "$ROOT/skills/using-teamwork/references/check-update.md" \
   "update readiness reference must report Codex routing drift"
+grep_required 'latest GitHub Release' "$ROOT/skills/using-teamwork/references/check-update.md" \
+  "check-update reference must report GitHub Release drift"
 grep_required 'tools belong to the current host/runtime' "$ROOT/skills/using-teamwork/references/check-update.md" \
   "update readiness reference must keep interaction capability host-owned"
 grep_absent 'default_mode_request_user_input\|codex-native-questions\|configure-codex-native-questions\|code_mode_only' \
@@ -679,7 +726,7 @@ grep_required 'quoted, file, tool, example, or maintenance mentions are inert' "
   "grill-me must keep non-user marker text inert"
 grep_required 'explicit negative intent wins' "$ROOT/skills/grill-me/SKILL.md" \
   "grill-me must honor explicit negative signals"
-for contract in 'discoverable evidence' 'safe, reversible, implementation-level details' 'unresolved user-owned choice' 'public behavior' 'compatibility' 'acceptance' 'cost' 'risk' 'irreversible action' 'one decision at a time' 'request_user_input' 'when it is callable' "Do not route the native input tool through a code executor" 'Ordinary clarification' 'does not grant implementation authority'; do
+for contract in 'Ask Gate' 'discoverable evidence' 'safe, reversible, implementation-level details' 'one decision at a time' "root asks" "host's native interaction surface" 'host owns waiting' "Do not route native input through a code executor" 'Ordinary clarification' 'does not grant implementation authority'; do
   grep_required "$contract" "$ROOT/skills/grill-me/SKILL.md" "grill-me missing minimal semantic contract: $contract"
 done
 for retired_field in 'Exit authority:' 'Implementation authority:' 'Close basis: no material user-owned decision remains' 'Alternatives:'; do
@@ -690,9 +737,9 @@ grep_absent 'After five assistant questions\|five_question_checkpoint' \
   "grill-me must not restore a five-question quota" "$ROOT/skills/grill-me" "$ROOT/scripts/eval-teamwork.py" "$ROOT/evals/teamwork/cases"
 grep_required 'routine reversible' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must allow routine autonomous choices"
-for contract in 'Ordinary clarification never activates `grill-me`' 'Interaction transport is' 'host-owned' 'Teamwork never enables or emulates a host capability'; do
+for contract in '## Ask Gate' 'necessary source' 'unresolved required input or observation' 'material decision' 'safe, reversible implementation details' 'Pause only the dependent' 'independent read-only work may continue' 'root agent alone asks' 'Question Candidates' 'host owns the interaction UI' 'Teamwork neither enables nor emulates'; do
   grep_required "$contract" "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
-    "workflow contract must preserve the ordinary clarification transport owner: $contract"
+    "workflow contract must preserve the shared ask boundary: $contract"
 done
 grep_required 'Do not invent required state' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must preserve bootstrap safety"
@@ -740,7 +787,7 @@ grep_required 'only when breadth makes' "$ROOT/skills/using-teamwork/references/
   "research matrices must be conditional"
 grep_required 'not an acceptance' \
   "$ROOT/skills/using-teamwork/references/plan-output.md" "plan format must remain flexible"
-for anchor in 'Codex Plan Mode Bridge' 'request_user_input' 'execution-critical value' 'Readiness gate'; do
+for anchor in 'Codex Plan Mode Bridge' 'shared Ask Gate' "host's native" 'execution-critical value' 'Readiness gate'; do
   grep_required "$anchor" "$ROOT/skills/using-teamwork/references/plan-output.md" \
     "Codex Plan mode bridge must preserve $anchor"
 done
@@ -1290,6 +1337,26 @@ project_update="$tmp/project-update"
 mkdir -p "$project_update"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
 routing_update_config="$tmp/home-project-update/.codex/config.toml"
+
+release_remote="$tmp/release-state.git"
+release_work="$tmp/release-state-work"
+env -u GIT_INDEX_FILE git init --bare "$release_remote" >/dev/null
+env -u GIT_INDEX_FILE git init "$release_work" >/dev/null
+env -u GIT_INDEX_FILE git -C "$release_work" \
+  -c user.name=Teamwork -c user.email=teamwork@example.invalid \
+  -c commit.gpgsign=false commit --allow-empty -m fixture >/dev/null
+env -u GIT_INDEX_FILE git -C "$release_work" tag v0.0.1
+env -u GIT_INDEX_FILE git -C "$release_work" remote add origin "$release_remote"
+env -u GIT_INDEX_FILE git -C "$release_work" push origin HEAD:main --tags >/dev/null
+TEAMWORK_GITHUB_REPO="$release_remote" HOME="$tmp/home-project-update" \
+  "$ROOT/scripts/check-update.sh" > "$tmp/release-state.out" || true
+grep_required '^Remote tag VERSION: 0\.0\.1$' "$tmp/release-state.out" \
+  "check-update must read a remote semver tag"
+grep_required '^Remote tag status: stale (0\.0\.1 -> ' "$tmp/release-state.out" \
+  "check-update must report stale remote tag drift"
+grep_required '^GitHub Release VERSION: unavailable$' "$tmp/release-state.out" \
+  "check-update must keep non-GitHub release state best-effort"
+
 sed 's/tool_namespace = "teamwork"/tool_namespace = "collaboration"/' \
   "$routing_update_config" > "$tmp/stale-routing.toml"
 mv "$tmp/stale-routing.toml" "$routing_update_config"

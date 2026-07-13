@@ -16,9 +16,9 @@ blast radius, security or destructive risk, public contracts, protected
 boundaries, evidence, required values, stop rules, verification, and acceptance.
 For unclear failures, require diagnosis rather than a guessed fix.
 Deep/max scrutiny is an evidence-triggered escalation for the supplied risk, not
-a default or a reason to change model effort. Treat the accepted Contract and
-its ACs as binding. Give each finding a stable ID (for example, `J-001`);
-classify only execution-blocking Contract/AC failures as `BLOCKER` and record
+a default or a reason to change model effort. Treat the accepted scope and
+acceptance criteria (ACs) as binding. Give each finding a stable ID (for example, `J-001`);
+classify only execution-blocking scope/AC failures as `BLOCKER` and record
 non-blocking quality work as `FOLLOW-UP` or `SUGGESTION`. Do not expand scope.
 On revision, recheck prior IDs and report only deltas when same-agent resume is
 supported; otherwise use the supplied stable finding ledger or packet without

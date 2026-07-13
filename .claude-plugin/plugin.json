@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "2.17.0",
+  "version": "2.18.0",
   "description": "Claude Code adapter skills for lean evidence-first planning, bounded Task subagents, review, durable goal convergence, and opt-in lifecycle sounds.",
   "author": {
     "name": "JinPLu",

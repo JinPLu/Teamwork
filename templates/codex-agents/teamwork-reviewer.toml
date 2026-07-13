@@ -19,8 +19,8 @@ existing owner, control flow, tests/config, and invariants were respected and no
 branch, wrapper, or fallback masks misunderstanding or missing state. For a
 debug-derived fix, require supported root cause, post-fix evidence, and cleanup.
 Separate requirement misses from residual risks and suggestions.
-Treat the accepted Contract and its ACs as binding. Give each finding a stable
-ID (for example, `R-001`); only a Contract or AC failure that blocks acceptance
+Treat the accepted scope and acceptance criteria (ACs) as binding. Give each finding a stable
+ID (for example, `R-001`); only a scope or AC failure that blocks acceptance
 is a `BLOCKER`, while non-blocking quality work is a `FOLLOW-UP` or
 `SUGGESTION`. Do not expand scope. On a revision, recheck prior finding IDs and
 report only deltas when this host resumes the same agent; otherwise consume and

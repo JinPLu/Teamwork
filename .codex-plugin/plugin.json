@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "2.17.0",
+  "version": "2.18.0",
   "description": "Codex-first skills (also installable on Cursor and Claude Code) for lean evidence-first collaboration, bounded subagents, review, goal convergence, and opt-in lifecycle sounds.",
   "author": {
     "name": "JinPLu",

@@ -20,15 +20,19 @@
     },
     {
       "name": "plan_readiness",
-      "description": "A proposed plan maps requirements to owned actions and proof, sources execution-critical values, preserves unresolved blockers, and is executable without reopening design."
+      "description": "A proposed plan states accepted scope and criteria, maps them to owned actions and proof, sources execution-critical values, and leaves only genuinely dependent work unresolved."
     },
     {
-      "name": "plan_grill_authority",
-      "description": "Non-simple planning resolves evidence first, asks only material user-owned decisions one at a time, confirms a Decision Summary before the final plan, and keeps implementation authority separate from plan confirmation."
+      "name": "ask_predicate_and_authority",
+      "description": "Simple or discoverable work asks nothing; required input, observation, material decisions, and confirmations ask in any applicable stage, with Plan auto-entering Grill only when non-simple, and confirmation granting no implementation or release authority."
     },
     {
-      "name": "convergence_monotonicity",
-      "description": "Reviews preserve stable identities, distinguish direct regressions from unrelated findings and pre-existing follow-ups, never accept with blockers, version contracts only for accepted scope deltas, and retry only the affected goal stage."
+      "name": "bounded_review_and_progress",
+      "description": "Reviews keep stable finding IDs, classify acceptance blockers, allow one bounded corrective recheck, and pause only dependent branches while independent read-only work continues."
+    },
+    {
+      "name": "question_ownership",
+      "description": "Subagents return deduplicatable Question Candidates, the root alone asks the user, and hosts without a native input tool use one concise text question."
     },
     {
       "name": "release_governance",

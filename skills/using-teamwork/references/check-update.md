@@ -7,6 +7,7 @@ Use with `teamwork-init` (readiness gate) and `teamwork-update` (user refresh).
 `./scripts/check-update.sh` reports Teamwork-controlled surfaces only:
 
 - checkout `VERSION` vs upstream GitHub `VERSION`
+- best-effort remote semver tag and latest GitHub Release vs checkout `VERSION`
 - global skills/agents under `~/.codex`, `~/.cursor`, `~/.claude`
 - skill file content drift against this checkout
 - bounded Codex custom-agent routing readiness in `~/.codex/config.toml` (9 total threads: one main plus eight subagents)
@@ -58,9 +59,10 @@ Do not bump `VERSION` or edit plugin manifests in user mode.
 
 ## Maintainer Update Mode
 
-Use when changing Teamwork itself: semver bump, manifests, validation, release.
-Follow `teamwork-update` maintainer workflow; run `./scripts/check-update.sh`
-after `./install.sh all` to confirm surfaces match the new `VERSION`.
+For Teamwork semver, manifests, validation, or release, follow `teamwork-update` and run `./scripts/check-update.sh`
+before publication to record expected tag/Release drift, then again after
+publication to confirm installed surfaces, the remote tag, and GitHub Release
+all match the new `VERSION`.
 
 ## Out of Scope
 

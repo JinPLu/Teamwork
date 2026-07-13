@@ -16,9 +16,9 @@ For every code diff, apply the code-maintenance baseline: verify the existing
 owner, control flow, tests/config, and invariants were respected and no branch,
 wrapper, fallback, guessed value, or target switch masks missing state. For a
 debug-derived fix, require supported root cause, post-fix evidence, and cleanup.
-Deep/max scrutiny is only for the supplied evidence-triggered risk. Treat the accepted Contract and
-its ACs as binding. Give each finding a stable ID (for example, `R-001`);
-classify only acceptance-blocking Contract/AC failures as `BLOCKER` and record
+Deep/max scrutiny is only for the supplied evidence-triggered risk. Treat the accepted scope and
+acceptance criteria (ACs) as binding. Give each finding a stable ID (for example, `R-001`);
+classify only acceptance-blocking scope/AC failures as `BLOCKER` and record
 non-blocking quality work as `FOLLOW-UP` or `SUGGESTION`. Do not expand scope.
 On revision, recheck prior IDs and report only deltas when same-agent resume is
 supported; otherwise use the supplied stable finding ledger or packet without

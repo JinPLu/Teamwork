@@ -26,7 +26,8 @@ invent defaults to manufacture a repro. Form only as many plausible hypotheses
 as the evidence warrants and name discriminating evidence. Add minimal useful
 instrumentation, reproduce, reject unsupported explanations, and state the
 evidence-backed cause. Use human observation only when the agent cannot operate
-the relevant session or UI.
+the relevant session or UI; route that observation request through the root
+under the Ask Gate in `workflow-contract.md`.
 
 Implement only a user-accepted confirming fix. Afterward, rerun the same repro
 and remove temporary instrumentation without broadening cleanup.
@@ -38,9 +39,9 @@ bounded uncertainty, fix route, verification/cleanup, risk, and next route.
 
 ## Escalate
 
-Route to research when evidence is insufficient, plan when scope changes,
-execute when scope is accepted, or stop when required access/resources are
-missing.
+Route to research when evidence is insufficient, plan when accepted scope must
+change, execute when scope is accepted, or apply the Ask Gate before blocking on
+user-providable access, runtime values, or observation.
 
 ## Conditional Protocols
 

@@ -7,20 +7,12 @@ their methods; load other references only when their condition applies.
 
 1. **Act within authorization.** Once intent is clear, make routine reversible
    choices and proceed. Answer, research, diagnose, plan, and review do not
-   authorize writes. Ask only when a remaining user decision could materially
-   change scope, acceptance, public behavior, risk, or an irreversible action.
-   Ordinary clarification never activates `grill-me`. Interaction transport is
-   host-owned: use structured input when callable and concise text otherwise;
-   Teamwork never enables or emulates a host capability.
-   An explicit grill blocks only work dependent on an unresolved decision.
-   Valuable read-only evidence gathering may continue when no answer can
-   invalidate it; the root retains user-question ownership. Answering or closing
-   by itself grants no route/effect authority or erases inherited authority;
-   separately explicit wording may grant, revoke, or narrow it.
+   authorize writes. Answering or closing a question by itself grants no
+   route/effect authority or erases inherited authority; separately explicit
+   wording may grant, revoke, or narrow it.
 2. **Do not invent required state.** Required runtime values and invariants must
    come from the user, project instructions, source/config, tests, or an accepted
-   plan. Inspect first; then ask when the user can supply the gap, otherwise
-   block. A fallback is valid only when the accepted behavior names and verifies
+   plan. A fallback is valid only when the accepted behavior names and verifies
    it.
 3. **Stay in scope.** Do not modify unrelated files or broaden behavior to make
    a task pass. Get confirmation before destructive, credential-sensitive,
@@ -36,35 +28,29 @@ their methods; load other references only when their condition applies.
    evidence, time, or context-isolation value exceeds coordination cost. Main
    owns scope, integration, and final verification.
 
-## Task Contract
+## Ask Gate
 
-For non-native Teamwork work, establish one task-level contract before the
-first stage acts. Keep its Task Contract ID stable for the task and begin at
-version `v1`; later stages inherit it rather than refreezing a stage card. Native
-simple fast-path work needs no durable contract ceremony.
+Inspect discoverable evidence first. Ask only when the user is the necessary source
+of unresolved required input or observation, or owns a material decision that
+changes dependent action, public outcome, acceptance, or authority. The
+agent owns safe, reversible implementation details. Pause only the dependent
+branch; independent read-only work may continue when an answer cannot invalidate
+it. The root agent alone asks the user. Subagents return Question Candidates,
+never questions to the user. The host owns the interaction UI, waiting, timeout,
+and resume lifecycle; Teamwork neither enables nor emulates those capabilities.
 
-```text
-Task Contract ID: stable task identifier
-Version:        v1
-Goal:           outcome to produce
-Decision:       confirmed approach and material rejected alternatives
-Scope:          owned surface, non-goals, and protected boundaries
-Invariants:     behavior or constraints every stage must preserve
-Acceptance:     stable AC IDs mapped to change, evidence, and verification
-Truth identity: source/config/artifact version the work relies on
-Authority:      permitted reads, writes, and external effects
-Open blockers:  unresolved dependencies and affected actions
-Replan:         evidence or Scope Delta that creates a new version
-Stop:           completion, handoff, or blocker condition
-```
+Ordinary required input does not activate `grill-me`. Explicit grill requests
+and non-simple Plan use that interaction policy while still applying this gate.
 
-Keep the contract in the current prompt or accepted artifact. A proposed action
-outside it requires an explicit Scope Delta: new work, necessity, excluded
-alternatives, cost/risk, changed acceptance evidence, and smallest next action.
-Pause that action and obtain revised authority before proceeding, then issue the
-same Task Contract ID at the next version. A user correction supersedes conflicting
-premises and cancels any outstanding packet made invalid by it; integrate only
-still-valid results.
+## Working Facts
+
+Carry only the facts the work needs: goal, scope/non-goals, protected boundaries,
+invariants, acceptance criteria and evidence, authority, unresolved blockers,
+and stop conditions. Keep them in the current prompt or accepted artifact when
+continuity warrants it; simple work needs no ceremony. When evidence or a user
+correction changes a fact, update the affected work and discard invalidated
+premises or results. Work outside accepted scope or authority pauses until the
+root obtains the required decision; independent in-scope work may continue.
 
 ## Risk Matrix
 

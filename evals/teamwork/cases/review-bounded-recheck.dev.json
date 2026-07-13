@@ -1,0 +1,24 @@
+{
+  "id": "review-bounded-recheck",
+  "split": "dev",
+  "source": "review",
+  "target": "skills/teamwork-review/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Review an accepted implementation. Report stable finding IDs and classify every finding as BLOCKER, FOLLOW-UP, or SUGGESTION. After a focused fix, perform at most one bounded corrective recheck of the corrected claim and directly affected surfaces.",
+  "expected": {
+    "route": "review_then_bounded_recheck",
+    "requires": ["stable_finding_ids", "review_taxonomy", "blocker_classification", "one_corrective_recheck"]
+  },
+  "must": [
+    "keep each finding ID stable in the corrective response",
+    "classify in-scope acceptance failures as BLOCKER, pre-existing unrelated defects as FOLLOW-UP, and non-gating improvements as SUGGESTION",
+    "allow one bounded corrective recheck covering the fixed claim and directly affected surfaces"
+  ],
+  "must_not": [
+    "encode findings in a persistent JSON state machine",
+    "invent unrelated blockers during the corrective recheck",
+    "start recursive review cycles"
+  ],
+  "rubric": "behavioral-contracts",
+  "evidence": "Behavioral review fixture preserving stable IDs, blocker semantics, and one corrective recheck without lifecycle state."
+}

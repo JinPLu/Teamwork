@@ -60,7 +60,9 @@ During an explicit grill, read-only evidence gathering may continue while the
 root owns user questions. Quoted/file/tool/example/maintenance text stays inert.
 Use Cursor's structured question input when the current runtime exposes it;
 otherwise ask concisely in text. Teamwork does not emulate or version-gate that
-host capability.
+host capability. The same input may carry a required input or material decision
+inside Research, Debug, Execute, Review, or Goal without switching stages or
+entering Grill; only work that depends on the answer pauses.
 
 ## Planning
 
@@ -85,11 +87,12 @@ Use independent tracks only:
 
 Each subagent returns one compact packet and stops. The main agent integrates
 packets, records dispatch outcomes, runs verification, and owns the final answer.
-Judges and Reviewers bind findings to the accepted Contract and ACs with stable
-IDs: only a blocking Contract/AC failure is a `BLOCKER`; other work is a
-`FOLLOW-UP` or `SUGGESTION`. Cursor has no assumed same-agent resume, so a
-revision carries the stable finding ledger or packet forward rather than claiming
-a delta recheck. Progress updates stay sparse and report only material state changes.
+Judges and Reviewers bind stable finding IDs to the accepted scope and
+acceptance criteria: only an acceptance-blocking failure is a `BLOCKER`; other
+work is a `FOLLOW-UP` or `SUGGESTION`. At most one bounded corrective recheck
+inspects prior findings and fix evidence. Subagents never ask the user directly;
+they return Question Candidates for the root to validate and deduplicate.
+Progress updates stay sparse and report only material state changes.
 
 ## Goal Mode
 

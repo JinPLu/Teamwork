@@ -6,8 +6,9 @@ Do not add sections or formats that do not change execution.
 ## Codex Plan Mode Bridge
 
 Codex Plan mode owns interaction and the authoritative `plan`; Teamwork owns its
-quality gate. Use native `request_user_input` for material user decisions and
-incorporate answers into that plan. Questions are not completion.
+quality gate. The root applies the shared Ask Gate and uses the host's native
+input surface when callable. Incorporate answers into the plan; questions are
+not completion, and the host owns wait/timeout/resume.
 
 ## Decision Gate
 
@@ -16,8 +17,8 @@ are fixed and no material user-owned decision remains. Every other plan enters
 `grill-me`; explicit negative intent suppresses the interview, not required-input
 or safety gates.
 
-Inspect evidence first. Resolve evidence/agent-owned gaps; ask one material user
-decision at a time with a recommendation. Own safe reversible details.
+Inspect evidence first. Resolve evidence/agent-owned gaps; apply the shared Ask
+Gate and ask one material decision at a time with a recommendation.
 
 When no such decision remains, provide one concise **Decision Summary**: goal,
 chosen approach, material rejected alternatives, scope/non-goals, protected
@@ -29,9 +30,9 @@ Readiness gate before the final plan:
 
 - inspect owner/flow, tests/config, active artifacts, and protected boundaries;
 - classify gaps as evidence-owned, agent-owned, user-decision, required-input, or
-  confirmation; resolve the first two and ask only material user decisions;
+  confirmation; resolve the first two and send remaining candidates through the Ask Gate;
 - source critical values as `user`, `repository`, `derived`, or `unresolved`;
-  justify derivations and block only actions dependent on unresolved values;
+  justify derivations and pause only actions dependent on unresolved values;
 - reconcile corrections and discard invalidated premises;
 - map each requirement to an owned action and proof; name each phase's surface,
   inputs, output, dependencies, verification, and stop/replan condition; and

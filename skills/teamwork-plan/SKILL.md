@@ -23,8 +23,9 @@ scope and protected surfaces; for code, identify owner/flow, tests/config, and
 invariants before choosing the smallest direct change.
 
 A plan is simple only when scope/risk are fixed and no material user decision
-remains. Every other plan enters evidence-first `grill-me`, independent of file
-count, and needs a confirmed Decision Summary. Confirmation grants no execution.
+remains. Every non-simple Plan enters evidence-first `grill-me`, independent of
+file count, and needs a confirmed Decision Summary. Confirmation grants no
+implementation, release, external-effect, or other authority.
 
 Source critical values from the user, repository, or justified derivation.
 Leave unresolved values open and block only dependent work; recommendations are
@@ -44,8 +45,8 @@ the user or governing workflow.
 
 ## Escalate
 
-Ask when a user decision changes behavior, architecture, risk, or acceptance.
-Return to research/debug when evidence cannot support a plan.
+Apply the Ask Gate in `workflow-contract.md` to unresolved Plan inputs and
+decisions. Return to research/debug when evidence cannot support a plan.
 
 ## Conditional Protocols
 

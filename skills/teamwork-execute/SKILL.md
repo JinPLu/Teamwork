@@ -18,16 +18,17 @@ credentials, paths, ports, models, and configs must be explicit or discoverable.
 
 ## Do And Boundaries
 
-Re-read the accepted Task Contract and inspect owner/flow, tests/config, and
-invariants. Change the current producer path; avoid masking wrappers, fallbacks,
-or guessed state. Preserve unrelated changes and delegate only disjoint ownership.
+Re-read the accepted scope, criteria, authority, and invariants; inspect
+owner/flow and tests/config. Change the current producer path; avoid masking
+wrappers, fallbacks, or guessed state. Preserve unrelated changes and delegate
+only disjoint ownership.
 
 Maintain `AC -> change/no-change -> evidence -> result/strength`. Before acting,
 classify discoveries:
 
-- `regression` or `contract_violation`: fix in scope or return `revise`/`blocked`;
+- `regression` or `accepted_scope_violation`: fix in scope or return `revise`/`blocked`;
 - `pre_existing`: record without attributing or silently repairing it;
-- `scope_delta`: pause and obtain an accepted Contract/version change; or
+- `out_of_scope`: pause that work and return it to the root for the Ask Gate; or
 - `suggestion`: record without editing.
 
 Failed AC evidence stays failed until direct evidence changes that AC.
@@ -41,13 +42,14 @@ touched-diff slop.
 
 ## Done When
 
-Return changed paths, Contract source, AC trace, proof, discovery classes,
+Return changed paths, accepted-scope source, AC trace, proof, discovery classes,
 delegation state, deviations, residual risk, and blockers. No track remains open.
 
 ## Escalate
 
-Stop when new evidence invalidates scope, required state is absent, or a change
-would affect protected/public behavior; route back to research, debug, or plan.
+When required state or authority is absent, apply the Ask Gate through the root
+before blocking. Stop when new evidence invalidates scope or a change would
+affect protected/public behavior; route back to research, debug, or plan.
 
 ## Conditional Protocols
 

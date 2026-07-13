@@ -35,17 +35,17 @@ Check that:
 
 Build an acceptance map before reaching a verdict: each accepted criterion ->
 candidate change/no-change rationale -> direct evidence -> result -> strength.
-Classify a discovery as `regression`, `contract_violation`, `pre_existing`,
-`scope_delta`, or `suggestion`. Only a regression or contract violation against
-accepted scope can become a blocking acceptance failure from that discovery
+Classify a discovery as `regression`, `accepted_scope_violation`,
+`pre_existing`, `out_of_scope`, or `suggestion`. Only a regression or accepted
+scope violation can become a blocking acceptance failure from that discovery
 classification; failed gating evidence is also a blocker. Preserve direct
-evidence for pre-existing issues and do not make scope delta work implicit.
+evidence for pre-existing issues and do not make out-of-scope work implicit.
 
 An initial Judge/Reviewer acceptance review is fresh and limited to accepted
 criteria, protected boundaries, and direct evidence. Give each material finding
-a stable ID and one class: `BLOCKER`, `FOLLOW-UP`, `SUGGESTION`, or `SCOPE_DELTA`.
-Other classes are non-blocking. If a scope delta is required for an accepted AC,
-that failed AC stays a `BLOCKER`; otherwise no open `BLOCKER` means `ACCEPT`.
+a stable ID and one class: `BLOCKER`, `FOLLOW-UP`, or `SUGGESTION`.
+Other classes are non-blocking. If out-of-scope work is required for an accepted
+AC, that failed AC stays a `BLOCKER`; otherwise no open `BLOCKER` means `ACCEPT`.
 
 One corrective recheck may reuse the initial Judge/Reviewer thread. Restrict it
 to prior finding IDs, claimed fixes, and direct evidence of a fix-introduced
