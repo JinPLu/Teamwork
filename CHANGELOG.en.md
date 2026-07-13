@@ -6,13 +6,16 @@ This changelog lists user-visible changes. Implementation details live in pull r
 
 ## 2.17.0 - 2026-07-13
 
-**Plan and Review remain, but decisions align earlier and the workflow converges faster.**
+**Directly addresses plans that get reviewed over and over yet still take hours to converge.**
 
-- Non-simple Plans with a material decision or risk automatically enter evidence-first Grill. Each turn asks at most one genuinely user-owned choice, followed by a concise Decision Summary before the final Plan. Confirming a Plan never authorizes implementation.
-- Plan, Execute, Review, and Goal now inherit one versioned Task Contract with stable acceptance criteria. Scope changes require an explicit Contract version change instead of silently moving the target during execution.
-- Review converges through one full pass and one same-Reviewer delta recheck. Finding IDs remain stable; no open `BLOCKER` requires acceptance, while preferences, follow-ups, and out-of-scope opportunities cannot repeatedly block completion.
-- Goal retries only the affected stage: known fixes return to Execute, unknown causes return to Debug, and only an accepted scope change returns to Plan. Progress updates report material state changes only.
-- Deterministic Contract/Finding validation and focused eval cases reject task or AC drift, recursive rechecks, unrelated new findings, and undeclared fix regressions. Existing Codex role-model tiers remain unchanged; this release does not claim to eliminate single-call GPT-5.6 Sol/high latency.
+- **Important decisions align earlier.** A non-simple Plan inspects repository and configuration evidence first, then asks one genuinely user-owned question at a time with a recommendation. A short Decision Summary appears before the final Plan, reducing late discovery that the task was heading in the wrong direction.
+- **Review no longer restarts indefinitely.** Each task gets one full review. After fixes, the same Reviewer performs one delta recheck limited to the original findings, declared fixes, and fix-introduced regressions instead of rescanning everything and opening another review cycle.
+- **No blocker means a clear finish.** Only a failed accepted criterion, protected-boundary breach, regression, or missing gating evidence can be a `BLOCKER`. Preferences, opportunistic improvements, and out-of-scope ideas remain visible without keeping the task permanently unaccepted.
+- **Fixing one problem no longer restarts from Plan.** Known fixes return directly to Execute; unknown causes return to Debug; only a user-accepted scope change returns to Plan. Failed verification reruns only the affected stage.
+- **The target cannot silently move during execution.** Plan, Execute, Review, and Goal inherit one versioned Task Contract with stable acceptance criteria. Every scope change must be explicit and versioned.
+- **The conversation is quieter.** Progress updates report only new decisions, blockers, verification results, and completion rather than repeatedly restating the plan or announcing another review.
+
+Plan and Review have not been removed, and Codex role-model tiers have not been lowered. This release reduces workflow repetition, rework, and convergence time; it does not promise to eliminate GPT-5.6 Sol/high single-call latency.
 
 ## 2.16.0 - 2026-07-13
 
