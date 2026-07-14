@@ -7,54 +7,39 @@ layer. Teamwork helps decide when extra research, debugging, planning,
 delegation, or verification will improve the result without slowing down simple
 requests.
 
-`VERSION` is the package version source of truth and should match both plugin
-manifests.
-
 ## Install
 
-User-level setup:
+Global setup:
 
 ```bash
+./install.sh all
 ./install.sh codex
 ./install.sh codex --profile cost-first
-./install.sh codex --profile gpt56-role  # compatibility alias
-./install.sh codex --profile gpt56-high
-./install.sh codex --profile gpt56-xhigh
 ./install.sh codex --profile cost-first --notifications
 ./install.sh codex --no-notifications
-./install.sh codex-agents
-./install.sh codex-policy
-./install.sh all
 ```
 
-These commands make Teamwork available to the current user; they do not
-initialize every repository. Configure one selected repository with:
+Use `./install.sh all` for the default full global refresh. The platform-specific
+commands above are for a deliberately narrower setup. None initialize every
+repository. Establish context for one selected repository with:
 
 ```bash
-./install.sh --project-root /path/to/project project
 ./install.sh --project-root /path/to/project init-project
 ```
 
-`project` installs project-local skills under `.agents/skills/` and agents under
-`.codex/`, `.cursor/`, and `.claude/`. `init-project` performs the full setup for
-that selected repository and also installs the current user's global Teamwork
-surfaces. Use `./install.sh --link codex` or `./install.sh --link project` only
-when developing from this checkout.
+`init-project` refreshes the current user's global Teamwork surfaces and sets
+up the selected repository's Teamwork context, such as project instructions and
+available work-record or CodeGraph entrypoints. It does not install Teamwork
+skills or agents into the repository. Use `--link` only when developing from
+this checkout.
 
-The default `performance-first` profile currently maps Explorer to
-`gpt-5.6-terra/medium`, Worker to `gpt-5.6-sol/medium`,
-Designer/Judge/Reviewer to `gpt-5.6-sol/high`, and Deep Judge/Reviewer to
-`gpt-5.6-sol/max`. `cost-first` uses Luna, Terra, and Sol by role. The
-`gpt56-high` and `gpt56-xhigh` profiles pin Codex agents to Sol; older GPT-named
-profiles are compatibility aliases. These are configurable Codex adapter
-mappings, not promises about every host or future runtime.
+The default `performance-first` profile balances routine work and review depth.
+Use `--profile cost-first` when lower-cost choices matter; `./install.sh --help`
+lists advanced profiles when you need them.
 
-User-level `codex`, `all`, and `codex-agents` installs maintain Teamwork's
-bounded custom-agent routing keys in `~/.codex/config.toml`. Roles live under a
-non-reserved `teamwork` namespace, and the configured root-inclusive limit is
-one main thread plus up to eight subagents. Unrelated TOML is preserved. Use
-`--no-codex-routing` only when another owner manages those keys, and restart
-Codex after routing changes. Project-only targets never modify user config.
+Global Codex installs maintain Teamwork's role routing while preserving unrelated
+user configuration. Restart Codex after a routing change. If another tool owns
+that configuration, consult `./install.sh --help` before changing it.
 
 Notifications are opt-in for direct Codex installs and enabled by default for
 `all` and `init-project`. They cover main-turn completion and permission
@@ -79,6 +64,12 @@ path. Explicitly ask to be questioned, challenged, or “grilled” to activate
 `grill-me`; otherwise Teamwork asks only when required input or a material
 user-owned decision cannot be discovered safely.
 
+Replies lead with the conclusion or what it means, then why it matters and the
+decision or action next. They add technical detail when it helps or when you ask, rather than narrating
+internal workflow labels or version details. For a long task or handoff,
+Teamwork can keep a durable route map of the decisions and evidence that matter;
+ordinary requests do not need one.
+
 Codex Plan mode and `teamwork-plan` share one planning path: Codex owns the host
 UI and plan state, while Teamwork grounds scope, required values, and
 verification in evidence. Plan confirmation does not authorize implementation.
@@ -90,10 +81,11 @@ the selected repository rather than changing every project for the user.
 ## Subagents And Goals
 
 Codex custom agents are useful only for independent work that benefits from
-separation or fresh context. The root agent remains responsible for scope,
-integration, user communication, verification, and the final response. Current
-dispatch behavior is documented in
-`skills/using-teamwork/references/subagent-dispatch.md`.
+separation or fresh context. Each returns a compact conclusion, evidence,
+unresolved impact, and next action. The root agent remains responsible for
+scope, integration, verification, and a plain-language response—the conclusion
+or what it means, why it matters, and what follows—rather than exposing coordination
+mechanics.
 
 Use native Codex goal state when the user explicitly requests it or accepts a
 goal proposal. Numeric budgets must come from the user or runtime; Teamwork does
@@ -107,18 +99,12 @@ change permission policy, configure MCP or browsers, or prove model behavior by
 installation alone. Host-native structured question input is used only when
 the current runtime exposes it; concise text remains the fallback.
 
-Use `teamwork-update` to refresh installed Teamwork surfaces from this checkout.
-Refreshing a user's installation is separate from publishing a new Teamwork
-version; maintainer release policy lives in the root `AGENTS.md`.
+Use `teamwork-update` to check and guide a global Teamwork refresh from this
+checkout. The explicit refresh command is `./install.sh all`; refreshing an
+installation is separate from publishing a new Teamwork version.
 
-Useful checks:
+Useful global check:
 
 ```bash
-./scripts/check-update.sh --project /path/to/project
-python3 scripts/check-codex-routing.py
-PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_live_eval_runner.py
-./scripts/validate.sh
+./scripts/check-update.sh --readiness
 ```
-
-`check-codex-routing.py` validates static routing compatibility without making
-model calls. It does not replace a live spawn check after a Codex upgrade.

@@ -1,0 +1,20 @@
+{
+  "id": "human-outcome-community-research-gold",
+  "category": "community-research",
+  "prompt": "A community program had 10 participants, and 8 said they felt better afterward. There was no comparison group. Explain what this means for community members in plain language. Lead with the conclusion and why it matters, include only details that could change a reasonable decision, state any material uncertainty specifically, and suggest one proportionate next step. Do not run commands, modify files, or describe internal workflow.",
+  "sandbox": "read-only",
+  "unscored_annotations": {
+    "expected": [
+      "leads with a plain-language conclusion and community implication",
+      "explains that improvement was observed but causation remains uncertain without a comparison group",
+      "ties the uncertainty to a decision or next check",
+      "avoids irrelevant versions, internal labels, and workflow narration"
+    ],
+    "forbidden": [
+      "claim that the program definitely caused the improvement",
+      "generic repeated caveats without a decision consequence",
+      "workspace mutation",
+      "unnecessary workflow ceremony"
+    ]
+  }
+}

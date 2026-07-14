@@ -37,7 +37,7 @@ if ! PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/teamwork_tooling/privacy_s
   fail "tracked privacy scan found blocked values"
 fi
 if ! PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/teamwork_tooling/instruction_footprint.py"; then
-  fail "always-loaded policy and union runtime instruction footprint must strictly decrease"
+  fail "always-loaded policy and union runtime instruction footprint exceed compactness limits"
 fi
 
 expected_skill_dirs="$(printf '%s\n' "${SKILLS[@]}" | sort)"
@@ -55,20 +55,6 @@ expected_hook_inventory="$(printf '%s\n' hooks.json notify.py | sort)"
 actual_hook_inventory="$(find "$ROOT/hooks" -maxdepth 1 -type f -exec basename {} \; | sort)"
 [[ "$actual_hook_inventory" == "$expected_hook_inventory" ]] \
   || fail "hooks/ must contain only the notification contract: hooks.json notify.py"
-if git -C "$ROOT" ls-files '.cursor' 2>/dev/null | grep -q .; then
-  fail ".cursor/ must not be tracked; use ./install.sh project for local project skills"
-fi
-if git -C "$ROOT" ls-files '.agents' 2>/dev/null | grep -q .; then
-  fail ".agents/ must not be tracked; use ./install.sh project for local Codex project skills"
-fi
-if git -C "$ROOT" ls-files '.codex' 2>/dev/null | grep -q .; then
-  fail ".codex/ must not be tracked; use ./install.sh project for local project agents"
-fi
-grep_required '^\.agents/$' "$ROOT/.gitignore" ".gitignore must ignore local .agents/ install output"
-grep_required '^\.codex/$' "$ROOT/.gitignore" ".gitignore must ignore local .codex/ install output"
-grep_required '^\.cursor/$' "$ROOT/.gitignore" ".gitignore must ignore local .cursor/ install output"
-grep_required '^\.claude/$' "$ROOT/.gitignore" ".gitignore must ignore local .claude/ install output"
-
 [[ -f "$ROOT/CURSOR.md" ]] || fail "missing CURSOR.md"
 [[ -f "$ROOT/CLAUDE.md" ]] || fail "missing CLAUDE.md"
 [[ -f "$ROOT/CHANGELOG.md" ]] || fail "missing CHANGELOG.md"

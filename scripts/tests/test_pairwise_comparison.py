@@ -73,6 +73,17 @@ class PairwiseComparisonTests(unittest.TestCase):
             result.extend(["--arm", f"{arm_id}={directory}"])
         return result
 
+    def test_pairwise_rubric_keeps_audience_outcome_gates(self) -> None:
+        criteria = {criterion["id"] for criterion in RUBRIC["criteria"]}
+        self.assertTrue(
+            {
+                "audience_first",
+                "relevance_gate",
+                "material_uncertainty",
+            }.issubset(criteria)
+        )
+        self.assertIn("human-outcome-community-research-gold", live_canary.FROZEN_GOLD_CASES)
+
     def prepare(self) -> None:
         argv = [
             "compare", "prepare", "--review-dir", str(self.review_dir),

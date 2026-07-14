@@ -12,11 +12,13 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
-BASELINE = {
-    "union": {"words": 18142, "bytes": 132316},
-    "codex": {"words": 182, "bytes": 1410},
-    "cursor": {"words": 181, "bytes": 1404},
-    "claude": {"words": 182, "bytes": 1409},
+COMPACTNESS_LIMITS = {
+    # These are ceilings, not a deletion incentive. Source-contract tests protect
+    # the minimum behavior-bearing instructions independently of this guard.
+    "union": {"words": 20500, "bytes": 150000},
+    "codex": {"words": 180, "bytes": 1800},
+    "cursor": {"words": 180, "bytes": 1800},
+    "claude": {"words": 180, "bytes": 1800},
 }
 
 
@@ -54,7 +56,6 @@ def generated_surfaces() -> list[str]:
                 str(ROOT / "scripts/init-project.sh"),
                 "--project-root",
                 str(project),
-                "--project-only",
                 "--copy",
                 "--no-codegraph",
                 "--no-cursor-policy-copy",
@@ -121,18 +122,23 @@ def measure() -> dict[str, object]:
     return result
 
 
-def regressions(result: dict[str, object]) -> list[str]:
+def compactness_failures(result: dict[str, object]) -> list[str]:
     failures: list[str] = []
-    for surface, baseline in BASELINE.items():
+    for surface, limit in COMPACTNESS_LIMITS.items():
         measured = result[surface]
         assert isinstance(measured, dict)
         for metric in ("words", "bytes"):
-            if int(measured[metric]) >= baseline[metric]:
+            if int(measured[metric]) > limit[metric]:
                 failures.append(
-                    f"{surface} {metric} must decrease: "
-                    f"{measured[metric]} >= {baseline[metric]}"
+                    f"{surface} {metric} exceeds compactness limit: "
+                    f"{measured[metric]} > {limit[metric]}"
                 )
     return failures
+
+
+# Kept as a narrow compatibility alias for callers that used the old helper.
+def regressions(result: dict[str, object]) -> list[str]:
+    return compactness_failures(result)
 
 
 def main() -> int:
@@ -140,9 +146,9 @@ def main() -> int:
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     result = measure()
-    failures = regressions(result)
+    failures = compactness_failures(result)
     if args.json:
-        print(json.dumps({"baseline": BASELINE, "measured": result, "failures": failures}, sort_keys=True))
+        print(json.dumps({"limits": COMPACTNESS_LIMITS, "measured": result, "failures": failures}, sort_keys=True))
     else:
         for surface in ("union", "codex", "cursor", "claude"):
             print(f"{surface}: {result[surface]}")

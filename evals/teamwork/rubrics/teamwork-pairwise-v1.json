@@ -1,7 +1,7 @@
 {
   "id": "teamwork-pairwise-v1",
   "version": 1,
-  "description": "Blind pairwise review of matched Teamwork responses. Prefer the response that is more useful while preserving technical precision, direct evidence, calibrated uncertainty, and user authority. Internal workflow vocabulary is a defect only when it adds unnecessary burden or exposes implementation ceremony; legitimate words such as plan and review are not defects by themselves.",
+  "description": "Blind pairwise review of matched Teamwork responses. Prefer the response that is more useful while preserving technical precision, direct evidence, calibrated uncertainty, user authority, an audience-first explanation, relevance-gated detail, and specific material uncertainty. Internal workflow vocabulary is a defect only when it adds unnecessary burden or exposes implementation ceremony; legitimate words such as plan and review are not defects by themselves.",
   "outcomes": ["LEFT_BETTER", "RIGHT_BETTER", "TIE"],
   "criteria": [
     {
@@ -23,6 +23,21 @@
       "id": "authority_discipline",
       "hard_gate": true,
       "description": "The response respects the user's authority and scope, including required confirmation for material actions and direct progress on authorized work."
+    },
+    {
+      "id": "audience_first",
+      "hard_gate": true,
+      "description": "The response begins with the conclusion and why it matters to the intended reader before any supporting implementation or process detail."
+    },
+    {
+      "id": "relevance_gate",
+      "hard_gate": true,
+      "description": "Versions, internal labels, implementation mechanics, and generic caveats appear only when they could change the reader's conclusion, action, risk, compatibility, or confidence."
+    },
+    {
+      "id": "material_uncertainty",
+      "hard_gate": true,
+      "description": "When uncertainty could change a reasonable decision, the response names what is unknown, how that affects the conclusion or action, and any proportionate evidence that would resolve it."
     },
     {
       "id": "workflow_leakage",

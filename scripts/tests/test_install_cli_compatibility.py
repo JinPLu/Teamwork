@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import os
 import pathlib
 import shutil
@@ -13,9 +12,6 @@ import unittest
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
-HELP_SHA256 = "c58162666d237d3dee4c746b81fcbf347071c3b09d8da008c86eb12162e799e2"
-
-
 class InstallCliCompatibilityTests(unittest.TestCase):
     def setUp(self) -> None:
         self.tempdir = tempfile.TemporaryDirectory()
@@ -54,10 +50,14 @@ class InstallCliCompatibilityTests(unittest.TestCase):
             check=False,
         )
 
-    def test_help_output_contract(self) -> None:
+    def test_help_exposes_global_routes_and_init_project_only(self) -> None:
         result = self.run_install("--help")
-        self.assertEqual(result.returncode, 0, result.stdout.decode())
-        self.assertEqual(hashlib.sha256(result.stdout).hexdigest(), HELP_SHA256)
+        output = result.stdout.decode()
+        self.assertEqual(result.returncode, 0, output)
+        self.assertIn("codex|cursor|claude|all|init-project", output)
+        self.assertIn("`--project-root` is valid only with `init-project`.", output)
+        self.assertNotIn("project-codex-agents", output)
+        self.assertNotRegex(output, r"(?m)^\s+project\s+")
 
     def test_invalid_arguments_keep_exit_and_usage_contract(self) -> None:
         result = self.run_install("--not-a-real-option")
@@ -71,31 +71,30 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2, output)
         self.assertTrue(output.startswith("Specify only one install target.\n"))
 
-    def test_project_copy_and_link_destinations(self) -> None:
-        copy_root = self.base / "copy-project"
-        link_root = self.base / "link-project"
-        copy_root.mkdir()
-        link_root.mkdir()
+    def test_removed_project_routes_fail_without_local_package_writes(self) -> None:
+        project = self.base / "project"
+        project.mkdir()
+        for target in ("project", "project-codex-agents"):
+            with self.subTest(target=target):
+                result = self.run_install("--project-root", str(project), target)
+                output = result.stdout.decode()
+                self.assertEqual(result.returncode, 2, output)
+                self.assertIn("Project-local install targets were removed", output)
+        for path in (
+            project / ".agents",
+            project / ".codex" / "agents",
+            project / ".cursor" / "skills",
+            project / ".claude" / "skills",
+        ):
+            self.assertFalse(path.exists(), path)
 
-        result = self.run_install("--project-root", str(copy_root), "project")
-        self.assertEqual(result.returncode, 0, result.stdout.decode())
-        copied_skill = copy_root / ".agents" / "skills" / "using-teamwork"
-        copied_agent = copy_root / ".codex" / "agents" / "teamwork-worker.toml"
-        self.assertTrue(copied_skill.is_dir())
-        self.assertFalse(copied_skill.is_symlink())
-        self.assertTrue(copied_agent.is_file())
-        self.assertFalse(copied_agent.is_symlink())
-
-        result = self.run_install(
-            "--link", "--project-root", str(link_root), "project"
-        )
-        self.assertEqual(result.returncode, 0, result.stdout.decode())
-        self.assertTrue(
-            (link_root / ".agents" / "skills" / "using-teamwork").is_symlink()
-        )
-        self.assertTrue(
-            (link_root / ".codex" / "agents" / "teamwork-worker.toml").is_symlink()
-        )
+    def test_project_root_is_rejected_outside_init_project(self) -> None:
+        project = self.base / "project-root-only"
+        project.mkdir()
+        result = self.run_install("--project-root", str(project), "codex")
+        output = result.stdout.decode()
+        self.assertEqual(result.returncode, 2, output)
+        self.assertIn("--project-root is valid only with the init-project target.", output)
 
     def test_profile_aliases_render_expected_codex_models(self) -> None:
         expectations = {
@@ -107,19 +106,18 @@ class InstallCliCompatibilityTests(unittest.TestCase):
             "gpt56-xhigh": ('model = "gpt-5.6-sol"', 'model_reasoning_effort = "xhigh"'),
             "gpt55-xhigh": ('model = "gpt-5.6-sol"', 'model_reasoning_effort = "xhigh"'),
         }
-        project_root = self.base / "profiles"
-        project_root.mkdir()
         for profile, expected_lines in expectations.items():
+            home = self.base / f"home-{profile}"
             result = self.run_install(
                 "--profile",
                 profile,
-                "--project-root",
-                str(project_root),
-                "project-codex-agents",
+                "--no-codex-routing",
+                "codex-agents",
+                home=home,
             )
             self.assertEqual(result.returncode, 0, result.stdout.decode())
             worker = (
-                project_root / ".codex" / "agents" / "teamwork-worker.toml"
+                home / ".codex" / "agents" / "teamwork-worker.toml"
             ).read_text()
             for expected in expected_lines:
                 self.assertIn(expected, worker)

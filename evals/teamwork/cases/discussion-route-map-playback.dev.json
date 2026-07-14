@@ -1,0 +1,28 @@
+{
+  "id": "discussion-route-map-playback",
+  "split": "dev",
+  "source": "bug",
+  "target": "skills/using-teamwork/references/teamwork-discussion-template.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Persist a long, branching Grill so a later handoff can recover both its route and its plain-language playback without replaying raw dialogue.",
+  "expected": {
+    "requires": [
+      "durable_route_map",
+      "textual_playback",
+      "decision_state_resume",
+      "static_contract_only"
+    ]
+  },
+  "must": [
+    "retain a durable route map for branching context",
+    "retain a textual playback that states what was decided, what remains open, and where to resume",
+    "keep the canonical decision state separate from raw dialogue"
+  ],
+  "must_not": [
+    "make either recovery view optional through silent deletion",
+    "store a raw transcript or hidden reasoning",
+    "claim this offline fixture proves live handoff behavior"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Static discussion continuity contract; it verifies template and source wording, not a host compaction event."
+}

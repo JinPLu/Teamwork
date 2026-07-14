@@ -4,14 +4,14 @@
   "source": "synthetic",
   "target": "skills/teamwork-update/SKILL.md",
   "platforms": ["codex", "cursor", "claude"],
-  "prompt": "Update my installed Teamwork skills on this machine and this project. Do not publish a package version.",
+  "prompt": "Update my installed Teamwork skills on this machine and initialize Teamwork context for this project. Do not publish a package version.",
   "expected": {
     "route": "update",
-    "requires": ["user_refresh_only", "source_freshness", "profile_preserved", "global_install_refresh", "project_refresh_when_in_scope", "manual_host_actions", "readiness_recheck", "no_release_metadata"]
+    "requires": ["user_refresh_only", "source_freshness", "profile_preserved", "global_install_refresh", "project_context_init_no_local_copies", "manual_host_actions", "readiness_recheck", "no_release_metadata"]
   },
   "must": [
     "check source and installed freshness before refreshing",
-    "refresh global and in-scope project Teamwork surfaces with the sourced profile",
+    "refresh global Teamwork surfaces with the sourced profile, then use init-project only for requested project context without local package copies",
     "rerun readiness until current or report exact remaining actions"
   ],
   "must_not": [

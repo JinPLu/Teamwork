@@ -71,9 +71,9 @@ def validate_discussion_handoff_case(data: dict[str, Any], path: Path) -> None:
 
     authored_output = "\n".join(assistant_turns)
     normalized_output = normalize_semantic_text(authored_output)
-    if "resume summary:" not in authored_output.casefold():
+    if "textual playback:" not in authored_output.casefold():
         raise EvalError(
-            f"{display_path(path)}: handoff trajectory must include a resume summary"
+            f"{display_path(path)}: handoff trajectory must include textual playback"
         )
     for decision in answered:
         if normalize_semantic_text(decision) not in normalized_output:
@@ -103,6 +103,107 @@ def validate_discussion_handoff_case(data: dict[str, Any], path: Path) -> None:
     if normalize_semantic_text(expected_next) not in normalized_question:
         raise EvalError(
             f"{display_path(path)}: handoff trajectory does not ask expected next decision"
+        )
+
+
+def validate_audience_reply_case(data: dict[str, Any], path: Path) -> None:
+    """Keep the authored community-research contrast useful as an offline oracle.
+
+    The checks intentionally validate a compact, authored positive response and
+    explicit negative controls. They do not claim to score arbitrary model prose.
+    """
+
+    response = require_string(data.get("authored_response"), "authored_response", path)
+    checks = data.get("response_checks")
+    required_checks = {
+        "opening_conclusion",
+        "audience_meaning",
+        "causal_explanation",
+        "material_uncertainty",
+        "uncertainty_impact",
+        "next_step",
+    }
+    if not isinstance(checks, dict) or set(checks) != required_checks:
+        raise EvalError(
+            f"{display_path(path)}: response_checks must contain exactly "
+            f"{sorted(required_checks)}"
+        )
+    normalized_response = normalize_semantic_text(response)
+    for field in sorted(required_checks):
+        phrase = require_string(checks[field], f"response_checks.{field}", path)
+        if normalize_semantic_text(phrase) not in normalized_response:
+            raise EvalError(
+                f"{display_path(path)}: authored_response loses {field}"
+            )
+
+    first_sentence = response.split(".", 1)[0]
+    if re.search(r"(?i)\b(?:i|we)\s+(?:first\s+)?(?:inspected|analyzed|validated|used)\b", first_sentence):
+        raise EvalError(
+            f"{display_path(path)}: authored_response opens with workflow narration"
+        )
+    if normalize_semantic_text(checks["opening_conclusion"]) not in normalize_semantic_text(
+        first_sentence
+    ):
+        raise EvalError(
+            f"{display_path(path)}: authored_response must lead with the conclusion"
+        )
+    if re.search(r"(?i)\b(?:teamwork|workflow stage|evidence confidence ladder|version\s*\d)", response):
+        raise EvalError(
+            f"{display_path(path)}: authored_response exposes irrelevant internal detail"
+        )
+
+    controls = data.get("negative_controls")
+    if not isinstance(controls, list) or len(controls) != 4:
+        raise EvalError(
+            f"{display_path(path)}: negative_controls must contain four named failure modes"
+        )
+    expected_controls = {
+        "workflow_narration",
+        "irrelevant_internal_detail",
+        "generic_caveat_repetition",
+        "false_certainty",
+    }
+    seen_controls: set[str] = set()
+    for index, control in enumerate(controls, start=1):
+        if not isinstance(control, dict) or set(control) != {"id", "response"}:
+            raise EvalError(
+                f"{display_path(path)}: negative control {index} must contain exactly id and response"
+            )
+        control_id = require_string(control.get("id"), "negative_controls.id", path)
+        text = require_string(control.get("response"), "negative_controls.response", path)
+        if control_id in seen_controls:
+            raise EvalError(f"{display_path(path)}: duplicate negative control: {control_id}")
+        seen_controls.add(control_id)
+        normalized = normalize_semantic_text(text)
+        if control_id == "workflow_narration" and not re.search(
+            r"\b(?:i|we)\s+(?:first\s+)?(?:inspected|analyzed|validated|used)\b|\bworkflow\b",
+            normalized,
+        ):
+            raise EvalError(
+                f"{display_path(path)}: workflow_narration control no longer demonstrates workflow leakage"
+            )
+        if control_id == "irrelevant_internal_detail" and not re.search(
+            r"\b(?:version\s*\d|evidence confidence ladder|internal label)\b",
+            normalized,
+        ):
+            raise EvalError(
+                f"{display_path(path)}: irrelevant_internal_detail control no longer demonstrates the relevance failure"
+            )
+        if control_id == "generic_caveat_repetition" and normalized.count("not proven") < 2:
+            raise EvalError(
+                f"{display_path(path)}: generic_caveat_repetition control must repeat a generic caveat"
+            )
+        if control_id == "false_certainty" and not re.search(
+            r"\b(?:the program worked|proves the program worked|definitely caused)\b",
+            normalized,
+        ):
+            raise EvalError(
+                f"{display_path(path)}: false_certainty control no longer demonstrates overclaiming"
+            )
+    if seen_controls != expected_controls:
+        raise EvalError(
+            f"{display_path(path)}: negative_controls must cover "
+            f"{', '.join(sorted(expected_controls))}"
         )
 
 
@@ -298,6 +399,30 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
             )
         if case_id == "discussion-handoff-playback":
             validate_discussion_handoff_case(data, path)
+
+    for label, required_cases in (
+        ("audience", REQUIRED_AUDIENCE_CASES),
+        ("handoff", REQUIRED_HANDOFF_CASES),
+        ("rule-maintenance", REQUIRED_RULE_MAINTENANCE_CASES),
+    ):
+        if case_id not in required_cases:
+            continue
+        requires = data["expected"].get("requires")
+        if not isinstance(requires, list) or not all(
+            isinstance(item, str) and item.strip() for item in requires
+        ):
+            raise EvalError(
+                f"{display_path(path)}: {label} expected.requires must be a string list"
+            )
+        normalized_requires = {normalize_contract_key(item) for item in requires}
+        missing = sorted(required_cases[case_id] - normalized_requires)
+        if missing:
+            raise EvalError(
+                f"{display_path(path)}: {label} coverage missing: "
+                f"{', '.join(missing)}"
+            )
+    if case_id == "audience-first-community-research":
+        validate_audience_reply_case(data, path)
 
     if case_id in SEMANTIC_QUESTION_CASES:
         retired = sorted(

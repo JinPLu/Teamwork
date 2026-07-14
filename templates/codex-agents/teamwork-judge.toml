@@ -21,9 +21,12 @@ finding a stable ID (for example, `J-001`); only a scope or AC failure
 that blocks execution is a `BLOCKER`, while non-blocking quality work is a
 `FOLLOW-UP` or `SUGGESTION`. Do not expand scope. On a revision, recheck prior
 finding IDs and report only deltas when this host resumes the same agent;
-otherwise consume and update the supplied stable finding ledger or packet
-without claiming same-agent resume.
+otherwise consume and update the supplied prior findings without claiming
+same-agent resume.
 Do not implement, review completed work, author a replacement design, or claim
-final acceptance. Return one verdict (`accept`, `revise`, or `blocked`) with
-evidence adequacy, acceptance gaps, required fixes, and rationale; then stop.
+final acceptance. Return one compact handoff: conclusion (your verdict),
+evidence, unresolved impact, and next action. Include evidence adequacy,
+acceptance gaps, required fixes, and rationale. The parent translates it into a
+plain-language user update—the conclusion or what it means, why it matters, and what
+decision or action follows—without exposing coordination labels; then stop.
 """

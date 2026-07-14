@@ -19,12 +19,17 @@ from teamwork_tooling.evaluation.cases import (
 )
 from teamwork_tooling.evaluation.contracts import EvalError, SKILL_SOURCE_CONTRACTS
 from teamwork_tooling.evaluation.sources import (
+    validate_always_loaded_policy_text,
+    validate_audience_source_text,
+    validate_decision_checkpoint_source_text,
     validate_discussion_source_text,
     validate_discussion_template_text,
     validate_mainline_focus_source_text,
     validate_maintainer_release_source_text,
+    validate_minimal_handoff_source_text,
     validate_minimality_source_text,
     validate_release_boundary_source_text,
+    validate_rule_maintenance_source_text,
     validate_semantic_source_text,
     validate_skill_source_contract,
 )
@@ -300,6 +305,47 @@ class CaseSchemaMutationTests(unittest.TestCase):
         with self.assertRaisesRegex(EvalError, "discussion coverage missing"):
             self.validate(data)
 
+    def test_plan_case_rejects_missing_brief_decision_checkpoint(self) -> None:
+        data = self.load_case("plan-ask-readiness.dev.json")
+        data["expected"]["requires"].remove("brief_decision_checkpoint")
+        with self.assertRaisesRegex(EvalError, "ask-predicate coverage missing"):
+            self.validate(data)
+
+    def test_audience_case_rejects_missing_material_uncertainty(self) -> None:
+        data = self.load_case("audience-first-community-research.dev.json")
+        data["authored_response"] = data["authored_response"].replace(
+            "we cannot tell whether the program caused the improvement",
+            "participants liked the program",
+        )
+        with self.assertRaisesRegex(EvalError, "loses material_uncertainty"):
+            self.validate(data)
+
+    def test_audience_case_rejects_workflow_first_opening(self) -> None:
+        data = self.load_case("audience-first-community-research.dev.json")
+        data["authored_response"] = (
+            "I first inspected the workflow. " + data["authored_response"]
+        )
+        with self.assertRaisesRegex(EvalError, "opens with workflow narration"):
+            self.validate(data)
+
+    def test_audience_case_requires_explicit_negative_controls(self) -> None:
+        data = self.load_case("audience-first-community-research.dev.json")
+        data["negative_controls"].pop()
+        with self.assertRaisesRegex(EvalError, "must contain four named failure modes"):
+            self.validate(data)
+
+    def test_minimal_handoff_case_rejects_missing_root_translation(self) -> None:
+        data = self.load_case("subagent-minimal-handoff.dev.json")
+        data["expected"]["requires"].remove("root_translation")
+        with self.assertRaisesRegex(EvalError, "handoff coverage missing"):
+            self.validate(data)
+
+    def test_rule_maintenance_case_rejects_missing_user_effect(self) -> None:
+        data = self.load_case("rule-maintenance-audit.dev.json")
+        data["expected"]["requires"].remove("user_effect")
+        with self.assertRaisesRegex(EvalError, "rule-maintenance coverage missing"):
+            self.validate(data)
+
 
 class SemanticSourceMutationTests(unittest.TestCase):
     @classmethod
@@ -311,6 +357,16 @@ class SemanticSourceMutationTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         cls.workflow_contract = (
             ROOT / "skills/using-teamwork/references/workflow-contract.md"
+        ).read_text(encoding="utf-8")
+        cls.policy = (ROOT / "scripts/install/policy.sh").read_text(encoding="utf-8")
+        cls.plan_output = (
+            ROOT / "skills/using-teamwork/references/plan-output.md"
+        ).read_text(encoding="utf-8")
+        cls.subagent_contract = (
+            ROOT / "skills/using-teamwork/references/subagent-contract.md"
+        ).read_text(encoding="utf-8")
+        cls.subagent_dispatch = (
+            ROOT / "skills/using-teamwork/references/subagent-dispatch.md"
         ).read_text(encoding="utf-8")
         cls.review_lenses = (
             ROOT / "skills/using-teamwork/references/review-lenses.md"
@@ -401,7 +457,7 @@ class SemanticSourceMutationTests(unittest.TestCase):
     def test_using_teamwork_rejects_removed_native_fast_path(self) -> None:
         self.assert_skill_contract_rejected(
             "using-teamwork",
-            "Small,\nclear tasks stay native",
+            "Small, clear\ntasks stay native",
             "All tasks enter a Teamwork stage",
             "Native fast path",
         )
@@ -449,9 +505,9 @@ class SemanticSourceMutationTests(unittest.TestCase):
     def test_init_rejects_global_failure_hard_gate(self) -> None:
         self.assert_skill_contract_rejected(
             "teamwork-init",
-            "Project surfaces continue even when the global install returns an actionable configuration failure",
-            "Project surfaces stop when the global install returns an actionable configuration failure",
-            "safe local continuation",
+            "Project instructions, memory,\nand CodeGraph context can continue when the global install returns an actionable\nconfiguration failure",
+            "Project instructions, memory, and CodeGraph context stop when the global install returns an actionable configuration failure",
+            "safe project-context continuation",
         )
 
     def test_update_rejects_release_metadata_scope(self) -> None:
@@ -462,12 +518,12 @@ class SemanticSourceMutationTests(unittest.TestCase):
             "no release metadata",
         )
 
-    def test_update_rejects_ignored_project_surfaces(self) -> None:
+    def test_update_rejects_project_context_package_copies(self) -> None:
         self.assert_skill_contract_rejected(
             "teamwork-update",
-            "refresh all global skills, agents, managed policy,\n   routing, and applicable project surfaces",
-            "refresh global skills and ignore project surfaces",
-            "global and project refresh",
+            "updates project instructions,\n   memory, and CodeGraph context without creating project-local package copies",
+            "updates project instructions, memory, and CodeGraph context by creating project-local package copies",
+            "project context without package copies",
         )
 
     def test_update_rejects_additive_publication_authority(self) -> None:
@@ -545,6 +601,51 @@ class SemanticSourceMutationTests(unittest.TestCase):
                     validate_minimality_source_text(
                         workflow_contract, self.review_lenses
                     )
+
+    def test_always_loaded_policy_rejects_deleted_audience_boundary(self) -> None:
+        mutated = self.policy.replace(
+            "Default user-facing replies: lead with conclusion, why it matters, causal\n"
+            "explanation, and useful action when relevant.",
+            "Respond with internal process details.",
+        )
+        self.assertNotEqual(mutated, self.policy)
+        with self.assertRaisesRegex(EvalError, "audience-first reply"):
+            validate_always_loaded_policy_text(mutated)
+
+    def test_audience_source_rejects_deleted_relevance_gate(self) -> None:
+        mutated = self.workflow_contract.replace(
+            "Use a relevance gate.", "Always include every implementation detail."
+        )
+        self.assertNotEqual(mutated, self.workflow_contract)
+        with self.assertRaisesRegex(EvalError, "relevance gate"):
+            validate_audience_source_text(mutated)
+
+    def test_rule_maintenance_source_rejects_missing_user_effect_audit(self) -> None:
+        mutated = self.workflow_contract.replace(
+            "audit the canonical owner, user effect, and verification",
+            "minimize the internal wording",
+        )
+        self.assertNotEqual(mutated, self.workflow_contract)
+        with self.assertRaisesRegex(EvalError, "canonical owner, user effect, and verification"):
+            validate_rule_maintenance_source_text(mutated)
+
+    def test_decision_checkpoint_rejects_lost_still_open_field(self) -> None:
+        plan = self.skill_sources["teamwork-plan"].replace(
+            "`Still open: ...`", "`Resolved: ...`"
+        )
+        self.assertNotEqual(plan, self.skill_sources["teamwork-plan"])
+        with self.assertRaisesRegex(EvalError, "Still open field"):
+            validate_decision_checkpoint_source_text(
+                self.workflow_contract, plan, self.plan_output
+            )
+
+    def test_minimal_handoff_rejects_deleted_direct_evidence(self) -> None:
+        mutated = self.subagent_contract.replace(
+            "Direct Evidence:", "Notes:"
+        )
+        self.assertNotEqual(mutated, self.subagent_contract)
+        with self.assertRaisesRegex(EvalError, "Direct Evidence"):
+            validate_minimal_handoff_source_text(mutated, self.subagent_dispatch)
 
     def test_grill_rejects_lost_mainline(self) -> None:
         self.assert_mainline_focus_rejected(
@@ -645,10 +746,29 @@ class SemanticSourceMutationTests(unittest.TestCase):
                         self.discussion_template,
                     )
 
+    def test_discussion_source_rejects_optional_route_or_playback(self) -> None:
+        protocol = (
+            ROOT / "skills/using-teamwork/references/artifact-protocol.md"
+        ).read_text(encoding="utf-8")
+        mutated = protocol.replace(
+            "persisted discussion includes both a full Route Map and a Textual Playback.",
+            "persisted discussion may include a route map or playback when convenient.",
+        )
+        self.assertNotEqual(mutated, protocol)
+        with self.assertRaisesRegex(EvalError, "required route map and textual playback"):
+            validate_discussion_source_text(
+                self.skill_sources["grill-me"],
+                self.skill_sources["using-teamwork"],
+                mutated,
+                self.discussion_template,
+            )
+
     def test_discussion_template_rejects_missing_required_sections(self) -> None:
         for heading, error in (
             ("## Starting Question", "Starting Question"),
             ("## Decision State", "Decision State"),
+            ("## Route Map", "Route Map"),
+            ("## Textual Playback", "Textual Playback"),
             ("## Update Rules", "Update Rules"),
         ):
             with self.subTest(heading=heading):
@@ -663,19 +783,17 @@ class SemanticSourceMutationTests(unittest.TestCase):
         with self.assertRaisesRegex(EvalError, "Authority: supporting"):
             validate_discussion_template_text(mutated)
 
-    def test_discussion_template_requires_one_optional_resume_surface(self) -> None:
-        mutated = re.sub(
-            r"(?ms)^## Route Map \(Optional\).*?(?=^## Resume Summary \(Optional\))",
-            "",
-            self.discussion_template,
-        )
-        mutated = re.sub(
-            r"(?ms)^## Resume Summary \(Optional\).*?(?=^## Update Rules)",
-            "",
-            mutated,
-        )
-        with self.assertRaisesRegex(EvalError, "Route Map or Resume Summary"):
-            validate_discussion_template_text(mutated)
+    def test_discussion_template_requires_route_map_and_textual_playback(self) -> None:
+        for heading, error in (
+            ("## Route Map", "Route Map"),
+            ("## Textual Playback", "Textual Playback"),
+        ):
+            with self.subTest(heading=heading):
+                mutated = self.discussion_template.replace(
+                    heading, f"## Removed {heading}"
+                )
+                with self.assertRaisesRegex(EvalError, error):
+                    validate_discussion_template_text(mutated)
 
     def test_discussion_template_rejects_undefined_edge_key(self) -> None:
         mutated = self.discussion_template.replace("R1 --> R3", "R1 --> R4")
@@ -705,7 +823,7 @@ class SemanticSourceMutationTests(unittest.TestCase):
         path = ROOT / "evals/teamwork/cases/discussion-handoff-playback.dev.json"
         data = json.loads(path.read_text(encoding="utf-8"))
         data["trajectory"][0]["assistant"] = (
-            "Resume summary: We already decided to use a dedicated discussion artifact and "
+            "Textual playback: We already decided to use a dedicated discussion artifact and "
             "persist only long or materially branching Grill.\n"
             "Should we use a dedicated discussion artifact?"
         )

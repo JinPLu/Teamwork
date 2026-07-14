@@ -4,15 +4,15 @@
   "source": "synthetic",
   "target": "skills/teamwork-plan/SKILL.md",
   "platforms": ["codex"],
-  "prompt": "Plan a non-simple public workflow change. Inspect first, resolve discoverable facts, enter Grill for any remaining material user decision, and include the resolved decisions in the final plan without requiring an extra confirmation turn. Do not implement or release anything.",
+  "prompt": "Plan a non-simple public workflow change. Inspect first, resolve discoverable facts, enter Grill for any remaining material user decision, then show a brief Settled / Still open checkpoint before the final plan. Do not implement or release anything.",
   "expected": {
     "route": "plan_then_grill_if_needed",
-    "requires": ["non_simple_auto_grill", "resolved_decisions_in_plan", "no_extra_confirmation_turn", "no_execution_authority"]
+    "requires": ["non_simple_auto_grill", "brief_decision_checkpoint", "settled_and_open_visible", "no_execution_authority"]
   },
   "must": [
     "auto-enter Grill for a non-simple plan after evidence has resolved discoverable facts",
-    "ask only material user decisions and carry their resolved choices into the final plan",
-    "continue to the final plan without a separate confirmation turn once choices are resolved",
+    "ask only material user decisions and show which choices are settled versus still open before the final plan",
+    "keep the checkpoint brief and use it to expose any decision that still needs user input",
     "treat any recap or confirmation as planning alignment only"
   ],
   "must_not": [

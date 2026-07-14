@@ -55,13 +55,17 @@ Update at material checkpoints only: a decision changes or closes a branch,
 evidence materially changes a route, the mainline changes, continuity is about
 to cross a context or handoff boundary, or the discussion is promoted or
 superseded. Do not update per turn. Preserve the current decisions, open and
-rejected options, decision-relevant evidence, and exact resume point. A Route
-Map and a plain-text resume summary are optional alternative views; use whichever
-materially improves continuity, without duplicating the canonical decision
-state. Keep only privacy-safe summaries; never store a raw transcript, hidden
-reasoning, secrets, or unnecessary personal data. Promotion to current state,
-research, plan, report, or another canonical owner follows that owner's trigger
-and authority rules and does not grant execution authority.
+rejected options, decision-relevant evidence, and exact resume point. Every
+persisted discussion includes both a full Route Map and a Textual Playback. The
+map shows every material branch and its settled, open, or rejected state; the
+playback concisely reconstructs how evidence and decisions moved through those
+branches to the resume point. They complement the canonical decision state and
+are not a raw transcript. Keep only privacy-safe summaries; never store hidden
+reasoning, secrets, or unnecessary personal data. Keep this route in the
+artifact: ordinary replies lead with the current conclusion, why it matters, and
+the next relevant decision rather than dumping process. Promotion to current
+state, research, plan, report, or another canonical owner follows that owner's
+trigger and authority rules and does not grant execution authority.
 
 ## Retrieval
 

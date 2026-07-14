@@ -15,4 +15,4 @@ Choose the lowest-maintenance surface that fully satisfies accepted criteria; pr
 
 Use TDD when a focused test can meaningfully lock behavior or prevent the regression; otherwise make the smallest change and run the named focused check. For a failure, gather bounded evidence sufficient to classify it and route unknown causes to diagnosis. Stop when required state is missing, scope or intent is unresolved, or observed reality invalidates the plan. Do not invent values, switch targets, expand scope, or perform destructive work. Remove temporary instrumentation before returning.
 
-Return verdict (`accept`, `revise`, or `blocked`), changed files, proof, deviations, and blockers. The parent owns integration and acceptance.
+Return one compact handoff: conclusion (verdict: accept/revise/blocked), evidence and changed files, unresolved impact such as deviations or blockers, and next action. The parent owns integration and acceptance and translates the handoff into a plain-language user update—the conclusion or what it means, why it matters, and what decision or action follows—without exposing coordination labels.

@@ -4,7 +4,6 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 GITHUB_REPO="${TEAMWORK_GITHUB_REPO:-https://github.com/JinPLu/Teamwork}"
 READINESS=0
-PROJECT_ROOT=""
 FETCH_UPSTREAM=1
 
 SKILLS=(
@@ -52,16 +51,14 @@ ISSUES=0
 usage() {
   cat <<'USAGE'
 Usage:
-  ./scripts/check-update.sh [--readiness] [--project PATH] [--no-fetch]
+  ./scripts/check-update.sh [--readiness] [--no-fetch]
 
-Report Teamwork install freshness: package version, global/project surfaces,
-bootstrap policy, agent inventory, and best-effort upstream, remote-tag,
-GitHub-Release, and model drift.
+Report Teamwork install freshness: package version, global surfaces, bootstrap
+policy, agent inventory, and best-effort upstream, remote-tag, GitHub-Release,
+and model drift.
 
 Options:
   --readiness     Compact machine-friendly output for teamwork-init gate
-  --project PATH  Also check Codex .agents/skills, Cursor .cursor/skills,
-                  Claude Code .claude/skills, and project-local agents
   --no-fetch      Skip git fetch / remote tag lookup
 USAGE
 }
@@ -552,37 +549,6 @@ print_readiness() {
   [[ "$(policy_status claude)" == "ok" ]] || { ready=no; missing+=("claude-policy"); }
   missing+=("cursor-policy-manual")
 
-  if [[ -n "$PROJECT_ROOT" ]]; then
-    local project_codex_v project_cursor_v project_claude_v
-    project_codex_v="$(read_installed_version "$PROJECT_ROOT/.agents/skills")"
-    project_cursor_v="$(read_installed_version "$PROJECT_ROOT/.cursor/skills")"
-    project_claude_v="$(read_installed_version "$PROJECT_ROOT/.claude/skills")"
-    [[ "$(skills_status "$PROJECT_ROOT/.agents/skills")" == "ok" ]] || { ready=no; missing+=("project-codex-skills"); }
-    [[ "$(skills_status "$PROJECT_ROOT/.cursor/skills")" == "ok" ]] || { ready=no; missing+=("project-cursor-skills"); }
-    [[ "$(skills_status "$PROJECT_ROOT/.claude/skills")" == "ok" ]] || { ready=no; missing+=("project-claude-skills"); }
-    [[ "$(skills_content_status "$PROJECT_ROOT/.agents/skills")" == "current" ]] || { ready=no; missing+=("project-codex-skill-content"); }
-    [[ "$(skills_content_status "$PROJECT_ROOT/.cursor/skills")" == "current" ]] || { ready=no; missing+=("project-cursor-skill-content"); }
-    [[ "$(skills_content_status "$PROJECT_ROOT/.claude/skills")" == "current" ]] || { ready=no; missing+=("project-claude-skill-content"); }
-    [[ "$(agents_status "$PROJECT_ROOT/.cursor/agents" md "${CURSOR_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("project-cursor-agents"); }
-    [[ "$(agents_status "$PROJECT_ROOT/.codex/agents" toml "${CODEX_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("project-codex-agents"); }
-    [[ "$(agents_status "$PROJECT_ROOT/.claude/agents" md "${CLAUDE_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("project-claude-agents"); }
-    [[ "$(agents_content_status "$PROJECT_ROOT/.codex/agents" toml codex "${CODEX_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("project-codex-agent-content"); }
-    [[ "$(agents_content_status "$PROJECT_ROOT/.cursor/agents" md cursor "${CURSOR_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("project-cursor-agent-content"); }
-    [[ "$(agents_content_status "$PROJECT_ROOT/.claude/agents" md claude "${CLAUDE_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("project-claude-agent-content"); }
-    if [[ "$project_codex_v" != "missing" && "$project_codex_v" != "unknown" ]] && semver_lt "$project_codex_v" "$source_version"; then
-      ready=no
-      missing+=("project-codex-version-drift")
-    fi
-    if [[ "$project_cursor_v" != "missing" && "$project_cursor_v" != "unknown" ]] && semver_lt "$project_cursor_v" "$source_version"; then
-      ready=no
-      missing+=("project-cursor-version-drift")
-    fi
-    if [[ "$project_claude_v" != "missing" && "$project_claude_v" != "unknown" ]] && semver_lt "$project_claude_v" "$source_version"; then
-      ready=no
-      missing+=("project-claude-version-drift")
-    fi
-  fi
-
   for v in "$codex_v" "$cursor_v" "$claude_v"; do
     if [[ "$v" != "missing" && "$v" != "unknown" ]] && semver_lt "$v" "$source_version"; then
       ready=no
@@ -597,22 +563,17 @@ print_readiness() {
   echo "CODEX_VERSION=$codex_v"
   echo "CURSOR_VERSION=$cursor_v"
   echo "CLAUDE_VERSION=$claude_v"
-  if [[ -n "$PROJECT_ROOT" ]]; then
-    echo "PROJECT_CODEX_VERSION=$project_codex_v"
-    echo "PROJECT_CURSOR_VERSION=$project_cursor_v"
-    echo "PROJECT_CLAUDE_VERSION=$project_claude_v"
-  fi
   echo "CODEX_NOTIFICATIONS=$(notification_status codex)"
   echo "CODEX_ROUTING=$(codex_routing_status)"
   echo "CLAUDE_NOTIFICATIONS=$(notification_status claude)"
   echo "CURSOR_NOTIFICATIONS=$(notification_status cursor)"
   echo "MISSING=$(IFS=,; echo "${missing[*]-}")"
-  echo "NEXT=cd \"$ROOT\" && ./install.sh all --profile $profile${PROJECT_ROOT:+ && ./install.sh --project-root \"$PROJECT_ROOT\" project}"
+  echo "NEXT=cd \"$ROOT\" && ./install.sh all --profile $profile"
   echo "CURSOR_POLICY=./install.sh cursor-policy-copy"
 }
 
 print_report() {
-  local source_version upstream profile remote_tag github_release
+  local source_version upstream profile remote_tag github_release action
   source_version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
   upstream="$(upstream_version)"
   profile="$(source_profile)"
@@ -723,54 +684,6 @@ print_report() {
   echo "Expected performance-first explore: claude-sonnet-4-6"
   echo
 
-  if [[ -n "$PROJECT_ROOT" ]]; then
-    echo "--- Project ($PROJECT_ROOT) ---"
-    local p_codex_skills p_cursor_skills p_claude_skills p_codex_content p_cursor_content p_claude_content
-    local p_cursor_agents p_codex_agents p_claude_agents p_cursor_agent_content p_codex_agent_content p_claude_agent_content
-    local p_codex_v p_cursor_v p_claude_v p_codex_drift p_cursor_drift p_claude_drift
-    p_codex_skills="$(skills_status "$PROJECT_ROOT/.agents/skills")"
-    p_cursor_skills="$(skills_status "$PROJECT_ROOT/.cursor/skills")"
-    p_claude_skills="$(skills_status "$PROJECT_ROOT/.claude/skills")"
-    p_codex_content="$(skills_content_status "$PROJECT_ROOT/.agents/skills")"
-    p_cursor_content="$(skills_content_status "$PROJECT_ROOT/.cursor/skills")"
-    p_claude_content="$(skills_content_status "$PROJECT_ROOT/.claude/skills")"
-    p_cursor_agents="$(agents_status "$PROJECT_ROOT/.cursor/agents" md "${CURSOR_AGENTS[@]}")"
-    p_codex_agents="$(agents_status "$PROJECT_ROOT/.codex/agents" toml "${CODEX_AGENTS[@]}")"
-    p_claude_agents="$(agents_status "$PROJECT_ROOT/.claude/agents" md "${CLAUDE_AGENTS[@]}")"
-    p_cursor_agent_content="$(agents_content_status "$PROJECT_ROOT/.cursor/agents" md cursor "${CURSOR_AGENTS[@]}")"
-    p_codex_agent_content="$(agents_content_status "$PROJECT_ROOT/.codex/agents" toml codex "${CODEX_AGENTS[@]}")"
-    p_claude_agent_content="$(agents_content_status "$PROJECT_ROOT/.claude/agents" md claude "${CLAUDE_AGENTS[@]}")"
-    p_codex_v="$(read_installed_version "$PROJECT_ROOT/.agents/skills")"
-    p_cursor_v="$(read_installed_version "$PROJECT_ROOT/.cursor/skills")"
-    p_claude_v="$(read_installed_version "$PROJECT_ROOT/.claude/skills")"
-    p_codex_drift="$(version_drift "$p_codex_v" "$source_version")"
-    p_cursor_drift="$(version_drift "$p_cursor_v" "$source_version")"
-    p_claude_drift="$(version_drift "$p_claude_v" "$source_version")"
-    echo "project codex skills: $p_codex_skills ($p_codex_drift)"
-    echo "project codex skill content: $p_codex_content"
-    echo "project cursor skills: $p_cursor_skills ($p_cursor_drift)"
-    echo "project cursor skill content: $p_cursor_content"
-    echo "project claude skills: $p_claude_skills ($p_claude_drift)"
-    echo "project claude skill content: $p_claude_content"
-    echo "project cursor agents: $p_cursor_agents"
-    echo "project cursor agent content: $p_cursor_agent_content"
-    echo "project codex agents: $p_codex_agents"
-    echo "project codex agent content: $p_codex_agent_content"
-    echo "project claude agents: $p_claude_agents"
-    echo "project claude agent content: $p_claude_agent_content"
-    [[ "$p_codex_skills" == "ok" && "$p_codex_content" == "current" && "$p_codex_drift" == "current" \
-      && "$p_cursor_skills" == "ok" && "$p_cursor_content" == "current" && "$p_cursor_drift" == "current" \
-      && "$p_claude_skills" == "ok" && "$p_claude_content" == "current" && "$p_claude_drift" == "current" \
-      && "$p_cursor_agents" == "ok" && "$p_codex_agents" == "ok" && "$p_claude_agents" == "ok" \
-      && "$p_cursor_agent_content" == "current" && "$p_codex_agent_content" == "current" && "$p_claude_agent_content" == "current" ]] || note_issue
-    if [[ -f "$PROJECT_ROOT/docs/teamwork/index.json" ]]; then
-      echo "docs/teamwork/index.json: present"
-    else
-      echo "docs/teamwork/index.json: missing (optional until memory enabled)"
-    fi
-    echo
-  fi
-
   echo "--- Optional substrates ---"
   if [[ -d "$HOME/.cursor/projects" ]] && find "$HOME/.cursor/projects" -path '*/mcps/user-codegraph/tools/*.json' -print -quit 2>/dev/null | grep -q .; then
     echo "CodeGraph MCP: configured"
@@ -780,24 +693,27 @@ print_report() {
   echo
 
   echo "--- Recommended actions ---"
+  action=1
   if [[ -n "$upstream" ]] && semver_lt "$source_version" "$upstream"; then
-    echo "1. cd \"$ROOT\" && git pull"
+    echo "$action. cd \"$ROOT\" && git pull"
+    ((action += 1))
   fi
-  echo "2. cd \"$ROOT\" && ./install.sh all --profile $profile"
-  if [[ -n "$PROJECT_ROOT" ]]; then
-    echo "3. cd \"$ROOT\" && ./install.sh --project-root \"$PROJECT_ROOT\" project"
-  fi
-  echo "4. Restart Codex after routing changes"
+  echo "$action. cd \"$ROOT\" && ./install.sh all --profile $profile"
+  ((action += 1))
+  echo "$action. Restart Codex after routing changes"
   if [[ "$codex_notification_s" == "review-required" ]]; then
-    echo "4a. Open Codex CLI, run /hooks, and trust the Teamwork Stop and PermissionRequest hooks"
+    echo "${action}a. Open Codex CLI, run /hooks, and trust the Teamwork Stop and PermissionRequest hooks"
   elif [[ "$codex_notification_s" == "runtime-unverified" ]]; then
-    echo "4a. Open Codex CLI and run /hooks to inspect Teamwork notification hook status"
+    echo "${action}a. Open Codex CLI and run /hooks to inspect Teamwork notification hook status"
   fi
-  echo "5. ./install.sh cursor-policy-copy  # copy, then paste into Cursor User Rules"
-  echo "6. ./scripts/validate.sh       # maintainer or post-release sanity"
+  ((action += 1))
+  echo "$action. ./install.sh cursor-policy-copy  # copy, then paste into Cursor User Rules"
+  ((action += 1))
+  echo "$action. ./scripts/validate.sh       # maintainer or post-release sanity"
   if [[ -n "$remote_tag" && "$remote_tag" != "$source_version" ]] \
     || [[ -n "$github_release" && "$github_release" != "$source_version" ]]; then
-    echo "7. Maintainer release: publish v$source_version and its GitHub Release after approval"
+    ((action += 1))
+    echo "$action. Maintainer release: publish v$source_version and its GitHub Release after approval"
   fi
   echo
 
@@ -815,9 +731,9 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --project)
-      [[ $# -ge 2 ]] || { echo "--project requires a path." >&2; exit 2; }
-      PROJECT_ROOT="$(cd "$2" && pwd)"
-      shift 2
+      echo "--project was removed: use ./install.sh all to refresh Teamwork's global skills and agents." >&2
+      usage
+      exit 2
       ;;
     --no-fetch)
       FETCH_UPSTREAM=0

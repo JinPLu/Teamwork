@@ -182,8 +182,8 @@ REQUIRED_ASK_PREDICATE_CASES = {
     "ask-required-input-goal": {"goal_stage", "required_input", "ask_outside_grill"},
     "plan-ask-readiness": {
         "non_simple_auto_grill",
-        "resolved_decisions_in_plan",
-        "no_extra_confirmation_turn",
+        "brief_decision_checkpoint",
+        "settled_and_open_visible",
         "no_execution_authority",
     },
     "review-bounded-recheck": {"stable_finding_ids", "review_taxonomy", "blocker_classification", "one_corrective_recheck"},
@@ -254,15 +254,51 @@ REQUIRED_DISCUSSION_CASES = {
     },
     "discussion-handoff-playback": {
         "decision_state_resume",
-        "optional_resume_view",
+        "durable_route_map",
+        "textual_playback",
         "no_repeated_answered_decision",
         "handoff_continuity",
+        "static_contract_only",
+    },
+    "discussion-route-map-playback": {
+        "durable_route_map",
+        "textual_playback",
+        "decision_state_resume",
         "static_contract_only",
     },
     "discussion-replacement-promotion": {
         "replaced_route_superseded",
         "promotion_trigger_and_target",
         "promotion_no_execution_authority",
+        "static_contract_only",
+    },
+}
+REQUIRED_AUDIENCE_CASES = {
+    "audience-first-community-research": {
+        "audience_first_answer",
+        "plain_causal_explanation",
+        "relevance_gate",
+        "specific_material_uncertainty",
+        "decision_appropriate_next_step",
+        "static_contract_only",
+    },
+}
+REQUIRED_HANDOFF_CASES = {
+    "subagent-minimal-handoff": {
+        "conclusion",
+        "direct_evidence",
+        "unresolved_impact",
+        "next_action",
+        "root_translation",
+        "static_contract_only",
+    },
+}
+REQUIRED_RULE_MAINTENANCE_CASES = {
+    "rule-maintenance-audit": {
+        "canonical_owner",
+        "user_effect",
+        "verification",
+        "plain_language_summary",
         "static_contract_only",
     },
 }
@@ -280,8 +316,8 @@ REQUIRED_SKILL_CASE_CLAUSES = {
     },
     "plan-ask-readiness": {
         "non_simple_auto_grill",
-        "resolved_decisions_in_plan",
-        "no_extra_confirmation_turn",
+        "brief_decision_checkpoint",
+        "settled_and_open_visible",
         "no_execution_authority",
     },
     "complex-coding-discipline": {
@@ -319,7 +355,7 @@ REQUIRED_SKILL_CASE_CLAUSES = {
         "source_freshness",
         "profile_preserved",
         "global_install_refresh",
-        "project_refresh_when_in_scope",
+        "project_context_init_no_local_copies",
         "manual_host_actions",
         "readiness_recheck",
         "no_release_metadata",
@@ -374,6 +410,10 @@ SKILL_SOURCE_CONTRACTS = {
         (
             ("non-simple material Grill", "every non-simple plan enters evidence-first `grill-me`"),
             ("resolved choices captured in the plan", "summarize them in the plan"),
+            (
+                "brief Settled/Still open checkpoint",
+                "`settled: ...` / `still open: ...` checkpoint",
+            ),
             ("no execution authority", "confirmation grants no implementation, release, external-effect, or other authority"),
         ),
     ),
@@ -406,7 +446,10 @@ SKILL_SOURCE_CONTRACTS = {
         "skills/teamwork-init/SKILL.md",
         (
             ("readiness gaps", "reported gaps, not stop conditions"),
-            ("safe local continuation", "project surfaces continue even when the global install returns an actionable configuration failure"),
+            (
+                "safe project-context continuation",
+                "project instructions, memory, and codegraph context can continue when the global install returns an actionable configuration failure",
+            ),
             ("host-owned tools", "native interaction tools are host capabilities, not teamwork installation requirements"),
             ("external tooling approval", "do not install external tooling without approval"),
         ),
@@ -414,9 +457,19 @@ SKILL_SOURCE_CONTRACTS = {
     "teamwork-update": (
         "skills/teamwork-update/SKILL.md",
         (
-            ("user refresh only", "refresh user installations only"),
+            (
+                "global user refresh and project context only",
+                "refresh global user installations and requested project context only",
+            ),
             ("profile preserved", "preserve the current install profile"),
-            ("global and project refresh", "refresh all global skills, agents, managed policy, routing, and applicable project surfaces"),
+            (
+                "global refresh",
+                "for a global-only refresh of skills, agents, managed policy, and routing",
+            ),
+            (
+                "project context without package copies",
+                "updates project instructions, memory, and codegraph context without creating project-local package copies",
+            ),
             ("readiness recheck", "until it reports `install_ready=yes`"),
             ("no release metadata", "never edit `version`, plugin manifests, changelogs, release commits, tags, or github releases"),
         ),

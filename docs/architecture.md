@@ -36,9 +36,10 @@ CONTRIBUTING.md                 contributor entrypoint
 
 The following are sinks, not package sources:
 
-- `.agents/`, `.codex/`, `.cursor/`, and `.claude/` are generated local
-  installations. Edit `skills/`, `templates/`, or the relevant producer
-  instead of editing an installed copy.
+- `.agents/`, `.codex/`, `.cursor/`, and `.claude/` may be legacy or generated
+  local installation paths. Supported project setup does not create or refresh
+  them; edit `skills/`, `templates/`, or the relevant producer instead of an
+  installed copy.
 - `docs/teamwork/` is local Teamwork runtime memory. Its plans, research,
   discussion, reports, and active-state files are ignored unless a maintainer
   explicitly promotes an artifact.
@@ -88,7 +89,7 @@ that recorder with an isolated Codex install, an installed-file manifest, and
 externally validated semantic reviews. Both supplement deterministic
 evaluation; neither proves automatic skill activation or Cursor/Claude parity.
 The installed canary isolates its user home, not an arbitrary supplied
-worktree; use a clean Git snapshot when project-local generated surfaces would
+worktree; use a clean Git snapshot when legacy generated local surfaces would
 confound the treatment.
 
 Thin entrypoints may delegate to `scripts/teamwork_tooling/` or
@@ -104,7 +105,7 @@ routing/configuration; it adds no third-party Python dependency.
 | Workflow routing, stage behavior, or shared policy | `skills/*/SKILL.md` and `skills/using-teamwork/references/` | Focused contract/evaluation case; platform adapters only when their rendering changes |
 | Platform agent role, prompt adapter, or model profile | `templates/*-agents/` | Profile/render validation for every affected platform |
 | Notifications | `hooks/` and notification configuration scripts | Hook manifest validation and focused hook tests |
-| Install targets, destinations, policy blocks, or profiles | `install.sh` and `scripts/install/` | Isolated-home/project installer fixtures |
+| Install targets, destinations, policy blocks, or profiles | `install.sh` and `scripts/install/` | Isolated-home and project-context fixtures |
 | Package validation behavior | `scripts/validate.sh` and validation modules | Focused harness tests, including a representative failing mutation |
 | Deterministic or semantic evaluation | `scripts/eval-teamwork.py`, evaluation modules, and `evals/teamwork/` | Case/rubric schema checks and mutation-sensitive tests |
 | Live trajectory recording | `scripts/run-teamwork-live-eval.py` and live-eval fixtures | Isolated, bounded runner tests; claims limited to observed treatment |

@@ -31,7 +31,8 @@ when it is available and its index is healthy for the relevant files.
 
 ## Lifecycle
 
-A subagent returns one self-contained internal result, then stops. It does not monitor,
+A subagent returns one self-contained internal result—Conclusion, Direct
+Evidence, Unresolved Impact, and Next Action—then stops. It does not monitor,
 expand scope, chain agents, or resume after return. The sole exception is one
 parent-directed corrective recheck in the same initial Judge/Reviewer thread;
 that thread may inspect only its prior finding IDs, claimed fixes, and
@@ -39,8 +40,9 @@ fix-introduced regressions or new direct evidence. It cannot dispatch, monitor,
 or request another recheck. Give materially new work to a fresh agent with a
 fresh internal brief.
 
-The main agent records review-relevant outcomes and owns integration,
-verification, and acceptance.
+The root translates internal results into an audience-first response; the main
+agent records review-relevant outcomes and owns integration, verification, and
+acceptance.
 
 ## Platform Fields
 

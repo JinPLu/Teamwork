@@ -4,19 +4,20 @@
   "source": "synthetic",
   "target": "skills/teamwork-init/SKILL.md",
   "platforms": ["codex", "cursor", "claude"],
-  "prompt": "Initialize project-local Teamwork instructions when global readiness reports an actionable gap and an optional external tool is unavailable.",
+  "prompt": "Initialize Teamwork project context when global readiness reports an actionable gap and an optional external tool is unavailable.",
   "expected": {
     "route": "init",
     "requires": ["readiness_gaps_reported", "safe_local_continuation", "host_tools_host_owned", "external_tooling_approval"]
   },
   "must": [
-    "report readiness gaps and continue safe project-local setup",
+    "report readiness gaps and continue safe project-context setup without copying Teamwork skills or agents into the project",
     "read the installed profile and material model configuration instead of relying on a timeless mapping embedded in Init",
     "treat native interaction tools as host-owned capabilities",
     "request approval before installing external tooling"
   ],
   "must_not": [
-    "hard-gate local project files on a global configuration failure",
+    "hard-gate project instructions, memory, or CodeGraph context on a global configuration failure",
+    "create project-local Teamwork skill or agent copies",
     "change user configuration to make a host interaction tool available",
     "install an unavailable external tool without approval"
   ],

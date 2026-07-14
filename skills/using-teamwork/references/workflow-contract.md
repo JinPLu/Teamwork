@@ -34,6 +34,27 @@ their methods; load other references only when their condition applies.
 6. **Delegate economically.** Fan out only independent, clearly owned work whose
    evidence, time, or context-isolation value exceeds coordination cost. Main
    owns scope, integration, and final verification.
+7. **Audit internal rule changes.** For each internal workflow/rule change,
+   audit the canonical owner, user effect, and verification; explain the result
+   in plain language.
+
+## User-Facing Communication
+
+Default to audience-first replies: lead with the conclusion and why it matters,
+then give the shortest plain causal explanation and a useful action or decision
+when relevant. Do not narrate internal work, stages, or process by default.
+
+Use a relevance gate. Omit versions, unexplained or self-invented labels,
+engineering/process narration, and repeated generic “not proven” / “尚未证明”
+caveats unless requested or they could change the conclusion, choice,
+compatibility, risk, or next action. State material uncertainty once: what is
+unknown, why it matters, and the evidence or action that would resolve it. Never
+turn uncertainty into certainty.
+
+When a material decision affects the next action, give a brief human-readable
+checkpoint: `Settled: <resolved choice and why>` / `Still open: <remaining
+choice or none>`. Omit it when no material decision exists. It reports decision
+state; it is not a process dump, confirmation turn, or authority grant.
 
 ## Ask Gate
 
@@ -42,9 +63,10 @@ of unresolved required input or observation, or owns a material decision that
 changes dependent action, public outcome, acceptance, or authority. The
 agent owns safe, reversible implementation details. Pause only the dependent
 branch; independent read-only work may continue when an answer cannot invalidate
-it. The root agent alone asks the user. Subagents return Question Candidates,
-never questions to the user. The host owns the interaction UI, waiting, timeout,
-and resume lifecycle; Teamwork neither enables nor emulates those capabilities.
+it. The root agent alone asks the user and translates internal outcomes into an
+audience-first response. Subagents return Question Candidates, never questions
+to the user. The host owns the interaction UI, waiting, timeout, and resume
+lifecycle; Teamwork neither enables nor emulates those capabilities.
 
 Ordinary required input does not activate `grill-me`. Explicit grill requests
 and non-simple Plan use that interaction policy while still applying this gate.
@@ -84,7 +106,8 @@ low- and medium-risk work. Fresh review is required only for the high-risk row.
 Evidence state is monotonic: keep `NOT VERIFIED`, failed, blocked, and
 partial-tranche results visible until new direct evidence changes that exact claim.
 Never upgrade them through synthesis, retry narration, or a broader completion
-claim.
+claim. Keep those states in evidence records; user-facing replies use the
+specific material uncertainty above rather than repeating generic status labels.
 
 Create durable artifacts only when work is reusable, cross-turn, high-risk,
 public, explicitly planned, or goal-mode; see `artifact-protocol.md`.

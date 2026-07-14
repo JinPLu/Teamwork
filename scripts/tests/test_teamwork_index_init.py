@@ -75,7 +75,6 @@ class TeamworkInitPreservationTests(unittest.TestCase):
             [
                 str(INIT),
                 "--copy",
-                "--project-only",
                 "--no-codegraph",
                 "--no-cursor-policy-copy",
                 "--project-root",
@@ -96,6 +95,7 @@ class TeamworkInitPreservationTests(unittest.TestCase):
             project.mkdir()
             home.mkdir()
             (project / "README.md").write_text("# Local Display Label\n", encoding="utf-8")
+            (project / ".gitignore").write_text("# Keep this user rule\n", encoding="utf-8")
 
             result = self.run_init(project, home)
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -116,6 +116,18 @@ class TeamworkInitPreservationTests(unittest.TestCase):
                 "Keep volatile task progress",
             ):
                 self.assertNotIn(unsupported, agents)
+
+            gitignore = (project / ".gitignore").read_text(encoding="utf-8")
+            self.assertIn("# Keep this user rule", gitignore)
+            for local_package_path in (".agents/", ".codex/", ".cursor/", ".claude/"):
+                self.assertNotIn(local_package_path, gitignore)
+            for local_package_path in (
+                project / ".agents",
+                project / ".codex" / "agents",
+                project / ".cursor" / "skills",
+                project / ".claude" / "skills",
+            ):
+                self.assertFalse(local_package_path.exists(), local_package_path)
 
     def test_existing_index_byte_preserved(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -138,6 +150,17 @@ class TeamworkInitPreservationTests(unittest.TestCase):
             self.assertEqual((memory / "index.json").read_bytes(), index_bytes)
             self.assertEqual((memory / "README.md").read_bytes(), readme_bytes)
             self.assertEqual((memory / "current.md").read_bytes(), current_bytes)
+
+    def test_project_only_flag_is_rejected(self) -> None:
+        result = subprocess.run(
+            [str(INIT), "--project-only"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("--project-only was removed", result.stderr)
 
 
 if __name__ == "__main__":

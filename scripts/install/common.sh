@@ -64,20 +64,16 @@ usage() {
 Usage:
   ./install.sh [--copy|--link] [--notifications|--no-notifications] [--codex-routing|--no-codex-routing] [--profile performance-first|cost-first|gpt56-role|gpt56-high|gpt56-xhigh|gpt55-high|gpt55-xhigh] \
     [--project-root PATH] \
-    codex|cursor|claude|all|project|init-project|project-codex-agents|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
+    codex|cursor|claude|all|init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
 
 Targets:
   codex          Install skills, Codex agents, and Teamwork global policy (default target)
   cursor         Install skills, Cursor agents, and print cursor-policy guidance
   claude         Install skills, Claude agents, and Teamwork Claude global policy
   all            Install skills, all platform agents, and Codex + Claude global policy
-  project        Install project skills under .agents/skills, .cursor/skills,
-                 and .claude/skills, plus agents under .codex/, .cursor/, and .claude/
-                 (default: this checkout; use --project-root for another repo)
-  init-project   Full project init: global/project skills and agents, AGENTS.md,
-                 docs/teamwork/, .gitignore entries, and CodeGraph when available
-  project-codex-agents
-                 Install only project-local Teamwork Codex agents under .codex/
+  init-project   Refresh global skills, agents, and policies, then initialize
+                 AGENTS.md, docs/teamwork/, .gitignore entries, and CodeGraph
+                 for one project (use --project-root for another repo)
   codex-agents   Install Teamwork Codex custom agents to ~/.codex/agents
                  and configure their user-level routing unless opted out
   cursor-agents  Install Teamwork Cursor subagents to ~/.cursor/agents
@@ -90,18 +86,19 @@ Targets:
 
 Default mode is --copy. Use --link for local development when installs should
 track this checkout.
+`--project-root` is valid only with `init-project`.
 
 Full installs (`all` and `init-project`) install ready/permission sounds for
 user-level Codex and Claude Code by default. Direct platform installs leave
 notifications unchanged unless --notifications or --no-notifications is used.
---no-notifications removes only Teamwork-owned handlers. Project and Cursor
-notification installs are intentionally unsupported until their local hook
-contracts are live-verified.
+--no-notifications removes only Teamwork-owned handlers. Cursor notification
+installs are intentionally unsupported until their local hook contracts are
+live-verified.
 
 User-level Codex installs configure ~/.codex/config.toml so the runtime can
 select installed Teamwork agent roles and run one main thread plus up to eight
 subagents. Use --no-codex-routing only when another owner manages that routing
-contract; project-only targets never change it.
+contract; init-project refreshes the user-level routing before project setup.
 
 Profile defaults to performance-first on all platforms. For Codex it uses a
 GPT-5.6 role split: Terra medium for Explorer; Sol medium for Worker; Sol high

@@ -58,7 +58,12 @@ while [[ $# -gt 0 ]]; do
       CODEX_PROFILE="cost-first"
       shift
       ;;
-    codex|cursor|claude|all|project|init-project|project-codex-agents|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy)
+    project|project-codex-agents)
+      echo "Project-local install targets were removed. Use ./install.sh --project-root <path> init-project to refresh global Teamwork surfaces and set up project context." >&2
+      usage
+      exit 2
+      ;;
+    codex|cursor|claude|all|init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy)
       if [[ -n "$TARGET" ]]; then
         echo "Specify only one install target." >&2
         usage
@@ -119,8 +124,8 @@ if [[ "$NOTIFICATIONS_ACTION" != "preserve" ]]; then
   esac
 fi
 
-if [[ -n "$PROJECT_ROOT" && "${TARGET:-codex}" != "project" && "${TARGET:-codex}" != "init-project" && "${TARGET:-codex}" != "project-codex-agents" ]]; then
-  echo "--project-root is valid only with the project, project-codex-agents, and init-project targets." >&2
+if [[ -n "$PROJECT_ROOT" && "${TARGET:-codex}" != "init-project" ]]; then
+  echo "--project-root is valid only with the init-project target." >&2
   usage
   exit 2
 fi
@@ -145,12 +150,6 @@ case "${TARGET:-codex}" in
     ;;
   all)
     install_all
-    ;;
-  project)
-    install_project
-    ;;
-  project-codex-agents)
-    install_codex_agent_set "${PROJECT_ROOT:-$ROOT}/.codex/agents" "project"
     ;;
   init-project)
     init_project

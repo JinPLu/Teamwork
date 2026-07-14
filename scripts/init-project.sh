@@ -6,7 +6,6 @@ PROJECT_ROOT="$PWD"
 INSTALL_MODE_FLAG=""
 PROFILE_VALUE=""
 RUN_CODEGRAPH="${TEAMWORK_INIT_CODEGRAPH:-1}"
-INSTALL_GLOBAL=1
 COPY_CURSOR_POLICY="${TEAMWORK_INIT_CURSOR_POLICY_COPY:-1}"
 NOTIFICATIONS_ACTION="${TEAMWORK_NOTIFICATIONS_ACTION:-preserve}"
 GLOBAL_INSTALL_RC=0
@@ -15,15 +14,13 @@ unset TEAMWORK_NOTIFICATIONS_ACTION
 usage() {
   cat <<'USAGE'
 Usage:
-  ./scripts/init-project.sh [--project-root PATH] [--copy|--link] [--profile performance-first|cost-first|gpt56-role|gpt56-high|gpt56-xhigh|gpt55-high|gpt55-xhigh] [--no-codegraph] [--project-only] [--no-cursor-policy-copy]
+  ./scripts/init-project.sh [--project-root PATH] [--copy|--link] [--profile performance-first|cost-first|gpt56-role|gpt56-high|gpt56-xhigh|gpt55-high|gpt55-xhigh] [--no-codegraph] [--no-cursor-policy-copy]
 
 Initializes a project with full Teamwork defaults:
   - global Codex/Cursor/Claude skills, agents, and managed policies
   - Codex custom-agent routing
   - user-level Codex and Claude Code notifications (use --no-notifications on
     the install.sh init-project entrypoint to opt out)
-  - project skills under .agents/skills, .cursor/skills, and .claude/skills,
-    plus agents under .codex/.cursor/.claude
   - AGENTS.md Teamwork managed block
   - docs/teamwork/ runtime memory entrypoint
   - .gitignore entries for local Teamwork state
@@ -53,8 +50,9 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --project-only)
-      INSTALL_GLOBAL=0
-      shift
+      echo "--project-only was removed: use ./install.sh --project-root <path> init-project, which always refreshes global Teamwork surfaces." >&2
+      usage
+      exit 2
       ;;
     --no-cursor-policy-copy)
       COPY_CURSOR_POLICY=0
@@ -81,26 +79,10 @@ require_python() {
 
 install_global_surfaces() {
   local args=()
-  if (( INSTALL_GLOBAL == 0 )); then
-    echo "Global Teamwork surfaces: skipped (--project-only)"
-    return 0
-  fi
   [[ -n "$INSTALL_MODE_FLAG" ]] && args+=("$INSTALL_MODE_FLAG")
   [[ -n "$PROFILE_VALUE" ]] && args+=(--profile "$PROFILE_VALUE")
   TEAMWORK_NOTIFICATIONS_ACTION="$NOTIFICATIONS_ACTION" \
     "$TEAMWORK_ROOT/install.sh" "${args[@]}" all
-}
-
-install_project_surfaces() {
-  if [[ -n "$INSTALL_MODE_FLAG" && -n "$PROFILE_VALUE" ]]; then
-    "$TEAMWORK_ROOT/install.sh" "$INSTALL_MODE_FLAG" --profile "$PROFILE_VALUE" --project-root "$PROJECT_ROOT" project
-  elif [[ -n "$INSTALL_MODE_FLAG" ]]; then
-    "$TEAMWORK_ROOT/install.sh" "$INSTALL_MODE_FLAG" --project-root "$PROJECT_ROOT" project
-  elif [[ -n "$PROFILE_VALUE" ]]; then
-    "$TEAMWORK_ROOT/install.sh" --profile "$PROFILE_VALUE" --project-root "$PROJECT_ROOT" project
-  else
-    "$TEAMWORK_ROOT/install.sh" --project-root "$PROJECT_ROOT" project
-  fi
 }
 
 write_project_files() {
@@ -183,7 +165,7 @@ Last Updated: {today}
 - Active discussion: none.
 - Active plan/design: none.
 - Progress summary: Teamwork runtime memory was initialized for this project.
-- Latest result: Project instructions and local runtime surfaces are ready for use.
+- Latest result: Project instructions and Teamwork runtime memory are ready for use.
 - Blockers: none recorded.
 - Next action: Replace this digest when material project state changes.
 
@@ -297,12 +279,7 @@ agents_block = f"""<!-- TEAMWORK_PROJECT_START -->
 """
 
 gitignore_block = """# TEAMWORK_LOCAL_START
-# Teamwork local runtime and project install surfaces
-.agents/
-.codex/
-.cursor/
-.claude/
-.teamwork-profile
+# Teamwork local runtime state
 .codegraph/
 docs/teamwork/plans/
 docs/teamwork/discussion/
@@ -416,9 +393,8 @@ if install_global_surfaces; then
   :
 else
   GLOBAL_INSTALL_RC=$?
-  echo "Global Teamwork surfaces: failed; continuing with project-local setup" >&2
+  echo "Global Teamwork surfaces: failed; continuing with project context setup" >&2
 fi
-install_project_surfaces
 init_codegraph
 write_project_files
 validate_teamwork_memory
@@ -426,7 +402,7 @@ detect_context7
 copy_cursor_policy
 
 if (( GLOBAL_INSTALL_RC != 0 )); then
-  echo "Teamwork project init completed locally; global setup still requires repair" >&2
+  echo "Teamwork project context initialized; global setup still requires repair" >&2
   exit "$GLOBAL_INSTALL_RC"
 fi
 

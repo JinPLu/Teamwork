@@ -27,11 +27,12 @@ authority.
 - Resume point: <the next decision question and why it can change the mainline>
 - Promotion: <none, or target artifact/path and trigger>
 
-## Route Map (Optional)
+## Route Map
 
-Use a diagram when branching relationships are easier to recover visually. Use
-artifact-local node keys such as `R1`, include textual status in every node, and
-keep evidence and outcomes in Decision State rather than duplicating them here.
+Show the full material route, including every settled, open, and rejected
+branch. Use artifact-local node keys such as `R1`, include textual status in
+every node, and keep detailed evidence and outcomes in Decision State rather
+than duplicating them here.
 
 ```mermaid
 flowchart TD
@@ -42,11 +43,12 @@ flowchart TD
     R1 --> R3
 ```
 
-## Resume Summary (Optional)
+## Textual Playback
 
-Use this instead of a Route Map when a short plain-text orientation is clearer:
-what was decided, what remains open or rejected, the evidence that matters, and
-the exact point at which to resume. Do not reproduce dialogue or a raw transcript.
+Concise chronological recovery of the route: starting question, evidence or
+decision that changed each material branch, current settled/open/rejected state,
+and the exact point at which to resume. This complements the Route Map; do not
+reproduce dialogue or a raw transcript.
 
 ## Update Rules
 

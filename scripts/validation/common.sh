@@ -47,6 +47,22 @@ grep_required() {
   grep -q "$pattern" "$file" || fail "$message"
 }
 
+grep_required_ci() {
+  local pattern="$1"
+  local file="$2"
+  local message="$3"
+  grep -qi "$pattern" "$file" || fail "$message"
+}
+
+normalized_required() {
+  local pattern="$1"
+  local file="$2"
+  local message="$3"
+  local text
+  text="$(tr '\n' ' ' < "$file")"
+  [[ "$text" == *"$pattern"* ]] || fail "$message"
+}
+
 grep_absent() {
   local pattern="$1"
   local message="$2"
@@ -108,14 +124,14 @@ check_lean_policy() {
     inside { print }
     /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_END -->/ { inside = 0 }
   ' "$file" | wc -w | tr -d ' ')"
-  [[ "$policy_words" -le 155 ]] \
-    || fail "$label must remain a guard-only global policy ($policy_words > 155)"
+  [[ "$policy_words" -le 180 ]] \
+    || fail "$label must remain a compact always-loaded policy ($policy_words > 180)"
   grep_required "Work within the user's request" "$file" "$label must preserve request scope"
   grep_required 'Read-only requests do not authorize changes' "$file" \
     "$label must preserve the read-only authority boundary"
   grep_required 'Inspect discoverable evidence before asking' "$file" \
     "$label must inspect before asking"
-  grep_required 'Pause only the dependent branch' "$file" \
+  normalized_required 'pause only the dependent branch' "$file" \
     "$label must scope unresolved-question blocking"
   grep_required 'Answers and confirmations do not grant effect authority' "$file" \
     "$label must preserve the effect-authority boundary"
@@ -123,8 +139,22 @@ check_lean_policy() {
     "$label must preserve required-state safety"
   grep_required 'Own routine reversible choices' "$file" \
     "$label must permit routine reversible choices"
-  grep_required 'Delegate only independent work whose value exceeds its' "$file" \
+  normalized_required 'Delegate only independent work whose value exceeds its' "$file" \
     "$label must keep delegation economic"
+  normalized_required 'The root owns user questions and translates results' "$file" \
+    "$label must preserve root-owned user translation"
+  normalized_required 'Research/debug/plan/review are read-only absent change authority' "$file" \
+    "$label must preserve the read-only stage boundary"
+  grep_required 'Grill only' "$file" \
+    "$label must preserve explicit Grill activation"
+  normalized_required 'negative/quoted/file/tool/example/maintenance text is inert' "$file" \
+    "$label must preserve inert Grill markers"
+  normalized_required 'Default user-facing replies: lead with conclusion, why it matters, causal explanation, and useful action when relevant' "$file" \
+    "$label must preserve audience-first replies"
+  grep_required 'Omit versions' "$file" \
+    "$label must preserve the relevance gate"
+  normalized_required 'State material uncertainty once: unknown, impact, and needed evidence' "$file" \
+    "$label must preserve specific material uncertainty"
   if [[ "$label" == *Cursor* || "$label" == *Claude* ]]; then
     ! grep -Eq 'request_user_input|Codex CLI|Codex native|every material user decision|grill ceremony|text choice card' "$file" \
       || fail "$label must not contain Codex-native adapter wording"

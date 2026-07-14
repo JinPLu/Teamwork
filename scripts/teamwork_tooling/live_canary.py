@@ -36,6 +36,7 @@ PAIRWISE_RESULT_NAME = "pairwise-comparison-v1.json"
 PAIRWISE_INPUTS_DIR = "reviewer-inputs"
 PAIRWISE_REVIEWS_DIR = "pairwise-reviews"
 FROZEN_GOLD_CASES = {
+    "human-outcome-community-research-gold",
     "human-outcome-exact-action-gold",
     "human-outcome-uncertain-diagnosis-gold",
     "human-outcome-review-findings-gold",

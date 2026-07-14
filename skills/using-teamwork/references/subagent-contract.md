@@ -53,12 +53,16 @@ Return the smallest internal result that preserves the parent's decision evidenc
 ```text
 Role:
 Status or Verdict:
-Result:
-Evidence / Verification:
+Conclusion:
+Direct Evidence:
+Unresolved Impact: <none, or unknown and why it changes the work>
+Next Action:
 Files Changed: <paths | none>
-Risks / Blockers:
-Next: <parent decision, follow-up evidence, or none>
 ```
+
+The parent uses this internal record to integrate the work. The root translates
+it into an audience-first response for people; do not expose the packet or its
+labels unless the user asks for them.
 
 ## Conditional Role Fields
 

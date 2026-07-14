@@ -1,25 +1,26 @@
 ---
 name: teamwork-update
-description: Use when checking or refreshing installed Teamwork skills, agents, global policy, notifications, routing, or project surfaces from an existing Teamwork checkout.
+description: Use when checking or refreshing installed Teamwork skills, agents, global policy, notifications, routing, or project context from an existing Teamwork checkout.
 ---
 
 # Teamwork Update
 
 Read `skills/using-teamwork/references/workflow-contract.md` before proceeding.
-Refresh user installations only. Read
+Refresh global user installations and requested project context only. Read
 `skills/using-teamwork/references/check-update.md` for the freshness contract.
 
 ## Workflow
 
-1. From the Teamwork checkout, run `./scripts/check-update.sh`; add `--project
-   "<project-root>"` when project surfaces are in scope.
+1. From the Teamwork checkout, run `./scripts/check-update.sh`.
 2. If the checkout is behind upstream, pull only with repository-update
    authority. Preserve the current install profile from source/config or the
    report; never guess it.
-3. Run `./scripts/check-update.sh --readiness` with the same optional project
-   argument. Execute `NEXT`, or its exact commands with an explicitly requested
-   `--no-notifications`, to refresh all global skills, agents, managed policy,
-   routing, and applicable project surfaces.
+3. Run `./scripts/check-update.sh --readiness`. Execute `NEXT`, or its exact
+   commands with an explicitly requested `--no-notifications`, for a global-only
+   refresh of skills, agents, managed policy, and routing. For requested project
+   context, run `./install.sh --project-root "<project-root>" init-project`
+   instead; it refreshes global Teamwork first, then updates project instructions,
+   memory, and CodeGraph context without creating project-local package copies.
 4. Run `./install.sh cursor-policy-copy` when possible and report that the
    Cursor User Rules paste cannot be verified automatically. For
    `CODEX_NOTIFICATIONS=review-required`, inspect `/hooks` and trust only the
@@ -38,8 +39,8 @@ Refresh user installations only. Read
 - Native interaction tools remain host-owned. Static content freshness does not
   prove live host behavior.
 - Preserve unrelated files and report source version, installed versions,
-  profile, global/project status, manual actions, restart need, and unresolved
-  drift.
+  profile, global status, project-context result, manual actions, restart need,
+  and unresolved drift.
 
 ## Done When
 

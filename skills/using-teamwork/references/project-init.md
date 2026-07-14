@@ -21,6 +21,11 @@ Optional internal classifications are `keep`, `merge`, `migrate`, `remove`,
 `create`, and `unresolved`. Send only material unresolved conflicts through the
 Ask Gate; preserve competing claims and pause dependent edits.
 
+When changing an internal workflow or instruction rule, audit its canonical
+owner, user effect, and verification. Give the user a plain-language summary of
+what changes for them; do not substitute internal classifications or process
+narration for that explanation.
+
 ## Ownership And Time Horizon
 
 - Root `AGENTS.md` owns shared stable Codex and Cursor project instructions:
@@ -59,10 +64,12 @@ migrator, preserve the legacy or custom key/content and report a candidate.
 ## Readiness, Capability, And Output
 
 Profiles are install-time; ask only about unresolved material overrides. With
-authority, run readiness and the accepted target. Skill roots are Codex
-`.agents/skills/`, Cursor `.cursor/skills/`, and Claude `.claude/skills/`; agents
-stay in host roots. Native tools are not install requirements; installing tools
-or changing host config needs separate authority.
+authority, run readiness and the accepted target. Teamwork skills and agents are
+global-install surfaces. `init-project` refreshes them globally, then updates
+only project instructions, memory, and optional CodeGraph context; it does not
+install, refresh, or check project-local Teamwork skill or agent copies. Native
+tools are not install requirements; installing tools or changing host config
+needs separate authority.
 
 Only an explicitly requested full bootstrap returns a Capability Matrix. Name
 the state and next action for each requested capability. CodeGraph initialization

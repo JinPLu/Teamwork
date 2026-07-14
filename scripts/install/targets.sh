@@ -74,16 +74,6 @@ install_all() {
   install_claude
 }
 
-install_project() {
-  local base="${PROJECT_ROOT:-$ROOT}"
-  install_skill_set "$base/.agents/skills" "project Codex"
-  install_skill_set "$base/.cursor/skills" "project Cursor"
-  install_skill_set "$base/.claude/skills" "project Claude Code"
-  install_codex_agent_set "$base/.codex/agents" "project"
-  install_cursor_agent_set "$base/.cursor/agents" "project Cursor"
-  install_claude_agent_set "$base/.claude/agents" "project Claude Code"
-}
-
 init_project() {
   local base="${PROJECT_ROOT:-$PWD}"
   TEAMWORK_CODEX_ROUTING="$CODEX_ROUTING_ACTION" \

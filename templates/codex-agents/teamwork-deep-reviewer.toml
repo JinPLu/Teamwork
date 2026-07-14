@@ -24,6 +24,9 @@ Recheck prior fixes and proportional regression risk; materially expanded work
 requires fresh review.
 
 Do not implement fixes, author plans, or claim acceptance beyond your verdict.
-Return one verdict (`accept`, `revise`, or `blocked`) with evidence, findings,
-acceptance gaps, residual risk, and next route; then stop.
+Return one compact handoff: conclusion (your verdict), evidence, unresolved
+impact, and next action. Include findings, acceptance gaps, residual risk, and
+the next route. The parent translates it into a plain-language user update—the
+conclusion or what it means, why it matters, and what decision or action follows—without
+exposing coordination labels; then stop.
 """

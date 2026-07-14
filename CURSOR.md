@@ -6,40 +6,36 @@ subagents, custom agents, and verification remain the execution layer.
 
 ## Install
 
-User-level setup:
+Global setup:
 
 ```bash
+./install.sh all
 ./install.sh cursor
 ./install.sh cursor --profile cost-first
-./install.sh cursor-agents
-./install.sh cursor-policy-copy
-./install.sh cursor-policy
-./install.sh all
 ```
 
-These commands make Teamwork skills and agents available to the current user;
-they do not initialize every repository. Configure one selected repository
-with:
+Use `./install.sh all` for the default full global refresh. The platform-specific
+commands above are for a deliberately narrower setup. None initialize every
+repository. Establish context for one selected repository with:
 
 ```bash
-./install.sh --project-root /path/to/project project
 ./install.sh --project-root /path/to/project init-project
 ```
 
-User-level skills install to `~/.cursor/skills/` and custom agents to
-`~/.cursor/agents/`. Project setup installs skills to `.cursor/skills/` and
-agents to `.cursor/agents/` in the selected repository. Use `--link` only when
-the installation should track this checkout during development.
+`init-project` refreshes the current user's global Teamwork surfaces and sets
+up the selected repository's Teamwork context, such as project instructions and
+available work-record or CodeGraph entrypoints. It does not install Teamwork
+skills or agents into the repository. Use `--link` only when the installation
+should track this checkout during development.
 
 Cursor stores User Rules outside a normal project file. Run
 `./install.sh cursor-policy-copy` (or print the block with `cursor-policy`), then
 paste it manually into Cursor Settings -> Rules -> User Rules. The installer
 cannot verify that this manual step was completed.
 
-The `performance-first` profile currently maps routine roles to Sonnet 4.6 or
-Composer 2.5 Fast and review roles to Opus 4.8 Thinking High. `cost-first` uses
-base Composer 2.5 for routine roles. These are configurable current Cursor
-adapter mappings, not cross-platform or future-runtime guarantees.
+The default `performance-first` profile balances routine work and review depth.
+Use `--profile cost-first` when lower-cost choices matter; `./install.sh --help`
+lists advanced profiles when you need them.
 
 Teamwork does not install Cursor notification sounds because the local hook path
 has not been live-verified.
@@ -55,21 +51,27 @@ material user-owned decision that it cannot discover safely.
 For planning, Teamwork grounds scope, required values, and verification in
 evidence. Confirming a plan does not authorize implementation.
 
+Replies lead with the conclusion or what it means, then why it matters and the
+decision or action next. They add technical detail when it helps or when you ask, rather than narrating
+internal workflow labels or version details. For a long task or handoff,
+Teamwork can keep a durable route map of the decisions and evidence that matter;
+ordinary requests do not need one.
+
 ## Subagents
 
 Teamwork may use Cursor `Task` subagents or installed custom agents for
-independent work that benefits from separation or fresh context. The main agent
-keeps responsibility for scope, integration, user communication, verification,
-and the final response. Shared dispatch behavior is documented in
-`skills/using-teamwork/references/subagent-dispatch.md`.
+independent work that benefits from separation or fresh context. Each returns a
+compact conclusion, evidence, unresolved impact, and next action. The main
+agent keeps responsibility for scope, integration, verification, and a
+plain-language response—the conclusion or what it means, why it matters, and what
+follows—rather than exposing coordination mechanics.
 
-## Goal Mode
+## Long Tasks And Handoffs
 
-Cursor has no native Codex `create_goal` equivalent. When cross-turn durability
-is needed, Teamwork can keep a rolling goal report under
-`docs/teamwork/reports/YYYY-MM-DD-<goal-slug>.md` in a repository where the user
-has authorized writes. Repeated failures should return to evidence gathering or
-debugging before another implementation attempt.
+When continuity is useful, Teamwork can keep a durable route map in a repository
+where the user has authorized writes. It is optional, not a requirement for
+ordinary replies. Repeated failures return to evidence gathering or debugging
+before another implementation attempt.
 
 ## Evidence, Limits, And Updates
 
@@ -79,6 +81,7 @@ not take over Cursor permissions, MCP, browser, or test settings, and it does
 not emulate structured question tools that the current runtime does not expose.
 
 Use `teamwork-init` to configure one selected repository. Use
-`teamwork-update` or `./scripts/check-update.sh --project /path/to/project` to
-refresh or inspect installed surfaces. Refreshing an installation is not a
+`teamwork-update` to check and guide a global refresh; the explicit refresh
+command is `./install.sh all`. Check the global installation with
+`./scripts/check-update.sh --readiness`. Refreshing an installation is not a
 maintainer version release.

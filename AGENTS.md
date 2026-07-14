@@ -4,18 +4,17 @@
 
 This repository packages Teamwork as a **Codex + Cursor + Claude Code skill package** for personalized research and engineering collaboration. The source of truth is under `skills/`: `using-teamwork` is the lightweight router, `teamwork-research` gathers evidence, `teamwork-debug` diagnoses reproducible failures, `teamwork-plan` shapes reviewable plans, `teamwork-execute` runs accepted scope, `teamwork-review` checks evidence and quality, `teamwork-goal` supports long-running convergence, `teamwork-init` sets up project instructions, and `teamwork-update` refreshes user installations. Native platform tools still execute the work; Teamwork adds evidence discipline, artifact memory, bounded delegation, review, and failure iteration policy.
 
-Platform metadata lives in `.codex-plugin/` and `.claude-plugin/`. User-facing docs live in `README.md`, `CODEX.md`, `CURSOR.md`, and `CLAUDE.md`. Artifacts live in `docs/teamwork/research/` for investigations, `docs/teamwork/discussion/` for long-discussion route checkpoints, `docs/teamwork/plans/` for accepted plans, and `docs/teamwork/reports/` for conclusions or goal rolling attempt tables. `teamwork-update` owns only user-facing install refresh via `./scripts/check-update.sh`; this file owns maintainer release policy.
+Platform metadata lives in `.codex-plugin/` and `.claude-plugin/`. User-facing docs live in `README.md`, `CODEX.md`, `CURSOR.md`, and `CLAUDE.md`. Artifacts live in `docs/teamwork/research/` for investigations, `docs/teamwork/discussion/` for long-discussion route checkpoints, `docs/teamwork/plans/` for accepted plans, and `docs/teamwork/reports/` for conclusions or goal rolling attempt tables. `teamwork-update` owns user-facing global-install refresh via `./scripts/check-update.sh`; this file owns maintainer release policy.
 
 ## Build, Test, and Development Commands
 
-- `./scripts/check-update.sh`: reports Teamwork install freshness (global/project skills, agents, policy, upstream VERSION drift); use `--readiness` for init gate.
+- `./scripts/check-update.sh`: reports global Teamwork install freshness (skills, agents, policy, upstream VERSION drift); use `--readiness` for the init gate.
 - `./scripts/validate.sh`: required repository verification for skill topology, frontmatter, Codex and Claude Code manifests, artifact ignore rules, installer smoke, and platform contract checks.
 - `./install.sh codex`: installs Codex skills, Teamwork Codex agents, and the Teamwork-managed global block in `~/.codex/AGENTS.md`.
 - `./install.sh cursor`: installs Cursor skills, Teamwork Cursor agents under `~/.cursor/agents/`.
 - `./install.sh claude`: installs Claude Code skills, Teamwork Claude agents, and the Teamwork-managed global block in `~/.claude/CLAUDE.md`.
 - `./install.sh all`: installs skills and agents for codex, cursor, and claude, plus Codex and Claude global policy.
-- `./install.sh project`: installs project `.cursor/skills/`, `.cursor/agents/`, `.codex/agents/`, and `.claude/agents/` (this checkout by default).
-- `./install.sh --project-root PATH project`: installs the same project surfaces into another repository.
+- `./install.sh --project-root PATH init-project`: refreshes global Teamwork surfaces and initializes the selected project's instructions, runtime memory, and optional CodeGraph context; it never installs Teamwork skill or agent copies into the project.
 - `./install.sh codex-agents`: installs Teamwork custom agents into `~/.codex/agents/`.
 - `./install.sh cursor-agents`: installs Teamwork Cursor subagents into `~/.cursor/agents/`.
 - `./install.sh claude-agents`: installs Teamwork subagents into `~/.claude/agents/`.
@@ -50,8 +49,8 @@ An explicit request to update, bump, or release the Teamwork version authorizes
 the complete release unit unless the user narrows scope. `VERSION` is canonical.
 One release unit contains `VERSION`, both plugin manifests, both changelogs,
 required public docs, verification, an intentional commit, `v<VERSION>` tag,
-GitHub Release, global skills/agents/policy refresh, applicable project skill and
-agent refresh, and a final freshness check. Until the tag and GitHub Release
+GitHub Release, global skills/agents/policy refresh, applicable project-context
+initialization, and a final freshness check. Until the tag and GitHub Release
 exist, report `release-ready`, not `released`.
 
 Write changelogs for users, not maintainers. Lead with the problem and outcome;
@@ -66,8 +65,8 @@ reads like an engineering report is not release-ready.
 Use patch for non-behavioral fixes, minor for compatible features, and major for
 incompatible public contracts. Inspect remote/tag/Release state before edits;
 update metadata and changelogs together; run relevant dev eval, full validation,
-non-empty release eval, and fresh release review; refresh global and applicable
-project installs; stay on the current branch unless isolation is requested or
+non-empty release eval, and fresh release review; refresh global installs and
+applicable project context; stay on the current branch unless isolation is requested or
 required; verify credentials and target commit; then push the accepted commit,
 tag, and GitHub Release. Rerun `./scripts/check-update.sh`; source, installations,
 remote tag, and GitHub Release must all be current.

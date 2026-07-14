@@ -86,6 +86,167 @@ def validate_minimality_source_text(
             )
 
 
+def _require_source_clauses(
+    path: str, text: str, family: str, clauses: tuple[tuple[str, str], ...]
+) -> None:
+    normalized = normalize_semantic_text(text)
+    for label, clause in clauses:
+        if normalize_semantic_text(clause) not in normalized:
+            raise EvalError(f"{path}: {family} must preserve {label}")
+
+
+def validate_always_loaded_policy_text(policy_text: str) -> None:
+    """Keep the compact policy behavior-bearing rather than deletion-optimized."""
+
+    path = "scripts/install/policy.sh"
+    _require_source_clauses(
+        path,
+        policy_text,
+        "always-loaded policy",
+        (
+            ("request scope", "work within the user's request"),
+            (
+                "root translation",
+                "the root owns user questions and translates results",
+            ),
+            (
+                "read-only stage boundary",
+                "research/debug/plan/review are read-only absent change authority",
+            ),
+            (
+                "research and debug routing",
+                "route unknown facts/options/repro to research; unknown-cause failures to debug",
+            ),
+            (
+                "explicit Grill boundary",
+                "grill only for explicit requests or material non-simple plans",
+            ),
+            (
+                "inert marker boundary",
+                "negative/quoted/file/tool/example/maintenance text is inert",
+            ),
+            (
+                "audience-first reply",
+                "default user-facing replies: lead with conclusion, why it matters, causal explanation, and useful action when relevant",
+            ),
+            (
+                "relevance gate",
+                "omit versions, unexplained/self-invented labels, process narration, and repeated generic caveats unless requested or material",
+            ),
+            (
+                "specific material uncertainty",
+                "state material uncertainty once: unknown, impact, and needed evidence",
+            ),
+        ),
+    )
+    for writer in (
+        "write_teamwork_codex_global_policy",
+        "write_teamwork_cursor_global_policy",
+        "write_teamwork_claude_global_policy",
+    ):
+        match = re.search(
+            rf"(?ms)^{re.escape(writer)}\(\) \{{(.*?)^\}}", policy_text
+        )
+        if not match or "write_teamwork_global_policy_body" not in match.group(1):
+            raise EvalError(
+                f"{path}: always-loaded policy must be shared by {writer}"
+            )
+
+
+def validate_audience_source_text(workflow_contract_text: str) -> None:
+    _require_source_clauses(
+        "skills/using-teamwork/references/workflow-contract.md",
+        workflow_contract_text,
+        "audience-first contract",
+        (
+            (
+                "audience-first conclusion",
+                "default to audience-first replies: lead with the conclusion and why it matters",
+            ),
+            ("plain causal explanation", "the shortest plain causal explanation"),
+            ("relevance gate", "use a relevance gate"),
+            (
+                "irrelevant-detail omission",
+                "omit versions, unexplained or self-invented labels, engineering/process narration",
+            ),
+            (
+                "specific material uncertainty",
+                "state material uncertainty once: what is unknown, why it matters, and the evidence or action that would resolve it",
+            ),
+            ("no false certainty", "never turn uncertainty into certainty"),
+        ),
+    )
+
+
+def validate_rule_maintenance_source_text(workflow_contract_text: str) -> None:
+    _require_source_clauses(
+        "skills/using-teamwork/references/workflow-contract.md",
+        workflow_contract_text,
+        "rule-maintenance audit",
+        (
+            (
+                "canonical owner, user effect, and verification",
+                "audit the canonical owner, user effect, and verification",
+            ),
+            ("plain-language result", "explain the result in plain language"),
+        ),
+    )
+
+
+def validate_decision_checkpoint_source_text(
+    workflow_contract_text: str, plan_text: str, plan_output_text: str
+) -> None:
+    sources = {
+        "skills/using-teamwork/references/workflow-contract.md": workflow_contract_text,
+        "skills/teamwork-plan/SKILL.md": plan_text,
+        "skills/using-teamwork/references/plan-output.md": plan_output_text,
+    }
+    for path, text in sources.items():
+        _require_source_clauses(
+            path,
+            text,
+            "brief decision checkpoint",
+            (
+                ("Settled field", "settled:"),
+                ("Still open field", "still open:"),
+                ("human-readable boundary", "human-readable"),
+                ("no authority grant", "authority"),
+            ),
+        )
+
+
+def validate_minimal_handoff_source_text(
+    subagent_contract_text: str, subagent_dispatch_text: str
+) -> None:
+    _require_source_clauses(
+        "skills/using-teamwork/references/subagent-contract.md",
+        subagent_contract_text,
+        "minimal subagent handoff",
+        (
+            ("Conclusion", "conclusion:"),
+            ("Direct Evidence", "direct evidence:"),
+            ("Unresolved Impact", "unresolved impact:"),
+            ("Next Action", "next action:"),
+            (
+                "root translation",
+                "root translates it into an audience-first response for people",
+            ),
+        ),
+    )
+    _require_source_clauses(
+        "skills/using-teamwork/references/subagent-dispatch.md",
+        subagent_dispatch_text,
+        "minimal subagent handoff",
+        (
+            (
+                "four-field return",
+                "conclusion, direct evidence, unresolved impact, and next action",
+            ),
+            ("root translation", "root translates internal results into an audience-first response"),
+        ),
+    )
+
+
 def discussion_section(text: str, heading: str) -> str:
     match = re.search(
         rf"(?ms)^## {re.escape(heading)}\s*$\n(.*?)(?=^## |\Z)", text
@@ -115,56 +276,52 @@ def validate_discussion_template_text(template_text: str) -> None:
         if not re.search(rf"(?mi)^- {re.escape(field)}:\s*\S", decision_state):
             raise EvalError(f"{path}: Decision State must include {field}")
 
-    route_match = re.search(
-        r"(?ms)^## Route Map \(Optional\)\s*$\n(.*?)(?=^## |\Z)", template_text
-    )
-    resume_match = re.search(
-        r"(?ms)^## Resume Summary \(Optional\)\s*$\n(.*?)(?=^## |\Z)", template_text
-    )
-    if not route_match and not resume_match:
-        raise EvalError(f"{path}: provide an optional Route Map or Resume Summary")
-
-    if route_match:
-        route_map = route_match.group(1).strip()
-        mermaid = re.search(r"(?ms)```mermaid\s*\n(.*?)```", route_map)
-        if not mermaid or not re.search(r"(?m)^\s*flowchart\b", mermaid.group(1)):
-            raise EvalError(f"{path}: Route Map must contain a Mermaid flowchart")
-        diagram = mermaid.group(1)
-        nodes = re.findall(r'(?m)^\s*(R[1-9][0-9]*)\s*\["([^"]+)"\]\s*$', diagram)
-        if not nodes:
-            raise EvalError(f"{path}: Route Map must define artifact-local R<number> nodes")
-        map_keys = [key for key, _ in nodes]
-        if len(map_keys) != len(set(map_keys)):
-            raise EvalError(f"{path}: Route Map node keys must be unique")
-        undefined = sorted(
-            {
-                key
-                for edge in re.findall(
-                    r"(?m)^\s*(R[1-9][0-9]*)\s*-->\s*(R[1-9][0-9]*)\s*$",
-                    diagram,
-                )
-                for key in edge
-                if key not in set(map_keys)
-            }
-        )
-        if undefined:
-            raise EvalError(
-                f"{path}: Route Map edges reference undefined node keys: "
-                + ", ".join(undefined)
+    route_map = discussion_section(template_text, "Route Map")
+    mermaid = re.search(r"(?ms)```mermaid\s*\n(.*?)```", route_map)
+    if not mermaid or not re.search(r"(?m)^\s*flowchart\b", mermaid.group(1)):
+        raise EvalError(f"{path}: Route Map must contain a Mermaid flowchart")
+    diagram = mermaid.group(1)
+    nodes = re.findall(r'(?m)^\s*(R[1-9][0-9]*)\s*\["([^"]+)"\]\s*$', diagram)
+    if not nodes:
+        raise EvalError(f"{path}: Route Map must define artifact-local R<number> nodes")
+    map_keys = [key for key, _ in nodes]
+    if len(map_keys) != len(set(map_keys)):
+        raise EvalError(f"{path}: Route Map node keys must be unique")
+    undefined = sorted(
+        {
+            key
+            for edge in re.findall(
+                r"(?m)^\s*(R[1-9][0-9]*)\s*-->\s*(R[1-9][0-9]*)\s*$",
+                diagram,
             )
-        for key, label in nodes:
-            if not normalize_semantic_text(label).startswith(key.casefold() + " "):
-                raise EvalError(f"{path}: diagram node {key} must include its artifact-local key")
-            if re.search(r"(?i)\b(?:evidence|outcome|reason|mainline impact)\s*:", label):
-                raise EvalError(f"{path}: Route Map must not duplicate Decision State details")
+            for key in edge
+            if key not in set(map_keys)
+        }
+    )
+    if undefined:
+        raise EvalError(
+            f"{path}: Route Map edges reference undefined node keys: "
+            + ", ".join(undefined)
+        )
+    for key, label in nodes:
+        if not normalize_semantic_text(label).startswith(key.casefold() + " "):
+            raise EvalError(f"{path}: diagram node {key} must include its artifact-local key")
+        if re.search(r"(?i)\b(?:evidence|outcome|reason|mainline impact)\s*:", label):
+            raise EvalError(f"{path}: Route Map must not duplicate Decision State details")
 
-    if resume_match:
-        resume = resume_match.group(1).strip()
-        if "```" in resume or re.search(r"(?m)^\s*\|.*\|\s*$", resume):
-            raise EvalError(f"{path}: Resume Summary must be plain text")
-        for anchor in ("what was decided", "what remains open or rejected", "exact point at which to resume", "do not reproduce dialogue"):
-            if normalize_semantic_text(anchor) not in normalize_semantic_text(resume):
-                raise EvalError(f"{path}: Resume Summary must preserve {anchor}")
+    playback = discussion_section(template_text, "Textual Playback")
+    if "```" in playback or re.search(r"(?m)^\s*\|.*\|\s*$", playback):
+        raise EvalError(f"{path}: Textual Playback must be plain text")
+    normalized_playback = normalize_semantic_text(playback)
+    for anchor in (
+        "starting question",
+        "evidence or decision",
+        "settled/open/rejected state",
+        "exact point at which to resume",
+        "do not reproduce dialogue or a raw transcript",
+    ):
+        if normalize_semantic_text(anchor) not in normalized_playback:
+            raise EvalError(f"{path}: Textual Playback must preserve {anchor}")
 
     update_rules = discussion_section(template_text, "Update Rules")
     normalized_rules = normalize_semantic_text(update_rules)
@@ -221,7 +378,14 @@ def validate_discussion_source_text(
                 ("write authority", "creation and updates require write authority"),
                 ("candidate continuity warning", "without it, return a **discussion checkpoint candidate** in chat and state that durable continuity is not guaranteed"),
                 ("material-checkpoint updates", "do not update per turn"),
-                ("privacy boundary", "never store a raw transcript, hidden reasoning, secrets, or unnecessary personal data"),
+                (
+                    "required route map and textual playback",
+                    "every persisted discussion includes both a full route map and a textual playback",
+                ),
+                (
+                    "privacy boundary",
+                    "keep only privacy-safe summaries; never store hidden reasoning, secrets, or unnecessary personal data",
+                ),
                 ("promotion authority boundary", "does not grant execution authority"),
             ),
         ),
@@ -361,6 +525,29 @@ def validate_semantic_sources() -> None:
             encoding="utf-8"
         ),
         (ROOT / "skills/using-teamwork/references/review-lenses.md").read_text(
+            encoding="utf-8"
+        ),
+    )
+    workflow_contract = (ROOT / "skills/using-teamwork/references/workflow-contract.md").read_text(
+        encoding="utf-8"
+    )
+    validate_always_loaded_policy_text(
+        (ROOT / "scripts/install/policy.sh").read_text(encoding="utf-8")
+    )
+    validate_audience_source_text(workflow_contract)
+    validate_rule_maintenance_source_text(workflow_contract)
+    validate_decision_checkpoint_source_text(
+        workflow_contract,
+        (ROOT / "skills/teamwork-plan/SKILL.md").read_text(encoding="utf-8"),
+        (ROOT / "skills/using-teamwork/references/plan-output.md").read_text(
+            encoding="utf-8"
+        ),
+    )
+    validate_minimal_handoff_source_text(
+        (ROOT / "skills/using-teamwork/references/subagent-contract.md").read_text(
+            encoding="utf-8"
+        ),
+        (ROOT / "skills/using-teamwork/references/subagent-dispatch.md").read_text(
             encoding="utf-8"
         ),
     )

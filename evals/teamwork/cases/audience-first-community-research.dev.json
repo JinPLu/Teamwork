@@ -1,0 +1,57 @@
+{
+  "id": "audience-first-community-research",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/workflow-contract.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Explain this community-research result to participants: 8 of 10 people reported improvement after a program, but there was no comparison group. Lead with what it means and why it matters. Include only details that could change the reader's conclusion, action, risk, or confidence. State material uncertainty specifically and suggest one proportionate next step.",
+  "expected": {
+    "requires": [
+      "audience_first_answer",
+      "plain_causal_explanation",
+      "relevance_gate",
+      "specific_material_uncertainty",
+      "decision_appropriate_next_step",
+      "static_contract_only"
+    ]
+  },
+  "must": [
+    "lead with a plain-language conclusion and why it matters to the community",
+    "explain the causal limitation without a workflow or repository narrative",
+    "state what remains unknown, why it changes the decision, and one next check"
+  ],
+  "must_not": [
+    "surface an irrelevant version, internal label, or process narration",
+    "repeat generic caveats without their decision consequence",
+    "claim the program caused the improvement"
+  ],
+  "authored_response": "The result is promising for the community because most participants reported feeling better after the program. Without a comparison group, though, we cannot tell whether the program caused the improvement or whether other changes would have produced it anyway, so it is too early to treat the result as proof that the program worked. For the next round, compare results with a similar group that did not take part.",
+  "response_checks": {
+    "opening_conclusion": "The result is promising for the community",
+    "audience_meaning": "because most participants reported feeling better",
+    "causal_explanation": "Without a comparison group",
+    "material_uncertainty": "we cannot tell whether the program caused the improvement",
+    "uncertainty_impact": "too early to treat the result as proof that the program worked",
+    "next_step": "compare results with a similar group that did not take part"
+  },
+  "negative_controls": [
+    {
+      "id": "workflow_narration",
+      "response": "I first inspected the workflow and then validated the evaluation stage before explaining the result."
+    },
+    {
+      "id": "irrelevant_internal_detail",
+      "response": "Version 2.22.0 places this result on the internal Evidence Confidence Ladder."
+    },
+    {
+      "id": "generic_caveat_repetition",
+      "response": "This is not proven. More research is needed. It remains not proven."
+    },
+    {
+      "id": "false_certainty",
+      "response": "The program worked, so the community should adopt it immediately."
+    }
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Offline authored contrast for audience-first explanation, relevance-gated detail, and specific material uncertainty; it does not prove live model behavior."
+}
