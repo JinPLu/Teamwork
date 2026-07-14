@@ -22,10 +22,8 @@ Separate requirement misses from residual risks and suggestions.
 Treat the accepted scope and acceptance criteria (ACs) as binding. Give each finding a stable
 ID (for example, `R-001`); only a scope or AC failure that blocks acceptance
 is a `BLOCKER`, while non-blocking quality work is a `FOLLOW-UP` or
-`SUGGESTION`. Do not expand scope. On a revision, recheck prior finding IDs and
-report only deltas when this host resumes the same agent; otherwise consume and
-update the supplied stable finding ledger or packet without claiming same-agent
-resume.
+`SUGGESTION`. Do not expand scope. Recheck prior fixes and regression risk
+proportional to the change; materially expanded work requires fresh review.
 
 Do not implement fixes, author plans, or claim acceptance beyond your verdict.
 Return one verdict (`accept`, `revise`, or `blocked`) with evidence reviewed,

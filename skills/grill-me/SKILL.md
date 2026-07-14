@@ -5,6 +5,8 @@ description: Use when the user explicitly asks to be grilled or challenged, requ
 
 # Grill Me
 
+Read `skills/using-teamwork/references/workflow-contract.md` before proceeding.
+
 Enter for an explicit request or a non-simple plan with material risk. Explicit
 negative intent suppresses this interview, not safety gates.
 
@@ -19,8 +21,7 @@ Every question must materially advance the mainline;
 drop locally interesting details that no longer serve it. Do not invent choices,
 fill a quota, or repeat an answered decision.
 
-The root asks through the host's native interaction surface when callable, else
-in concise text. The host owns waiting/resume. Do not route native input through a code executor.
+Use the host's native interaction surface when callable, otherwise concise text.
 
 Keep short Grill artifact-free. For a long, cross-context, handoff-sensitive,
 or materially branching Grill, use the discussion contract in
@@ -31,6 +32,5 @@ and state that durable continuity is not guaranteed.
 
 Ordinary clarification stays outside.
 
-With no material user-owned decision left, confirm one Decision Summary. Changes
-return to that decision;
-confirmation does not grant implementation authority.
+When no material user-owned decision remains, continue without an extra
+confirmation turn. Recaps align only; confirmation does not grant implementation authority.

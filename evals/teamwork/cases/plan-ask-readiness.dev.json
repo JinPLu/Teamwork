@@ -4,15 +4,16 @@
   "source": "synthetic",
   "target": "skills/teamwork-plan/SKILL.md",
   "platforms": ["codex"],
-  "prompt": "Plan a non-simple public workflow change. Inspect first, resolve discoverable facts, enter Grill for any remaining material user decision, and confirm a concise Decision Summary before the final plan. Do not implement or release anything.",
+  "prompt": "Plan a non-simple public workflow change. Inspect first, resolve discoverable facts, enter Grill for any remaining material user decision, and include the resolved decisions in the final plan without requiring an extra confirmation turn. Do not implement or release anything.",
   "expected": {
     "route": "plan_then_grill_if_needed",
-    "requires": ["non_simple_auto_grill", "decision_summary", "no_execution_authority"]
+    "requires": ["non_simple_auto_grill", "resolved_decisions_in_plan", "no_extra_confirmation_turn", "no_execution_authority"]
   },
   "must": [
     "auto-enter Grill for a non-simple plan after evidence has resolved discoverable facts",
-    "ask only material user decisions and confirm a concise Decision Summary before the final plan",
-    "treat confirmation as acceptance of planning decisions only"
+    "ask only material user decisions and carry their resolved choices into the final plan",
+    "continue to the final plan without a separate confirmation turn once choices are resolved",
+    "treat any recap or confirmation as planning alignment only"
   ],
   "must_not": [
     "ask for repository facts the agent can discover",

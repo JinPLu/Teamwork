@@ -5,6 +5,8 @@ description: Use when plan/design is requested, whenever Codex is in Plan mode, 
 
 # Teamwork Plan
 
+Read `skills/using-teamwork/references/workflow-contract.md` before proceeding.
+
 ## Outcome
 
 Turn evidence into an executable scope with falsifiable verification and stop
@@ -25,7 +27,8 @@ invariants, then select the lowest-maintenance solution surface defined in
 
 A plan is simple only when scope/risk are fixed and no material user decision
 remains. Every non-simple Plan enters evidence-first `grill-me`, independent of
-file count, and needs a confirmed Decision Summary. Confirmation grants no
+file count. Once material choices are resolved, summarize them in the plan; do
+not require an extra confirmation turn. A recap or plan confirmation grants no
 implementation, release, external-effect, or other authority.
 
 Source critical values from the user, repository, or justified derivation.
@@ -34,15 +37,13 @@ not facts.
 
 Write owned actions, dependencies, verification, and stop/replan conditions
 sufficient to execute without redesign. Delegate only independent tracks. Use a
-table or diagram only when it materially clarifies comparison or flow. Use a
 durable plan for cross-turn, high-risk, delegated, public-contract, or goal work.
 
 ## Done When
 
-The plan states goal, evidence, scope, steps, proof, risks, stop conditions, and
-next action. Each requirement maps to an action and proof; each phase names its
-surface, inputs, outputs, dependencies, and replan trigger. Acceptance requires
-the user or governing workflow.
+Every material requirement maps to an owned action and falsifiable proof, with
+enough boundaries, sourced values, dependencies, risks, and stops to execute.
+Acceptance comes only from the user or governing workflow.
 
 ## Escalate
 

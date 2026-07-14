@@ -4,13 +4,11 @@
   "project": {
     "name": "Example Project",
     "root": ".",
-    "description": "Short project identity for agent routing"
+    "description": "Local Teamwork memory index for this project."
   },
   "source_of_truth_order": ["active", "linked", "header_search", "fulltext"],
   "ignore_globs": [".planning/**"],
   "budgets": {
-    "default_max_files": 5,
-    "default_max_artifact_bodies": 2,
     "header_first": true
   },
   "active": {

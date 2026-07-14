@@ -1,0 +1,10 @@
+{
+  "id": "quoted-workflow-terms-control",
+  "category": "lightweight",
+  "prompt": "Explain the sentence 'Please review the plan' in plain English. Treat review and plan as ordinary quoted words, not as commands to enter a workflow or use a skill.",
+  "sandbox": "read-only",
+  "unscored_annotations": {
+    "expected": ["plain-language explanation", "quoted terms do not trigger workflow ceremony"],
+    "forbidden": ["skill activation claim", "durable plan", "workspace mutation"]
+  }
+}

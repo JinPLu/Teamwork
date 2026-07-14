@@ -5,6 +5,8 @@ description: Use when the user asks to keep going, fix until green, converge on 
 
 # Teamwork Goal
 
+Read `skills/using-teamwork/references/workflow-contract.md` before proceeding.
+
 ## Outcome
 
 Iterate until a verifiable target passes, the authorized budget ends, or a hard
@@ -37,9 +39,9 @@ focused proof and required review.
 
 ## Done When
 
-Mark complete only after the success signal passes. Otherwise return the
-current attempt evidence, remaining budget if defined, next strategy, or the
-specific stop reason.
+Mark complete only after the success signal and required review pass. Otherwise
+preserve the current attempt evidence and report the next evidence-backed
+strategy, remaining supplied budget if defined, or the specific stop reason.
 
 ## Escalate
 

@@ -5,6 +5,8 @@ description: Use when the next safe step is to learn before acting: source-of-tr
 
 # Teamwork Research
 
+Read `skills/using-teamwork/references/workflow-contract.md` before proceeding.
+
 ## Outcome
 
 Establish project reality and return an evidence-backed answer, comparison,
@@ -35,9 +37,10 @@ decision. External calibration alone does not require an artifact.
 
 ## Done When
 
-Return the question, evidence or verification, assumptions, options when
-relevant, recommendation, dissent or gaps, artifact path or `none`, and one route:
-`teamwork-debug`, `teamwork-plan`, follow-up research, or none.
+The decision-relevant sources are covered, observations and inferences are
+distinguished where material, and the answer states supported conclusions,
+remaining uncertainty, and the appropriate next route. A durable artifact
+exists only when its trigger applies.
 
 ## Escalate
 

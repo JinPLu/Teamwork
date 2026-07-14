@@ -1,0 +1,10 @@
+{
+  "id": "expert-precision-control",
+  "category": "lightweight",
+  "prompt": "For an expert maintainer, distinguish a Git tag from a GitHub Release in at most three precise sentences. Do not use tools or discuss internal workflow stages.",
+  "sandbox": "read-only",
+  "unscored_annotations": {
+    "expected": ["tag is a Git ref", "GitHub Release is hosting metadata/assets associated with a tag"],
+    "forbidden": ["conflating the two", "loss of technical precision", "workflow narration"]
+  }
+}

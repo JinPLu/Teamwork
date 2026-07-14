@@ -7,6 +7,7 @@ import copy
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -646,8 +647,9 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_discussion_template_rejects_missing_required_sections(self) -> None:
         for heading, error in (
-            ("## Route Map", "Route Map"),
-            ("## Playback", "Playback"),
+            ("## Starting Question", "Starting Question"),
+            ("## Decision State", "Decision State"),
+            ("## Update Rules", "Update Rules"),
         ):
             with self.subTest(heading=heading):
                 mutated = self.discussion_template.replace(heading, f"## Removed {heading}")
@@ -661,32 +663,19 @@ class SemanticSourceMutationTests(unittest.TestCase):
         with self.assertRaisesRegex(EvalError, "Authority: supporting"):
             validate_discussion_template_text(mutated)
 
-    def test_discussion_template_requires_textual_node_status(self) -> None:
-        mutated = self.discussion_template.replace(
-            'R2["R2 · Option A · open"]', 'R2["R2 · Option A"]'
+    def test_discussion_template_requires_one_optional_resume_surface(self) -> None:
+        mutated = re.sub(
+            r"(?ms)^## Route Map \(Optional\).*?(?=^## Resume Summary \(Optional\))",
+            "",
+            self.discussion_template,
         )
-        with self.assertRaisesRegex(EvalError, "textual status"):
-            validate_discussion_template_text(mutated)
-
-    def test_discussion_template_rejects_map_note_status_mismatch(self) -> None:
-        mutated = self.discussion_template.replace("- Status: open", "- Status: accepted", 1)
-        self.assertNotEqual(mutated, self.discussion_template)
-        with self.assertRaisesRegex(EvalError, "status mismatch for R2"):
-            validate_discussion_template_text(mutated)
-
-    def test_discussion_template_rejects_mismatched_or_dangling_keys(self) -> None:
-        mutations = (
-            self.discussion_template.replace(
-                "### R1 — <short label>", "### R4 — <short label>"
-            ),
-            self.discussion_template.replace(
-                '    R1 --> R3', '    R4["R4 · Extra · open"]\n    R1 --> R3'
-            ),
+        mutated = re.sub(
+            r"(?ms)^## Resume Summary \(Optional\).*?(?=^## Update Rules)",
+            "",
+            mutated,
         )
-        for mutated in mutations:
-            with self.subTest(mutated=mutated[-80:]):
-                with self.assertRaisesRegex(EvalError, "Route Map/Route Notes keys"):
-                    validate_discussion_template_text(mutated)
+        with self.assertRaisesRegex(EvalError, "Route Map or Resume Summary"):
+            validate_discussion_template_text(mutated)
 
     def test_discussion_template_rejects_undefined_edge_key(self) -> None:
         mutated = self.discussion_template.replace("R1 --> R3", "R1 --> R4")
@@ -701,25 +690,24 @@ class SemanticSourceMutationTests(unittest.TestCase):
                     'R2["R2 · Option A · open"]',
                     f'R2["R2 · Option A · open · {field}: benchmark"]',
                 )
-                with self.assertRaisesRegex(EvalError, "diagram labels must not carry"):
+                with self.assertRaisesRegex(EvalError, "must not duplicate Decision State"):
                     validate_discussion_template_text(mutated)
 
-    def test_discussion_template_requires_every_route_note_field(self) -> None:
+    def test_discussion_template_requires_every_decision_state_field(self) -> None:
         mutated = self.discussion_template.replace(
-            "- Reason: <why this option remains open>",
-            "- Rationale omitted: <why this option remains open>",
+            "- Evidence: <decision-relevant sources and observations>",
+            "- Inputs: <decision-relevant sources and observations>",
         )
-        with self.assertRaisesRegex(EvalError, "Route Note R2 must include Reason"):
+        with self.assertRaisesRegex(EvalError, "Decision State must include Evidence"):
             validate_discussion_template_text(mutated)
 
     def test_discussion_handoff_rejects_repeated_answered_decision(self) -> None:
         path = ROOT / "evals/teamwork/cases/discussion-handoff-playback.dev.json"
         data = json.loads(path.read_text(encoding="utf-8"))
         data["trajectory"][0]["assistant"] = (
-            "Playback: We already decided to use a dedicated discussion artifact and "
+            "Resume summary: We already decided to use a dedicated discussion artifact and "
             "persist only long or materially branching Grill.\n"
-            "Current: The route is restored.\nOpen: one decision remains.\n"
-            "Next: Should we use a dedicated discussion artifact?"
+            "Should we use a dedicated discussion artifact?"
         )
         with self.assertRaisesRegex(EvalError, "repeats answered decision"):
             validate_discussion_handoff_case(data, path)

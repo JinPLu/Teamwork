@@ -15,6 +15,9 @@ narrative.
 3. Prefer headers before full artifact bodies.
 4. Use stage-specific profiles from the index.
 
+Legacy numeric budgets are compatibility retrieval hints, not execution limits
+or hard stops. New indexes use header-first retrieval without numeric defaults.
+
 ## Stage Notes
 
 - `research`: read topic headers first, then selective bodies.
@@ -22,11 +25,6 @@ narrative.
 - `plan`: read active design/plan before adding or replacing plan state.
 - `execute`: read active plan/progress before implementation updates.
 - `review`: verify active claims against commands/logs/results.
-
-## Memory Delta Reminder
-
-At non-lightweight stage exit, report one disposition:
-`none | current | plan | research | decision | supersede | compact | deferred`.
 
 ## Bounds
 

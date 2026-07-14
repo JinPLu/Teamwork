@@ -33,6 +33,13 @@ done < <(
   find "$ROOT/scripts/teamwork_tooling" "$ROOT/scripts/tests" -type f -name '*.py' | sort
 )
 
+if ! PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/teamwork_tooling/privacy_scan.py" "$ROOT"; then
+  fail "tracked privacy scan found blocked values"
+fi
+if ! PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/teamwork_tooling/instruction_footprint.py"; then
+  fail "always-loaded policy and union runtime instruction footprint must strictly decrease"
+fi
+
 expected_skill_dirs="$(printf '%s\n' "${SKILLS[@]}" | sort)"
 actual_skill_dirs="$(find "$ROOT/skills" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)"
 [[ "$actual_skill_dirs" == "$expected_skill_dirs" ]] || fail "skills/ must contain exactly: ${SKILLS[*]}"
@@ -198,13 +205,13 @@ python3 -m py_compile "$ROOT/scripts/grill_contract.py" "$ROOT/scripts/run-teamw
   "$ROOT/scripts/test_eval_teamwork_mutations.py" "$ROOT/scripts/codex_routing_config.py" \
   "$ROOT/scripts/configure-codex-routing.py" "$ROOT/scripts/test_codex_routing_config.py" \
   "$ROOT/scripts/codex_app_server_user_input.py" "$ROOT/scripts/test_codex_app_server_user_input.py"
-PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_live_eval_runner.py" >/dev/null
-PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_eval_teamwork_mutations.py" >/dev/null
-PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_routing_config.py" >/dev/null
-PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_app_server_user_input.py" >/dev/null
+env -u GIT_INDEX_FILE PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_live_eval_runner.py" >/dev/null
+env -u GIT_INDEX_FILE PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_eval_teamwork_mutations.py" >/dev/null
+env -u GIT_INDEX_FILE PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_routing_config.py" >/dev/null
+env -u GIT_INDEX_FILE PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_app_server_user_input.py" >/dev/null
 (
   cd "$ROOT"
-  PYTHONPATH="$ROOT/scripts" PYTHONDONTWRITEBYTECODE=1 \
+  env -u GIT_INDEX_FILE PYTHONPATH="$ROOT/scripts" PYTHONDONTWRITEBYTECODE=1 \
     python3 -m unittest discover -s scripts/tests -p 'test_*.py' >/dev/null
 )
 grep_required 'one class: `BLOCKER`, `FOLLOW-UP`, or `SUGGESTION`' \
@@ -253,7 +260,7 @@ grep_required '"category": "grill"' "$ROOT/evals/teamwork/live-cases/grill-multi
   "live evals must include a grill category"
 live_eval_tmp="$(mktemp -d)"
 CLEANUP_PATHS+=("$live_eval_tmp")
-python3 "$ROOT/scripts/run-teamwork-live-eval.py" \
+env -u GIT_INDEX_FILE python3 "$ROOT/scripts/run-teamwork-live-eval.py" \
   --arm validate-dry-run \
   --model gpt-5.6-sol \
   --effort max \
@@ -265,7 +272,7 @@ python3 "$ROOT/scripts/run-teamwork-live-eval.py" \
   --repeats 1 \
   --timeout-seconds 60 \
   --dry-run >/dev/null
-python3 "$ROOT/scripts/run-installed-teamwork-live-eval.py" run \
+env -u GIT_INDEX_FILE python3 "$ROOT/scripts/run-installed-teamwork-live-eval.py" run \
   --model gpt-5.6-sol \
   --effort max \
   --profile performance-first \

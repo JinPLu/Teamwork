@@ -172,12 +172,26 @@ def validate_index(index: dict, index_path: Path) -> None:
 
     budgets = index["budgets"]
     require(isinstance(budgets, dict), "budgets must be object")
-    require(isinstance(budgets.get("default_max_files"), int), "budgets.default_max_files must be integer")
-    require(1 <= budgets["default_max_files"] <= 10, "budgets.default_max_files must be between 1 and 10")
-    require(isinstance(budgets.get("default_max_artifact_bodies"), int), "budgets.default_max_artifact_bodies must be integer")
-    require(0 <= budgets["default_max_artifact_bodies"] <= 5, "budgets.default_max_artifact_bodies must be between 0 and 5")
-    require(isinstance(budgets.get("header_first"), bool), "budgets.header_first must be boolean")
-    require(budgets["header_first"] is True, "budgets.header_first must be true for templates")
+    header_only_keys = {"header_first"}
+    legacy_keys = {"default_max_files", "default_max_artifact_bodies", "header_first"}
+    require(
+        set(budgets) in (header_only_keys, legacy_keys),
+        "budgets must be exactly header-first or the complete legacy numeric form",
+    )
+    require(budgets.get("header_first") is True, "budgets.header_first must be true")
+    if set(budgets) == legacy_keys:
+        max_files = budgets["default_max_files"]
+        max_bodies = budgets["default_max_artifact_bodies"]
+        require(
+            isinstance(max_files, int) and not isinstance(max_files, bool),
+            "budgets.default_max_files must be integer",
+        )
+        require(1 <= max_files <= 10, "budgets.default_max_files must be between 1 and 10")
+        require(
+            isinstance(max_bodies, int) and not isinstance(max_bodies, bool),
+            "budgets.default_max_artifact_bodies must be integer",
+        )
+        require(0 <= max_bodies <= 5, "budgets.default_max_artifact_bodies must be between 0 and 5")
 
     active = index["active"]
     require(isinstance(active, dict), "active must be object")
@@ -224,7 +238,14 @@ def validate_templates(root: Path) -> None:
     require(line_count(current) <= 120, "teamwork-current-template.md exceeds 120 lines")
     require(word_count(current) <= 700, "teamwork-current-template.md exceeds 700 words")
 
-    required_readme_phrases = ["broad scan", "stage", "Memory Delta", "index.json", "Project instructions may point here"]
+    required_readme_phrases = [
+        "broad scan",
+        "stage",
+        "compatibility retrieval hints",
+        "not execution limits",
+        "index.json",
+        "Project instructions may point here",
+    ]
     for phrase in required_readme_phrases:
         require(phrase.lower() in readme.lower(), f"README template missing required language: {phrase}")
 

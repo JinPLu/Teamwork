@@ -4,19 +4,21 @@
   "source": "synthetic",
   "target": "skills/using-teamwork/references/subagent-dispatch.md",
   "platforms": ["codex"],
-  "prompt": "Delegate two independent implementation slices and a later review using the currently callable generic spawn schema.",
+  "prompt": "Delegate several independent implementation slices and a dependent later review using the currently callable generic spawn schema.",
   "expected": {
     "dispatch": "bounded",
-    "requires": ["schema detection", "fresh context packets", "two-agent first wave", "integration before next wave"]
+    "requires": ["schema detection", "fresh internal briefs", "economic wave sizing", "integration before dependent review"]
   },
   "must": [
     "use only task_name, message, and fork_turns when those are the exposed spawn fields",
-    "default fresh Worker and Reviewer packets to fork_turns none",
-    "integrate at most two first-wave returns before dispatching the later review"
+    "default fresh Worker and Reviewer internal briefs to fork_turns none",
+    "size the implementation wave from disjoint ownership, evidence value, runtime limits, and integration cost",
+    "integrate implementation results before dispatching the dependent review"
   ],
   "must_not": [
     "invent agent_type or reasoning_effort fields that the callable schema does not expose",
-    "dispatch the entire multi-wave graph before synthesizing first-wave results"
+    "impose a universal fixed first-wave size",
+    "dispatch the dependent review before synthesizing implementation results"
   ],
   "rubric": "assistance-quality",
   "evidence": "Deterministic control for capability-aware bounded dispatch."

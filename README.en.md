@@ -14,8 +14,7 @@ Teamwork is a Codex-first skill package. After installation, describe your goal 
 - **More focused questions:** Inspect discoverable facts first and ask you only about decisions that change the outcome, scope, acceptance, or authority.
 - **Controlled collaboration:** Use subagents only when work splits cleanly; the main agent keeps ownership of scope, integration, and final verification.
 - **Clear completion evidence:** Show whether the task is truly done with sources, logs, tests, diffs, or review results.
-- **Continuity for long tasks:** Keep only the records needed across turns and resume failures from the affected stage.
-- **Reviewable long discussions:** Preserve a route map and text Playback only for Grill conversations that cross contexts, need handoff, or reach material branches; short discussions stay artifact-free and no turn-by-turn transcript is stored.
+- **Continuity for long tasks:** Keep the evidence needed across turns and resume from the affected work after a failure.
 
 Teamwork is a good fit for literature and field research, technical evaluation, complex plans, reproducible failures, CI, cross-file implementation, strict review, and “keep going until it passes” work. One-line facts and obvious small edits do not get forced into a workflow.
 
@@ -51,6 +50,8 @@ Grill me: challenge only decisions that change the outcome, and stop when none r
 | Claude Code | `./install.sh claude` |
 | All platforms | `./install.sh all` |
 
+These user-level commands make Teamwork skills and agents available to the current user; they do not modify every project automatically. To configure one repository, use the `project` or `init-project` target below with an explicit project path.
+
 The default installation uses the `performance-first` profile. See every target and option with:
 
 ```bash
@@ -62,14 +63,16 @@ Common options:
 ```bash
 ./install.sh --profile cost-first codex
 ./install.sh --notifications codex
+./install.sh --project-root /path/to/project project
 ./install.sh --project-root /path/to/project init-project
 ```
 
 - `--profile cost-first`: prefer current lower-cost models.
 - `--notifications`: add main-turn completion and permission-request sounds to direct platform installs; subagents stay silent. Full `all`/`init-project` installs enable them by default; use `--no-notifications` to opt out. After a Codex install, run `/hooks` in the CLI and trust the two Teamwork hooks individually.
-- `init-project`: install project skills into Codex `.agents/skills/`, Cursor `.cursor/skills/`, and Claude Code `.claude/skills/`, plus platform agents and global defaults, then configure project rules, the Teamwork memory entrypoint, and CodeGraph when available.
+- `project`: install only the project-level Teamwork skills and agents into the selected repository.
+- `init-project`: fully initialize one selected repository with project skills, agents, project rules, a Teamwork work-record entrypoint, and CodeGraph when available; it also installs user-level skills, agents, and default rules for the current user.
 
-Restart Codex after a user-level installation changes role routing. The installer manages only Teamwork-owned directories, marked rules, and bounded configuration; it does not take over platform permissions, MCP, browser, or test settings. See the [Codex](CODEX.md), [Cursor](CURSOR.md), and [Claude Code](CLAUDE.md) guides for platform details.
+Restart Codex after a user-level installation changes role routing. Cursor User Rules still require a manual copy-and-paste step that the installer cannot verify. The installer manages only Teamwork-owned directories, marked rules, and bounded configuration; it does not take over platform permissions, MCP, browser, or test settings. See the [Codex guide](CODEX.md), [Cursor guide](CURSOR.md), and [Claude Code guide](CLAUDE.md) for platform details.
 
 ## Update
 

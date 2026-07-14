@@ -180,10 +180,15 @@ REQUIRED_ASK_PREDICATE_CASES = {
     "ask-required-input-execute": {"execute_stage", "required_input", "ask_outside_grill"},
     "ask-required-observation-review": {"review_stage", "required_observation", "ask_outside_grill"},
     "ask-required-input-goal": {"goal_stage", "required_input", "ask_outside_grill"},
-    "plan-ask-readiness": {"non_simple_auto_grill", "decision_summary", "no_execution_authority"},
+    "plan-ask-readiness": {
+        "non_simple_auto_grill",
+        "resolved_decisions_in_plan",
+        "no_extra_confirmation_turn",
+        "no_execution_authority",
+    },
     "review-bounded-recheck": {"stable_finding_ids", "review_taxonomy", "blocker_classification", "one_corrective_recheck"},
     "goal-dependent-branch-retry": {"affected_branch_only", "independent_work_continues", "native_goal_authority"},
-    "ask-confirmation-authority": {"confirmation_only", "no_implementation_authority", "no_release_authority"},
+    "ask-confirmation-authority": {"plan_acceptance_only", "no_implementation_authority", "no_release_authority"},
     "ask-subagent-root-ownership": {"question_candidate", "root_only_asks", "deduplicate"},
     "ask-independent-readonly-progress": {"dependent_branch_only", "independent_read_only_continues"},
     "ask-text-fallback": {"native_unavailable", "concise_text_fallback"},
@@ -248,7 +253,8 @@ REQUIRED_DISCUSSION_CASES = {
         "static_contract_only",
     },
     "discussion-handoff-playback": {
-        "playback_current_route",
+        "decision_state_resume",
+        "optional_resume_view",
         "no_repeated_answered_decision",
         "handoff_continuity",
         "static_contract_only",
@@ -274,7 +280,8 @@ REQUIRED_SKILL_CASE_CLAUSES = {
     },
     "plan-ask-readiness": {
         "non_simple_auto_grill",
-        "decision_summary",
+        "resolved_decisions_in_plan",
+        "no_extra_confirmation_turn",
         "no_execution_authority",
     },
     "complex-coding-discipline": {
@@ -366,7 +373,7 @@ SKILL_SOURCE_CONTRACTS = {
         "skills/teamwork-plan/SKILL.md",
         (
             ("non-simple material Grill", "every non-simple plan enters evidence-first `grill-me`"),
-            ("Decision Summary", "needs a confirmed decision summary"),
+            ("resolved choices captured in the plan", "summarize them in the plan"),
             ("no execution authority", "confirmation grants no implementation, release, external-effect, or other authority"),
         ),
     ),

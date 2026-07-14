@@ -1,0 +1,10 @@
+{
+  "id": "direct-artifact-only-control",
+  "category": "lightweight",
+  "prompt": "Return only the relative path of the repository's canonical version file. Do not explain your reasoning.",
+  "sandbox": "read-only",
+  "unscored_annotations": {
+    "expected": ["VERSION"],
+    "forbidden": ["extra explanation", "workflow narration", "workspace mutation"]
+  }
+}

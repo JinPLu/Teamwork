@@ -1,7 +1,7 @@
 {
   "name": "teamwork-skill",
-  "version": "2.21.1",
-  "description": "Claude Code adapter skills for lean evidence-first planning, bounded Task subagents, review, durable goal convergence, and lifecycle sounds in full setup.",
+  "version": "2.22.0",
+  "description": "Claude Code adapter skills for evidence-grounded research, debugging, planning, execution, review, and long-running goals.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"
@@ -22,8 +22,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Teamwork",
-    "shortDescription": "Use Teamwork's Codex-first protocol as a Claude Code Task-subagent adapter.",
-    "longDescription": "A Claude Code adapter entrypoint plus a lean explicit grill-me interaction skill, dedicated stages for project setup, evidence, durable memory, scoped execution, native fast-path handling, bounded Task-subagent work, fresh review, package updates, and goal convergence. Each host uses its callable interaction tools and falls back to concise text.",
+    "shortDescription": "Evidence-grounded teamwork for complex Claude Code tasks.",
+    "longDescription": "A Claude Code adapter for research, reproducible debugging, reviewable planning, scoped execution, fresh review, and long-running goals. Simple work stays on the native fast path; Task subagents are used only when independent work benefits from separation. Claude Code remains in control of editing, tools, permissions, and interaction.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -32,13 +32,13 @@
     ],
     "websiteURL": "https://github.com/JinPLu/Teamwork",
     "defaultPrompt": [
-      "Design a goal with evidence, scope, retry policy, artifacts, and Task subagent routing.",
-      "Initialize or slim project AGENTS/CLAUDE rules while preserving local evidence boundaries.",
-      "Apply Teamwork's Codex-first collaboration protocol to Claude Code evidence, planning, execution, and review tracks.",
-      "Ground facts, classify ownership, and ask only unresolved outcome-changing user decisions, normally one at a time.",
-      "Fan out independent investigation, scoped Worker execution, or fresh-context review through Task subagents.",
-      "Map completion claims and Memory Delta status to direct evidence before accepting the result.",
-      "Update Teamwork version metadata, refresh installed skills/agents/global policy, and validate the installed surface."
+      "Research this problem from primary sources and project evidence, then recommend the next safe action.",
+      "Diagnose this reproducible failure with logs or runtime evidence before changing code.",
+      "Create a scoped, reviewable plan with sourced required values and explicit verification.",
+      "Execute the accepted scope, verify the result, and report any genuine blocker.",
+      "Use independent Claude Code Task subagents when the work splits cleanly, while keeping integration and final verification with the main agent.",
+      "Strictly review this result for unsupported claims, risky fallbacks, and unnecessary complexity.",
+      "Initialize or refresh Teamwork for one selected repository without changing unrelated user or project configuration."
     ],
     "brandColor": "#2563EB"
   }

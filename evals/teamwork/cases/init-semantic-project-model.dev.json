@@ -23,8 +23,8 @@
   "must": [
     "report audit, deterministic bootstrap, and semantic init as separate surfaces and results",
     "default an explicit teamwork-init invocation to semantic init unless the user asks only for audit or deterministic bootstrap",
-    "form a proportional evidenced init-local Project Model before proposing edits",
-    "classify relevant rules as keep, merge, migrate, remove, create, or unresolved",
+    "use a proportional evidenced init-local project model as an internal audit aid when it helps before proposing edits",
+    "use keep, merge, migrate, remove, create, or unresolved as optional internal classifications for complex audits",
     "place shared stable Codex and Cursor rules in AGENTS.md, keep only Claude-specific deltas in an ordinary CLAUDE.md loader, and reserve Cursor rules for genuinely scoped behavior",
     "preserve public or human-facing CODEX.md, CURSOR.md, CLAUDE.md, and other project documentation absent contrary evidence",
     "reuse an existing canonical tracker or runbook and create docs/teamwork/project.md only when its durable need, absence-of-equivalent, and write-authority conditions hold",
@@ -32,6 +32,7 @@
   ],
   "must_not": [
     "claim deterministic bootstrap performed semantic organization",
+    "force a user-visible Project Model, six-way classification, Memory Delta, or Capability Matrix in ordinary semantic output",
     "persist the Project Model as a default artifact, object, route, stage, mode, template, or ceremony",
     "overwrite human docs or silently discard legacy or custom content",
     "claim static authored evidence proves live Codex, Cursor, or Claude behavior"

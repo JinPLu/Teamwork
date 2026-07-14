@@ -28,16 +28,14 @@ for audit or deterministic bootstrap.
 
 Report bootstrap and semantic results separately. Audit never implies install or
 write authority.
-
 ## Readiness And Profile
 
 Use the installed cross-platform profile unless evidence leaves a material
-override. `performance-first` maps Codex Explorer to Terra medium, Worker to Sol
-medium, Designer/Judge/Reviewer to Sol high, and Deep roles to Sol max;
-`cost-first` uses Luna/Terra/Sol and native low-cost adapters. `gpt56-high` and
-`gpt56-xhigh` pin Codex to Sol; `gpt56-role` and legacy `gpt55-*` are aliases.
-Report `Init Mode:` with the selected name. Refresh via `./install.sh --profile
-<profile> all` only with install authority.
+override. Read the active profile and any material model configuration from the
+installed `.teamwork-profile` markers, readiness output, and host configuration;
+do not reconstruct a timeless profile-to-model mapping in Init. Report the
+selected profile when it materially affects the result. Refresh via
+`./install.sh --profile <profile> all` only with install authority.
 
 Before bootstrap or writes, run:
 
@@ -63,12 +61,14 @@ destructive effects, or other separately protected actions.
 1. Follow `project-init.md`: inspect instructions/imports and human docs,
    canonical project docs, source/config/tests, commands, trackers/runbooks, and
    Codex/Cursor/Claude surfaces before edits.
-2. Form the smallest evidenced init-local Project Model; never persist it or
-   invent purpose, owners, required values, relationships, or current truth.
+2. When useful, form the smallest evidenced init-local project model as an
+   internal audit aid; never persist it or invent purpose, owners, required
+   values, relationships, or current truth.
    Include platform instruction/loading entrypoints and only evidenced deltas;
    give each rule or fact one primary owner and link or delta elsewhere.
-3. Classify rules `keep`, `merge`, `migrate`, `remove`, `create`, or
-   `unresolved`; use the root Ask Gate only for material unresolved conflict.
+3. Use `keep`, `merge`, `migrate`, `remove`, `create`, or `unresolved` as
+   optional internal classifications; use the root Ask Gate only for material
+   unresolved conflict.
 4. Apply canonical cross-platform ownership and stable/volatile boundaries.
    Reuse the existing tracker/runbook; create conditional `project.md` only when
    every reference trigger and write authority hold. This grants no Git or
@@ -78,7 +78,6 @@ destructive effects, or other separately protected actions.
    legacy content and report the candidate.
 6. Verify changed surfaces and limit claims to their evidence tier. Static or
    deterministic checks do not prove live host behavior.
-
 An equivalent repeat audit with no new evidence, classification, or mainline
 change must write nothing and report `no-change`.
 
@@ -88,8 +87,9 @@ systems without authority. Keep volatile progress in its canonical tracker or a
 triggered Teamwork current/artifact surface. Initialize repo-local CodeGraph only
 with bootstrap authority and an existing CLI; otherwise report the gap.
 
-Return the selected surface; bootstrap and semantic results; changed/proposed
-files; Project Model summary and classifications when semantic init ran;
-mainline and migration decisions; verification strength; conflicts and human
-decisions. For full bootstrap include the `project-init.md` Capability Matrix.
-Include `Memory Delta:` only when durable memory was checked or changed.
+Return the selected surface; separate bootstrap and semantic results;
+changed/proposed files; material ownership, mainline, and migration decisions;
+verification strength; conflicts and human decisions. Do not require a visible
+Project Model, six-way classification, or Memory Delta in ordinary output.
+Include the `project-init.md` Capability Matrix only when the user explicitly
+requested full bootstrap.

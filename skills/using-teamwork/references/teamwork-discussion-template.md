@@ -18,11 +18,20 @@ authority.
 - Decision: <what is being decided>
 - Why now: <why this decision can change the mainline>
 
-## Route Map
+## Decision State
 
-Use artifact-local node keys such as `R1`; do not reuse issue, task, or external
-system identifiers as node keys. Put a textual status in every node so meaning
-does not depend on color.
+- Decisions: <resolved choices and why>
+- Open: <unresolved material options or none>
+- Rejected: <discarded options and why, or none>
+- Evidence: <decision-relevant sources and observations>
+- Resume point: <the next decision question and why it can change the mainline>
+- Promotion: <none, or target artifact/path and trigger>
+
+## Route Map (Optional)
+
+Use a diagram when branching relationships are easier to recover visually. Use
+artifact-local node keys such as `R1`, include textual status in every node, and
+keep evidence and outcomes in Decision State rather than duplicating them here.
 
 ```mermaid
 flowchart TD
@@ -33,48 +42,11 @@ flowchart TD
     R1 --> R3
 ```
 
-## Route Notes
+## Resume Summary (Optional)
 
-Route Notes are the sole owner of each node's evidence, outcome, reason, and
-mainline impact. Keep one keyed entry per Route Map node and do not duplicate
-these fields elsewhere in the artifact.
-
-### R1 — <short label>
-
-- Status: current
-- Evidence: <decision-relevant evidence or none>
-- Outcome: <current result or unresolved>
-- Reason: <why this route remains, changed, or closed>
-- Mainline impact: <how this affects the global goal>
-
-### R2 — <open option label>
-
-- Status: open
-- Evidence: <decision-relevant evidence or none>
-- Outcome: unresolved
-- Reason: <why this option remains open>
-- Mainline impact: <how choosing it could affect the global goal>
-
-### R3 — <rejected option label>
-
-- Status: rejected
-- Evidence: <decision-relevant evidence or none>
-- Outcome: <why this option was rejected>
-- Reason: <why the discussion no longer follows this route>
-- Mainline impact: <how rejecting it narrows the global decision>
-
-## Playback
-
-<A concise plain-text orientation for the next reader: what is being decided,
-what has already been ruled in or out, and where to resume. Summarize decisions;
-do not reproduce dialogue or a raw transcript.>
-
-## Continuity
-
-- Current: <current decision and route key>
-- Open: <unresolved material branches by route key, or none>
-- Next: <the next decision question and why it can change the mainline>
-- Promotion: <none, or target artifact/path and trigger>
+Use this instead of a Route Map when a short plain-text orientation is clearer:
+what was decided, what remains open or rejected, the evidence that matters, and
+the exact point at which to resume. Do not reproduce dialogue or a raw transcript.
 
 ## Update Rules
 

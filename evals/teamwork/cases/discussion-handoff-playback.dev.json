@@ -6,10 +6,10 @@
   "platforms": ["codex", "cursor", "claude"],
   "prompt": "Resume a long Grill after compaction or handoff from its supporting discussion artifact; prior branches already contain answered decisions.",
   "expected": {
-    "requires": ["playback_current_route", "no_repeated_answered_decision", "handoff_continuity", "static_contract_only"]
+    "requires": ["decision_state_resume", "optional_resume_view", "no_repeated_answered_decision", "handoff_continuity", "static_contract_only"]
   },
   "must": [
-    "use Playback and Continuity to restore the current route and next material decision",
+    "use Decision State and, when helpful, either the optional Route Map or Resume Summary to restore the next material decision",
     "preserve prior answered decisions without asking them again"
   ],
   "must_not": [
@@ -20,11 +20,11 @@
     "use a dedicated discussion artifact",
     "persist only long or materially branching Grill"
   ],
-  "expected_next_decision": "whether offline evidence is sufficient for acceptance",
+  "expected_next_decision": "treat offline evidence as sufficient for acceptance",
   "trajectory": [
     {
       "user": "Continue from the supporting discussion artifact after handoff.",
-      "assistant": "Playback: We already decided to use a dedicated discussion artifact and persist only long or materially branching Grill.\nCurrent: The offline contract and recovery fixture are implemented.\nOpen: whether offline evidence is sufficient for acceptance.\nNext: Is whether offline evidence is sufficient for acceptance the remaining decision?"
+      "assistant": "Resume summary: We already decided to use a dedicated discussion artifact and persist only long or materially branching Grill. The offline contract and recovery fixture are implemented.\nShould we treat offline evidence as sufficient for acceptance?"
     }
   ],
   "rubric": "assistance-quality",

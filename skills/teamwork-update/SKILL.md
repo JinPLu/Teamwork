@@ -5,9 +5,9 @@ description: Use when checking or refreshing installed Teamwork skills, agents, 
 
 # Teamwork Update
 
+Read `skills/using-teamwork/references/workflow-contract.md` before proceeding.
 Refresh user installations only. Read
-`skills/using-teamwork/references/check-update.md` for the freshness contract and
-`workflow-contract.md` for authorization and evidence boundaries.
+`skills/using-teamwork/references/check-update.md` for the freshness contract.
 
 ## Workflow
 
@@ -40,3 +40,9 @@ Refresh user installations only. Read
 - Preserve unrelated files and report source version, installed versions,
   profile, global/project status, manual actions, restart need, and unresolved
   drift.
+
+## Done When
+
+The repeated readiness check truthfully reports `INSTALL_READY=yes`, or every
+remaining drift item, manual action, and exact next step is visible without
+claiming that static freshness proves live host behavior.

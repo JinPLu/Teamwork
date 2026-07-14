@@ -129,7 +129,9 @@ def first_readme_heading() -> str:
     return ""
 
 
-project_description = first_readme_heading() or "Project-local Teamwork collaboration state."
+readme_label = first_readme_heading()
+project_label = readme_label or project_name
+project_description = "Local Teamwork memory index for this project."
 
 docs = root / "docs" / "teamwork"
 for directory in (docs, docs / "research", docs / "plans", docs / "reports", docs / "workflows"):
@@ -155,6 +157,9 @@ Project instructions may point here, but should not inline this runtime narrativ
 3. Prefer headers before full artifact bodies.
 4. Use stage-specific profiles from the index.
 
+Legacy numeric budgets are compatibility retrieval hints, not execution limits
+or hard stops. New indexes use header-first retrieval without numeric defaults.
+
 ## Stage Notes
 
 - `research`: read topic headers first, then selective bodies.
@@ -162,11 +167,6 @@ Project instructions may point here, but should not inline this runtime narrativ
 - `plan`: read active design/plan before adding or replacing plan state.
 - `execute`: read active plan/progress before implementation updates.
 - `review`: verify active claims against commands/logs/results.
-
-## Memory Delta Reminder
-
-At non-lightweight stage exit, report one disposition:
-`none | current | plan | research | decision | supersede | compact | deferred`.
 
 ## Bounds
 
@@ -211,15 +211,13 @@ index = {
     "schema_version": 1,
     "last_updated": today,
     "project": {
-        "name": project_name,
+        "name": project_label,
         "root": ".",
         "description": project_description,
     },
     "source_of_truth_order": ["active", "linked", "header_search", "fulltext"],
     "ignore_globs": [".planning/**"],
     "budgets": {
-        "default_max_files": 5,
-        "default_max_artifact_bodies": 2,
         "header_first": True,
     },
     "active": {
@@ -264,15 +262,37 @@ write_if_missing(docs / "README.md", readme)
 write_if_missing(docs / "current.md", current)
 write_if_missing(docs / "index.json", json.dumps(index, indent=2, ensure_ascii=False) + "\n")
 
+def configured(substr: str) -> str | None:
+    candidates = (
+        root / ".cursor" / "mcp.json",
+        root / ".mcp.json",
+    )
+    for path in candidates:
+        if path.is_file() and substr in path.read_text(encoding="utf-8", errors="replace").lower():
+            try:
+                return str(path.relative_to(root))
+            except ValueError:
+                return str(path)
+    return None
+
+
+project_lines = [
+    f"- Project label (local routing only): `{project_label}`.",
+    "- Teamwork memory: read `docs/teamwork/index.json` first, then `docs/teamwork/README.md` when durable memory is relevant.",
+]
+codegraph_config = configured("codegraph")
+if (root / ".codegraph").is_dir():
+    project_lines.append("- CodeGraph: this project has a local `.codegraph/` index.")
+elif codegraph_config:
+    project_lines.append(f"- CodeGraph: project configuration declares it in `{codegraph_config}`.")
+docs_config = configured("context7")
+if docs_config:
+    project_lines.append(f"- Docs MCP: project configuration declares Context7 in `{docs_config}`.")
+
 agents_block = f"""<!-- TEAMWORK_PROJECT_START -->
 ## Teamwork Project Instructions
 
-- Project identity: `{project_name}` - {project_description}
-- Teamwork memory: read `docs/teamwork/index.json` first, then `docs/teamwork/README.md` when durable memory is relevant.
-- CodeGraph: use `codegraph_*` tools for structural code questions when available. If `.codegraph/` is missing and the `codegraph` CLI is available, initialize with `codegraph init -i` from the project root.
-- Docs MCP: use Context7/docs MCP for current external library, framework, SDK, or API docs when already available. Send only sanitized package names, versions, and topic queries; do not send private source.
-- Keep volatile task progress, chat summaries, and experiment numbers out of `AGENTS.md`; use `docs/teamwork/current.md` or dated artifacts only when durable triggers apply.
-- Required values, credentials, paths, ports, model names, hyperparameters, configs, and execution modes must come from project files, environment, or the user; do not invent fallbacks.
+{chr(10).join(project_lines)}
 <!-- TEAMWORK_PROJECT_END -->
 """
 
@@ -367,7 +387,7 @@ detect_context7() {
       return 0
     fi
   done
-  echo "Context7/docs MCP: not detected; recorded as optional read-only docs substrate"
+  echo "Context7/docs MCP: not detected (optional)"
 }
 
 copy_cursor_policy() {
@@ -399,9 +419,9 @@ else
   echo "Global Teamwork surfaces: failed; continuing with project-local setup" >&2
 fi
 install_project_surfaces
+init_codegraph
 write_project_files
 validate_teamwork_memory
-init_codegraph
 detect_context7
 copy_cursor_policy
 

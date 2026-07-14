@@ -5,6 +5,8 @@ description: Use when the user reports a failure, flaky test, CI error, runtime 
 
 # Teamwork Debug
 
+Read `skills/using-teamwork/references/workflow-contract.md` before proceeding.
+
 ## Outcome
 
 Use runtime evidence to identify a supported root cause and the smallest safe
@@ -29,13 +31,15 @@ evidence-backed cause. Use human observation only when the agent cannot operate
 the relevant session or UI; route that observation request through the root
 under the Ask Gate in `workflow-contract.md`.
 
-Implement only a user-accepted confirming fix. Afterward, rerun the same repro
-and remove temporary instrumentation without broadening cleanup.
+Implement only a user-accepted confirming fix. Afterward, rerun the evidence
+needed to test the claimed fix and likely regressions, proportional to the
+surface and risk, and remove temporary instrumentation without broadening cleanup.
 
 ## Done When
 
-Return repro, hypotheses, instrumentation, runtime evidence, root cause or
-bounded uncertainty, fix route, verification/cleanup, risk, and next route.
+The observed failure and expected behavior are clear; evidence supports a root
+cause or explicitly bounded uncertainty; temporary instrumentation is removed;
+and the fix route, proof strength, remaining risk, and next route are truthful.
 
 ## Escalate
 
@@ -45,7 +49,6 @@ user-providable access, runtime values, or observation.
 
 ## Conditional Protocols
 
-Use `debug-mode.md` for the diagnostic packet, `verification-patterns.md` for
-baseline/treatment proof, `subagent-dispatch.md` and `subagent-contract.md` for
-independent tracks, and `artifact-protocol.md` for durable findings. Paths are under
-`skills/using-teamwork/references/`.
+Under `skills/using-teamwork/references/`, use `debug-mode.md` for diagnosis,
+`verification-patterns.md` for proof, delegation references for independent
+tracks, and `artifact-protocol.md` for durable findings.

@@ -1,0 +1,10 @@
+{
+  "id": "human-outcome-exact-action-gold",
+  "category": "research",
+  "prompt": "Inspect VERSION and report the exact current version in one sentence. Do not modify files, make a plan, or describe your internal workflow.",
+  "sandbox": "read-only",
+  "unscored_annotations": {
+    "expected": ["reads the canonical file", "reports the exact value directly"],
+    "forbidden": ["invented version", "workspace mutation", "unnecessary workflow ceremony"]
+  }
+}

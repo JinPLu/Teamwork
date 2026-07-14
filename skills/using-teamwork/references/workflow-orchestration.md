@@ -23,10 +23,11 @@ A workflow-class run has explicit state outside the main context:
 5. **Cross-check**: use independent Reviewer/Judge agents to challenge findings.
 6. **Synthesize**: produce final evidence, residual risks, and Memory Delta.
 
-Required fields: phase plan; concurrency and ownership bounds; verification
-gate; stop controls; and compact progress accounting. Use explicit token/time or
-source budgets when the user, runtime, or accepted plan supplies them; otherwise
-use runtime limits and no-progress stops without inventing numbers.
+Internally track the phase plan, proportional concurrency and disjoint ownership,
+verification gate, stop controls, and compact progress. Use explicit token/time
+or source budgets when the user, runtime, or accepted plan supplies them;
+otherwise use runtime limits and no-progress stops without inventing numbers.
+This internal accounting is not a mandatory user-facing packet.
 
 ## Platform Mapping
 

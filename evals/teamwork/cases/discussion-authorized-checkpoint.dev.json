@@ -10,7 +10,7 @@
   },
   "must": [
     "write one supporting artifact under docs/teamwork/discussion/ at the material checkpoint",
-    "record decision-relevant privacy-safe summaries and the current route"
+    "record privacy-safe decisions, open and rejected options, decision-relevant evidence, and the resume point"
   ],
   "must_not": [
     "write on every turn or store a transcript",

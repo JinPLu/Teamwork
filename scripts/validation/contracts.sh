@@ -219,7 +219,7 @@ grep_required 'quoted, file, tool, example, or maintenance mentions are inert' "
   "grill-me must keep non-user marker text inert"
 grep_required 'explicit negative intent wins' "$ROOT/skills/grill-me/SKILL.md" \
   "grill-me must honor explicit negative signals"
-for contract in 'Ask Gate' 'discoverable evidence' 'safe, reversible, implementation-level details' 'one decision at a time' "root asks" "host's native interaction surface" 'host owns waiting' "Do not route native input through a code executor" 'Ordinary clarification' 'does not grant implementation authority'; do
+for contract in 'Ask Gate' 'discoverable evidence' 'safe, reversible, implementation-level details' 'one decision at a time' "host's native interaction surface" 'Ordinary clarification' 'does not grant implementation authority'; do
   grep_required "$contract" "$ROOT/skills/grill-me/SKILL.md" "grill-me missing minimal semantic contract: $contract"
 done
 for retired_field in 'Exit authority:' 'Implementation authority:' 'Close basis: no material user-owned decision remains' 'Alternatives:'; do
@@ -257,8 +257,6 @@ grep_absent 'grill/question-first\|grill-mode.md' \
   "$ROOT/skills/teamwork-init" "$ROOT/skills/teamwork-update"
 grep_required 'as the evidence warrants' "$ROOT/skills/teamwork-debug/SKILL.md" \
   "debug must avoid a fixed hypothesis quota"
-grep_required 'diagram only when it materially clarifies comparison' "$ROOT/skills/teamwork-plan/SKILL.md" \
-  "plan formatting must be conditional"
 grep_required 'whenever Codex is in Plan mode' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "teamwork-plan metadata must trigger in Codex Plan mode"
 grep_required 'native bridge and readiness gate' "$ROOT/skills/teamwork-plan/SKILL.md" \
@@ -319,8 +317,11 @@ for anchor in agent_type subagent_type 'Custom agent' effort 'gpt-5.6-sol.*max';
   grep_required "$anchor" "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" \
     "subagent dispatch must preserve platform/profile anchor: $anchor"
 done
-grep_required 'no fixed prompt-level cap' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" \
-  "Worker waves must be bounded by economics rather than a fixed quota"
+grep_required 'exceeds coordination cost' "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" \
+  "Worker waves must be bounded by economics"
+grep_absent 'first wave to at most two\|two-agent first wave' \
+  "Worker waves must not restore a fixed quota" \
+  "$ROOT/skills/using-teamwork/references/subagent-dispatch.md"
 
 # --- Codex agent routing readiness contract ---
 [[ -f "$ROOT/scripts/check-codex-routing.py" ]] \

@@ -10,7 +10,7 @@
   },
   "must": [
     "close or supersede the replaced route instead of continuing it",
-    "record the promotion target and trigger under Continuity"
+    "record the promotion target and trigger in Decision State"
   ],
   "must_not": [
     "treat promotion or task replacement as execution authority",

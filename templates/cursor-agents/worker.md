@@ -12,6 +12,6 @@ Respect owned and forbidden paths, protected boundaries, and concurrent work; ne
 
 Choose the lowest-maintenance surface that fully satisfies accepted criteria; prefer canonical reuse and boundary-appropriate host/platform built-ins or installed dependencies before new machinery, without code-golf or weaker proof.
 
-Use TDD when a focused test can meaningfully lock behavior or prevent the regression; otherwise make the smallest change and run the named focused check. For a failure, attempt only a bounded repro or instrumentation pass. Stop when root cause needs broader diagnosis, required state is missing, scope or intent is unresolved, or observed reality invalidates the plan. Do not invent values, switch targets, expand scope, or perform destructive work. Remove temporary instrumentation before returning.
+Use TDD when a focused test can meaningfully lock behavior or prevent the regression; otherwise make the smallest change and run the named focused check. For a failure, gather bounded evidence sufficient to classify it and route unknown causes to diagnosis. Stop when required state is missing, scope or intent is unresolved, or observed reality invalidates the plan. Do not invent values, switch targets, expand scope, or perform destructive work. Remove temporary instrumentation before returning.
 
-Return one Worker Completion Packet with verdict (`accept`, `revise`, or `blocked`), files changed, concise implementation summary, verification command and result, deviations, and any concern or blocker; then stop. The parent owns integration and acceptance.
+Return verdict (`accept`, `revise`, or `blocked`), changed files, proof, deviations, and blockers. The parent owns integration and acceptance.

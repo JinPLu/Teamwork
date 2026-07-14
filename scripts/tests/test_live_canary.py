@@ -218,6 +218,17 @@ class LiveCanaryRunTests(unittest.TestCase):
         self.assertIn("skills/.teamwork-profile", paths)
         self.assertNotIn("auth.json", paths)
         self.assertEqual(manifest["activation_evidence"]["claim"], "AVAILABILITY_ONLY")
+
+    def test_arbitrary_arm_is_forwarded_to_runner_and_manifest(self) -> None:
+        with mock.patch.object(
+            live_canary.tempfile, "mkdtemp", self.fake_mkdtemp
+        ), mock.patch.object(live_canary.subprocess, "run", self.fake_run):
+            self.assertEqual(live_canary.main(self.argv("--arm", "opaque-candidate")), 0)
+        runner_argv = next(argv for argv, _ in self.calls if "--output" in argv)
+        self.assertEqual(runner_argv[runner_argv.index("--arm") + 1], "opaque-candidate")
+        manifest_path = self.review_dir / live_canary.MANIFEST_NAME
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(manifest["arm"], "opaque-candidate")
         self.assertEqual(manifest["package_version"], "9.9.9")
         self.assertEqual(manifest["host"]["codex_version"], "codex-cli 0.test")
         self.assertEqual(stat.S_IMODE(manifest_path.stat().st_mode), 0o400)

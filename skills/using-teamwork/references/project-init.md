@@ -1,10 +1,8 @@
 # Project Init
 
-Keep their results separate: `teamwork-init` audit, deterministic bootstrap, and
-semantic init. Bootstrap refreshes Teamwork-owned managed blocks/entries and the exact loader,
-preserves content outside managed regions, and reports semantic audit pending;
-content inside Teamwork markers is package-owned. Only semantic init claims
-evidenced organization.
+Separate audit, deterministic bootstrap, and semantic init results. Bootstrap
+refreshes package-owned regions and loaders while preserving outside content;
+only semantic init claims evidenced organization.
 
 ## Evidence And Project Model
 
@@ -13,19 +11,15 @@ canonical project docs; source/config/tests/required values; commands;
 trackers/runbooks/plans/Teamwork pointers; and platform or scoped Cursor surfaces.
 Prefer declared canonical order; verify names, defaults, and bootstrap claims.
 
-Form the smallest init-local Project Model needed: audience/outcome/success;
-mainline, workstreams, current topic parent; owners/source order; each platform's instruction/loading entrypoint plus only its
-platform-specific deltas; stable boundaries, sourced values, protected actions,
-verification entrypoints; and unresolved material conflicts. Give every rule or
+When useful, form the smallest init-local project model needed: outcome,
+mainline, owners/source order, platform entrypoints and real deltas, boundaries,
+sourced values, verification, and unresolved conflicts. Give every rule or
 fact one primary owner; other surfaces link to it or contain only a real delta.
-Omit unknowns and scale to the request. Never persist this
-model as an object, template, file, skill, stage, route, mode, artifact, or state
-machine.
+Omit unknowns and scale to the request. Never persist this internal aid.
 
-Classify every relevant rule: `keep` accurate stable ownership; `merge` overlapping
-truth; `migrate` truth in the wrong owner/surface; `remove` stale,
-contradicted, duplicate, or package-owned workflow; `create` missing evidenced
-stable guidance; `unresolved` material conflict. Continue reversible work. Send only unresolved conflict affecting behavior, public outcome, acceptance, authority, or protection to the root Ask Gate; preserve both claims and pause only dependent edits.
+Optional internal classifications are `keep`, `merge`, `migrate`, `remove`,
+`create`, and `unresolved`. Send only material unresolved conflicts through the
+Ask Gate; preserve competing claims and pause dependent edits.
 
 ## Ownership And Time Horizon
 
@@ -70,12 +64,13 @@ authority, run readiness and the accepted target. Skill roots are Codex
 stay in host roots. Native tools are not install requirements; installing tools
 or changing host config needs separate authority.
 
-Full bootstrap returns a Capability Matrix: Core workflow; profile; instruction
-layer; memory; CodeGraph; subagents; role contracts; validation; optional docs
-graph/external memory; blockers. Use `enabled`, `missing`, `blocked`, `optional`,
-or `deferred`; non-enabled rows name a next action. CodeGraph initialization requires existing CLI plus bootstrap authority.
+Only an explicitly requested full bootstrap returns a Capability Matrix. Name
+the state and next action for each requested capability. CodeGraph initialization
+requires its CLI and bootstrap authority.
 
-Semantic output includes selected surface; separate bootstrap/semantic results;
-Project Model; six classifications; mainline; files; migration; conflicts/decisions;
-verification tier. Never infer live Codex, Cursor, or Claude behavior from static
+Ordinary output covers the selected surface, material ownership/mainline,
+changes, conflicts, and verification. Do not force internal models,
+classifications, or a Memory Delta into it. Legacy numeric index budgets remain
+retrieval hints, not execution limits.
+Never infer live Codex, Cursor, or Claude behavior from static
 inspection, bootstrap checks, emitted loaders/files, or deterministic fixtures.

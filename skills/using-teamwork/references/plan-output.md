@@ -20,11 +20,9 @@ or safety gates.
 Inspect evidence first. Resolve evidence/agent-owned gaps; apply the shared Ask
 Gate and ask one material decision at a time with a recommendation.
 
-When no such decision remains, provide one concise **Decision Summary**: goal,
-chosen approach, material rejected alternatives, scope/non-goals, protected
-boundaries, acceptance meaning, material residual risk, and implementation
-authority. Confirm it before the final plan. A change returns to the affected
-decision; confirmation does not authorize implementation or extra scope.
+Capture resolved choices and material rejected alternatives in the final plan;
+do not add a separate confirmation turn. A recap or plan acceptance does not
+authorize implementation or extra scope.
 
 Readiness gate before the final plan:
 
@@ -73,4 +71,5 @@ Goal work preserves invariants, failed evidence, strategy delta, success/no-prog
 and retry/stop verdict. Bug plans add repro/runtime evidence only for diagnosis.
 
 Workers execute accepted scope; Judges/Reviewers check evidence, scope, proof,
-and stops. Delegation stays auditable by owner, result/blocker, and integration.
+and stops. Internal delegation records stay auditable by owner, result/blocker,
+and integration; they are not required user-facing plan sections.

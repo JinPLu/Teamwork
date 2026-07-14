@@ -4,6 +4,18 @@
 
 This changelog lists user-visible changes. Implementation details live in Git commits or pull requests.
 
+## 2.22.0 - 2026-07-15
+
+**Teamwork's instructions are leaner and more portable while preserving the boundaries that matter for research, execution, and review.**
+
+- **Before → After: repeated workflow narration is consolidated into a small shared contract.** Global rules, stage skills, agent templates, and project initialization previously repeated how to ask, report, plan, and review, which could shift attention toward presentation mechanics. Shared boundaries now have one maintained source, each stage keeps only its own responsibility and completion conditions, and simple tasks remain direct.
+- **The open-source package no longer carries machine or session traces.** A new privacy check rejects real home directories, session identifiers, private network addresses, credential-shaped values, and force-tracked private runtime artifacts while preserving explicit public transports and synthetic fixtures.
+- **Project initialization makes fewer guesses.** New projects emit a compact, portable Teamwork block and a header-first index by default. Existing complete legacy indexes remain compatible, partial hybrid shapes are rejected, and reruns preserve existing content byte for byte.
+- **Maintainers can compare instruction candidates blindly.** A pairwise workflow prepares two opaque arms for two independent reviewers using frozen cases and hard gates. Raw trajectories remain private, and static footprint evidence is permitted only as a narrow all-tie fallback.
+- **To upgrade:** from the Teamwork repository, run `./scripts/check-update.sh --readiness --project "$PWD"`, execute the printed `NEXT`, and repeat the check until it reports `INSTALL_READY=yes`. Cursor User Rules still require the prompted manual paste.
+
+This release is covered by offline contracts, installer simulations, privacy scanning, the pairwise protocol, and full package validation. No paid model comparison was run, so it does not claim improved real-answer quality or runtime equivalence between Codex, Cursor, and Claude Code.
+
 ## 2.21.1 - 2026-07-15
 
 **Teamwork is easier to maintain and its installed Codex behavior is easier to inspect, while everyday usage stays the same.**

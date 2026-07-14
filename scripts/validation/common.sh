@@ -100,7 +100,7 @@ fenced_block_line_count_max() {
 
 check_lean_policy() {
   local file="$1"
-  local profile="$2"
+  local _profile="$2"
   local label="$3"
   local policy_words
   policy_words="$(awk '
@@ -108,20 +108,23 @@ check_lean_policy() {
     inside { print }
     /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_END -->/ { inside = 0 }
   ' "$file" | wc -w | tr -d ' ')"
-  [[ "$policy_words" -le 190 ]] \
-    || fail "$label must remain a guard-only global policy ($policy_words > 190)"
+  [[ "$policy_words" -le 155 ]] \
+    || fail "$label must remain a guard-only global policy ($policy_words > 155)"
   grep_required "Work within the user's request" "$file" "$label must preserve request scope"
-  grep_required 'routine reversible choices' "$file" "$label must permit routine reversible choices"
-  grep_required 'Route explicit grill/question-first' "$file" \
-    "$label must route explicit grill intent"
-  grep_required 'Never invent or hide gaps' "$file" "$label must preserve required-state safety"
-  grep_required 'Ask only when the user must supply' "$file" "$label must preserve the shared ask boundary"
-  grep_required 'Pause only dependent work' "$file" "$label must scope unresolved-question blocking"
-  grep_required 'Delegate only worthwhile independent scope' "$file" \
+  grep_required 'Read-only requests do not authorize changes' "$file" \
+    "$label must preserve the read-only authority boundary"
+  grep_required 'Inspect discoverable evidence before asking' "$file" \
+    "$label must inspect before asking"
+  grep_required 'Pause only the dependent branch' "$file" \
+    "$label must scope unresolved-question blocking"
+  grep_required 'Answers and confirmations do not grant effect authority' "$file" \
+    "$label must preserve the effect-authority boundary"
+  grep_required 'Never invent or hide a required value or invariant' "$file" \
+    "$label must preserve required-state safety"
+  grep_required 'Own routine reversible choices' "$file" \
+    "$label must permit routine reversible choices"
+  grep_required 'Delegate only independent work whose value exceeds its' "$file" \
     "$label must keep delegation economic"
-  grep_required 'agents own models; active profile' "$file" \
-    "$label must keep model mappings out of global policy"
-  grep_required "active profile: ${profile}\. Use project-local init" "$file" "$label must record active profile $profile"
   if [[ "$label" == *Cursor* || "$label" == *Claude* ]]; then
     ! grep -Eq 'request_user_input|Codex CLI|Codex native|every material user decision|grill ceremony|text choice card' "$file" \
       || fail "$label must not contain Codex-native adapter wording"

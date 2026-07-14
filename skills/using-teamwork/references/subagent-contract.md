@@ -3,10 +3,12 @@
 Use only after `subagent-dispatch.md` decides delegation has net value. The
 parent owns scope, integration, user questions, and final acceptance. Subagents
 never interact with the user or operate an interaction lifecycle.
+All prompt, result, question-candidate, and dispatch shapes in this reference are
+internal coordination records, not mandatory user-facing packets.
 
 ## Prompt
 
-Every delegated prompt contains four fields:
+Every delegated prompt covers four facts, in any compact form:
 
 ```text
 Mission:     one question, decision, owned slice, or review
@@ -46,7 +48,7 @@ Question Candidate:
 
 ## Base Result
 
-Return the smallest result that preserves the parent's decision evidence:
+Return the smallest internal result that preserves the parent's decision evidence:
 
 ```text
 Role:
@@ -67,15 +69,17 @@ Next: <parent decision, follow-up evidence, or none>
   any Question Candidate.
 - **Judge:** plan source, evidence/scope/verification adequacy, acceptance gap,
   and smallest required fixes.
-- **Worker:** owned scope, acceptance-criterion change/evidence map, focused
-  verification, discovery classification (`regression`,
+- **Worker:** owned scope, acceptance-criterion change/evidence map, verification
+  proportional to the changed surface and risk, discovery classification (`regression`,
   `accepted_scope_violation`, `pre_existing`, `out_of_scope`, or `suggestion`), deviations,
   protected-boundary hits, and blocker. Add repro, root-cause, TDD, or cleanup
   evidence only when that protocol was used.
 - **Reviewer:** review target, fresh/recheck status, requirements/evidence map,
   stable-ID actionable findings classified `BLOCKER`, `FOLLOW-UP`, or
   `SUGGESTION`, verification reviewed, and residual risk.
-  `ACCEPT` requires no open `BLOCKER`; follow-ups do not block acceptance.
+  `ACCEPT` requires no open `BLOCKER`; follow-ups do not block acceptance. A
+  recheck covers proportional regression risk, while materially expanded scope
+  receives a fresh review.
 
 For goal retries, add Goal Invariants, prior failed evidence, strategy delta,
 drift, and retry/stop verdict. For durable-memory work, subagents may propose a

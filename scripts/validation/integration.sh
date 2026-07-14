@@ -6,9 +6,58 @@ while IFS= read -r template; do
     || fail "agent template must not duplicate the grill procedure: ${template#"$ROOT/"}"
   word_count_max "$template" 260 "agent template should remain lean: ${template#"$ROOT/"}"
 done < <(find "$ROOT/templates/codex-agents" "$ROOT/templates/cursor-agents" "$ROOT/templates/claude-agents" -type f | sort)
-grep_absent 'Shared Understanding Packet\|Native Fields\|Option Matrix' \
+grep_absent 'Shared Understanding Packet\|Native Fields\|Option Matrix\|Worker Completion Packet\|Question Candidate' \
   "agent templates must not restore fixed packet ceremony" \
   "$ROOT/templates/codex-agents" "$ROOT/templates/cursor-agents" "$ROOT/templates/claude-agents"
+grep_absent 'only lightweight commands\|Inspect additional material only\|attempt only a bounded' \
+  "agent templates must not impose capability-harming universal caps" \
+  "$ROOT/templates/codex-agents" "$ROOT/templates/cursor-agents" "$ROOT/templates/claude-agents"
+python3 - "$ROOT" <<'PY'
+import pathlib
+import sys
+
+root = pathlib.Path(sys.argv[1])
+roles = {
+    "explorer": [
+        root / "templates/codex-agents/teamwork-explorer.toml",
+        root / "templates/cursor-agents/explore.md",
+        root / "templates/claude-agents/explore.md",
+    ],
+    "designer": [
+        root / "templates/codex-agents/teamwork-designer.toml",
+        root / "templates/cursor-agents/designer.md",
+        root / "templates/claude-agents/designer.md",
+    ],
+    "worker": [
+        root / "templates/codex-agents/teamwork-worker.toml",
+        root / "templates/cursor-agents/worker.md",
+        root / "templates/claude-agents/worker.md",
+    ],
+    "reviewer": [
+        root / "templates/codex-agents/teamwork-reviewer.toml",
+        root / "templates/cursor-agents/code-reviewer.md",
+        root / "templates/claude-agents/code-reviewer.md",
+    ],
+    "deep-reviewer": [
+        root / "templates/codex-agents/teamwork-deep-reviewer.toml",
+        root / "templates/cursor-agents/deep-reviewer.md",
+        root / "templates/claude-agents/deep-reviewer.md",
+    ],
+}
+required = {
+    "explorer": ("tools proportional", "full source census"),
+    "designer": ("inspect relevant material within the delegated scope", "genuine alternatives"),
+    "worker": ("bounded evidence sufficient to classify", "route unknown causes to diagnosis"),
+    "reviewer": ("stable id", "blocker", "follow-up", "suggestion", "prior fixes", "regression risk proportional", "fresh review"),
+    "deep-reviewer": ("stable id", "blocker", "follow-up", "suggestion", "prior fixes", "proportional regression risk", "fresh review"),
+}
+for role, paths in roles.items():
+    for path in paths:
+        text = " ".join(path.read_text(encoding="utf-8").split()).lower()
+        for phrase in required[role]:
+            if phrase not in text:
+                raise SystemExit(f"FAIL: {role} parity missing {phrase!r}: {path}")
+PY
 for template in \
   "$ROOT/templates/codex-agents/teamwork-explorer.toml" \
   "$ROOT/templates/cursor-agents/explore.md" \
@@ -160,8 +209,6 @@ grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$tmp/home/.codex/AGENTS.md
 grep_required 'Teamwork Codex Global Policy' "$tmp/home/.codex/AGENTS.md" \
   "Codex install must write Teamwork global policy heading"
 check_lean_policy "$tmp/home/.codex/AGENTS.md" performance-first "Codex global policy"
-grep_required 'Use callable native structured input' "$tmp/home/.codex/AGENTS.md" \
-  "Codex global policy must defer transport to the callable host capability"
 
 agents_preserve_home="$tmp/home-agents-preserve"
 mkdir -p "$agents_preserve_home/.codex"
@@ -187,8 +234,6 @@ grep_required '<!-- CODEGRAPH_START -->' "$agents_preserve_home/.codex/AGENTS.md
   "Codex global policy install must preserve CodeGraph block"
 check_lean_policy "$agents_preserve_home/.codex/AGENTS.md" performance-first \
   "refreshed Codex global policy"
-grep_required 'Use callable native structured input' "$agents_preserve_home/.codex/AGENTS.md" \
-  "refreshed Codex policy must defer transport to the callable host capability"
 grep_absent 'old managed content' \
   "Codex global policy install must replace old managed content" \
   "$agents_preserve_home/.codex/AGENTS.md"
@@ -208,8 +253,6 @@ HOME="$tmp/home-codex-policy" "$ROOT/install.sh" codex-policy \
 grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$codex_policy_out" \
   "codex-policy target must print Teamwork global policy start marker"
 check_lean_policy "$codex_policy_out" performance-first "codex-policy output"
-grep_required 'Use callable native structured input' "$codex_policy_out" \
-  "codex-policy output must defer transport to the callable host capability"
 [[ ! -e "$tmp/home-codex-policy/.codex/AGENTS.md" ]] \
   || fail "codex-policy target must not write global AGENTS policy"
 
@@ -311,13 +354,9 @@ done
 
 HOME="$tmp/home-codex-cost" "$ROOT/install.sh" --profile cost-first codex >/dev/null
 check_lean_policy "$tmp/home-codex-cost/.codex/AGENTS.md" cost-first "cost-first Codex policy"
-grep_required 'Use callable native structured input' "$tmp/home-codex-cost/.codex/AGENTS.md" \
-  "cost-first Codex policy must defer transport to the callable host capability"
 
 HOME="$tmp/home-codex-policy-cost" "$ROOT/install.sh" --profile cost-first codex-policy > "$tmp/codex-policy-cost.out"
 check_lean_policy "$tmp/codex-policy-cost.out" cost-first "cost-first codex-policy output"
-grep_required 'Use callable native structured input' "$tmp/codex-policy-cost.out" \
-  "cost-first codex-policy output must defer transport to the callable host capability"
 [[ ! -e "$tmp/home-codex-policy-cost/.codex/AGENTS.md" ]] \
   || fail "cost-first codex-policy target must not write global AGENTS policy"
 

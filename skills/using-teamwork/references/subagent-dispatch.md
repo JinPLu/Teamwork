@@ -18,7 +18,8 @@ track's evidence, latency, or isolation value exceeds coordination cost:
 Skip dispatch for quick facts, obvious edits, tightly coupled work, unavailable
 tools, missing authority, user opt-out, or excessive context cost.
 
-Use CodeGraph before Explorer fanout for structural code questions.
+For structural code questions, prefer CodeGraph before Explorer fanout only
+when it is available and its index is healthy for the relevant files.
 
 ## Roles
 
@@ -30,13 +31,13 @@ Use CodeGraph before Explorer fanout for structural code questions.
 
 ## Lifecycle
 
-A subagent returns one self-contained packet, then stops. It does not monitor,
+A subagent returns one self-contained internal result, then stops. It does not monitor,
 expand scope, chain agents, or resume after return. The sole exception is one
 parent-directed corrective recheck in the same initial Judge/Reviewer thread;
 that thread may inspect only its prior finding IDs, claimed fixes, and
 fix-introduced regressions or new direct evidence. It cannot dispatch, monitor,
-or request another recheck. Give materially new work to a fresh agent and
-packet.
+or request another recheck. Give materially new work to a fresh agent with a
+fresh internal brief.
 
 The main agent records review-relevant outcomes and owns integration,
 verification, and acceptance.
@@ -45,7 +46,7 @@ verification, and acceptance.
 
 Inspect the live schema. A ready Codex install exposes a non-reserved `teamwork`
 namespace with `agent_type`; select the installed role with `fork_turns:"none"`
-and a self-contained packet.
+and a self-contained internal brief.
 The config checker proves local state only. If fields remain generic, label the
 child `parent-inherited` and put its role and stop rule in `message`.
 
@@ -129,10 +130,9 @@ failed-goal adequacy, or performance-first projects.
 
 ## Economics
 
-- The first wave defaults to at most two agents with disjoint ownership.
-  Integrate and assess their packets before opening another wave.
-- Workers have no fixed prompt-level cap; runtime limits, disjoint ownership,
-  integration cost, and the accepted plan bound the wave.
+Choose wave size from independent ownership, evidence value, runtime limits,
+and integration cost. Integrate returned work before opening dependent tracks;
+do not impose a universal first-wave or Worker count.
 ## Codex Control Plane
 
 - Native Codex goal state is the source of truth for autonomous lifecycle.

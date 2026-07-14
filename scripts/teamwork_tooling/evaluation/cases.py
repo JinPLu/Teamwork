@@ -71,11 +71,10 @@ def validate_discussion_handoff_case(data: dict[str, Any], path: Path) -> None:
 
     authored_output = "\n".join(assistant_turns)
     normalized_output = normalize_semantic_text(authored_output)
-    for anchor in ("playback:", "current:", "open:", "next:"):
-        if anchor not in authored_output.casefold():
-            raise EvalError(
-                f"{display_path(path)}: handoff trajectory must include {anchor[:-1]}"
-            )
+    if "resume summary:" not in authored_output.casefold():
+        raise EvalError(
+            f"{display_path(path)}: handoff trajectory must include a resume summary"
+        )
     for decision in answered:
         if normalize_semantic_text(decision) not in normalized_output:
             raise EvalError(

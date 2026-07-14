@@ -380,13 +380,12 @@ policy_status() {
   if [[ -f "$file" ]] \
     && grep -q "$marker" "$file" \
     && grep -q "Work within the user's request" "$file" \
-    && grep -q 'routine reversible choices' "$file" \
-    && grep -q 'Route explicit grill/question-first' "$file" \
-    && grep -q 'Ask only when the user must supply' "$file" \
-    && grep -q 'Pause only dependent work' "$file" \
-    && grep -q 'Never invent or hide gaps' "$file" \
-    && grep -q 'Delegate only worthwhile independent scope' "$file" \
-    && grep -q 'agents own models; active profile' "$file"; then
+    && grep -q 'Read-only requests do not authorize changes' "$file" \
+    && grep -q 'Inspect discoverable evidence before asking' "$file" \
+    && grep -q 'Pause only the dependent branch' "$file" \
+    && grep -q 'Answers and confirmations do not grant effect authority' "$file" \
+    && grep -q 'Never invent or hide a required value or invariant' "$file" \
+    && grep -q 'Delegate only independent work whose value exceeds its' "$file"; then
     echo "ok"
   else
     echo "missing"
@@ -472,7 +471,7 @@ github_repo_slug() {
   case "$slug" in
     https://github.com/*) slug="${slug#https://github.com/}" ;;
     http://github.com/*) slug="${slug#http://github.com/}" ;;
-    git@github.com:*) slug="${slug#git@github.com:}" ;;
+    git@github.com:*) slug="${slug#*:}" ;;
     *) return 0 ;;
   esac
   slug="${slug%.git}"

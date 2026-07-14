@@ -34,6 +34,7 @@ SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 UTC_TIMESTAMP_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$"
 )
+PAIRWISE_OUTCOMES = {"LEFT_BETTER", "RIGHT_BETTER", "TIE"}
 UNSAFE_RAW_PROSE_FIELDS = {
     "content",
     "evidence_text",
@@ -54,6 +55,121 @@ UNSAFE_RAW_PROSE_FIELDS = {
 
 class SemanticReviewError(ValueError):
     """Raised when a semantic-review record violates the review contract."""
+
+
+def _contains_secret(value: Any, secrets: set[str]) -> bool:
+    """Return whether controller-only arm identity leaked into reviewer JSON."""
+
+    if isinstance(value, dict):
+        return any(_contains_secret(key, secrets) or _contains_secret(child, secrets) for key, child in value.items())
+    if isinstance(value, list):
+        return any(_contains_secret(child, secrets) for child in value)
+    if not isinstance(value, str):
+        return False
+    for secret in secrets:
+        if value == secret:
+            return True
+        if len(secret) >= 4 and re.search(rf"(?<![A-Za-z0-9_-]){re.escape(secret)}(?![A-Za-z0-9_-])", value):
+            return True
+    return False
+
+
+def _pairwise_rubric_contract(rubric: Any) -> tuple[str, list[str]]:
+    value = _require_object(rubric, "pairwise rubric")
+    rubric_id = _require_nonempty_string(value.get("id"), "pairwise rubric.id")
+    raw_criteria = value.get("criteria")
+    if not isinstance(raw_criteria, list) or not raw_criteria:
+        raise SemanticReviewError("pairwise rubric.criteria must be a non-empty list")
+    criteria: list[str] = []
+    for index, raw in enumerate(raw_criteria):
+        criterion = _require_object(raw, f"pairwise rubric.criteria[{index}]")
+        criterion_id = _require_nonempty_string(
+            criterion.get("id"), f"pairwise rubric.criteria[{index}].id"
+        )
+        if criterion.get("hard_gate") is not True:
+            raise SemanticReviewError(f"pairwise rubric criterion {criterion_id} must be a hard gate")
+        if criterion_id in criteria:
+            raise SemanticReviewError(f"pairwise rubric contains duplicate criterion: {criterion_id}")
+        criteria.append(criterion_id)
+    return rubric_id, criteria
+
+
+def validate_pairwise_review(
+    review: Any,
+    payload: Any,
+    rubric: Any,
+    controller_secrets: set[str] | None = None,
+) -> None:
+    """Validate one blind review against its exact neutral reviewer payload."""
+
+    value = _require_object(review, "pairwise review")
+    packet = _require_object(payload, "reviewer payload")
+    secrets = {item for item in (controller_secrets or set()) if item}
+    if secrets and (_contains_secret(packet, secrets) or _contains_secret(value, secrets)):
+        raise SemanticReviewError("controller arm mapping leaked into reviewer input or judgment")
+    _require_exact_fields(
+        value,
+        {"schema_version", "record_type", "comparison_id", "reviewer_id", "rubric_id", "judgments", "timestamp"},
+        "pairwise review",
+    )
+    if value["schema_version"] != SCHEMA_VERSION:
+        raise SemanticReviewError(f"pairwise review schema_version must be {SCHEMA_VERSION}")
+    if value["record_type"] != "teamwork_pairwise_review":
+        raise SemanticReviewError("pairwise review has the wrong record_type")
+    for field in ("comparison_id", "reviewer_id"):
+        if value[field] != packet.get(field):
+            raise SemanticReviewError(f"pairwise review {field} does not match reviewer payload")
+    rubric_id, criterion_ids = _pairwise_rubric_contract(rubric)
+    if value["rubric_id"] != rubric_id or packet.get("rubric_id") != rubric_id:
+        raise SemanticReviewError("pairwise rubric_id does not match")
+    raw_pairs = packet.get("pairs")
+    raw_judgments = value["judgments"]
+    if not isinstance(raw_pairs, list) or not raw_pairs:
+        raise SemanticReviewError("reviewer payload pairs must be a non-empty list")
+    if not isinstance(raw_judgments, list) or not raw_judgments:
+        raise SemanticReviewError("pairwise review judgments must be a non-empty list")
+    pairs: dict[str, Mapping[str, Any]] = {}
+    for index, raw_pair in enumerate(raw_pairs):
+        pair = _require_object(raw_pair, f"reviewer payload pairs[{index}]")
+        pair_id = _require_nonempty_string(pair.get("pair_id"), f"reviewer payload pairs[{index}].pair_id")
+        if pair_id in pairs:
+            raise SemanticReviewError(f"reviewer payload has duplicate pair_id: {pair_id}")
+        pairs[pair_id] = pair
+    seen: set[str] = set()
+    for index, raw_judgment in enumerate(raw_judgments):
+        field = f"judgments[{index}]"
+        judgment = _require_object(raw_judgment, field)
+        _require_exact_fields(
+            judgment,
+            {"pair_id", "case_id", "repeat_index", "left_trajectory_sha256", "right_trajectory_sha256", "outcome", "hard_gates", "rationale"},
+            field,
+        )
+        pair_id = _require_nonempty_string(judgment["pair_id"], f"{field}.pair_id")
+        if pair_id in seen:
+            raise SemanticReviewError(f"duplicate pairwise judgment: {pair_id}")
+        if pair_id not in pairs:
+            raise SemanticReviewError(f"unmatched pairwise judgment: {pair_id}")
+        seen.add(pair_id)
+        pair = pairs[pair_id]
+        for name in ("case_id", "repeat_index", "left_trajectory_sha256", "right_trajectory_sha256"):
+            if judgment[name] != pair.get(name):
+                raise SemanticReviewError(f"{field}.{name} does not match reviewer payload")
+        if judgment["outcome"] not in PAIRWISE_OUTCOMES:
+            raise SemanticReviewError(f"{field} has unknown outcome: {judgment['outcome']!r}")
+        gates = _require_object(judgment["hard_gates"], f"{field}.hard_gates")
+        _require_exact_fields(gates, set(criterion_ids), f"{field}.hard_gates")
+        for criterion_id in criterion_ids:
+            side_gate = _require_object(gates[criterion_id], f"{field}.hard_gates.{criterion_id}")
+            _require_exact_fields(side_gate, {"left", "right"}, f"{field}.hard_gates.{criterion_id}")
+            if side_gate["left"] is not True or side_gate["right"] is not True:
+                raise SemanticReviewError(f"{field} hard-gate fail: {criterion_id}")
+        _require_nonempty_string(judgment["rationale"], f"{field}.rationale")
+    missing = sorted(set(pairs) - seen)
+    if missing:
+        raise SemanticReviewError(f"pairwise review missing judgments: {', '.join(missing)}")
+    timestamp = value["timestamp"]
+    if not isinstance(timestamp, str) or not UTC_TIMESTAMP_RE.fullmatch(timestamp):
+        raise SemanticReviewError("pairwise review timestamp must be an RFC 3339 UTC timestamp")
 
 
 def trajectory_sha256(value: Any) -> str:

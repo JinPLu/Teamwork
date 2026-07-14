@@ -52,7 +52,10 @@ proof. For explicit "verify this" requests, return one claim verdict:
   artifact path.
 - Preserve negative results. `NOT VERIFIED`, `failed`, and `blocked` are useful.
 
-## Output Fragment
+## Internal Record
+
+Keep only the fields needed to support the claim. This record may inform the
+user-facing answer, but its exact packet shape is not a presentation requirement.
 
 ```text
 Verification Strength: live-verified | targeted-test-verified | build-only | blocked | failed

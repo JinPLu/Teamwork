@@ -11,6 +11,7 @@
   },
   "must": [
     "report readiness gaps and continue safe project-local setup",
+    "read the installed profile and material model configuration instead of relying on a timeless mapping embedded in Init",
     "treat native interaction tools as host-owned capabilities",
     "request approval before installing external tooling"
   ],

@@ -53,8 +53,8 @@ trajectory with `collaborationMode` set to Plan.
 
 Ask-predicate and convergence fixtures are offline behavioral contracts. They
 cover zero-question simple work, discoverable facts, required input or human
-observation in every Teamwork stage, Plan's non-simple Grill entry and Decision
-Summary, authority preservation after confirmation, root-owned deduplicated
+observation in every Teamwork stage, Plan's non-simple Grill entry and resolved
+choices, authority preservation after confirmation, root-owned deduplicated
 Question Candidates, dependent-branch-only blocking, concise text fallback,
 stable review finding IDs, blocker classification, and one bounded corrective
 recheck. They contain no persistent workflow state. They validate fixture shape
@@ -194,6 +194,26 @@ skill activation, general reliability, or equivalent behavior in Cursor or
 Claude Code. The summary retains statuses, model provenance, usage, reported
 cost, verdicts, scores, and hashes; it does not retain prompt, response, event,
 or reviewer-rationale prose.
+
+### Blind pairwise comparison
+
+`compare prepare` accepts exactly two opaque `--arm ID=CANARY_DIR` inputs from
+the installed-Codex lane, verifies matched frozen cases/repeats and hard gates,
+then writes balanced left/right packets for exactly two independent reviewers.
+`compare finalize` binds judgments to trajectory hashes, rejects arm-map leaks
+or disagreement, and applies the predeclared A→B or B→C rule. An all-tie A→B
+selection additionally requires `teamwork-pairwise-footprint-v1` evidence bound
+to both source manifest hashes; the harness recomputes the allowlisted
+`installed_inventory_bytes` metric from those manifests.
+
+```bash
+python3 scripts/run-installed-teamwork-live-eval.py compare prepare --help
+python3 scripts/run-installed-teamwork-live-eval.py compare finalize --help
+```
+
+Raw trajectories, controller maps, reviews, and results remain private under the
+chosen review directory. Offline schemas and fake-run tests do not prove live
+model quality, justify spend, or establish Cursor/Claude behavioral parity.
 
 `scripts/codex_app_server_user_input.py` separately probes the Codex app-server
 `request_user_input` lifecycle when that capability is callable. It never mounts

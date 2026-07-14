@@ -54,11 +54,14 @@ canonical memory changed.
 Update at material checkpoints only: a decision changes or closes a branch,
 evidence materially changes a route, the mainline changes, continuity is about
 to cross a context or handoff boundary, or the discussion is promoted or
-superseded. Do not update per turn. Keep only decision-relevant summaries and
-privacy-safe evidence; never store a raw transcript, hidden reasoning, secrets,
-or unnecessary personal data. Promotion to current state, research, plan,
-report, or another canonical owner follows that owner's trigger and authority
-rules and does not grant execution authority.
+superseded. Do not update per turn. Preserve the current decisions, open and
+rejected options, decision-relevant evidence, and exact resume point. A Route
+Map and a plain-text resume summary are optional alternative views; use whichever
+materially improves continuity, without duplicating the canonical decision
+state. Keep only privacy-safe summaries; never store a raw transcript, hidden
+reasoning, secrets, or unnecessary personal data. Promotion to current state,
+research, plan, report, or another canonical owner follows that owner's trigger
+and authority rules and does not grant execution authority.
 
 ## Retrieval
 

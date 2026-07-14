@@ -110,96 +110,61 @@ def validate_discussion_template_text(template_text: str) -> None:
         if not re.search(rf"(?mi)^- {re.escape(field)}:\s*\S", starting_question):
             raise EvalError(f"{path}: Starting Question must include {field}")
 
-    route_map = discussion_section(template_text, "Route Map")
-    mermaid = re.search(r"(?ms)```mermaid\s*\n(.*?)```", route_map)
-    if not mermaid or not re.search(r"(?m)^\s*flowchart\b", mermaid.group(1)):
-        raise EvalError(f"{path}: Route Map must contain a Mermaid flowchart")
-    diagram = mermaid.group(1)
-    nodes = re.findall(r'(?m)^\s*(R[1-9][0-9]*)\s*\["([^"]+)"\]\s*$', diagram)
-    if not nodes:
-        raise EvalError(f"{path}: Route Map must define artifact-only R<number> node keys")
-    all_node_keys = re.findall(
-        r'(?m)^\s*([A-Za-z][A-Za-z0-9_-]*)\s*\["[^"]+"\]\s*$', diagram
+    decision_state = discussion_section(template_text, "Decision State")
+    for field in ("Decisions", "Open", "Rejected", "Evidence", "Resume point", "Promotion"):
+        if not re.search(rf"(?mi)^- {re.escape(field)}:\s*\S", decision_state):
+            raise EvalError(f"{path}: Decision State must include {field}")
+
+    route_match = re.search(
+        r"(?ms)^## Route Map \(Optional\)\s*$\n(.*?)(?=^## |\Z)", template_text
     )
-    if len(all_node_keys) != len(nodes):
-        raise EvalError(f"{path}: Route Map must use only artifact-local R<number> node keys")
-    map_keys = [key for key, _ in nodes]
-    if len(map_keys) != len(set(map_keys)):
-        raise EvalError(f"{path}: Route Map node keys must be unique")
-    edge_keys = re.findall(
-        r"(?m)^\s*(R[1-9][0-9]*)\s*-->\s*(R[1-9][0-9]*)\s*$", diagram
+    resume_match = re.search(
+        r"(?ms)^## Resume Summary \(Optional\)\s*$\n(.*?)(?=^## |\Z)", template_text
     )
-    undefined_edge_keys = sorted(
-        {key for edge in edge_keys for key in edge if key not in set(map_keys)}
-    )
-    if undefined_edge_keys:
-        raise EvalError(
-            f"{path}: Route Map edges reference undefined node keys: "
-            + ", ".join(undefined_edge_keys)
+    if not route_match and not resume_match:
+        raise EvalError(f"{path}: provide an optional Route Map or Resume Summary")
+
+    if route_match:
+        route_map = route_match.group(1).strip()
+        mermaid = re.search(r"(?ms)```mermaid\s*\n(.*?)```", route_map)
+        if not mermaid or not re.search(r"(?m)^\s*flowchart\b", mermaid.group(1)):
+            raise EvalError(f"{path}: Route Map must contain a Mermaid flowchart")
+        diagram = mermaid.group(1)
+        nodes = re.findall(r'(?m)^\s*(R[1-9][0-9]*)\s*\["([^"]+)"\]\s*$', diagram)
+        if not nodes:
+            raise EvalError(f"{path}: Route Map must define artifact-local R<number> nodes")
+        map_keys = [key for key, _ in nodes]
+        if len(map_keys) != len(set(map_keys)):
+            raise EvalError(f"{path}: Route Map node keys must be unique")
+        undefined = sorted(
+            {
+                key
+                for edge in re.findall(
+                    r"(?m)^\s*(R[1-9][0-9]*)\s*-->\s*(R[1-9][0-9]*)\s*$",
+                    diagram,
+                )
+                for key in edge
+                if key not in set(map_keys)
+            }
         )
-    statuses = (
-        "accepted",
-        "rejected",
-        "current",
-        "open",
-        "closed",
-        "superseded",
-        "promoted",
-    )
-    map_statuses: dict[str, str] = {}
-    for key, label in nodes:
-        normalized_label = normalize_semantic_text(label)
-        if not normalized_label.startswith(key.casefold() + " "):
-            raise EvalError(f"{path}: diagram node {key} must include its artifact-only key")
-        if re.search(r"(?i)\b(?:evidence|outcome|reason|mainline impact)\s*:", label):
+        if undefined:
             raise EvalError(
-                f"{path}: diagram labels must not carry Evidence, Outcome, Reason, or Mainline impact"
+                f"{path}: Route Map edges reference undefined node keys: "
+                + ", ".join(undefined)
             )
-        status_match = re.search(
-            rf"\b({'|'.join(statuses)})\b\s*$", normalized_label
-        )
-        if not status_match:
-            raise EvalError(f"{path}: diagram node {key} must include a textual status")
-        map_statuses[key] = status_match.group(1)
+        for key, label in nodes:
+            if not normalize_semantic_text(label).startswith(key.casefold() + " "):
+                raise EvalError(f"{path}: diagram node {key} must include its artifact-local key")
+            if re.search(r"(?i)\b(?:evidence|outcome|reason|mainline impact)\s*:", label):
+                raise EvalError(f"{path}: Route Map must not duplicate Decision State details")
 
-    route_notes = discussion_section(template_text, "Route Notes")
-    note_keys = re.findall(r"(?m)^### (R[1-9][0-9]*)\b", route_notes)
-    if len(note_keys) != len(set(note_keys)) or set(note_keys) != set(map_keys):
-        raise EvalError(f"{path}: Route Map/Route Notes keys must match exactly")
-    normalized_notes = normalize_semantic_text(route_notes)
-    sole_owner = (
-        "route notes are the sole owner of each node's evidence, outcome, reason, and mainline impact"
-    )
-    if normalize_semantic_text(sole_owner) not in normalized_notes:
-        raise EvalError(f"{path}: Route Notes must be the sole owner of decision details")
-    note_entries = re.findall(
-        r"(?ms)^### (R[1-9][0-9]*)\b[^\n]*\n(.*?)(?=^### |\Z)", route_notes
-    )
-    for key, entry in note_entries:
-        for field in ("Status", "Evidence", "Outcome", "Reason", "Mainline impact"):
-            if not re.search(rf"(?mi)^- {re.escape(field)}:\s*\S", entry):
-                raise EvalError(f"{path}: Route Note {key} must include {field}")
-        note_status = re.search(
-            rf"(?mi)^- Status:\s*({'|'.join(statuses)})\s*$", entry
-        )
-        if not note_status:
-            raise EvalError(f"{path}: Route Note {key} must declare one valid Status")
-        if note_status.group(1).casefold() != map_statuses[key]:
-            raise EvalError(
-                f"{path}: Route Map/Route Notes status mismatch for {key}"
-            )
-
-    playback = discussion_section(template_text, "Playback")
-    if "```" in playback or re.search(r"(?m)^\s*\|.*\|\s*$", playback):
-        raise EvalError(f"{path}: Playback must be plain text")
-    for anchor in ("where to resume", "summarize decisions", "do not reproduce dialogue"):
-        if normalize_semantic_text(anchor) not in normalize_semantic_text(playback):
-            raise EvalError(f"{path}: Playback must preserve {anchor}")
-
-    continuity = discussion_section(template_text, "Continuity")
-    for field in ("Current", "Open", "Next", "Promotion"):
-        if not re.search(rf"(?mi)^- {field}:\s*\S", continuity):
-            raise EvalError(f"{path}: Continuity must include {field}")
+    if resume_match:
+        resume = resume_match.group(1).strip()
+        if "```" in resume or re.search(r"(?m)^\s*\|.*\|\s*$", resume):
+            raise EvalError(f"{path}: Resume Summary must be plain text")
+        for anchor in ("what was decided", "what remains open or rejected", "exact point at which to resume", "do not reproduce dialogue"):
+            if normalize_semantic_text(anchor) not in normalize_semantic_text(resume):
+                raise EvalError(f"{path}: Resume Summary must preserve {anchor}")
 
     update_rules = discussion_section(template_text, "Update Rules")
     normalized_rules = normalize_semantic_text(update_rules)
@@ -288,8 +253,8 @@ def validate_mainline_focus_source_text(
         ),
         "skills/teamwork-init/SKILL.md": (
             "explicit `teamwork-init` defaults to **semantic init** unless the user asks only for audit or deterministic bootstrap",
-            "form the smallest evidenced init-local project model; never persist it",
-            "classify rules `keep`, `merge`, `migrate`, `remove`, `create`, or `unresolved`",
+            "form the smallest evidenced init-local project model as an internal audit aid; never persist it or invent",
+            "use `keep`, `merge`, `migrate`, `remove`, `create`, or `unresolved` as optional internal classifications",
         ),
     }
     sources = {
