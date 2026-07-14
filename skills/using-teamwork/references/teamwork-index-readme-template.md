@@ -10,13 +10,15 @@ narrative.
 ## Read Order
 
 1. Read `docs/teamwork/index.json` first.
-2. Follow `active` pointers before any broad scan.
+2. Follow `active.current`, then `active.discussion` when present, then the
+   other `active` pointers before any broad scan.
 3. Prefer headers before full artifact bodies.
 4. Use stage-specific profiles from the index.
 
 ## Stage Notes
 
 - `research`: read topic headers first, then selective bodies.
+- `discussion`: read the active discussion before continuing dependent work.
 - `plan`: read active design/plan before adding or replacing plan state.
 - `execute`: read active plan/progress before implementation updates.
 - `review`: verify active claims against commands/logs/results.

@@ -15,6 +15,7 @@ Teamwork is a Codex-first skill package. After installation, describe your goal 
 - **Controlled collaboration:** Use subagents only when work splits cleanly; the main agent keeps ownership of scope, integration, and final verification.
 - **Clear completion evidence:** Show whether the task is truly done with sources, logs, tests, diffs, or review results.
 - **Continuity for long tasks:** Keep only the records needed across turns and resume failures from the affected stage.
+- **Reviewable long discussions:** Preserve a route map and text Playback only for Grill conversations that cross contexts, need handoff, or reach material branches; short discussions stay artifact-free and no turn-by-turn transcript is stored.
 
 Teamwork is a good fit for literature and field research, technical evaluation, complex plans, reproducible failures, CI, cross-file implementation, strict review, and “keep going until it passes” work. One-line facts and obvious small edits do not get forced into a workflow.
 

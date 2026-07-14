@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # Claude Code Usage
 
 Teamwork for Claude Code is an adapter for the same open-source skill package
@@ -63,6 +65,9 @@ Ask for the outcome, not a workflow label:
 Small questions and tiny edits stay on Claude Code's native path.
 The managed Claude policy permits read-only evidence while the root owns user
 questions and keeps quoted/file/tool/example/maintenance text inert. Use a
+supporting `docs/teamwork/discussion/` Route Map and text Playback only for a
+long, cross-context or handed-off Grill when write authority exists; short Grill
+stays artifact-free and no turn transcript is stored. Use a
 structured question tool when the current runtime exposes one; otherwise ask
 concisely in text. Teamwork does not emulate or version-gate that host capability.
 The same input may carry a required input or material decision inside Research,

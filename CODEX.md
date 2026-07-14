@@ -181,12 +181,18 @@ Reusable or cross-turn findings live in:
 
 ```text
 docs/teamwork/research/YYYY-MM-DD-<slug>.md
+docs/teamwork/discussion/YYYY-MM-DD-<slug>.md
 docs/teamwork/plans/YYYY-MM-DD-<slug>.md
 docs/teamwork/reports/YYYY-MM-DD-<slug>.md
 ```
 
 Use durable artifacts when evidence or state needs cross-turn reuse, supports a
 goal, records repeated failure, or justifies high-risk/public behavior.
+`discussion/` is supporting-only route memory for long, cross-context Grill:
+it keeps a Mermaid Route Map plus plain-text Playback, not a turn transcript,
+and never replaces evidence, a plan, or execution authority. Existing installed
+Teamwork surfaces must be refreshed to a version that supports this artifact
+kind before a project adds `active.discussion`.
 Do not store volatile chat progress in project instructions.
 
 ## Goal Mode
@@ -197,7 +203,8 @@ user/runtime budget or stop after repeated no-progress without a new strategy.
 
 ## Updates
 
-Use `teamwork-update` for both user refreshes and maintainer releases.
+Use `teamwork-update` only to refresh installed Teamwork surfaces. Repository
+maintainer release policy lives in the root `AGENTS.md`.
 
 ```bash
 ./scripts/check-update.sh --project <path>
@@ -212,9 +219,3 @@ python3 scripts/audit-codex-sessions.py --help
 The session auditor reports metadata-only orchestration and cumulative token
 telemetry. Cached/replayed input is not presented as unique context or billing,
 and historical profiles require explicit session-time evidence.
-
-User refresh updates installed skills, agents, and policy. A maintainer release
-keeps `VERSION`, both manifests, both changelogs, required docs, validation,
-install surfaces, the `v<VERSION>` tag, and GitHub Release in one release unit.
-Until the tag and GitHub Release exist, its status is `release-ready`, not
-`released`.

@@ -43,8 +43,8 @@ required state are clear; unresolved questions follow the shared Ask Gate.
   going, or work to a budgeted verifiable target.
 - **Init** (`skills/teamwork-init/SKILL.md`) — project agent instructions,
   AGENTS/CODEX/CURSOR/CLAUDE, install readiness, or rule migration.
-- **Update** (`skills/teamwork-update/SKILL.md`) — Teamwork version, release,
-  refresh, or installed skills/agents/policy maintenance.
+- **Update** (`skills/teamwork-update/SKILL.md`) — installed Teamwork
+  skills/agents/policy, project surfaces, or freshness.
 
 Stage names are optional force switches. If one stage plainly owns the task,
 load it directly rather than keeping the router active.

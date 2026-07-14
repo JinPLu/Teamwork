@@ -1,84 +1,81 @@
 # Project Init
 
-Use with `teamwork-init` for instruction setup, cleanup, or migration.
+Keep their results separate: `teamwork-init` audit, deterministic bootstrap, and
+semantic init. Bootstrap refreshes Teamwork-owned managed blocks/entries and the exact loader,
+preserves content outside managed regions, and reports semantic audit pending;
+content inside Teamwork markers is package-owned. Only semantic init claims
+evidenced organization.
 
-## Project Rule Layering
+## Evidence And Project Model
 
-- Global bootstrap: installer-managed blocks in `~/.codex/AGENTS.md` (Codex),
-  `~/.claude/CLAUDE.md` (Claude Code), and Cursor User Rules via
-  `./install.sh cursor-policy-copy`.
-- Root `AGENTS.md`: boundaries, repo map, required values, protected actions, and tool arbitration.
-- Repo-local `AGENTS.md`: facts, evidence, commands, danger zones, acceptance.
-- Platform files `CODEX.md`, `CURSOR.md`, `CLAUDE.md`, `GEMINI.md`: deltas only.
-- Appendix docs: long paths, commands, environment matrices, and history.
-- `docs/teamwork/index.json`: runtime memory entrypoint; README may explain it,
-  but active pointers come from the index.
-- `docs/teamwork/{research,plans,reports}/`: durable memory when triggered; retrieval aids, not completion evidence.
+Before proposing edits, proportionally inspect: instructions/imports/managed blocks/human docs;
+canonical project docs; source/config/tests/required values; commands;
+trackers/runbooks/plans/Teamwork pointers; and platform or scoped Cursor surfaces.
+Prefer declared canonical order; verify names, defaults, and bootstrap claims.
 
-## Content Classification
+Form the smallest init-local Project Model needed: audience/outcome/success;
+mainline, workstreams, current topic parent; owners/source order; each platform's instruction/loading entrypoint plus only its
+platform-specific deltas; stable boundaries, sourced values, protected actions,
+verification entrypoints; and unresolved material conflicts. Give every rule or
+fact one primary owner; other surfaces link to it or contain only a real delta.
+Omit unknowns and scale to the request. Never persist this
+model as an object, template, file, skill, stage, route, mode, artifact, or state
+machine.
 
-- Bootstrap policy: authorization, act-by-default posture, model profile, no-silent-defaults safety, remote baseline.
-- Portable workflow: evidence labels, artifact triggers, route selection, verification, handoff, and slimming policy.
-- Project facts: repo roles, paths, execution model, required environment variables, red lines.
-- Current state: active results, progress, summaries, or run status.
-- Appendix navigation: long trees, path tables, command catalogs, and environment matrices.
+Classify every relevant rule: `keep` accurate stable ownership; `merge` overlapping
+truth; `migrate` truth in the wrong owner/surface; `remove` stale,
+contradicted, duplicate, or package-owned workflow; `create` missing evidenced
+stable guidance; `unresolved` material conflict. Continue reversible work. Send only unresolved conflict affecting behavior, public outcome, acceptance, authority, or protection to the root Ask Gate; preserve both claims and pause only dependent edits.
 
-## Collaboration Backbone Audit
+## Ownership And Time Horizon
 
-Audit reusable human-agent habits. Mark `keep` for project-specific acceptance, `migrate` for generic workflow duplicated from Teamwork, or `add` when missing:
+- Root `AGENTS.md` owns shared stable Codex and Cursor project instructions:
+  identity/map, owners, checks, sourced values, boundaries, and preferences;
+  nested files may own scoped facts.
+- Ordinary root `CLAUDE.md` imports `@AGENTS.md`, keeps only nonduplicated
+  Claude-specific deltas, and preserves unrelated human/project docs. Teamwork's
+  own public `CLAUDE.md` guide stays intact; at most add a minimal loader. Claude
+  Code expands the import when the session launches; package checks prove only
+  that the loader and files were emitted, not that a live session loaded them.
+- `.cursor/rules` holds only genuinely path-scoped rules that cannot safely live
+  in the shared root. Cursor supports root `AGENTS.md` as its simple project-rule
+  alternative. `CODEX.md` and `CURSOR.md` remain docs absent contrary evidence.
+- Stable instructions keep durable facts, checks, invariants, boundaries, and
+  preferences. Runtime
+  environment, GPU allocation, checkpoint path/status, run progress, experiment numbers,
+  summaries, blockers, and narrow narration are volatile; keep them in their
+  canonical tracker or triggered memory, not stable instructions.
 
-- Context first: structure, entry points, commands, files, unknowns before edits.
-- Plan gate: non-trivial, unfamiliar, research, or experiment work has scope, modules, steps, verification, risks.
-- Research gate: papers, repos, APIs, results, and practice use primary-source evidence.
-- Execution shape: edits stay in small producer-side steps tied to accepted scope.
-- Completion evidence: final replies name changed files, why, verification, gaps.
-- Handoff hygiene: task switches include a one-sentence handoff when state matters.
+Reuse the canonical tracker/runbook. Create fallback `docs/teamwork/project.md` only
+for durable cross-task need, no equivalent, and write authority; it remains a
+runbook and grants no Git, publication, release, or protected-state authority.
+A narrow plan, including a StateConflict-like local plan, stays subordinate to
+the canonical tracker; record it as the current topic with that tracker as its
+parent rather than promoting it to `active.mainline`.
 
-## Teamwork Initialization Mode
+An equivalent second semantic audit with no new evidence, classification, or
+mainline change writes nothing and reports `no-change`.
 
-Model profile is chosen at install time on all platforms. `performance-first` is
-the default and uses Terra medium for Explorer, Sol medium for Worker, Sol high
-for Designer/Judge/Reviewer, and Sol max for Deep Judge/Reviewer on Codex.
-`gpt56-role` is a compatibility alias for that Codex mapping. `cost-first`
-uses Luna/Terra/Sol on Codex and native low-cost models elsewhere.
-`gpt56-high` and `gpt56-xhigh` pin all Codex roles to Sol; legacy `gpt55-high`
-and `gpt55-xhigh` names alias those mappings without emitting GPT-5.5.
-Non-Codex platforms keep current native model families. Project init asks only
-for global-policy overrides; model overrides require `./install.sh --profile <profile> <target>`.
+## Safe Migration
+For automatic migration: transform a same-filesystem temporary copy; preserve
+unrelated/custom content; validate schema, anchors, uniqueness, and intent; then
+atomically replace. Failure must leave destination bytes unchanged. Without a safe
+migrator, preserve the legacy or custom key/content and report a candidate.
 
-## Local Project Init Surfaces
+## Readiness, Capability, And Output
 
-For init/setup requests, run `./install.sh --project-root "<root>"
-init-project` from the Teamwork checkout unless a narrower audit-only request is
-explicit. This installs Teamwork-managed global and project skills/agents/
-policies by default, then writes the managed `AGENTS.md` block,
-`docs/teamwork/` README/index/current files, local `.gitignore` entries, and
-`codegraph init -i` when the CLI already exists. Project skills install to
-Codex `.agents/skills/`, Cursor `.cursor/skills/`, and Claude Code
-`.claude/skills/`; project agents remain under each platform's agent root.
-Cursor manual paste, missing
-CodeGraph CLI or missing Context7/docs MCP is a capability gap, not a stop
-condition. Native interaction tools are used when the current host exposes them;
-project init never enables them. Report global configuration failure after project surfaces install. Do not install external MCP/tools without approval.
+Profiles are install-time; ask only about unresolved material overrides. With
+authority, run readiness and the accepted target. Skill roots are Codex
+`.agents/skills/`, Cursor `.cursor/skills/`, and Claude `.claude/skills/`; agents
+stay in host roots. Native tools are not install requirements; installing tools
+or changing host config needs separate authority.
 
-## Full Feature Capability Matrix
+Full bootstrap returns a Capability Matrix: Core workflow; profile; instruction
+layer; memory; CodeGraph; subagents; role contracts; validation; optional docs
+graph/external memory; blockers. Use `enabled`, `missing`, `blocked`, `optional`,
+or `deferred`; non-enabled rows name a next action. CodeGraph initialization requires existing CLI plus bootstrap authority.
 
-For full setup requests, run `./scripts/check-update.sh --readiness --project
-"<root>"` first, then return compact matrix rows: Core Teamwork workflow;
-Platform profile; Project instruction layer; Artifact memory; CodeGraph policy;
-Subagent policy/install state; Teamwork role workflow contracts; Validation;
-Optional docs graph; Optional external memory; Blockers.
-
-Statuses: `enabled`, `missing`, `blocked`, `optional`, `deferred`. Every non-enabled row names one next action. Optional docs graph and external memory stay `optional` or `deferred` until user approval and the optional-skills gate pass.
-
-## Rule Persistence Decision
-
-Use `./install.sh --project-root "<root>" init-project` for default full setup.
-Project instructions record concrete values, exceptions, opt-outs, or protected
-boundaries. Ask first when host/path/command/credential/model values are
-user-supplied; block only when unavailable, unsafe, or declined; never invent
-fallback.
-
-## Output Shape
-
-Return compact files, `keep`/`migrate`/`add` decisions, remaining local rules, Capability Matrix when requested, verification, and human decisions.
+Semantic output includes selected surface; separate bootstrap/semantic results;
+Project Model; six classifications; mainline; files; migration; conflicts/decisions;
+verification tier. Never infer live Codex, Cursor, or Claude behavior from static
+inspection, bootstrap checks, emitted loaders/files, or deterministic fixtures.

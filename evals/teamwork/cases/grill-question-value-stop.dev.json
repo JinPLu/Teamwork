@@ -5,9 +5,9 @@
   "target": "skills/grill-me/SKILL.md",
   "platforms": ["codex", "cursor", "claude"],
   "prompt": "Grill me on a change that includes one public compatibility decision plus routine language and file-layout choices.",
-  "expected": {"mode": "grill_bounded", "requires": ["one material question", "normal completion", "no implementation authority", "no confidence claim"]},
-  "must": ["ask only the outcome-changing compatibility question", "finish when only reversible implementation choices remain"],
-  "must_not": ["ask about programming language, file count, filenames, naming, or internal organization", "ask a continue checkpoint", "invent confidence", "grant implementation authority"],
+  "expected": {"mode": "grill_bounded", "requires": ["one material question", "mainline anchoring", "normal completion", "no implementation authority", "no confidence claim"]},
+  "must": ["state how the outcome-changing compatibility question serves the global goal", "ask only that material question", "finish when only reversible implementation choices remain"],
+  "must_not": ["follow a locally interesting detail that no longer serves the mainline", "repeat a status ribbon on every turn", "ask about programming language, file count, filenames, naming, or internal organization", "ask a continue checkpoint", "invent confidence", "grant implementation authority"],
   "candidates": [
     {"candidate_id": "public_default", "owner": "user-decision", "grounding_required": true, "expected_action": "ask"},
     {"candidate_id": "implementation_language", "owner": "agent", "grounding_required": true, "expected_action": "decide"},

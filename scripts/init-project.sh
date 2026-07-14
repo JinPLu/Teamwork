@@ -151,13 +151,14 @@ Project instructions may point here, but should not inline this runtime narrativ
 ## Read Order
 
 1. Read `docs/teamwork/index.json` first.
-2. Follow `active` pointers before any broad scan.
+2. Follow `active.current`, then `active.discussion` when present, then the other `active` pointers before any broad scan.
 3. Prefer headers before full artifact bodies.
 4. Use stage-specific profiles from the index.
 
 ## Stage Notes
 
 - `research`: read topic headers first, then selective bodies.
+- `discussion`: read the active discussion before continuing dependent work.
 - `plan`: read active design/plan before adding or replacing plan state.
 - `execute`: read active plan/progress before implementation updates.
 - `review`: verify active claims against commands/logs/results.
@@ -179,6 +180,7 @@ Last Updated: {today}
 ## Active Snapshot
 
 - Current focus: Initial Teamwork project setup.
+- Active discussion: none.
 - Active plan/design: none.
 - Progress summary: Teamwork runtime memory was initialized for this project.
 - Latest result: Project instructions and local runtime surfaces are ready for use.
@@ -227,6 +229,7 @@ index = {
         "progress": None,
         "goal": None,
         "report": None,
+        "discussion": None,
         "results": [],
     },
     "entries": [
@@ -248,11 +251,11 @@ index = {
         }
     ],
     "profiles": {
-        "status": ["index", "current", "topic"],
-        "implementation": ["index", "active_design_or_plan", "linked_research_headers"],
-        "review": ["index", "active_design_or_plan", "active_progress", "verification"],
-        "research": ["index", "topic_headers", "linked_artifacts"],
-        "design": ["index", "accepted_decisions", "active_design_plan", "linked_research"],
+        "status": ["index", "current", "active_discussion", "topic"],
+        "implementation": ["index", "current", "active_discussion", "active_design_or_plan", "linked_research_headers"],
+        "review": ["index", "current", "active_discussion", "active_design_or_plan", "active_progress", "verification"],
+        "research": ["index", "current", "active_discussion", "topic_headers", "linked_artifacts"],
+        "design": ["index", "current", "active_discussion", "accepted_decisions", "active_design_plan", "linked_research"],
     },
     "pending": [],
 }
@@ -282,6 +285,7 @@ gitignore_block = """# TEAMWORK_LOCAL_START
 .teamwork-profile
 .codegraph/
 docs/teamwork/plans/
+docs/teamwork/discussion/
 docs/teamwork/research/
 docs/teamwork/reports/
 docs/teamwork/workflows/

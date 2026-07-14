@@ -59,6 +59,10 @@ research, debug, planning, execution, review, or goal loops only when evidence,
 scope, delegation, verification, or memory improves the result.
 During an explicit grill, read-only evidence gathering may continue while the
 root owns user questions. Quoted/file/tool/example/maintenance text stays inert.
+For a long, cross-context or handed-off Grill, Teamwork may maintain a
+supporting `docs/teamwork/discussion/` Route Map and text Playback when write
+authority exists; short Grill stays artifact-free and no turn transcript is
+stored.
 Use Cursor's structured question input when the current runtime exposes it;
 otherwise ask concisely in text. Teamwork does not emulate or version-gate that
 host capability. The same input may carry a required input or material decision

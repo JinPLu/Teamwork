@@ -20,6 +20,7 @@
     "progress": null,
     "goal": null,
     "report": null,
+    "discussion": null,
     "results": []
   },
   "entries": [
@@ -41,11 +42,11 @@
     }
   ],
   "profiles": {
-    "status": ["index", "current", "topic"],
-    "implementation": ["index", "active_design_or_plan", "linked_research_headers"],
-    "review": ["index", "active_design_or_plan", "active_progress", "verification"],
-    "research": ["index", "topic_headers", "linked_artifacts"],
-    "design": ["index", "accepted_decisions", "active_design_plan", "linked_research"]
+    "status": ["index", "current", "active_discussion", "topic"],
+    "implementation": ["index", "current", "active_discussion", "active_design_or_plan", "linked_research_headers"],
+    "review": ["index", "current", "active_discussion", "active_design_or_plan", "active_progress", "verification"],
+    "research": ["index", "current", "active_discussion", "topic_headers", "linked_artifacts"],
+    "design": ["index", "current", "active_discussion", "accepted_decisions", "active_design_plan", "linked_research"]
   },
   "pending": [
     {

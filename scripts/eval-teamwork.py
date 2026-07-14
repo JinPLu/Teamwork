@@ -38,7 +38,7 @@ REQUIRED_CASE_FIELDS = {
 SPLITS = {"dev", "release"}
 SOURCES = {"synthetic", "trajectory", "bug", "review", "release"}
 PLATFORMS = {"codex", "cursor", "claude"}
-TARGET_PREFIXES = ("skills/", "evals/teamwork/", "scripts/eval-teamwork.py")
+TARGET_PREFIXES = ("skills/", "evals/teamwork/", "scripts/eval-teamwork.py", "AGENTS.md")
 ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 CANDIDATE_ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 LEDGER_SCHEMAS = {
@@ -226,12 +226,56 @@ REQUIRED_MINIMALITY_CASES = {
         "no_scope_expansion",
     },
 }
+REQUIRED_SEMANTIC_INIT_CASES = {
+    "init-semantic-project-model": {
+        "separate_audit_bootstrap_semantic",
+        "explicit_init_defaults_to_semantic",
+        "project_model_before_edits",
+        "six_way_classification",
+        "cross_platform_instruction_ownership",
+        "human_docs_preserved",
+        "canonical_mainline_reuse",
+        "conditional_project_fallback",
+        "safe_original_byte_migration",
+        "static_evidence_limit",
+    },
+}
+REQUIRED_DISCUSSION_CASES = {
+    "discussion-short-grill": {
+        "short_grill_artifact_free",
+        "static_contract_only",
+    },
+    "discussion-authorized-checkpoint": {
+        "long_grill_supporting_artifact",
+        "write_authority_required",
+        "material_checkpoint_only",
+        "static_contract_only",
+    },
+    "discussion-unauthorized-candidate": {
+        "discussion_checkpoint_candidate",
+        "durable_continuity_not_guaranteed",
+        "no_canonical_memory_change",
+        "static_contract_only",
+    },
+    "discussion-handoff-playback": {
+        "playback_current_route",
+        "no_repeated_answered_decision",
+        "handoff_continuity",
+        "static_contract_only",
+    },
+    "discussion-replacement-promotion": {
+        "replaced_route_superseded",
+        "promotion_trigger_and_target",
+        "promotion_no_execution_authority",
+        "static_contract_only",
+    },
+}
 REQUIRED_SKILL_CASE_CLAUSES = {
     "native-lightweight-control": {"complete_stage_inventory", "native_fast_path"},
     "grill-explicit-skill-invocation": {"explicit_activation", "no_enactment"},
     "grill-negative-signal-control": {"negative_signal_wins", "no_activation"},
     "grill-quoted-marker-control": {"quoted_marker_inert", "no_activation"},
-    "grill-question-value-stop": {"no_implementation_authority"},
+    "grill-question-value-stop": {"mainline_anchoring", "no_implementation_authority"},
     "research-source-quality": {"observed_inferred_claimed", "read_only_boundary"},
     "debug-repro-before-fix": {
         "repro_before_fix",
@@ -269,7 +313,24 @@ REQUIRED_SKILL_CASE_CLAUSES = {
         "version_canonical",
         "publication_authority",
         "release_ready_until_tag_and_github_release",
+        "user_facing_changelog",
+        "ordinary_user_comprehension",
+        "full_version_update_unit",
     },
+    "update-user-refresh": {
+        "user_refresh_only",
+        "source_freshness",
+        "profile_preserved",
+        "global_install_refresh",
+        "project_refresh_when_in_scope",
+        "manual_host_actions",
+        "readiness_recheck",
+        "no_release_metadata",
+    },
+}
+REQUIRED_CASE_TARGET_ROUTES = {
+    "update-user-refresh": ("skills/teamwork-update/SKILL.md", "update"),
+    "update-release-ledger": ("AGENTS.md", "project-maintainer"),
 }
 SKILL_SOURCE_CONTRACTS = {
     "using-teamwork": (
@@ -356,9 +417,11 @@ SKILL_SOURCE_CONTRACTS = {
     "teamwork-update": (
         "skills/teamwork-update/SKILL.md",
         (
-            ("VERSION canonical", "`version` is the source of truth"),
-            ("publication authority", "with explicit publication authority"),
-            ("release-ready until tag and GitHub Release", "until the tag and github release exist, report `release-ready`, not `released`"),
+            ("user refresh only", "refresh user installations only"),
+            ("profile preserved", "preserve the current install profile"),
+            ("global and project refresh", "refresh all global skills, agents, managed policy, routing, and applicable project surfaces"),
+            ("readiness recheck", "until it reports `install_ready=yes`"),
+            ("no release metadata", "never edit `version`, plugin manifests, changelogs, release commits, tags, or github releases"),
         ),
     ),
 }
@@ -405,7 +468,7 @@ REQUIRED_SKILL_CONTRACT_CASES = {
     "teamwork-review": {"review-bounded-recheck"},
     "teamwork-goal": {"goal-dependent-branch-retry"},
     "teamwork-init": {"init-readiness-contract"},
-    "teamwork-update": {"update-release-ledger"},
+    "teamwork-update": {"update-user-refresh"},
 }
 SEMANTIC_OWNERS = {"evidence", "agent", "user-decision", "required-input", "confirmation"}
 EXPECTED_ACTION_BY_OWNER = {
@@ -532,6 +595,296 @@ def validate_minimality_source_text(
             )
 
 
+def discussion_section(text: str, heading: str) -> str:
+    match = re.search(
+        rf"(?ms)^## {re.escape(heading)}\s*$\n(.*?)(?=^## |\Z)", text
+    )
+    if not match:
+        raise EvalError(
+            "skills/using-teamwork/references/teamwork-discussion-template.md: "
+            f"missing {heading} section"
+        )
+    return match.group(1).strip()
+
+
+def validate_discussion_template_text(template_text: str) -> None:
+    path = "skills/using-teamwork/references/teamwork-discussion-template.md"
+    if not re.search(r"(?m)^Artifact Type: discussion\s*$", template_text):
+        raise EvalError(f"{path}: header must declare Artifact Type: discussion")
+    if not re.search(r"(?m)^Authority: supporting\s*$", template_text):
+        raise EvalError(f"{path}: header must declare Authority: supporting")
+
+    starting_question = discussion_section(template_text, "Starting Question")
+    for field in ("Mainline or project goal", "Decision", "Why now"):
+        if not re.search(rf"(?mi)^- {re.escape(field)}:\s*\S", starting_question):
+            raise EvalError(f"{path}: Starting Question must include {field}")
+
+    route_map = discussion_section(template_text, "Route Map")
+    mermaid = re.search(r"(?ms)```mermaid\s*\n(.*?)```", route_map)
+    if not mermaid or not re.search(r"(?m)^\s*flowchart\b", mermaid.group(1)):
+        raise EvalError(f"{path}: Route Map must contain a Mermaid flowchart")
+    diagram = mermaid.group(1)
+    nodes = re.findall(r'(?m)^\s*(R[1-9][0-9]*)\s*\["([^"]+)"\]\s*$', diagram)
+    if not nodes:
+        raise EvalError(f"{path}: Route Map must define artifact-only R<number> node keys")
+    all_node_keys = re.findall(
+        r'(?m)^\s*([A-Za-z][A-Za-z0-9_-]*)\s*\["[^"]+"\]\s*$', diagram
+    )
+    if len(all_node_keys) != len(nodes):
+        raise EvalError(f"{path}: Route Map must use only artifact-local R<number> node keys")
+    map_keys = [key for key, _ in nodes]
+    if len(map_keys) != len(set(map_keys)):
+        raise EvalError(f"{path}: Route Map node keys must be unique")
+    edge_keys = re.findall(
+        r"(?m)^\s*(R[1-9][0-9]*)\s*-->\s*(R[1-9][0-9]*)\s*$", diagram
+    )
+    undefined_edge_keys = sorted(
+        {key for edge in edge_keys for key in edge if key not in set(map_keys)}
+    )
+    if undefined_edge_keys:
+        raise EvalError(
+            f"{path}: Route Map edges reference undefined node keys: "
+            + ", ".join(undefined_edge_keys)
+        )
+    statuses = (
+        "accepted",
+        "rejected",
+        "current",
+        "open",
+        "closed",
+        "superseded",
+        "promoted",
+    )
+    map_statuses: dict[str, str] = {}
+    for key, label in nodes:
+        normalized_label = normalize_semantic_text(label)
+        if not normalized_label.startswith(key.casefold() + " "):
+            raise EvalError(f"{path}: diagram node {key} must include its artifact-only key")
+        if re.search(r"(?i)\b(?:evidence|outcome|reason|mainline impact)\s*:", label):
+            raise EvalError(
+                f"{path}: diagram labels must not carry Evidence, Outcome, Reason, or Mainline impact"
+            )
+        status_match = re.search(
+            rf"\b({'|'.join(statuses)})\b\s*$", normalized_label
+        )
+        if not status_match:
+            raise EvalError(f"{path}: diagram node {key} must include a textual status")
+        map_statuses[key] = status_match.group(1)
+
+    route_notes = discussion_section(template_text, "Route Notes")
+    note_keys = re.findall(r"(?m)^### (R[1-9][0-9]*)\b", route_notes)
+    if len(note_keys) != len(set(note_keys)) or set(note_keys) != set(map_keys):
+        raise EvalError(f"{path}: Route Map/Route Notes keys must match exactly")
+    normalized_notes = normalize_semantic_text(route_notes)
+    sole_owner = (
+        "route notes are the sole owner of each node's evidence, outcome, reason, and mainline impact"
+    )
+    if normalize_semantic_text(sole_owner) not in normalized_notes:
+        raise EvalError(f"{path}: Route Notes must be the sole owner of decision details")
+    note_entries = re.findall(
+        r"(?ms)^### (R[1-9][0-9]*)\b[^\n]*\n(.*?)(?=^### |\Z)", route_notes
+    )
+    for key, entry in note_entries:
+        for field in ("Status", "Evidence", "Outcome", "Reason", "Mainline impact"):
+            if not re.search(rf"(?mi)^- {re.escape(field)}:\s*\S", entry):
+                raise EvalError(f"{path}: Route Note {key} must include {field}")
+        note_status = re.search(
+            rf"(?mi)^- Status:\s*({'|'.join(statuses)})\s*$", entry
+        )
+        if not note_status:
+            raise EvalError(f"{path}: Route Note {key} must declare one valid Status")
+        if note_status.group(1).casefold() != map_statuses[key]:
+            raise EvalError(
+                f"{path}: Route Map/Route Notes status mismatch for {key}"
+            )
+
+    playback = discussion_section(template_text, "Playback")
+    if "```" in playback or re.search(r"(?m)^\s*\|.*\|\s*$", playback):
+        raise EvalError(f"{path}: Playback must be plain text")
+    for anchor in ("where to resume", "summarize decisions", "do not reproduce dialogue"):
+        if normalize_semantic_text(anchor) not in normalize_semantic_text(playback):
+            raise EvalError(f"{path}: Playback must preserve {anchor}")
+
+    continuity = discussion_section(template_text, "Continuity")
+    for field in ("Current", "Open", "Next", "Promotion"):
+        if not re.search(rf"(?mi)^- {field}:\s*\S", continuity):
+            raise EvalError(f"{path}: Continuity must include {field}")
+
+    update_rules = discussion_section(template_text, "Update Rules")
+    normalized_rules = normalize_semantic_text(update_rules)
+    for label, anchor in (
+        ("material-checkpoint updates", "update only at a material checkpoint"),
+        ("no per-turn writes", "do not update per turn"),
+        ("privacy-safe summaries", "privacy-safe summaries only"),
+        ("no transcripts or hidden reasoning", "exclude raw transcripts, hidden reasoning, secrets, and unnecessary personal data"),
+        ("promotion authority boundary", "promotion does not grant execution authority"),
+    ):
+        if normalize_semantic_text(anchor) not in normalized_rules:
+            raise EvalError(f"{path}: Update Rules must preserve {label}")
+
+
+def validate_discussion_source_text(
+    grill_text: str,
+    router_text: str,
+    artifact_protocol_text: str,
+    template_text: str,
+) -> None:
+    path = "skills/using-teamwork/references/artifact-protocol.md"
+    combined = "\n".join((grill_text, router_text, artifact_protocol_text, template_text))
+    if "docs/teamwork/discussions/" in combined:
+        raise EvalError(f"{path}: use the singular discussion path")
+    if "`docs/teamwork/discussion/YYYY-MM-DD-<slug>.md`" not in artifact_protocol_text:
+        raise EvalError(f"{path}: preserve the singular discussion path")
+
+    source_contracts = (
+        (
+            "skills/grill-me/SKILL.md",
+            grill_text,
+            (
+                ("short Grill artifact-free", "keep short grill artifact-free"),
+                ("long Grill trigger", "for a long, cross-context, handoff-sensitive, or materially branching grill"),
+                ("supporting memory", "it is supporting memory, not a transcript or execution authority"),
+                ("material checkpoints", "updated only at material checkpoints"),
+                ("unauthorized candidate", "without write authority, return a **discussion checkpoint candidate**"),
+                ("continuity warning", "durable continuity is not guaranteed"),
+                ("answered-decision recovery", "do not invent choices, fill a quota, or repeat an answered decision"),
+            ),
+        ),
+        (
+            "skills/using-teamwork/SKILL.md",
+            router_text,
+            (("task replacement termination", "task replacement ends it"),),
+        ),
+        (
+            path,
+            artifact_protocol_text,
+            (
+                ("supporting-only boundary", "it is not a transcript, a new skill, stage, route, mode, state machine, or source of execution authority"),
+                ("supporting authority header", "every persisted discussion has `authority: supporting`"),
+                ("canonical and execution authority boundary", "stays subordinate to canonical project sources. it cannot promote itself or authorize execution"),
+                ("write authority", "creation and updates require write authority"),
+                ("candidate continuity warning", "without it, return a **discussion checkpoint candidate** in chat and state that durable continuity is not guaranteed"),
+                ("material-checkpoint updates", "do not update per turn"),
+                ("privacy boundary", "never store a raw transcript, hidden reasoning, secrets, or unnecessary personal data"),
+                ("promotion authority boundary", "does not grant execution authority"),
+            ),
+        ),
+    )
+    for source_path, text, clauses in source_contracts:
+        normalized = normalize_semantic_text(text)
+        for label, clause in clauses:
+            if normalize_semantic_text(clause) not in normalized:
+                raise EvalError(f"{source_path}: discussion contract must preserve {label}")
+    validate_discussion_template_text(template_text)
+
+
+def validate_mainline_focus_source_text(
+    grill_text: str, project_init_text: str, teamwork_init_text: str
+) -> None:
+    source_contracts = {
+        "skills/grill-me/SKILL.md": (
+            "hold one mainline: the global goal, current focus, and why the next question can change the project-level decision",
+            "on drift, topic switch, or compaction",
+            "do not repeat it every turn",
+            "every question must materially advance the mainline",
+            "drop locally interesting details that no longer serve it",
+        ),
+        "skills/using-teamwork/references/project-init.md": (
+            "form the smallest init-local project model needed",
+            "give every rule or fact one primary owner",
+            "reuse the canonical tracker/runbook",
+            "writes nothing and reports `no-change`",
+        ),
+        "skills/teamwork-init/SKILL.md": (
+            "explicit `teamwork-init` defaults to **semantic init** unless the user asks only for audit or deterministic bootstrap",
+            "form the smallest evidenced init-local project model; never persist it",
+            "classify rules `keep`, `merge`, `migrate`, `remove`, `create`, or `unresolved`",
+        ),
+    }
+    sources = {
+        "skills/grill-me/SKILL.md": grill_text,
+        "skills/using-teamwork/references/project-init.md": project_init_text,
+        "skills/teamwork-init/SKILL.md": teamwork_init_text,
+    }
+    for path, anchors in source_contracts.items():
+        normalized = normalize_semantic_text(sources[path])
+        for anchor in anchors:
+            if normalize_semantic_text(anchor) not in normalized:
+                raise EvalError(f"{path}: mainline focus contract must preserve {anchor}")
+
+
+def validate_maintainer_release_source_text(agents_text: str) -> None:
+    normalized = normalize_semantic_text(agents_text)
+    for label, clause in (
+        ("AGENTS-owned maintainer release", "this root `agents.md`; a generic github publish/pr workflow does not replace"),
+        ("complete release unit", "one release unit contains `version`, both plugin manifests, both changelogs"),
+        ("user-facing changelog", "write changelogs for users, not maintainers"),
+        ("Before-to-After difference", "before -> after difference"),
+        ("exact user action", "the exact upgrade action or that no action is needed"),
+        ("engineering-report rejection", "reads like an engineering report is not release-ready"),
+        ("publication completion", "source, installations, remote tag, and github release must all be current"),
+    ):
+        if normalize_semantic_text(clause) not in normalized:
+            raise EvalError(f"AGENTS.md: maintainer release contract must preserve {label}")
+
+
+def validate_release_boundary_source_text(
+    update_text: str,
+    router_text: str,
+    check_update_text: str,
+    codex_text: str,
+    changelog_guide_exists: bool,
+) -> None:
+    sources = {
+        "skills/teamwork-update/SKILL.md": update_text,
+        "skills/using-teamwork/SKILL.md": router_text,
+        "skills/using-teamwork/references/check-update.md": check_update_text,
+        "CODEX.md": codex_text,
+    }
+    detailed_release_markers = (
+        "one release unit contains",
+        "complete release unit",
+        "write changelogs for users, not maintainers",
+        "until the tag and github release exist",
+        "`v<version>` tag",
+    )
+    authorization_patterns = (
+        re.compile(
+            r"(?im)^\s*(?:[-*]\s*|\d+\.\s*)?(?:also\s+)?"
+            r"(?:edit|update|bump|publish|create|push)\b[^\n]{0,160}"
+            r"\b(?:version|plugin manifests?|changelogs?|release commits?|tags?|github releases?)\b"
+        ),
+        re.compile(
+            r"(?im)^(?![^\n]*\b(?:do not|must not|cannot|never)\b)[^\n]{0,100}"
+            r"\b(?:may|can|should|must|will|authorized to)\s+(?:also\s+)?"
+            r"(?:edit|update|bump|publish|create|push)\b[^\n]{0,120}"
+            r"\b(?:version|plugin manifests?|changelogs?|release commits?|tags?|github releases?)\b"
+        ),
+        re.compile(
+            r"(?im)^(?![^\n]*\b(?:do not|must not|cannot|never)\b)[^\n]{0,120}"
+            r"\b(?:publication|release)\s+authority\b[^\n]{0,100}"
+            r"\b(?:edit|update|bump|write|publish|create|push)\b[^\n]{0,160}"
+            r"\b(?:version|plugin manifests?|changelogs?|release commits?|tags?|github releases?)\b"
+        ),
+    )
+    for path, text in sources.items():
+        normalized = normalize_semantic_text(text)
+        for marker in detailed_release_markers:
+            if marker in normalized:
+                raise EvalError(
+                    f"{path}: maintainer release policy must live only in root AGENTS.md"
+                )
+        if any(pattern.search(text) for pattern in authorization_patterns):
+            raise EvalError(
+                f"{path}: installed/user documentation must not authorize maintainer publication"
+            )
+    if changelog_guide_exists:
+        raise EvalError(
+            "skills/using-teamwork/references/changelog-guide.md: maintainer release "
+            "guidance must live only in root AGENTS.md"
+        )
+
+
 def validate_semantic_sources() -> None:
     for skill, (path, _) in SKILL_SOURCE_CONTRACTS.items():
         if skill in {"teamwork-review", "teamwork-goal"}:
@@ -554,6 +907,35 @@ def validate_semantic_sources() -> None:
         (ROOT / "skills/using-teamwork/references/review-lenses.md").read_text(
             encoding="utf-8"
         ),
+    )
+    validate_mainline_focus_source_text(
+        (ROOT / "skills/grill-me/SKILL.md").read_text(encoding="utf-8"),
+        (ROOT / "skills/using-teamwork/references/project-init.md").read_text(
+            encoding="utf-8"
+        ),
+        (ROOT / "skills/teamwork-init/SKILL.md").read_text(encoding="utf-8"),
+    )
+    validate_discussion_source_text(
+        (ROOT / "skills/grill-me/SKILL.md").read_text(encoding="utf-8"),
+        (ROOT / "skills/using-teamwork/SKILL.md").read_text(encoding="utf-8"),
+        (ROOT / "skills/using-teamwork/references/artifact-protocol.md").read_text(
+            encoding="utf-8"
+        ),
+        (ROOT / "skills/using-teamwork/references/teamwork-discussion-template.md").read_text(
+            encoding="utf-8"
+        ),
+    )
+    validate_maintainer_release_source_text(
+        (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    )
+    validate_release_boundary_source_text(
+        (ROOT / "skills/teamwork-update/SKILL.md").read_text(encoding="utf-8"),
+        (ROOT / "skills/using-teamwork/SKILL.md").read_text(encoding="utf-8"),
+        (ROOT / "skills/using-teamwork/references/check-update.md").read_text(
+            encoding="utf-8"
+        ),
+        (ROOT / "CODEX.md").read_text(encoding="utf-8"),
+        (ROOT / "skills/using-teamwork/references/changelog-guide.md").exists(),
     )
 
 
@@ -583,6 +965,72 @@ def require_string_list(value: Any, field: str, path: Path) -> list[str]:
     if not all(isinstance(item, str) and item.strip() for item in value):
         raise EvalError(f"{display_path(path)}: {field} must contain non-empty strings")
     return value
+
+
+def validate_discussion_handoff_case(data: dict[str, Any], path: Path) -> None:
+    answered = require_string_list(
+        data.get("answered_decisions"), "answered_decisions", path
+    )
+    if len(answered) < 2:
+        raise EvalError(
+            f"{display_path(path)}: handoff trajectory must preserve at least two answered decisions"
+        )
+    expected_next = require_string(
+        data.get("expected_next_decision"), "expected_next_decision", path
+    )
+    trajectory = data.get("trajectory")
+    if not isinstance(trajectory, list) or not trajectory:
+        raise EvalError(
+            f"{display_path(path)}: handoff trajectory must be a non-empty authored turn list"
+        )
+
+    assistant_turns: list[str] = []
+    for index, turn in enumerate(trajectory, start=1):
+        if not isinstance(turn, dict) or set(turn) != {"user", "assistant"}:
+            raise EvalError(
+                f"{display_path(path)}: handoff trajectory turn {index} must contain exactly user and assistant"
+            )
+        require_string(turn.get("user"), "trajectory.user", path)
+        assistant_turns.append(
+            require_string(turn.get("assistant"), "trajectory.assistant", path)
+        )
+
+    authored_output = "\n".join(assistant_turns)
+    normalized_output = normalize_semantic_text(authored_output)
+    for anchor in ("playback:", "current:", "open:", "next:"):
+        if anchor not in authored_output.casefold():
+            raise EvalError(
+                f"{display_path(path)}: handoff trajectory must include {anchor[:-1]}"
+            )
+    for decision in answered:
+        if normalize_semantic_text(decision) not in normalized_output:
+            raise EvalError(
+                f"{display_path(path)}: handoff trajectory loses answered decision: {decision}"
+            )
+
+    questions = [
+        line.strip()
+        for line in authored_output.splitlines()
+        if "?" in line or "？" in line
+    ]
+    if question_count(authored_output) != 1 or len(questions) != 1:
+        raise EvalError(
+            f"{display_path(path)}: handoff trajectory must ask exactly one next decision"
+        )
+    normalized_question = normalize_semantic_text(questions[0])
+    repeated = [
+        decision
+        for decision in answered
+        if normalize_semantic_text(decision) in normalized_question
+    ]
+    if repeated:
+        raise EvalError(
+            f"{display_path(path)}: handoff trajectory repeats answered decision: {repeated[0]}"
+        )
+    if normalize_semantic_text(expected_next) not in normalized_question:
+        raise EvalError(
+            f"{display_path(path)}: handoff trajectory does not ask expected next decision"
+        )
 
 
 def normalize_contract_key(value: str) -> str:
@@ -642,6 +1090,7 @@ def validate_target(target: str, path: Path) -> None:
         raise EvalError(f"{display_path(path)}: target does not exist: {target}")
 
 
+
 def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
     data = load_json(path)
     if not isinstance(data, dict):
@@ -673,6 +1122,16 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
     require_string(data["prompt"], "prompt", path)
     if not isinstance(data["expected"], dict) or not data["expected"]:
         raise EvalError(f"{display_path(path)}: expected must be a non-empty object")
+    if case_id in REQUIRED_CASE_TARGET_ROUTES:
+        required_target, required_route = REQUIRED_CASE_TARGET_ROUTES[case_id]
+        if target != required_target:
+            raise EvalError(
+                f"{display_path(path)}: {case_id} target must be {required_target}"
+            )
+        if data["expected"].get("route") != required_route:
+            raise EvalError(
+                f"{display_path(path)}: {case_id} route must be {required_route}"
+            )
     require_string_list(data["must"], "must", path)
     require_string_list(data["must_not"], "must_not", path)
     evidence = data["evidence"]
@@ -728,6 +1187,44 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
                 f"{display_path(path)}: minimality coverage missing: "
                 f"{', '.join(missing_minimality)}"
             )
+
+    if case_id in REQUIRED_SEMANTIC_INIT_CASES:
+        requires = data["expected"].get("requires")
+        if not isinstance(requires, list) or not all(
+            isinstance(item, str) and item.strip() for item in requires
+        ):
+            raise EvalError(
+                f"{display_path(path)}: semantic-init expected.requires must be a string list"
+            )
+        normalized_requires = {normalize_contract_key(item) for item in requires}
+        missing_semantic_init = sorted(
+            REQUIRED_SEMANTIC_INIT_CASES[case_id] - normalized_requires
+        )
+        if missing_semantic_init:
+            raise EvalError(
+                f"{display_path(path)}: semantic-init coverage missing: "
+                f"{', '.join(missing_semantic_init)}"
+            )
+
+    if case_id in REQUIRED_DISCUSSION_CASES:
+        requires = data["expected"].get("requires")
+        if not isinstance(requires, list) or not all(
+            isinstance(item, str) and item.strip() for item in requires
+        ):
+            raise EvalError(
+                f"{display_path(path)}: discussion expected.requires must be a string list"
+            )
+        normalized_requires = {normalize_contract_key(item) for item in requires}
+        missing_discussion = sorted(
+            REQUIRED_DISCUSSION_CASES[case_id] - normalized_requires
+        )
+        if missing_discussion:
+            raise EvalError(
+                f"{display_path(path)}: discussion coverage missing: "
+                f"{', '.join(missing_discussion)}"
+            )
+        if case_id == "discussion-handoff-playback":
+            validate_discussion_handoff_case(data, path)
 
     if case_id in SEMANTIC_QUESTION_CASES:
         retired = sorted(
@@ -1272,6 +1769,16 @@ def selected_cases(selection: str) -> list[dict[str, Any]]:
     if missing_minimality_cases:
         raise EvalError(
             f"missing minimality case(s): {', '.join(missing_minimality_cases)}"
+        )
+    missing_semantic_init_cases = sorted(set(REQUIRED_SEMANTIC_INIT_CASES) - seen)
+    if missing_semantic_init_cases:
+        raise EvalError(
+            "missing semantic-init case(s): " + ", ".join(missing_semantic_init_cases)
+        )
+    missing_discussion_cases = sorted(set(REQUIRED_DISCUSSION_CASES) - seen)
+    if missing_discussion_cases:
+        raise EvalError(
+            "missing discussion case(s): " + ", ".join(missing_discussion_cases)
         )
     for skill, required_cases in REQUIRED_SKILL_CONTRACT_CASES.items():
         missing_skill_cases = sorted(required_cases - seen)

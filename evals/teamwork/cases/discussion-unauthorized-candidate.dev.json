@@ -1,0 +1,21 @@
+{
+  "id": "discussion-unauthorized-candidate",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/artifact-protocol.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "A long cross-context Grill reaches a material checkpoint, but the request grants no repository write authority.",
+  "expected": {
+    "requires": ["discussion_checkpoint_candidate", "durable_continuity_not_guaranteed", "no_canonical_memory_change", "static_contract_only"]
+  },
+  "must": [
+    "return a Discussion Checkpoint Candidate in chat",
+    "state that durable continuity is not guaranteed"
+  ],
+  "must_not": [
+    "write docs/teamwork/discussion/ or imply canonical memory changed",
+    "claim this offline authored case proves live model behavior"
+  ],
+  "rubric": "behavioral-contracts",
+  "evidence": "Offline static discussion-contract fixture; it does not prove live model behavior."
+}

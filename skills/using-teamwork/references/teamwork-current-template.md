@@ -5,6 +5,7 @@ Last Updated: YYYY-MM-DD
 ## Active Snapshot
 
 - Current focus:
+- Active discussion:
 - Active plan/design:
 - Progress summary:
 - Latest result:

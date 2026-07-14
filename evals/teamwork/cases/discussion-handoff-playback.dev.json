@@ -1,0 +1,32 @@
+{
+  "id": "discussion-handoff-playback",
+  "split": "dev",
+  "source": "bug",
+  "target": "skills/using-teamwork/references/teamwork-discussion-template.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Resume a long Grill after compaction or handoff from its supporting discussion artifact; prior branches already contain answered decisions.",
+  "expected": {
+    "requires": ["playback_current_route", "no_repeated_answered_decision", "handoff_continuity", "static_contract_only"]
+  },
+  "must": [
+    "use Playback and Continuity to restore the current route and next material decision",
+    "preserve prior answered decisions without asking them again"
+  ],
+  "must_not": [
+    "replay the raw dialogue or repeat an answered decision",
+    "claim this offline authored case proves live model behavior"
+  ],
+  "answered_decisions": [
+    "use a dedicated discussion artifact",
+    "persist only long or materially branching Grill"
+  ],
+  "expected_next_decision": "whether offline evidence is sufficient for acceptance",
+  "trajectory": [
+    {
+      "user": "Continue from the supporting discussion artifact after handoff.",
+      "assistant": "Playback: We already decided to use a dedicated discussion artifact and persist only long or materially branching Grill.\nCurrent: The offline contract and recovery fixture are implemented.\nOpen: whether offline evidence is sufficient for acceptance.\nNext: Is whether offline evidence is sufficient for acceptance the remaining decision?"
+    }
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Offline static discussion-contract fixture for compaction and handoff recovery; it does not prove live model behavior."
+}

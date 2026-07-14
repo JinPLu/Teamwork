@@ -4,18 +4,30 @@
 
 This changelog lists user-visible changes. Implementation details live in Git commits or pull requests.
 
+## 2.21.0 - 2026-07-15
+
+**Long discussions can now stay on the project mainline, with clearer boundaries for project initialization and version updates.**
+
+- **Long discussions no longer depend only on chat context.** After compaction, a pause, or a handoff, it was previously difficult to recover which routes were accepted, rejected, or still open. Long, cross-context, or materially branching Grill sessions can now maintain a dedicated `discussion/` artifact with a flowchart, keyed notes, and plain-text Playback. Research still owns evidence, while Plan still owns executable scope.
+- **Short discussions remain lightweight.** Ordinary short Grill sessions create no file. A discussion stores only material route checkpoints, never a turn-by-turn transcript, and grants no execution authority. Without write permission, Teamwork returns only a candidate summary and warns that durable continuity is not guaranteed.
+- **Project initialization moves from “emit files” to “understand, then organize.”** Deterministic bootstrap could previously be mistaken for semantic project organization. An explicit `teamwork-init` now defaults to evidence-backed semantic initialization, classifies rules as keep, merge, migrate, remove, create, or unresolved, and protects existing human documentation, project trackers, and custom content.
+- **Installed updates and maintainer publication are no longer mixed.** `teamwork-update` previously described both local refreshes and public releases, which made ordinary update requests appear over-authorized. It now refreshes installed skills, agents, policy, and project surfaces only; version metadata, bilingual changelogs, commits, tags, and GitHub Releases require an explicit maintainer version request.
+- **To upgrade:** from the Teamwork repository, run `./scripts/check-update.sh --readiness --project "$PWD"`, execute the printed `NEXT`, and repeat the check until it reports `INSTALL_READY=yes`. Cursor User Rules still require the prompted manual paste.
+
+These capabilities are verified through offline contracts, authored recovery trajectories, installation simulations, and release checks. They do not prove that a model will understand every real-host discussion, that real context compaction always recovers correctly, or that runtime behavior is identical across all three platforms.
+
 ## 2.20.0 - 2026-07-14
 
-**Teamwork now selects the lowest-maintenance sufficient solution at the source, while making all ten project skills natively installable across three platforms.**
+**Simple requests are less likely to turn into unnecessary machinery, and project installs now work completely in Codex, Cursor, and Claude Code.**
 
-- **`evidence-guided minimality` now spans design through acceptance.** Plan selects the lowest-maintenance solution surface, Execute implements that choice, and Review plus Worker reject unsupported abstractions, modes, wrappers, fallbacks, or duplicate owners. The preference order is the canonical owner, platform/language built-ins, a boundary-appropriate dependency, then minimal new logic.
-- **Minimality is not code golf.** Multi-file changes, clear abstractions, and dependencies remain justified when they reduce total maintenance cost without weakening evidence. LOC or file count cannot replace correctness, clarity, security, accessibility, portability, accepted behavior, or proportional verification.
-- `install.sh project` installs the same ten Teamwork skills from one source into Codex `.agents/skills/`, Cursor `.cursor/skills/`, and Claude Code `.claude/skills/`. Copy/link behavior, shared references, version/profile markers, and platform agents remain aligned without taking over unrelated local content.
-- `check-update.sh --project` reports missing, version-drift, and content-drift state separately for each platform's project skills instead of treating Cursor as the proxy for all three.
-- Every Teamwork skill now has a named case and mutation-sensitive static contract. `teamwork-init`, which previously had no direct case, is covered; Goal invariants, strategy delta, and affected-branch retry are independently protected.
-- The Teamwork memory template leaves unused active pointers as `null`, while index validation rejects active pointers that lack a matching entry or resolve to non-current or candidate authority.
+- **Less unnecessary code and maintenance.** Previously, an agent could add a wrapper, configuration mode, fallback path, or duplicate module for a local change. Teamwork now starts with the existing code that owns the behavior and the capabilities already provided by the platform, adding an abstraction or dependency only when it is justified.
+- **This is not a “write fewer lines” rule.** Multi-file changes, clear modules, and complete tests are still appropriate when the task needs them. The goal is to reduce duplicate concepts and future maintenance, not compress code at the expense of quality.
+- **Project installation no longer favors Cursor.** Previously, project installs did not place skills in the Codex and Claude Code project directories, so those hosts could still depend on a global install. One project install now prepares all ten Teamwork skills for all three platforms while preserving unrelated local content.
+- **Update problems identify the affected platform.** The update check now says whether Codex, Cursor, or Claude Code project skills are missing, outdated, or different instead of returning one generic project status.
+- **Old plans are less likely to steer current work.** Teamwork records that are obsolete, unaccepted, or no longer applicable are not treated as current execution authority.
+- **To upgrade:** run `./scripts/check-update.sh --readiness` from the Teamwork repository. Add `--project <project-path>` when a project also needs refreshing. Run the printed `NEXT` command, then rerun the same check until it reports `INSTALL_READY=yes`.
 
-This release validates static contracts, mutations, and isolated three-platform install/readiness behavior. It does not claim proof of implicit skill selection or complete runtime behavior in Codex, Cursor, or Claude Code.
+These improvements are workflow safeguards and installation checks. They do not guarantee that every model response will automatically be minimal, or prove complete runtime behavior across all three platforms.
 
 ## 2.19.0 - 2026-07-13
 

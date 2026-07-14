@@ -11,6 +11,7 @@ dist/
 # Local workflow artifacts. Keep them in the working tree, but do not publish
 # them to GitHub unless a specific artifact is intentionally force-added.
 docs/teamwork/plans/
+docs/teamwork/discussion/
 docs/teamwork/research/
 docs/teamwork/reports/
 docs/teamwork/workflows/
@@ -36,6 +37,7 @@ docs/superpowers/
 .teamwork-profile
 .codegraph/
 docs/teamwork/plans/
+docs/teamwork/discussion/
 docs/teamwork/research/
 docs/teamwork/reports/
 docs/teamwork/workflows/

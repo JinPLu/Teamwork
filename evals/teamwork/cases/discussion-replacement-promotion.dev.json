@@ -1,0 +1,22 @@
+{
+  "id": "discussion-replacement-promotion",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/artifact-protocol.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "During a persisted branching Grill, the user replaces the task; later, a surviving conclusion meets the trigger for promotion to a plan.",
+  "expected": {
+    "requires": ["replaced_route_superseded", "promotion_trigger_and_target", "promotion_no_execution_authority", "static_contract_only"]
+  },
+  "must": [
+    "close or supersede the replaced route instead of continuing it",
+    "record the promotion target and trigger under Continuity"
+  ],
+  "must_not": [
+    "treat promotion or task replacement as execution authority",
+    "continue asking questions from the replaced task",
+    "claim this offline authored case proves live model behavior"
+  ],
+  "rubric": "behavioral-contracts",
+  "evidence": "Offline static discussion-contract fixture; it does not prove live model behavior."
+}

@@ -1,0 +1,24 @@
+{
+  "id": "update-user-refresh",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/teamwork-update/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Update my installed Teamwork skills on this machine and this project. Do not publish a package version.",
+  "expected": {
+    "route": "update",
+    "requires": ["user_refresh_only", "source_freshness", "profile_preserved", "global_install_refresh", "project_refresh_when_in_scope", "manual_host_actions", "readiness_recheck", "no_release_metadata"]
+  },
+  "must": [
+    "check source and installed freshness before refreshing",
+    "refresh global and in-scope project Teamwork surfaces with the sourced profile",
+    "rerun readiness until current or report exact remaining actions"
+  ],
+  "must_not": [
+    "edit VERSION, manifests, or changelogs",
+    "create a release commit, tag, or GitHub Release",
+    "install unrelated project packages or external tooling"
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Static user-refresh contract; it does not prove live host behavior."
+}

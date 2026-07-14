@@ -2,17 +2,17 @@
 import json
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-KINDS = {"result", "progress", "design", "decision", "plan", "report", "research", "runbook"}
+KINDS = {"result", "progress", "design", "decision", "discussion", "plan", "report", "research", "runbook"}
 STATUSES = {"active", "historical", "superseded", "blocked", "candidate", "accepted"}
 CURRENTNESS = {"current", "stale", "historical", "candidate"}
 AUTHORITIES = {"canonical", "active-summary", "supporting", "candidate", "historical", "superseded"}
 ACTIVE_STATUSES = {"active", "accepted"}
 ACTIVE_AUTHORITIES = {"canonical", "active-summary", "supporting"}
-ACTIVE_POINTER_KEYS = ("current", "design", "plan", "progress", "goal", "report")
+ACTIVE_POINTER_KEYS = ("current", "design", "plan", "progress", "goal", "report", "discussion")
 
 
 class ValidationError(Exception):
@@ -69,7 +69,17 @@ def validate_entry(entry: dict, idx: int) -> None:
     require(DATE_RE.match(str(entry["updated"])) is not None, f"entries[{idx}].updated must be YYYY-MM-DD")
 
 
-def validate_active_pointers(active: dict, entries: list[dict]) -> None:
+def real_project_root(index_path: Path) -> Path | None:
+    if (
+        index_path.name == "index.json"
+        and index_path.parent.name == "teamwork"
+        and index_path.parent.parent.name == "docs"
+    ):
+        return index_path.parent.parent.parent
+    return None
+
+
+def validate_active_pointers(active: dict, entries: list[dict], index_path: Path) -> None:
     entries_by_path: dict[str, list[dict]] = {}
     for entry in entries:
         entries_by_path.setdefault(entry["path"], []).append(entry)
@@ -103,8 +113,33 @@ def validate_active_pointers(active: dict, entries: list[dict]) -> None:
             f"{label} must resolve to a current accepted/active entry with non-candidate authority: {path}",
         )
 
+        if label == "active.discussion":
+            discussion_path = PurePosixPath(path)
+            require(
+                not discussion_path.is_absolute()
+                and discussion_path.as_posix() == path
+                and len(discussion_path.parts) > 3
+                and discussion_path.parts[:3] == ("docs", "teamwork", "discussion")
+                and ".." not in discussion_path.parts,
+                "active.discussion path must be under docs/teamwork/discussion/",
+            )
+            require(
+                any(entry["kind"] == "discussion" for entry in eligible),
+                "active.discussion must resolve to an entry with kind discussion",
+            )
+            require(
+                any(entry["authority"] == "supporting" for entry in eligible if entry["kind"] == "discussion"),
+                "active.discussion must resolve to a discussion entry with supporting authority",
+            )
+            project_root = real_project_root(index_path)
+            if project_root is not None:
+                require(
+                    (project_root / discussion_path).is_file(),
+                    f"active.discussion artifact does not exist: {path}",
+                )
 
-def validate_index(index: dict) -> None:
+
+def validate_index(index: dict, index_path: Path) -> None:
     required_top = [
         "schema_version",
         "last_updated",
@@ -164,7 +199,7 @@ def validate_index(index: dict) -> None:
             require(key not in active_unique, f"duplicate active entry for topic+kind: {key[0]}::{key[1]}")
             active_unique.add(key)
 
-    validate_active_pointers(active, entries)
+    validate_active_pointers(active, entries, index_path)
 
     profiles = index["profiles"]
     require(isinstance(profiles, dict) and len(profiles) > 0, "profiles must be non-empty object")
@@ -215,7 +250,7 @@ def main() -> int:
     try:
         raw = read_text(template_path)
         data = json.loads(raw)
-        validate_index(data)
+        validate_index(data, template_path)
         validate_templates(root)
     except (ValidationError, json.JSONDecodeError) as exc:
         print(f"FAIL: {exc}", file=sys.stderr)

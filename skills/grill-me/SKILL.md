@@ -5,31 +5,32 @@ description: Use when the user explicitly asks to be grilled or challenged, requ
 
 # Grill Me
 
-Enter for an explicit request or automatically for a non-simple plan with
-material decision or risk. Explicit negative intent suppresses this interview,
-not ordinary required-input or safety gates.
+Enter for an explicit request or a non-simple plan with material risk. Explicit
+negative intent suppresses this interview, not safety gates.
 
-Before asking:
+Before asking, apply Ask Gate and Working Facts. Use discoverable evidence to
+decide safe, reversible, implementation-level details.
+- Hold one mainline: the global goal, current focus, and why the next question
+  can change the project-level decision. On drift, topic switch, or compaction,
+  restate that link briefly before asking; do not repeat it every turn.
 
-- Apply the Ask Gate in `skills/using-teamwork/references/workflow-contract.md`.
-- Inspect discoverable evidence from the request, source, config, tests, tools,
-  and conventions. Do not ask the user to predict it.
-- Decide safe, reversible, implementation-level details yourself.
+Ask one decision at a time; challenge and recommend.
+Every question must materially advance the mainline;
+drop locally interesting details that no longer serve it. Do not invent choices,
+fill a quota, or repeat an answered decision.
 
-Ask one decision at a time. Challenge its downside, then recommend an
-evidence-supported option. Do not invent choices, fill a quota, or repeat a
-decision already answered or delegated to Codex.
+The root asks through the host's native interaction surface when callable, else
+in concise text. The host owns waiting/resume. Do not route native input through a code executor.
 
-The root asks. Use the host's native interaction surface when callable;
-otherwise ask one concise textual question. The host owns waiting, timeout, and
-resume. Do not route native input through a code executor or change the user's
-configuration to make it available.
+Keep short Grill artifact-free. For a long, cross-context, handoff-sensitive,
+or materially branching Grill, use the discussion contract in
+`skills/using-teamwork/references/artifact-protocol.md`. It is supporting memory,
+not a transcript or execution authority, and is updated only at material
+checkpoints. Without write authority, return a **Discussion Checkpoint Candidate**
+and state that durable continuity is not guaranteed.
 
-Missing identifiers, credentials, permissions, required values, and confirmations
-are normal inputs or safety gates, not grill decisions. Ordinary clarification stays outside this skill.
+Ordinary clarification stays outside.
 
-When a non-simple plan has no material user-owned decision left, present one
-concise Decision Summary and obtain confirmation before its final plan. A change
-returns to the relevant decision; confirmation does not grant implementation
-authority. Otherwise continue within granted authority or report the blocker.
-Ending a grill does not grant implementation authority.
+With no material user-owned decision left, confirm one Decision Summary. Changes
+return to that decision;
+confirmation does not grant implementation authority.

@@ -1,0 +1,41 @@
+{
+  "id": "init-semantic-project-model",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/project-init.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Semantically organize an established project's agent instructions without confusing audit, deterministic bootstrap, or evidenced semantic init, and without replacing existing human documentation or canonical project tracking.",
+  "expected": {
+    "route": "init",
+    "requires": [
+      "separate_audit_bootstrap_semantic",
+      "explicit_init_defaults_to_semantic",
+      "project_model_before_edits",
+      "six_way_classification",
+      "cross_platform_instruction_ownership",
+      "human_docs_preserved",
+      "canonical_mainline_reuse",
+      "conditional_project_fallback",
+      "safe_original_byte_migration",
+      "static_evidence_limit"
+    ]
+  },
+  "must": [
+    "report audit, deterministic bootstrap, and semantic init as separate surfaces and results",
+    "default an explicit teamwork-init invocation to semantic init unless the user asks only for audit or deterministic bootstrap",
+    "form a proportional evidenced init-local Project Model before proposing edits",
+    "classify relevant rules as keep, merge, migrate, remove, create, or unresolved",
+    "place shared stable Codex and Cursor rules in AGENTS.md, keep only Claude-specific deltas in an ordinary CLAUDE.md loader, and reserve Cursor rules for genuinely scoped behavior",
+    "preserve public or human-facing CODEX.md, CURSOR.md, CLAUDE.md, and other project documentation absent contrary evidence",
+    "reuse an existing canonical tracker or runbook and create docs/teamwork/project.md only when its durable need, absence-of-equivalent, and write-authority conditions hold",
+    "migrate through temporary copy, validation, and atomic replacement so failure preserves original bytes and custom content"
+  ],
+  "must_not": [
+    "claim deterministic bootstrap performed semantic organization",
+    "persist the Project Model as a default artifact, object, route, stage, mode, template, or ceremony",
+    "overwrite human docs or silently discard legacy or custom content",
+    "claim static authored evidence proves live Codex, Cursor, or Claude behavior"
+  ],
+  "rubric": "behavioral-contracts",
+  "evidence": "Static authored contract fixture for semantic init ownership and migration boundaries; it validates package text only and does not claim live host behavior."
+}

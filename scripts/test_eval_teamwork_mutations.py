@@ -178,7 +178,10 @@ class CaseSchemaMutationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / f"{data['id']}.dev.json"
             path.write_text(json.dumps(data), encoding="utf-8")
-            EVAL.validate_case(path, {"assistance-quality", "behavioral-contracts"})
+            EVAL.validate_case(
+                path,
+                {"assistance-quality", "behavioral-contracts"},
+            )
 
     def test_expected_question_must_be_user_owned(self) -> None:
         data = self.load_case("grill-rename-ownership-contrast.dev.json")
@@ -243,12 +246,47 @@ class CaseSchemaMutationTests(unittest.TestCase):
         data = self.load_case("minimality-justified-surface.dev.json")
         data["expected"]["requires"].remove("no_code_golf")
         with self.assertRaisesRegex(EVAL.EvalError, "minimality coverage missing"):
-            self.validate(data)
+                self.validate(data)
+
 
     def test_active_case_rejects_retired_stage_card_language(self) -> None:
         data = self.load_case("working-facts-scope-correction.dev.json")
         data["must"].append("Restore the " + "Stage Entry Card before continuing.")
         with self.assertRaisesRegex(EVAL.EvalError, "retired workflow term remains"):
+            self.validate(data)
+
+    def test_update_refresh_case_locks_target_and_route(self) -> None:
+        for field, value, error in (
+            ("target", "AGENTS.md", "target must be skills/teamwork-update/SKILL.md"),
+            ("route", "project-maintainer", "route must be update"),
+        ):
+            with self.subTest(field=field):
+                data = self.load_case("update-user-refresh.dev.json")
+                if field == "target":
+                    data[field] = value
+                else:
+                    data["expected"][field] = value
+                with self.assertRaisesRegex(EVAL.EvalError, error):
+                    self.validate(data)
+
+    def test_maintainer_release_case_locks_target_and_route(self) -> None:
+        for field, value, error in (
+            ("target", "skills/teamwork-update/SKILL.md", "target must be AGENTS.md"),
+            ("route", "update", "route must be project-maintainer"),
+        ):
+            with self.subTest(field=field):
+                data = self.load_case("update-release-ledger.release.json")
+                if field == "target":
+                    data[field] = value
+                else:
+                    data["expected"][field] = value
+                with self.assertRaisesRegex(EVAL.EvalError, error):
+                    self.validate(data)
+
+    def test_discussion_case_rejects_missing_contract_coverage(self) -> None:
+        data = self.load_case("discussion-authorized-checkpoint.dev.json")
+        data["expected"]["requires"].remove("material_checkpoint_only")
+        with self.assertRaisesRegex(EVAL.EvalError, "discussion coverage missing"):
             self.validate(data)
 
 
@@ -266,6 +304,17 @@ class SemanticSourceMutationTests(unittest.TestCase):
         cls.review_lenses = (
             ROOT / "skills/using-teamwork/references/review-lenses.md"
         ).read_text(encoding="utf-8")
+        cls.project_init = (
+            ROOT / "skills/using-teamwork/references/project-init.md"
+        ).read_text(encoding="utf-8")
+        cls.agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        cls.check_update = (
+            ROOT / "skills/using-teamwork/references/check-update.md"
+        ).read_text(encoding="utf-8")
+        cls.codex = (ROOT / "CODEX.md").read_text(encoding="utf-8")
+        cls.discussion_template = (
+            ROOT / "skills/using-teamwork/references/teamwork-discussion-template.md"
+        ).read_text(encoding="utf-8")
         cls.skill_sources = {
             skill: (ROOT / path).read_text(encoding="utf-8")
             for skill, (path, _) in EVAL.SKILL_SOURCE_CONTRACTS.items()
@@ -279,6 +328,24 @@ class SemanticSourceMutationTests(unittest.TestCase):
         self.assertNotEqual(mutated, source, f"mutation did not change {skill}")
         with self.assertRaisesRegex(EVAL.EvalError, error):
             EVAL.validate_skill_source_contract(skill, mutated)
+
+    def assert_mainline_focus_rejected(
+        self, source_name: str, old: str, new: str, error: str
+    ) -> None:
+        sources = {
+            "grill": self.skill_sources["grill-me"],
+            "project_init": self.project_init,
+            "teamwork_init": self.skill_sources["teamwork-init"],
+        }
+        mutated = sources[source_name].replace(old, new)
+        self.assertNotEqual(mutated, sources[source_name], f"mutation did not change {source_name}")
+        sources[source_name] = mutated
+        with self.assertRaisesRegex(EVAL.EvalError, error):
+            EVAL.validate_mainline_focus_source_text(
+                sources["grill"],
+                sources["project_init"],
+                sources["teamwork_init"],
+            )
 
     def test_rejects_retired_review_severity_taxonomy(self) -> None:
         mutated = self.review.replace(
@@ -371,18 +438,80 @@ class SemanticSourceMutationTests(unittest.TestCase):
     def test_init_rejects_global_failure_hard_gate(self) -> None:
         self.assert_skill_contract_rejected(
             "teamwork-init",
-            "Project surfaces continue even\n   when the global install returns an actionable configuration failure",
+            "Project surfaces continue even when the global install returns an actionable configuration failure",
             "Project surfaces stop when the global install returns an actionable configuration failure",
             "safe local continuation",
         )
 
-    def test_update_rejects_noncanonical_version(self) -> None:
+    def test_update_rejects_release_metadata_scope(self) -> None:
         self.assert_skill_contract_rejected(
             "teamwork-update",
-            "`VERSION` is the source of truth",
-            "`VERSION` is advisory",
-            "VERSION canonical",
+            "Never edit `VERSION`, plugin manifests, changelogs, release commits, tags, or\n  GitHub Releases",
+            "Edit VERSION and publish a GitHub Release",
+            "no release metadata",
         )
+
+    def test_update_rejects_ignored_project_surfaces(self) -> None:
+        self.assert_skill_contract_rejected(
+            "teamwork-update",
+            "refresh all global skills, agents, managed policy,\n   routing, and applicable project surfaces",
+            "refresh global skills and ignore project surfaces",
+            "global and project refresh",
+        )
+
+    def test_update_rejects_additive_publication_authority(self) -> None:
+        mutated = self.skill_sources["teamwork-update"] + (
+            "\nWith explicit publication authority, edit VERSION and plugin manifests, "
+            "write the changelogs and release commit, create the tag, and publish the "
+            "GitHub Release.\n"
+        )
+        with self.assertRaisesRegex(EVAL.EvalError, "must not authorize maintainer publication"):
+            EVAL.validate_release_boundary_source_text(
+                mutated,
+                self.skill_sources["using-teamwork"],
+                self.check_update,
+                self.codex,
+                False,
+            )
+
+    def test_release_policy_rejects_duplication_outside_agents(self) -> None:
+        mutated_codex = self.codex + "\nOne release unit contains VERSION and tags.\n"
+        with self.assertRaisesRegex(EVAL.EvalError, "must live only in root AGENTS.md"):
+            EVAL.validate_release_boundary_source_text(
+                self.skill_sources["teamwork-update"],
+                self.skill_sources["using-teamwork"],
+                self.check_update,
+                mutated_codex,
+                False,
+            )
+
+    def test_release_policy_rejects_restored_changelog_guide(self) -> None:
+        with self.assertRaisesRegex(EVAL.EvalError, "changelog-guide.md"):
+            EVAL.validate_release_boundary_source_text(
+                self.skill_sources["teamwork-update"],
+                self.skill_sources["using-teamwork"],
+                self.check_update,
+                self.codex,
+                True,
+            )
+
+    def test_maintainer_release_rejects_engineering_only_changelog(self) -> None:
+        mutated = self.agents.replace(
+            "Write changelogs for users, not maintainers",
+            "Write changelogs as internal engineering reports",
+        )
+        self.assertNotEqual(mutated, self.agents)
+        with self.assertRaisesRegex(EVAL.EvalError, "user-facing changelog"):
+            EVAL.validate_maintainer_release_source_text(mutated)
+
+    def test_maintainer_release_rejects_partial_release_unit(self) -> None:
+        mutated = self.agents.replace(
+            "One release unit contains `VERSION`, both plugin manifests, both changelogs",
+            "One release unit contains VERSION only",
+        )
+        self.assertNotEqual(mutated, self.agents)
+        with self.assertRaisesRegex(EVAL.EvalError, "complete release unit"):
+            EVAL.validate_maintainer_release_source_text(mutated)
 
     def test_rejects_removed_or_inverted_minimality_boundaries(self) -> None:
         mutations = (
@@ -405,6 +534,186 @@ class SemanticSourceMutationTests(unittest.TestCase):
                     EVAL.validate_minimality_source_text(
                         workflow_contract, self.review_lenses
                     )
+
+    def test_grill_rejects_lost_mainline(self) -> None:
+        self.assert_mainline_focus_rejected(
+            "grill",
+            "Hold one mainline: the global goal, current focus, and why the next question\n  can change the project-level decision.",
+            "Follow the latest local topic.",
+            "hold one mainline",
+        )
+
+    def test_grill_rejects_irrelevant_questions(self) -> None:
+        self.assert_mainline_focus_rejected(
+            "grill",
+            "Every question must materially advance the mainline;\ndrop locally interesting details that no longer serve it.",
+            "Ask any locally interesting question.",
+            "materially advance the mainline",
+        )
+
+    def test_grill_rejects_per_turn_mainline_ribbon(self) -> None:
+        self.assert_mainline_focus_rejected(
+            "grill",
+            "restate that link briefly before asking; do not repeat it every turn.",
+            "repeat that link on every turn.",
+            "do not repeat it every turn",
+        )
+
+    def test_init_rejects_deterministic_bootstrap_as_explicit_default(self) -> None:
+        self.assert_mainline_focus_rejected(
+            "teamwork_init",
+            "Explicit `teamwork-init` defaults to **Semantic init** unless the user asks only\nfor audit or deterministic bootstrap.",
+            "Explicit teamwork-init defaults to deterministic bootstrap.",
+            "defaults to",
+        )
+
+    def test_init_rejects_missing_primary_owner(self) -> None:
+        self.assert_mainline_focus_rejected(
+            "project_init",
+            "Give every rule or\nfact one primary owner; other surfaces link to it or contain only a real delta.",
+            "Duplicate every rule across instruction surfaces.",
+            "one primary owner",
+        )
+
+    def test_init_rejects_meaningless_second_semantic_write(self) -> None:
+        self.assert_mainline_focus_rejected(
+            "project_init",
+            "An equivalent second semantic audit with no new evidence, classification, or\nmainline change writes nothing and reports `no-change`.",
+            "An equivalent second semantic audit rewrites the files.",
+            "writes nothing",
+        )
+
+    def test_discussion_source_rejects_plural_path(self) -> None:
+        protocol = (
+            ROOT / "skills/using-teamwork/references/artifact-protocol.md"
+        ).read_text(encoding="utf-8")
+        mutated = protocol.replace(
+            "docs/teamwork/discussion/", "docs/teamwork/discussions/"
+        )
+        self.assertNotEqual(mutated, protocol)
+        with self.assertRaisesRegex(EVAL.EvalError, "singular discussion path"):
+            EVAL.validate_discussion_source_text(
+                self.skill_sources["grill-me"],
+                self.skill_sources["using-teamwork"],
+                mutated,
+                self.discussion_template,
+            )
+
+    def test_discussion_source_rejects_retired_identity_or_authority(self) -> None:
+        protocol = (
+            ROOT / "skills/using-teamwork/references/artifact-protocol.md"
+        ).read_text(encoding="utf-8")
+        mutations = (
+            (
+                protocol.replace(
+                    "it is not a transcript, a new skill, stage,\nroute, mode, state machine, or source of execution authority",
+                    "it is a transcript, stage, route, mode, state machine, and source of execution authority",
+                ),
+                "supporting-only boundary",
+            ),
+            (
+                protocol.replace("Do not update per turn.", "Update per turn."),
+                "material-checkpoint updates",
+            ),
+            (
+                protocol.replace(
+                    "stays subordinate to\ncanonical project sources. It cannot promote itself or authorize execution",
+                    "is canonical project memory and authorizes execution",
+                ),
+                "canonical and execution authority boundary",
+            ),
+        )
+        for mutated, error in mutations:
+            with self.subTest(error=error):
+                self.assertNotEqual(mutated, protocol)
+                with self.assertRaisesRegex(EVAL.EvalError, error):
+                    EVAL.validate_discussion_source_text(
+                        self.skill_sources["grill-me"],
+                        self.skill_sources["using-teamwork"],
+                        mutated,
+                        self.discussion_template,
+                    )
+
+    def test_discussion_template_rejects_missing_required_sections(self) -> None:
+        for heading, error in (
+            ("## Route Map", "Route Map"),
+            ("## Playback", "Playback"),
+        ):
+            with self.subTest(heading=heading):
+                mutated = self.discussion_template.replace(heading, f"## Removed {heading}")
+                with self.assertRaisesRegex(EVAL.EvalError, error):
+                    EVAL.validate_discussion_template_text(mutated)
+
+    def test_discussion_template_requires_supporting_authority(self) -> None:
+        mutated = self.discussion_template.replace(
+            "Authority: supporting", "Authority: canonical"
+        )
+        with self.assertRaisesRegex(EVAL.EvalError, "Authority: supporting"):
+            EVAL.validate_discussion_template_text(mutated)
+
+    def test_discussion_template_requires_textual_node_status(self) -> None:
+        mutated = self.discussion_template.replace(
+            'R2["R2 · Option A · open"]', 'R2["R2 · Option A"]'
+        )
+        with self.assertRaisesRegex(EVAL.EvalError, "textual status"):
+            EVAL.validate_discussion_template_text(mutated)
+
+    def test_discussion_template_rejects_map_note_status_mismatch(self) -> None:
+        mutated = self.discussion_template.replace("- Status: open", "- Status: accepted", 1)
+        self.assertNotEqual(mutated, self.discussion_template)
+        with self.assertRaisesRegex(EVAL.EvalError, "status mismatch for R2"):
+            EVAL.validate_discussion_template_text(mutated)
+
+    def test_discussion_template_rejects_mismatched_or_dangling_keys(self) -> None:
+        mutations = (
+            self.discussion_template.replace(
+                "### R1 — <short label>", "### R4 — <short label>"
+            ),
+            self.discussion_template.replace(
+                '    R1 --> R3', '    R4["R4 · Extra · open"]\n    R1 --> R3'
+            ),
+        )
+        for mutated in mutations:
+            with self.subTest(mutated=mutated[-80:]):
+                with self.assertRaisesRegex(EVAL.EvalError, "Route Map/Route Notes keys"):
+                    EVAL.validate_discussion_template_text(mutated)
+
+    def test_discussion_template_rejects_undefined_edge_key(self) -> None:
+        mutated = self.discussion_template.replace("R1 --> R3", "R1 --> R4")
+        self.assertNotEqual(mutated, self.discussion_template)
+        with self.assertRaisesRegex(EVAL.EvalError, "undefined node keys: R4"):
+            EVAL.validate_discussion_template_text(mutated)
+
+    def test_discussion_template_rejects_note_details_in_diagram_labels(self) -> None:
+        for field in ("Evidence", "Reason", "Mainline impact"):
+            with self.subTest(field=field):
+                mutated = self.discussion_template.replace(
+                    'R2["R2 · Option A · open"]',
+                    f'R2["R2 · Option A · open · {field}: benchmark"]',
+                )
+                with self.assertRaisesRegex(EVAL.EvalError, "diagram labels must not carry"):
+                    EVAL.validate_discussion_template_text(mutated)
+
+    def test_discussion_template_requires_every_route_note_field(self) -> None:
+        mutated = self.discussion_template.replace(
+            "- Reason: <why this option remains open>",
+            "- Rationale omitted: <why this option remains open>",
+        )
+        with self.assertRaisesRegex(EVAL.EvalError, "Route Note R2 must include Reason"):
+            EVAL.validate_discussion_template_text(mutated)
+
+    def test_discussion_handoff_rejects_repeated_answered_decision(self) -> None:
+        path = ROOT / "evals/teamwork/cases/discussion-handoff-playback.dev.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["trajectory"][0]["assistant"] = (
+            "Playback: We already decided to use a dedicated discussion artifact and "
+            "persist only long or materially branching Grill.\n"
+            "Current: The route is restored.\nOpen: one decision remains.\n"
+            "Next: Should we use a dedicated discussion artifact?"
+        )
+        with self.assertRaisesRegex(EVAL.EvalError, "repeats answered decision"):
+            EVAL.validate_discussion_handoff_case(data, path)
+
 
 
 if __name__ == "__main__":

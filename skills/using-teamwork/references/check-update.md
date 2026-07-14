@@ -58,9 +58,11 @@ When the user asks to update or refresh Teamwork (not release a new version):
 
 Do not bump `VERSION` or edit plugin manifests in user mode.
 
-## Maintainer Update Mode
+## Release Boundary
 
-For Teamwork semver, manifests, validation, or release, follow `teamwork-update`; run `check-update.sh` before and after publication to verify installs, tag, and Release.
+Package versioning, changelogs, tags, and GitHub Releases are repository
+maintainer work governed by the Teamwork repository's root `AGENTS.md`, not by
+the installed user-refresh skill. This reference only checks freshness before and after an authorized local refresh.
 
 ## Out of Scope
 

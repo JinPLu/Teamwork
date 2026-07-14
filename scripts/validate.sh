@@ -221,9 +221,12 @@ git_known_package_file "CHANGELOG.en.md" || fail "CHANGELOG.en.md is not known t
 git_known_package_file "VERSION" || fail "VERSION is not known to git; use git add -N before release validation"
 grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' "$ROOT/VERSION" || fail "VERSION must be plain semver"
 
-if git -C "$ROOT" ls-files 'docs/teamwork/plans/*' 'docs/teamwork/research/*' 'docs/teamwork/reports/*' 'docs/teamwork/workflows/*' | grep -q .; then
-  fail "local workflow artifacts under docs/teamwork/{plans,research,reports,workflows}/ must not be tracked"
+if git -C "$ROOT" ls-files 'docs/teamwork/discussion/*' 'docs/teamwork/plans/*' 'docs/teamwork/research/*' 'docs/teamwork/reports/*' 'docs/teamwork/workflows/*' | grep -q .; then
+  fail "local workflow artifacts under docs/teamwork/{discussion,plans,research,reports,workflows}/ must not be tracked"
 fi
+grep_required '^docs/teamwork/discussion/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork discussion artifacts"
+git -C "$ROOT" check-ignore -q docs/teamwork/discussion/validation-probe.md \
+  || fail ".gitignore must match untracked Teamwork discussion artifacts"
 grep_required '^docs/teamwork/plans/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork plan artifacts"
 grep_required '^docs/teamwork/research/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork research artifacts"
 grep_required '^docs/teamwork/reports/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork report artifacts"
@@ -266,7 +269,7 @@ done
   || [[ -z "$(find "$ROOT/skills/grill-me/references" -type f -print -quit)" ]] \
   || fail "grill-me must keep its complete semantic contract in the lean SKILL.md"
 
-for template in teamwork-index-template.json teamwork-index-readme-template.md teamwork-current-template.md; do
+for template in teamwork-index-template.json teamwork-index-readme-template.md teamwork-current-template.md teamwork-discussion-template.md; do
   template_file="$ROOT/skills/using-teamwork/references/$template"
   [[ -f "$template_file" ]] || fail "missing skills/using-teamwork/references/$template"
   git_known_package_file "skills/using-teamwork/references/$template" \
@@ -278,6 +281,7 @@ expected_reference_inventory="$(
     artifact-protocol.md check-update.md debug-mode.md eval-gate.md goal-iteration.md optional-skills.md plan-output.md \
     project-init.md research-protocol.md review-checks.md review-lenses.md role-playbook.md routing-policy.md \
     subagent-contract.md subagent-dispatch.md teamwork-current-template.md \
+    teamwork-discussion-template.md \
     teamwork-index-readme-template.md teamwork-index-template.json \
     verification-patterns.md workflow-contract.md workflow-orchestration.md | sort
 )"
@@ -443,6 +447,81 @@ python3 "$ROOT/scripts/validate_teamwork_index.py" \
   "$ROOT/skills/using-teamwork/references/teamwork-index-template.json" >/dev/null
 index_pointer_tmp="$(mktemp -d "${TMPDIR:-/tmp}/teamwork-index-pointer.XXXXXX")"
 CLEANUP_PATHS+=("$index_pointer_tmp")
+python3 - \
+  "$ROOT/skills/using-teamwork/references/teamwork-index-template.json" \
+  "$index_pointer_tmp" <<'PY'
+import copy
+import json
+import pathlib
+import sys
+
+template_path = pathlib.Path(sys.argv[1])
+output_dir = pathlib.Path(sys.argv[2])
+template = json.loads(template_path.read_text(encoding="utf-8"))
+
+old_index = copy.deepcopy(template)
+old_index["active"].pop("discussion")
+(output_dir / "old-v1.json").write_text(json.dumps(old_index) + "\n", encoding="utf-8")
+
+discussion_path = "docs/teamwork/discussion/active.md"
+discussion_entry = {
+    "topic": "active-discussion",
+    "kind": "discussion",
+    "title": "Active discussion",
+    "status": "accepted",
+    "currentness": "current",
+    "authority": "supporting",
+    "path": discussion_path,
+    "updated": "2026-06-01",
+    "summary": "Accepted supporting discussion context.",
+}
+
+valid = copy.deepcopy(template)
+valid["active"]["discussion"] = discussion_path
+valid["entries"].append(discussion_entry)
+(output_dir / "valid-discussion.json").write_text(json.dumps(valid) + "\n", encoding="utf-8")
+
+variants = {
+    "wrong-kind": ("kind", "report"),
+    "wrong-path": ("path", "docs/teamwork/reports/active.md"),
+    "wrong-status": ("status", "candidate"),
+    "wrong-authority": ("authority", "canonical"),
+}
+for name, (field, value) in variants.items():
+    invalid = copy.deepcopy(valid)
+    invalid["entries"][-1][field] = value
+    if field == "path":
+        invalid["active"]["discussion"] = value
+    (output_dir / f"{name}.json").write_text(json.dumps(invalid) + "\n", encoding="utf-8")
+
+missing_entry = copy.deepcopy(valid)
+missing_entry["entries"].pop()
+(output_dir / "missing-entry.json").write_text(json.dumps(missing_entry) + "\n", encoding="utf-8")
+
+for project_name, create_artifact in (("valid-project", True), ("missing-artifact", False)):
+    project_root = output_dir / project_name
+    index_path = project_root / "docs/teamwork/index.json"
+    index_path.parent.mkdir(parents=True)
+    index_path.write_text(json.dumps(valid) + "\n", encoding="utf-8")
+    if create_artifact:
+        artifact = project_root / discussion_path
+        artifact.parent.mkdir(parents=True)
+        artifact.write_text("# Active discussion\n", encoding="utf-8")
+PY
+python3 "$ROOT/scripts/validate_teamwork_index.py" "$index_pointer_tmp/old-v1.json" >/dev/null
+python3 "$ROOT/scripts/validate_teamwork_index.py" "$index_pointer_tmp/valid-discussion.json" >/dev/null
+python3 "$ROOT/scripts/validate_teamwork_index.py" \
+  "$index_pointer_tmp/valid-project/docs/teamwork/index.json" >/dev/null
+for invalid_discussion_index in wrong-kind wrong-path wrong-status wrong-authority missing-entry; do
+  if python3 "$ROOT/scripts/validate_teamwork_index.py" \
+    "$index_pointer_tmp/$invalid_discussion_index.json" >/dev/null 2>&1; then
+    fail "Teamwork index validator accepted invalid active discussion invariant: $invalid_discussion_index"
+  fi
+done
+if python3 "$ROOT/scripts/validate_teamwork_index.py" \
+  "$index_pointer_tmp/missing-artifact/docs/teamwork/index.json" >/dev/null 2>&1; then
+  fail "Teamwork index validator accepted a missing active discussion artifact"
+fi
 sed 's#"current": "docs/teamwork/current.md"#"current": "docs/teamwork/missing.md"#' \
   "$ROOT/skills/using-teamwork/references/teamwork-index-template.json" \
   > "$index_pointer_tmp/missing-pointer.json"
@@ -569,10 +648,23 @@ grep_required '\[Claude Code\](CLAUDE.md)' "$ROOT/README.md" "README must link t
 check_markdown_local_images "$ROOT/README.md"
 grep_required '^# 更新日志' "$ROOT/CHANGELOG.md" "CHANGELOG must have a Chinese top-level heading"
 grep_required '\[English\](CHANGELOG.en.md)' "$ROOT/CHANGELOG.md" "default CHANGELOG must link to English CHANGELOG"
-grep_required "## $(tr -d '[:space:]' < "$ROOT/VERSION") -" "$ROOT/CHANGELOG.md" "CHANGELOG must document current VERSION"
+current_version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
+grep_required "## $current_version -" "$ROOT/CHANGELOG.md" "CHANGELOG must document current VERSION"
+current_changelog_cn="$(awk -v prefix="## $current_version -" '
+  /^## / { if (capture) exit; capture = index($0, prefix) == 1 }
+  capture { print }
+' "$ROOT/CHANGELOG.md")"
+[[ "$current_changelog_cn" == *"升级方式："* || "$current_changelog_cn" == *"无需操作"* ]] \
+  || fail "current Chinese changelog must state the user action or that no action is needed"
 grep_required '^# Changelog' "$ROOT/CHANGELOG.en.md" "English CHANGELOG must have a top-level heading"
 grep_required '\[中文\](CHANGELOG.md)' "$ROOT/CHANGELOG.en.md" "English CHANGELOG must link to default Chinese CHANGELOG"
-grep_required "## $(tr -d '[:space:]' < "$ROOT/VERSION") -" "$ROOT/CHANGELOG.en.md" "English CHANGELOG must document current VERSION"
+grep_required "## $current_version -" "$ROOT/CHANGELOG.en.md" "English CHANGELOG must document current VERSION"
+current_changelog_en="$(awk -v prefix="## $current_version -" '
+  /^## / { if (capture) exit; capture = index($0, prefix) == 1 }
+  capture { print }
+' "$ROOT/CHANGELOG.en.md")"
+[[ "$current_changelog_en" == *"To upgrade:"* || "$current_changelog_en" == *"No action is required"* ]] \
+  || fail "current English changelog must state the user action or that no action is needed"
 [[ -f "$ROOT/README.en.md" ]] || fail "missing English README"
 git -C "$ROOT" ls-files --error-unmatch "README.en.md" >/dev/null 2>&1 || fail "README.en.md must be tracked by git"
 grep_required '\[中文\](README.md)' "$ROOT/README.en.md" "English README must link to default Chinese README"
@@ -648,11 +740,28 @@ grep_required 'latest_github_release_version' "$ROOT/scripts/check-update.sh" \
 grep_required 'codex-routing' "$ROOT/skills/teamwork-init/SKILL.md" "teamwork-init must repair routing readiness"
 grep_required 'Native interaction tools are host capabilities' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init must keep interaction capability host-owned"
-grep_required 'never enabled by Teamwork' "$ROOT/skills/teamwork-update/SKILL.md" \
+grep_required 'Native interaction tools remain host-owned' "$ROOT/skills/teamwork-update/SKILL.md" \
   "teamwork-update must keep interaction capability runtime-owned"
-for release_contract in 'One release unit contains' 'both changelogs' '`v<VERSION>` tag' 'GitHub Release' 'report `release-ready`, not `released`' 'default branch alone never'; do
-  grep_required "$release_contract" "$ROOT/skills/teamwork-update/SKILL.md" \
-    "teamwork-update missing atomic release contract: $release_contract"
+for refresh_contract in 'Refresh user installations only' 'check-update.sh --readiness' 'applicable project surfaces' 'INSTALL_READY=yes' 'Never edit `VERSION`'; do
+  grep_required "$refresh_contract" "$ROOT/skills/teamwork-update/SKILL.md" \
+    "teamwork-update missing user-refresh contract: $refresh_contract"
+done
+grep_absent '## Maintainer Release\|## Release Unit\|v<VERSION>' \
+  "installed teamwork-update must not own maintainer release policy" \
+  "$ROOT/skills/teamwork-update"
+[[ ! -e "$ROOT/skills/using-teamwork/references/changelog-guide.md" ]] \
+  || fail "maintainer changelog guidance must live only in root AGENTS.md"
+grep_absent 'One release unit contains\|complete release unit\|Write changelogs for users, not maintainers\|Until the tag and GitHub Release exist' \
+  "maintainer release policy must not be duplicated outside root AGENTS.md" \
+  "$ROOT/skills/teamwork-update/SKILL.md" "$ROOT/skills/using-teamwork/SKILL.md" \
+  "$ROOT/skills/using-teamwork/references/check-update.md" "$ROOT/CODEX.md"
+for release_contract in 'One release unit contains' 'both changelogs' '`v<VERSION>` tag' 'GitHub Release' 'report `release-ready`, not `released`'; do
+  grep_required "$release_contract" "$ROOT/AGENTS.md" \
+    "AGENTS.md missing atomic maintainer release contract: $release_contract"
+done
+for changelog_contract in 'Write changelogs for users, not maintainers' 'Before -> After' 'exact upgrade action or that no action is needed' 'reads like an engineering report is not release-ready'; do
+  grep_required "$changelog_contract" "$ROOT/AGENTS.md" \
+    "AGENTS.md missing user-facing changelog contract: $changelog_contract"
 done
 grep_required 'Being on the default branch alone is not a reason' "$ROOT/AGENTS.md" \
   "project Git policy must not create branches only because the current branch is default"
@@ -1785,8 +1894,40 @@ grep_required '# TEAMWORK_LOCAL_START' "$init_root/.gitignore" \
   "init-project must write local .gitignore block"
 grep_required '^\.agents/$' "$init_root/.gitignore" \
   "init-project must ignore generated Codex project skills"
+grep_required '^docs/teamwork/discussion/$' "$init_root/.gitignore" \
+  "init-project must ignore local discussion artifacts"
 python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/index.json" >/dev/null
 [[ -f "$init_root/docs/teamwork/current.md" ]] || fail "init-project must write current.md"
+[[ ! -e "$init_root/docs/teamwork/discussion" ]] \
+  || fail "init-project must not create an empty or fake discussion artifact directory"
+python3 - "$init_root/docs/teamwork/index.json" "$init_root/docs/teamwork/discussion/preserved.md" <<'PY'
+import json
+import pathlib
+import sys
+
+index_path = pathlib.Path(sys.argv[1])
+artifact_path = pathlib.Path(sys.argv[2])
+artifact_path.parent.mkdir(parents=True, exist_ok=True)
+index = json.loads(index_path.read_text(encoding="utf-8"))
+relative_artifact = "docs/teamwork/discussion/preserved.md"
+index["active"]["discussion"] = relative_artifact
+index["entries"].append({
+    "topic": "preserved-discussion",
+    "kind": "discussion",
+    "title": "Preserved discussion",
+    "status": "active",
+    "currentness": "current",
+    "authority": "supporting",
+    "path": relative_artifact,
+    "updated": index["last_updated"],
+    "summary": "Existing discussion pointer preserved across init reruns.",
+})
+index_path.write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
+artifact_path.write_text("# Preserved discussion\n", encoding="utf-8")
+PY
+cp "$init_root/docs/teamwork/index.json" "$index_pointer_tmp/init-index-before-rerun.json"
+cp "$init_root/docs/teamwork/current.md" "$index_pointer_tmp/init-current-before-rerun.md"
+cp "$init_root/docs/teamwork/README.md" "$index_pointer_tmp/init-readme-before-rerun.md"
 [[ -d "$tmp/home-init-project/.codex/skills/using-teamwork" ]] || fail "init-project must install global Codex skills by default"
 [[ -f "$tmp/home-init-project/.codex/AGENTS.md" ]] || fail "init-project must install global Codex policy by default"
 [[ -d "$tmp/home-init-project/.cursor/skills/using-teamwork" ]] || fail "init-project must install global Cursor skills by default"
@@ -1813,6 +1954,13 @@ HOME="$tmp/home-init-project" \
   TEAMWORK_INIT_CODEGRAPH=0 \
   TEAMWORK_INIT_CURSOR_POLICY_COPY=0 \
   "$ROOT/install.sh" --copy --no-notifications --project-root "$init_root" init-project >/dev/null
+cmp -s "$index_pointer_tmp/init-index-before-rerun.json" "$init_root/docs/teamwork/index.json" \
+  || fail "init-project rerun must preserve the existing index and active discussion pointer"
+cmp -s "$index_pointer_tmp/init-current-before-rerun.md" "$init_root/docs/teamwork/current.md" \
+  || fail "init-project rerun must preserve existing current.md"
+cmp -s "$index_pointer_tmp/init-readme-before-rerun.md" "$init_root/docs/teamwork/README.md" \
+  || fail "init-project rerun must preserve the existing runtime README"
+python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/index.json" >/dev/null
 [[ ! -e "$tmp/home-init-project/.codex/teamwork/notify.py" ]] \
   || fail "init-project --no-notifications must remove only Teamwork Codex notifications"
 [[ ! -e "$tmp/home-init-project/.claude/teamwork/notify.py" ]] \

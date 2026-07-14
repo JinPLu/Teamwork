@@ -4,18 +4,30 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 2.21.0 - 2026-07-15
+
+**长时间讨论现在可以沿着主线继续，项目初始化和版本更新的边界也更清楚。**
+
+- **长讨论不再只依赖聊天上下文。** 过去经过压缩、暂停或交接后，很难快速看清已经接受、拒绝和仍待决定的路线；现在长时间、跨上下文或有重要分支的 Grill 可以维护独立的 `discussion/` 工件，用流程图、对应说明和纯文本 Playback 恢复全局路线。Research 仍只负责证据，Plan 仍只负责可执行方案。
+- **短讨论仍然轻量。** 普通短 Grill 不创建文件；discussion 只保存必要的路线检查点，不保存逐轮对话，也不会获得执行权限。没有写权限时只会给出候选摘要，并明确连续性没有持久化保证。
+- **项目初始化从“生成文件”变为“先理解再整理”。** 过去确定性 bootstrap 容易被误认为已经理解并重组了项目规则；现在显式 `teamwork-init` 默认执行有证据的语义初始化，先区分保留、合并、迁移、删除、新建和未解决项，同时保护已有的人类文档、项目追踪器与自定义内容。
+- **安装更新和维护者发布不再混用。** 过去 `teamwork-update` 同时描述本地刷新和公开发布，普通更新请求可能显得权限过大；现在它只刷新已安装的 skills、agents、策略和项目表面，版本号、双语更新日志、提交、标签与 GitHub Release 只由明确的维护者版本请求触发。
+- **升级方式：** 在 Teamwork 仓库运行 `./scripts/check-update.sh --readiness --project "$PWD"`，执行输出中的 `NEXT`，再重复检查直到显示 `INSTALL_READY=yes`。Cursor User Rules 仍需按提示手动粘贴。
+
+这些能力经过离线规则、恢复轨迹、安装模拟和发布检查验证；它们不证明模型在真实宿主中一定理解讨论内容，也不证明真实上下文压缩或三平台运行时行为完全一致。
+
 ## 2.20.0 - 2026-07-14
 
-**Teamwork 现在会从源头选择最低维护成本的充分方案，并让十个项目级 skills 在三平台都能原生安装。**
+**简单需求更不容易被做复杂，项目内安装也能在 Codex、Cursor 和 Claude Code 中完整工作。**
 
-- **`evidence-guided minimality` 贯穿方案到验收。** Plan 明确选择最低维护成本的 solution surface，Execute 按该选择实施，Review 和 Worker 会阻止无证据的新 abstraction、mode、wrapper、fallback 或重复 owner；优先顺序是 canonical owner、平台/语言内建能力、边界合适的依赖，最后才是最少的新逻辑。
-- **精简不等于 code golf。** 多文件修改、清晰 abstraction 或依赖只要能降低总维护成本并保留证据就仍然合理；不能用 LOC、文件数换掉正确性、清晰度、安全性、可访问性、可移植性、已接受行为或相称验证。
-- `install.sh project` 会从同一份 Teamwork source 把十个 skills 分别安装到 Codex `.agents/skills/`、Cursor `.cursor/skills/` 和 Claude Code `.claude/skills/`；copy/link 模式、共享 references、版本/profile marker 和平台 agents 保持一致，其他本地内容不会被接管。
-- `check-update.sh --project` 会分别报告三个平台项目级 skills 的缺失、版本漂移和内容漂移，不再用 Cursor 的一项状态代表全部平台。
-- 所有十个 Teamwork skills 现在都有命名样例与 mutation-sensitive 静态契约；此前完全缺少直接覆盖的 `teamwork-init` 已补齐，Goal 的 invariants、strategy delta 和受影响分支重试也有独立保护。
-- Teamwork memory 模板把未使用的 active 指针设为 `null`；索引校验会拒绝找不到 entry、非 current 或 candidate authority 的 active 指针，减少旧计划被误当成当前执行依据。
+- **少一些没必要的代码和维护负担。** 过去 agent 可能为一个局部需求新增包装层、配置模式、备用流程或重复模块；现在会先复用真正负责这项行为的现有代码和平台能力，只有确有必要时才增加新的抽象或依赖。
+- **不会为了“少写代码”牺牲质量。** 需要跨文件修改、清晰模块或完整测试时仍会正常实现；精简针对的是重复概念和后续维护成本，不是强行压缩行数。
+- **项目安装不再只照顾 Cursor。** 过去项目级安装没有把 skills 放进 Codex 和 Claude Code 的项目目录，它们可能仍依赖全局安装；现在一次项目安装会为三个平台都准备完整的十个 Teamwork skills，同时保留其他本地内容。
+- **更新异常会指出具体平台。** 检查更新时会分别说明 Codex、Cursor 或 Claude Code 的项目 skills 是缺失、版本过旧还是内容不同，不再只给出一个笼统状态。
+- **旧计划更不容易误导当前任务。** 已过期、尚未接受或不再适用的 Teamwork 记录不会被当成当前执行依据。
+- **升级方式：** 在 Teamwork 仓库运行 `./scripts/check-update.sh --readiness`；需要同步某个项目时加 `--project <项目路径>`。执行输出中的 `NEXT` 后，重新运行同一条检查命令，直到显示 `INSTALL_READY=yes`。
 
-本版本的验证覆盖静态契约、mutation 和隔离的三平台安装/readiness；它不宣称已经证明 Codex、Cursor 或 Claude Code 的隐式 skill 选择和完整运行时行为。
+这些改进来自工作流约束和安装检查；它们不会保证每一次模型回答都自动达到最简，也不代表已经验证三个平台上的所有运行时行为。
 
 ## 2.19.0 - 2026-07-13
 
