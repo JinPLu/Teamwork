@@ -4,13 +4,13 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
-## Unreleased
+## 3.0.0 - 2026-07-15
 
-**讨论会先说明结论与下一步，安装也不再把过期的 Teamwork 副本留在项目里。**
+**讨论会先说明结论与下一步，安装也不再创建或刷新项目内的 Teamwork 副本。**
 
 - **Before → After：普通回复从内部流程叙述回到问题本身。** 过去回复可能先报版本号、阶段、自创标签或重复的泛泛保留意见；现在先说结论或它代表的含义、为什么重要和下一步。只有确实影响决定、行动或你要求时，才展开内部实现、版本或不确定性细节。
-- **Before → After：连续性只在需要时留下。** 长任务、交接或重要分支会保留可恢复的路线图和 Playback；普通回复不会因此变成工程记录。规则变更也要说明谁负责、对人有什么影响、如何验证。
-- **Before → After：项目级副本路径已删除。** `project`、`project-codex-agents`、`--project-only` 和 `check-update --project` 不再可用；`init-project` 刷新全局 Teamwork，并只写项目说明、memory 与 CodeGraph context，不会在项目内复制 skills 或 agents。
+- **Before → After：连续性只在需要时留下。** 符合条件的长讨论、交接或重要分支只有在具备写权限时才会保留可恢复的路线图和 Playback；没有写权限时只返回候选检查点，不能保证连续性。普通回复不会因此变成工程记录。规则变更也要说明谁负责、对人有什么影响、如何验证。
+- **Before → After：项目级副本路径已删除。** `project`、`project-codex-agents` 和 `check-update --project` 不再可用；`init-project` 刷新全局 Teamwork，并只写项目说明、memory 与 CodeGraph context，不会在项目内复制 skills 或 agents。
 - **升级方式：** 在 Teamwork 仓库运行 `./install.sh all`，再运行 `./scripts/check-update.sh --readiness`。需要项目 context 时运行 `./install.sh --project-root "<项目路径>" init-project`。清理旧副本时只删除已确认由 Teamwork 生成的内容，不要整目录删除 `.agents`、`.codex`、`.cursor` 或 `.claude`。
 
 这些变化通过离线契约、安装模拟和完整包验证；没有运行付费或真实模型对比，因此不声称实际回答质量已经提升，也不声称三平台运行时行为等价。

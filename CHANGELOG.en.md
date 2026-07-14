@@ -4,13 +4,13 @@
 
 This changelog lists user-visible changes. Implementation details live in Git commits or pull requests.
 
-## Unreleased
+## 3.0.0 - 2026-07-15
 
-**Discussions lead with the conclusion and next action, and installation no longer leaves stale Teamwork copies inside a project.**
+**Discussions lead with the conclusion and next action, and installation no longer creates or refreshes project-local Teamwork copies.**
 
 - **Before → After: ordinary replies return to the issue itself instead of internal process narration.** Replies could lead with versions, stages, invented labels, or repeated generic caveats. They now lead with the conclusion or what it means, why it matters, and the next action. Internal implementation, versions, or uncertainty appear only when requested or when they change a decision or action.
-- **Before → After: continuity is recorded only when it helps.** Long work, handoffs, or material branches keep a recoverable route map and Playback; ordinary replies do not become engineering records. A rule change must also state its owner, user effect, and verification.
-- **Before → After: project-local package routes are gone.** `project`, `project-codex-agents`, `--project-only`, and `check-update --project` no longer work. `init-project` refreshes global Teamwork and writes only project instructions, memory, and CodeGraph context; it never copies skills or agents into the project.
+- **Before → After: continuity is recorded only when it helps.** Eligible long discussions, handoffs, or material branches persist a recoverable route map and Playback only with write authority; otherwise Teamwork returns a checkpoint candidate and cannot guarantee continuity. Ordinary replies do not become engineering records. A rule change must also state its owner, user effect, and verification.
+- **Before → After: project-local package routes are gone.** `project`, `project-codex-agents`, and `check-update --project` no longer work. `init-project` refreshes global Teamwork and writes only project instructions, memory, and CodeGraph context; it never copies skills or agents into the project.
 - **To upgrade:** from the Teamwork repository, run `./install.sh all`, then `./scripts/check-update.sh --readiness`. For project context, run `./install.sh --project-root "<project-path>" init-project`. When clearing legacy copies, remove only assets confirmed as Teamwork-generated—never whole `.agents`, `.codex`, `.cursor`, or `.claude` directories.
 
 Offline contracts, installer simulations, and full package validation cover these changes. No paid or live model comparison ran, so this does not claim improved real-answer quality or runtime equivalence across the three platforms.

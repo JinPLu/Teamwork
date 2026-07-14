@@ -358,7 +358,7 @@ render_cursor_agent_expected() {
 
 policy_status() {
   local platform="$1"
-  local file marker
+  local file marker policy_text
   case "$platform" in
     codex)
       file="$HOME/.codex/AGENTS.md"
@@ -374,15 +374,17 @@ policy_status() {
       ;;
   esac
 
-  if [[ -f "$file" ]] \
-    && grep -q "$marker" "$file" \
-    && grep -q "Work within the user's request" "$file" \
-    && grep -q 'Read-only requests do not authorize changes' "$file" \
-    && grep -q 'Inspect discoverable evidence before asking' "$file" \
-    && grep -q 'Pause only the dependent branch' "$file" \
-    && grep -q 'Answers and confirmations do not grant effect authority' "$file" \
-    && grep -q 'Never invent or hide a required value or invariant' "$file" \
-    && grep -q 'Delegate only independent work whose value exceeds its' "$file"; then
+  [[ -f "$file" ]] || { echo "missing"; return 0; }
+  policy_text="$(tr '\n' ' ' < "$file")"
+
+  if grep -q "$marker" "$file" \
+    && [[ "$policy_text" == *"Work within the user's request"* ]] \
+    && [[ "$policy_text" == *'Read-only requests do not authorize changes'* ]] \
+    && [[ "$policy_text" == *'Inspect discoverable evidence before asking'* ]] \
+    && [[ "$policy_text" == *'pause only the dependent branch'* ]] \
+    && [[ "$policy_text" == *'Answers and confirmations do not grant effect authority'* ]] \
+    && [[ "$policy_text" == *'Never invent or hide a required value or invariant'* ]] \
+    && [[ "$policy_text" == *'Delegate only independent work whose value exceeds its'* ]]; then
     echo "ok"
   else
     echo "missing"

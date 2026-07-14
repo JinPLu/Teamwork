@@ -84,7 +84,7 @@ the active pointers. Do not inline volatile progress or experiment state here.
 <!-- TEAMWORK_PROJECT_START -->
 ## Teamwork Project Instructions
 
-- Project label: `Teamwork`.
+- Project label (local routing only): `Teamwork`.
 - Teamwork memory: read `docs/teamwork/index.json` first, then `docs/teamwork/README.md` when durable memory is relevant.
-- CodeGraph is configured for this repository; prefer it for structural code questions.
+- CodeGraph: this project has a local `.codegraph/` index.
 <!-- TEAMWORK_PROJECT_END -->

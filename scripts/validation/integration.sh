@@ -604,6 +604,8 @@ HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no
   > "$tmp/global-only-readiness.out"
 grep_required '^INSTALL_READY=yes$' "$tmp/global-only-readiness.out" \
   "global readiness must pass after a fresh global install"
+grep_required '^MISSING=cursor-policy-manual$' "$tmp/global-only-readiness.out" \
+  "global readiness must recognize wrapped Codex and Claude policy text"
 ! grep -q '^PROJECT_' "$tmp/global-only-readiness.out" \
   || fail "global-only readiness must not report deleted project-local package surfaces"
 removed_project_flag_rc=0
