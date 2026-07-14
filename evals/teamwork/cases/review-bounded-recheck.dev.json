@@ -7,7 +7,7 @@
   "prompt": "Review an accepted implementation. Report stable finding IDs and classify every finding as BLOCKER, FOLLOW-UP, or SUGGESTION. After a focused fix, perform at most one bounded corrective recheck of the corrected claim and directly affected surfaces.",
   "expected": {
     "route": "review_then_bounded_recheck",
-    "requires": ["stable_finding_ids", "review_taxonomy", "blocker_classification", "one_corrective_recheck"]
+    "requires": ["stable_finding_ids", "review_taxonomy", "blocker_classification", "risk_gated_fresh_review", "one_corrective_recheck"]
   },
   "must": [
     "keep each finding ID stable in the corrective response",

@@ -4,6 +4,19 @@
 
 This changelog lists user-visible changes. Implementation details live in Git commits or pull requests.
 
+## 2.20.0 - 2026-07-14
+
+**Teamwork now selects the lowest-maintenance sufficient solution at the source, while making all ten project skills natively installable across three platforms.**
+
+- **`evidence-guided minimality` now spans design through acceptance.** Plan selects the lowest-maintenance solution surface, Execute implements that choice, and Review plus Worker reject unsupported abstractions, modes, wrappers, fallbacks, or duplicate owners. The preference order is the canonical owner, platform/language built-ins, a boundary-appropriate dependency, then minimal new logic.
+- **Minimality is not code golf.** Multi-file changes, clear abstractions, and dependencies remain justified when they reduce total maintenance cost without weakening evidence. LOC or file count cannot replace correctness, clarity, security, accessibility, portability, accepted behavior, or proportional verification.
+- `install.sh project` installs the same ten Teamwork skills from one source into Codex `.agents/skills/`, Cursor `.cursor/skills/`, and Claude Code `.claude/skills/`. Copy/link behavior, shared references, version/profile markers, and platform agents remain aligned without taking over unrelated local content.
+- `check-update.sh --project` reports missing, version-drift, and content-drift state separately for each platform's project skills instead of treating Cursor as the proxy for all three.
+- Every Teamwork skill now has a named case and mutation-sensitive static contract. `teamwork-init`, which previously had no direct case, is covered; Goal invariants, strategy delta, and affected-branch retry are independently protected.
+- The Teamwork memory template leaves unused active pointers as `null`, while index validation rejects active pointers that lack a matching entry or resolve to non-current or candidate authority.
+
+This release validates static contracts, mutations, and isolated three-platform install/readiness behavior. It does not claim proof of implicit skill selection or complete runtime behavior in Codex, Cursor, or Claude Code.
+
 ## 2.19.0 - 2026-07-13
 
 **Full initialization and updates now install, verify, and continuously maintain lifecycle sounds.**

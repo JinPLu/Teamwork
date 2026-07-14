@@ -7,7 +7,7 @@
   "prompt": "Prepare a Teamwork maintainer release after changing package behavior.",
   "expected": {
     "route": "update",
-    "requires": ["dev eval", "validation", "release eval", "ledger deltas"]
+    "requires": ["dev eval", "validation", "release eval", "ledger deltas", "version_canonical", "publication_authority", "release_ready_until_tag_and_github_release"]
   },
   "must": [
     "run dev eval and repository validation before release claims",

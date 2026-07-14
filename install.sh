@@ -75,7 +75,8 @@ Targets:
   cursor         Install skills, Cursor agents, and print cursor-policy guidance
   claude         Install skills, Claude agents, and Teamwork Claude global policy
   all            Install skills, all platform agents, and Codex + Claude global policy
-  project        Install project skills/agents under .cursor/, .codex/, and .claude/
+  project        Install project skills under .agents/skills, .cursor/skills,
+                 and .claude/skills, plus agents under .codex/, .cursor/, and .claude/
                  (default: this checkout; use --project-root for another repo)
   init-project   Full project init: global/project skills and agents, AGENTS.md,
                  docs/teamwork/, .gitignore entries, and CodeGraph when available
@@ -707,7 +708,9 @@ install_all() {
 
 install_project() {
   local base="${PROJECT_ROOT:-$ROOT}"
+  install_skill_set "$base/.agents/skills" "project Codex"
   install_skill_set "$base/.cursor/skills" "project Cursor"
+  install_skill_set "$base/.claude/skills" "project Claude Code"
   install_codex_agent_set "$base/.codex/agents" "project"
   install_cursor_agent_set "$base/.cursor/agents" "project Cursor"
   install_claude_agent_set "$base/.claude/agents" "project Claude Code"

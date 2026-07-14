@@ -205,6 +205,163 @@ REQUIRED_WORKING_FACTS_CASES = {
         "stale_delegated_results_discarded",
     },
 }
+REQUIRED_MINIMALITY_CASES = {
+    "minimality-canonical-reuse": {
+        "canonical_owner",
+        "boundary_builtin_or_dependency",
+        "minimal_new_logic",
+        "proportional_proof",
+    },
+    "minimality-justified-surface": {
+        "accepted_behavior_justifies_new_logic",
+        "justified_abstraction_or_dependency",
+        "multi_file_allowed",
+        "proportional_proof",
+        "no_code_golf",
+    },
+    "minimality-review-classification": {
+        "minimality_reviewable",
+        "acceptance_failure_blocker",
+        "non_ac_cleanup_follow_up_or_suggestion",
+        "no_scope_expansion",
+    },
+}
+REQUIRED_SKILL_CASE_CLAUSES = {
+    "native-lightweight-control": {"complete_stage_inventory", "native_fast_path"},
+    "grill-explicit-skill-invocation": {"explicit_activation", "no_enactment"},
+    "grill-negative-signal-control": {"negative_signal_wins", "no_activation"},
+    "grill-quoted-marker-control": {"quoted_marker_inert", "no_activation"},
+    "grill-question-value-stop": {"no_implementation_authority"},
+    "research-source-quality": {"observed_inferred_claimed", "read_only_boundary"},
+    "debug-repro-before-fix": {
+        "repro_before_fix",
+        "discriminating_hypotheses",
+        "safe_fix_route",
+    },
+    "plan-ask-readiness": {
+        "non_simple_auto_grill",
+        "decision_summary",
+        "no_execution_authority",
+    },
+    "complex-coding-discipline": {
+        "accepted_scope",
+        "discovery_classification",
+        "failed_ac_monotonicity",
+    },
+    "review-bounded-recheck": {
+        "review_taxonomy",
+        "risk_gated_fresh_review",
+        "one_corrective_recheck",
+    },
+    "goal-dependent-branch-retry": {
+        "native_goal_authority",
+        "preserved_invariants",
+        "strategy_delta",
+        "affected_branch_only",
+    },
+    "init-readiness-contract": {
+        "readiness_gaps_reported",
+        "safe_local_continuation",
+        "host_tools_host_owned",
+        "external_tooling_approval",
+    },
+    "update-release-ledger": {
+        "version_canonical",
+        "publication_authority",
+        "release_ready_until_tag_and_github_release",
+    },
+}
+SKILL_SOURCE_CONTRACTS = {
+    "using-teamwork": (
+        "skills/using-teamwork/SKILL.md",
+        (
+            ("Native fast path", "small, clear tasks stay native"),
+            ("Native stage", "**Native**"),
+            ("Research stage", "**Research**"),
+            ("Debug stage", "**Debug**"),
+            ("Plan stage", "**Plan**"),
+            ("Execute stage", "**Execute**"),
+            ("Review stage", "**Review**"),
+            ("Goal stage", "**Goal**"),
+            ("Init stage", "**Init**"),
+            ("Update stage", "**Update**"),
+        ),
+    ),
+    "grill-me": (
+        "skills/grill-me/SKILL.md",
+        (
+            ("explicit activation", "enter for an explicit request"),
+            ("negative intent wins", "explicit negative intent suppresses this interview"),
+            ("inert mentions", "quoted, file, tool, example, or maintenance mentions are inert"),
+            ("no execution authority", "confirmation does not grant implementation authority"),
+        ),
+    ),
+    "teamwork-research": (
+        "skills/teamwork-research/SKILL.md",
+        (
+            ("observed/inferred/claimed evidence", "`observed`, `inferred`, and `claimed` findings"),
+            ("read-only boundary", "research does not authorize edits, external writes"),
+        ),
+    ),
+    "teamwork-debug": (
+        "skills/teamwork-debug/SKILL.md",
+        (
+            ("repro before fix", "state expected versus actual behavior, the repro"),
+            ("discriminating hypotheses", "name discriminating evidence"),
+            ("safe fix route", "route an accepted fix to execution"),
+        ),
+    ),
+    "teamwork-plan": (
+        "skills/teamwork-plan/SKILL.md",
+        (
+            ("non-simple material Grill", "every non-simple plan enters evidence-first `grill-me`"),
+            ("Decision Summary", "needs a confirmed decision summary"),
+            ("no execution authority", "confirmation grants no implementation, release, external-effect, or other authority"),
+        ),
+    ),
+    "teamwork-execute": (
+        "skills/teamwork-execute/SKILL.md",
+        (
+            ("accepted scope", "use when an accepted plan, scope, or known root-cause fix"),
+            ("discovery classification", "classify discoveries:"),
+            ("failed-AC monotonicity", "failed ac evidence stays failed until direct evidence changes that ac"),
+        ),
+    ),
+    "teamwork-review": (
+        "skills/teamwork-review/SKILL.md",
+        (
+            ("review taxonomy must be BLOCKER, FOLLOW-UP, or SUGGESTION", "one class: `blocker`, `follow-up`, or `suggestion`"),
+            ("risk-gated fresh review", "fresh context is required for high-risk, public-contract, delegated, security, destructive, release, or goal acceptance"),
+            ("one bounded recheck", "permit one corrective recheck"),
+        ),
+    ),
+    "teamwork-goal": (
+        "skills/teamwork-goal/SKILL.md",
+        (
+            ("explicit user request or accepted Goal Proposal", "only when the user explicitly requests goal mode or accepts a goal proposal"),
+            ("preserved Goal Invariants", "identify the preserved scope/invariants, failed claim and stage, prior evidence, do-not-repeat constraints"),
+            ("strategy delta", "stop on repeated no-progress without an evidence-backed strategy delta"),
+            ("affected stage", "route only the affected stage"),
+        ),
+    ),
+    "teamwork-init": (
+        "skills/teamwork-init/SKILL.md",
+        (
+            ("readiness gaps", "reported gaps, not stop conditions"),
+            ("safe local continuation", "project surfaces continue even when the global install returns an actionable configuration failure"),
+            ("host-owned tools", "native interaction tools are host capabilities, not teamwork installation requirements"),
+            ("external tooling approval", "do not install external tooling without approval"),
+        ),
+    ),
+    "teamwork-update": (
+        "skills/teamwork-update/SKILL.md",
+        (
+            ("VERSION canonical", "`version` is the source of truth"),
+            ("publication authority", "with explicit publication authority"),
+            ("release-ready until tag and GitHub Release", "until the tag and github release exist, report `release-ready`, not `released`"),
+        ),
+    ),
+}
 RETIRED_ACTIVE_CASE_TERMS = (
     "stage entry card",
     "truth identity",
@@ -235,6 +392,20 @@ GRILL_CONTROL_CASES = {
     "grill-file-tool-marker-control",
     "grill-maintenance-marker-control",
     "grill-negative-signal-control",
+}
+REQUIRED_SKILL_CONTRACT_CASES = {
+    "using-teamwork": {"native-lightweight-control"},
+    "grill-me": GRILL_SEMANTIC_CASES
+    | GRILL_CONTROL_CASES
+    | {"question-first-explicit-grill", "question-first-explicit-lightweight-grill"},
+    "teamwork-research": {"research-source-quality"},
+    "teamwork-debug": {"debug-repro-before-fix"},
+    "teamwork-plan": {"plan-ask-readiness"},
+    "teamwork-execute": {"complex-coding-discipline"},
+    "teamwork-review": {"review-bounded-recheck"},
+    "teamwork-goal": {"goal-dependent-branch-retry"},
+    "teamwork-init": {"init-readiness-contract"},
+    "teamwork-update": {"update-release-ledger"},
 }
 SEMANTIC_OWNERS = {"evidence", "agent", "user-decision", "required-input", "confirmation"}
 EXPECTED_ACTION_BY_OWNER = {
@@ -282,15 +453,22 @@ class EvalError(Exception):
     pass
 
 
+def normalize_semantic_text(text: str) -> str:
+    return " ".join(text.split()).casefold()
+
+
+def validate_skill_source_contract(skill: str, source_text: str) -> None:
+    path, clauses = SKILL_SOURCE_CONTRACTS[skill]
+    normalized = normalize_semantic_text(source_text)
+    for label, clause in clauses:
+        if normalize_semantic_text(clause) not in normalized:
+            raise EvalError(f"{path}: skill contract must preserve {label}")
+
+
 def validate_semantic_source_text(
     review_text: str, goal_text: str, role_playbook_text: str
 ) -> None:
-    review_taxonomy = "one class: `BLOCKER`, `FOLLOW-UP`, or `SUGGESTION`"
-    if review_taxonomy not in review_text:
-        raise EvalError(
-            "skills/teamwork-review/SKILL.md: review taxonomy must be "
-            "BLOCKER, FOLLOW-UP, or SUGGESTION"
-        )
+    validate_skill_source_contract("teamwork-review", review_text)
     if re.search(
         r"(?i)one class:\s*`blocker`\s*,\s*`major`\s*,\s*(?:or\s*)?`minor`",
         review_text,
@@ -314,16 +492,8 @@ def validate_semantic_source_text(
             "blocker | major | minor taxonomy remains"
         )
 
-    normalized_goal = " ".join(goal_text.split())
-    required_goal_authority = (
-        "Use Codex native goal state only when the user explicitly requests Goal mode or "
-        "accepts a Goal Proposal"
-    )
-    if required_goal_authority not in normalized_goal:
-        raise EvalError(
-            "skills/teamwork-goal/SKILL.md: native goal state requires an explicit user "
-            "request or accepted Goal Proposal"
-        )
+    validate_skill_source_contract("teamwork-goal", goal_text)
+    normalized_goal = normalize_semantic_text(goal_text)
     if re.search(r"(?i)native goal state.{0,80}when available", normalized_goal):
         raise EvalError(
             "skills/teamwork-goal/SKILL.md: native goal state must not activate merely "
@@ -331,11 +501,57 @@ def validate_semantic_source_text(
         )
 
 
+def validate_minimality_source_text(
+    workflow_contract_text: str, review_lenses_text: str
+) -> None:
+    workflow = " ".join(workflow_contract_text.split())
+    review_lenses = " ".join(review_lenses_text.split())
+    for anchor in (
+        "the canonical owner/pattern, language or host/platform built-ins, a "
+        "boundary-appropriate installed dependency, then minimal new logic",
+        "not fewer lines or files",
+        "Never trade away clarity, correctness, security, accessibility, portability, "
+        "accepted behavior, or proportional verification",
+    ):
+        if anchor not in workflow:
+            raise EvalError(
+                "skills/using-teamwork/references/workflow-contract.md: minimality "
+                f"boundary must preserve {anchor}"
+            )
+    for anchor in (
+        "unaccepted cleanup as `SUGGESTION` or `out_of_scope`, not as a reason to "
+        "expand the candidate",
+        "Do not score minimality by LOC or file count",
+        "Justified abstractions, dependencies, and multi-file changes are not slop "
+        "when they improve cost without weakening proof",
+    ):
+        if anchor not in review_lenses:
+            raise EvalError(
+                "skills/using-teamwork/references/review-lenses.md: minimality review "
+                f"boundary must preserve {anchor}"
+            )
+
+
 def validate_semantic_sources() -> None:
+    for skill, (path, _) in SKILL_SOURCE_CONTRACTS.items():
+        if skill in {"teamwork-review", "teamwork-goal"}:
+            continue
+        validate_skill_source_contract(
+            skill,
+            (ROOT / path).read_text(encoding="utf-8"),
+        )
     validate_semantic_source_text(
         (ROOT / "skills/teamwork-review/SKILL.md").read_text(encoding="utf-8"),
         (ROOT / "skills/teamwork-goal/SKILL.md").read_text(encoding="utf-8"),
         (ROOT / "skills/using-teamwork/references/role-playbook.md").read_text(
+            encoding="utf-8"
+        ),
+    )
+    validate_minimality_source_text(
+        (ROOT / "skills/using-teamwork/references/workflow-contract.md").read_text(
+            encoding="utf-8"
+        ),
+        (ROOT / "skills/using-teamwork/references/review-lenses.md").read_text(
             encoding="utf-8"
         ),
     )
@@ -367,6 +583,10 @@ def require_string_list(value: Any, field: str, path: Path) -> list[str]:
     if not all(isinstance(item, str) and item.strip() for item in value):
         raise EvalError(f"{display_path(path)}: {field} must contain non-empty strings")
     return value
+
+
+def normalize_contract_key(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", value.casefold()).strip("_")
 
 
 def is_package_relative(value: str) -> bool:
@@ -492,6 +712,23 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
                 f"{', '.join(missing_working_facts)}"
             )
 
+    if case_id in REQUIRED_MINIMALITY_CASES:
+        requires = data["expected"].get("requires")
+        if not isinstance(requires, list) or not all(
+            isinstance(item, str) and item.strip() for item in requires
+        ):
+            raise EvalError(
+                f"{display_path(path)}: minimality expected.requires must be a string list"
+            )
+        missing_minimality = sorted(
+            REQUIRED_MINIMALITY_CASES[case_id] - set(requires)
+        )
+        if missing_minimality:
+            raise EvalError(
+                f"{display_path(path)}: minimality coverage missing: "
+                f"{', '.join(missing_minimality)}"
+            )
+
     if case_id in SEMANTIC_QUESTION_CASES:
         retired = sorted(
             {"expected_question_ids", "blocked_route", "expected_close"} & set(data)
@@ -599,6 +836,24 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
         if present:
             raise EvalError(
                 f"{display_path(path)}: retired lifecycle term remains: {', '.join(present)}"
+            )
+
+    if case_id in REQUIRED_SKILL_CASE_CLAUSES:
+        requires = data["expected"].get("requires")
+        if not isinstance(requires, list) or not all(
+            isinstance(item, str) and item.strip() for item in requires
+        ):
+            raise EvalError(
+                f"{display_path(path)}: skill contract expected.requires must be a string list"
+            )
+        normalized_requires = {normalize_contract_key(item) for item in requires}
+        missing_skill_clauses = sorted(
+            REQUIRED_SKILL_CASE_CLAUSES[case_id] - normalized_requires
+        )
+        if missing_skill_clauses:
+            raise EvalError(
+                f"{display_path(path)}: skill contract coverage missing: "
+                f"{', '.join(missing_skill_clauses)}"
             )
 
     rubric = data.get("rubric")
@@ -1013,6 +1268,17 @@ def selected_cases(selection: str) -> list[dict[str, Any]]:
     missing_ask_cases = sorted(set(REQUIRED_ASK_PREDICATE_CASES) - seen)
     if missing_ask_cases:
         raise EvalError(f"missing ask-predicate case(s): {', '.join(missing_ask_cases)}")
+    missing_minimality_cases = sorted(set(REQUIRED_MINIMALITY_CASES) - seen)
+    if missing_minimality_cases:
+        raise EvalError(
+            f"missing minimality case(s): {', '.join(missing_minimality_cases)}"
+        )
+    for skill, required_cases in REQUIRED_SKILL_CONTRACT_CASES.items():
+        missing_skill_cases = sorted(required_cases - seen)
+        if missing_skill_cases:
+            raise EvalError(
+                f"missing {skill} contract case(s): {', '.join(missing_skill_cases)}"
+            )
     output_rows = validate_question_first_outputs(cases_by_id)
     if selection == "all":
         selected = cases

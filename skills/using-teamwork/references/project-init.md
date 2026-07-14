@@ -44,8 +44,7 @@ uses Luna/Terra/Sol on Codex and native low-cost models elsewhere.
 `gpt56-high` and `gpt56-xhigh` pin all Codex roles to Sol; legacy `gpt55-high`
 and `gpt55-xhigh` names alias those mappings without emitting GPT-5.5.
 Non-Codex platforms keep current native model families. Project init asks only
-for global-policy overrides. Model overrides
-require `./install.sh --profile <profile> <target>`.
+for global-policy overrides; model overrides require `./install.sh --profile <profile> <target>`.
 
 ## Local Project Init Surfaces
 
@@ -54,12 +53,13 @@ init-project` from the Teamwork checkout unless a narrower audit-only request is
 explicit. This installs Teamwork-managed global and project skills/agents/
 policies by default, then writes the managed `AGENTS.md` block,
 `docs/teamwork/` README/index/current files, local `.gitignore` entries, and
-`codegraph init -i` when the CLI already exists. Cursor manual paste, missing
+`codegraph init -i` when the CLI already exists. Project skills install to
+Codex `.agents/skills/`, Cursor `.cursor/skills/`, and Claude Code
+`.claude/skills/`; project agents remain under each platform's agent root.
+Cursor manual paste, missing
 CodeGraph CLI or missing Context7/docs MCP is a capability gap, not a stop
 condition. Native interaction tools are used when the current host exposes them;
-project init never enables them. A global configuration failure is reported
-after project surfaces are installed. Do not install external MCP/tools without
-approval.
+project init never enables them. Report global configuration failure after project surfaces install. Do not install external MCP/tools without approval.
 
 ## Full Feature Capability Matrix
 

@@ -12,7 +12,8 @@ Use with `teamwork-init` (readiness gate) and `teamwork-update` (user refresh).
 - skill file content drift against this checkout
 - bounded Codex custom-agent routing readiness in `~/.codex/config.toml` (9 total threads: one main plus eight subagents)
 - bootstrap policy markers (Codex/Claude managed files; Cursor UI paste)
-- optional `--project PATH` for repo-local `.cursor/.codex/.claude`
+- optional `--project PATH` for repo-local Codex `.agents/skills/`, Cursor
+  `.cursor/skills/`, Claude Code `.claude/skills/`, and each platform's agents
 - best-effort Cursor model slug sample and CodeGraph MCP detection
 - Codex notification installation and runtime trust (`review-required` until both exact hooks are trusted)
 
@@ -24,6 +25,8 @@ Flags:
 
 Normal report mode exits `0` when current and `1` when surfaces need action;
 readiness reports convergence through `INSTALL_READY`.
+Project readiness uses host-specific `project-codex-*`, `project-cursor-*`, and
+`project-claude-*` entries for missing skills, content drift, and version drift.
 
 ## Init Readiness
 

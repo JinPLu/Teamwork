@@ -7,7 +7,7 @@
   "prompt": "Compare current API behavior before choosing an implementation approach.",
   "expected": {
     "route": "research",
-    "requires": ["source-of-truth lookup", "observed/inferred/claimed labels"]
+    "requires": ["source-of-truth lookup", "observed/inferred/claimed labels", "observed_inferred_claimed", "read_only_boundary"]
   },
   "must": [
     "use source evidence for unstable or external behavior",

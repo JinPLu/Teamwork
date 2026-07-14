@@ -20,7 +20,8 @@ reproducible failures to debug. Tiny fixed-scope work may go to execution.
 
 Resolve decision-critical gaps and map requirements to evidence or proof. Define
 scope and protected surfaces; for code, identify owner/flow, tests/config, and
-invariants before choosing the smallest direct change.
+invariants, then select the lowest-maintenance solution surface defined in
+`workflow-contract.md` before choosing the smallest direct change.
 
 A plan is simple only when scope/risk are fixed and no material user decision
 remains. Every non-simple Plan enters evidence-first `grill-me`, independent of

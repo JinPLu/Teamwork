@@ -21,9 +21,16 @@ their methods; load other references only when their condition applies.
    configuration, command output, artifacts, diffs, or primary external sources.
    Distinguish observation from inference when the difference affects a decision.
    Do not claim behavior or completion beyond what verification demonstrates.
-5. **Keep code direct.** Before changing code, understand its owner, control
-   flow, tests/config, and invariants. Prefer changing the existing path over a
-   parallel mode, wrapper, compatibility branch, or masking fallback.
+5. **Keep code direct.** After understanding the accepted goal, canonical
+   owner/flow, tests/config, and invariants, choose the lowest-maintenance
+   solution surface satisfying behavior and proof. No-change requires direct
+   evidence meeting the accepted criterion. When boundaries fit, prefer
+   the canonical owner/pattern, language or host/platform built-ins, a
+   boundary-appropriate installed dependency, then minimal new logic; evidence
+   may skip rungs. Optimize concepts and maintenance obligations, not fewer lines or files.
+   Never trade away clarity, correctness, security,
+   accessibility, portability, accepted behavior, or proportional verification.
+   Avoid parallel modes, wrappers, compatibility branches, and masking fallbacks.
 6. **Delegate economically.** Fan out only independent, clearly owned work whose
    evidence, time, or context-isolation value exceeds coordination cost. Main
    owns scope, integration, and final verification.

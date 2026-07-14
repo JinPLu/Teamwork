@@ -22,7 +22,8 @@ Initializes a project with full Teamwork defaults:
   - Codex custom-agent routing
   - user-level Codex and Claude Code notifications (use --no-notifications on
     the install.sh init-project entrypoint to opt out)
-  - project .cursor/.codex/.claude skills and agents
+  - project skills under .agents/skills, .cursor/skills, and .claude/skills,
+    plus agents under .codex/.cursor/.claude
   - AGENTS.md Teamwork managed block
   - docs/teamwork/ runtime memory entrypoint
   - .gitignore entries for local Teamwork state
@@ -274,6 +275,7 @@ agents_block = f"""<!-- TEAMWORK_PROJECT_START -->
 
 gitignore_block = """# TEAMWORK_LOCAL_START
 # Teamwork local runtime and project install surfaces
+.agents/
 .codex/
 .cursor/
 .claude/

@@ -37,7 +37,8 @@ Designer/Judge/Reviewer to `gpt-5.6-sol/high`, and Deep Judge/Reviewer to
 `gpt56-xhigh` pin every Codex agent to Sol. `gpt56-role`, `gpt55-high`, and
 `gpt55-xhigh` remain compatibility names, but no active profile emits GPT-5.5.
 Use `./install.sh project` or `./install.sh --project-root <path> project` for
-project-local skills and agents. Use
+project-local skills under `.agents/skills/` and Codex agents under
+`.codex/agents/`. Use
 `./install.sh --link codex` while editing this checkout.
 
 User-level `codex`, `all`, and `codex-agents` installs also migrate the bounded

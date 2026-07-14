@@ -24,8 +24,9 @@ Project-local setup:
 ./install.sh --link project
 ```
 
-Skills install to `~/.cursor/skills/` or `.cursor/skills/`. Custom role agents
-install to `~/.cursor/agents/` or `.cursor/agents/`.
+Skills install to `~/.cursor/skills/` for user-level setup or
+`.cursor/skills/` for project setup. Custom role agents install to
+`~/.cursor/agents/` or `.cursor/agents/`.
 
 Teamwork does not currently install Cursor sounds: the local hook path must be
 live-verified before the package claims parity with Codex/Claude Code.

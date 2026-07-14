@@ -229,7 +229,7 @@ class CaseSchemaMutationTests(unittest.TestCase):
         data = self.load_case("review-bounded-recheck.dev.json")
         self.assertEqual(
             set(data["expected"]["requires"]),
-            {"stable_finding_ids", "review_taxonomy", "blocker_classification", "one_corrective_recheck"},
+            {"stable_finding_ids", "review_taxonomy", "blocker_classification", "risk_gated_fresh_review", "one_corrective_recheck"},
         )
         self.validate(data)
 
@@ -237,6 +237,12 @@ class CaseSchemaMutationTests(unittest.TestCase):
         data = self.load_case("working-facts-scope-correction.dev.json")
         data["expected"]["requires"].remove("stale_delegated_results_discarded")
         with self.assertRaisesRegex(EVAL.EvalError, "Working Facts coverage missing"):
+            self.validate(data)
+
+    def test_minimality_case_rejects_missing_coverage(self) -> None:
+        data = self.load_case("minimality-justified-surface.dev.json")
+        data["expected"]["requires"].remove("no_code_golf")
+        with self.assertRaisesRegex(EVAL.EvalError, "minimality coverage missing"):
             self.validate(data)
 
     def test_active_case_rejects_retired_stage_card_language(self) -> None:
@@ -254,6 +260,25 @@ class SemanticSourceMutationTests(unittest.TestCase):
         cls.role_playbook = (
             ROOT / "skills/using-teamwork/references/role-playbook.md"
         ).read_text(encoding="utf-8")
+        cls.workflow_contract = (
+            ROOT / "skills/using-teamwork/references/workflow-contract.md"
+        ).read_text(encoding="utf-8")
+        cls.review_lenses = (
+            ROOT / "skills/using-teamwork/references/review-lenses.md"
+        ).read_text(encoding="utf-8")
+        cls.skill_sources = {
+            skill: (ROOT / path).read_text(encoding="utf-8")
+            for skill, (path, _) in EVAL.SKILL_SOURCE_CONTRACTS.items()
+        }
+
+    def assert_skill_contract_rejected(
+        self, skill: str, old: str, new: str, error: str
+    ) -> None:
+        source = self.skill_sources[skill]
+        mutated = source.replace(old, new)
+        self.assertNotEqual(mutated, source, f"mutation did not change {skill}")
+        with self.assertRaisesRegex(EVAL.EvalError, error):
+            EVAL.validate_skill_source_contract(skill, mutated)
 
     def test_rejects_retired_review_severity_taxonomy(self) -> None:
         mutated = self.review.replace(
@@ -278,6 +303,108 @@ class SemanticSourceMutationTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(EVAL.EvalError, "explicit user request or accepted Goal Proposal"):
             EVAL.validate_semantic_source_text(self.review, mutated, self.role_playbook)
+
+    def test_goal_rejects_discarded_retry_invariants(self) -> None:
+        self.assert_skill_contract_rejected(
+            "teamwork-goal",
+            "identify the preserved scope/invariants, failed claim and\nstage, prior evidence, do-not-repeat constraints",
+            "discard accepted scope and retry from scratch",
+            "preserved Goal Invariants",
+        )
+
+    def test_goal_rejects_unchanged_no_progress_retry(self) -> None:
+        self.assert_skill_contract_rejected(
+            "teamwork-goal",
+            "Stop on repeated no-progress without an evidence-backed strategy delta",
+            "Repeat the same attempt after no progress",
+            "strategy delta",
+        )
+
+    def test_using_teamwork_rejects_removed_native_fast_path(self) -> None:
+        self.assert_skill_contract_rejected(
+            "using-teamwork",
+            "Small,\nclear tasks stay native",
+            "All tasks enter a Teamwork stage",
+            "Native fast path",
+        )
+
+    def test_grill_rejects_removed_explicit_activation(self) -> None:
+        self.assert_skill_contract_rejected(
+            "grill-me",
+            "Enter for an explicit request",
+            "Enter whenever available",
+            "explicit activation",
+        )
+
+    def test_research_rejects_collapsed_evidence_tiers(self) -> None:
+        self.assert_skill_contract_rejected(
+            "teamwork-research",
+            "`observed`, `inferred`,\nand `claimed` findings",
+            "`claimed` findings",
+            "observed/inferred/claimed evidence",
+        )
+
+    def test_debug_rejects_removed_discriminating_hypotheses(self) -> None:
+        self.assert_skill_contract_rejected(
+            "teamwork-debug",
+            "name discriminating evidence",
+            "collect any evidence",
+            "discriminating hypotheses",
+        )
+
+    def test_plan_rejects_optional_non_simple_grill(self) -> None:
+        self.assert_skill_contract_rejected(
+            "teamwork-plan",
+            "Every non-simple Plan enters evidence-first `grill-me`",
+            "A non-simple Plan may enter `grill-me`",
+            "non-simple material Grill",
+        )
+
+    def test_execute_rejects_reset_failed_ac_evidence(self) -> None:
+        self.assert_skill_contract_rejected(
+            "teamwork-execute",
+            "Failed AC evidence stays failed until direct evidence changes that AC",
+            "Failed AC evidence resets after any edit",
+            "failed-AC monotonicity",
+        )
+
+    def test_init_rejects_global_failure_hard_gate(self) -> None:
+        self.assert_skill_contract_rejected(
+            "teamwork-init",
+            "Project surfaces continue even\n   when the global install returns an actionable configuration failure",
+            "Project surfaces stop when the global install returns an actionable configuration failure",
+            "safe local continuation",
+        )
+
+    def test_update_rejects_noncanonical_version(self) -> None:
+        self.assert_skill_contract_rejected(
+            "teamwork-update",
+            "`VERSION` is the source of truth",
+            "`VERSION` is advisory",
+            "VERSION canonical",
+        )
+
+    def test_rejects_removed_or_inverted_minimality_boundaries(self) -> None:
+        mutations = (
+            (
+                self.workflow_contract.replace(
+                    "the canonical owner/pattern,", "a new wrapper,"
+                ),
+                "canonical owner/pattern",
+            ),
+            (
+                self.workflow_contract.replace(
+                    "not fewer lines or files", "only fewer lines and files"
+                ),
+                "not fewer lines or files",
+            ),
+        )
+        for workflow_contract, error in mutations:
+            with self.subTest(error=error):
+                with self.assertRaisesRegex(EVAL.EvalError, error):
+                    EVAL.validate_minimality_source_text(
+                        workflow_contract, self.review_lenses
+                    )
 
 
 if __name__ == "__main__":

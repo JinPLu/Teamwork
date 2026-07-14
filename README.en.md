@@ -66,7 +66,7 @@ Common options:
 
 - `--profile cost-first`: prefer current lower-cost models.
 - `--notifications`: add main-turn completion and permission-request sounds to direct platform installs; subagents stay silent. Full `all`/`init-project` installs enable them by default; use `--no-notifications` to opt out. After a Codex install, run `/hooks` in the CLI and trust the two Teamwork hooks individually.
-- `init-project`: install global and project-local skills, agents, and default notifications, then configure project rules, the Teamwork memory entrypoint, and CodeGraph when available.
+- `init-project`: install project skills into Codex `.agents/skills/`, Cursor `.cursor/skills/`, and Claude Code `.claude/skills/`, plus platform agents and global defaults, then configure project rules, the Teamwork memory entrypoint, and CodeGraph when available.
 
 Restart Codex after a user-level installation changes role routing. The installer manages only Teamwork-owned directories, marked rules, and bounded configuration; it does not take over platform permissions, MCP, browser, or test settings. See the [Codex](CODEX.md), [Cursor](CURSOR.md), and [Claude Code](CLAUDE.md) guides for platform details.
 

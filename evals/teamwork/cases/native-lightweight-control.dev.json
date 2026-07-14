@@ -8,7 +8,8 @@
   "expected": {
     "route": "native",
     "burden": "minimal",
-    "dispatch": "none"
+    "dispatch": "none",
+    "requires": ["complete_stage_inventory", "native_fast_path"]
   },
   "must": [
     "act directly when the edit is obvious and low risk",

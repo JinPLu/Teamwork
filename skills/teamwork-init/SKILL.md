@@ -26,10 +26,8 @@ gpt56-xhigh | gpt55-high | gpt55-xhigh`. Refresh installed agents with
 ## Full Project Init Default
 
 For setup/init, install the full setup first and report gaps after. Run
-`./install.sh --project-root "<project-root>" init-project` from Teamwork, or
-perform the same steps directly. It installs global/project skills, agents,
-policies, routing, Codex/Claude notifications, managed project files, and
-CodeGraph when available. `--no-notifications` is an explicit opt-out.
+`./install.sh --project-root "<project-root>" init-project`, or do the equivalent.
+It installs global/project skills, agents, policies, routing, notifications, managed files, and available CodeGraph. Project skills use Codex `.agents/skills/`, Cursor `.cursor/skills/`, and Claude Code `.claude/skills/`; `--no-notifications` opts out.
 Context7/docs MCP is read-only external docs, not a project index. Routing
 allows 9 threads total: one main plus eight subagents.
 
@@ -47,10 +45,8 @@ Before instruction work, run from the Teamwork checkout:
 ```
 
 When `INSTALL_READY=no`, run `NEXT`; user-level Codex installs repair
-`codex-routing`.
-Native interaction tools are host capabilities, not Teamwork installation
-requirements: use them when callable and never change user config to make them
-available. Restart after routing changes and report remaining gaps.
+`codex-routing`. Treat project Codex, Cursor, and Claude gaps separately; readiness names missing skills, content drift, and version drift per host.
+Native interaction tools are host capabilities, not Teamwork installation requirements. Use them when callable; never change user config to expose them. Restart after routing changes and report remaining gaps.
 
 ## Workflow
 

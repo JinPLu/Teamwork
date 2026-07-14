@@ -28,8 +28,9 @@ Project-local setup:
 ./install.sh --link project
 ```
 
-Skills install to `~/.claude/skills/`. Subagents install to
-`~/.claude/agents/` or `.claude/agents/`. `./install.sh claude` also maintains
+Skills install to `~/.claude/skills/` for user-level setup or
+`.claude/skills/` for project setup. Subagents install to `~/.claude/agents/`
+or `.claude/agents/`. `./install.sh claude` also maintains
 the Teamwork-managed bootstrap block in `~/.claude/CLAUDE.md`; `claude-policy`
 prints the same block for review.
 

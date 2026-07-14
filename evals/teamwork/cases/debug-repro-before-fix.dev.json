@@ -7,7 +7,7 @@
   "prompt": "A flaky UI test fails with unclear root cause.",
   "expected": {
     "route": "debug",
-    "requires": ["expected/actual behavior", "repro", "hypotheses", "runtime evidence"]
+    "requires": ["expected/actual behavior", "repro", "hypotheses", "runtime evidence", "repro_before_fix", "discriminating_hypotheses", "safe_fix_route"]
   },
   "must": [
     "gather same-surface repro evidence before fixing",

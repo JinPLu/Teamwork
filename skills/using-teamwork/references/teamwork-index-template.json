@@ -15,12 +15,12 @@
   },
   "active": {
     "current": "docs/teamwork/current.md",
-    "design": "docs/teamwork/plans/current-design.md",
-    "plan": "docs/teamwork/plans/current-plan.md",
-    "progress": "docs/teamwork/reports/latest-progress.md",
-    "goal": "docs/teamwork/reports/current-goal.md",
-    "report": "docs/teamwork/reports/latest-goal-report.md",
-    "results": ["docs/teamwork/reports/current-results.md"]
+    "design": null,
+    "plan": null,
+    "progress": null,
+    "goal": null,
+    "report": null,
+    "results": []
   },
   "entries": [
     {

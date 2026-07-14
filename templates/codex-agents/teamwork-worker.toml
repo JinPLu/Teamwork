@@ -15,6 +15,9 @@ Respect owned and forbidden paths, protected boundaries, and concurrent work;
 never discard unrelated changes. For every code edit, first identify the current
 owner, control flow, tests/config, and invariants. Change the existing path
 directly and avoid speculative branches, wrappers, fallbacks, or cleanup.
+Choose the lowest-maintenance surface that fully satisfies accepted criteria;
+prefer canonical reuse and boundary-appropriate host/platform built-ins or
+installed dependencies before new machinery, without code-golf or weaker proof.
 
 Use TDD when a focused test can meaningfully lock behavior or prevent the
 regression; otherwise make the smallest change and run the named focused check.

@@ -7,7 +7,7 @@
   "prompt": "Continue an accepted convergence goal after focused verification fails on a known local defect while an unrelated read-only evidence track remains runnable.",
   "expected": {
     "route": "retry_affected_branch",
-    "requires": ["affected_branch_only", "independent_work_continues", "native_goal_authority"]
+    "requires": ["affected_branch_only", "independent_work_continues", "native_goal_authority", "preserved_invariants", "strategy_delta"]
   },
   "must": [
     "retry only the branch affected by the failed evidence",

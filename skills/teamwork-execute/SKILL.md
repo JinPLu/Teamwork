@@ -18,10 +18,10 @@ credentials, paths, ports, models, and configs must be explicit or discoverable.
 
 ## Do And Boundaries
 
-Re-read the accepted scope, criteria, authority, and invariants; inspect
-owner/flow and tests/config. Change the current producer path; avoid masking
-wrappers, fallbacks, or guessed state. Preserve unrelated changes and delegate
-only disjoint ownership.
+Re-read scope, criteria, authority, and invariants; inspect owner/flow and
+tests/config. Apply the solution surface within scope; change the
+current producer path, avoiding masking wrappers, fallbacks, or guessed state.
+Preserve unrelated changes; delegate only disjoint work.
 
 Maintain `AC -> change/no-change -> evidence -> result/strength`. Before acting,
 classify discoveries:
@@ -33,8 +33,8 @@ classify discoveries:
 
 Failed AC evidence stays failed until direct evidence changes that AC.
 
-Verify against the acceptance signal, adding broader checks when planned or
-shared/public behavior changed. Report commands, artifacts, diffs, or observed
+Verify against the acceptance signal, adding broader checks for planned or
+shared/public changes. Report commands, artifacts, diffs, or observed
 behavior accurately: build-only and blocked checks are not behavioral proof.
 For an unclear reproducible failure, use one bounded confirming pass; route to
 debug if root cause remains uncertain. Remove temporary instrumentation and

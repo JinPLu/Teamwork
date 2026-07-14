@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 2.20.0 - 2026-07-14
+
+**Teamwork 现在会从源头选择最低维护成本的充分方案，并让十个项目级 skills 在三平台都能原生安装。**
+
+- **`evidence-guided minimality` 贯穿方案到验收。** Plan 明确选择最低维护成本的 solution surface，Execute 按该选择实施，Review 和 Worker 会阻止无证据的新 abstraction、mode、wrapper、fallback 或重复 owner；优先顺序是 canonical owner、平台/语言内建能力、边界合适的依赖，最后才是最少的新逻辑。
+- **精简不等于 code golf。** 多文件修改、清晰 abstraction 或依赖只要能降低总维护成本并保留证据就仍然合理；不能用 LOC、文件数换掉正确性、清晰度、安全性、可访问性、可移植性、已接受行为或相称验证。
+- `install.sh project` 会从同一份 Teamwork source 把十个 skills 分别安装到 Codex `.agents/skills/`、Cursor `.cursor/skills/` 和 Claude Code `.claude/skills/`；copy/link 模式、共享 references、版本/profile marker 和平台 agents 保持一致，其他本地内容不会被接管。
+- `check-update.sh --project` 会分别报告三个平台项目级 skills 的缺失、版本漂移和内容漂移，不再用 Cursor 的一项状态代表全部平台。
+- 所有十个 Teamwork skills 现在都有命名样例与 mutation-sensitive 静态契约；此前完全缺少直接覆盖的 `teamwork-init` 已补齐，Goal 的 invariants、strategy delta 和受影响分支重试也有独立保护。
+- Teamwork memory 模板把未使用的 active 指针设为 `null`；索引校验会拒绝找不到 entry、非 current 或 candidate authority 的 active 指针，减少旧计划被误当成当前执行依据。
+
+本版本的验证覆盖静态契约、mutation 和隔离的三平台安装/readiness；它不宣称已经证明 Codex、Cursor 或 Claude Code 的隐式 skill 选择和完整运行时行为。
+
 ## 2.19.0 - 2026-07-13
 
 **完整初始化和更新现在会把提示音真正安装、复查并纳入持续维护。**

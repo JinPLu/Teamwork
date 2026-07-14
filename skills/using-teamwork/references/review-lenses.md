@@ -1,9 +1,8 @@
 # Review Lenses
 
-Use when review needs strict maintainability, AI-code cleanup, or a diff
-presentation optimized for human review. These lenses are gated: ordinary review
-does not become opportunistic refactor. Review identifies slop; edit-producing
-cleanup belongs to execute/Worker only when requested or accepted.
+Use when review needs strict maintainability, explicit minimality or over-engineering scrutiny, AI-code cleanup, or a human-reviewable diff. These
+lenses are gated: ordinary review does not become opportunistic refactor. Review
+identifies slop; cleanup belongs to execute/Worker only when requested or accepted.
 
 Apply these lenses only to accepted scope and protected boundaries. Report an
 unaccepted cleanup as `SUGGESTION` or `out_of_scope`, not as a reason to expand
@@ -49,10 +48,12 @@ regression, or a diff is large/risky enough to deserve a maintainability pass.
 Flag high-conviction issues:
 
 - A simpler framing would delete branches, helpers, modes, or layers.
-- The diff adds special paths before showing the existing code path was
-  understood and reused, moved, or deleted.
+- The diff bypasses the canonical owner/pattern or adds machinery before showing
+  a suitable host/platform built-in or installed dependency is insufficient.
 - Special cases, feature checks, or nullable modes spread through unrelated
   flows.
+- A single-use abstraction, config, mode, or new dependency has no accepted
+  behavior or boundary need.
 - A file crosses a healthy size boundary, especially near or above 1000 lines.
 - Thin wrappers, magic generic handlers, duplicated helpers, or wrong-layer
   logic add reader load.
@@ -65,6 +66,8 @@ Flag high-conviction issues:
 Prefer directions that reduce concepts, move logic to the canonical owner,
 make boundaries explicit, or turn repeated corrections into lint, tests,
 scripts, schemas, or runtime guards.
+Do not score minimality by LOC or file count. Justified abstractions, dependencies,
+and multi-file changes are not slop when they improve cost without weakening proof.
 
 ## Reviewer Comprehension
 

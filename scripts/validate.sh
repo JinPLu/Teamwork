@@ -199,9 +199,13 @@ actual_hook_inventory="$(find "$ROOT/hooks" -maxdepth 1 -type f -exec basename {
 if git -C "$ROOT" ls-files '.cursor' 2>/dev/null | grep -q .; then
   fail ".cursor/ must not be tracked; use ./install.sh project for local project skills"
 fi
+if git -C "$ROOT" ls-files '.agents' 2>/dev/null | grep -q .; then
+  fail ".agents/ must not be tracked; use ./install.sh project for local Codex project skills"
+fi
 if git -C "$ROOT" ls-files '.codex' 2>/dev/null | grep -q .; then
   fail ".codex/ must not be tracked; use ./install.sh project for local project agents"
 fi
+grep_required '^\.agents/$' "$ROOT/.gitignore" ".gitignore must ignore local .agents/ install output"
 grep_required '^\.codex/$' "$ROOT/.gitignore" ".gitignore must ignore local .codex/ install output"
 grep_required '^\.cursor/$' "$ROOT/.gitignore" ".gitignore must ignore local .cursor/ install output"
 grep_required '^\.claude/$' "$ROOT/.gitignore" ".gitignore must ignore local .claude/ install output"
@@ -437,6 +441,22 @@ git_known_package_file "scripts/validate_teamwork_index.py" \
   || fail "scripts/validate_teamwork_index.py is not known to git; use git add -N before release validation"
 python3 "$ROOT/scripts/validate_teamwork_index.py" \
   "$ROOT/skills/using-teamwork/references/teamwork-index-template.json" >/dev/null
+index_pointer_tmp="$(mktemp -d "${TMPDIR:-/tmp}/teamwork-index-pointer.XXXXXX")"
+CLEANUP_PATHS+=("$index_pointer_tmp")
+sed 's#"current": "docs/teamwork/current.md"#"current": "docs/teamwork/missing.md"#' \
+  "$ROOT/skills/using-teamwork/references/teamwork-index-template.json" \
+  > "$index_pointer_tmp/missing-pointer.json"
+if python3 "$ROOT/scripts/validate_teamwork_index.py" \
+  "$index_pointer_tmp/missing-pointer.json" >/dev/null 2>&1; then
+  fail "Teamwork index validator accepted an active pointer without a matching entry"
+fi
+sed 's/"status": "active"/"status": "candidate"/' \
+  "$ROOT/skills/using-teamwork/references/teamwork-index-template.json" \
+  > "$index_pointer_tmp/candidate-pointer.json"
+if python3 "$ROOT/scripts/validate_teamwork_index.py" \
+  "$index_pointer_tmp/candidate-pointer.json" >/dev/null 2>&1; then
+  fail "Teamwork index validator accepted a candidate entry as active truth"
+fi
 if [[ -f "$ROOT/docs/teamwork/index.json" ]]; then
   python3 "$ROOT/scripts/validate_teamwork_index.py" "$ROOT/docs/teamwork/index.json" >/dev/null
 fi
@@ -745,7 +765,6 @@ grep_required 'Do not invent required state' "$ROOT/skills/using-teamwork/refere
   "workflow contract must preserve bootstrap safety"
 grep_required 'Fresh review is required only for the high-risk row' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must risk-gate fresh review"
-
 for skill in teamwork-research teamwork-debug teamwork-plan teamwork-execute teamwork-review teamwork-goal; do
   file="$ROOT/skills/$skill/SKILL.md"
   for heading in '## Outcome' '## Enter When' '## Do And Boundaries' '## Done When' '## Escalate' '## Conditional Protocols'; do
@@ -884,10 +903,30 @@ for template in \
       "Worker completion verdicts must match the shared subagent contract: $verdict"
   done
 done
+python3 - \
+  "$ROOT/templates/codex-agents/teamwork-worker.toml" \
+  "$ROOT/templates/cursor-agents/worker.md" \
+  "$ROOT/templates/claude-agents/worker.md" <<'PY'
+import pathlib
+import sys
+
+expected = (
+    "Choose the lowest-maintenance surface that fully satisfies accepted criteria; "
+    "prefer canonical reuse and boundary-appropriate host/platform built-ins or "
+    "installed dependencies before new machinery, without code-golf or weaker proof."
+)
+for value in sys.argv[1:]:
+    text = " ".join(pathlib.Path(value).read_text(encoding="utf-8").split())
+    if expected not in text:
+        raise SystemExit(f"FAIL: Worker minimality semantics differ: {value}")
+PY
 grep_absent 'done_with_concerns\|needs_context' \
   "agent templates must not restore retired lifecycle verdicts" \
   "$ROOT/templates/codex-agents" "$ROOT/templates/cursor-agents" "$ROOT/templates/claude-agents"
 
+grep_absent 'teamwork-minimality\|minimality-mode\|minimality_mode' \
+  "minimality must not add a route, stage, or mode" \
+  "$ROOT/skills" "$ROOT/templates" "$ROOT/install.sh"
 grep_absent 'teamwork-quality' "Teamwork must not add a separate quality stage" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/install.sh"
 grep_absent 'teamwork-deslop' "Teamwork must not add a separate deslop stage" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/install.sh"
 [[ -f "$ROOT/skills/grill-me/SKILL.md" ]] || fail "question-first override must have one public grill-me skill"
@@ -1416,9 +1455,32 @@ grep_required 'Summary: .*issue' "$tmp/global-agent-stale-report.out" \
   "check-update report must count global agent content drift"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
 HOME="$tmp/home-project-update" "$ROOT/install.sh" --project-root "$project_update" project >/dev/null
+for project_skill_root in \
+  "$project_update/.agents/skills" \
+  "$project_update/.cursor/skills" \
+  "$project_update/.claude/skills"; do
+  for skill in "${SKILLS[@]}"; do
+    [[ -f "$project_skill_root/$skill/SKILL.md" ]] \
+      || fail "default project install must copy $skill into $project_skill_root"
+    [[ ! -L "$project_skill_root/$skill" ]] \
+      || fail "default project install must copy, not link, $skill into $project_skill_root"
+  done
+  [[ "$(<"$project_skill_root/.teamwork-version")" == "$(<"$ROOT/VERSION")" ]] \
+    || fail "default project install must write current version in $project_skill_root"
+  [[ "$(<"$project_skill_root/.teamwork-profile")" == "performance-first" ]] \
+    || fail "default project install must write the active profile in $project_skill_root"
+  [[ -f "$project_skill_root/using-teamwork/references/workflow-contract.md" ]] \
+    || fail "default project install must include shared references in $project_skill_root"
+done
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --project "$project_update" --no-fetch > "$tmp/project-update-ready.out"
 grep_required '^INSTALL_READY=yes$' "$tmp/project-update-ready.out" \
   "check-update project readiness must pass after fresh project install"
+grep_required '^PROJECT_CODEX_VERSION=' "$tmp/project-update-ready.out" \
+  "check-update readiness must report the project Codex skill version"
+grep_required '^PROJECT_CURSOR_VERSION=' "$tmp/project-update-ready.out" \
+  "check-update readiness must report the project Cursor skill version"
+grep_required '^PROJECT_CLAUDE_VERSION=' "$tmp/project-update-ready.out" \
+  "check-update readiness must report the project Claude skill version"
 printf '\n# stale agent drift fixture\n' >> "$project_update/.codex/agents/teamwork-worker.toml"
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --project "$project_update" --no-fetch > "$tmp/project-update-agent-stale-report.out" || true
 grep_required 'project codex agent content: drift(missing=0,changed=1)' "$tmp/project-update-agent-stale-report.out" \
@@ -1429,22 +1491,32 @@ grep_required '^INSTALL_READY=no$' "$tmp/project-update-agent-stale.out" \
 grep_required 'project-codex-agent-content' "$tmp/project-update-agent-stale.out" \
   "check-update readiness must report project agent content drift"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" --project-root "$project_update" project >/dev/null
-printf '%s\n' '0.0.0' > "$project_update/.cursor/skills/.teamwork-version"
-printf '\n# stale drift fixture\n' >> "$project_update/.cursor/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --project "$project_update" --no-fetch > "$tmp/project-update-stale.out"
-grep_required '^INSTALL_READY=no$' "$tmp/project-update-stale.out" \
-  "check-update project readiness must fail on project drift"
-grep_required 'project-version-drift' "$tmp/project-update-stale.out" \
-  "check-update readiness must report project version drift"
-grep_required 'project-skill-content' "$tmp/project-update-stale.out" \
-  "check-update readiness must report project skill content drift"
-HOME="$tmp/home-project-update" "$ROOT/install.sh" --project-root "$project_update" project >/dev/null
-rm "$project_update/.cursor/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --project "$project_update" --no-fetch > "$tmp/project-grill-missing.out"
-grep_required '^INSTALL_READY=no$' "$tmp/project-grill-missing.out" \
-  "check-update project readiness must fail when project grill-me is missing"
-grep_required 'project-skill-content' "$tmp/project-grill-missing.out" \
-  "check-update readiness must report missing project grill-me content"
+for project_host in codex cursor claude; do
+  case "$project_host" in
+    codex) project_skill_root="$project_update/.agents/skills" ;;
+    cursor) project_skill_root="$project_update/.cursor/skills" ;;
+    claude) project_skill_root="$project_update/.claude/skills" ;;
+  esac
+  HOME="$tmp/home-project-update" "$ROOT/install.sh" --project-root "$project_update" project >/dev/null
+  printf '%s\n' '0.0.0' > "$project_skill_root/.teamwork-version"
+  printf '\n# stale drift fixture\n' >> "$project_skill_root/grill-me/SKILL.md"
+  HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --project "$project_update" --no-fetch \
+    > "$tmp/project-$project_host-stale.out"
+  grep_required '^INSTALL_READY=no$' "$tmp/project-$project_host-stale.out" \
+    "check-update project readiness must fail on project $project_host drift"
+  grep_required "project-$project_host-version-drift" "$tmp/project-$project_host-stale.out" \
+    "check-update readiness must report project $project_host version drift"
+  grep_required "project-$project_host-skill-content" "$tmp/project-$project_host-stale.out" \
+    "check-update readiness must report project $project_host skill content drift"
+  HOME="$tmp/home-project-update" "$ROOT/install.sh" --project-root "$project_update" project >/dev/null
+  rm "$project_skill_root/grill-me/SKILL.md"
+  HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --project "$project_update" --no-fetch \
+    > "$tmp/project-$project_host-missing.out"
+  grep_required '^INSTALL_READY=no$' "$tmp/project-$project_host-missing.out" \
+    "check-update project readiness must fail when project $project_host grill-me is missing"
+  grep_required "project-$project_host-skills" "$tmp/project-$project_host-missing.out" \
+    "check-update readiness must report missing project $project_host skills"
+done
 
 HOME="$tmp/home-invalid-profile" "$ROOT/install.sh" --profile invalid codex >/dev/null 2>&1 \
   && fail "installer must reject unsupported Codex profiles"
@@ -1658,9 +1730,32 @@ cp -R "$old_root/templates/claude-agents/." "$ROOT/templates/claude-agents/"
 cp -R "$old_root/templates/codex-agents/." "$ROOT/templates/codex-agents/"
 cp -R "$old_root/templates/cursor-agents/." "$ROOT/templates/cursor-agents/"
 cp "$old_root/install.sh" "$ROOT/install.sh"
+cp "$old_root/VERSION" "$ROOT/VERSION"
+for project_skill_root in \
+  "$ROOT/.agents/skills" \
+  "$ROOT/.cursor/skills" \
+  "$ROOT/.claude/skills"; do
+  mkdir -p "$project_skill_root/local-skill"
+  printf '%s\n' 'preserve unrelated project skill' > "$project_skill_root/local-skill/KEEP"
+done
 HOME="$tmp/home-project" ROOT="$ROOT" "$ROOT/install.sh" --link project >/dev/null
 for skill in "${SKILLS[@]}"; do
+  [[ -L "$ROOT/.agents/skills/$skill" ]] || fail "project install must link Codex skill $skill"
   [[ -L "$ROOT/.cursor/skills/$skill" ]] || fail "project install must link Cursor skill $skill"
+  [[ -L "$ROOT/.claude/skills/$skill" ]] || fail "project install must link Claude skill $skill"
+done
+for project_skill_root in \
+  "$ROOT/.agents/skills" \
+  "$ROOT/.cursor/skills" \
+  "$ROOT/.claude/skills"; do
+  grep_required '^preserve unrelated project skill$' "$project_skill_root/local-skill/KEEP" \
+    "project install must preserve unrelated content in $project_skill_root"
+  [[ "$(<"$project_skill_root/.teamwork-version")" == "$(<"$old_root/VERSION")" ]] \
+    || fail "linked project install must write current version in $project_skill_root"
+  [[ "$(<"$project_skill_root/.teamwork-profile")" == "performance-first" ]] \
+    || fail "linked project install must write the active profile in $project_skill_root"
+  [[ -f "$project_skill_root/using-teamwork/references/workflow-contract.md" ]] \
+    || fail "linked project install must expose shared references in $project_skill_root"
 done
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
   [[ -L "$ROOT/.codex/agents/$agent.toml" ]] || fail "project install must link Codex agent $agent"
@@ -1688,6 +1783,8 @@ grep_required 'docs/teamwork/README.md' "$init_root/AGENTS.md" \
   "init-project AGENTS.md block must point to Teamwork memory"
 grep_required '# TEAMWORK_LOCAL_START' "$init_root/.gitignore" \
   "init-project must write local .gitignore block"
+grep_required '^\.agents/$' "$init_root/.gitignore" \
+  "init-project must ignore generated Codex project skills"
 python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/index.json" >/dev/null
 [[ -f "$init_root/docs/teamwork/current.md" ]] || fail "init-project must write current.md"
 [[ -d "$tmp/home-init-project/.codex/skills/using-teamwork" ]] || fail "init-project must install global Codex skills by default"
@@ -1706,7 +1803,9 @@ python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/ind
   --config "$tmp/home-init-project/.claude/settings.json" \
   --notifier "$tmp/home-init-project/.claude/teamwork/notify.py")" == "installed" ]] \
   || fail "init-project must configure Claude notifications by default"
-[[ -d "$init_root/.cursor/skills/using-teamwork" ]] || fail "init-project must install project skills"
+[[ -d "$init_root/.agents/skills/using-teamwork" ]] || fail "init-project must install project Codex skills"
+[[ -d "$init_root/.cursor/skills/using-teamwork" ]] || fail "init-project must install project Cursor skills"
+[[ -d "$init_root/.claude/skills/using-teamwork" ]] || fail "init-project must install project Claude skills"
 [[ -f "$init_root/.codex/agents/teamwork-worker.toml" ]] || fail "init-project must install Codex agents"
 [[ -f "$init_root/.cursor/agents/worker.md" ]] || fail "init-project must install project Cursor agents"
 [[ -f "$init_root/.claude/agents/worker.md" ]] || fail "init-project must install project Claude agents"
@@ -1737,8 +1836,12 @@ printf '%s\n' "$global_failure_output" | grep -q 'continuing with project-local 
   || fail "init-project must explain that project setup continues after global failure"
 [[ -f "$global_failure_root/.codex/agents/teamwork-worker.toml" ]] \
   || fail "global config failure must not prevent project Codex agents"
+[[ -f "$global_failure_root/.agents/skills/using-teamwork/SKILL.md" ]] \
+  || fail "global config failure must not prevent project Codex skills"
 [[ -f "$global_failure_root/.cursor/skills/using-teamwork/SKILL.md" ]] \
-  || fail "global config failure must not prevent project skills"
+  || fail "global config failure must not prevent project Cursor skills"
+[[ -f "$global_failure_root/.claude/skills/using-teamwork/SKILL.md" ]] \
+  || fail "global config failure must not prevent project Claude skills"
 [[ -f "$global_failure_root/docs/teamwork/index.json" ]] \
   || fail "global config failure must not prevent project memory"
 grep_required '<!-- TEAMWORK_PROJECT_START -->' "$global_failure_root/AGENTS.md" \

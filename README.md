@@ -66,7 +66,7 @@ grill me：只挑战会改变结果的关键决定，没有实质问题就停止
 
 - `--profile cost-first`：优先使用当前低成本模型。
 - `--notifications`：为直接平台安装添加主任务完成音和权限请求音；subagent 保持静音。完整的 `all`/`init-project` 安装默认启用，可用 `--no-notifications` 退出。Codex 安装后需在 CLI 运行 `/hooks`，逐项审核并信任两项 Teamwork hook。
-- `init-project`：安装全局与项目级 skills/agents、默认通知，并配置项目规则、Teamwork 记忆入口和可用的 CodeGraph。
+- `init-project`：把项目级 skills 分别安装到 Codex 的 `.agents/skills/`、Cursor 的 `.cursor/skills/` 和 Claude Code 的 `.claude/skills/`，同时安装各平台 agents 和全局默认项，并配置项目规则、Teamwork 记忆入口和可用的 CodeGraph。
 
 Codex 用户级安装更新角色路由后需要重启 Codex。安装器只管理 Teamwork 自己的目录、规则块和有限配置；不会接管平台权限、MCP、浏览器或测试设置。平台细节见 [Codex](CODEX.md)、[Cursor](CURSOR.md) 和 [Claude Code](CLAUDE.md)。
 

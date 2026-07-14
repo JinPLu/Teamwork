@@ -10,6 +10,9 @@ KINDS = {"result", "progress", "design", "decision", "plan", "report", "research
 STATUSES = {"active", "historical", "superseded", "blocked", "candidate", "accepted"}
 CURRENTNESS = {"current", "stale", "historical", "candidate"}
 AUTHORITIES = {"canonical", "active-summary", "supporting", "candidate", "historical", "superseded"}
+ACTIVE_STATUSES = {"active", "accepted"}
+ACTIVE_AUTHORITIES = {"canonical", "active-summary", "supporting"}
+ACTIVE_POINTER_KEYS = ("current", "design", "plan", "progress", "goal", "report")
 
 
 class ValidationError(Exception):
@@ -61,7 +64,44 @@ def validate_entry(entry: dict, idx: int) -> None:
     require(entry["status"] in STATUSES, f"entries[{idx}].status has unknown value: {entry['status']}")
     require(entry["currentness"] in CURRENTNESS, f"entries[{idx}].currentness has unknown value: {entry['currentness']}")
     require(entry["authority"] in AUTHORITIES, f"entries[{idx}].authority has unknown value: {entry['authority']}")
+    for key in ["title", "path", "summary"]:
+        require(isinstance(entry[key], str) and entry[key], f"entries[{idx}].{key} must be non-empty string")
     require(DATE_RE.match(str(entry["updated"])) is not None, f"entries[{idx}].updated must be YYYY-MM-DD")
+
+
+def validate_active_pointers(active: dict, entries: list[dict]) -> None:
+    entries_by_path: dict[str, list[dict]] = {}
+    for entry in entries:
+        entries_by_path.setdefault(entry["path"], []).append(entry)
+
+    pointers: list[tuple[str, str]] = []
+    for key in ACTIVE_POINTER_KEYS:
+        value = active.get(key)
+        if value is not None:
+            pointers.append((f"active.{key}", value))
+
+    results = active.get("results", [])
+    seen_results: set[str] = set()
+    for idx, value in enumerate(results):
+        require(isinstance(value, str) and value, f"active.results[{idx}] must be non-empty string")
+        require(value not in seen_results, f"active.results contains duplicate path: {value}")
+        seen_results.add(value)
+        pointers.append((f"active.results[{idx}]", value))
+
+    for label, path in pointers:
+        matches = entries_by_path.get(path, [])
+        require(matches, f"{label} has no matching entries.path: {path}")
+        eligible = [
+            entry
+            for entry in matches
+            if entry["status"] in ACTIVE_STATUSES
+            and entry["currentness"] == "current"
+            and entry["authority"] in ACTIVE_AUTHORITIES
+        ]
+        require(
+            eligible,
+            f"{label} must resolve to a current accepted/active entry with non-candidate authority: {path}",
+        )
 
 
 def validate_index(index: dict) -> None:
@@ -106,7 +146,7 @@ def validate_index(index: dict) -> None:
 
     active = index["active"]
     require(isinstance(active, dict), "active must be object")
-    for key in ["current", "design", "plan", "progress", "goal", "report"]:
+    for key in ACTIVE_POINTER_KEYS:
         if key in active:
             value = active[key]
             require(value is None or (isinstance(value, str) and value), f"active.{key} must be null or non-empty string when present")
@@ -123,6 +163,8 @@ def validate_index(index: dict) -> None:
             key = (entry.get("topic"), entry.get("kind"))
             require(key not in active_unique, f"duplicate active entry for topic+kind: {key[0]}::{key[1]}")
             active_unique.add(key)
+
+    validate_active_pointers(active, entries)
 
     profiles = index["profiles"]
     require(isinstance(profiles, dict) and len(profiles) > 0, "profiles must be non-empty object")

@@ -22,12 +22,14 @@ docs/teamwork/migrations.md
 docs/superpowers/
 
 # Local project symlinks/copies from ./install.sh project
+.agents/
 .cursor/
 .claude/
 .teamwork-profile
 
 # TEAMWORK_LOCAL_START
 # Teamwork local runtime and project install surfaces
+.agents/
 .codex/
 .cursor/
 .claude/
