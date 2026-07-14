@@ -2,6 +2,10 @@
 
 Thanks for helping improve Teamwork. Issues and pull requests are welcome for reproducible bugs, documentation gaps, platform compatibility problems, and focused workflow improvements.
 
+Start with the [repository architecture](docs/architecture.md). It defines the
+canonical source tree, generated and local sinks, dependency direction, stable
+commands, and the owner for each kind of change.
+
 ## Before Opening An Issue
 
 Include enough evidence for someone else to understand the problem:
@@ -21,7 +25,8 @@ Do not include credentials, private source, proprietary data, or unredacted pers
 2. Update the owning `skills/*/SKILL.md` first when workflow behavior changes.
 3. Keep Codex as the reference runtime and preserve Cursor and Claude Code adapter behavior unless the change explicitly targets one platform.
 4. Add or update focused validation when changing installer logic, manifests, skill topology, artifact policy, evaluation gates, or platform contracts.
-5. Keep generated runtime state out of commits; durable examples belong under the existing `docs/teamwork/` or `evals/teamwork/` conventions.
+5. Change canonical sources rather than installed copies under `.agents/`, `.codex/`, `.cursor/`, or `.claude/`.
+6. Keep generated runtime state out of commits. `docs/teamwork/` is local memory by default; tracked evaluation fixtures belong under the existing `evals/teamwork/` conventions.
 
 ## Verification
 
@@ -32,7 +37,12 @@ Run the repository checks before opening a pull request:
 python3 scripts/eval-teamwork.py --split dev
 ```
 
-For installer changes, also test the exact target and profile you modified with a temporary `HOME` or another isolated path. Live-model evaluation is needed only when the change claims model-dependent behavior; see `python3 scripts/run-teamwork-live-eval.py --help`.
+For installer changes, also test the exact target and profile you modified with a temporary `HOME` or another isolated path. Live-model evaluation is needed only when the change claims model-dependent behavior; see `python3 scripts/run-teamwork-live-eval.py --help`. For an explicitly authorized installed-package canary, see `python3 scripts/run-installed-teamwork-live-eval.py --help`.
+
+Use the focused command named by the owning surface in the
+[architecture change-owner map](docs/architecture.md#change-owners), then run
+the repository checks above. Preserve the public command paths even when their
+implementation moves into internal modules.
 
 ## Pull Requests
 

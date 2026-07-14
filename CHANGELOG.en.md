@@ -4,6 +4,17 @@
 
 This changelog lists user-visible changes. Implementation details live in Git commits or pull requests.
 
+## 2.21.1 - 2026-07-15
+
+**Teamwork is easier to maintain and its installed Codex behavior is easier to inspect, while everyday usage stays the same.**
+
+- **Before → After: three large maintenance scripts now have stable entrypoints and clear modules.** Installation, offline evaluation, and package validation previously concentrated their responsibilities in long scripts, making ownership and safe changes harder to locate. The original commands and outputs remain compatible, while coarse modules now own install targets, evaluation responsibilities, and validation phases. A repository architecture map identifies canonical sources, generated directories, and change owners. This reduces maintenance and regression risk without adding workflow to ordinary tasks.
+- **Before → After: installed behavior moves from inference to optional review.** Static fixtures and fake-process tests could not show what an installed Codex run actually produced. Maintainers can now explicitly run an installed-Codex canary with a private temporary home, installed-file manifest, independent semantic scoring, and a redacted summary. All four valid trajectories in this release received semantic `ACCEPT`.
+- **The canary fails closed more consistently.** It verifies a real Git root before any model call, passes only `HOME`, `CODEX_HOME`, and `PATH` to install/runner subprocesses, reports cleanup failures, and allowlists retained summary fields so arbitrary prose cannot survive through dictionary keys.
+- **To upgrade:** from the Teamwork repository, run `./scripts/check-update.sh --readiness --project "$PWD"`, execute the printed `NEXT`, and repeat the check until it reports `INSTALL_READY=yes`. No new user configuration is required; Cursor User Rules still require the prompted manual paste.
+
+This is a compatible maintenance patch, not evidence that ordinary model answers are better than in 2.21.0. The bounded canary does not prove automatic skill activation, the resolved model, absence of ambient credential variables in the historical treatment, broad reliability, or Cursor/Claude Code runtime parity.
+
 ## 2.21.0 - 2026-07-15
 
 **Long discussions can now stay on the project mainline, with clearer boundaries for project initialization and version updates.**

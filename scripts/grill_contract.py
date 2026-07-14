@@ -84,10 +84,16 @@ def synthetic_event(event_class_name: str) -> Any:
 _RAW_EVENT_CLASSES = {
     ("thread.started", "", ""): "transport",
     ("thread.resumed", "", ""): "transport",
+    ("turn.started", "", ""): "transport",
     ("turn.completed", "", ""): "transport",
+    ("item.started", "agent_message", ""): "internal",
+    ("item.started", "reasoning", ""): "internal",
+    ("item.started", "analysis", ""): "internal",
+    ("item.started", "error", ""): "internal",
     ("item.completed", "agent_message", ""): "assistant-message",
     ("item.completed", "reasoning", ""): "internal",
     ("item.completed", "analysis", ""): "internal",
+    ("item.completed", "error", ""): "internal",
     ("teamwork.decision.request", "", ""): "decision-request",
     ("teamwork.decision.response", "", ""): "decision-response",
     ("item.completed", "file_change", "apply_patch"): "mutation",
@@ -129,7 +135,7 @@ def _command_tokens(command: str) -> list[str] | None:
 
 def _is_bounded_sed_read(args: Sequence[str]) -> bool:
     return (
-        len(args) >= 3
+        len(args) >= 2
         and args[0] in {"-n", "--quiet", "--silent"}
         and bool(re.fullmatch(r"\d+(?:,\d+)?p", args[1]))
         and all(value and not value.startswith("-") for value in args[2:])
@@ -147,8 +153,13 @@ def _is_bounded_head_or_tail(args: Sequence[str]) -> bool:
 def _is_allowlisted_read_segment(tokens: Sequence[str]) -> bool:
     if not tokens:
         return False
-    executable = tokens[0].rsplit("/", 1)[-1]
-    args = list(tokens[1:])
+    values = list(tokens)
+    if values and values[0] == "PYTHONDONTWRITEBYTECODE=1":
+        values = values[1:]
+    if not values:
+        return False
+    executable = values[0].rsplit("/", 1)[-1]
+    args = values[1:]
     if executable == "cd":
         return len(args) == 1 and not args[0].startswith("-")
     if executable == "pwd":
@@ -157,6 +168,29 @@ def _is_allowlisted_read_segment(tokens: Sequence[str]) -> bool:
         return True
     if executable == "rg":
         return not any(value == "--pre" or value.startswith("--pre=") for value in args)
+    if executable in {"cat", "nl", "printf", "stat", "true"}:
+        return True
+    if executable == "sort":
+        return not any(
+            value in {"--output", "--temporary-directory", "--compress-program"}
+            or value.startswith(
+                ("-o", "-T", "--output=", "--temporary-directory=", "--compress-program=")
+            )
+            for value in args
+        )
+    if executable == "find":
+        unsafe_actions = ("-delete", "-exec", "-execdir", "-ok", "-okdir", "-fprint", "-fprintf", "-fls")
+        return not any(
+            value == action or value.startswith(f"{action}0")
+            for value in args
+            for action in unsafe_actions
+        )
+    if executable in {"python", "python3"}:
+        return args in (
+            ["scripts/eval-teamwork.py", "--all"],
+            ["scripts/eval-teamwork.py", "--split", "dev"],
+            ["scripts/eval-teamwork.py", "--split", "release"],
+        )
     if executable == "sed":
         return _is_bounded_sed_read(args)
     if executable in {"head", "tail"}:
@@ -168,7 +202,17 @@ def _is_allowlisted_read_segment(tokens: Sequence[str]) -> bool:
         args = args[1:]
     if len(args) >= 2 and args[0] == "-C" and not args[1].startswith("-"):
         args = args[2:]
-    if not args or args[0] not in _GIT_READ_SUBCOMMANDS:
+    if not args:
+        return False
+    if args[0] == "branch":
+        return args == ["branch", "--show-current"]
+    if args[0] == "remote":
+        return args == ["remote", "-v"]
+    if args[0] == "config":
+        return len(args) == 4 and args[1:3] == ["--local", "--get-regexp"]
+    if args[0] == "notes":
+        return len(args) in {2, 3} and args[1] == "show"
+    if args[0] not in _GIT_READ_SUBCOMMANDS:
         return False
     return not any(
         value in {"--ext-diff", "--textconv", "--output"}
@@ -189,15 +233,29 @@ def _is_allowlisted_nonmutating_command(command: str) -> bool:
         return _is_allowlisted_nonmutating_command(tokens[2])
 
     segments: list[list[str]] = [[]]
-    for token in tokens:
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if (
+            index + 2 < len(tokens)
+            and token in {"0", "1", "2"}
+            and tokens[index + 1] == ">"
+            and tokens[index + 2] == "/dev/null"
+        ):
+            index += 3
+            continue
         if token in _COMMAND_SEPARATORS:
             if not segments[-1]:
                 return False
             segments.append([])
         elif token and all(character in "();<>|&" for character in token):
-            return False
+            if token in {"(", ")"}:
+                segments[-1].append(token)
+            else:
+                return False
         else:
             segments[-1].append(token)
+        index += 1
     return bool(segments[-1]) and all(
         _is_allowlisted_read_segment(segment) for segment in segments
     )
@@ -218,7 +276,7 @@ def event_class(event: Any) -> str:
         return "unknown-runtime"
     if item_type == "command_execution":
         command = item.get("command")
-        if event_type != "item.completed" or not isinstance(command, str):
+        if event_type not in {"item.started", "item.completed"} or not isinstance(command, str):
             return "unknown-runtime"
         return "command" if _is_allowlisted_nonmutating_command(command) else "unknown-runtime"
     return _RAW_EVENT_CLASSES.get((event_type, item_type, tool_name), "unknown-runtime")

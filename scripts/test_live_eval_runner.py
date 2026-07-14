@@ -34,9 +34,9 @@ RUNNER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(RUNNER)
 
 
-def command_event(command: str) -> dict[str, object]:
+def command_event(command: str, event_type: str = "item.completed") -> dict[str, object]:
     return {
-        "type": "item.completed",
+        "type": event_type,
         "item": {"type": "command_execution", "command": command},
     }
 
@@ -84,6 +84,44 @@ class GrillContractTests(unittest.TestCase):
         self.assertTrue(readonly_event_violations([synthetic_event("mutation")]))
         with self.assertRaises(ValueError):
             synthetic_event("invented")
+
+    def test_codex_0144_lifecycle_events_are_safe_metadata(self) -> None:
+        events = [
+            {"type": "thread.started", "thread_id": "thread-1"},
+            {"type": "turn.started"},
+            {"type": "item.started", "item": {"type": "agent_message", "id": "item-1"}},
+            {"type": "item.completed", "item": {"type": "error", "id": "item-2", "message": "redacted"}},
+            {"type": "turn.completed", "usage": {"input_tokens": 1}},
+        ]
+        self.assertEqual(readonly_event_violations(events), [])
+
+    def test_codex_0144_read_command_shapes_remain_fail_closed(self) -> None:
+        safe_commands = [
+            "/bin/zsh -lc \"nl -ba scripts/eval-teamwork.py | sed -n '1,80p'\"",
+            "/bin/zsh -lc \"rg --files | sort | sed -n '1,80p'\"",
+            "/bin/zsh -lc \"find . -path './.git' -prune -o -type f -print | sort\"",
+            "/bin/zsh -lc \"stat -f '%Sm %N' scripts/validate.sh; git branch --show-current; git remote -v\"",
+            "/bin/zsh -lc 'PYTHONDONTWRITEBYTECODE=1 python3 scripts/eval-teamwork.py --split dev'",
+            "/bin/zsh -lc \"rg -n Teamwork . 2>/dev/null || true\"",
+        ]
+        for command in safe_commands:
+            with self.subTest(command=command):
+                self.assertEqual(
+                    readonly_event_violations(
+                        [command_event(command, "item.started"), command_event(command)]
+                    ),
+                    [],
+                )
+        for command in (
+            "find . -delete",
+            "sort -o changed.txt README.md",
+            "sort -ochanged.txt README.md",
+            "sort -Tscratch README.md",
+            "python3 -c 'open(\"changed.txt\", \"w\").write(\"x\")'",
+            "printf x > changed.txt",
+        ):
+            with self.subTest(command=command):
+                self.assertTrue(readonly_event_violations([command_event(command)]))
 
 
 class LiveRecorderTests(unittest.TestCase):

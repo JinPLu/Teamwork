@@ -91,5 +91,6 @@ To include a project-local installation in the check:
 
 - [Changelog](CHANGELOG.en.md): user-visible changes in each release.
 - [Codex guide](CODEX.md), [Cursor guide](CURSOR.md), and [Claude Code guide](CLAUDE.md): platform setup and advanced usage.
+- [Repository architecture](docs/architecture.md): canonical sources, generated directories, stable commands, and change owners.
 - [Contributing](CONTRIBUTING.md): change scope and verification requirements.
 - [GitHub Issues](https://github.com/JinPLu/Teamwork/issues): problems and suggestions.

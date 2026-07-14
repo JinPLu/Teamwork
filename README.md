@@ -91,5 +91,6 @@ git pull --ff-only
 
 - [更新日志](CHANGELOG.md)：每个版本中用户能感受到的变化。
 - [Codex 指南](CODEX.md)、[Cursor 指南](CURSOR.md)、[Claude Code 指南](CLAUDE.md)：平台安装与高级用法。
+- [项目结构](docs/architecture.md)：canonical source、生成目录、稳定命令和变更 owner。
 - [参与贡献](CONTRIBUTING.md)：修改范围和验证要求。
 - [GitHub Issues](https://github.com/JinPLu/Teamwork/issues)：问题反馈与建议。

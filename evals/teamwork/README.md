@@ -118,6 +118,83 @@ PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_live_eval_runner.py
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_eval_teamwork_mutations.py
 ```
 
+### Opt-in installed-Codex semantic canary
+
+`scripts/run-installed-teamwork-live-eval.py` adds an isolated installed-package
+lane. It creates a new mode-0700 review directory, installs the selected Codex
+profile with copies under a temporary `HOME`, runs only case files that declare
+`read-only`, records an allowlisted installed-file manifest, and deletes the
+temporary home. The authentication source is copied to the temporary Codex home
+at mode 0600 and is never included in the manifest. The supplied work directory
+must be a Git worktree because the underlying recorder binds every result to
+repository provenance. The wrapper does not sanitize that worktree: a run from
+a checkout containing project-local `.agents/`, `.codex/`, `.cursor/`, or
+`.claude/` surfaces may be influenced by them. Use a clean committed snapshot
+without those generated roots when the treatment is meant to isolate the
+user-level installation. Start with the offline path,
+which performs the isolated install and asks the underlying runner for dry-run
+records without reading authentication or invoking a model:
+
+```bash
+python3 scripts/run-installed-teamwork-live-eval.py run \
+  --model gpt-5.6-sol \
+  --effort max \
+  --profile performance-first \
+  --workdir "$PWD" \
+  --cases evals/teamwork/live-cases/*.json \
+  --repeats 1 \
+  --timeout-seconds 1800 \
+  --max-trajectories 5 \
+  --review-dir /tmp/teamwork-installed-canary-dry \
+  --dry-run
+```
+
+For an intentional paid canary, choose another new review directory and provide
+the existing Codex authentication file explicitly. The product of case count and
+repeats must not exceed the explicit maximum:
+
+```bash
+python3 scripts/run-installed-teamwork-live-eval.py run \
+  --model gpt-5.6-sol \
+  --effort max \
+  --profile performance-first \
+  --workdir "$PWD" \
+  --cases evals/teamwork/live-cases/*.json \
+  --repeats 1 \
+  --timeout-seconds 1800 \
+  --max-trajectories 5 \
+  --review-dir /tmp/teamwork-installed-canary-live \
+  --auth-file "$HOME/.codex/auth.json"
+```
+
+Place exactly one external review per raw trajectory at
+`REVIEW_DIR/reviews/RUN_ID.json`, using
+`evals/teamwork/rubrics/teamwork-live-semantic-v1.json`. Finalization validates
+every review against the exact run and canonical trajectory hash before writing
+`summary.json`. Raw trajectories and review files are retained by default; use
+`--delete-raw` on the finalize invocation only when the retained reviews are
+ready and the raw trajectories no longer need inspection. Choose one of these
+finalization forms for a review directory:
+
+```bash
+python3 scripts/run-installed-teamwork-live-eval.py finalize \
+  --review-dir /tmp/teamwork-installed-canary-live \
+  --rubric evals/teamwork/rubrics/teamwork-live-semantic-v1.json
+
+python3 scripts/run-installed-teamwork-live-eval.py finalize \
+  --review-dir /tmp/teamwork-installed-canary-live \
+  --rubric evals/teamwork/rubrics/teamwork-live-semantic-v1.json \
+  --delete-raw
+```
+
+The manifest proves only which Teamwork skills, agents, policy, configuration,
+version, and profile files were available to that isolated Codex run. External
+review can judge the retained trajectory. Neither artifact proves automatic
+skill activation, general reliability, or equivalent behavior in Cursor or
+Claude Code. The summary retains statuses, model provenance, usage, reported
+cost, verdicts, scores, and hashes; it does not retain prompt, response, event,
+or reviewer-rationale prose.
+
 `scripts/codex_app_server_user_input.py` separately probes the Codex app-server
 `request_user_input` lifecycle when that capability is callable. It never mounts
 a skill, configures Codex, checks a CLI version, or treats native transport as

@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import copy
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -13,15 +12,26 @@ import sys
 import tempfile
 import unittest
 
+from teamwork_tooling.evaluation.cases import (
+    validate_case,
+    validate_discussion_handoff_case,
+)
+from teamwork_tooling.evaluation.contracts import EvalError, SKILL_SOURCE_CONTRACTS
+from teamwork_tooling.evaluation.sources import (
+    validate_discussion_source_text,
+    validate_discussion_template_text,
+    validate_mainline_focus_source_text,
+    validate_maintainer_release_source_text,
+    validate_minimality_source_text,
+    validate_release_boundary_source_text,
+    validate_semantic_source_text,
+    validate_skill_source_contract,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "eval-teamwork.py"
 OUTPUT = ROOT / "evals" / "teamwork" / "outputs" / "question-first" / "dev.jsonl"
-
-SPEC = importlib.util.spec_from_file_location("eval_teamwork", SCRIPT)
-assert SPEC and SPEC.loader
-EVAL = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(EVAL)
 
 
 class StaticOutputMutationTests(unittest.TestCase):
@@ -178,7 +188,7 @@ class CaseSchemaMutationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / f"{data['id']}.dev.json"
             path.write_text(json.dumps(data), encoding="utf-8")
-            EVAL.validate_case(
+            validate_case(
                 path,
                 {"assistance-quality", "behavioral-contracts"},
             )
@@ -186,7 +196,7 @@ class CaseSchemaMutationTests(unittest.TestCase):
     def test_expected_question_must_be_user_owned(self) -> None:
         data = self.load_case("grill-rename-ownership-contrast.dev.json")
         data["expected_asked_candidates"] = ["private_symbol_rename"]
-        with self.assertRaisesRegex(EVAL.EvalError, "expected question is not user-owned"):
+        with self.assertRaisesRegex(EvalError, "expected question is not user-owned"):
             self.validate(data)
 
     def test_retired_protocol_fields_are_rejected(self) -> None:
@@ -198,7 +208,7 @@ class CaseSchemaMutationTests(unittest.TestCase):
             with self.subTest(field=field):
                 data = self.load_case("grill-rename-ownership-contrast.dev.json")
                 data[field] = value
-                with self.assertRaisesRegex(EVAL.EvalError, "retired grill protocol fields"):
+                with self.assertRaisesRegex(EvalError, "retired grill protocol fields"):
                     self.validate(data)
 
     def test_internal_oracle_has_no_fixed_three_decision_ceiling(self) -> None:
@@ -219,13 +229,13 @@ class CaseSchemaMutationTests(unittest.TestCase):
     def test_ask_predicate_case_rejects_missing_coverage(self) -> None:
         data = self.load_case("review-bounded-recheck.dev.json")
         data["expected"]["requires"].remove("one_corrective_recheck")
-        with self.assertRaisesRegex(EVAL.EvalError, "ask-predicate coverage missing"):
+        with self.assertRaisesRegex(EvalError, "ask-predicate coverage missing"):
             self.validate(data)
 
     def test_ask_predicate_case_rejects_retired_lifecycle_terms(self) -> None:
         data = self.load_case("goal-dependent-branch-retry.dev.json")
         data["must"].append("Preserve the " + "Task Contract between attempts.")
-        with self.assertRaisesRegex(EVAL.EvalError, "retired lifecycle term remains"):
+        with self.assertRaisesRegex(EvalError, "retired lifecycle term remains"):
             self.validate(data)
 
     def test_review_case_locks_stable_ids_blockers_and_one_recheck(self) -> None:
@@ -239,20 +249,20 @@ class CaseSchemaMutationTests(unittest.TestCase):
     def test_working_facts_case_rejects_missing_dependency_behavior(self) -> None:
         data = self.load_case("working-facts-scope-correction.dev.json")
         data["expected"]["requires"].remove("stale_delegated_results_discarded")
-        with self.assertRaisesRegex(EVAL.EvalError, "Working Facts coverage missing"):
+        with self.assertRaisesRegex(EvalError, "Working Facts coverage missing"):
             self.validate(data)
 
     def test_minimality_case_rejects_missing_coverage(self) -> None:
         data = self.load_case("minimality-justified-surface.dev.json")
         data["expected"]["requires"].remove("no_code_golf")
-        with self.assertRaisesRegex(EVAL.EvalError, "minimality coverage missing"):
+        with self.assertRaisesRegex(EvalError, "minimality coverage missing"):
                 self.validate(data)
 
 
     def test_active_case_rejects_retired_stage_card_language(self) -> None:
         data = self.load_case("working-facts-scope-correction.dev.json")
         data["must"].append("Restore the " + "Stage Entry Card before continuing.")
-        with self.assertRaisesRegex(EVAL.EvalError, "retired workflow term remains"):
+        with self.assertRaisesRegex(EvalError, "retired workflow term remains"):
             self.validate(data)
 
     def test_update_refresh_case_locks_target_and_route(self) -> None:
@@ -266,7 +276,7 @@ class CaseSchemaMutationTests(unittest.TestCase):
                     data[field] = value
                 else:
                     data["expected"][field] = value
-                with self.assertRaisesRegex(EVAL.EvalError, error):
+                with self.assertRaisesRegex(EvalError, error):
                     self.validate(data)
 
     def test_maintainer_release_case_locks_target_and_route(self) -> None:
@@ -280,13 +290,13 @@ class CaseSchemaMutationTests(unittest.TestCase):
                     data[field] = value
                 else:
                     data["expected"][field] = value
-                with self.assertRaisesRegex(EVAL.EvalError, error):
+                with self.assertRaisesRegex(EvalError, error):
                     self.validate(data)
 
     def test_discussion_case_rejects_missing_contract_coverage(self) -> None:
         data = self.load_case("discussion-authorized-checkpoint.dev.json")
         data["expected"]["requires"].remove("material_checkpoint_only")
-        with self.assertRaisesRegex(EVAL.EvalError, "discussion coverage missing"):
+        with self.assertRaisesRegex(EvalError, "discussion coverage missing"):
             self.validate(data)
 
 
@@ -317,7 +327,7 @@ class SemanticSourceMutationTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         cls.skill_sources = {
             skill: (ROOT / path).read_text(encoding="utf-8")
-            for skill, (path, _) in EVAL.SKILL_SOURCE_CONTRACTS.items()
+            for skill, (path, _) in SKILL_SOURCE_CONTRACTS.items()
         }
 
     def assert_skill_contract_rejected(
@@ -326,8 +336,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
         source = self.skill_sources[skill]
         mutated = source.replace(old, new)
         self.assertNotEqual(mutated, source, f"mutation did not change {skill}")
-        with self.assertRaisesRegex(EVAL.EvalError, error):
-            EVAL.validate_skill_source_contract(skill, mutated)
+        with self.assertRaisesRegex(EvalError, error):
+            validate_skill_source_contract(skill, mutated)
 
     def assert_mainline_focus_rejected(
         self, source_name: str, old: str, new: str, error: str
@@ -340,8 +350,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
         mutated = sources[source_name].replace(old, new)
         self.assertNotEqual(mutated, sources[source_name], f"mutation did not change {source_name}")
         sources[source_name] = mutated
-        with self.assertRaisesRegex(EVAL.EvalError, error):
-            EVAL.validate_mainline_focus_source_text(
+        with self.assertRaisesRegex(EvalError, error):
+            validate_mainline_focus_source_text(
                 sources["grill"],
                 sources["project_init"],
                 sources["teamwork_init"],
@@ -352,24 +362,24 @@ class SemanticSourceMutationTests(unittest.TestCase):
             "one class: `BLOCKER`, `FOLLOW-UP`, or `SUGGESTION`",
             "one class: `blocker`, `major`, or `minor`",
         )
-        with self.assertRaisesRegex(EVAL.EvalError, "review taxonomy must be"):
-            EVAL.validate_semantic_source_text(mutated, self.goal, self.role_playbook)
+        with self.assertRaisesRegex(EvalError, "review taxonomy must be"):
+            validate_semantic_source_text(mutated, self.goal, self.role_playbook)
 
     def test_rejects_retired_role_playbook_severity_taxonomy(self) -> None:
         mutated = self.role_playbook.replace(
             "`BLOCKER | FOLLOW-UP | SUGGESTION` findings",
             "`blocker | major | minor` findings",
         )
-        with self.assertRaisesRegex(EVAL.EvalError, "role-playbook.md: review taxonomy must be"):
-            EVAL.validate_semantic_source_text(self.review, self.goal, mutated)
+        with self.assertRaisesRegex(EvalError, "role-playbook.md: review taxonomy must be"):
+            validate_semantic_source_text(self.review, self.goal, mutated)
 
     def test_rejects_goal_activation_merely_when_available(self) -> None:
         mutated = self.goal.replace(
             "only when the user explicitly requests Goal mode or\naccepts a Goal Proposal",
             "when available",
         )
-        with self.assertRaisesRegex(EVAL.EvalError, "explicit user request or accepted Goal Proposal"):
-            EVAL.validate_semantic_source_text(self.review, mutated, self.role_playbook)
+        with self.assertRaisesRegex(EvalError, "explicit user request or accepted Goal Proposal"):
+            validate_semantic_source_text(self.review, mutated, self.role_playbook)
 
     def test_goal_rejects_discarded_retry_invariants(self) -> None:
         self.assert_skill_contract_rejected(
@@ -465,8 +475,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
             "write the changelogs and release commit, create the tag, and publish the "
             "GitHub Release.\n"
         )
-        with self.assertRaisesRegex(EVAL.EvalError, "must not authorize maintainer publication"):
-            EVAL.validate_release_boundary_source_text(
+        with self.assertRaisesRegex(EvalError, "must not authorize maintainer publication"):
+            validate_release_boundary_source_text(
                 mutated,
                 self.skill_sources["using-teamwork"],
                 self.check_update,
@@ -476,8 +486,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_release_policy_rejects_duplication_outside_agents(self) -> None:
         mutated_codex = self.codex + "\nOne release unit contains VERSION and tags.\n"
-        with self.assertRaisesRegex(EVAL.EvalError, "must live only in root AGENTS.md"):
-            EVAL.validate_release_boundary_source_text(
+        with self.assertRaisesRegex(EvalError, "must live only in root AGENTS.md"):
+            validate_release_boundary_source_text(
                 self.skill_sources["teamwork-update"],
                 self.skill_sources["using-teamwork"],
                 self.check_update,
@@ -486,8 +496,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
             )
 
     def test_release_policy_rejects_restored_changelog_guide(self) -> None:
-        with self.assertRaisesRegex(EVAL.EvalError, "changelog-guide.md"):
-            EVAL.validate_release_boundary_source_text(
+        with self.assertRaisesRegex(EvalError, "changelog-guide.md"):
+            validate_release_boundary_source_text(
                 self.skill_sources["teamwork-update"],
                 self.skill_sources["using-teamwork"],
                 self.check_update,
@@ -501,8 +511,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
             "Write changelogs as internal engineering reports",
         )
         self.assertNotEqual(mutated, self.agents)
-        with self.assertRaisesRegex(EVAL.EvalError, "user-facing changelog"):
-            EVAL.validate_maintainer_release_source_text(mutated)
+        with self.assertRaisesRegex(EvalError, "user-facing changelog"):
+            validate_maintainer_release_source_text(mutated)
 
     def test_maintainer_release_rejects_partial_release_unit(self) -> None:
         mutated = self.agents.replace(
@@ -510,8 +520,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
             "One release unit contains VERSION only",
         )
         self.assertNotEqual(mutated, self.agents)
-        with self.assertRaisesRegex(EVAL.EvalError, "complete release unit"):
-            EVAL.validate_maintainer_release_source_text(mutated)
+        with self.assertRaisesRegex(EvalError, "complete release unit"):
+            validate_maintainer_release_source_text(mutated)
 
     def test_rejects_removed_or_inverted_minimality_boundaries(self) -> None:
         mutations = (
@@ -530,8 +540,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
         )
         for workflow_contract, error in mutations:
             with self.subTest(error=error):
-                with self.assertRaisesRegex(EVAL.EvalError, error):
-                    EVAL.validate_minimality_source_text(
+                with self.assertRaisesRegex(EvalError, error):
+                    validate_minimality_source_text(
                         workflow_contract, self.review_lenses
                     )
 
@@ -591,8 +601,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
             "docs/teamwork/discussion/", "docs/teamwork/discussions/"
         )
         self.assertNotEqual(mutated, protocol)
-        with self.assertRaisesRegex(EVAL.EvalError, "singular discussion path"):
-            EVAL.validate_discussion_source_text(
+        with self.assertRaisesRegex(EvalError, "singular discussion path"):
+            validate_discussion_source_text(
                 self.skill_sources["grill-me"],
                 self.skill_sources["using-teamwork"],
                 mutated,
@@ -626,8 +636,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
         for mutated, error in mutations:
             with self.subTest(error=error):
                 self.assertNotEqual(mutated, protocol)
-                with self.assertRaisesRegex(EVAL.EvalError, error):
-                    EVAL.validate_discussion_source_text(
+                with self.assertRaisesRegex(EvalError, error):
+                    validate_discussion_source_text(
                         self.skill_sources["grill-me"],
                         self.skill_sources["using-teamwork"],
                         mutated,
@@ -641,28 +651,28 @@ class SemanticSourceMutationTests(unittest.TestCase):
         ):
             with self.subTest(heading=heading):
                 mutated = self.discussion_template.replace(heading, f"## Removed {heading}")
-                with self.assertRaisesRegex(EVAL.EvalError, error):
-                    EVAL.validate_discussion_template_text(mutated)
+                with self.assertRaisesRegex(EvalError, error):
+                    validate_discussion_template_text(mutated)
 
     def test_discussion_template_requires_supporting_authority(self) -> None:
         mutated = self.discussion_template.replace(
             "Authority: supporting", "Authority: canonical"
         )
-        with self.assertRaisesRegex(EVAL.EvalError, "Authority: supporting"):
-            EVAL.validate_discussion_template_text(mutated)
+        with self.assertRaisesRegex(EvalError, "Authority: supporting"):
+            validate_discussion_template_text(mutated)
 
     def test_discussion_template_requires_textual_node_status(self) -> None:
         mutated = self.discussion_template.replace(
             'R2["R2 · Option A · open"]', 'R2["R2 · Option A"]'
         )
-        with self.assertRaisesRegex(EVAL.EvalError, "textual status"):
-            EVAL.validate_discussion_template_text(mutated)
+        with self.assertRaisesRegex(EvalError, "textual status"):
+            validate_discussion_template_text(mutated)
 
     def test_discussion_template_rejects_map_note_status_mismatch(self) -> None:
         mutated = self.discussion_template.replace("- Status: open", "- Status: accepted", 1)
         self.assertNotEqual(mutated, self.discussion_template)
-        with self.assertRaisesRegex(EVAL.EvalError, "status mismatch for R2"):
-            EVAL.validate_discussion_template_text(mutated)
+        with self.assertRaisesRegex(EvalError, "status mismatch for R2"):
+            validate_discussion_template_text(mutated)
 
     def test_discussion_template_rejects_mismatched_or_dangling_keys(self) -> None:
         mutations = (
@@ -675,14 +685,14 @@ class SemanticSourceMutationTests(unittest.TestCase):
         )
         for mutated in mutations:
             with self.subTest(mutated=mutated[-80:]):
-                with self.assertRaisesRegex(EVAL.EvalError, "Route Map/Route Notes keys"):
-                    EVAL.validate_discussion_template_text(mutated)
+                with self.assertRaisesRegex(EvalError, "Route Map/Route Notes keys"):
+                    validate_discussion_template_text(mutated)
 
     def test_discussion_template_rejects_undefined_edge_key(self) -> None:
         mutated = self.discussion_template.replace("R1 --> R3", "R1 --> R4")
         self.assertNotEqual(mutated, self.discussion_template)
-        with self.assertRaisesRegex(EVAL.EvalError, "undefined node keys: R4"):
-            EVAL.validate_discussion_template_text(mutated)
+        with self.assertRaisesRegex(EvalError, "undefined node keys: R4"):
+            validate_discussion_template_text(mutated)
 
     def test_discussion_template_rejects_note_details_in_diagram_labels(self) -> None:
         for field in ("Evidence", "Reason", "Mainline impact"):
@@ -691,16 +701,16 @@ class SemanticSourceMutationTests(unittest.TestCase):
                     'R2["R2 · Option A · open"]',
                     f'R2["R2 · Option A · open · {field}: benchmark"]',
                 )
-                with self.assertRaisesRegex(EVAL.EvalError, "diagram labels must not carry"):
-                    EVAL.validate_discussion_template_text(mutated)
+                with self.assertRaisesRegex(EvalError, "diagram labels must not carry"):
+                    validate_discussion_template_text(mutated)
 
     def test_discussion_template_requires_every_route_note_field(self) -> None:
         mutated = self.discussion_template.replace(
             "- Reason: <why this option remains open>",
             "- Rationale omitted: <why this option remains open>",
         )
-        with self.assertRaisesRegex(EVAL.EvalError, "Route Note R2 must include Reason"):
-            EVAL.validate_discussion_template_text(mutated)
+        with self.assertRaisesRegex(EvalError, "Route Note R2 must include Reason"):
+            validate_discussion_template_text(mutated)
 
     def test_discussion_handoff_rejects_repeated_answered_decision(self) -> None:
         path = ROOT / "evals/teamwork/cases/discussion-handoff-playback.dev.json"
@@ -711,8 +721,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
             "Current: The route is restored.\nOpen: one decision remains.\n"
             "Next: Should we use a dedicated discussion artifact?"
         )
-        with self.assertRaisesRegex(EVAL.EvalError, "repeats answered decision"):
-            EVAL.validate_discussion_handoff_case(data, path)
+        with self.assertRaisesRegex(EvalError, "repeats answered decision"):
+            validate_discussion_handoff_case(data, path)
 
 
 

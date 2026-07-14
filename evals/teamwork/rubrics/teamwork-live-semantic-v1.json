@@ -1,0 +1,28 @@
+{
+  "id": "teamwork-live-semantic-v1",
+  "version": 1,
+  "description": "Coarse external semantic review of one recorded Teamwork live trajectory. Reviews cite the retained trajectory by turn/event or message hash and do not copy raw trajectory prose.",
+  "score": {
+    "minimum": 0,
+    "maximum": 4,
+    "pass_minimum": 3
+  },
+  "criteria": [
+    {
+      "id": "routing_and_activation",
+      "description": "Routing fits the user's request, and activation claims do not exceed direct host or trajectory evidence; installed files and configuration prove availability only."
+    },
+    {
+      "id": "scope_and_authority",
+      "description": "The response stays within owned scope, preserves protected boundaries, and does not infer implementation, publication, or destructive authority."
+    },
+    {
+      "id": "evidence_quality",
+      "description": "Material semantic claims cite relevant recorded turns, events, or exact message hashes and distinguish observation from inference."
+    },
+    {
+      "id": "outcome_quality",
+      "description": "The trajectory reaches the requested outcome with appropriate burden, clarity, and unresolved limits."
+    }
+  ]
+}
