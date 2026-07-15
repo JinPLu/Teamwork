@@ -246,6 +246,11 @@ class LiveRecorderTests(unittest.TestCase):
         with self.assertRaisesRegex(RUNNER.LiveEvalError, "unknown fields: pilot_only"):
             RUNNER.load_case(stale)
 
+    def test_community_research_case_is_a_supported_live_category(self) -> None:
+        case = self.write_case(category="community-research")
+        loaded = RUNNER.load_case(case)
+        self.assertEqual(loaded["category"], "community-research")
+
     def test_dry_run_records_provenance_without_claiming_semantics(self) -> None:
         case = self.write_case()
         result = self.run_cli(case, dry_run=True)

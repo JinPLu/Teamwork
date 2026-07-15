@@ -4,6 +4,17 @@
 
 This changelog explains what changed for users. Maintainer implementation details belong in Git commits or pull requests.
 
+## 3.1.0 - 2026-07-15
+
+This release makes long discussions recoverable and ordinary replies easier to read.
+
+- Discussion continuity — Before: persistence depended on vague judgment and several hand-written files. After: observable continuity signals create one compact five-section summary—goal, settled choices, open question, key evidence, and continue point. A fresh session recovers only the unresolved item, does not re-ask settled choices, and clears the summary once the question is resolved. Short discussions remain artifact-free.
+- Audience-first replies — Before: engineering process, version details, invented labels, and repeated caveats could obscure the answer. After: replies lead with the conclusion, then only decision-relevant facts, mechanism, and next action. A useful skill name may still appear when it explains a capability or limit.
+- Safer project migration — Initialization can recover from process interruption under the project lock and rejects unknown files, malformed journals, and reused temporary resources instead of continuing from partial state.
+- To upgrade: From the Teamwork repository, run `./install.sh all`, then `./scripts/check-update.sh --readiness`. Existing projects do not need Teamwork package copies; run `./install.sh --project-root "<project-path>" init-project` when project context needs refreshing.
+
+Limit: live behavior was verified in one isolated Codex scenario. Fresh-thread recovery is not an actual host compaction test and does not establish Cursor or Claude Code runtime parity.
+
 ## 3.0.0 - 2026-07-15
 
 This release makes ordinary replies more direct and simplifies project setup.

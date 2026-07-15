@@ -5,7 +5,7 @@ Last Updated: YYYY-MM-DD
 ## Active Snapshot
 
 - Current focus:
-- Active discussion:
+- Active discussion: `none` or the exact `active.discussion` path from `index.json`.
 - Active plan/design:
 - Progress summary:
 - Latest result:

@@ -65,10 +65,11 @@ path. Explicitly ask to be questioned, challenged, or “grilled” to activate
 user-owned decision cannot be discovered safely.
 
 Replies lead with the conclusion or what it means, then why it matters and the
-decision or action next. They add technical detail when it helps or when you ask, rather than narrating
-internal workflow labels or version details. For a long task or handoff,
-Teamwork can keep a durable route map of the decisions and evidence that matter;
-ordinary requests do not need one.
+decision or action next. They add technical detail when it helps or when you ask,
+rather than narrating internal workflow labels or version details. When a long
+discussion needs continuity, Teamwork can save one compact summary of the goal,
+settled choices, open question, key evidence, and continue point; ordinary
+requests do not need one.
 
 Codex Plan mode and `teamwork-plan` share one planning path: Codex owns the host
 UI and plan state, while Teamwork grounds scope, required values, and

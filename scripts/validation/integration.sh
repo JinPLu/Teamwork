@@ -131,7 +131,27 @@ if git -C "$ROOT" grep -n -E 'raoctl|RAO|Stop hook|/rao:|/teamwork:' \
 fi
 rm -f /tmp/teamwork-retired-grep.$$
 
-tmp="$(mktemp -d)"
+tmp="$(cd "$(mktemp -d)" && pwd -P)"
+discussion_transaction_source="$ROOT/skills/using-teamwork/scripts/discussion-transaction.py"
+
+check_discussion_transaction_copy() {
+  local installed="$1"
+  local platform="$2"
+  [[ -f "$installed" ]] || fail "$platform install must copy discussion-transaction.py"
+  [[ ! -L "$installed" ]] || fail "$platform default install must copy discussion-transaction.py"
+  [[ -x "$installed" ]] || fail "$platform installed discussion-transaction.py must be executable"
+  cmp -s "$discussion_transaction_source" "$installed" \
+    || fail "$platform installed discussion-transaction.py must match source byte-for-byte"
+}
+
+check_using_teamwork_link() {
+  local installed="$1"
+  local platform="$2"
+  [[ -L "$installed" ]] || fail "$platform link install must symlink the using-teamwork skill directory"
+  [[ "$(cd "$installed" && pwd -P)" == "$(cd "$ROOT/skills/using-teamwork" && pwd -P)" ]] \
+    || fail "$platform using-teamwork skill link must resolve to source"
+}
+
 original_profile_marker="$ROOT/.teamwork-profile"
 original_profile_exists=0
 original_profile=""
@@ -186,6 +206,41 @@ HOME="$tmp/home" "$ROOT/scripts/check-update.sh" --readiness --no-fetch >/dev/nu
 
 [[ -f "$tmp/home/.codex/skills/using-teamwork/references/workflow-contract.md" ]] \
   || fail "Codex install must copy using-teamwork references"
+codex_discussion_transaction="$tmp/home/.codex/skills/using-teamwork/scripts/discussion-transaction.py"
+check_discussion_transaction_copy \
+  "$codex_discussion_transaction" \
+  "Codex"
+discussion_inspect_empty="$tmp/discussion-inspect-empty"
+mkdir -p "$discussion_inspect_empty"
+discussion_inspect_output="$(
+  "$codex_discussion_transaction" inspect --project-root "$discussion_inspect_empty"
+)"
+python3 - "$discussion_inspect_output" <<'PY'
+import json
+import sys
+
+result = json.loads(sys.argv[1])
+if result.get("initialized") is not False or result.get("active", object()) is not None:
+    raise SystemExit("FAIL: installed helper must report an empty safe project as uninitialized")
+if "revision" in result:
+    raise SystemExit("FAIL: an uninitialized project must not expose a discussion revision")
+PY
+
+discussion_inspect_partial="$tmp/discussion-inspect-partial"
+mkdir -p "$discussion_inspect_partial/docs/teamwork"
+printf '{}\n' > "$discussion_inspect_partial/docs/teamwork/index.json"
+if "$codex_discussion_transaction" inspect \
+  --project-root "$discussion_inspect_partial" >/dev/null 2>&1; then
+  fail "installed helper must fail closed on partially initialized Teamwork memory"
+fi
+
+discussion_inspect_unsafe="$tmp/discussion-inspect-unsafe"
+mkdir -p "$discussion_inspect_unsafe" "$tmp/discussion-inspect-unsafe-target"
+ln -s "$tmp/discussion-inspect-unsafe-target" "$discussion_inspect_unsafe/docs"
+if "$codex_discussion_transaction" inspect \
+  --project-root "$discussion_inspect_unsafe" >/dev/null 2>&1; then
+  fail "installed helper must fail closed on an unsafe Teamwork memory node"
+fi
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
   [[ -f "$tmp/home/.codex/agents/$agent.toml" ]] \
     || fail "Codex install must copy Codex agent $agent"
@@ -550,7 +605,7 @@ grep_required '^GitHub Release VERSION: unavailable$' "$tmp/release-state.out" \
 sed 's/tool_namespace = "teamwork"/tool_namespace = "collaboration"/' \
   "$routing_update_config" > "$tmp/stale-routing.toml"
 mv "$tmp/stale-routing.toml" "$routing_update_config"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-routing-stale.out"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-routing-stale.out" || true
 grep_required '^INSTALL_READY=no$' "$tmp/global-routing-stale.out" \
   "check-update readiness must fail on stale Codex routing"
 grep_required 'codex-routing' "$tmp/global-routing-stale.out" \
@@ -560,36 +615,36 @@ HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no
 grep_required '^CODEX_ROUTING=ready$' "$tmp/global-routing-ready.out" \
   "user refresh must repair Codex routing readiness"
 printf '\n# stale grill-me skill fixture\n' >> "$tmp/home-project-update/.codex/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-grill-skill-stale.out"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-grill-skill-stale.out" || true
 grep_required '^INSTALL_READY=no$' "$tmp/global-grill-skill-stale.out" \
   "check-update readiness must fail when installed grill-me content drifts"
 grep_required 'codex-skill-content' "$tmp/global-grill-skill-stale.out" \
   "check-update readiness must identify global Codex skill content drift"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
 rm "$tmp/home-project-update/.codex/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-codex-grill-missing.out"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-codex-grill-missing.out" || true
 grep_required 'codex-skills' "$tmp/global-codex-grill-missing.out" \
   "check-update readiness must identify missing Codex grill-me content"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
 rm "$tmp/home-project-update/.claude/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-grill-skill-missing.out"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-grill-skill-missing.out" || true
 grep_required '^INSTALL_READY=no$' "$tmp/global-grill-skill-missing.out" \
   "check-update readiness must fail when installed grill-me is missing"
 grep_required 'claude-skills' "$tmp/global-grill-skill-missing.out" \
   "check-update readiness must identify a missing global Claude skill"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
 printf '\n# stale Claude grill-me fixture\n' >> "$tmp/home-project-update/.claude/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-claude-grill-stale.out"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-claude-grill-stale.out" || true
 grep_required 'claude-skill-content' "$tmp/global-claude-grill-stale.out" \
   "check-update readiness must identify changed Claude grill-me content"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
 printf '\n# stale Cursor grill-me fixture\n' >> "$tmp/home-project-update/.cursor/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-cursor-grill-stale.out"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-cursor-grill-stale.out" || true
 grep_required 'cursor-skill-content' "$tmp/global-cursor-grill-stale.out" \
   "check-update readiness must identify changed Cursor grill-me content"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
 rm "$tmp/home-project-update/.cursor/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-cursor-grill-missing.out"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-cursor-grill-missing.out" || true
 grep_required 'cursor-skills' "$tmp/global-cursor-grill-missing.out" \
   "check-update readiness must identify missing Cursor grill-me content"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
@@ -639,12 +694,16 @@ HOME="$tmp/home-link" "$ROOT/install.sh" --link codex >/dev/null
 for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/home-link/.codex/skills/$skill" ]] || fail "link install must symlink $skill directory"
 done
+check_using_teamwork_link "$tmp/home-link/.codex/skills/using-teamwork" "Codex"
 
 HOME="$tmp/home-cursor" "$ROOT/install.sh" cursor >/dev/null
 for skill in "${SKILLS[@]}"; do
   [[ -f "$tmp/home-cursor/.cursor/skills/$skill/SKILL.md" ]] || fail "Cursor install missing $skill"
   [[ ! -L "$tmp/home-cursor/.cursor/skills/$skill/SKILL.md" ]] || fail "default Cursor install must copy $skill"
 done
+check_discussion_transaction_copy \
+  "$tmp/home-cursor/.cursor/skills/using-teamwork/scripts/discussion-transaction.py" \
+  "Cursor"
 for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do
   [[ -f "$tmp/home-cursor/.cursor/agents/$agent.md" ]] \
     || fail "Cursor install must copy Cursor agent $agent"
@@ -716,6 +775,9 @@ for skill in "${SKILLS[@]}"; do
 done
 [[ -f "$tmp/home-claude/.claude/skills/using-teamwork/references/workflow-contract.md" ]] \
   || fail "Claude Code install must copy using-teamwork references"
+check_discussion_transaction_copy \
+  "$tmp/home-claude/.claude/skills/using-teamwork/scripts/discussion-transaction.py" \
+  "Claude Code"
 for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do
   [[ -f "$tmp/home-claude/.claude/agents/$agent.md" ]] \
     || fail "Claude Code install must copy Claude agent $agent"
@@ -794,6 +856,7 @@ HOME="$tmp/home-claude-link" "$ROOT/install.sh" --link claude >/dev/null
 for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/home-claude-link/.claude/skills/$skill" ]] || fail "Claude Code link install must symlink $skill directory"
 done
+check_using_teamwork_link "$tmp/home-claude-link/.claude/skills/using-teamwork" "Claude Code"
 
 HOME="$tmp/home-claude-agents-link" "$ROOT/install.sh" --link claude-agents >/dev/null
 for agent in explore worker designer judge code-reviewer deep-judge deep-reviewer; do
@@ -809,6 +872,9 @@ for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/home-all/.cursor/skills/$skill" ]] || fail "all install must link Cursor skill $skill"
   [[ -L "$tmp/home-all/.claude/skills/$skill" ]] || fail "all install must link Claude skill $skill"
 done
+check_using_teamwork_link "$tmp/home-all/.codex/skills/using-teamwork" "Codex all"
+check_using_teamwork_link "$tmp/home-all/.cursor/skills/using-teamwork" "Cursor all"
+check_using_teamwork_link "$tmp/home-all/.claude/skills/using-teamwork" "Claude Code all"
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
   [[ -L "$tmp/home-all/.codex/agents/$agent.toml" ]] || fail "all install must link Codex agent $agent"
 done
@@ -847,7 +913,7 @@ python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/ind
 [[ -f "$init_root/docs/teamwork/current.md" ]] || fail "init-project must write current.md"
 [[ ! -e "$init_root/docs/teamwork/discussion" ]] \
   || fail "init-project must not create an empty or fake discussion artifact directory"
-python3 - "$init_root/docs/teamwork/index.json" "$init_root/docs/teamwork/discussion/preserved.md" <<'PY'
+python3 - "$init_root/docs/teamwork/index.json" "$init_root/docs/teamwork/discussion/$(date +%F)-preserved-discussion.md" <<'PY'
 import json
 import pathlib
 import sys
@@ -856,7 +922,8 @@ index_path = pathlib.Path(sys.argv[1])
 artifact_path = pathlib.Path(sys.argv[2])
 artifact_path.parent.mkdir(parents=True, exist_ok=True)
 index = json.loads(index_path.read_text(encoding="utf-8"))
-relative_artifact = "docs/teamwork/discussion/preserved.md"
+project_root = index_path.parents[2]
+relative_artifact = artifact_path.relative_to(project_root).as_posix()
 index["active"]["discussion"] = relative_artifact
 index["entries"].append({
     "topic": "preserved-discussion",
@@ -870,7 +937,61 @@ index["entries"].append({
     "summary": "Existing discussion pointer preserved across init reruns.",
 })
 index_path.write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
-artifact_path.write_text("# Preserved discussion\n", encoding="utf-8")
+current_path = index_path.parent / "current.md"
+current = current_path.read_text(encoding="utf-8")
+current = current.replace(
+    "- Active discussion: none.",
+    f"- Active discussion: {relative_artifact}.",
+)
+if relative_artifact not in current:
+    raise SystemExit("FAIL: initialized current.md did not expose the discussion anchor")
+current_path.write_text(current, encoding="utf-8")
+
+readme_path = index_path.parent / "README.md"
+readme = readme_path.read_text(encoding="utf-8")
+readme = readme.replace(
+    "- Active discussion route: none",
+    f"- Active discussion route: {relative_artifact}",
+)
+if relative_artifact not in readme:
+    raise SystemExit("FAIL: initialized runtime README did not expose the discussion anchor")
+readme_path.write_text(readme, encoding="utf-8")
+
+artifact_path.write_text(f"""Artifact Type: discussion
+Status: active
+Authority: supporting
+Last Updated: {index["last_updated"]}
+Search Keys: preserved discussion, init rerun
+Abstract: Preserve the active supporting route across project initialization.
+Linked Artifacts: none
+Superseded By: none
+
+# Preserve the discussion route across initialization
+
+## Goal
+
+Preserve a material decision route across an initialization rerun so later work
+does not lose continuity.
+
+## Settled
+
+- Retain the existing supporting route; recreating it from a raw transcript was
+  rejected because the saved artifact already carries the needed context.
+
+## Still open
+
+- Whether later evidence changes the active route.
+
+## Key evidence
+
+- The active pointer and both runtime anchors identify the same artifact,
+  establishing the route that the rerun must preserve.
+
+## Continue here
+
+Continue from the next decision-relevant evidence and update the artifact only
+if that evidence changes the route.
+""", encoding="utf-8")
 PY
 cp "$init_root/docs/teamwork/index.json" "$index_pointer_tmp/init-index-before-rerun.json"
 cp "$init_root/docs/teamwork/current.md" "$index_pointer_tmp/init-current-before-rerun.md"
@@ -952,14 +1073,24 @@ invalid_root="$tmp/init-project-invalid-index"
 mkdir -p "$invalid_root/docs/teamwork"
 printf '# Invalid Index Smoke\n' > "$invalid_root/README.md"
 printf '{"bad": true}\n' > "$invalid_root/docs/teamwork/index.json"
+cp "$invalid_root/docs/teamwork/index.json" "$index_pointer_tmp/invalid-index-before.json"
+invalid_rc=0
 invalid_output="$(
   HOME="$tmp/home-init-project-invalid" \
     TEAMWORK_INIT_CODEGRAPH=0 \
     TEAMWORK_INIT_CURSOR_POLICY_COPY=0 \
     "$ROOT/scripts/init-project.sh" --project-root "$invalid_root" --copy 2>&1
-)"
-printf '%s\n' "$invalid_output" | grep -q 'Teamwork memory: index invalid' \
-  || fail "init-project must report invalid existing Teamwork memory index"
+)" || invalid_rc=$?
+[[ "$invalid_rc" -ne 0 ]] \
+  || fail "init-project must fail closed on an invalid existing Teamwork memory index"
+printf '%s\n' "$invalid_output" | grep -q 'Teamwork project init refused' \
+  || fail "init-project must explain why invalid existing Teamwork memory was refused"
+cmp -s "$index_pointer_tmp/invalid-index-before.json" "$invalid_root/docs/teamwork/index.json" \
+  || fail "invalid existing Teamwork memory must remain byte-for-byte unchanged"
+[[ ! -e "$invalid_root/AGENTS.md" && ! -e "$invalid_root/.gitignore" ]] \
+  || fail "invalid existing Teamwork memory must fail before project output writes"
+[[ ! -e "$tmp/home-init-project-invalid" ]] \
+  || fail "invalid existing Teamwork memory must fail before global install writes"
 [[ ! -e "$tmp/home-init-project-invalid/.fake-codex-invocations" ]] \
   || fail "init-project must not invoke the host Codex CLI to manage interaction capabilities"
 HOME="$tmp/home-agents" "$ROOT/install.sh" --link claude-agents >/dev/null

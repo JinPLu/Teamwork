@@ -52,10 +52,11 @@ For planning, Teamwork grounds scope, required values, and verification in
 evidence. Confirming a plan does not authorize implementation.
 
 Replies lead with the conclusion or what it means, then why it matters and the
-decision or action next. They add technical detail when it helps or when you ask, rather than narrating
-internal workflow labels or version details. For a long task or handoff,
-Teamwork can keep a durable route map of the decisions and evidence that matter;
-ordinary requests do not need one.
+decision or action next. They add technical detail when it helps or when you ask,
+rather than narrating internal workflow labels or version details. When a long
+discussion needs continuity, Teamwork can save one compact summary of the goal,
+settled choices, open question, key evidence, and continue point; ordinary
+requests do not need one.
 
 ## Subagents
 
@@ -68,10 +69,10 @@ follows—rather than exposing coordination mechanics.
 
 ## Long Tasks And Handoffs
 
-When continuity is useful, Teamwork can keep a durable route map in a repository
-where the user has authorized writes. It is optional, not a requirement for
-ordinary replies. Repeated failures return to evidence gathering or debugging
-before another implementation attempt.
+When continuity is useful, Teamwork can save that compact summary in a repository
+where the user has authorized writes. It is supporting context, not execution
+authority and not a requirement for ordinary replies. Repeated failures return to
+evidence gathering or debugging before another implementation attempt.
 
 ## Evidence, Limits, And Updates
 

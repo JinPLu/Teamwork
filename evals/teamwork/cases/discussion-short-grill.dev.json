@@ -6,10 +6,10 @@
   "platforms": ["codex", "cursor", "claude"],
   "prompt": "Grill me on one bounded compatibility decision that can be resolved in this context without a handoff or material branch.",
   "expected": {
-    "requires": ["short_grill_artifact_free", "static_contract_only"]
+    "requires": ["short_grill_artifact_free", "short_grill_no_write", "static_contract_only"]
   },
   "must": [
-    "keep the short Grill artifact-free",
+    "keep the short Grill artifact-free and do not write discussion memory",
     "ask only the decision that can change the mainline"
   ],
   "must_not": [

@@ -88,11 +88,13 @@ claims. This lane measures only its recorded Codex host/model/mode trajectory;
 it does not establish Cursor or Claude parity. A missing session id fails
 without `--last` or fallback.
 
-All execution-critical inputs are explicit. Cases default to `read-only` by
-declaring it in the case file; `workspace-write` is permitted only when the
-individual case explicitly declares that sandbox. The tracked cases all remain
-read-only pilots. Use `--dry-run` in CI or before a live experiment to validate
-case and output schemas without invoking Codex:
+All execution-critical inputs are explicit. The tracked cases remain read-only
+pilots. Although the recorder can parse a `workspace-write` declaration, its
+structural gate intentionally rejects mutation; it is not evidence for a write
+workflow. Test a deliberate write only in a disposable project with the
+controlled discussion-lifecycle allowlist and a before/after manifest. Use
+`--dry-run` in CI or before a live experiment to validate case and output
+schemas without invoking Codex:
 
 ```bash
 python3 scripts/run-teamwork-live-eval.py \

@@ -13,6 +13,54 @@ from .contracts import *  # noqa: F403
 from .sources import normalize_semantic_text, validate_semantic_sources
 
 
+INTERNAL_RESEARCH_DETAIL_RE = re.compile(
+    r"(?i)\b(?:teamwork|workflow stage|evidence confidence ladder|version\s*\d|"
+    r"c8\s*(?:channel|label|lane)?|internal label)\b"
+)
+GENERIC_CAVEAT_RE = re.compile(
+    r"(?i)(?:not\s+proven|cannot\s+(?:prove|confirm|establish)|"
+    r"can't\s+(?:prove|confirm|establish)|does(?:n't|\s+not)\s+(?:prove|establish)|"
+    r"尚未证明|尚不能证明|不能证明|无法证明|未能证明|尚未证实|不能证实|不能据此证明|"
+    r"不能据此(?:确认|认定)|无法(?:确认|认定)|不能确认|不能断定)"
+)
+HYPOTHETICAL_CAUSE_SIGNALS = (
+    re.compile(r"(?i)\bnatural change\b|自然变化"),
+    re.compile(r"(?i)\btime(?: changes?)?\b|时间变化"),
+    re.compile(r"(?i)\benvironment\b|环境"),
+    re.compile(r"(?i)\bother (?:support|help)\b|其他(?:支持|帮助)"),
+    re.compile(r"(?i)\bparticipant differences?\b|参与者差异"),
+    re.compile(r"(?i)\bsubjective expectations?\b|主观期待"),
+)
+EXTRA_COMMUNITY_ACTION_RE = re.compile(
+    r"(?i)\b(?:expand|increase) the sample\b|\bcollect more feedback\b|"
+    r"扩大样本|增加样本|收集更多反馈|继续跟踪"
+)
+ATTRIBUTION_BOUNDARY_RE = re.compile(
+    r"(?i)(?:cannot|can't) tell how much[^.;。；]*came from|"
+    r"(?:无法|不能)(?:判断|确定)[^。；;]*有多少[^。；;]*来自"
+)
+IRRELEVANT_PROCESS_NARRATION_RE = re.compile(
+    r"(?i)(?:"
+    r"\b(?:i|we)\s+(?:(?:first|then)\s+)?(?:inspected|analyzed|validated|used|loaded|"
+    r"opened|routed|dispatched|ran|recovered)\b|"
+    r"\brouted\s+(?:this|the\s+(?:result|request|answer))\s+through\b|"
+    r"\bthe\s+workflow\s+(?:routed|validated|classified|recorded)\b"
+    r")"
+)
+FORCED_CAUSE_RE = re.compile(
+    r"(?i)\b(?:because|so that|in order to|it matters because)\b|"
+    r"\bwhich\s+(?:helps|ensures|prevents)\b"
+)
+FORCED_ACTION_RE = re.compile(
+    r"(?i)(?:"
+    r"\b(?:you should|please)\s+(?:run|execute)\b|"
+    r"\bnext[, :]\s*(?:run|execute)\b|"
+    r"(?:^|[;:,.!?]\s*)run\s+(?:it|this|the command)\b|"
+    r"\b(?:run|execute)\s+(?:it|this)\s+now\b"
+    r")"
+)
+
+
 def display_path(path: Path) -> str:
     try:
         return str(path.relative_to(ROOT))
@@ -71,10 +119,6 @@ def validate_discussion_handoff_case(data: dict[str, Any], path: Path) -> None:
 
     authored_output = "\n".join(assistant_turns)
     normalized_output = normalize_semantic_text(authored_output)
-    if "textual playback:" not in authored_output.casefold():
-        raise EvalError(
-            f"{display_path(path)}: handoff trajectory must include textual playback"
-        )
     for decision in answered:
         if normalize_semantic_text(decision) not in normalized_output:
             raise EvalError(
@@ -106,11 +150,54 @@ def validate_discussion_handoff_case(data: dict[str, Any], path: Path) -> None:
         )
 
 
+def validate_discussion_recovery_case(data: dict[str, Any], path: Path) -> None:
+    artifact = require_string(data.get("authored_artifact"), "authored_artifact", path)
+    if not re.search(r"(?m)^# (?!Discussion\s*$|<)[^\n]+$", artifact):
+        raise EvalError(
+            f"{display_path(path)}: recovery artifact must have a specific topic H1"
+        )
+
+    anchors = data.get("recovery_anchors")
+    required = {"goal", "settled", "still_open", "key_evidence", "continue_here"}
+    if not isinstance(anchors, dict) or set(anchors) != required:
+        raise EvalError(
+            f"{display_path(path)}: recovery_anchors must contain exactly the five recovery sections"
+        )
+    headings = {
+        "goal": "Goal",
+        "settled": "Settled",
+        "still_open": "Still open",
+        "key_evidence": "Key evidence",
+        "continue_here": "Continue here",
+    }
+    for key in sorted(required):
+        anchor = require_string(anchors.get(key), f"recovery_anchors.{key}", path)
+        heading = headings[key]
+        match = re.search(
+            rf"(?ms)^## {re.escape(heading)}\s*$\n(.*?)(?=^## |\Z)", artifact
+        )
+        if not match:
+            raise EvalError(
+                f"{display_path(path)}: recovery artifact missing {heading} section"
+            )
+        if normalize_semantic_text(anchor) not in normalize_semantic_text(match.group(1)):
+            raise EvalError(
+                f"{display_path(path)}: {heading} loses its human recovery anchor"
+            )
+
+    retired = ("Route Map", "Textual Playback", "Update Rules", "Decision State")
+    if any(re.search(rf"(?m)^## {re.escape(heading)}\s*$", artifact) for heading in retired):
+        raise EvalError(
+            f"{display_path(path)}: recovery artifact retains a retired required section"
+        )
+
+
 def validate_audience_reply_case(data: dict[str, Any], path: Path) -> None:
     """Keep the authored community-research contrast useful as an offline oracle.
 
     The checks intentionally validate a compact, authored positive response and
-    explicit negative controls. They do not claim to score arbitrary model prose.
+    explicit negative controls. They do not claim to score arbitrary model prose
+    or establish live model behavior.
     """
 
     response = require_string(data.get("authored_response"), "authored_response", path)
@@ -137,9 +224,9 @@ def validate_audience_reply_case(data: dict[str, Any], path: Path) -> None:
             )
 
     first_sentence = response.split(".", 1)[0]
-    if re.search(r"(?i)\b(?:i|we)\s+(?:first\s+)?(?:inspected|analyzed|validated|used)\b", first_sentence):
+    if IRRELEVANT_PROCESS_NARRATION_RE.search(response):
         raise EvalError(
-            f"{display_path(path)}: authored_response opens with workflow narration"
+            f"{display_path(path)}: authored_response includes irrelevant workflow narration"
         )
     if normalize_semantic_text(checks["opening_conclusion"]) not in normalize_semantic_text(
         first_sentence
@@ -147,9 +234,28 @@ def validate_audience_reply_case(data: dict[str, Any], path: Path) -> None:
         raise EvalError(
             f"{display_path(path)}: authored_response must lead with the conclusion"
         )
-    if re.search(r"(?i)\b(?:teamwork|workflow stage|evidence confidence ladder|version\s*\d)", response):
+    if INTERNAL_RESEARCH_DETAIL_RE.search(response):
         raise EvalError(
             f"{display_path(path)}: authored_response exposes irrelevant internal detail"
+        )
+    if GENERIC_CAVEAT_RE.search(normalized_response):
+        raise EvalError(
+            f"{display_path(path)}: authored_response uses a generic proof-status caveat"
+        )
+    cause_signals = sum(
+        bool(pattern.search(response)) for pattern in HYPOTHETICAL_CAUSE_SIGNALS
+    )
+    if cause_signals >= 2:
+        raise EvalError(
+            f"{display_path(path)}: authored_response lists imagined alternative causes"
+        )
+    if EXTRA_COMMUNITY_ACTION_RE.search(response):
+        raise EvalError(
+            f"{display_path(path)}: authored_response adds a second independent next action"
+        )
+    if len(ATTRIBUTION_BOUNDARY_RE.findall(response)) > 1:
+        raise EvalError(
+            f"{display_path(path)}: authored_response repeats the attribution boundary"
         )
 
     controls = data.get("negative_controls")
@@ -175,23 +281,25 @@ def validate_audience_reply_case(data: dict[str, Any], path: Path) -> None:
             raise EvalError(f"{display_path(path)}: duplicate negative control: {control_id}")
         seen_controls.add(control_id)
         normalized = normalize_semantic_text(text)
-        if control_id == "workflow_narration" and not re.search(
-            r"\b(?:i|we)\s+(?:first\s+)?(?:inspected|analyzed|validated|used)\b|\bworkflow\b",
-            normalized,
-        ):
+        if control_id == "workflow_narration" and not IRRELEVANT_PROCESS_NARRATION_RE.search(text):
             raise EvalError(
                 f"{display_path(path)}: workflow_narration control no longer demonstrates workflow leakage"
             )
-        if control_id == "irrelevant_internal_detail" and not re.search(
-            r"\b(?:version\s*\d|evidence confidence ladder|internal label)\b",
-            normalized,
-        ):
-            raise EvalError(
-                f"{display_path(path)}: irrelevant_internal_detail control no longer demonstrates the relevance failure"
+        if control_id == "irrelevant_internal_detail":
+            has_version = bool(re.search(r"\bversion\s*\d", normalized))
+            has_self_invented_label = bool(
+                re.search(
+                    r"\b(?:c8\s*(?:channel|label|lane)?|evidence confidence ladder|internal label)\b",
+                    normalized,
+                )
             )
-        if control_id == "generic_caveat_repetition" and normalized.count("not proven") < 2:
+            if not has_version or not has_self_invented_label:
+                raise EvalError(
+                    f"{display_path(path)}: irrelevant_internal_detail control must combine a version with a self-invented label"
+                )
+        if control_id == "generic_caveat_repetition" and len(GENERIC_CAVEAT_RE.findall(normalized)) < 2:
             raise EvalError(
-                f"{display_path(path)}: generic_caveat_repetition control must repeat a generic caveat"
+                f"{display_path(path)}: generic_caveat_repetition control must repeat a generic caveat in English or Chinese"
             )
         if control_id == "false_certainty" and not re.search(
             r"\b(?:the program worked|proves the program worked|definitely caused)\b",
@@ -204,6 +312,193 @@ def validate_audience_reply_case(data: dict[str, Any], path: Path) -> None:
         raise EvalError(
             f"{display_path(path)}: negative_controls must cover "
             f"{', '.join(sorted(expected_controls))}"
+        )
+
+
+def validate_skill_explanation_contrast_case(data: dict[str, Any], path: Path) -> None:
+    """Keep skill relevance distinct from engineering-process leakage."""
+
+    response = require_string(data.get("authored_response"), "authored_response", path)
+    normalized_response = normalize_semantic_text(response)
+    for anchor in ("teamwork-review", "read-only", "authorization"):
+        if normalize_semantic_text(anchor) not in normalized_response:
+            raise EvalError(
+                f"{display_path(path)}: useful skill explanation loses {anchor}"
+            )
+    if (
+        "skills/" in response.casefold()
+        or "subagent" in normalized_response
+        or re.search(r"\b\d+\s+tests?\b", normalized_response)
+    ):
+        raise EvalError(
+            f"{display_path(path)}: useful skill explanation includes engineering process inventory"
+        )
+    if IRRELEVANT_PROCESS_NARRATION_RE.search(response):
+        raise EvalError(
+            f"{display_path(path)}: useful skill explanation includes irrelevant route or workflow narration"
+        )
+    if "\n" in response or len(response) > 180:
+        raise EvalError(
+            f"{display_path(path)}: useful skill explanation must stay brief"
+        )
+
+    control = data.get("negative_control")
+    if not isinstance(control, dict) or set(control) != {"id", "response"}:
+        raise EvalError(
+            f"{display_path(path)}: negative_control must contain exactly id and response"
+        )
+    if control.get("id") != "engineering_process_dump":
+        raise EvalError(
+            f"{display_path(path)}: negative_control must be engineering_process_dump"
+        )
+    dumped = normalize_semantic_text(
+        require_string(control.get("response"), "negative_control.response", path)
+    )
+    required_dump_signals = ("skills/teamwork-review/skill.md", "subagent", "42 tests")
+    missing = [
+        signal
+        for signal in required_dump_signals
+        if normalize_semantic_text(signal) not in dumped
+    ]
+    if missing:
+        raise EvalError(
+            f"{display_path(path)}: engineering process dump loses: {', '.join(missing)}"
+        )
+    if not IRRELEVANT_PROCESS_NARRATION_RE.search(control["response"]):
+        raise EvalError(
+            f"{display_path(path)}: engineering process dump loses irrelevant route or workflow narration"
+        )
+
+
+def validate_one_sentence_fact_control(data: dict[str, Any], path: Path) -> None:
+    """Protect a simple fact from mandatory explanation or action padding."""
+
+    response = require_string(data.get("authored_response"), "authored_response", path)
+    fact = require_string(data.get("fact_anchor"), "fact_anchor", path)
+    if normalize_semantic_text(fact) not in normalize_semantic_text(response):
+        raise EvalError(f"{display_path(path)}: one-sentence control loses the fact")
+    if "\n" in response or len(re.findall(r"[.!?。！？](?:\s|$)", response)) != 1:
+        raise EvalError(
+            f"{display_path(path)}: simple fact must remain one sentence"
+        )
+    if len(response.split()) > 12:
+        raise EvalError(
+            f"{display_path(path)}: simple fact exceeds the shortest complete answer"
+        )
+    if FORCED_CAUSE_RE.search(response):
+        raise EvalError(
+            f"{display_path(path)}: simple fact adds a forced causal explanation"
+        )
+    if FORCED_ACTION_RE.search(response):
+        raise EvalError(f"{display_path(path)}: simple fact adds a forced action")
+
+    controls = data.get("negative_controls")
+    if not isinstance(controls, list) or len(controls) != 2:
+        raise EvalError(
+            f"{display_path(path)}: one-sentence control must contain forced-cause and forced-action controls"
+        )
+    expected_controls = {"forced_cause", "forced_action"}
+    seen_controls: set[str] = set()
+    for index, control in enumerate(controls, start=1):
+        if not isinstance(control, dict) or set(control) != {"id", "response"}:
+            raise EvalError(
+                f"{display_path(path)}: fact negative control {index} must contain exactly id and response"
+            )
+        control_id = require_string(control.get("id"), "negative_controls.id", path)
+        text = require_string(control.get("response"), "negative_controls.response", path)
+        if control_id in seen_controls:
+            raise EvalError(f"{display_path(path)}: duplicate fact negative control: {control_id}")
+        seen_controls.add(control_id)
+        if control_id == "forced_cause" and not FORCED_CAUSE_RE.search(text):
+            raise EvalError(
+                f"{display_path(path)}: forced_cause control loses its causal padding"
+            )
+        if control_id == "forced_action" and not FORCED_ACTION_RE.search(text):
+            raise EvalError(
+                f"{display_path(path)}: forced_action control loses its action padding"
+            )
+    if seen_controls != expected_controls:
+        raise EvalError(
+            f"{display_path(path)}: fact negative controls must cover "
+            f"{', '.join(sorted(expected_controls))}"
+        )
+
+
+def _question_texts(text: str) -> list[str]:
+    """Return authored question fragments without claiming semantic parsing."""
+
+    return [fragment.strip() for fragment in re.findall(r"[^.?!？\n]*[?？]", text)]
+
+
+def validate_mainline_distraction_case(data: dict[str, Any], path: Path) -> None:
+    """Validate authored anchors for a mainline-versus-detail contrast.
+
+    This protects the fixture itself. The matching output sample remains an
+    authored static contract, not evidence that an arbitrary model will retain
+    the mainline in a live conversation.
+    """
+
+    mainline_anchor = require_string(data.get("mainline_anchor"), "mainline_anchor", path)
+    question_anchor = require_string(data.get("question_anchor"), "question_anchor", path)
+    distractions = require_string_list(
+        data.get("implementation_distractions"), "implementation_distractions", path
+    )
+    if len(distractions) < 2:
+        raise EvalError(
+            f"{display_path(path)}: mainline distraction fixture needs at least two implementation details"
+        )
+    if normalize_semantic_text(mainline_anchor) == normalize_semantic_text(question_anchor):
+        raise EvalError(
+            f"{display_path(path)}: mainline and question anchors must describe different parts of the response"
+        )
+
+
+def validate_mainline_distraction_output(
+    case: dict[str, Any], trajectory: list[dict[str, Any]], path: Path, index: int
+) -> None:
+    """Ensure the authored Grill trajectory asks the public decision, not a detail."""
+
+    question_turns = [
+        turn
+        for turn in trajectory
+        if turn["asked_candidates"] == ["public_claim_scope"]
+    ]
+    if len(question_turns) != 1:
+        raise EvalError(
+            f"{display_path(path)}:{index}: mainline distraction fixture must ask exactly the public_claim_scope decision"
+        )
+    question_turn = question_turns[0]["assistant"]
+    normalized_turn = normalize_semantic_text(question_turn)
+    for field in ("mainline_anchor", "question_anchor"):
+        anchor = normalize_semantic_text(case[field])
+        if anchor not in normalized_turn:
+            raise EvalError(
+                f"{display_path(path)}:{index}: mainline distraction fixture does not preserve {field}"
+            )
+
+    question_texts = _question_texts(question_turn)
+    if len(question_texts) != 1:
+        raise EvalError(
+            f"{display_path(path)}:{index}: mainline distraction fixture must contain one public-decision question"
+        )
+    normalized_question = normalize_semantic_text(question_texts[0])
+    for detail in case["implementation_distractions"]:
+        if normalize_semantic_text(detail) in normalized_question:
+            raise EvalError(
+                f"{display_path(path)}:{index}: implementation detail displaced the public-decision question: {detail}"
+            )
+
+    authored_reply = "\n".join(turn["assistant"] for turn in trajectory)
+    normalized_reply = normalize_semantic_text(authored_reply)
+    exposed = [
+        detail
+        for detail in case["implementation_distractions"]
+        if normalize_semantic_text(detail) in normalized_reply
+    ]
+    if exposed:
+        raise EvalError(
+            f"{display_path(path)}:{index}: ordinary reply exposes irrelevant implementation detail: "
+            + ", ".join(exposed)
         )
 
 
@@ -397,8 +692,29 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
                 f"{display_path(path)}: discussion coverage missing: "
                 f"{', '.join(missing_discussion)}"
             )
-        if case_id == "discussion-handoff-playback":
+        if case_id == "discussion-handoff-recovery":
             validate_discussion_handoff_case(data, path)
+        if case_id == "discussion-human-recovery":
+            validate_discussion_recovery_case(data, path)
+        if case_id == "discussion-resume-no-new-input":
+            normalized_must = normalize_semantic_text("\n".join(data["must"]))
+            normalized_must_not = normalize_semantic_text("\n".join(data["must_not"]))
+            for phrase in (
+                "run inspect and ask the saved unresolved question",
+                "keep the resume read-only when the user provides no new decision, evidence, or continuation point",
+            ):
+                if normalize_semantic_text(phrase) not in normalized_must:
+                    raise EvalError(
+                        f"{display_path(path)}: no-input resume must preserve {phrase}"
+                    )
+            for phrase in (
+                "run schema or apply",
+                "invent new facts or refine the saved question on the user's behalf",
+            ):
+                if normalize_semantic_text(phrase) not in normalized_must_not:
+                    raise EvalError(
+                        f"{display_path(path)}: no-input resume must forbid {phrase}"
+                    )
 
     for label, required_cases in (
         ("audience", REQUIRED_AUDIENCE_CASES),
@@ -423,6 +739,12 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
             )
     if case_id == "audience-first-community-research":
         validate_audience_reply_case(data, path)
+    if case_id == "audience-skill-explanation-contrast":
+        validate_skill_explanation_contrast_case(data, path)
+    if case_id == "audience-one-sentence-fact-control":
+        validate_one_sentence_fact_control(data, path)
+    if case_id == "grill-question-value-stop":
+        validate_mainline_distraction_case(data, path)
 
     if case_id in SEMANTIC_QUESTION_CASES:
         retired = sorted(
@@ -836,6 +1158,8 @@ def validate_question_first_outputs(cases_by_id: dict[str, dict[str, Any]]) -> i
                     for turn in trajectory
                 ):
                     raise EvalError(f"{display_path(output_path)}:{index}: fact lookup fixture lacks bounded evidence")
+            if case_id == "grill-question-value-stop":
+                validate_mainline_distraction_output(case, trajectory, output_path, index)
         if case_id in GRILL_CONTROL_CASES:
             assistant_text = "\n".join(turn["assistant"].lower() for turn in trajectory)
             if has_legacy_grill_ceremony(assistant_text):

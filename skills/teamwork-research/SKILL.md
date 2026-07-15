@@ -17,8 +17,8 @@ debug route, or plan-ready recommendation without implementing the change.
 Use when source of truth, current behavior, repro surface, alternatives, or risk
 is unclear. Treat a supplied article, URL, paper, repo, or report as seed
 evidence, not the research boundary. Route reproducible runtime failures to
-`teamwork-debug`; skip research only when direct evidence already resolves the
-uncertainty.
+`teamwork-debug`. Do not enter merely to explain supplied facts when no lookup
+or stale-assumption check is needed; return to Native.
 
 ## Do And Boundaries
 

@@ -107,19 +107,29 @@ def validate_always_loaded_policy_text(policy_text: str) -> None:
             ("request scope", "work within the user's request"),
             (
                 "root translation",
-                "the root owns user questions and translates results",
+                "root owns user questions and translates results",
+            ),
+            (
+                "specific Ask Gate",
+                "ask only when user must supply required input/observation or owns a material decision",
             ),
             (
                 "read-only stage boundary",
-                "research/debug/plan/review are read-only absent change authority",
+                "research/debug/plan/review stay read-only absent change authority",
             ),
             (
                 "research and debug routing",
                 "route unknown facts/options/repro to research; unknown-cause failures to debug",
             ),
+            ("grounded claims", "ground claims"),
+            ("scope boundary", "keep scope"),
+            (
+                "material decision routing",
+                "material scope/contract/architecture/acceptance decisions to plan",
+            ),
             (
                 "explicit Grill boundary",
-                "grill only for explicit requests or material non-simple plans",
+                "grill only: explicit requests or non-simple plans",
             ),
             (
                 "inert marker boundary",
@@ -127,15 +137,35 @@ def validate_always_loaded_policy_text(policy_text: str) -> None:
             ),
             (
                 "audience-first reply",
-                "default user-facing replies: lead with conclusion, why it matters, causal explanation, and useful action when relevant",
+                "lead with the needed conclusion",
             ),
             (
-                "relevance gate",
-                "omit versions, unexplained/self-invented labels, process narration, and repeated generic caveats unless requested or material",
+                "evidence-derived explanation",
+                "derive explanations from observed facts and a plain mechanism",
+            ),
+            (
+                "conditional explanation and action",
+                "add useful cause/limits/action",
+            ),
+            (
+                "shortest complete answer",
+                "use the shortest complete answer",
+            ),
+            (
+                "useful skill explanation",
+                "briefly name skills for capability/limits/choice",
+            ),
+            (
+                "irrelevant engineering inventory",
+                "omit engineering/process inventory that cannot change understanding, decisions, action, risk, or confidence",
             ),
             (
                 "specific material uncertainty",
-                "state material uncertainty once: unknown, impact, and needed evidence",
+                "state uncertainty once: unknown, impact, needed evidence",
+            ),
+            (
+                "missing-discriminator uncertainty",
+                "for no-comparison results use only: “the signal is promising, but we cannot tell how much came from x; next compare with a similar group.” stop; omit proof status and cause lists",
             ),
         ),
     )
@@ -160,20 +190,67 @@ def validate_audience_source_text(workflow_contract_text: str) -> None:
         "audience-first contract",
         (
             (
-                "audience-first conclusion",
-                "default to audience-first replies: lead with the conclusion and why it matters",
+                "conclusion-first user need",
+                "lead with the conclusion the user needs",
             ),
-            ("plain causal explanation", "the shortest plain causal explanation"),
+            (
+                "evidence-derived explanation",
+                "when explanation is needed, derive it from observed facts and a plain-language mechanism",
+            ),
+            (
+                "conditional cause or action",
+                "add a cause, limitation, or next step only when it helps that current need",
+            ),
+            (
+                "no fixed answer template",
+                "first-principles reasoning is an evidence discipline, not a fixed section template or reason to delay the answer",
+            ),
+            (
+                "shortest complete answer",
+                "use the shortest complete answer, and keep a simple fact to one sentence",
+            ),
+            (
+                "stop after the decision boundary",
+                "once the conclusion and decision boundary are clear, stop; do not restate them",
+            ),
             ("relevance gate", "use a relevance gate"),
             (
-                "irrelevant-detail omission",
-                "omit versions, unexplained or self-invented labels, engineering/process narration",
+                "decision-relevant detail",
+                "change the user's understanding, decision, action, risk, or confidence",
+            ),
+            (
+                "useful skill explanation",
+                "a brief skill name or explanation is allowed when it clarifies a capability, limitation, or reason for the approach",
+            ),
+            (
+                "irrelevant engineering inventory",
+                "omit engineering process and implementation inventory—such as routes, files, subagents, and test counts—",
+            ),
+            (
+                "irrelevant versions and labels",
+                "omit irrelevant versions, unexplained or self-invented labels",
+            ),
+            (
+                "concrete evidence boundary",
+                "prefer the concrete boundary—what the evidence supports and what it cannot attribute—over a stock caveat",
+            ),
+            (
+                "generic proof-status omission",
+                "for no-comparison results, use one conclusion and one action: “the signal is promising, but we cannot tell how much came from x; next compare with a similar group.” stop; omit proof status and imagined causes",
+            ),
+            (
+                "missing-discriminator explanation",
+                "otherwise name the missing comparison, measurement, or observation",
+            ),
+            (
+                "alternative-cause relevance",
+                "mention an alternative cause only when it changes action or confidence",
             ),
             (
                 "specific material uncertainty",
-                "state material uncertainty once: what is unknown, why it matters, and the evidence or action that would resolve it",
+                "state material uncertainty once: unknown, impact, and what resolves it",
             ),
-            ("no false certainty", "never turn uncertainty into certainty"),
+            ("no false certainty", "never turn it into certainty"),
         ),
     )
 
@@ -265,75 +342,38 @@ def validate_discussion_template_text(template_text: str) -> None:
         raise EvalError(f"{path}: header must declare Artifact Type: discussion")
     if not re.search(r"(?m)^Authority: supporting\s*$", template_text):
         raise EvalError(f"{path}: header must declare Authority: supporting")
+    if not re.search(
+        r"(?m)^# <Specific decision or continuation title>\s*$", template_text
+    ):
+        raise EvalError(f"{path}: template must require a specific topic H1")
 
-    starting_question = discussion_section(template_text, "Starting Question")
-    for field in ("Mainline or project goal", "Decision", "Why now"):
-        if not re.search(rf"(?mi)^- {re.escape(field)}:\s*\S", starting_question):
-            raise EvalError(f"{path}: Starting Question must include {field}")
-
-    decision_state = discussion_section(template_text, "Decision State")
-    for field in ("Decisions", "Open", "Rejected", "Evidence", "Resume point", "Promotion"):
-        if not re.search(rf"(?mi)^- {re.escape(field)}:\s*\S", decision_state):
-            raise EvalError(f"{path}: Decision State must include {field}")
-
-    route_map = discussion_section(template_text, "Route Map")
-    mermaid = re.search(r"(?ms)```mermaid\s*\n(.*?)```", route_map)
-    if not mermaid or not re.search(r"(?m)^\s*flowchart\b", mermaid.group(1)):
-        raise EvalError(f"{path}: Route Map must contain a Mermaid flowchart")
-    diagram = mermaid.group(1)
-    nodes = re.findall(r'(?m)^\s*(R[1-9][0-9]*)\s*\["([^"]+)"\]\s*$', diagram)
-    if not nodes:
-        raise EvalError(f"{path}: Route Map must define artifact-local R<number> nodes")
-    map_keys = [key for key, _ in nodes]
-    if len(map_keys) != len(set(map_keys)):
-        raise EvalError(f"{path}: Route Map node keys must be unique")
-    undefined = sorted(
-        {
-            key
-            for edge in re.findall(
-                r"(?m)^\s*(R[1-9][0-9]*)\s*-->\s*(R[1-9][0-9]*)\s*$",
-                diagram,
-            )
-            for key in edge
-            if key not in set(map_keys)
-        }
+    required_sections = {
+        "Goal": ("objective", "mainline or project goal"),
+        "Settled": ("settled choice", "why it was chosen"),
+        "Still open": ("unresolved item", "why it matters"),
+        "Key evidence": ("source or observation", "established"),
+        "Continue here": ("exact next question or action", "evidence needed"),
+    }
+    headings = re.findall(r"(?m)^## ([^\n]+)\s*$", template_text)
+    retired = sorted(
+        set(headings)
+        & {"Starting Question", "Decision State", "Route Map", "Textual Playback", "Update Rules"}
     )
-    if undefined:
-        raise EvalError(
-            f"{path}: Route Map edges reference undefined node keys: "
-            + ", ".join(undefined)
-        )
-    for key, label in nodes:
-        if not normalize_semantic_text(label).startswith(key.casefold() + " "):
-            raise EvalError(f"{path}: diagram node {key} must include its artifact-local key")
-        if re.search(r"(?i)\b(?:evidence|outcome|reason|mainline impact)\s*:", label):
-            raise EvalError(f"{path}: Route Map must not duplicate Decision State details")
+    if retired:
+        raise EvalError(f"{path}: template retains retired section(s): {', '.join(retired)}")
+    unexpected = sorted(set(headings) - set(required_sections) - {"Decision map"})
+    if unexpected:
+        raise EvalError(f"{path}: template has unexpected recovery section(s): {', '.join(unexpected)}")
+    for heading, anchors in required_sections.items():
+        section = normalize_semantic_text(discussion_section(template_text, heading))
+        for anchor in anchors:
+            if normalize_semantic_text(anchor) not in section:
+                raise EvalError(f"{path}: {heading} must preserve {anchor}")
 
-    playback = discussion_section(template_text, "Textual Playback")
-    if "```" in playback or re.search(r"(?m)^\s*\|.*\|\s*$", playback):
-        raise EvalError(f"{path}: Textual Playback must be plain text")
-    normalized_playback = normalize_semantic_text(playback)
-    for anchor in (
-        "starting question",
-        "evidence or decision",
-        "settled/open/rejected state",
-        "exact point at which to resume",
-        "do not reproduce dialogue or a raw transcript",
-    ):
-        if normalize_semantic_text(anchor) not in normalized_playback:
-            raise EvalError(f"{path}: Textual Playback must preserve {anchor}")
-
-    update_rules = discussion_section(template_text, "Update Rules")
-    normalized_rules = normalize_semantic_text(update_rules)
-    for label, anchor in (
-        ("material-checkpoint updates", "update only at a material checkpoint"),
-        ("no per-turn writes", "do not update per turn"),
-        ("privacy-safe summaries", "privacy-safe summaries only"),
-        ("no transcripts or hidden reasoning", "exclude raw transcripts, hidden reasoning, secrets, and unnecessary personal data"),
-        ("promotion authority boundary", "promotion does not grant execution authority"),
-    ):
-        if normalize_semantic_text(anchor) not in normalized_rules:
-            raise EvalError(f"{path}: Update Rules must preserve {label}")
+    if "Decision map" in headings:
+        decision_map = discussion_section(template_text, "Decision map")
+        if "```mermaid" not in decision_map:
+            raise EvalError(f"{path}: optional Decision map must use Mermaid")
 
 
 def validate_discussion_source_text(
@@ -354,13 +394,15 @@ def validate_discussion_source_text(
             "skills/grill-me/SKILL.md",
             grill_text,
             (
-                ("short Grill artifact-free", "keep short grill artifact-free"),
-                ("long Grill trigger", "for a long, cross-context, handoff-sensitive, or materially branching grill"),
-                ("supporting memory", "it is supporting memory, not a transcript or execution authority"),
-                ("material checkpoints", "updated only at material checkpoints"),
-                ("unauthorized candidate", "without write authority, return a **discussion checkpoint candidate**"),
-                ("continuity warning", "durable continuity is not guaranteed"),
-                ("answered-decision recovery", "do not invent choices, fill a quota, or repeat an answered decision"),
+                ("narrow explicit-Grill write authority", "explicit grill authorizes only its supporting `docs/teamwork/` discussion record unless the user says no files"),
+                ("short Grill artifact-free", "short grill stays artifact-free"),
+                ("entry-time protocol load", "`skills/using-teamwork/references/artifact-protocol.md` completely at entry"),
+                ("pre-question persistence gate", "after a trigger, persist before asking"),
+                ("continued Grill canonical discovery", "on continuation or completion, inspect canonical state"),
+                ("continued Grill mutation boundary", "update only when new input changes it; close only when scope resolves"),
+                ("stated-scope completion", "when its stated scope is resolved, stop and close the discussion; never invent another decision"),
+                ("continuity-only reply", "state only saved decisions, resume context, or completion"),
+                ("useful skill explanation", "a brief skill name or purpose is welcome when it helps explain a capability, limit, or choice"),
             ),
         ),
         (
@@ -372,21 +414,44 @@ def validate_discussion_source_text(
             path,
             artifact_protocol_text,
             (
-                ("supporting-only boundary", "it is not a transcript, a new skill, stage, route, mode, state machine, or source of execution authority"),
-                ("supporting authority header", "every persisted discussion has `authority: supporting`"),
-                ("canonical and execution authority boundary", "stays subordinate to canonical project sources. it cannot promote itself or authorize execution"),
-                ("write authority", "creation and updates require write authority"),
-                ("candidate continuity warning", "without it, return a **discussion checkpoint candidate** in chat and state that durable continuity is not guaranteed"),
-                ("material-checkpoint updates", "do not update per turn"),
-                (
-                    "required route map and textual playback",
-                    "every persisted discussion includes both a full route map and a textual playback",
-                ),
-                (
-                    "privacy boundary",
-                    "keep only privacy-safe summaries; never store hidden reasoning, secrets, or unnecessary personal data",
-                ),
-                ("promotion authority boundary", "does not grant execution authority"),
+                ("supporting-only boundary", "a discussion record is supporting continuity only"),
+                ("not a transcript or authority", "it is not a transcript or execution authority"),
+                ("canonical subordination", "stays subordinate to canonical project sources"),
+                ("explicit save trigger", "the user explicitly asks to save or resume later"),
+                ("handoff trigger", "a known handoff or context compaction is approaching"),
+                ("settled-and-open trigger", "at least two substantive choices are settled while at least one remains open"),
+                ("three-branch trigger", "one decision has at least three real branches"),
+                ("non-proxy trigger boundary", "time, word count, and a short grill never trigger persistence"),
+                ("privacy boundary", "keep privacy-safe summaries, never hidden reasoning, secrets, unnecessary personal data, or a transcript"),
+                ("five human recovery sections", "goal, settled (including reasons), still open, key evidence, and continue here"),
+                ("new-input-only updates", "update only when the user's new input changes saved decisions, evidence, or the continuation point"),
+                ("read-only resume", "opening, recovering, or reading an existing discussion is read-only"),
+                ("resume skips mutation commands", "after `inspect`, do not run `schema` or `apply`; ask the saved unresolved question"),
+                ("scope-bounded closure", "the user's stated grill scope defines closure"),
+                ("loaded skill root", "resolve `scripts/discussion-transaction.py` from the already loaded `using-teamwork` skill root"),
+                ("helper sole runtime path", "this helper is the sole runtime path for discussion state"),
+                ("cwd-default inspect", "from the project root, run `inspect`; the helper defaults its project root to the current directory"),
+                ("inspect sole read path", "its result is the only discovery and reading source for canonical discussion state, anchors, and artifacts"),
+                ("no direct canonical reads", "do not directly read `index.json`, `current.md`, `readme.md`, or a discussion artifact"),
+                ("self-describing request schema", "run `schema <operation>` and fill exactly its json shape"),
+                ("no helper-source inference", "never inspect helper source"),
+                ("semantic helper rendering", "the helper derives the path, index entry, and rendered artifact"),
+                ("opaque revision reuse", "reuse the opaque `revision` unchanged"),
+                ("single structured apply", "in exactly one `apply --request-json <json>`"),
+                ("safe request-file fallback", "or `--request <file>` when quoting is unsafe"),
+                ("no stdin apply", "never use stdin"),
+                ("apply sole writer", "`apply` is the only writer"),
+                ("no direct or ad-hoc write path", "do not edit canonical files or substitute shell, validators, or another transaction"),
+                ("atomic replacement", "replacement atomically supersedes the old record, links it to the new record, and activates the new one"),
+                ("no close-create replacement", "never close and then create as separate transactions"),
+                ("no manual fallback write", "never manually repair or complete canonical state after a nonzero helper exit"),
+                ("helper failure stop", "stop the dependent question and any completion claim"),
+                ("pre-write fallback conditions", "`initialized: false`, a user no-files request, or host read-only state uses a natural-language fallback"),
+                ("plain fallback recovery", "goal, settled choices, open choice, key evidence, and continuation point"),
+                ("one-time continuity warning", "state once that it was not saved and may be lost across sessions"),
+                ("no post-apply fallback", "do not use this fallback after an attempted `apply`"),
+                ("continuity-value reply", "saved decisions, current resume context, or completed discussion"),
+                ("useful skill explanation", "a brief skill name or purpose is welcome when it helps explain a capability, limit, or choice"),
             ),
         ),
     )
@@ -406,8 +471,10 @@ def validate_mainline_focus_source_text(
             "hold one mainline: the global goal, current focus, and why the next question can change the project-level decision",
             "on drift, topic switch, or compaction",
             "do not repeat it every turn",
-            "every question must materially advance the mainline",
-            "drop locally interesting details that no longer serve it",
+            "each advances the mainline",
+            "drop distractions",
+            "when its stated scope is resolved, stop and close the discussion; never invent another decision",
+            "ask in the user's domain language",
         ),
         "skills/using-teamwork/references/project-init.md": (
             "form the smallest init-local project model needed",

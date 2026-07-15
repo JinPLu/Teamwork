@@ -5,56 +5,26 @@ Last Updated: YYYY-MM-DD
 Search Keys: <goal, decision terms, components, identifiers>
 Abstract: <mainline, current decision, and applicability boundary>
 Linked Artifacts: <paths or none>
+Superseded By: <path, reason, or none>
 
-# Teamwork Discussion
+# <Specific decision or continuation title>
 
-This artifact supports continuity for a long, cross-context, handoff-sensitive,
-or materially branching Grill. It is not a transcript and grants no execution
-authority.
+## Goal
 
-## Starting Question
+<The objective and the mainline or project goal it supports.>
 
-- Mainline or project goal: <path or plain-language anchor>
-- Decision: <what is being decided>
-- Why now: <why this decision can change the mainline>
+## Settled
 
-## Decision State
+- <A settled choice, why it was chosen, and any important rejected alternative.>
 
-- Decisions: <resolved choices and why>
-- Open: <unresolved material options or none>
-- Rejected: <discarded options and why, or none>
-- Evidence: <decision-relevant sources and observations>
-- Resume point: <the next decision question and why it can change the mainline>
-- Promotion: <none, or target artifact/path and trigger>
+## Still open
 
-## Route Map
+- <An unresolved item and why it matters; use "None" only when closing the artifact.>
 
-Show the full material route, including every settled, open, and rejected
-branch. Use artifact-local node keys such as `R1`, include textual status in
-every node, and keep detailed evidence and outcomes in Decision State rather
-than duplicating them here.
+## Key evidence
 
-```mermaid
-flowchart TD
-    R1["R1 · Mainline · current"]
-    R2["R2 · Option A · open"]
-    R3["R3 · Option B · rejected"]
-    R1 --> R2
-    R1 --> R3
-```
+- <A source or observation and what it established for the decision.>
 
-## Textual Playback
+## Continue here
 
-Concise chronological recovery of the route: starting question, evidence or
-decision that changed each material branch, current settled/open/rejected state,
-and the exact point at which to resume. This complements the Route Map; do not
-reproduce dialogue or a raw transcript.
-
-## Update Rules
-
-Update only at a material checkpoint: a decision changes or closes a branch,
-evidence materially changes a route, the mainline changes, continuity is about
-to cross a context or handoff boundary, or the discussion is promoted or
-superseded. Do not update per turn. Store decision-relevant, privacy-safe
-summaries only; exclude raw transcripts, hidden reasoning, secrets, and
-unnecessary personal data. Promotion does not grant execution authority.
+<The exact next question or action, including the evidence needed to resolve it.>

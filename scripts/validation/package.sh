@@ -137,6 +137,35 @@ actual_reference_inventory="$(
 [[ "$actual_reference_inventory" == "$expected_reference_inventory" ]] \
   || fail "using-teamwork references inventory drifted"
 
+# --- Installed skill helper inventory ---
+discussion_transaction_helper="skills/using-teamwork/scripts/discussion-transaction.py"
+[[ -f "$ROOT/$discussion_transaction_helper" ]] \
+  || fail "missing $discussion_transaction_helper"
+git_known_package_file "$discussion_transaction_helper" \
+  || fail "$discussion_transaction_helper is not known to git; use git add -N before release validation"
+[[ -x "$ROOT/$discussion_transaction_helper" ]] \
+  || fail "$discussion_transaction_helper must be executable"
+expected_using_teamwork_script_inventory="discussion-transaction.py"
+actual_using_teamwork_script_inventory="$(
+  find "$ROOT/skills/using-teamwork/scripts" -maxdepth 1 -type f \
+    -exec basename {} \; | sort
+)"
+[[ "$actual_using_teamwork_script_inventory" == "$expected_using_teamwork_script_inventory" ]] \
+  || fail "using-teamwork scripts inventory drifted"
+python3 - "$ROOT/$discussion_transaction_helper" <<'PY'
+import pathlib
+import py_compile
+import sys
+import tempfile
+
+with tempfile.TemporaryDirectory() as directory:
+    py_compile.compile(
+        sys.argv[1],
+        cfile=str(pathlib.Path(directory) / "discussion-transaction.pyc"),
+        doraise=True,
+    )
+PY
+
 # --- Eval harness inventory ---
 [[ -f "$ROOT/evals/teamwork/README.md" ]] || fail "missing evals/teamwork/README.md"
 git_known_package_file "evals/teamwork/README.md" \
@@ -344,12 +373,12 @@ old_index = copy.deepcopy(template)
 old_index["active"].pop("discussion")
 (output_dir / "old-v1.json").write_text(json.dumps(old_index) + "\n", encoding="utf-8")
 
-discussion_path = "docs/teamwork/discussion/active.md"
+discussion_path = "docs/teamwork/discussion/2026-06-01-active-discussion.md"
 discussion_entry = {
     "topic": "active-discussion",
     "kind": "discussion",
     "title": "Active discussion",
-    "status": "accepted",
+    "status": "active",
     "currentness": "current",
     "authority": "supporting",
     "path": discussion_path,
@@ -384,10 +413,54 @@ for project_name, create_artifact in (("valid-project", True), ("missing-artifac
     index_path = project_root / "docs/teamwork/index.json"
     index_path.parent.mkdir(parents=True)
     index_path.write_text(json.dumps(valid) + "\n", encoding="utf-8")
+    (project_root / "docs/teamwork/current.md").write_text(
+        f"# Teamwork Current State\n\n- Active discussion: {discussion_path}.\n",
+        encoding="utf-8",
+    )
+    (project_root / "docs/teamwork/README.md").write_text(
+        f"# Teamwork Runtime Index README\n\n- Active discussion route: {discussion_path}\n",
+        encoding="utf-8",
+    )
     if create_artifact:
         artifact = project_root / discussion_path
         artifact.parent.mkdir(parents=True)
-        artifact.write_text("# Active discussion\n", encoding="utf-8")
+        artifact.write_text(
+            """Artifact Type: discussion
+Status: active
+Authority: supporting
+Last Updated: 2026-06-01
+Search Keys: active discussion, handoff
+Abstract: The active supporting route for a material handoff decision.
+Linked Artifacts: none
+Superseded By: none
+
+# Preserve the active handoff decision
+
+## Goal
+
+Preserve the material handoff decision so the next session can recover it
+without reconstructing the conversation.
+
+## Settled
+
+- Keep one supporting artifact for the active decision; a per-turn transcript
+  was rejected because it creates noise without improving recovery.
+
+## Still open
+
+- Whether new evidence changes the active route.
+
+## Key evidence
+
+- The runtime pointer and anchors identify the same artifact, establishing a
+  deterministic handoff route.
+
+## Continue here
+
+Assess the next decision-relevant evidence before changing the route.
+""",
+            encoding="utf-8",
+        )
 PY
 python3 "$ROOT/scripts/validate_teamwork_index.py" "$index_pointer_tmp/old-v1.json" >/dev/null
 python3 "$ROOT/scripts/validate_teamwork_index.py" "$index_pointer_tmp/valid-discussion.json" >/dev/null

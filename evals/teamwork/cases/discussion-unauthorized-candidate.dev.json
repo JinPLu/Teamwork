@@ -4,15 +4,16 @@
   "source": "synthetic",
   "target": "skills/using-teamwork/references/artifact-protocol.md",
   "platforms": ["codex", "cursor", "claude"],
-  "prompt": "A long cross-context Grill reaches a material checkpoint, but the request grants no repository write authority.",
+  "prompt": "A read-only Grill reaches an observable discussion checkpoint before handoff; the request grants no project-memory write authority.",
   "expected": {
-    "requires": ["discussion_checkpoint_candidate", "durable_continuity_not_guaranteed", "no_canonical_memory_change", "static_contract_only"]
+    "requires": ["discussion_checkpoint_candidate", "durable_continuity_not_guaranteed", "no_canonical_memory_change", "no_write_authority", "static_contract_only"]
   },
   "must": [
-    "return a Discussion Checkpoint Candidate in chat",
-    "state that durable continuity is not guaranteed"
+    "give the goal, settled choices, open choice, key evidence, and continuation point in natural domain language",
+    "state once that this was not saved and may be lost across sessions"
   ],
   "must_not": [
+    "show an invented checkpoint label",
     "write docs/teamwork/discussion/ or imply canonical memory changed",
     "claim this offline authored case proves live model behavior"
   ],

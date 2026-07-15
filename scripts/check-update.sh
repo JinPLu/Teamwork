@@ -382,9 +382,9 @@ policy_status() {
     && [[ "$policy_text" == *'Read-only requests do not authorize changes'* ]] \
     && [[ "$policy_text" == *'Inspect discoverable evidence before asking'* ]] \
     && [[ "$policy_text" == *'pause only the dependent branch'* ]] \
-    && [[ "$policy_text" == *'Answers and confirmations do not grant effect authority'* ]] \
-    && [[ "$policy_text" == *'Never invent or hide a required value or invariant'* ]] \
-    && [[ "$policy_text" == *'Delegate only independent work whose value exceeds its'* ]]; then
+    && [[ "$policy_text" == *'Answers/confirmations grant no effect authority'* ]] \
+    && [[ "$policy_text" == *'Never invent required state'* ]] \
+    && [[ "$policy_text" == *'Delegate only worthwhile independent work'* ]]; then
     echo "ok"
   else
     echo "missing"

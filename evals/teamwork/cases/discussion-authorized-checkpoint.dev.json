@@ -4,16 +4,19 @@
   "source": "synthetic",
   "target": "skills/using-teamwork/references/artifact-protocol.md",
   "platforms": ["codex", "cursor", "claude"],
-  "prompt": "Continue a long, materially branching Grill with repository write authority; a decision has just closed one branch before a handoff.",
+  "prompt": "In an initialized writable project, continue the user's explicit Grill. Two substantive choices are settled, one remains open, and a handoff is approaching.",
   "expected": {
-    "requires": ["long_grill_supporting_artifact", "write_authority_required", "material_checkpoint_only", "static_contract_only"]
+    "requires": ["observable_discussion_trigger", "explicit_grill_narrow_discussion_authority", "supporting_artifact_only", "five_section_human_recovery", "persistence_before_next_question", "readback_verified_anchors", "static_contract_only"]
   },
   "must": [
-    "write one supporting artifact under docs/teamwork/discussion/ at the material checkpoint",
-    "record privacy-safe decisions, open and rejected options, decision-relevant evidence, and the resume point"
+    "use the explicit Grill request only as narrow permission for supporting docs/teamwork/ discussion memory",
+    "write one supporting artifact under docs/teamwork/discussion/ as soon as an observable trigger becomes true, update index/current/README, then read them back and verify that all anchors agree before asking Q3",
+    "use a specific H1 and Goal, Settled, Still open, Key evidence, and Continue here so a person can resume"
   ],
   "must_not": [
     "write on every turn or store a transcript",
+    "ask Q3 before the supporting record and index/current/README anchors have been written, read back, and verified",
+    "treat word count or elapsed time as a trigger",
     "treat the discussion as canonical state or execution authority",
     "claim this offline authored case proves live model behavior"
   ],

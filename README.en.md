@@ -14,7 +14,7 @@ Teamwork is a Codex-first skill package. After installation, describe your goal 
 - **More focused questions:** Inspect discoverable facts first and ask you only about decisions that change the outcome, scope, acceptance, or authority.
 - **Controlled collaboration:** Use subagents only when work splits cleanly; the main agent keeps ownership of scope, integration, and final verification.
 - **Clear completion evidence:** Show whether the task is truly done with sources, logs, tests, diffs, or review results.
-- **Continuity when it matters:** For a long task or handoff, Teamwork can keep a durable route map of the key decisions and evidence; ordinary replies stay brief and direct.
+- **Recoverable long discussions:** Only observable continuity signals create one compact summary of the goal, settled choices, open question, key evidence, and continue point; ordinary replies stay brief and direct.
 
 Teamwork is a good fit for literature and field research, technical evaluation, complex plans, reproducible failures, CI, cross-file implementation, strict review, and “keep going until it passes” work. One-line facts and obvious small edits do not get forced into a workflow.
 

@@ -131,7 +131,7 @@ if [[ -n "$PROJECT_ROOT" && "${TARGET:-codex}" != "init-project" ]]; then
 fi
 
 case "${TARGET:-codex}" in
-  codex-policy|cursor-policy|cursor-policy-copy|claude-policy)
+  codex-policy|cursor-policy|cursor-policy-copy|claude-policy|init-project)
     ;;
   *)
     printf '%s\n' "$CODEX_PROFILE" > "$ROOT/.teamwork-profile"

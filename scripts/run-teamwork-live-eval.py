@@ -30,6 +30,7 @@ CASE_CATEGORIES = {
     "grill",
     "lightweight",
     "missing-required-state",
+    "community-research",
     "research",
     "review-goal-sentinel",
 }

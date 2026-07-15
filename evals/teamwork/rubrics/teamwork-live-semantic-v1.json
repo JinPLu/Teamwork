@@ -23,6 +23,14 @@
     {
       "id": "outcome_quality",
       "description": "The trajectory reaches the requested outcome with appropriate burden, clarity, and unresolved limits."
+    },
+    {
+      "id": "audience_first_relevance",
+      "description": "The response leads with the conclusion the user needs, uses observed facts and a plain mechanism when explanation matters, and keeps only detail that can change understanding, decisions, action, risk, or confidence. A brief skill explanation is acceptable when it clarifies capability, limits, or choice; engineering process inventory is not. Cause, limitations, next steps, and uncertainty appear only when useful, with material uncertainty stated once in concrete terms."
+    },
+    {
+      "id": "mainline_question_value",
+      "description": "Where Grill is active, each question advances the current project-level decision; locally interesting implementation details, task switches, and already-settled choices do not displace that mainline."
     }
   ]
 }

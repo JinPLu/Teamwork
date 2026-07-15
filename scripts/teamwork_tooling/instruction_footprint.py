@@ -44,7 +44,11 @@ def manifest_interface(path: Path) -> str:
 
 def generated_surfaces() -> list[str]:
     with tempfile.TemporaryDirectory() as temp:
-        temp_root = Path(temp)
+        # init-project rejects lexical symlink ancestors so a caller cannot
+        # redirect writes outside its declared project boundary. macOS exposes
+        # the temporary root through /var -> /private/var, so use its physical
+        # spelling for this controlled fixture.
+        temp_root = Path(temp).resolve()
         project = temp_root / "project"
         home = temp_root / "home"
         project.mkdir()

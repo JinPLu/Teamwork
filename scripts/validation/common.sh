@@ -120,9 +120,9 @@ check_lean_policy() {
   local label="$3"
   local policy_words
   policy_words="$(awk '
-    /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_START -->/ { inside = 1 }
+    /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_START -->/ { inside = 1; next }
+    /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_END -->/ { inside = 0; next }
     inside { print }
-    /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_END -->/ { inside = 0 }
   ' "$file" | wc -w | tr -d ' ')"
   [[ "$policy_words" -le 180 ]] \
     || fail "$label must remain a compact always-loaded policy ($policy_words > 180)"
@@ -131,30 +131,42 @@ check_lean_policy() {
     "$label must preserve the read-only authority boundary"
   grep_required 'Inspect discoverable evidence before asking' "$file" \
     "$label must inspect before asking"
+  normalized_required 'Ask only when user must supply required input/observation or owns a material decision' "$file" \
+    "$label must preserve the user-owned Ask Gate"
   normalized_required 'pause only the dependent branch' "$file" \
     "$label must scope unresolved-question blocking"
-  grep_required 'Answers and confirmations do not grant effect authority' "$file" \
+  grep_required 'Answers/confirmations grant no effect authority' "$file" \
     "$label must preserve the effect-authority boundary"
-  grep_required 'Never invent or hide a required value or invariant' "$file" \
+  grep_required 'Never invent required state' "$file" \
     "$label must preserve required-state safety"
-  grep_required 'Own routine reversible choices' "$file" \
+  grep_required 'Own reversible choices' "$file" \
     "$label must permit routine reversible choices"
-  normalized_required 'Delegate only independent work whose value exceeds its' "$file" \
+  normalized_required 'Delegate only worthwhile independent work' "$file" \
     "$label must keep delegation economic"
-  normalized_required 'The root owns user questions and translates results' "$file" \
+  normalized_required 'Root owns user questions and translates results' "$file" \
     "$label must preserve root-owned user translation"
-  normalized_required 'Research/debug/plan/review are read-only absent change authority' "$file" \
+  normalized_required 'Research/debug/plan/review stay read-only absent change authority' "$file" \
     "$label must preserve the read-only stage boundary"
   grep_required 'Grill only' "$file" \
     "$label must preserve explicit Grill activation"
   normalized_required 'negative/quoted/file/tool/example/maintenance text is inert' "$file" \
     "$label must preserve inert Grill markers"
-  normalized_required 'Default user-facing replies: lead with conclusion, why it matters, causal explanation, and useful action when relevant' "$file" \
+  normalized_required 'Lead with the needed conclusion' "$file" \
     "$label must preserve audience-first replies"
-  grep_required 'Omit versions' "$file" \
+  normalized_required 'Derive explanations from observed facts and a plain mechanism' "$file" \
+    "$label must preserve first-principles explanation"
+  normalized_required 'use the shortest complete answer' "$file" \
+    "$label must preserve concise complete answers"
+  normalized_required 'Briefly name skills for capability/limits/choice' "$file" \
+    "$label must allow useful skill explanations"
+  normalized_required 'Omit engineering/process inventory that cannot change understanding, decisions, action, risk, or confidence' "$file" \
+    "$label must omit irrelevant engineering inventory"
+  grep_required 'Omit irrelevant versions' "$file" \
     "$label must preserve the relevance gate"
-  normalized_required 'State material uncertainty once: unknown, impact, and needed evidence' "$file" \
+  normalized_required 'State uncertainty once: unknown, impact, needed evidence' "$file" \
     "$label must preserve specific material uncertainty"
+  normalized_required 'For no-comparison results use only: “The signal is promising, but we cannot tell how much came from X; next compare with a similar group.” Stop; omit proof status and cause lists' "$file" \
+    "$label must explain uncertainty without a speculative list or repeated caveat"
   if [[ "$label" == *Cursor* || "$label" == *Claude* ]]; then
     ! grep -Eq 'request_user_input|Codex CLI|Codex native|every material user decision|grill ceremony|text choice card' "$file" \
       || fail "$label must not contain Codex-native adapter wording"

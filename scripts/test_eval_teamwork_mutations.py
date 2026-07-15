@@ -93,6 +93,17 @@ class StaticOutputMutationTests(unittest.TestCase):
             "question text and asked_candidates annotation disagree",
         )
 
+    def test_mainline_distraction_cannot_replace_the_public_question(self) -> None:
+        def mutate(row: dict) -> None:
+            row["trajectory"][0]["assistant"] = (
+                "Should we use JSON or YAML for the route label?"
+            )
+
+        self.assert_rejected(
+            self.mutate_row("grill-question-value-stop", mutate),
+            "does not preserve mainline_anchor",
+        )
+
     def test_semantic_oracle_rejects_agent_owned_question(self) -> None:
         def mutate(row: dict) -> None:
             row["trajectory"][0]["asked_candidates"] = ["private_symbol_rename"]
@@ -301,8 +312,42 @@ class CaseSchemaMutationTests(unittest.TestCase):
 
     def test_discussion_case_rejects_missing_contract_coverage(self) -> None:
         data = self.load_case("discussion-authorized-checkpoint.dev.json")
-        data["expected"]["requires"].remove("material_checkpoint_only")
+        data["expected"]["requires"].remove("observable_discussion_trigger")
         with self.assertRaisesRegex(EvalError, "discussion coverage missing"):
+            self.validate(data)
+
+    def test_discussion_case_locks_question_and_readback_gate_coverage(self) -> None:
+        for requirement in (
+            "persistence_before_next_question",
+            "readback_verified_anchors",
+        ):
+            with self.subTest(requirement=requirement):
+                data = self.load_case("discussion-authorized-checkpoint.dev.json")
+                data["expected"]["requires"].remove(requirement)
+                with self.assertRaisesRegex(EvalError, "discussion coverage missing"):
+                    self.validate(data)
+
+    def test_discussion_no_input_resume_locks_read_only_coverage(self) -> None:
+        data = self.load_case("discussion-resume-no-new-input.dev.json")
+        data["expected"]["requires"].remove("no_schema_or_apply")
+        with self.assertRaisesRegex(EvalError, "discussion coverage missing"):
+            self.validate(data)
+
+    def test_discussion_no_input_resume_rejects_mutation_commands(self) -> None:
+        data = self.load_case("discussion-resume-no-new-input.dev.json")
+        data["must_not"] = [
+            item.replace("run schema or apply", "write only when useful")
+            for item in data["must_not"]
+        ]
+        with self.assertRaisesRegex(EvalError, "no-input resume must forbid"):
+            self.validate(data)
+
+    def test_discussion_recovery_case_rejects_missing_human_anchor(self) -> None:
+        data = self.load_case("discussion-human-recovery.dev.json")
+        data["authored_artifact"] = data["authored_artifact"].replace(
+            "this controls rollback safety", "this remains undecided"
+        )
+        with self.assertRaisesRegex(EvalError, "Still open loses its human recovery anchor"):
             self.validate(data)
 
     def test_plan_case_rejects_missing_brief_decision_checkpoint(self) -> None:
@@ -314,7 +359,7 @@ class CaseSchemaMutationTests(unittest.TestCase):
     def test_audience_case_rejects_missing_material_uncertainty(self) -> None:
         data = self.load_case("audience-first-community-research.dev.json")
         data["authored_response"] = data["authored_response"].replace(
-            "we cannot tell whether the program caused the improvement",
+            "how much of that improvement came from the program",
             "participants liked the program",
         )
         with self.assertRaisesRegex(EvalError, "loses material_uncertainty"):
@@ -325,13 +370,130 @@ class CaseSchemaMutationTests(unittest.TestCase):
         data["authored_response"] = (
             "I first inspected the workflow. " + data["authored_response"]
         )
-        with self.assertRaisesRegex(EvalError, "opens with workflow narration"):
+        with self.assertRaisesRegex(EvalError, "includes irrelevant workflow narration"):
+            self.validate(data)
+
+    def test_audience_case_rejects_trailing_workflow_narration(self) -> None:
+        data = self.load_case("audience-first-community-research.dev.json")
+        data["authored_response"] += (
+            " I then routed this through the review stage and validated the workflow."
+        )
+        with self.assertRaisesRegex(EvalError, "includes irrelevant workflow narration"):
+            self.validate(data)
+
+    def test_audience_case_rejects_generic_proof_status_in_positive(self) -> None:
+        data = self.load_case("audience-first-community-research.dev.json")
+        data["authored_response"] += " This cannot prove the program worked."
+        with self.assertRaisesRegex(EvalError, "generic proof-status caveat"):
+            self.validate(data)
+
+    def test_audience_case_rejects_chinese_generic_proof_status(self) -> None:
+        data = self.load_case("audience-first-community-research.dev.json")
+        data["authored_response"] += " 不能据此证明项目有效。"
+        with self.assertRaisesRegex(EvalError, "generic proof-status caveat"):
+            self.validate(data)
+
+    def test_audience_case_rejects_imagined_cause_list(self) -> None:
+        data = self.load_case("audience-first-community-research.dev.json")
+        data["authored_response"] += (
+            " The change may instead reflect time, environment, or other support."
+        )
+        with self.assertRaisesRegex(EvalError, "lists imagined alternative causes"):
+            self.validate(data)
+
+    def test_audience_case_rejects_second_independent_action(self) -> None:
+        data = self.load_case("audience-first-community-research.dev.json")
+        data["authored_response"] += " Also expand the sample and collect more feedback."
+        with self.assertRaisesRegex(EvalError, "second independent next action"):
+            self.validate(data)
+
+    def test_audience_case_rejects_repeated_attribution_boundary(self) -> None:
+        data = self.load_case("audience-first-community-research.dev.json")
+        data["authored_response"] += (
+            " Without a comparison, we cannot tell how much came from the program."
+        )
+        with self.assertRaisesRegex(EvalError, "repeats the attribution boundary"):
             self.validate(data)
 
     def test_audience_case_requires_explicit_negative_controls(self) -> None:
         data = self.load_case("audience-first-community-research.dev.json")
         data["negative_controls"].pop()
         with self.assertRaisesRegex(EvalError, "must contain four named failure modes"):
+            self.validate(data)
+
+    def test_audience_case_rejects_irrelevant_version_and_internal_label(self) -> None:
+        data = self.load_case("audience-first-community-research.dev.json")
+        data["authored_response"] += " Version 3.0.0 calls this C8."
+        with self.assertRaisesRegex(EvalError, "exposes irrelevant internal detail"):
+            self.validate(data)
+
+    def test_audience_case_requires_repeated_caveat_control_in_chinese_or_english(self) -> None:
+        data = self.load_case("audience-first-community-research.dev.json")
+        for control in data["negative_controls"]:
+            if control["id"] == "generic_caveat_repetition":
+                control["response"] = "尚未证明。"
+        with self.assertRaisesRegex(
+            EvalError, "must repeat a generic caveat in English or Chinese"
+        ):
+            self.validate(data)
+
+    def test_audience_case_requires_internal_detail_and_caveat_clauses(self) -> None:
+        for requirement in (
+            "no_irrelevant_internal_detail",
+            "no_generic_proof_status",
+        ):
+            with self.subTest(requirement=requirement):
+                data = self.load_case("audience-first-community-research.dev.json")
+                data["expected"]["requires"].remove(requirement)
+                with self.assertRaisesRegex(EvalError, "audience coverage missing"):
+                    self.validate(data)
+
+    def test_audience_case_allows_a_brief_relevant_skill_explanation(self) -> None:
+        data = self.load_case("audience-skill-explanation-contrast.dev.json")
+        self.validate(data)
+
+    def test_audience_case_rejects_engineering_inventory_after_skill_explanation(self) -> None:
+        data = self.load_case("audience-skill-explanation-contrast.dev.json")
+        data["authored_response"] += (
+            " I opened skills/teamwork-review/SKILL.md and dispatched a subagent."
+        )
+        with self.assertRaisesRegex(EvalError, "engineering process inventory"):
+            self.validate(data)
+
+    def test_skill_explanation_rejects_irrelevant_route_narration(self) -> None:
+        data = self.load_case("audience-skill-explanation-contrast.dev.json")
+        data["authored_response"] += (
+            " I routed this through the Review stage and loaded the workflow."
+        )
+        with self.assertRaisesRegex(EvalError, "irrelevant route or workflow narration"):
+            self.validate(data)
+
+    def test_audience_case_rejects_a_weakened_engineering_dump_control(self) -> None:
+        data = self.load_case("audience-skill-explanation-contrast.dev.json")
+        data["negative_control"]["response"] = (
+            "The review skill is read-only, so editing needs authorization."
+        )
+        with self.assertRaisesRegex(EvalError, "engineering process dump loses"):
+            self.validate(data)
+
+    def test_one_sentence_fact_control_rejects_forced_cause_in_one_sentence(self) -> None:
+        data = self.load_case("audience-one-sentence-fact-control.dev.json")
+        data["authored_response"] = data["negative_controls"][0]["response"]
+        with self.assertRaisesRegex(EvalError, "adds a forced causal explanation"):
+            self.validate(data)
+
+    def test_one_sentence_fact_control_rejects_forced_action_in_one_sentence(self) -> None:
+        data = self.load_case("audience-one-sentence-fact-control.dev.json")
+        data["authored_response"] = data["negative_controls"][1]["response"]
+        with self.assertRaisesRegex(EvalError, "adds a forced action"):
+            self.validate(data)
+
+    def test_one_sentence_fact_control_requires_semantic_negative_controls(self) -> None:
+        data = self.load_case("audience-one-sentence-fact-control.dev.json")
+        data["negative_controls"][0]["response"] = (
+            "`./scripts/validate.sh` is the required repository validation command."
+        )
+        with self.assertRaisesRegex(EvalError, "forced_cause control loses"):
             self.validate(data)
 
     def test_minimal_handoff_case_rejects_missing_root_translation(self) -> None:
@@ -414,6 +576,22 @@ class SemanticSourceMutationTests(unittest.TestCase):
                 sources["teamwork_init"],
             )
 
+    def assert_discussion_protocol_rejected(
+        self, old: str, new: str, error: str
+    ) -> None:
+        protocol = (
+            ROOT / "skills/using-teamwork/references/artifact-protocol.md"
+        ).read_text(encoding="utf-8")
+        mutated = protocol.replace(old, new)
+        self.assertNotEqual(mutated, protocol, "discussion mutation did not apply")
+        with self.assertRaisesRegex(EvalError, error):
+            validate_discussion_source_text(
+                self.skill_sources["grill-me"],
+                self.skill_sources["using-teamwork"],
+                mutated,
+                self.discussion_template,
+            )
+
     def test_rejects_retired_review_severity_taxonomy(self) -> None:
         mutated = self.review.replace(
             "one class: `BLOCKER`, `FOLLOW-UP`, or `SUGGESTION`",
@@ -462,6 +640,24 @@ class SemanticSourceMutationTests(unittest.TestCase):
             "Native fast path",
         )
 
+    def test_using_teamwork_rejects_research_for_a_known_facts_explanation(self) -> None:
+        self.assert_skill_contract_rejected(
+            "using-teamwork",
+            "When the prompt already contains\n"
+            "all decision-relevant facts, a stable explanation stays native",
+            "Every explanation enters Research",
+            "known-facts native explanation",
+        )
+
+    def test_using_teamwork_rejects_repeated_supplied_facts_explanation(self) -> None:
+        self.assert_skill_contract_rejected(
+            "using-teamwork",
+            "For a supplied-facts explanation, name\n"
+            "the conclusion and missing discriminator once, then stop",
+            "For supplied facts, list imagined causes and repeat the conclusion",
+            "supplied-facts concise explanation",
+        )
+
     def test_grill_rejects_removed_explicit_activation(self) -> None:
         self.assert_skill_contract_rejected(
             "grill-me",
@@ -470,12 +666,70 @@ class SemanticSourceMutationTests(unittest.TestCase):
             "explicit activation",
         )
 
+    def test_grill_rejects_removed_frontmatter_plan_entry(self) -> None:
+        self.assert_skill_contract_rejected(
+            "grill-me",
+            "a non-simple Plan auto-enters",
+            "the user explicitly invokes it",
+            "frontmatter non-simple Plan entry",
+        )
+
+    def test_grill_rejects_removed_automatic_plan_body_entry(self) -> None:
+        self.assert_skill_contract_rejected(
+            "grill-me",
+            "automatically from every non-simple Plan",
+            "optionally from a non-simple Plan",
+            "automatic non-simple Plan body entry",
+        )
+
+    def test_grill_requires_an_evidence_backed_recommendation_per_question(self) -> None:
+        self.assert_skill_contract_rejected(
+            "grill-me",
+            "Before every\nquestion, inspect discoverable evidence and give a recommended answer grounded in it",
+            "Ask the user to choose without a recommendation",
+            "evidence-backed recommended answer",
+        )
+
+    def test_grill_requires_a_concise_text_fallback(self) -> None:
+        self.assert_skill_contract_rejected(
+            "grill-me",
+            "when callable; otherwise ask one concise text question",
+            "and stop when it is unavailable",
+            "concise text fallback",
+        )
+
+    def test_grill_rejects_mutating_a_no_input_resume(self) -> None:
+        grill = self.skill_sources["grill-me"].replace(
+            "Update only when new input changes it; close only when scope resolves.",
+            "On every continuation, update or close before replying.",
+        )
+        self.assertNotEqual(grill, self.skill_sources["grill-me"])
+        with self.assertRaisesRegex(EvalError, "continued Grill mutation boundary"):
+            validate_discussion_source_text(
+                grill,
+                self.skill_sources["using-teamwork"],
+                (
+                    ROOT
+                    / "skills/using-teamwork/references/artifact-protocol.md"
+                ).read_text(encoding="utf-8"),
+                self.discussion_template,
+            )
+
     def test_research_rejects_collapsed_evidence_tiers(self) -> None:
         self.assert_skill_contract_rejected(
             "teamwork-research",
             "`observed`, `inferred`,\nand `claimed` findings",
             "`claimed` findings",
             "observed/inferred/claimed evidence",
+        )
+
+    def test_research_rejects_explaining_supplied_facts_as_research(self) -> None:
+        self.assert_skill_contract_rejected(
+            "teamwork-research",
+            "Do not enter merely to explain supplied facts when no lookup\n"
+            "or stale-assumption check is needed; return to Native",
+            "Enter Research for every supplied-facts explanation",
+            "supplied-facts native boundary",
         )
 
     def test_debug_rejects_removed_discriminating_hypotheses(self) -> None:
@@ -604,12 +858,63 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_always_loaded_policy_rejects_deleted_audience_boundary(self) -> None:
         mutated = self.policy.replace(
-            "Default user-facing replies: lead with conclusion, why it matters, causal\n"
-            "explanation, and useful action when relevant.",
-            "Respond with internal process details.",
+            "Lead with the needed conclusion.",
+            "Put the conclusion last.",
         )
         self.assertNotEqual(mutated, self.policy)
         with self.assertRaisesRegex(EvalError, "audience-first reply"):
+            validate_always_loaded_policy_text(mutated)
+
+    def test_always_loaded_policy_requires_evidence_derived_explanation(self) -> None:
+        mutated = self.policy.replace(
+            "Derive explanations from observed facts and a\n"
+            "plain mechanism.",
+            "Invent a mechanism before checking facts.",
+        )
+        self.assertNotEqual(mutated, self.policy)
+        with self.assertRaisesRegex(EvalError, "evidence-derived explanation"):
+            validate_always_loaded_policy_text(mutated)
+
+    def test_always_loaded_policy_requires_the_specific_ask_gate(self) -> None:
+        mutated = self.policy.replace(
+            "Ask only when user must supply\n"
+            "required input/observation or owns a material decision",
+            "Ask only when required",
+        )
+        self.assertNotEqual(mutated, self.policy)
+        with self.assertRaisesRegex(EvalError, "specific Ask Gate"):
+            validate_always_loaded_policy_text(mutated)
+
+    def test_always_loaded_policy_requires_grounded_claims(self) -> None:
+        mutated = self.policy.replace("ground claims", "guess claims")
+        self.assertNotEqual(mutated, self.policy)
+        with self.assertRaisesRegex(EvalError, "grounded claims"):
+            validate_always_loaded_policy_text(mutated)
+
+    def test_always_loaded_policy_requires_scope_control(self) -> None:
+        mutated = self.policy.replace("keep scope", "broaden scope")
+        self.assertNotEqual(mutated, self.policy)
+        with self.assertRaisesRegex(EvalError, "scope boundary"):
+            validate_always_loaded_policy_text(mutated)
+
+    def test_always_loaded_policy_routes_material_decisions_to_plan(self) -> None:
+        mutated = self.policy.replace(
+            "material scope/contract/architecture/acceptance decisions to plan",
+            "material decisions directly to execution",
+        )
+        self.assertNotEqual(mutated, self.policy)
+        with self.assertRaisesRegex(EvalError, "material decision routing"):
+            validate_always_loaded_policy_text(mutated)
+
+    def test_always_loaded_policy_requires_missing_discriminator_uncertainty(self) -> None:
+        mutated = self.policy.replace(
+            "For no-comparison results use only: “The signal is promising,\n"
+            "but we cannot tell how much came from X; next compare with a similar group.”\n"
+            "Stop; omit proof status and cause lists.",
+            "list every possible cause and repeat the caveat.",
+        )
+        self.assertNotEqual(mutated, self.policy)
+        with self.assertRaisesRegex(EvalError, "missing-discriminator uncertainty"):
             validate_always_loaded_policy_text(mutated)
 
     def test_audience_source_rejects_deleted_relevance_gate(self) -> None:
@@ -618,6 +923,105 @@ class SemanticSourceMutationTests(unittest.TestCase):
         )
         self.assertNotEqual(mutated, self.workflow_contract)
         with self.assertRaisesRegex(EvalError, "relevance gate"):
+            validate_audience_source_text(mutated)
+
+    def test_audience_source_rejects_conclusion_last(self) -> None:
+        mutated = self.workflow_contract.replace(
+            "Lead with the conclusion the user needs.",
+            "Build up to the conclusion at the end.",
+        )
+        self.assertNotEqual(mutated, self.workflow_contract)
+        with self.assertRaisesRegex(EvalError, "conclusion-first user need"):
+            validate_audience_source_text(mutated)
+
+    def test_audience_source_requires_evidence_derived_explanation(self) -> None:
+        mutated = self.workflow_contract.replace(
+            "When explanation is needed, derive it\n"
+            "from observed facts and a plain-language mechanism.",
+            "When explanation is needed, begin with speculation.",
+        )
+        self.assertNotEqual(mutated, self.workflow_contract)
+        with self.assertRaisesRegex(EvalError, "evidence-derived explanation"):
+            validate_audience_source_text(mutated)
+
+    def test_audience_source_rejects_generic_proof_status(self) -> None:
+        mutated = self.workflow_contract.replace(
+            "For no-comparison results, use one conclusion and\n"
+            "one action: “The signal is promising, but we cannot tell how much came from X;\n"
+            "next compare with a similar group.” Stop; omit proof status and imagined causes",
+            "use a generic proof-status disclaimer",
+        )
+        self.assertNotEqual(mutated, self.workflow_contract)
+        with self.assertRaisesRegex(EvalError, "generic proof-status omission"):
+            validate_audience_source_text(mutated)
+
+    def test_audience_source_requires_a_concrete_evidence_boundary(self) -> None:
+        mutated = self.workflow_contract.replace(
+            "Prefer the concrete boundary—what the evidence supports and what it cannot\n"
+            "attribute—over a stock caveat.",
+            "Prefer a stock uncertainty disclaimer.",
+        )
+        self.assertNotEqual(mutated, self.workflow_contract)
+        with self.assertRaisesRegex(EvalError, "concrete evidence boundary"):
+            validate_audience_source_text(mutated)
+
+    def test_audience_source_rejects_repeated_concluding_limitation(self) -> None:
+        mutated = self.workflow_contract.replace(
+            "Once\nthe conclusion and decision boundary are clear, stop; do not restate them.",
+            "Repeat the limitation again in the conclusion.",
+        )
+        self.assertNotEqual(mutated, self.workflow_contract)
+        with self.assertRaisesRegex(EvalError, "stop after the decision boundary"):
+            validate_audience_source_text(mutated)
+
+    def test_audience_source_explains_the_missing_discriminator(self) -> None:
+        mutated = self.workflow_contract.replace(
+            "Otherwise\nname the missing comparison, measurement, or observation.",
+            "List every imagined cause of uncertainty.",
+        )
+        self.assertNotEqual(mutated, self.workflow_contract)
+        with self.assertRaisesRegex(EvalError, "missing-discriminator explanation"):
+            validate_audience_source_text(mutated)
+
+    def test_audience_source_rejects_irrelevant_alternative_causes(self) -> None:
+        mutated = self.workflow_contract.replace(
+            "Mention an alternative\ncause only when it changes action or confidence.",
+            "Name every possible alternative cause.",
+        )
+        self.assertNotEqual(mutated, self.workflow_contract)
+        with self.assertRaisesRegex(EvalError, "alternative-cause relevance"):
+            validate_audience_source_text(mutated)
+
+    def test_audience_source_allows_relevant_skill_explanations(self) -> None:
+        mutated = self.workflow_contract.replace(
+            "A brief skill name or\n"
+            "explanation is allowed when it clarifies a capability, limitation, or reason for\n"
+            "the approach.",
+            "Never name a skill in a user-facing reply.",
+        )
+        self.assertNotEqual(mutated, self.workflow_contract)
+        with self.assertRaisesRegex(EvalError, "useful skill explanation"):
+            validate_audience_source_text(mutated)
+
+    def test_audience_source_rejects_engineering_process_inventory(self) -> None:
+        mutated = self.workflow_contract.replace(
+            "Omit engineering process\n"
+            "and implementation inventory—such as routes, files, subagents, and test counts—\n"
+            "unless relevant.",
+            "List routes, files, subagents, and test counts in every reply.",
+        )
+        self.assertNotEqual(mutated, self.workflow_contract)
+        with self.assertRaisesRegex(EvalError, "irrelevant engineering inventory"):
+            validate_audience_source_text(mutated)
+
+    def test_audience_source_rejects_forced_multi_part_answers(self) -> None:
+        mutated = self.workflow_contract.replace(
+            "First-principles reasoning is an\n"
+            "evidence discipline, not a fixed section template or reason to delay the answer.",
+            "Always answer in four sections: fact, cause, conclusion, and next action.",
+        )
+        self.assertNotEqual(mutated, self.workflow_contract)
+        with self.assertRaisesRegex(EvalError, "no fixed answer template"):
             validate_audience_source_text(mutated)
 
     def test_rule_maintenance_source_rejects_missing_user_effect_audit(self) -> None:
@@ -650,7 +1054,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
     def test_grill_rejects_lost_mainline(self) -> None:
         self.assert_mainline_focus_rejected(
             "grill",
-            "Hold one mainline: the global goal, current focus, and why the next question\n  can change the project-level decision.",
+            "Hold one mainline: the global goal, current focus, and why the next question can\n"
+            "change the project-level decision.",
             "Follow the latest local topic.",
             "hold one mainline",
         )
@@ -658,17 +1063,34 @@ class SemanticSourceMutationTests(unittest.TestCase):
     def test_grill_rejects_irrelevant_questions(self) -> None:
         self.assert_mainline_focus_rejected(
             "grill",
-            "Every question must materially advance the mainline;\ndrop locally interesting details that no longer serve it.",
+            "each advances\nthe mainline. Drop distractions",
             "Ask any locally interesting question.",
-            "materially advance the mainline",
+            "each advances the mainline",
+        )
+
+    def test_grill_rejects_adjacent_question_after_stated_scope_is_resolved(self) -> None:
+        self.assert_mainline_focus_rejected(
+            "grill",
+            "When its stated scope is resolved, stop and close the discussion; never invent\n"
+            "another decision.",
+            "When its stated scope is resolved, ask a related question to continue.",
+            "stated scope is resolved",
         )
 
     def test_grill_rejects_per_turn_mainline_ribbon(self) -> None:
         self.assert_mainline_focus_rejected(
             "grill",
-            "restate that link briefly before asking; do not repeat it every turn.",
+            "restate; do not repeat it every turn.",
             "repeat that link on every turn.",
             "do not repeat it every turn",
+        )
+
+    def test_grill_rejects_internal_route_status_in_an_ordinary_reply(self) -> None:
+        self.assert_mainline_focus_rejected(
+            "grill",
+            "Ask in the user's domain language",
+            "Ask with internal route labels",
+            "ask in the user's domain language",
         )
 
     def test_init_rejects_deterministic_bootstrap_as_explicit_default(self) -> None:
@@ -711,65 +1133,291 @@ class SemanticSourceMutationTests(unittest.TestCase):
                 self.discussion_template,
             )
 
-    def test_discussion_source_rejects_retired_identity_or_authority(self) -> None:
-        protocol = (
-            ROOT / "skills/using-teamwork/references/artifact-protocol.md"
-        ).read_text(encoding="utf-8")
-        mutations = (
-            (
-                protocol.replace(
-                    "it is not a transcript, a new skill, stage,\nroute, mode, state machine, or source of execution authority",
-                    "it is a transcript, stage, route, mode, state machine, and source of execution authority",
-                ),
-                "supporting-only boundary",
-            ),
-            (
-                protocol.replace("Do not update per turn.", "Update per turn."),
-                "material-checkpoint updates",
-            ),
-            (
-                protocol.replace(
-                    "stays subordinate to\ncanonical project sources. It cannot promote itself or authorize execution",
-                    "is canonical project memory and authorizes execution",
-                ),
-                "canonical and execution authority boundary",
-            ),
+    def test_discussion_source_rejects_broadened_explicit_grill_authority(self) -> None:
+        grill = self.skill_sources["grill-me"]
+        mutated = grill.replace(
+            "Explicit Grill authorizes only its supporting `docs/teamwork/`\n"
+            "discussion record unless the user says no files.",
+            "Explicit Grill authorizes all project writes.",
         )
-        for mutated, error in mutations:
-            with self.subTest(error=error):
-                self.assertNotEqual(mutated, protocol)
-                with self.assertRaisesRegex(EvalError, error):
-                    validate_discussion_source_text(
-                        self.skill_sources["grill-me"],
-                        self.skill_sources["using-teamwork"],
-                        mutated,
-                        self.discussion_template,
-                    )
-
-    def test_discussion_source_rejects_optional_route_or_playback(self) -> None:
-        protocol = (
-            ROOT / "skills/using-teamwork/references/artifact-protocol.md"
-        ).read_text(encoding="utf-8")
-        mutated = protocol.replace(
-            "persisted discussion includes both a full Route Map and a Textual Playback.",
-            "persisted discussion may include a route map or playback when convenient.",
-        )
-        self.assertNotEqual(mutated, protocol)
-        with self.assertRaisesRegex(EvalError, "required route map and textual playback"):
+        self.assertNotEqual(mutated, grill)
+        with self.assertRaisesRegex(EvalError, "narrow explicit-Grill write authority"):
             validate_discussion_source_text(
-                self.skill_sources["grill-me"],
-                self.skill_sources["using-teamwork"],
                 mutated,
+                self.skill_sources["using-teamwork"],
+                (ROOT / "skills/using-teamwork/references/artifact-protocol.md").read_text(
+                    encoding="utf-8"
+                ),
                 self.discussion_template,
             )
 
+    def test_discussion_source_rejects_short_grill_writes(self) -> None:
+        grill = self.skill_sources["grill-me"]
+        mutated = grill.replace(
+            "Short Grill stays artifact-free", "Short Grill writes a discussion record"
+        )
+        self.assertNotEqual(mutated, grill)
+        with self.assertRaisesRegex(EvalError, "short Grill artifact-free"):
+            validate_discussion_source_text(
+                mutated,
+                self.skill_sources["using-teamwork"],
+                (ROOT / "skills/using-teamwork/references/artifact-protocol.md").read_text(
+                    encoding="utf-8"
+                ),
+                self.discussion_template,
+            )
+
+    def test_discussion_source_requires_entry_time_protocol_load(self) -> None:
+        grill = self.skill_sources["grill-me"]
+        mutated = grill.replace(
+            "`skills/using-teamwork/references/artifact-protocol.md` completely at entry.",
+            "`skills/using-teamwork/references/artifact-protocol.md` before discussion access.",
+        )
+        self.assertNotEqual(mutated, grill)
+        with self.assertRaisesRegex(EvalError, "entry-time protocol load"):
+            validate_discussion_source_text(
+                mutated,
+                self.skill_sources["using-teamwork"],
+                (ROOT / "skills/using-teamwork/references/artifact-protocol.md").read_text(
+                    encoding="utf-8"
+                ),
+                self.discussion_template,
+            )
+
+    def test_discussion_source_preserves_observable_triggers(self) -> None:
+        mutations = (
+            ("the user explicitly asks to save or resume later", "the discussion feels long"),
+            ("a known handoff or context compaction is approaching", "ten minutes pass"),
+            (
+                "at least two substantive choices are settled while at least one remains open",
+                "enough words have accumulated",
+            ),
+            ("one decision has at least three real branches", "the agent feels uncertain"),
+            (
+                "Time, word count, and a short Grill never trigger persistence",
+                "Time and word count trigger persistence",
+            ),
+        )
+        for old, new in mutations:
+            with self.subTest(old=old):
+                self.assert_discussion_protocol_rejected(old, new, "discussion contract")
+
+    def test_discussion_source_preserves_runnable_helper_interface(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "From the project root, run `inspect`; the helper defaults its project root to\n"
+            "   the current directory.",
+            "Run inspect with unspecified required arguments.",
+            "cwd-default inspect",
+        )
+        self.assert_discussion_protocol_rejected(
+            "in exactly one\n   `apply --request-json <JSON>`",
+            "in an unspecified apply operation",
+            "single structured apply",
+        )
+        self.assert_discussion_protocol_rejected(
+            "Never use stdin.",
+            "Pass the request through stdin.",
+            "no stdin apply",
+        )
+
+    def test_discussion_source_preserves_supporting_privacy_boundary(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "Keep privacy-safe summaries, never hidden reasoning, secrets, unnecessary\n"
+            "personal data, or a transcript.",
+            "Store the complete transcript, secrets, and hidden reasoning.",
+            "privacy boundary",
+        )
+
+    def test_discussion_source_requires_five_recovery_sections(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "Goal, Settled (including reasons), Still open, Key evidence,\n"
+            "and Continue here",
+            "Goal and Notes",
+            "five human recovery sections",
+        )
+
+    def test_discussion_source_requires_new_input_for_updates_and_scope_close(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "Update only when the user's new input changes saved decisions, evidence, or the\n"
+            "continuation point, not merely because a turn resumed",
+            "Update on every turn",
+            "new-input-only updates",
+        )
+        self.assert_discussion_protocol_rejected(
+            "Opening, recovering, or\n"
+            "reading an existing discussion is read-only: after `inspect`, do not run `schema`\n"
+            "or `apply`; ask the saved unresolved question",
+            "Opening a discussion permits schema update and apply before asking a refined question",
+            "read-only resume",
+        )
+        self.assert_discussion_protocol_rejected(
+            "The user's stated\nGrill scope defines closure",
+            "Continue into adjacent decisions after the stated scope is complete",
+            "scope-bounded closure",
+        )
+
+    def test_discussion_source_requires_helper_as_sole_runtime_path(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "This helper is the sole runtime path for discussion\nstate",
+            "Edit the canonical discussion files directly",
+            "helper sole runtime path",
+        )
+
+    def test_discussion_source_requires_inspect_first_and_only_read_path(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "From the project root, run `inspect`; the helper defaults its project root to\n"
+            "   the current directory",
+            "Read index.json directly before running inspect",
+            "cwd-default inspect",
+        )
+        self.assert_discussion_protocol_rejected(
+            "Its result is the only discovery and reading source for\n"
+            "   canonical discussion state, anchors, and artifacts",
+            "Use searches and direct file reads to discover discussion state",
+            "inspect sole read path",
+        )
+
+    def test_discussion_source_rejects_direct_canonical_file_access(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "do not directly read\n"
+            "   `index.json`, `current.md`, `README.md`, or a discussion artifact",
+            "open index.json, current.md, README.md, and the artifact directly",
+            "no direct canonical reads",
+        )
+        self.assert_discussion_protocol_rejected(
+            "do not edit canonical files or substitute shell, validators, or another transaction",
+            "Edit index.json and current.md directly with a shell validator",
+            "no direct or ad-hoc write path",
+        )
+
+    def test_discussion_source_requires_semantic_record_and_opaque_revision(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "The helper derives the path, index entry, and rendered artifact",
+            "Manually choose a path and render the index entry and artifact",
+            "semantic helper rendering",
+        )
+        self.assert_discussion_protocol_rejected(
+            "Run\n   `schema <operation>` and fill exactly its JSON shape; never inspect helper\n"
+            "   source.",
+            "Construct an undocumented request by reading the helper source.",
+            "self-describing request schema",
+        )
+        self.assert_discussion_protocol_rejected(
+            "Reuse the opaque `revision` unchanged",
+            "Recompute or alter revision before apply",
+            "opaque revision reuse",
+        )
+
+    def test_discussion_source_requires_one_structured_apply(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "in exactly one\n   `apply --request-json <JSON>`",
+            "using multiple direct write operations",
+            "single structured apply",
+        )
+        self.assert_discussion_protocol_rejected(
+            "`apply` is the only writer",
+            "direct file edits are also supported writers",
+            "apply sole writer",
+        )
+
+    def test_discussion_source_rejects_close_then_create_replacement(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "never close and\n"
+            "then create as separate transactions",
+            "close the old record, then create the replacement separately",
+            "no close-create replacement",
+        )
+
+    def test_discussion_source_requires_atomic_replacement(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "Replacement atomically supersedes the\n"
+            "old record, links it to the new record, and activates the new one",
+            "Replacement may leave the old record active while creating the new one",
+            "atomic replacement",
+        )
+
+    def test_discussion_source_forbids_manual_fallback_after_helper_failure(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "Never manually repair or complete canonical state after a nonzero helper exit",
+            "After helper failure, patch the canonical files manually",
+            "no manual fallback write",
+        )
+        self.assert_discussion_protocol_rejected(
+            "Do not use this fallback after an attempted `apply`",
+            "Use the natural-language fallback after a partial apply",
+            "no post-apply fallback",
+        )
+
+    def test_discussion_source_requires_bounded_prewrite_fallback(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "Before writing, `initialized: false`, a user no-files request, or host read-only\n"
+            "state uses a natural-language fallback",
+            "Any helper failure uses a fallback",
+            "pre-write fallback conditions",
+        )
+        self.assert_discussion_protocol_rejected(
+            "goal, settled choices, open choice, key\n"
+            "evidence, and continuation point",
+            "a generic unavailable message",
+            "plain fallback recovery",
+        )
+        self.assert_discussion_protocol_rejected(
+            "State once that it was not saved and may be\nlost across sessions",
+            "Silently omit persistence",
+            "one-time continuity warning",
+        )
+
+    def test_discussion_source_requires_helper_failures_to_stop(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "stop the dependent question and any completion claim",
+            "continue questioning and claim completion",
+            "helper failure stop",
+        )
+
+    def test_discussion_source_allows_relevant_skill_explanation(self) -> None:
+        sources = {
+            "grill": self.skill_sources["grill-me"],
+            "protocol": (
+                ROOT / "skills/using-teamwork/references/artifact-protocol.md"
+            ).read_text(encoding="utf-8"),
+        }
+        for source_name, source in sources.items():
+            with self.subTest(source=source_name):
+                allowance = (
+                    "A brief skill name or purpose is welcome when it helps\n"
+                    "explain a capability, limit, or choice"
+                    if source_name == "grill"
+                    else "A brief skill name or purpose is welcome when it helps explain a\n"
+                    "capability, limit, or choice"
+                )
+                mutated = source.replace(
+                    allowance,
+                    "Never mention a skill or its purpose",
+                )
+                self.assertNotEqual(mutated, source)
+                with self.assertRaisesRegex(EvalError, "useful skill explanation"):
+                    validate_discussion_source_text(
+                        mutated if source_name == "grill" else sources["grill"],
+                        self.skill_sources["using-teamwork"],
+                        mutated if source_name == "protocol" else sources["protocol"],
+                        self.discussion_template,
+                    )
+
+    def test_discussion_source_keeps_continuity_only_user_reply(self) -> None:
+        self.assert_discussion_protocol_rejected(
+            "saved decisions, current resume context, or completed\n"
+            "discussion",
+            "paths, gates, checks, and helper process",
+            "continuity-value reply",
+        )
+
     def test_discussion_template_rejects_missing_required_sections(self) -> None:
         for heading, error in (
-            ("## Starting Question", "Starting Question"),
-            ("## Decision State", "Decision State"),
-            ("## Route Map", "Route Map"),
-            ("## Textual Playback", "Textual Playback"),
-            ("## Update Rules", "Update Rules"),
+            ("## Goal", "Goal"),
+            ("## Settled", "Settled"),
+            ("## Still open", "Still open"),
+            ("## Key evidence", "Key evidence"),
+            ("## Continue here", "Continue here"),
         ):
             with self.subTest(heading=heading):
                 mutated = self.discussion_template.replace(heading, f"## Removed {heading}")
@@ -783,48 +1431,28 @@ class SemanticSourceMutationTests(unittest.TestCase):
         with self.assertRaisesRegex(EvalError, "Authority: supporting"):
             validate_discussion_template_text(mutated)
 
-    def test_discussion_template_requires_route_map_and_textual_playback(self) -> None:
-        for heading, error in (
-            ("## Route Map", "Route Map"),
-            ("## Textual Playback", "Textual Playback"),
-        ):
-            with self.subTest(heading=heading):
-                mutated = self.discussion_template.replace(
-                    heading, f"## Removed {heading}"
-                )
-                with self.assertRaisesRegex(EvalError, error):
-                    validate_discussion_template_text(mutated)
-
-    def test_discussion_template_rejects_undefined_edge_key(self) -> None:
-        mutated = self.discussion_template.replace("R1 --> R3", "R1 --> R4")
+    def test_discussion_template_requires_a_specific_topic_h1(self) -> None:
+        mutated = self.discussion_template.replace(
+            "# <Specific decision or continuation title>", "# Discussion"
+        )
         self.assertNotEqual(mutated, self.discussion_template)
-        with self.assertRaisesRegex(EvalError, "undefined node keys: R4"):
+        with self.assertRaisesRegex(EvalError, "specific topic H1"):
             validate_discussion_template_text(mutated)
 
-    def test_discussion_template_rejects_note_details_in_diagram_labels(self) -> None:
-        for field in ("Evidence", "Reason", "Mainline impact"):
-            with self.subTest(field=field):
-                mutated = self.discussion_template.replace(
-                    'R2["R2 · Option A · open"]',
-                    f'R2["R2 · Option A · open · {field}: benchmark"]',
-                )
-                with self.assertRaisesRegex(EvalError, "must not duplicate Decision State"):
-                    validate_discussion_template_text(mutated)
-
-    def test_discussion_template_requires_every_decision_state_field(self) -> None:
+    def test_discussion_template_requires_recovery_reasoning(self) -> None:
         mutated = self.discussion_template.replace(
-            "- Evidence: <decision-relevant sources and observations>",
-            "- Inputs: <decision-relevant sources and observations>",
+            "why it was chosen", "that it was chosen"
         )
-        with self.assertRaisesRegex(EvalError, "Decision State must include Evidence"):
+        self.assertNotEqual(mutated, self.discussion_template)
+        with self.assertRaisesRegex(EvalError, "Settled must preserve why it was chosen"):
             validate_discussion_template_text(mutated)
 
     def test_discussion_handoff_rejects_repeated_answered_decision(self) -> None:
-        path = ROOT / "evals/teamwork/cases/discussion-handoff-playback.dev.json"
+        path = ROOT / "evals/teamwork/cases/discussion-handoff-recovery.dev.json"
         data = json.loads(path.read_text(encoding="utf-8"))
         data["trajectory"][0]["assistant"] = (
-            "Textual playback: We already decided to use a dedicated discussion artifact and "
-            "persist only long or materially branching Grill.\n"
+            "We already decided to use a dedicated discussion artifact and "
+            "persist only when an observable trigger is present.\n"
             "Should we use a dedicated discussion artifact?"
         )
         with self.assertRaisesRegex(EvalError, "repeats answered decision"):

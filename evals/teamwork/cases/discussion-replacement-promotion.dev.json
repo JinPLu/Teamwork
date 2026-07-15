@@ -6,11 +6,11 @@
   "platforms": ["codex", "cursor", "claude"],
   "prompt": "During a persisted branching Grill, the user replaces the task; later, a surviving conclusion meets the trigger for promotion to a plan.",
   "expected": {
-    "requires": ["replaced_route_superseded", "promotion_trigger_and_target", "promotion_no_execution_authority", "static_contract_only"]
+    "requires": ["replaced_discussion_superseded", "promotion_trigger_and_target", "promotion_no_execution_authority", "static_contract_only"]
   },
   "must": [
-    "close or supersede the replaced route instead of continuing it",
-    "record the promotion target and trigger in Decision State"
+    "close or supersede the replaced discussion instead of continuing it",
+    "record the promotion target and reason in the supporting artifact"
   ],
   "must_not": [
     "treat promotion or task replacement as execution authority",

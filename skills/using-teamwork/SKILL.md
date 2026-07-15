@@ -6,14 +6,18 @@ description: Use when Teamwork is explicitly requested, work must cross Teamwork
 # Using Teamwork
 
 Teamwork routes work across stages while native tools do the work. Small, clear
-tasks stay native even across several files. Do not load this router when the
-stage is already clear.
+tasks stay native even across several files. When the prompt already contains
+all decision-relevant facts, a stable explanation stays native; Research is not
+a valid route merely to explain them. Do not load this router when the stage is
+already clear.
 
 Read `references/workflow-contract.md` for shared rules; read
 `references/routing-policy.md` only when the next stage is unclear.
 
-Use audience-first replies. Omit route, stage, progress, and internal-record
-narration unless requested or it changes a decision or action.
+Use the shortest complete audience-first reply. A short skill explanation is
+useful when it clarifies a capability, limitation, or choice; omit route, stage,
+files, subagents, test counts, progress, and internal-record narration when they
+cannot change the user's understanding, decision, action, risk, or confidence.
 
 Route explicit grill/question-first requests to `skills/grill-me/SKILL.md`
 before stage selection; ordinary clarification stays outside it. A non-simple
@@ -29,10 +33,9 @@ inherited authority.
 Route by intent and evidence. Proceed when the stage and required state are
 clear; unresolved questions follow the shared Ask Gate.
 
-- **Native** — quick facts, structural lookup, small clear edits, obvious fixes,
-  simple checks, and low-risk mechanical work.
-- **Research** (`skills/teamwork-research/SKILL.md`) — source, API behavior,
-  stale facts, options, constraints, or repro surface is unclear.
+- **Native** — quick facts, clear edits/fixes, and simple checks.
+- **Research** (`skills/teamwork-research/SKILL.md`) — unknown facts, current
+  behavior, options, constraints, or repro surface.
 - **Debug** (`skills/teamwork-debug/SKILL.md`) — a failure, flaky run, CI log,
   crash, UI symptom, or regression needs reproduction/root cause.
 - **Plan** (`skills/teamwork-plan/SKILL.md`) — design/planning is requested or
@@ -51,14 +54,11 @@ clear; unresolved questions follow the shared Ask Gate.
 Stage names are optional force switches. If one plainly owns the task, load it
 directly.
 
-## Orchestrate
-
-Fan out only independent, owned tracks whose value exceeds coordination cost.
-The main agent owns integration and verification. Use a fresh Reviewer only
-when the risk matrix requires one.
-
 ## Output
 
-For native work, just answer. Name a route only for a handoff, redirect, or
-blocker. At a material decision, state `Settled` / `Still open` in ordinary
-language; the root translates internal findings for people.
+For native work, just answer. Name a route or skill only when it explains a
+useful capability, limitation, handoff, redirect, or blocker. At a material
+decision, state `Settled` / `Still open` in ordinary language; the root
+translates internal findings for people. For a supplied-facts explanation, name
+the conclusion and missing discriminator once, then stop; do not enumerate
+hypothetical causes or restate the limit.

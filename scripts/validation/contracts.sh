@@ -14,8 +14,8 @@ grep_required '回复会先给出结论或它代表的含义' "$ROOT/README.md" 
   "README must promise an audience-first response"
 grep_required '技术细节只在确有帮助或你要求时展开' "$ROOT/README.md" \
   "README must relevance-gate technical detail"
-grep_required '只有在长任务或交接需要时，才保留记录关键决定与证据的可持续路线图' "$ROOT/README.md" \
-  "README must keep durable continuity optional"
+grep_required '只有出现明确的连续性信号时，才保存一份包含目标、已定选择、未决问题、关键证据和继续点的紧凑摘要' "$ROOT/README.md" \
+  "README must describe signal-gated durable continuity"
 grep_required '只删除已确认由 Teamwork 生成的条目' "$ROOT/README.md" \
   "README must require safe legacy cleanup"
 grep_required '绝不要整体删除 `.agents`、`.codex`、`.cursor` 或 `.claude`' "$ROOT/README.md" \
@@ -58,8 +58,8 @@ grep_required 'Replies lead with the conclusion or what it means' "$ROOT/README.
   "English README must promise an audience-first response"
 grep_required 'Technical detail appears when it is useful or requested' "$ROOT/README.en.md" \
   "English README must relevance-gate technical detail"
-grep_required 'For a long task or handoff, Teamwork can keep a durable route map' "$ROOT/README.en.md" \
-  "English README must keep durable continuity optional"
+grep_required 'Only observable continuity signals create one compact summary of the goal, settled choices, open question, key evidence, and continue point' "$ROOT/README.en.md" \
+  "English README must describe signal-gated durable continuity"
 grep_required 'Delete only entries you have confirmed Teamwork generated' "$ROOT/README.en.md" \
   "English README must require safe legacy cleanup"
 grep_required 'never the whole `.agents`, `.codex`, `.cursor`, or `.claude` directory' "$ROOT/README.en.md" \
@@ -72,6 +72,23 @@ grep_required 'Codex + Cursor + Claude Code skill package' "$ROOT/AGENTS.md" "AG
 grep_required 'teamwork-update' "$ROOT/AGENTS.md" "AGENTS.md must document update skill ownership"
 grep_required 'check-update.sh' "$ROOT/AGENTS.md" "AGENTS.md must document check-update script"
 grep_required 'teamwork-init' "$ROOT/AGENTS.md" "AGENTS.md must document init skill ownership"
+for retrieval_surface in \
+  "$ROOT/AGENTS.md" \
+  "$ROOT/scripts/init-project-files.py" \
+  "$ROOT/skills/using-teamwork/references/teamwork-index-readme-template.md"; do
+  grep_required 'For Grill/discussion continuation, load `grill-me`' "$retrieval_surface" \
+    "$retrieval_surface must load grill-me before discussion continuation"
+  grep_required 'run `inspect` from the project root' "$retrieval_surface" \
+    "$retrieval_surface must route discussion reads through helper inspect"
+  normalized_required 'sole discussion read path' "$retrieval_surface" \
+    "$retrieval_surface must keep helper inspect as the sole discussion read path"
+  normalized_required 'do not directly read `index.json`' "$retrieval_surface" \
+    "$retrieval_surface must forbid direct canonical-memory reads during discussion continuation"
+done
+grep_absent 'Follow `active.current`, then `active.discussion`\|read the active discussion before continuing dependent work' \
+  "project retrieval instructions must not direct-read active discussion state" \
+  "$ROOT/AGENTS.md" \
+  "$ROOT/skills/using-teamwork/references/teamwork-index-readme-template.md"
 # Every platform guide carries the shared public promise. This protects the
 # user-facing contract without making a guide narrate versioning, routing,
 # host goal modes, or maintainer test implementation.
@@ -88,8 +105,8 @@ for guide in CODEX.md CURSOR.md CLAUDE.md; do
     "$guide must relevance-gate technical detail"
   normalized_required 'rather than narrating internal workflow labels or version details' "$guide_path" \
     "$guide must not make internal process narration the response"
-  grep_required 'durable route map' "$guide_path" "$guide must offer durable continuity when useful"
-  grep_required 'ordinary requests do not need one' "$guide_path" \
+  grep_required 'one compact summary of the goal' "$guide_path" "$guide must offer compact durable continuity when useful"
+  normalized_required 'ordinary requests do not need one' "$guide_path" \
     "$guide must keep durable continuity optional"
   grep_required 'teamwork-init' "$guide_path" "$guide must point users to project-context setup"
   grep_required 'teamwork-update' "$guide_path" "$guide must point users to global refresh guidance"
@@ -200,8 +217,8 @@ grep_required 'non-reserved `teamwork`' "$ROOT/skills/using-teamwork/references/
 [[ "$(wc -l < "$ROOT/README.en.md")" -le 200 ]] || fail "English README should stay concise"
 line_count_max "$ROOT/skills/using-teamwork/SKILL.md" 80 "using-teamwork should stay concise"
 word_count_max "$ROOT/skills/using-teamwork/SKILL.md" 450 "using-teamwork should stay concise"
-line_count_max "$ROOT/skills/grill-me/SKILL.md" 40 "grill-me should stay concise"
-word_count_max "$ROOT/skills/grill-me/SKILL.md" 260 "grill-me should stay concise"
+line_count_max "$ROOT/skills/grill-me/SKILL.md" 35 "grill-me should stay concise"
+word_count_max "$ROOT/skills/grill-me/SKILL.md" 245 "grill-me should stay concise"
 line_count_max "$ROOT/skills/teamwork-init/SKILL.md" 95 "teamwork-init should stay concise"
 word_count_max "$ROOT/skills/teamwork-init/SKILL.md" 650 "teamwork-init should stay concise"
 line_count_max "$ROOT/skills/teamwork-debug/SKILL.md" 85 "teamwork-debug should stay concise"
@@ -236,8 +253,8 @@ line_count_max "$ROOT/skills/using-teamwork/references/routing-policy.md" 70 "ro
 word_count_max "$ROOT/skills/using-teamwork/references/routing-policy.md" 520 "routing policy reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/role-playbook.md" 100 "role playbook reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/role-playbook.md" 650 "role playbook reference should stay focused"
-line_count_max "$ROOT/skills/using-teamwork/references/artifact-protocol.md" 120 "artifact protocol reference should stay focused"
-word_count_max "$ROOT/skills/using-teamwork/references/artifact-protocol.md" 780 "artifact protocol reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/artifact-protocol.md" 100 "artifact protocol reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/artifact-protocol.md" 650 "artifact protocol reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/goal-iteration.md" 90 "goal iteration reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/goal-iteration.md" 520 "goal iteration reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/plan-output.md" 90 "plan output reference should stay focused"
@@ -246,6 +263,9 @@ line_count_max "$ROOT/skills/using-teamwork/references/review-checks.md" 60 "rev
 word_count_max "$ROOT/skills/using-teamwork/references/review-checks.md" 460 "review checks reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/project-init.md" 85 "project init reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/project-init.md" 650 "project init reference should stay focused"
+grep_required 'durable marker blocks protocol reads and writes' \
+  "$ROOT/skills/using-teamwork/references/project-init.md" \
+  "project init must document hard-interruption recovery instead of instant multi-file atomicity"
 line_count_max "$ROOT/skills/using-teamwork/references/check-update.md" 70 "check update reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/check-update.md" 500 "check update reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/research-protocol.md" 60 "research protocol reference should stay focused"

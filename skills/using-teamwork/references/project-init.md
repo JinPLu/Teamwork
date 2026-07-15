@@ -56,10 +56,12 @@ An equivalent second semantic audit with no new evidence, classification, or
 mainline change writes nothing and reports `no-change`.
 
 ## Safe Migration
-For automatic migration: transform a same-filesystem temporary copy; preserve
-unrelated/custom content; validate schema, anchors, uniqueness, and intent; then
-atomically replace. Failure must leave destination bytes unchanged. Without a safe
-migrator, preserve the legacy or custom key/content and report a candidate.
+For automatic migration, preserve unrelated content; validate schema, anchors,
+uniqueness, and intent; then use a recoverable same-filesystem transaction.
+Caught failures restore exact old bytes. A hard interruption may briefly leave
+mixed bytes, but a durable marker blocks protocol reads and writes; the next
+locked init rolls back before commit or finishes cleanup after it. Without a
+safe migrator, preserve the legacy or custom content and report a candidate.
 
 ## Readiness, Capability, And Output
 

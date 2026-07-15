@@ -52,11 +52,12 @@ def evidence(turn: int = 1, event: int | None = None) -> list[dict[str, int]]:
 
 def sample_review(verdict: str = "ACCEPT") -> dict[str, object]:
     trajectory = sample_trajectory()
-    outcomes = {
-        "ACCEPT": ["PASS", "PASS", "PASS", "PASS"],
-        "REVISE": ["REVISE", "PASS", "PASS", "PASS"],
-        "REJECT": ["FAIL", "PASS", "PASS", "PASS"],
-        "INCONCLUSIVE": ["INCONCLUSIVE", "PASS", "PASS", "PASS"],
+    outcomes = ["PASS"] * len(RUBRIC["criteria"])
+    outcomes[0] = {
+        "ACCEPT": "PASS",
+        "REVISE": "REVISE",
+        "REJECT": "FAIL",
+        "INCONCLUSIVE": "INCONCLUSIVE",
     }[verdict]
     scores = {
         "PASS": 4,
@@ -184,7 +185,7 @@ class SemanticReviewContractTests(unittest.TestCase):
     def test_rejects_incomplete_criteria_and_verdict_outcome_mismatch(self) -> None:
         review = sample_review()
         review["criteria"].pop()
-        self.assert_invalid(review, "missing criteria: outcome_quality")
+        self.assert_invalid(review, "missing criteria: mainline_question_value")
 
         review = sample_review("ACCEPT")
         review["criteria"][0].update({"outcome": "FAIL", "score": 0})

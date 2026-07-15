@@ -148,6 +148,9 @@ REQUIRED_QUESTION_FIRST_CASES = {
     "grill-question-value-stop": {
         "ownership_oracle",
         "expected_asked_candidates",
+        "mainline_anchoring",
+        "public_decision_retained",
+        "implementation_detail_deprioritized",
         "normal_completion",
         "no_new_authority",
     },
@@ -238,36 +241,48 @@ REQUIRED_SEMANTIC_INIT_CASES = {
 REQUIRED_DISCUSSION_CASES = {
     "discussion-short-grill": {
         "short_grill_artifact_free",
+        "short_grill_no_write",
         "static_contract_only",
     },
     "discussion-authorized-checkpoint": {
-        "long_grill_supporting_artifact",
-        "write_authority_required",
-        "material_checkpoint_only",
+        "observable_discussion_trigger",
+        "explicit_grill_narrow_discussion_authority",
+        "supporting_artifact_only",
+        "five_section_human_recovery",
+        "persistence_before_next_question",
+        "readback_verified_anchors",
+        "static_contract_only",
+    },
+    "discussion-resume-no-new-input": {
+        "inspect_canonical_state",
+        "resume_without_new_input_is_read_only",
+        "no_schema_or_apply",
+        "ask_saved_unresolved_question",
         "static_contract_only",
     },
     "discussion-unauthorized-candidate": {
         "discussion_checkpoint_candidate",
         "durable_continuity_not_guaranteed",
         "no_canonical_memory_change",
+        "no_write_authority",
         "static_contract_only",
     },
-    "discussion-handoff-playback": {
-        "decision_state_resume",
-        "durable_route_map",
-        "textual_playback",
+    "discussion-handoff-recovery": {
+        "human_recoverability",
+        "five_section_recovery",
         "no_repeated_answered_decision",
         "handoff_continuity",
         "static_contract_only",
     },
-    "discussion-route-map-playback": {
-        "durable_route_map",
-        "textual_playback",
-        "decision_state_resume",
+    "discussion-human-recovery": {
+        "specific_topic_h1",
+        "five_section_recovery",
+        "decision_map_optional_for_three_branches",
+        "human_recoverability",
         "static_contract_only",
     },
     "discussion-replacement-promotion": {
-        "replaced_route_superseded",
+        "replaced_discussion_superseded",
         "promotion_trigger_and_target",
         "promotion_no_execution_authority",
         "static_contract_only",
@@ -278,8 +293,23 @@ REQUIRED_AUDIENCE_CASES = {
         "audience_first_answer",
         "plain_causal_explanation",
         "relevance_gate",
+        "no_irrelevant_internal_detail",
+        "no_generic_proof_status",
         "specific_material_uncertainty",
         "decision_appropriate_next_step",
+        "static_contract_only",
+    },
+    "audience-skill-explanation-contrast": {
+        "skill_explanation_allowed",
+        "capability_or_limit_relevance",
+        "engineering_process_dump_rejected",
+        "static_contract_only",
+    },
+    "audience-one-sentence-fact-control": {
+        "shortest_complete_answer",
+        "one_sentence_control",
+        "no_forced_cause",
+        "no_forced_action",
         "static_contract_only",
     },
 }
@@ -307,7 +337,12 @@ REQUIRED_SKILL_CASE_CLAUSES = {
     "grill-explicit-skill-invocation": {"explicit_activation", "no_enactment"},
     "grill-negative-signal-control": {"negative_signal_wins", "no_activation"},
     "grill-quoted-marker-control": {"quoted_marker_inert", "no_activation"},
-    "grill-question-value-stop": {"mainline_anchoring", "no_implementation_authority"},
+    "grill-question-value-stop": {
+        "mainline_anchoring",
+        "public_decision_retained",
+        "implementation_detail_deprioritized",
+        "no_implementation_authority",
+    },
     "research-source-quality": {"observed_inferred_claimed", "read_only_boundary"},
     "debug-repro-before-fix": {
         "repro_before_fix",
@@ -370,6 +405,14 @@ SKILL_SOURCE_CONTRACTS = {
         "skills/using-teamwork/SKILL.md",
         (
             ("Native fast path", "small, clear tasks stay native"),
+            (
+                "known-facts native explanation",
+                "when the prompt already contains all decision-relevant facts, a stable explanation stays native",
+            ),
+            (
+                "supplied-facts concise explanation",
+                "for a supplied-facts explanation, name the conclusion and missing discriminator once, then stop",
+            ),
             ("Native stage", "**Native**"),
             ("Research stage", "**Research**"),
             ("Debug stage", "**Debug**"),
@@ -385,8 +428,24 @@ SKILL_SOURCE_CONTRACTS = {
         "skills/grill-me/SKILL.md",
         (
             ("explicit activation", "enter for an explicit request"),
-            ("negative intent wins", "explicit negative intent suppresses this interview"),
+            (
+                "frontmatter non-simple Plan entry",
+                "a non-simple plan auto-enters",
+            ),
+            (
+                "automatic non-simple Plan body entry",
+                "automatically from every non-simple plan",
+            ),
+            ("negative intent wins", "explicit negative intent wins"),
             ("inert mentions", "quoted, file, tool, example, or maintenance mentions are inert"),
+            (
+                "evidence-backed recommended answer",
+                "before every question, inspect discoverable evidence and give a recommended answer grounded in it",
+            ),
+            (
+                "concise text fallback",
+                "when callable; otherwise ask one concise text question",
+            ),
             ("no execution authority", "confirmation does not grant implementation authority"),
         ),
     ),
@@ -395,6 +454,10 @@ SKILL_SOURCE_CONTRACTS = {
         (
             ("observed/inferred/claimed evidence", "`observed`, `inferred`, and `claimed` findings"),
             ("read-only boundary", "research does not authorize edits, external writes"),
+            (
+                "supplied-facts native boundary",
+                "do not enter merely to explain supplied facts when no lookup or stale-assumption check is needed; return to native",
+            ),
         ),
     ),
     "teamwork-debug": (

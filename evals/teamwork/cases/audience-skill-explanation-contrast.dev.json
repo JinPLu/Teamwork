@@ -1,0 +1,30 @@
+{
+  "id": "audience-skill-explanation-contrast",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/workflow-contract.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Explain briefly why you can review this change but cannot edit it yet. A skill name is welcome if it makes the capability or limit clearer; do not list engineering process details.",
+  "expected": {
+    "requires": [
+      "skill_explanation_allowed",
+      "capability_or_limit_relevance",
+      "engineering_process_dump_rejected",
+      "static_contract_only"
+    ]
+  },
+  "must": [
+    "allow a short skill explanation when it clarifies the read-only limit",
+    "connect the limit to the authorization the user would need to provide"
+  ],
+  "must_not": [
+    "reject the answer merely because it names a skill",
+    "list routes, files, subagents, or test counts that do not help the decision"
+  ],
+  "authored_response": "`teamwork-review` is read-only, so I can assess the change now but need your authorization before editing it.",
+  "negative_control": {
+    "id": "engineering_process_dump",
+    "response": "I loaded teamwork-review, routed through Review, opened skills/teamwork-review/SKILL.md, dispatched a reviewer subagent, and ran 42 tests."
+  },
+  "evidence": "Offline authored contrast: a brief skill explanation can clarify a user-relevant limit, while an engineering process inventory cannot."
+}

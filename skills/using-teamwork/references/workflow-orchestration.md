@@ -21,13 +21,15 @@ A workflow-class run has explicit state outside the main context:
 3. **Execute**: run Worker or Explorer waves.
 4. **Verify**: run commands, artifact checks, or behavior inspection.
 5. **Cross-check**: use independent Reviewer/Judge agents to challenge findings.
-6. **Synthesize**: produce final evidence, residual risks, and Memory Delta.
+6. **Synthesize**: produce final evidence and residual risks; account for memory
+   changes internally.
 
 Internally track the phase plan, proportional concurrency and disjoint ownership,
 verification gate, stop controls, and compact progress. Use explicit token/time
 or source budgets when the user, runtime, or accepted plan supplies them;
 otherwise use runtime limits and no-progress stops without inventing numbers.
-This internal accounting is not a mandatory user-facing packet.
+This internal accounting is not a user-facing packet. Translate any relevant
+memory change into plain language instead of exposing its label or enum.
 
 ## Platform Mapping
 

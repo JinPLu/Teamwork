@@ -2,7 +2,10 @@
 set -euo pipefail
 
 TEAMWORK_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROJECT_ROOT="$PWD"
+ORIGINAL_ARGS=("$@")
+CALLER_PWD="$PWD"
+PROJECT_ROOT_INPUT="$PWD"
+PROJECT_ROOT=""
 INSTALL_MODE_FLAG=""
 PROFILE_VALUE=""
 RUN_CODEGRAPH="${TEAMWORK_INIT_CODEGRAPH:-1}"
@@ -26,14 +29,64 @@ Initializes a project with full Teamwork defaults:
   - .gitignore entries for local Teamwork state
   - CodeGraph index when the codegraph CLI is available
   - Cursor User Rules block copied to clipboard when clipboard tooling exists
+
+Safety boundary: the project-root path and each existing caller-path ancestor
+must be real directories; symlink components are refused before any write.
 USAGE
+}
+
+require_python() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "python3 is required to write Teamwork project init files." >&2
+    exit 1
+  fi
+}
+
+preflight_project_root_input() {
+  require_python
+  TEAMWORK_PROJECT_ROOT_INPUT="$PROJECT_ROOT_INPUT" \
+  TEAMWORK_CALLER_PWD="$CALLER_PWD" \
+  python3 <<'PY'
+import os
+import stat
+from pathlib import Path
+
+raw = os.environ["TEAMWORK_PROJECT_ROOT_INPUT"]
+caller_pwd = os.environ["TEAMWORK_CALLER_PWD"]
+if not raw:
+    raise SystemExit("Teamwork project root must not be empty")
+if not os.path.isabs(caller_pwd):
+    raise SystemExit(f"Teamwork caller PWD must be absolute: {caller_pwd}")
+
+parts = []
+if not os.path.isabs(raw):
+    parts.extend(caller_pwd.split("/"))
+parts.extend(raw.split("/"))
+current = Path("/")
+for part in parts:
+    if part in ("", "."):
+        continue
+    if part == "..":
+        current = current.parent
+        continue
+    candidate = current / part
+    try:
+        mode = candidate.lstat().st_mode
+    except FileNotFoundError:
+        raise SystemExit(f"Teamwork project-root component does not exist: {candidate}")
+    if stat.S_ISLNK(mode):
+        raise SystemExit(f"refusing symlinked Teamwork project-root component: {candidate}")
+    if not stat.S_ISDIR(mode):
+        raise SystemExit(f"expected Teamwork project-root directory component: {candidate}")
+    current = candidate
+PY
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --project-root)
       [[ $# -ge 2 ]] || { echo "--project-root requires a path." >&2; exit 2; }
-      PROJECT_ROOT="$(cd "$2" && pwd)"
+      PROJECT_ROOT_INPUT="$2"
       shift 2
       ;;
     --copy|--link)
@@ -70,266 +123,68 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-require_python() {
-  if ! command -v python3 >/dev/null 2>&1; then
-    echo "python3 is required to write Teamwork project init files." >&2
-    exit 1
+preflight_project_root_input
+PROJECT_ROOT="$(cd "$PROJECT_ROOT_INPUT" && pwd -P)"
+
+guard_environment_present() {
+  [[ -n "${TEAMWORK_DISCUSSION_GUARD_ROOT_FD:-}" \
+    || -n "${TEAMWORK_DISCUSSION_GUARD_DOCS_FD:-}" \
+    || -n "${TEAMWORK_DISCUSSION_GUARD_TEAMWORK_FD:-}" \
+    || -n "${TEAMWORK_DISCUSSION_GUARD_LOCK_FD:-}" \
+    || -n "${TEAMWORK_DISCUSSION_GUARD_TOKEN:-}" ]]
+}
+
+verify_inherited_guard_lock_owner() {
+  TEAMWORK_PROJECT_ROOT="$PROJECT_ROOT" python3 <<'PY'
+import fcntl
+import os
+
+names = (
+    "TEAMWORK_DISCUSSION_GUARD_ROOT_FD",
+    "TEAMWORK_DISCUSSION_GUARD_DOCS_FD",
+    "TEAMWORK_DISCUSSION_GUARD_TEAMWORK_FD",
+    "TEAMWORK_DISCUSSION_GUARD_LOCK_FD",
+    "TEAMWORK_DISCUSSION_GUARD_TOKEN",
+)
+if any(not os.environ.get(name) for name in names):
+    raise SystemExit("incomplete inherited discussion transaction guard")
+try:
+    lock_fd = int(os.environ["TEAMWORK_DISCUSSION_GUARD_LOCK_FD"])
+except ValueError:
+    raise SystemExit("invalid inherited discussion transaction guard: lock file descriptor is malformed")
+try:
+    fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+except OSError as exc:
+    raise SystemExit(
+        "invalid inherited discussion transaction guard: "
+        f"lock descriptor does not own the discussion lock: {exc}"
+    )
+PY
+}
+
+enter_discussion_transaction_guard() {
+  if guard_environment_present; then
+    verify_inherited_guard_lock_owner
+    return
   fi
+  export TEAMWORK_NOTIFICATIONS_ACTION="$NOTIFICATIONS_ACTION"
+  exec "$TEAMWORK_ROOT/skills/using-teamwork/scripts/discussion-transaction.py" \
+    guard --allow-init-recovery --project-root "$PROJECT_ROOT" -- \
+    "$TEAMWORK_ROOT/scripts/init-project.sh" "${ORIGINAL_ARGS[@]}"
+}
+
+project_files() {
+  TEAMWORK_PROJECT_ROOT="$PROJECT_ROOT" \
+    python3 "$TEAMWORK_ROOT/scripts/init-project-files.py" "$@"
 }
 
 install_global_surfaces() {
   local args=()
   [[ -n "$INSTALL_MODE_FLAG" ]] && args+=("$INSTALL_MODE_FLAG")
   [[ -n "$PROFILE_VALUE" ]] && args+=(--profile "$PROFILE_VALUE")
+  args+=(all)
   TEAMWORK_NOTIFICATIONS_ACTION="$NOTIFICATIONS_ACTION" \
-    "$TEAMWORK_ROOT/install.sh" "${args[@]}" all
-}
-
-write_project_files() {
-  require_python
-  TEAMWORK_PROJECT_ROOT="$PROJECT_ROOT" \
-  TEAMWORK_TODAY="$(date +%F)" \
-  python3 <<'PY'
-import json
-import os
-import re
-from pathlib import Path
-
-root = Path(os.environ["TEAMWORK_PROJECT_ROOT"])
-today = os.environ["TEAMWORK_TODAY"]
-project_name = root.name or "Project"
-
-
-def first_readme_heading() -> str:
-    for name in ("README.md", "README.en.md", "readme.md"):
-        path = root / name
-        if not path.exists():
-            continue
-        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
-            if line.startswith("# "):
-                return line[2:].strip()
-    return ""
-
-
-readme_label = first_readme_heading()
-project_label = readme_label or project_name
-project_description = "Local Teamwork memory index for this project."
-
-docs = root / "docs" / "teamwork"
-for directory in (docs, docs / "research", docs / "plans", docs / "reports", docs / "workflows"):
-    directory.mkdir(parents=True, exist_ok=True)
-
-
-def write_if_missing(path: Path, text: str) -> None:
-    if not path.exists():
-        path.write_text(text, encoding="utf-8")
-
-
-readme = """# Teamwork Runtime Index README
-
-## Purpose
-
-This local runtime README is the entrypoint for Teamwork memory in this project.
-Project instructions may point here, but should not inline this runtime narrative.
-
-## Read Order
-
-1. Read `docs/teamwork/index.json` first.
-2. Follow `active.current`, then `active.discussion` when present, then the other `active` pointers before any broad scan.
-3. Prefer headers before full artifact bodies.
-4. Use stage-specific profiles from the index.
-
-Legacy numeric budgets are compatibility retrieval hints, not execution limits
-or hard stops. New indexes use header-first retrieval without numeric defaults.
-
-## Stage Notes
-
-- `research`: read topic headers first, then selective bodies.
-- `discussion`: read the active discussion before continuing dependent work.
-- `plan`: read active design/plan before adding or replacing plan state.
-- `execute`: read active plan/progress before implementation updates.
-- `review`: verify active claims against commands/logs/results.
-
-## Bounds
-
-Keep this file concise and operational.
-"""
-
-current = f"""# Teamwork Current State
-
-Last Updated: {today}
-
-## Active Snapshot
-
-- Current focus: Initial Teamwork project setup.
-- Active discussion: none.
-- Active plan/design: none.
-- Progress summary: Teamwork runtime memory was initialized for this project.
-- Latest result: Project instructions and Teamwork runtime memory are ready for use.
-- Blockers: none recorded.
-- Next action: Replace this digest when material project state changes.
-
-## Verification Anchors
-
-- Commands: discover from project files before changing behavior.
-- Logs/Artifacts: none recorded.
-- Result paths: `docs/teamwork/index.json`, `docs/teamwork/current.md`.
-
-## Supersession
-
-- Supersedes: none.
-- Superseded by: none.
-
-## Pending
-
-- None.
-
-## Notes
-
-This is a compact digest, not a running log. Replace in place as state changes.
-"""
-
-index = {
-    "schema_version": 1,
-    "last_updated": today,
-    "project": {
-        "name": project_label,
-        "root": ".",
-        "description": project_description,
-    },
-    "source_of_truth_order": ["active", "linked", "header_search", "fulltext"],
-    "ignore_globs": [".planning/**"],
-    "budgets": {
-        "header_first": True,
-    },
-    "active": {
-        "current": "docs/teamwork/current.md",
-        "design": None,
-        "plan": None,
-        "progress": None,
-        "goal": None,
-        "report": None,
-        "discussion": None,
-        "results": [],
-    },
-    "entries": [
-        {
-            "topic": "project-initialization",
-            "kind": "result",
-            "title": "Teamwork project initialization",
-            "status": "active",
-            "currentness": "current",
-            "authority": "active-summary",
-            "path": "docs/teamwork/current.md",
-            "applies_to": ["AGENTS.md", "docs/teamwork/"],
-            "linked": [],
-            "evidence_paths": ["docs/teamwork/current.md"],
-            "supersedes": [],
-            "search_keys": ["teamwork-init", "project-init", "initialization"],
-            "updated": today,
-            "summary": "Initial Teamwork runtime memory entry created by project init.",
-        }
-    ],
-    "profiles": {
-        "status": ["index", "current", "active_discussion", "topic"],
-        "implementation": ["index", "current", "active_discussion", "active_design_or_plan", "linked_research_headers"],
-        "review": ["index", "current", "active_discussion", "active_design_or_plan", "active_progress", "verification"],
-        "research": ["index", "current", "active_discussion", "topic_headers", "linked_artifacts"],
-        "design": ["index", "current", "active_discussion", "accepted_decisions", "active_design_plan", "linked_research"],
-    },
-    "pending": [],
-}
-
-write_if_missing(docs / "README.md", readme)
-write_if_missing(docs / "current.md", current)
-write_if_missing(docs / "index.json", json.dumps(index, indent=2, ensure_ascii=False) + "\n")
-
-def configured(substr: str) -> str | None:
-    candidates = (
-        root / ".cursor" / "mcp.json",
-        root / ".mcp.json",
-    )
-    for path in candidates:
-        if path.is_file() and substr in path.read_text(encoding="utf-8", errors="replace").lower():
-            try:
-                return str(path.relative_to(root))
-            except ValueError:
-                return str(path)
-    return None
-
-
-project_lines = [
-    f"- Project label (local routing only): `{project_label}`.",
-    "- Teamwork memory: read `docs/teamwork/index.json` first, then `docs/teamwork/README.md` when durable memory is relevant.",
-]
-codegraph_config = configured("codegraph")
-if (root / ".codegraph").is_dir():
-    project_lines.append("- CodeGraph: this project has a local `.codegraph/` index.")
-elif codegraph_config:
-    project_lines.append(f"- CodeGraph: project configuration declares it in `{codegraph_config}`.")
-docs_config = configured("context7")
-if docs_config:
-    project_lines.append(f"- Docs MCP: project configuration declares Context7 in `{docs_config}`.")
-
-agents_block = f"""<!-- TEAMWORK_PROJECT_START -->
-## Teamwork Project Instructions
-
-{chr(10).join(project_lines)}
-<!-- TEAMWORK_PROJECT_END -->
-"""
-
-gitignore_block = """# TEAMWORK_LOCAL_START
-# Teamwork local runtime state
-.codegraph/
-docs/teamwork/plans/
-docs/teamwork/discussion/
-docs/teamwork/research/
-docs/teamwork/reports/
-docs/teamwork/workflows/
-docs/teamwork/index.json
-docs/teamwork/README.md
-docs/teamwork/current.md
-# TEAMWORK_LOCAL_END
-"""
-
-
-def replace_or_append(path: Path, start: str, end: str, block: str, prefix: str = "") -> None:
-    original = path.read_text(encoding="utf-8", errors="replace") if path.exists() else prefix
-    pattern = re.compile(re.escape(start) + r".*?" + re.escape(end) + r"\n?", re.S)
-    if pattern.search(original):
-        updated = pattern.sub(block, original)
-    else:
-        updated = original.rstrip() + "\n\n" + block
-    path.write_text(updated.rstrip() + "\n", encoding="utf-8")
-
-
-replace_or_append(
-    root / "AGENTS.md",
-    "<!-- TEAMWORK_PROJECT_START -->",
-    "<!-- TEAMWORK_PROJECT_END -->",
-    agents_block,
-    "# Repository Guidelines\n",
-)
-replace_or_append(
-    root / ".gitignore",
-    "# TEAMWORK_LOCAL_START",
-    "# TEAMWORK_LOCAL_END",
-    gitignore_block,
-)
-PY
-}
-
-validate_teamwork_memory() {
-  local index="$PROJECT_ROOT/docs/teamwork/index.json"
-  if [[ ! -f "$index" ]]; then
-    echo "Teamwork memory: index missing after init"
-    return 0
-  fi
-  if python3 "$TEAMWORK_ROOT/scripts/validate_teamwork_index.py" "$index" >/dev/null 2>&1; then
-    echo "Teamwork memory: index valid"
-  else
-    echo "Teamwork memory: index invalid; preserved existing file, inspect $index"
-  fi
+    "$TEAMWORK_ROOT/install.sh" "${args[@]}"
 }
 
 init_codegraph() {
@@ -345,26 +200,11 @@ init_codegraph() {
     echo "CodeGraph: skipped (codegraph CLI not found)"
     return 0
   fi
-  if (cd "$PROJECT_ROOT" && codegraph init -i); then
+  if project_files codegraph -- codegraph init -i; then
     echo "CodeGraph: initialized"
   else
     echo "CodeGraph: init failed; continuing with project files in place"
   fi
-}
-
-detect_context7() {
-  local file
-  for file in \
-    "$PROJECT_ROOT/.cursor/mcp.json" \
-    "$PROJECT_ROOT/.mcp.json" \
-    "$HOME/.codex/config.toml" \
-    "$HOME/.cursor/mcp.json"; do
-    if [[ -f "$file" ]] && grep -qi 'context7' "$file"; then
-      echo "Context7/docs MCP: detected in $file"
-      return 0
-    fi
-  done
-  echo "Context7/docs MCP: not detected (optional)"
 }
 
 copy_cursor_policy() {
@@ -389,6 +229,9 @@ copy_cursor_policy() {
   fi
 }
 
+enter_discussion_transaction_guard
+project_files preflight
+project_files migrate
 if install_global_surfaces; then
   :
 else
@@ -396,9 +239,13 @@ else
   echo "Global Teamwork surfaces: failed; continuing with project context setup" >&2
 fi
 init_codegraph
-write_project_files
-validate_teamwork_memory
-detect_context7
+project_files write-context
+if project_files validate; then
+  echo "Teamwork memory: index valid"
+else
+  echo "Teamwork memory: index invalid; inspect $PROJECT_ROOT/docs/teamwork/index.json" >&2
+  exit 1
+fi
 copy_cursor_policy
 
 if (( GLOBAL_INSTALL_RC != 0 )); then

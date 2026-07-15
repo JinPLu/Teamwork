@@ -77,14 +77,20 @@ When editing workflow behavior, update the relevant `skills/*/SKILL.md` first an
 
 ## Teamwork Memory
 
-Runtime memory lives under `docs/teamwork/`. Read `docs/teamwork/index.json`
-first, then use `docs/teamwork/README.md` for the retrieval protocol and follow
-the active pointers. Do not inline volatile progress or experiment state here.
+Runtime memory lives under `docs/teamwork/`. For Grill/discussion continuation,
+load `grill-me`, resolve the installed `scripts/discussion-transaction.py` from
+the loaded `using-teamwork` skill, and run `inspect` from the project root first; its
+result is the sole discussion read path. Do not directly read `index.json`,
+`current.md`, `README.md`, or a discussion artifact for that continuation. For
+ordinary non-discussion memory, read `docs/teamwork/index.json` first, then use
+`docs/teamwork/README.md` for the retrieval protocol. Do not inline volatile
+progress or experiment state here.
 
 <!-- TEAMWORK_PROJECT_START -->
 ## Teamwork Project Instructions
 
 - Project label (local routing only): `Teamwork`.
-- Teamwork memory: read `docs/teamwork/index.json` first, then `docs/teamwork/README.md` when durable memory is relevant.
+- For Grill/discussion continuation, load `grill-me`, resolve the installed `scripts/discussion-transaction.py` from the loaded `using-teamwork` skill, and run `inspect` from the project root first; its result is the sole discussion read path, so do not directly read `index.json`, `current.md`, `README.md`, or a discussion artifact for that continuation.
+- Ordinary non-discussion memory reads `docs/teamwork/index.json` first, then `docs/teamwork/README.md` when durable memory is relevant.
 - CodeGraph: this project has a local `.codegraph/` index.
 <!-- TEAMWORK_PROJECT_END -->
