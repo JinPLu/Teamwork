@@ -4,6 +4,15 @@
 
 This changelog explains what changed for users. Maintainer implementation details belong in Git commits or pull requests.
 
+## 3.1.1 - 2026-07-15
+
+This patch release completes the evidence record for 3.1.0 without changing runtime behavior.
+
+- Release record — Before: 3.1.0 had tests for discussion continuity, audience-first replies, and safer initialization, but no tracked accepted record tying those behavior deltas to their evidence. After: one compact tracked record captures the same behavior, evals, validation, reviewer evidence, and limits for future release audits.
+- To upgrade: From the Teamwork repository, run `./install.sh all`, then `./scripts/check-update.sh --readiness`. Existing projects do not need Teamwork package copies.
+
+Limit: this patch adds no runtime capability. Its record covers offline evals, package validation, and one isolated Codex scenario; it still does not establish host compaction or Cursor/Claude Code runtime parity.
+
 ## 3.1.0 - 2026-07-15
 
 This release makes long discussions recoverable and ordinary replies easier to read.
