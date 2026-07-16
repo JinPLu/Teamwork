@@ -1,0 +1,13 @@
+{
+  "id": "activation-review-zh",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/teamwork-review/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "检查这个差异是否满足已确认的标准，并指出会阻止验收的问题。",
+  "expected": {"language": "zh", "route": "review", "observable": "evidence_backed_verdict", "requires": ["weak_cue", "observable_contract", "static_contract_only"]},
+  "must": ["给出有证据的结论和可执行的问题"],
+  "must_not": ["修改候选内容或虚构验收证据"],
+  "rubric": "assistance-quality",
+  "evidence": "Static weak-cue routing contract; it does not prove live model activation."
+}

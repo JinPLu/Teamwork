@@ -16,9 +16,11 @@ observable condition holds:
   decision remains open before the next action;
 - one decision has at least three real branches.
 
-Time, word count, and a short Grill never trigger persistence. Creation and later
-updates require authority; explicit Grill grants only its supporting discussion
-record unless the user says no files.
+Time, word count, and a short Grill never trigger persistence. These conditions
+decide usefulness, never authority. Creation and later updates require authority;
+a user-originated challenge or natural question-first request is explicit Grill
+and grants only its supporting discussion-record lifecycle unless the user says
+no files. Automatic Plan reuse of Grill policy grants no write authority.
 
 Do not wait for a second settled choice when the first conclusion already
 determines an open next check. The record exists to preserve that conclusion,
@@ -65,10 +67,11 @@ Never manually repair or complete canonical state after a nonzero helper exit.
 For unsafe, partial, `INDETERMINATE`, stale, malformed, or other helper failure,
 stop the dependent question and any completion claim.
 
-Before writing, `initialized: false`, a user no-files request, or host read-only
-state uses a natural-language fallback: goal, settled choices, open choice, key
-evidence, and continuation point. State once that it was not saved and may be
-lost across sessions. Do not use this fallback after an attempted `apply`.
+Before writing, absent discussion authority, `initialized: false`, a user
+no-files request, or host read-only state uses a natural-language fallback: goal,
+settled choices, open choice, key evidence, and continuation point. State once
+that it was not saved and may be lost across sessions. Do not use this fallback
+after an attempted `apply`.
 
 After successful `apply`, ask or complete. In an ordinary reply, describe only
 the continuity result: saved decisions, current resume context, or completed

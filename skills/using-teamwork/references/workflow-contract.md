@@ -8,6 +8,10 @@ references only when needed.
 1. **Act within authorization.** Make routine reversible choices once intent is
    clear. Answers, research, diagnosis, planning, review, or closure grant no
    write/effect authority; only explicit wording may grant, revoke, or narrow it.
+   A user-originated challenge or natural question-first request is explicit
+   Grill and grants only its supporting discussion-record lifecycle unless the
+   user says no files. Automatic Plan reuse of Grill policy grants no write;
+   an artifact usefulness condition never grants authority.
 2. **Do not invent required state.** Required values and invariants come from
    the user, project instructions, source/config, tests, or an accepted plan. A
    fallback is valid only when accepted behavior names and verifies it.
@@ -76,10 +80,13 @@ action, outcome, acceptance, or authority. The agent owns safe, reversible imple
 Pause only the dependent branch; independent read-only work may continue
 when an answer cannot invalidate it. The root agent alone asks; subagents return
 Question Candidates. The host owns the interaction UI, waiting, timeout, and
-resume lifecycle; Teamwork neither enables nor emulates them.
+resume lifecycle. In Codex, call `request_user_input` when callable; in another
+host, use its native interaction surface when callable; otherwise ask one concise
+text question. Teamwork neither enables nor emulates those capabilities.
 
 Ordinary required input does not activate `grill-me`. Explicit grill and
-non-simple Plan use that policy while applying this gate.
+non-simple Plan use that policy while applying this gate, but only the
+user-originated explicit form carries its narrow discussion lifecycle authority.
 
 ## Working Facts
 

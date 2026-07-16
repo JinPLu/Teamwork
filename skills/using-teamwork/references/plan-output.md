@@ -6,15 +6,18 @@ Do not add sections or formats that do not change execution.
 ## Codex Plan Mode Bridge
 
 Codex Plan mode owns interaction and the authoritative `plan`; Teamwork owns the
-quality gate. The root applies the shared Ask Gate through the host's native
-input surface. Incorporate answers; questions are not completion, and the host
-owns wait/timeout/resume.
+quality gate. The root applies the shared Ask Gate by calling
+`request_user_input` when callable, otherwise using one concise text question.
+Teamwork does not enable or emulate the capability. Incorporate answers;
+questions are not completion, and the host owns wait/timeout/resume.
 
 ## Decision Gate
 
 Classify from evidence, not file count. A plan is simple only with fixed
-scope/risk and no material user-owned decision; otherwise enter `grill-me`.
-Explicit negative intent suppresses the interview, not required-input or safety gates.
+scope/risk and no material user-owned decision; otherwise reuse `grill-me`
+decision policy. This automatic reuse is not user-originated explicit Grill and
+grants no discussion-record write authority. Explicit negative intent suppresses
+the interview, not required-input or safety gates.
 
 Inspect evidence. Resolve evidence/agent-owned gaps; apply the shared Ask Gate
 and ask one recommended material decision at a time.

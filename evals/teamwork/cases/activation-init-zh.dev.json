@@ -1,0 +1,13 @@
+{
+  "id": "activation-init-zh",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/teamwork-init/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "为这个仓库建立 agent 说明和可持续的协作记忆，不要把全局包复制进来。",
+  "expected": {"language": "zh", "route": "init", "observable": "project_context_setup", "requires": ["weak_cue", "observable_contract", "static_contract_only"]},
+  "must": ["建立项目自己的说明和记忆，并保留人类文档"],
+  "must_not": ["把全局 skill 或 agent 包复制进仓库"],
+  "rubric": "assistance-quality",
+  "evidence": "Static weak-cue routing contract; it does not prove live model activation."
+}

@@ -1,6 +1,6 @@
 ---
 name: teamwork-research
-description: Use when the next safe step is to learn before acting: source-of-truth lookup, current API behavior, repro-surface framing, option comparison, stale-assumption refresh, or risk/evidence gathering before planning/debugging.
+description: Use when the user needs facts checked before action, asks what is currently true, wants options compared, or an unknown or stale assumption requires source-of-truth evidence.
 ---
 
 # Teamwork Research

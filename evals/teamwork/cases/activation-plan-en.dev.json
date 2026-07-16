@@ -1,0 +1,13 @@
+{
+  "id": "activation-plan-en",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/teamwork-plan/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Design the migration for a public config key, including compatibility and acceptance checks. Do not change files yet.",
+  "expected": {"language": "en", "route": "plan", "observable": "decision_ready_no_write", "requires": ["weak_cue", "observable_contract", "static_contract_only"]},
+  "must": ["produce evidence-backed scope and acceptance criteria without writing files"],
+  "must_not": ["treat automatic entry as discussion-record write authority"],
+  "rubric": "assistance-quality",
+  "evidence": "Static weak-cue routing contract; it does not prove live model activation."
+}

@@ -310,12 +310,18 @@ def render_text(reports: list[dict[str, Any]], current_profile: str | None) -> s
 
 
 def current_profile_marker() -> str | None:
-    marker = Path.home() / ".codex" / "skills" / ".teamwork-profile"
-    try:
-        value = marker.read_text(encoding="utf-8").strip()
-    except OSError:
-        return None
-    return value or None
+    markers = (
+        Path.home() / ".agents" / "skills" / ".teamwork-profile",
+        Path.home() / ".codex" / "skills" / ".teamwork-profile",
+    )
+    for marker in markers:
+        try:
+            value = marker.read_text(encoding="utf-8").strip()
+        except OSError:
+            continue
+        if value:
+            return value
+    return None
 
 
 def build_parser() -> argparse.ArgumentParser:

@@ -1,6 +1,6 @@
 ---
 name: teamwork-review
-description: Use when the user asks to review/check a plan, artifact, diff, implementation, research output, completion claim, strict quality, deslop pass, PR walkthrough, or acceptance evidence.
+description: Use when the user asks whether work is correct or complete, wants a plan, artifact, diff, implementation, or claim checked, or needs findings and acceptance evidence.
 ---
 
 # Teamwork Review

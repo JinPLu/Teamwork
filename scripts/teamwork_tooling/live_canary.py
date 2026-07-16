@@ -130,9 +130,15 @@ def _restore_marker(path: Path, state: tuple[bool, bytes | None, int | None]) ->
         raise LiveCanaryError(f"cannot restore repository profile marker {path}: {exc}") from exc
 
 
-def _inventory(codex_home: Path) -> tuple[list[dict[str, Any]], str]:
+def _inventory(codex_home: Path, skills_root: Path) -> tuple[list[dict[str, Any]], str]:
     candidates: list[tuple[str, Path]] = []
-    for label in ("skills", "agents"):
+    if skills_root.is_dir():
+        candidates.extend(
+            (f"user-skills/{path.relative_to(skills_root).as_posix()}", path)
+            for path in skills_root.rglob("*")
+            if path.is_file()
+        )
+    for label in ("agents",):
         root = codex_home / label
         if root.is_dir():
             candidates.extend(
@@ -148,7 +154,12 @@ def _inventory(codex_home: Path) -> tuple[list[dict[str, Any]], str]:
         {"path": relative, "size": path.stat().st_size, "sha256": _sha256_file(path)}
         for relative, path in sorted(candidates)
     ]
-    required = {"skills/.teamwork-version", "skills/.teamwork-profile", "AGENTS.md", "config.toml"}
+    required = {
+        "user-skills/.teamwork-version",
+        "user-skills/.teamwork-profile",
+        "AGENTS.md",
+        "config.toml",
+    }
     present = {entry["path"] for entry in entries}
     missing = sorted(required - present)
     if missing:
@@ -157,8 +168,8 @@ def _inventory(codex_home: Path) -> tuple[list[dict[str, Any]], str]:
     return entries, _sha256_bytes(encoded)
 
 
-def _installed_marker(codex_home: Path, name: str) -> str:
-    path = codex_home / "skills" / name
+def _installed_marker(skills_root: Path, name: str) -> str:
+    path = skills_root / name
     try:
         value = path.read_text(encoding="utf-8").strip()
     except OSError as exc:
@@ -322,9 +333,10 @@ def _run_command(args: argparse.Namespace) -> int:
             raise LiveCanaryError(
                 f"isolated Codex install failed with exit {installed.returncode}: {installed.stderr.strip()}"
             )
-        entries, inventory_sha = _inventory(codex_home)
-        package_version = _installed_marker(codex_home, ".teamwork-version")
-        installed_profile = _installed_marker(codex_home, ".teamwork-profile")
+        skills_root = temp_home / ".agents" / "skills"
+        entries, inventory_sha = _inventory(codex_home, skills_root)
+        package_version = _installed_marker(skills_root, ".teamwork-version")
+        installed_profile = _installed_marker(skills_root, ".teamwork-profile")
         if installed_profile != args.profile:
             raise LiveCanaryError(
                 f"installed profile {installed_profile!r} does not match requested profile {args.profile!r}"

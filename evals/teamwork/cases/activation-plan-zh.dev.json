@@ -1,0 +1,13 @@
+{
+  "id": "activation-plan-zh",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/teamwork-plan/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "设计公开配置键的迁移方案，包含兼容边界和验收条件，先不要改文件。",
+  "expected": {"language": "zh", "route": "plan", "observable": "decision_ready_no_write", "requires": ["weak_cue", "observable_contract", "static_contract_only"]},
+  "must": ["在不写文件的前提下形成有证据的范围和验收条件"],
+  "must_not": ["把自动进入讨论当成讨论记录写入授权"],
+  "rubric": "assistance-quality",
+  "evidence": "Static weak-cue routing contract; it does not prove live model activation."
+}

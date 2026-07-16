@@ -1,11 +1,12 @@
 # Codex Usage
 
-Teamwork for Codex is the reference Codex runtime profile for this open-source
-skill package. Codex native capabilities—editing, shell execution, plans,
+Teamwork for Codex adapts the same shared skill package used by Cursor and
+Claude Code. Codex native capabilities—editing, shell execution, plans,
 custom agents, permissions, MCP, browser tools, and review—remain the execution
 layer. Teamwork helps decide when extra research, debugging, planning,
 delegation, or verification will improve the result without slowing down simple
-requests.
+requests. Codex owns skill discovery, tool availability, permission prompts,
+interaction UI, and the behavior produced by the selected model.
 
 ## Install
 
@@ -33,6 +34,12 @@ available work-record or CodeGraph entrypoints. It does not install Teamwork
 skills or agents into the repository. Use `--link` only when developing from
 this checkout.
 
+The current supported Codex target installs user skills under
+`~/.agents/skills` and custom agent roles under `~/.codex/agents`. Older
+Teamwork copies under `~/.codex/skills` are migration input, not the supported
+runtime location. Custom-agent routing stays on Teamwork's currently compatible
+Codex path; installation and readiness checks do not prove a live spawn.
+
 The default `performance-first` profile balances routine work and review depth.
 Use `--profile cost-first` when lower-cost choices matter; `./install.sh --help`
 lists advanced profiles when you need them.
@@ -49,7 +56,10 @@ that user-owned trust step.
 
 ## How To Use
 
-Ask for the outcome in normal language. Teamwork is most useful for:
+Ask for the outcome in normal language. Codex uses the request and each skill's
+description to select a suitable capability, but this is model behavior rather
+than deterministic automatic routing. Explicitly invoke a skill when exact
+selection matters. Teamwork is most useful for:
 
 - research grounded in papers, official documentation, project files, or
   source history;
@@ -60,9 +70,10 @@ Ask for the outcome in normal language. Teamwork is most useful for:
 - long-running work that should continue until verified or genuinely blocked.
 
 Small facts, tiny edits, and obvious local fixes stay on Codex's native fast
-path. Explicitly ask to be questioned, challenged, or “grilled” to activate
-`grill-me`; otherwise Teamwork asks only when required input or a material
-user-owned decision cannot be discovered safely.
+path. An explicit request to be questioned, challenged, or “grilled” expresses
+question-first intent and may select `grill-me`; otherwise Teamwork asks only
+when required input or a material user-owned decision cannot be discovered
+safely.
 
 Replies lead with the conclusion or what it means. For a substantive discussion,
 they connect observed facts, their plain interpretation, and only the boundary or
@@ -70,13 +81,16 @@ next comparison that could change the decision; continuing discussion keeps its
 current question visible. This is a reasoning order, not a fixed answer format,
 and simple facts stay one sentence. They add technical detail when it helps or
 when you ask, rather than narrating internal workflow labels or version details.
-When a material conclusion leaves a next comparison or decision open, Teamwork
-can save one compact summary of the goal, settled choices, open question, key
-evidence, and continue point; ordinary requests do not need one.
+In a repository initialized for Teamwork, when the user has authorized writes,
+the runtime can write, and an explicit question-first discussion leaves a next
+comparison or decision open, Teamwork can save one compact summary of the goal,
+settled choices, open question, key evidence, and continue point. Ordinary
+requests do not need one.
 
 Codex Plan mode and `teamwork-plan` share one planning path: Codex owns the host
 UI and plan state, while Teamwork grounds scope, required values, and
-verification in evidence. Plan confirmation does not authorize implementation.
+verification in evidence. Entering or confirming a plan authorizes neither
+implementation nor writing a discussion record.
 
 Use `teamwork-init` to set up one repository, align its project instructions,
 or add the optional Teamwork work-record and CodeGraph entrypoints. It targets
@@ -100,8 +114,8 @@ not invent one.
 Teamwork relies on sources, repository files, configuration, tests, logs,
 diffs, screenshots, and review evidence. It does not enable platform tools,
 change permission policy, configure MCP or browsers, or prove model behavior by
-installation alone. Host-native structured question input is used only when
-the current runtime exposes it; concise text remains the fallback.
+installation alone. Codex owns its native structured-question UI; Teamwork uses
+it only when the runtime exposes it and otherwise asks concisely in text.
 
 Use `teamwork-update` to check and guide a global Teamwork refresh from this
 checkout. The explicit refresh command is `./install.sh all`; refreshing an
@@ -112,3 +126,7 @@ Useful global check:
 ```bash
 ./scripts/check-update.sh --readiness
 ```
+
+This reports freshness and completeness of Teamwork-managed files and bounded
+configuration. It does not verify that the user has trusted Codex hooks or that
+a natural-language request will select a particular skill at runtime.

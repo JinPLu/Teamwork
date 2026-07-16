@@ -2,6 +2,7 @@ INSTALL_MODE="${TEAMWORK_INSTALL_MODE:-copy}"
 CODEX_PROFILE="${TEAMWORK_CODEX_PROFILE:-performance-first}"
 NOTIFICATIONS_ACTION="${TEAMWORK_NOTIFICATIONS_ACTION:-preserve}"
 CODEX_ROUTING_ACTION="${TEAMWORK_CODEX_ROUTING:-configure}"
+CODEX_USER_SKILLS_ROOT="$HOME/.agents/skills"
 PKG_VERSION="unknown"
 if [[ -f "$ROOT/VERSION" ]]; then
   PKG_VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION")"
@@ -247,4 +248,177 @@ install_skill_set() {
   printf '%s\n' "$CODEX_PROFILE" > "$dest_root/.teamwork-profile"
 
   echo "Installed $label skills under: $dest_root ($INSTALL_MODE)"
+}
+
+codex_home_path() {
+  printf '%s\n' "${CODEX_HOME:-$HOME/.codex}"
+}
+
+teamwork_skill_entry_is_named() {
+  local root="$1"
+  local skill="$2"
+  local entry="$root/$skill"
+  local skill_file="$entry/SKILL.md"
+  [[ -f "$skill_file" ]] || return 1
+  grep -q "^name: $skill$" "$skill_file"
+}
+
+teamwork_skill_entry_identity_is_safe() {
+  local root="$1"
+  local skill="$2"
+  local entry="$root/$skill"
+  local skill_file="$entry/SKILL.md"
+
+  if [[ -L "$entry" ]]; then
+    teamwork_skill_entry_is_named "$root" "$skill"
+    return
+  fi
+  [[ -d "$entry" ]] || return 1
+  [[ ! -e "$skill_file" ]] || teamwork_skill_entry_is_named "$root" "$skill"
+}
+
+teamwork_skill_entry_has_known_inventory() {
+  local root="$1"
+  local skill="$2"
+  local entry="$root/$skill"
+  local source="$ROOT/skills/$skill"
+  local item rel
+
+  if [[ -L "$entry" ]]; then
+    teamwork_skill_entry_is_named "$root" "$skill"
+    return
+  fi
+  [[ -d "$entry" ]] || return 1
+  while IFS= read -r -d '' item; do
+    rel="${item#$entry/}"
+    if [[ ! -e "$source/$rel" && ! -L "$source/$rel" ]]; then
+      return 1
+    fi
+  done < <(find "$entry" -mindepth 1 -print0)
+}
+
+preflight_teamwork_skill_root() {
+  local root="$1"
+  local label="$2"
+  local marker="$root/.teamwork-version"
+  local profile_marker="$root/.teamwork-profile"
+  local skill found=0
+
+  for skill in "${SKILLS[@]}"; do
+    if [[ -e "$root/$skill" || -L "$root/$skill" ]]; then
+      found=1
+      if [[ ! -f "$marker" || ! -f "$profile_marker" ]]; then
+        echo "$label contains $skill without Teamwork ownership markers; refusing to replace it." >&2
+        return 1
+      fi
+      if ! teamwork_skill_entry_identity_is_safe "$root" "$skill"; then
+        echo "$label contains an unrecognized $skill entry; refusing to replace it." >&2
+        return 1
+      fi
+      if ! teamwork_skill_entry_has_known_inventory "$root" "$skill"; then
+        echo "$label contains unknown files in $skill; refusing to replace it." >&2
+        return 1
+      fi
+    fi
+  done
+
+  if (( found == 0 )) && [[ -e "$marker" || -e "$profile_marker" ]]; then
+    if [[ ! -f "$marker" || ! -f "$profile_marker" ]]; then
+      echo "$label has incomplete Teamwork ownership markers; refusing to modify it." >&2
+      return 1
+    fi
+  fi
+}
+
+preflight_legacy_codex_skills() {
+  local legacy_root="$1"
+  local marker="$legacy_root/.teamwork-version"
+  local profile_marker="$legacy_root/.teamwork-profile"
+  local skill found=0
+
+  [[ -d "$legacy_root" ]] || return 0
+  for skill in "${SKILLS[@]}"; do
+    if [[ -e "$legacy_root/$skill" || -L "$legacy_root/$skill" ]]; then
+      found=1
+      if [[ ! -f "$marker" || ! -f "$profile_marker" ]]; then
+        echo "Legacy Codex skills contain $skill without Teamwork ownership markers; refusing migration." >&2
+        return 1
+      fi
+      if ! teamwork_skill_entry_identity_is_safe "$legacy_root" "$skill"; then
+        echo "Legacy Codex skills contain an unrecognized $skill entry; refusing migration." >&2
+        return 1
+      fi
+      if ! teamwork_skill_entry_has_known_inventory "$legacy_root" "$skill"; then
+        echo "Legacy Codex skills contain unknown files in $skill; refusing migration." >&2
+        return 1
+      fi
+    fi
+  done
+  if (( found == 0 )) && [[ -e "$marker" || -e "$profile_marker" ]]; then
+    if [[ ! -f "$marker" || ! -f "$profile_marker" ]]; then
+      echo "Legacy Codex skills have incomplete Teamwork ownership markers; refusing migration." >&2
+      return 1
+    fi
+  fi
+}
+
+preflight_owned_legacy_cleanup() {
+  local legacy_root="$1"
+  local skill entry dir
+  local found=0
+
+  [[ -d "$legacy_root" ]] || return 0
+  for skill in "${SKILLS[@]}"; do
+    entry="$legacy_root/$skill"
+    if [[ -e "$entry" || -L "$entry" ]]; then
+      found=1
+      if [[ -d "$entry" && ! -L "$entry" ]]; then
+        while IFS= read -r -d '' dir; do
+          if [[ ! -w "$dir" || ! -x "$dir" ]]; then
+            echo "Legacy Codex skill cleanup is not writable at $dir; refusing migration before installing the new root." >&2
+            return 1
+          fi
+        done < <(find "$entry" -type d -print0)
+      fi
+    fi
+  done
+
+  if (( found == 1 )) || [[ -e "$legacy_root/.teamwork-version" || -e "$legacy_root/.teamwork-profile" ]]; then
+    if [[ ! -w "$legacy_root" || ! -x "$legacy_root" ]]; then
+      echo "Legacy Codex skill cleanup is not writable at $legacy_root; refusing migration before installing the new root." >&2
+      return 1
+    fi
+  fi
+}
+
+remove_owned_legacy_codex_skills() {
+  local legacy_root="$1"
+  local skill retired
+  [[ -d "$legacy_root" ]] || return 0
+
+  for skill in "${SKILLS[@]}"; do
+    if [[ -e "$legacy_root/$skill" || -L "$legacy_root/$skill" ]]; then
+      rm -rf "$legacy_root/$skill"
+    fi
+  done
+  for retired in "${RETIRED_SKILLS[@]}"; do
+    remove_retired_skill "$legacy_root" "$retired"
+  done
+  rm -f "$legacy_root/.teamwork-version" "$legacy_root/.teamwork-profile"
+  rmdir "$legacy_root" 2>/dev/null || true
+}
+
+install_codex_skill_set() {
+  local dest_root="$CODEX_USER_SKILLS_ROOT"
+  local legacy_root="$(codex_home_path)/skills"
+
+  preflight_teamwork_skill_root "$dest_root" "Codex user skill root"
+  if [[ "$legacy_root" != "$dest_root" ]]; then
+    preflight_legacy_codex_skills "$legacy_root"
+    preflight_owned_legacy_cleanup "$legacy_root"
+  fi
+  install_skill_set "$dest_root" "Codex"
+  if [[ "$legacy_root" != "$dest_root" ]]; then
+    remove_owned_legacy_codex_skills "$legacy_root"
+  fi
 }

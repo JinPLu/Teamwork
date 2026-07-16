@@ -45,6 +45,32 @@ split/platform/source values, target paths, rubrics, ledgers, and non-empty
 behavior expectations. It does not execute Codex, Cursor, Claude, or prove live
 model behavior. Eval output is evidence, not final acceptance.
 
+## Four evidence lanes
+
+Keep these lanes separate because they support different claims:
+
+1. **Static contract:** `scripts/eval-teamwork.py` checks tracked fixture and
+   source contracts offline. It does not run a model.
+2. **Native transport:** `scripts/codex_app_server_user_input.py` checks the
+   Codex app-server `request_user_input` lifecycle and bounded request count. It
+   does not mount a Teamwork skill or score whether a question is useful.
+3. **Installed semantic:** `scripts/run-installed-teamwork-live-eval.py` makes
+   Teamwork available in an isolated Codex home and records read-only answers
+   for external review. The three `weak-cue-*-pilot` cases avoid spelling out
+   the desired answer structure. A good response supports only a response-quality
+   finding: without a recorded host activation event, it does not prove which
+   skill loaded automatically.
+4. **Disposable discussion write:** an explicitly authorized experiment uses a
+   disposable initialized project, captures a pre-treatment manifest outside
+   that project with `scripts/discussion-write-evidence.py snapshot`, performs
+   the workspace-write treatment, then runs `verify`. This lane alone can show
+   that the observed write footprint stayed within the discussion allowlist; an
+   endpoint manifest cannot show a write that was completely restored between
+   snapshots.
+
+Do not combine these into one green status. Report the lane, host, model,
+prompt set, repeats, and unresolved evidence limit with every behavioral claim.
+
 The Codex Plan-mode fixture treats native Plan mode as the interaction
 transport and `teamwork-plan` as the quality gate. It rejects question-only
 completion, unsourced locked values, and phases without ownership or proof. This
@@ -216,6 +242,18 @@ python3 scripts/run-installed-teamwork-live-eval.py compare finalize --help
 Raw trajectories, controller maps, reviews, and results remain private under the
 chosen review directory. Offline schemas and fake-run tests do not prove live
 model quality, justify spend, or establish Cursor/Claude behavioral parity.
+
+For a reader-facing narrative change, the minimum development comparison is the
+three tracked `weak-cue-*-pilot` prompts with two independent trajectories per
+arm. Both arms must use the same prompt, model, effort, host, sandbox, and runner
+configuration. Two independent reviewers then judge every matched pair without
+seeing the arm map. Acceptance requires the candidate to be no worse on all six
+matched pairs, better on at least one, and free of any hard-gate failure or
+reviewer disagreement. A response-quality win is not evidence of hidden skill
+auto-loading; only a recorded host activation event could support that separate
+claim. The comparison command currently admits only its declared frozen set, so
+the weak-cue set must be explicitly promoted to that set before the command can
+be used for this acceptance claim.
 
 `scripts/codex_app_server_user_input.py` separately probes the Codex app-server
 `request_user_input` lifecycle when that capability is callable. It never mounts

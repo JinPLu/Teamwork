@@ -1,0 +1,13 @@
+{
+  "id": "activation-router-zh",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "供应商可能改过这个接口。先确认现状，再选做法、修改并检查结果。",
+  "expected": {"language": "zh", "route": "router", "observable": "ordered_stages", "requires": ["weak_cue", "observable_contract", "static_contract_only"]},
+  "must": ["先确认不稳定事实，再选择做法并实施"],
+  "must_not": ["先改代码或向用户罗列内部阶段"],
+  "rubric": "assistance-quality",
+  "evidence": "Static weak-cue routing contract; it does not prove live model activation."
+}

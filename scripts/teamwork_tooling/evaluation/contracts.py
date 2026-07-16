@@ -355,6 +355,40 @@ REQUIRED_RULE_MAINTENANCE_CASES = {
         "static_contract_only",
     },
 }
+REQUIRED_ACTIVATION_CASES = {
+    "activation-native-en": ("en", "native", "skills/using-teamwork/SKILL.md", "direct_action"),
+    "activation-native-zh": ("zh", "native", "skills/using-teamwork/SKILL.md", "direct_action"),
+    "activation-router-en": ("en", "router", "skills/using-teamwork/SKILL.md", "ordered_stages"),
+    "activation-router-zh": ("zh", "router", "skills/using-teamwork/SKILL.md", "ordered_stages"),
+    "activation-research-en": ("en", "research", "skills/teamwork-research/SKILL.md", "source_grounded_answer"),
+    "activation-research-zh": ("zh", "research", "skills/teamwork-research/SKILL.md", "source_grounded_answer"),
+    "activation-debug-en": ("en", "debug", "skills/teamwork-debug/SKILL.md", "repro_before_fix"),
+    "activation-debug-zh": ("zh", "debug", "skills/teamwork-debug/SKILL.md", "repro_before_fix"),
+    "activation-plan-en": ("en", "plan", "skills/teamwork-plan/SKILL.md", "decision_ready_no_write"),
+    "activation-plan-zh": ("zh", "plan", "skills/teamwork-plan/SKILL.md", "decision_ready_no_write"),
+    "activation-grill-en": ("en", "grill", "skills/grill-me/SKILL.md", "native_question_no_write"),
+    "activation-grill-zh": ("zh", "grill", "skills/grill-me/SKILL.md", "native_question_no_write"),
+    "activation-execute-en": ("en", "execute", "skills/teamwork-execute/SKILL.md", "scoped_change_and_checks"),
+    "activation-execute-zh": ("zh", "execute", "skills/teamwork-execute/SKILL.md", "scoped_change_and_checks"),
+    "activation-review-en": ("en", "review", "skills/teamwork-review/SKILL.md", "evidence_backed_verdict"),
+    "activation-review-zh": ("zh", "review", "skills/teamwork-review/SKILL.md", "evidence_backed_verdict"),
+    "activation-goal-en": ("en", "goal", "skills/teamwork-goal/SKILL.md", "bounded_convergence"),
+    "activation-goal-zh": ("zh", "goal", "skills/teamwork-goal/SKILL.md", "bounded_convergence"),
+    "activation-init-en": ("en", "init", "skills/teamwork-init/SKILL.md", "project_context_setup"),
+    "activation-init-zh": ("zh", "init", "skills/teamwork-init/SKILL.md", "project_context_setup"),
+    "activation-update-en": ("en", "update", "skills/teamwork-update/SKILL.md", "global_refresh"),
+    "activation-update-zh": ("zh", "update", "skills/teamwork-update/SKILL.md", "global_refresh"),
+}
+REQUIRED_ACTIVATION_COVERAGE = {
+    "weak_cue",
+    "observable_contract",
+    "static_contract_only",
+}
+ACTIVATION_PROMPT_STAGE_RE = re.compile(
+    r"(?i)(?:\b(?:native|router|research|debug|plan|grill|execute|review|goal|init|update)\b|"
+    r"\b(?:using-teamwork|grill-me|teamwork-[a-z-]+)\b|"
+    r"(?:研究阶段|调试阶段|计划阶段|规划阶段|执行阶段|评审阶段|审查阶段|目标模式|初始化阶段|更新阶段))"
+)
 REQUIRED_SKILL_CASE_CLAUSES = {
     "native-lightweight-control": {"complete_stage_inventory", "native_fast_path"},
     "grill-explicit-skill-invocation": {"explicit_activation", "no_enactment"},
@@ -413,9 +447,11 @@ REQUIRED_SKILL_CASE_CLAUSES = {
         "source_freshness",
         "profile_preserved",
         "global_install_refresh",
-        "project_context_init_no_local_copies",
+        "project_init_separate",
         "manual_host_actions",
-        "readiness_recheck",
+        "managed_readiness",
+        "host_activation_readiness",
+        "single_active_skill",
         "no_release_metadata",
     },
 }
@@ -452,8 +488,8 @@ SKILL_SOURCE_CONTRACTS = {
         (
             ("explicit activation", "enter for an explicit request"),
             (
-                "frontmatter non-simple Plan entry",
-                "a non-simple plan auto-enters",
+                "frontmatter natural explicit entry",
+                "description: Use when the user asks to be challenged, grilled, or questioned before action",
             ),
             (
                 "automatic non-simple Plan body entry",
@@ -475,6 +511,7 @@ SKILL_SOURCE_CONTRACTS = {
     "teamwork-research": (
         "skills/teamwork-research/SKILL.md",
         (
+            ("natural research intent", "description: Use when the user needs facts checked before action"),
             ("observed/inferred/claimed evidence", "`observed`, `inferred`, and `claimed` findings"),
             ("read-only boundary", "research does not authorize edits, external writes"),
             (
@@ -486,6 +523,7 @@ SKILL_SOURCE_CONTRACTS = {
     "teamwork-debug": (
         "skills/teamwork-debug/SKILL.md",
         (
+            ("natural debug intent", "description: Use when something fails, crashes, flakes, regresses, or behaves unexpectedly"),
             ("repro before fix", "state expected versus actual behavior, the repro"),
             ("discriminating hypotheses", "name discriminating evidence"),
             ("safe fix route", "route an accepted fix to execution"),
@@ -506,6 +544,7 @@ SKILL_SOURCE_CONTRACTS = {
     "teamwork-execute": (
         "skills/teamwork-execute/SKILL.md",
         (
+            ("natural execute intent", "description: Use when the user asks to carry out an accepted plan or checklist"),
             ("accepted scope", "use when an accepted plan, scope, or known root-cause fix"),
             ("discovery classification", "classify discoveries:"),
             ("failed-AC monotonicity", "failed ac evidence stays failed until direct evidence changes that ac"),
@@ -514,6 +553,7 @@ SKILL_SOURCE_CONTRACTS = {
     "teamwork-review": (
         "skills/teamwork-review/SKILL.md",
         (
+            ("natural review intent", "description: Use when the user asks whether work is correct or complete"),
             ("review taxonomy must be BLOCKER, FOLLOW-UP, or SUGGESTION", "one class: `blocker`, `follow-up`, or `suggestion`"),
             ("risk-gated fresh review", "fresh context is required for high-risk, public-contract, delegated, security, destructive, release, or goal acceptance"),
             ("one bounded recheck", "permit one corrective recheck"),
@@ -522,6 +562,7 @@ SKILL_SOURCE_CONTRACTS = {
     "teamwork-goal": (
         "skills/teamwork-goal/SKILL.md",
         (
+            ("natural goal intent", "description: Use when the user asks Codex to keep working until a verifiable result"),
             ("explicit user request or accepted Goal Proposal", "only when the user explicitly requests goal mode or accepts a goal proposal"),
             ("preserved Goal Invariants", "identify the preserved scope/invariants, failed claim and stage, prior evidence, do-not-repeat constraints"),
             ("strategy delta", "stop on repeated no-progress without an evidence-backed strategy delta"),
@@ -531,6 +572,7 @@ SKILL_SOURCE_CONTRACTS = {
     "teamwork-init": (
         "skills/teamwork-init/SKILL.md",
         (
+            ("natural init intent", "description: Use when a project needs agent instructions or Teamwork context set up"),
             ("readiness gaps", "reported gaps, not stop conditions"),
             (
                 "safe project-context continuation",
@@ -543,9 +585,10 @@ SKILL_SOURCE_CONTRACTS = {
     "teamwork-update": (
         "skills/teamwork-update/SKILL.md",
         (
+            ("natural update intent", "description: Use when the user asks to check or refresh globally installed Teamwork skills"),
             (
-                "global user refresh and project context only",
-                "refresh global user installations and requested project context only",
+                "global user refresh only",
+                "refresh global user installations only",
             ),
             ("profile preserved", "preserve the current install profile"),
             (
@@ -553,10 +596,13 @@ SKILL_SOURCE_CONTRACTS = {
                 "for a global-only refresh of skills, agents, managed policy, and routing",
             ),
             (
-                "project context without package copies",
-                "updates project instructions, memory, and codegraph context without creating project-local package copies",
+                "project initialization ownership",
+                "project initialization and project-context changes belong to `teamwork-init`",
             ),
-            ("readiness recheck", "until it reports `install_ready=yes`"),
+            ("managed readiness", "`managed_install_ready=yes` proves managed files are current"),
+            ("host activation readiness", "it is not full host activation when `host_activation=manual-action-required`"),
+            ("execute refresh", "do not stop at command advice while the command remains safe and in scope"),
+            ("single active catalog entry", "verify each teamwork skill appears once"),
             ("no release metadata", "never edit `version`, plugin manifests, changelogs, release commits, tags, or github releases"),
         ),
     ),

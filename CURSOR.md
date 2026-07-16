@@ -2,7 +2,9 @@
 
 Teamwork for Cursor adapts the same evidence-first skill package used by Codex
 and Claude Code. Cursor's editor, shell, MCP, permissions, browser tools, `Task`
-subagents, custom agents, and verification remain the execution layer.
+subagents, custom agents, and verification remain the execution layer. Cursor
+owns skill discovery, available tools, permission prompts, interaction UI, and
+the behavior produced by its selected model.
 
 ## Install
 
@@ -43,13 +45,17 @@ has not been live-verified.
 ## How To Use
 
 Ask naturally for research, debugging, a plan, execution, strict review, or a
-verified long-running outcome. Tiny edits and one-line questions remain on
-Cursor's native path. Explicitly ask to be questioned, challenged, or grilled
-to activate `grill-me`; otherwise Teamwork asks only for required input or a
-material user-owned decision that it cannot discover safely.
+verified long-running outcome. Cursor uses the request and skill descriptions
+to select a capability; this is model behavior, not deterministic automatic
+routing. Explicitly invoke a skill when exact selection matters. Tiny edits and
+one-line questions remain on Cursor's native path. An explicit request to be
+questioned, challenged, or grilled expresses question-first intent and may
+select `grill-me`; otherwise Teamwork asks only for required input or a material
+user-owned decision that it cannot discover safely.
 
 For planning, Teamwork grounds scope, required values, and verification in
-evidence. Confirming a plan does not authorize implementation.
+evidence. Entering or confirming a plan authorizes neither implementation nor
+writing a discussion record.
 
 Replies lead with the conclusion or what it means. For a substantive discussion,
 they connect observed facts, their plain interpretation, and only the boundary or
@@ -57,9 +63,11 @@ next comparison that could change the decision; continuing discussion keeps its
 current question visible. This is a reasoning order, not a fixed answer format,
 and simple facts stay one sentence. They add technical detail when it helps or
 when you ask, rather than narrating internal workflow labels or version details.
-When a material conclusion leaves a next comparison or decision open, Teamwork
-can save one compact summary of the goal, settled choices, open question, key
-evidence, and continue point; ordinary requests do not need one.
+In a repository initialized for Teamwork, when the user has authorized writes,
+the runtime can write, and an explicit question-first discussion leaves a next
+comparison or decision open, Teamwork can save one compact summary of the goal,
+settled choices, open question, key evidence, and continue point. Ordinary
+requests do not need one.
 
 ## Subagents
 
@@ -88,4 +96,6 @@ Use `teamwork-init` to configure one selected repository. Use
 `teamwork-update` to check and guide a global refresh; the explicit refresh
 command is `./install.sh all`. Check the global installation with
 `./scripts/check-update.sh --readiness`. Refreshing an installation is not a
-maintainer version release.
+maintainer version release. This readiness check covers Teamwork-managed files
+and bounded configuration; it cannot verify the manual Cursor User Rules step
+or prove live skill selection and model behavior.

@@ -5,7 +5,9 @@
 Teamwork for Claude Code adapts the same evidence-first skill package used by
 Codex and Cursor. Claude Code native capabilities—editing, shell execution,
 MCP, permissions, `Task` subagents, planning, and verification—remain the
-execution layer.
+execution layer. Claude Code owns skill discovery, available tools, permission
+prompts, interaction UI, hook trust, and the behavior produced by its selected
+model.
 
 ## Install
 
@@ -47,13 +49,17 @@ lists advanced profiles when you need them.
 ## How To Use
 
 Ask for research, debugging, a plan, execution of accepted scope, strict review,
-or a verified long-running outcome. Small questions and tiny edits remain on
-Claude Code's native path. Explicitly ask to be questioned, challenged, or
-grilled to activate `grill-me`; otherwise Teamwork asks only for required input
-or a material user-owned decision that it cannot discover safely.
+or a verified long-running outcome. Claude Code uses the request and skill
+descriptions to select a capability; this is model behavior, not deterministic
+automatic routing. Explicitly invoke a skill when exact selection matters.
+Small questions and tiny edits remain on Claude Code's native path. An explicit
+request to be questioned, challenged, or grilled expresses question-first
+intent and may select `grill-me`; otherwise Teamwork asks only for required
+input or a material user-owned decision that it cannot discover safely.
 
 For planning, Teamwork grounds scope, required values, and verification in
-evidence. Confirming a plan does not authorize implementation.
+evidence. Entering or confirming a plan authorizes neither implementation nor
+writing a discussion record.
 
 Replies lead with the conclusion or what it means. For a substantive discussion,
 they connect observed facts, their plain interpretation, and only the boundary or
@@ -61,9 +67,11 @@ next comparison that could change the decision; continuing discussion keeps its
 current question visible. This is a reasoning order, not a fixed answer format,
 and simple facts stay one sentence. They add technical detail when it helps or
 when you ask, rather than narrating internal workflow labels or version details.
-When a material conclusion leaves a next comparison or decision open, Teamwork
-can save one compact summary of the goal, settled choices, open question, key
-evidence, and continue point; ordinary requests do not need one.
+In a repository initialized for Teamwork, when the user has authorized writes,
+the runtime can write, and an explicit question-first discussion leaves a next
+comparison or decision open, Teamwork can save one compact summary of the goal,
+settled choices, open question, key evidence, and continue point. Ordinary
+requests do not need one.
 
 ## Subagents
 
@@ -94,4 +102,6 @@ Use `teamwork-init` to configure one selected repository. Use
 `teamwork-update` to check and guide a global refresh; the explicit refresh
 command is `./install.sh all`. Check the global installation with
 `./scripts/check-update.sh --readiness`. Refreshing an installation is not a
-maintainer version release.
+maintainer version release. This readiness check covers Teamwork-managed files
+and bounded configuration; it does not verify Claude Code hook trust or prove
+live skill selection and model behavior.

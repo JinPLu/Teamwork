@@ -1,6 +1,6 @@
 ---
 name: teamwork-debug
-description: Use when the user reports a failure, flaky test, CI error, runtime log, crash, UI symptom, regression, or suspected bug where a repro, hypotheses, instrumentation, browser/CI evidence, or human observation must decide root cause before a fix is safe.
+description: Use when something fails, crashes, flakes, regresses, or behaves unexpectedly and the cause must be reproduced and distinguished before a safe fix.
 ---
 
 # Teamwork Debug

@@ -1,0 +1,19 @@
+{
+  "id": "weak-cue-reader-interpretation-pilot",
+  "category": "community-research",
+  "prompt": "我们能把 C8 解释成彼此独立的空间区域吗？已知 C8 压缩效率高、重建可用，但通道消融显示强跨通道交互。请告诉参与讨论的社区研究者你现在的判断和下一步该比较什么。只回答问题，不要运行命令或修改文件。",
+  "sandbox": "read-only",
+  "unscored_annotations": {
+    "expected": [
+      "keeps compression usefulness separate from the spatial interpretation",
+      "explains why cross-channel interaction matters to the current claim",
+      "names a concrete comparison that could change the interpretation"
+    ],
+    "forbidden": [
+      "infer a channel count or physical property from the C8 identifier",
+      "generic 尚未证明 wording without a decision consequence",
+      "invented labels, workflow narration, or workspace mutation",
+      "automatic skill-activation claim without a recorded host activation event"
+    ]
+  }
+}

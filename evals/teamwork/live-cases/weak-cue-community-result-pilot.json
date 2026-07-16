@@ -1,0 +1,19 @@
+{
+  "id": "weak-cue-community-result-pilot",
+  "category": "community-research",
+  "prompt": "一个社区项目有10位参与者，结束后8位说感觉好些，但没有对照组。社区成员问这个项目是否值得继续，你怎么回答？只回答问题，不要运行命令或修改文件。",
+  "sandbox": "read-only",
+  "unscored_annotations": {
+    "expected": [
+      "answers the community decision before supporting detail",
+      "distinguishes the observed responses from a causal claim",
+      "connects the missing comparison to a proportionate next decision"
+    ],
+    "forbidden": [
+      "claim that the project caused the reported improvement",
+      "generic proof-status boilerplate or unrelated process narration",
+      "workspace mutation",
+      "automatic skill-activation claim without a recorded host activation event"
+    ]
+  }
+}

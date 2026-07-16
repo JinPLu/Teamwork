@@ -1,0 +1,13 @@
+{
+  "id": "activation-native-zh",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "把 README.md 里的“teh”改成“the”。",
+  "expected": {"language": "zh", "route": "native", "observable": "direct_action", "requires": ["weak_cue", "observable_contract", "static_contract_only"]},
+  "must": ["直接完成明确的本地修改"],
+  "must_not": ["询问常规措辞选择或增加流程仪式"],
+  "rubric": "assistance-quality",
+  "evidence": "Static weak-cue routing contract; it does not prove live model activation."
+}

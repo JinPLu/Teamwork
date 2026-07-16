@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "Codex-first skills, with Cursor and Claude Code adapters, for evidence-grounded research, debugging, planning, execution, review, and long-running goals.",
   "author": {
     "name": "JinPLu",

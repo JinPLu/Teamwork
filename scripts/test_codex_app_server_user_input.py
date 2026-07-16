@@ -137,6 +137,14 @@ class RequestValidationTests(unittest.TestCase):
         self.assertTrue(any("description" in error for error in errors))
         self.assertTrue(any("unique" in error for error in errors))
 
+    def test_grill_bound_rejects_multiple_questions_in_one_request(self) -> None:
+        invalid = json.loads(json.dumps(VALID_PARAMS))
+        second = json.loads(json.dumps(VALID_PARAMS["questions"][0]))
+        second["id"] = "host-key-2"
+        invalid["questions"].append(second)
+        errors = validate_request_params(invalid, max_questions_per_request=1)
+        self.assertEqual(errors, ["questions must contain one to 1 items"])
+
 
 class OfflineLifecycleTests(unittest.TestCase):
     def run_probe(
@@ -187,11 +195,18 @@ class OfflineLifecycleTests(unittest.TestCase):
                 "protocol",
                 "ordinary-material",
                 "explicit-grill-material",
+                "explicit-grill-material-zh",
                 "explicit-grill-zero",
                 "simple-control",
             },
         )
         self.assertEqual(SCENARIOS["ordinary-material"]["expected_requests"], 1)
+        self.assertEqual(SCENARIOS["explicit-grill-material-zh"]["expected_requests"], 1)
+        self.assertEqual(
+            SCENARIOS["explicit-grill-material-zh"]["max_questions_per_request"], 1
+        )
+        self.assertTrue(SCENARIOS["explicit-grill-material-zh"]["forbid_text_question"])
+        self.assertIn("先问清楚", SCENARIOS["explicit-grill-material-zh"]["prompt"])
         self.assertEqual(SCENARIOS["simple-control"]["expected_requests"], 0)
         rendered = json.dumps(SCENARIOS)
         self.assertNotIn("mounted", rendered)
@@ -234,6 +249,20 @@ class OfflineLifecycleTests(unittest.TestCase):
         observed = json.loads(result.stdout)["results"][0]
         self.assertIn("duplicated", observed["blocker"])
         self.assertTrue(observed["text_question_observed"])
+
+    def test_chinese_explicit_grill_requires_one_native_request_without_text_duplicate(self) -> None:
+        passed = self.run_probe(scenario="explicit-grill-material-zh")
+        self.assertEqual(passed.returncode, 0, passed.stdout + passed.stderr)
+        observed = json.loads(passed.stdout)["results"][0]
+        self.assertEqual(observed["resolved_request_count"], 1)
+
+        duplicated = self.run_probe(
+            scenario="explicit-grill-material-zh", mode="text-question"
+        )
+        self.assertEqual(duplicated.returncode, 2)
+        blocked = json.loads(duplicated.stdout)["results"][0]
+        self.assertIn("duplicated", blocked["blocker"])
+        self.assertTrue(blocked["text_question_observed"])
 
     def test_second_native_request_exceeds_scenario_bound(self) -> None:
         result = self.run_probe(mode="duplicate")
@@ -295,6 +324,7 @@ class OfflineLifecycleTests(unittest.TestCase):
                 thread_id="thread-1",
                 turn_id="turn-1",
                 expected_count=2,
+                max_questions_per_request=1,
                 allow_auto_resolution=False,
             )
         )
@@ -304,6 +334,7 @@ class OfflineLifecycleTests(unittest.TestCase):
                 thread_id="thread-1",
                 turn_id="turn-1",
                 expected_count=2,
+                max_questions_per_request=1,
                 allow_auto_resolution=False,
             )
 

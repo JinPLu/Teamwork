@@ -1,0 +1,13 @@
+{
+  "id": "activation-init-en",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/teamwork-init/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Set up this repository's agent instructions and durable collaboration memory without copying global packages into it.",
+  "expected": {"language": "en", "route": "init", "observable": "project_context_setup", "requires": ["weak_cue", "observable_contract", "static_contract_only"]},
+  "must": ["set up project-owned instructions and memory while preserving human documentation"],
+  "must_not": ["copy global skill or agent packages into the repository"],
+  "rubric": "assistance-quality",
+  "evidence": "Static weak-cue routing contract; it does not prove live model activation."
+}

@@ -4,19 +4,20 @@
   "source": "synthetic",
   "target": "skills/using-teamwork/references/artifact-protocol.md",
   "platforms": ["codex", "cursor", "claude"],
-  "prompt": "In an initialized writable project, continue the user's explicit Grill. Two substantive choices are settled, one remains open, and a handoff is approaching.",
+  "prompt": "In an initialized writable project, continue after the user said ‘先问我几个关键问题再行动’. Two substantive choices are settled, one remains open, and a handoff is approaching.",
   "expected": {
-    "requires": ["observable_discussion_trigger", "explicit_grill_narrow_discussion_authority", "supporting_artifact_only", "five_section_human_recovery", "persistence_before_next_question", "readback_verified_anchors", "static_contract_only"]
+    "requires": ["observable_discussion_trigger", "user_originated_natural_question_first_provenance", "explicit_grill_narrow_discussion_authority", "supporting_artifact_only", "five_section_human_recovery", "persistence_before_next_question", "readback_verified_anchors", "static_contract_only"]
   },
   "must": [
-    "use the explicit Grill request only as narrow permission for supporting docs/teamwork/ discussion memory",
-    "write one supporting artifact under docs/teamwork/discussion/ as soon as an observable trigger becomes true, update index/current/README, then read them back and verify that all anchors agree before asking Q3",
+    "preserve the user-originated natural question-first provenance as explicit Grill and use it only as narrow permission for the supporting docs/teamwork/ discussion lifecycle",
+    "run the canonical discussion transaction as soon as an observable trigger becomes true and verify its returned state before asking Q3",
     "use a specific H1 and Goal, Settled, Still open, Key evidence, and Continue here so a person can resume"
   ],
   "must_not": [
     "write on every turn or store a transcript",
     "ask Q3 before the supporting record and index/current/README anchors have been written, read back, and verified",
     "treat word count or elapsed time as a trigger",
+    "claim that usefulness, writability, or automatic Plan entry grants authority",
     "treat the discussion as canonical state or execution authority",
     "claim this offline authored case proves live model behavior"
   ],

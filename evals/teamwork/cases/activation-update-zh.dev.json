@@ -1,0 +1,13 @@
+{
+  "id": "activation-update-zh",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/teamwork-update/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "把这台机器已安装的协作 skills 和 agents 刷新到当前源码，并保持现有配置档。",
+  "expected": {"language": "zh", "route": "update", "observable": "global_refresh", "requires": ["weak_cue", "observable_contract", "static_contract_only"]},
+  "must": ["检查来源和安装状态，保留配置档并刷新全局安装"],
+  "must_not": ["修改版本元数据或在项目内复制安装包"],
+  "rubric": "assistance-quality",
+  "evidence": "Static weak-cue routing contract; it does not prove live model activation."
+}

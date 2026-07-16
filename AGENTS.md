@@ -34,20 +34,22 @@ There is no separate test suite directory; `scripts/validate.sh` is the required
 
 ## Commit & Pull Request Guidelines
 
-Keep commits scoped to one logical change. Pull requests should describe workflow impact, changed skill or runtime entrypoints, validation output, and any compatibility risk for existing Codex, Cursor, or Claude Code installs.
-
-Stay on the current branch unless the user explicitly requests a branch or pull
-request, repository protection requires one, or the user accepts isolation for
-the task. Being on the default branch alone is not a reason to create an
-`agent/*` branch. A Teamwork maintainer release is owned end to end by this root
-`AGENTS.md`; a generic GitHub publish/PR workflow does not replace version,
-changelog, tag, GitHub Release, or installed-surface refresh work.
+Keep commits scoped to one logical change. By default, complete a Teamwork
+change as a direct mainline release: work on `main`, update `VERSION`, and
+complete the corresponding release unit. Create a branch or pull request only
+when the user explicitly requests it or repository protection requires it.
+When requested, pull requests should describe workflow impact, changed skill or
+runtime entrypoints, validation output, and any compatibility risk for existing
+Codex, Cursor, or Claude Code installs. A Teamwork maintainer release is owned
+end to end by this root `AGENTS.md`; a generic GitHub publish/PR workflow does
+not replace version, changelog, tag, GitHub Release, or installed-surface
+refresh work.
 
 ## Maintainer Release & Changelog
 
-An explicit request to update, bump, or release the Teamwork version authorizes
-the complete release unit unless the user narrows scope. `VERSION` is canonical.
-One release unit contains `VERSION`, both plugin manifests, both changelogs,
+Unless the user narrows scope, a user-requested Teamwork change uses the direct
+mainline release default above. `VERSION` is canonical. One release unit
+contains `VERSION`, both plugin manifests, both changelogs,
 required public docs, verification, an intentional commit, `v<VERSION>` tag,
 GitHub Release, global skills/agents/policy refresh, applicable project-context
 initialization, and a final freshness check. Until the tag and GitHub Release
@@ -66,10 +68,10 @@ Use patch for non-behavioral fixes, minor for compatible features, and major for
 incompatible public contracts. Inspect remote/tag/Release state before edits;
 update metadata and changelogs together; run relevant dev eval, full validation,
 non-empty release eval, and fresh release review; refresh global installs and
-applicable project context; stay on the current branch unless isolation is requested or
-required; verify credentials and target commit; then push the accepted commit,
-tag, and GitHub Release. Rerun `./scripts/check-update.sh`; source, installations,
-remote tag, and GitHub Release must all be current.
+applicable project context; verify credentials and target commit; then push the
+accepted mainline commit, tag, and GitHub Release. Rerun
+`./scripts/check-update.sh`; source, installations, remote tag, and GitHub
+Release must all be current.
 
 ## Agent-Specific Instructions
 

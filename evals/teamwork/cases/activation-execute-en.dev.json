@@ -1,0 +1,13 @@
+{
+  "id": "activation-execute-en",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/teamwork-execute/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "The migration checklist is approved. Apply it and run the named checks.",
+  "expected": {"language": "en", "route": "execute", "observable": "scoped_change_and_checks", "requires": ["weak_cue", "observable_contract", "static_contract_only"]},
+  "must": ["make only the accepted changes and run the specified checks"],
+  "must_not": ["reopen settled requirements or expand scope"],
+  "rubric": "assistance-quality",
+  "evidence": "Static weak-cue routing contract; it does not prove live model activation."
+}

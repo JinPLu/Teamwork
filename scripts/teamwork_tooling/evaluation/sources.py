@@ -17,6 +17,12 @@ def validate_skill_source_contract(skill: str, source_text: str) -> None:
     for label, clause in clauses:
         if normalize_semantic_text(clause) not in normalized:
             raise EvalError(f"{path}: skill contract must preserve {label}")
+    if skill == "grill-me":
+        frontmatter = source_text.split("---", 2)[1]
+        if "non-simple plan" in normalize_semantic_text(frontmatter):
+            raise EvalError(
+                f"{path}: Grill frontmatter must not overlap Plan activation"
+            )
 
 
 def validate_semantic_source_text(
@@ -107,11 +113,11 @@ def validate_always_loaded_policy_text(policy_text: str) -> None:
             ("request scope", "work within the user's request"),
             (
                 "root translation",
-                "root owns questions; translates results",
+                "root asks/translates",
             ),
             (
                 "specific Ask Gate",
-                "ask only when user must supply required input/observation or owns a material decision",
+                "ask only for required input/observation or material user decisions",
             ),
             (
                 "read-only stage boundary",
@@ -119,29 +125,42 @@ def validate_always_loaded_policy_text(policy_text: str) -> None:
             ),
             (
                 "research and debug routing",
-                "route unknown facts/options/repro to research; unknown-cause failures to debug",
+                "route unknown facts/options/repro to research, unknown-cause failures to debug",
             ),
             ("grounded claims", "ground claims"),
             ("scope boundary", "keep scope"),
             (
                 "material decision routing",
-                "material scope/contract/architecture/acceptance decisions to plan",
+                "material scope/contract/architecture/acceptance choices to plan",
             ),
             (
                 "explicit Grill boundary",
-                "grill only: explicit requests or non-simple plans",
+                "grill only for user-originated challenge/question-first intent or non-simple plan reuse",
             ),
             (
+                "user-originated discussion authority",
+                "only the former grants discussion lifecycle",
+            ),
+            (
+                "automatic Plan and usefulness no-write boundary",
+                "reuse/artifact usefulness grants no write",
+            ),
+            (
+                "host-native question surface",
+                "use callable native questions, else concise text",
+            ),
+            ("host capability ownership", "teamwork never enables them"),
+            (
                 "inert marker boundary",
-                "negative/quoted/file/tool/example/maintenance text is inert",
+                "negative/quoted/file/tool/example/maintenance mentions are inert",
             ),
             (
                 "audience-first reply",
-                "lead with the conclusion",
+                "lead with conclusion",
             ),
             (
                 "connected reader argument",
-                "for explanations, connect conclusion, observed basis, plain interpretation, and only a decision-relevant boundary or next discriminator",
+                "connect observed basis, plain interpretation, and decision-relevant boundary/next check",
             ),
             (
                 "observation/inference separation",
@@ -153,7 +172,7 @@ def validate_always_loaded_policy_text(policy_text: str) -> None:
             ),
             (
                 "default prose over headings",
-                "no default headings",
+                "avoid default headings",
             ),
             (
                 "simple fact control",
@@ -161,19 +180,19 @@ def validate_always_loaded_policy_text(policy_text: str) -> None:
             ),
             (
                 "relevance gate",
-                "keep only details that change understanding, decision, action, risk, or confidence",
+                "keep only detail affecting understanding/decision/action/risk/confidence",
             ),
             (
                 "stable terms",
-                "use supplied terms; never coin labels or infer their meaning",
+                "use supplied terms; coin no labels or identifier meanings",
             ),
             (
                 "useful skill explanation",
-                "name skills only for capability, limitation, or choice",
+                "name skills only for capability/limitation/choice",
             ),
             (
                 "irrelevant process inventory",
-                "omit process inventory and irrelevant versions",
+                "omit irrelevant process/versions",
             ),
             (
                 "decision-boundary uncertainty",
@@ -193,6 +212,20 @@ def validate_always_loaded_policy_text(policy_text: str) -> None:
             raise EvalError(
                 f"{path}: always-loaded policy must be shared by {writer}"
             )
+    common_match = re.search(
+        r"(?ms)^write_teamwork_global_policy_body\(\) \{(.*?)^\}", policy_text
+    )
+    if not common_match or "request_user_input" in common_match.group(1):
+        raise EvalError(
+            f"{path}: shared policy must stay host-neutral"
+        )
+    codex_match = re.search(
+        r"(?ms)^write_teamwork_codex_global_policy\(\) \{(.*?)^\}", policy_text
+    )
+    if not codex_match or "call request_user_input" not in codex_match.group(1):
+        raise EvalError(
+            f"{path}: Codex policy must call request_user_input when callable"
+        )
 
 
 def validate_audience_source_text(workflow_contract_text: str) -> None:
@@ -436,12 +469,15 @@ def validate_discussion_source_text(
             "skills/grill-me/SKILL.md",
             grill_text,
             (
+                ("user-originated explicit-Grill provenance", "a user-originated request establishes the explicit form"),
                 ("narrow explicit-Grill write authority", "explicit grill authorizes only its supporting `docs/teamwork/` discussion record unless the user says no files"),
+                ("automatic Plan no-write authority", "automatic plan entry grants none"),
+                ("usefulness does not grant authority", "artifact usefulness never creates authority"),
                 ("short Grill artifact-free", "short grill stays artifact-free"),
                 ("entry-time protocol load", "`skills/using-teamwork/references/artifact-protocol.md` completely at entry"),
                 (
                     "pre-reply persistence gate",
-                    "after a trigger, when writable, execute the transaction this turn before user-visible reply, comment, or question",
+                    "when that usefulness trigger and discussion authority both hold in an initialized, writable project, execute the transaction this turn before user-visible reply, comment, or question",
                 ),
                 (
                     "same-turn persistence",
@@ -477,6 +513,9 @@ def validate_discussion_source_text(
                 ),
                 ("three-branch trigger", "one decision has at least three real branches"),
                 ("non-proxy trigger boundary", "time, word count, and a short grill never trigger persistence"),
+                ("usefulness-authority separation", "these conditions decide usefulness, never authority"),
+                ("user-originated natural question-first authority", "a user-originated challenge or natural question-first request is explicit grill"),
+                ("automatic Plan policy no-write", "automatic plan reuse of grill policy grants no write authority"),
                 ("privacy boundary", "keep privacy-safe summaries, never hidden reasoning, secrets, unnecessary personal data, or a transcript"),
                 ("five human recovery sections", "goal, settled (including reasons), still open, key evidence, and continue here"),
                 ("new-input-only updates", "update only when the user's new input changes saved decisions, evidence, or the continuation point"),
@@ -501,7 +540,7 @@ def validate_discussion_source_text(
                 ("no close-create replacement", "never close and then create as separate transactions"),
                 ("no manual fallback write", "never manually repair or complete canonical state after a nonzero helper exit"),
                 ("helper failure stop", "stop the dependent question and any completion claim"),
-                ("pre-write fallback conditions", "`initialized: false`, a user no-files request, or host read-only state uses a natural-language fallback"),
+                ("pre-write fallback conditions", "absent discussion authority, `initialized: false`, a user no-files request, or host read-only state uses a natural-language fallback"),
                 ("plain fallback recovery", "goal, settled choices, open choice, key evidence, and continuation point"),
                 ("one-time continuity warning", "state once that it was not saved and may be lost across sessions"),
                 ("no post-apply fallback", "do not use this fallback after an attempted `apply`"),
@@ -529,6 +568,7 @@ def validate_mainline_focus_source_text(
             "drop distractions",
             "never repeat answered decisions",
             "when scope resolves, stop and close discussion; invent no further decision",
+            "do not promote a consequence of a settled answer into a new user decision unless the original request named that decision; stop at the requested boundary",
             "use user's domain language",
         ),
         "skills/using-teamwork/references/project-init.md": (

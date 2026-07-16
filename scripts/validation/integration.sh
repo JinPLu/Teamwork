@@ -190,23 +190,123 @@ HOME="$tmp/home" "$ROOT/install.sh" >/dev/null
   || fail "Codex install must not invoke the host CLI to manage interaction capabilities"
 [[ ! -e "$retired_teamwork_dir" ]] || fail "Codex install must remove old copied teamwork skill"
 for skill in "${SKILLS[@]}"; do
-  [[ -f "$tmp/home/.codex/skills/$skill/SKILL.md" ]] || fail "Codex install missing $skill"
-  [[ ! -L "$tmp/home/.codex/skills/$skill/SKILL.md" ]] || fail "default install must copy $skill"
-  grep_required "^name: $skill$" "$tmp/home/.codex/skills/$skill/SKILL.md" \
+  [[ -f "$tmp/home/.agents/skills/$skill/SKILL.md" ]] || fail "Codex install missing $skill"
+  [[ ! -L "$tmp/home/.agents/skills/$skill/SKILL.md" ]] || fail "default install must copy $skill"
+  grep_required "^name: $skill$" "$tmp/home/.agents/skills/$skill/SKILL.md" \
     "installed skill has wrong name: $skill"
 done
-[[ "$(tr -d '[:space:]' < "$tmp/home/.codex/skills/.teamwork-version")" == "$(tr -d '[:space:]' < "$ROOT/VERSION")" ]] \
+[[ "$(tr -d '[:space:]' < "$tmp/home/.agents/skills/.teamwork-version")" == "$(tr -d '[:space:]' < "$ROOT/VERSION")" ]] \
   || fail "Codex install must write .teamwork-version matching VERSION"
-[[ -f "$tmp/home/.codex/skills/.teamwork-profile" ]] \
+[[ -f "$tmp/home/.agents/skills/.teamwork-profile" ]] \
   || fail "Codex install must write .teamwork-profile"
-HOME="$tmp/home" "$ROOT/scripts/check-update.sh" --readiness --no-fetch >/dev/null \
+HOME="$tmp/home" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/fresh-readiness.out" \
   || fail "check-update readiness must succeed after fresh install"
+grep_required '^MANAGED_INSTALL_READY=' "$tmp/fresh-readiness.out" \
+  "readiness must distinguish managed install state"
+grep_required '^HOST_ACTIVATION=manual-action-required$' "$tmp/fresh-readiness.out" \
+  "readiness must expose remaining host-owned manual activation"
+grep_required '^MANUAL_ACTIONS=.*cursor-policy-paste' "$tmp/fresh-readiness.out" \
+  "readiness must name the remaining Cursor policy action"
+grep_absent '^HOST_ACTIVATION=ready$' \
+  "static install readiness must not claim live host activation" \
+  "$tmp/fresh-readiness.out"
 [[ ! -e "$tmp/home/.fake-codex-invocations" ]] \
   || fail "readiness must not invoke the host CLI to manage interaction capabilities"
 
-[[ -f "$tmp/home/.codex/skills/using-teamwork/references/workflow-contract.md" ]] \
+legacy_codex_home="$tmp/home-codex-legacy-skills"
+legacy_codex_root="$legacy_codex_home/.codex/skills"
+mkdir -p "$legacy_codex_root"
+for skill in "${SKILLS[@]}"; do
+  cp -R "$ROOT/skills/$skill" "$legacy_codex_root/$skill"
+done
+printf '%s\n' "$(tr -d '[:space:]' < "$ROOT/VERSION")" > "$legacy_codex_root/.teamwork-version"
+printf '%s\n' performance-first > "$legacy_codex_root/.teamwork-profile"
+printf '%s\n' 'preserve unrelated skill root content' > "$legacy_codex_root/unrelated.txt"
+HOME="$legacy_codex_home" "$ROOT/install.sh" codex >/dev/null
+for skill in "${SKILLS[@]}"; do
+  [[ -f "$legacy_codex_home/.agents/skills/$skill/SKILL.md" ]] \
+    || fail "Codex install must migrate $skill to the supported user skill root"
+  [[ ! -e "$legacy_codex_root/$skill" ]] \
+    || fail "Codex install must remove its owned legacy duplicate for $skill"
+done
+[[ -f "$legacy_codex_root/unrelated.txt" ]] \
+  || fail "Codex legacy migration must preserve unrelated root content"
+[[ ! -e "$legacy_codex_root/.teamwork-version" && ! -e "$legacy_codex_root/.teamwork-profile" ]] \
+  || fail "Codex legacy migration must remove obsolete Teamwork ownership markers"
+
+readonly_legacy_home="$tmp/home-codex-readonly-legacy"
+readonly_legacy_root="$readonly_legacy_home/.codex/skills"
+mkdir -p "$readonly_legacy_root"
+cp -R "$ROOT/skills/grill-me" "$readonly_legacy_root/grill-me"
+printf '%s\n' current > "$readonly_legacy_root/.teamwork-version"
+printf '%s\n' performance-first > "$readonly_legacy_root/.teamwork-profile"
+chmod a-w "$readonly_legacy_root"
+readonly_legacy_rc=0
+HOME="$readonly_legacy_home" "$ROOT/install.sh" --no-notifications codex >/dev/null 2>&1 \
+  || readonly_legacy_rc=$?
+chmod u+w "$readonly_legacy_root"
+if [[ "$readonly_legacy_rc" -eq 0 ]]; then
+  fail "Codex install must reject a legacy root that cannot be cleaned"
+fi
+[[ -f "$readonly_legacy_root/grill-me/SKILL.md" ]] \
+  || fail "failed legacy cleanup preflight must preserve the legacy skill"
+[[ ! -e "$readonly_legacy_home/.agents/skills/grill-me" ]] \
+  || fail "failed legacy cleanup preflight must not create a duplicate new-root skill"
+[[ ! -e "$readonly_legacy_home/.codex/config.toml" ]] \
+  || fail "legacy cleanup preflight must fail before routing mutation"
+
+custom_codex_home="$tmp/home-codex-custom-root"
+custom_codex_runtime="$tmp/custom-codex-runtime"
+mkdir -p "$custom_codex_runtime/skills"
+cp -R "$ROOT/skills/grill-me" "$custom_codex_runtime/skills/grill-me"
+printf '%s\n' current > "$custom_codex_runtime/skills/.teamwork-version"
+printf '%s\n' performance-first > "$custom_codex_runtime/skills/.teamwork-profile"
+HOME="$custom_codex_home" CODEX_HOME="$custom_codex_runtime" \
+  "$ROOT/install.sh" codex >/dev/null
+[[ -f "$custom_codex_home/.agents/skills/grill-me/SKILL.md" ]] \
+  || fail "Codex install must keep the supported skill root independent of CODEX_HOME"
+[[ ! -e "$custom_codex_runtime/skills/grill-me" ]] \
+  || fail "Codex install must migrate an owned legacy CODEX_HOME skill"
+
+unknown_legacy_home="$tmp/home-codex-unknown-legacy"
+mkdir -p "$unknown_legacy_home/.codex/skills"
+cp -R "$ROOT/skills/grill-me" "$unknown_legacy_home/.codex/skills/grill-me"
+if HOME="$unknown_legacy_home" "$ROOT/install.sh" codex >/dev/null 2>&1; then
+  fail "Codex install must reject an unmarked legacy same-name skill"
+fi
+[[ -f "$unknown_legacy_home/.codex/skills/grill-me/SKILL.md" ]] \
+  || fail "rejected legacy migration must preserve the existing skill"
+[[ ! -e "$unknown_legacy_home/.agents/skills/grill-me" ]] \
+  || fail "rejected legacy migration must not create a duplicate skill"
+[[ ! -e "$unknown_legacy_home/.codex/config.toml" ]] \
+  || fail "legacy migration preflight must fail before routing mutation"
+
+unknown_inventory_home="$tmp/home-codex-unknown-inventory"
+mkdir -p "$unknown_inventory_home/.codex/skills"
+cp -R "$ROOT/skills/grill-me" "$unknown_inventory_home/.codex/skills/grill-me"
+printf '%s\n' current > "$unknown_inventory_home/.codex/skills/.teamwork-version"
+printf '%s\n' performance-first > "$unknown_inventory_home/.codex/skills/.teamwork-profile"
+printf '%s\n' 'user file' > "$unknown_inventory_home/.codex/skills/grill-me/notes.md"
+if HOME="$unknown_inventory_home" "$ROOT/install.sh" codex >/dev/null 2>&1; then
+  fail "Codex install must reject unknown files inside a legacy Teamwork skill"
+fi
+[[ -f "$unknown_inventory_home/.codex/skills/grill-me/notes.md" ]] \
+  || fail "rejected unknown legacy inventory must remain untouched"
+
+unknown_destination_home="$tmp/home-codex-unknown-destination"
+mkdir -p "$unknown_destination_home/.agents/skills"
+cp -R "$ROOT/skills/grill-me" "$unknown_destination_home/.agents/skills/grill-me"
+if HOME="$unknown_destination_home" "$ROOT/install.sh" codex >/dev/null 2>&1; then
+  fail "Codex install must reject an unmarked same-name skill at the supported root"
+fi
+[[ -f "$unknown_destination_home/.agents/skills/grill-me/SKILL.md" ]] \
+  || fail "rejected supported-root collision must remain untouched"
+[[ ! -e "$unknown_destination_home/.codex/config.toml" ]] \
+  || fail "supported-root preflight must fail before routing mutation"
+
+[[ -f "$tmp/home/.agents/skills/using-teamwork/references/workflow-contract.md" ]] \
   || fail "Codex install must copy using-teamwork references"
-codex_discussion_transaction="$tmp/home/.codex/skills/using-teamwork/scripts/discussion-transaction.py"
+codex_discussion_transaction="$tmp/home/.agents/skills/using-teamwork/scripts/discussion-transaction.py"
 check_discussion_transaction_copy \
   "$codex_discussion_transaction" \
   "Codex"
@@ -351,6 +451,9 @@ grep_required '^tool_namespace = "teamwork"$' "$codex_routing_config" \
   "Codex routing must avoid the reserved collaboration namespace"
 grep_required '^max_concurrent_threads_per_session = 9$' "$codex_routing_config" \
   "Codex routing must configure eight subagent slots plus the root thread"
+grep_absent '^multi_agent = true$' \
+  "unverified stable routing must not replace the working multi_agent_v2 contract" \
+  "$codex_routing_config"
 python3 "$ROOT/scripts/configure-codex-routing.py" --check --config "$codex_routing_config" >/dev/null
 cp "$codex_routing_config" "$tmp/codex-routing-first.toml"
 HOME="$tmp/home-codex-agents" "$ROOT/install.sh" codex-agents >/dev/null
@@ -614,14 +717,14 @@ HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-routing-ready.out"
 grep_required '^CODEX_ROUTING=ready$' "$tmp/global-routing-ready.out" \
   "user refresh must repair Codex routing readiness"
-printf '\n# stale grill-me skill fixture\n' >> "$tmp/home-project-update/.codex/skills/grill-me/SKILL.md"
+printf '\n# stale grill-me skill fixture\n' >> "$tmp/home-project-update/.agents/skills/grill-me/SKILL.md"
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-grill-skill-stale.out" || true
 grep_required '^INSTALL_READY=no$' "$tmp/global-grill-skill-stale.out" \
   "check-update readiness must fail when installed grill-me content drifts"
 grep_required 'codex-skill-content' "$tmp/global-grill-skill-stale.out" \
   "check-update readiness must identify global Codex skill content drift"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
-rm "$tmp/home-project-update/.codex/skills/grill-me/SKILL.md"
+rm "$tmp/home-project-update/.agents/skills/grill-me/SKILL.md"
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-codex-grill-missing.out" || true
 grep_required 'codex-skills' "$tmp/global-codex-grill-missing.out" \
   "check-update readiness must identify missing Codex grill-me content"
@@ -692,9 +795,9 @@ HOME="$tmp/home-unknown" "$ROOT/install.sh" >/dev/null
 
 HOME="$tmp/home-link" "$ROOT/install.sh" --link codex >/dev/null
 for skill in "${SKILLS[@]}"; do
-  [[ -L "$tmp/home-link/.codex/skills/$skill" ]] || fail "link install must symlink $skill directory"
+  [[ -L "$tmp/home-link/.agents/skills/$skill" ]] || fail "link install must symlink $skill directory"
 done
-check_using_teamwork_link "$tmp/home-link/.codex/skills/using-teamwork" "Codex"
+check_using_teamwork_link "$tmp/home-link/.agents/skills/using-teamwork" "Codex"
 
 HOME="$tmp/home-cursor" "$ROOT/install.sh" cursor >/dev/null
 for skill in "${SKILLS[@]}"; do
@@ -868,11 +971,11 @@ HOME="$tmp/home-invalid" "$ROOT/install.sh" gemini >/dev/null 2>&1 && fail "inst
 
 HOME="$tmp/home-all" "$ROOT/install.sh" --link all >/dev/null
 for skill in "${SKILLS[@]}"; do
-  [[ -L "$tmp/home-all/.codex/skills/$skill" ]] || fail "all install must link Codex skill $skill"
+  [[ -L "$tmp/home-all/.agents/skills/$skill" ]] || fail "all install must link Codex skill $skill"
   [[ -L "$tmp/home-all/.cursor/skills/$skill" ]] || fail "all install must link Cursor skill $skill"
   [[ -L "$tmp/home-all/.claude/skills/$skill" ]] || fail "all install must link Claude skill $skill"
 done
-check_using_teamwork_link "$tmp/home-all/.codex/skills/using-teamwork" "Codex all"
+check_using_teamwork_link "$tmp/home-all/.agents/skills/using-teamwork" "Codex all"
 check_using_teamwork_link "$tmp/home-all/.cursor/skills/using-teamwork" "Cursor all"
 check_using_teamwork_link "$tmp/home-all/.claude/skills/using-teamwork" "Claude Code all"
 for agent in teamwork-explorer teamwork-worker teamwork-designer teamwork-judge teamwork-reviewer teamwork-deep-judge teamwork-deep-reviewer; do
@@ -996,7 +1099,7 @@ PY
 cp "$init_root/docs/teamwork/index.json" "$index_pointer_tmp/init-index-before-rerun.json"
 cp "$init_root/docs/teamwork/current.md" "$index_pointer_tmp/init-current-before-rerun.md"
 cp "$init_root/docs/teamwork/README.md" "$index_pointer_tmp/init-readme-before-rerun.md"
-[[ -d "$tmp/home-init-project/.codex/skills/using-teamwork" ]] || fail "init-project must install global Codex skills by default"
+[[ -d "$tmp/home-init-project/.agents/skills/using-teamwork" ]] || fail "init-project must install global Codex skills by default"
 [[ -f "$tmp/home-init-project/.codex/AGENTS.md" ]] || fail "init-project must install global Codex policy by default"
 [[ -d "$tmp/home-init-project/.cursor/skills/using-teamwork" ]] || fail "init-project must install global Cursor skills by default"
 [[ -f "$tmp/home-init-project/.cursor/agents/worker.md" ]] || fail "init-project must install global Cursor agents by default"

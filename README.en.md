@@ -4,17 +4,17 @@
 
 **Help Codex, Cursor, and Claude Code gather evidence before acting and finish complex research or engineering work with checkable results.**
 
-Teamwork is a Codex-first skill package. After installation, describe your goal in natural language as usual. Teamwork organizes research, debugging, planning, execution, and review when the task needs them, while simple requests stay direct. Replies lead with the conclusion or what it means. For a substantive discussion, they connect observed facts, their plain interpretation, and only the boundary or next comparison that could change the decision. Continuing discussions keep the current question visible. Technical detail appears when it is useful or requested, rather than as unexplained process, version, or label narration.
+Teamwork is one shared skill package adapted to Codex, Cursor, and Claude Code. Each host still owns skill discovery, native tool calls, permission policy, and the responses produced at runtime. After installation, you can usually describe your goal in natural language; the host uses the request and skill descriptions to select research, debugging, planning, execution, or review. That selection is model behavior, not deterministic automatic routing. For substantive explanations, Teamwork asks for a short argument that starts with the conclusion or what it means, connects the observed facts to their plain interpretation, and includes only a boundary or comparison that could change the decision. Technical detail appears when it is useful or requested, rather than as unexplained process, version, or label narration.
 
 ![Teamwork workflow](assets/teamwork-workflow-gpt-image-2.png)
 
 ## What You Get
 
-- **More reliable research:** Ground work in primary sources, project files, and real configuration instead of inventing paths, ports, models, or parameters.
-- **More focused questions:** Inspect discoverable facts first and ask you only about decisions that change the outcome, scope, acceptance, or authority.
-- **Controlled collaboration:** Use subagents only when work splits cleanly; the main agent keeps ownership of scope, integration, and final verification.
-- **Clear completion evidence:** Show whether the task is truly done with sources, logs, tests, diffs, or review results.
-- **Recoverable discussions:** Only observable continuity signals create one compact summary of the goal, settled choices, open question, key evidence, and continue point; one material conclusion with an unresolved next comparison or decision is enough to create it. Ordinary replies stay brief and direct.
+- **Evidence-grounded research:** Use primary sources, project files, and real configuration instead of inventing paths, ports, models, or parameters.
+- **Questions only when needed:** Inspect discoverable facts first and ask only about decisions that change the outcome, scope, acceptance, or authority.
+- **Bounded collaboration:** Use subagents only when work splits cleanly; the main agent keeps ownership of scope, integration, and final verification.
+- **Checkable completion evidence:** Show whether the task is done with sources, logs, tests, diffs, or review results.
+- **Recoverable discussions:** In an initialized repository where the user has authorized writes and the runtime can write, an explicit request to be questioned or challenged may save one compact summary of the goal, settled choices, open question, key evidence, and continue point for a later task. Entering a planning flow automatically does not authorize a discussion write; ordinary replies do not grow merely to leave a record.
 
 Teamwork is a good fit for literature and field research, technical evaluation, complex plans, reproducible failures, CI, cross-file implementation, strict review, and “keep going until it passes” work. One-line facts and obvious small edits do not get forced into a workflow.
 
@@ -31,7 +31,7 @@ cd Teamwork
 ./scripts/check-update.sh --readiness
 ```
 
-Then ask for the result directly—there are no skill names to memorize:
+Then usually ask for the result directly. Natural language expresses intent; when exact routing matters, explicitly invoke a skill supported by the host:
 
 ```text
 Research this field, its key papers, and the existing code, then propose an executable plan.
@@ -72,7 +72,9 @@ Common options:
 
 Migration note: existing project-level Teamwork copies are no longer supported or refreshed. Delete only entries you have confirmed Teamwork generated—never the whole `.agents`, `.codex`, `.cursor`, or `.claude` directory—then run `./install.sh all`.
 
-Restart Codex after a user-level installation changes role routing. Cursor User Rules still require a manual copy-and-paste step that the installer cannot verify. The installer manages only Teamwork-owned directories, marked rules, and bounded configuration; it does not take over platform permissions, MCP, browser, or test settings. See the [Codex guide](CODEX.md), [Cursor guide](CURSOR.md), and [Claude Code guide](CLAUDE.md) for platform details.
+Restart Codex after a user-level installation changes role routing; its hooks still require individual trust in the CLI. Cursor User Rules still require a manual copy-and-paste step that the installer cannot verify. The installer manages only Teamwork-owned directories, marked rules, and bounded configuration; it does not take over platform permissions, MCP, browser, test settings, or host model behavior. See the [Codex guide](CODEX.md), [Cursor guide](CURSOR.md), and [Claude Code guide](CLAUDE.md) for platform details.
+
+`./scripts/check-update.sh --readiness` checks the freshness and completeness of Teamwork-managed files and configuration. It does not prove that the manual Cursor User Rules or Codex hook-trust steps are complete, or that a particular natural-language request will activate a specific skill.
 
 ## Update
 

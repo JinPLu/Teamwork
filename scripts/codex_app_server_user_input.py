@@ -18,11 +18,13 @@ from typing import Any
 SCENARIOS = {
     "protocol": {
         "expected_requests": 1,
+        "max_questions_per_request": 1,
         "allow_auto_resolution": True,
         "prompt": "Ask one short question about whether a public CLI rename should keep an alias.",
     },
     "ordinary-material": {
         "expected_requests": 1,
+        "max_questions_per_request": 1,
         "forbid_text_question": True,
         "prompt": (
             "Help me rename a public CLI command. Whether existing scripts must keep "
@@ -32,17 +34,28 @@ SCENARIOS = {
     },
     "explicit-grill-material": {
         "expected_requests": 1,
+        "max_questions_per_request": 1,
         "forbid_text_question": True,
         "prompt": (
             "Grill me before acting: I want to rename a public CLI command, but have not "
             "decided whether existing scripts must keep working."
         ),
     },
+    "explicit-grill-material-zh": {
+        "expected_requests": 1,
+        "max_questions_per_request": 1,
+        "forbid_text_question": True,
+        "prompt": (
+            "行动前先问清楚：我想重命名一个公开 CLI 命令，但还没决定是否必须让"
+            "现有脚本继续工作。"
+        ),
+    },
     "explicit-grill-zero": {
         "expected_requests": 0,
         "prompt": (
-            "Grill me before acting: choose the private helper name and file split yourself "
-            "using repository conventions. Do not ask about reversible implementation details."
+            "Grill me before acting: rename the private helper to match repository conventions "
+            "without changing public behavior. Choose the exact name and file split yourself. "
+            "Do not ask about reversible implementation details."
         ),
     },
     "simple-control": {
@@ -76,6 +89,7 @@ def validate_request_params(
     expected_turn_id: str | None = None,
     existing_request_count: int = 0,
     expected_request_count: int = 1,
+    max_questions_per_request: int = 3,
     allow_auto_resolution: bool = False,
 ) -> list[str]:
     """Validate only the callable transport shape, not decision semantics or IDs."""
@@ -97,8 +111,10 @@ def validate_request_params(
         errors.append("autoResolutionMs must be omitted for a material decision")
 
     questions = params.get("questions")
-    if not isinstance(questions, list) or not 1 <= len(questions) <= 3:
-        return errors + ["questions must contain one to three items"]
+    if not isinstance(questions, list) or not 1 <= len(questions) <= max_questions_per_request:
+        return errors + [
+            f"questions must contain one to {max_questions_per_request} items"
+        ]
 
     for index, question in enumerate(questions, 1):
         prefix = f"questions[{index}]"
@@ -237,6 +253,7 @@ class AppServerProbe:
         thread_id: str,
         turn_id: str,
         expected_count: int,
+        max_questions_per_request: int,
         allow_auto_resolution: bool,
     ) -> bool:
         if message.get("method") != "item/tool/requestUserInput":
@@ -248,6 +265,7 @@ class AppServerProbe:
             expected_turn_id=turn_id,
             existing_request_count=len(self._server_request_ids),
             expected_request_count=expected_count,
+            max_questions_per_request=max_questions_per_request,
             allow_auto_resolution=allow_auto_resolution,
         )
         questions = params.get("questions") if isinstance(params, dict) else None
@@ -347,6 +365,9 @@ class AppServerProbe:
                     thread_id=thread_id,
                     turn_id=turn_id,
                     expected_count=expected_count,
+                    max_questions_per_request=int(
+                        spec.get("max_questions_per_request", 3)
+                    ),
                     allow_auto_resolution=bool(spec.get("allow_auto_resolution")),
                 ):
                     continue

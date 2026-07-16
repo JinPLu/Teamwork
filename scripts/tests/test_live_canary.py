@@ -127,10 +127,11 @@ class LiveCanaryRunTests(unittest.TestCase):
                 argv[1:],
                 ["--copy", "--no-notifications", "--profile", "performance-first", "codex"],
             )
-            (codex_home / "skills/test").mkdir(parents=True)
-            (codex_home / "skills/test/SKILL.md").write_text("installed skill", encoding="utf-8")
-            (codex_home / "skills/.teamwork-version").write_text("9.9.9\n", encoding="utf-8")
-            (codex_home / "skills/.teamwork-profile").write_text("performance-first\n", encoding="utf-8")
+            skills_root = Path(env["HOME"]) / ".agents" / "skills"
+            (skills_root / "test").mkdir(parents=True)
+            (skills_root / "test/SKILL.md").write_text("installed skill", encoding="utf-8")
+            (skills_root / ".teamwork-version").write_text("9.9.9\n", encoding="utf-8")
+            (skills_root / ".teamwork-profile").write_text("performance-first\n", encoding="utf-8")
             (codex_home / "agents").mkdir()
             (codex_home / "agents/teamwork-worker.toml").write_text("model = 'fake'\n", encoding="utf-8")
             (codex_home / "AGENTS.md").write_text("installed policy\n", encoding="utf-8")
@@ -210,12 +211,12 @@ class LiveCanaryRunTests(unittest.TestCase):
             self.assertEqual(set(env), {"HOME", "CODEX_HOME", "PATH"})
             self.assertEqual(env["CODEX_HOME"], str(Path(env["HOME"]) / ".codex"))
         paths = {item["path"] for item in manifest["inventory"]}
-        self.assertIn("skills/test/SKILL.md", paths)
+        self.assertIn("user-skills/test/SKILL.md", paths)
         self.assertIn("agents/teamwork-worker.toml", paths)
         self.assertIn("AGENTS.md", paths)
         self.assertIn("config.toml", paths)
-        self.assertIn("skills/.teamwork-version", paths)
-        self.assertIn("skills/.teamwork-profile", paths)
+        self.assertIn("user-skills/.teamwork-version", paths)
+        self.assertIn("user-skills/.teamwork-profile", paths)
         self.assertNotIn("auth.json", paths)
         self.assertEqual(manifest["activation_evidence"]["claim"], "AVAILABILITY_ONLY")
 

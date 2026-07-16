@@ -4,6 +4,18 @@
 
 This changelog explains what changed for users. Maintainer implementation details belong in Git commits or pull requests.
 
+## 3.3.0 - 2026-07-16
+
+This release makes Teamwork easier to activate in ordinary language and keeps discussion centered on the question the user actually needs to judge, rather than on internal engineering narration.
+
+- Natural activation — Before: everyday requests such as “ask me first,” “find the cause,” or “continue with the accepted approach” could fail to visibly activate Grill, Research, Debug, or Execute. After: each capability matches user intent directly, with English and Chinese weak-cue regression coverage. Simple requests still use the native fast path instead of gaining extra workflow.
+- Reader-facing discussion — Before: implementation detail, versions, process, and invented terms could obscure the answer. After: replies lead with the conclusion, then connect observed support, a plain-language interpretation, and only the boundary that changes the decision. Simple facts remain one sentence; a skill name can still explain a relevant capability or limit.
+- Useful, recoverable discussion records — Before: the persistence trigger and write authority were unclear, so real projects rarely produced a recoverable discussion document. After: a record is written only when the user explicitly requests Grill, the project is initialized, and the discussion has a useful continuation point. Plan can reuse the same questioning judgment but does not gain write authority from that reuse.
+- Clear update and initialization roles — Before: refreshing global capabilities and refreshing project context could be conflated. After: `teamwork-update` refreshes global Teamwork only, while `teamwork-init` initializes or refreshes a selected project. Codex skills migrate to the single `~/.agents/skills` root; if the legacy root cannot be cleaned safely, installation stops before changing the new location.
+- To upgrade: From the Teamwork repository, run `./install.sh all`, then `./scripts/check-update.sh --readiness`. To give an existing project the full project context and discussion-record capability, also run `./install.sh --project-root "<project-path>" init-project`.
+
+Limit: the host model and router still decide whether a skill is invoked. These changes strengthen cues, policy, and checks, but cannot guarantee every natural phrasing will activate the intended capability. Cursor User Rules still require the prompted manual paste, and this release does not adopt an unproven Codex routing migration.
+
 ## 3.2.0 - 2026-07-16
 
 This release makes research-minded discussion easier to follow and resume without turning ordinary collaboration into academic prose or a process log.

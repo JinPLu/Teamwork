@@ -4,18 +4,22 @@
 # Keep these checks about outcomes and user actions. Internal implementation
 # details belong with their owners, not in the platform guides.
 grep_required 'Codex、Cursor 和 Claude Code' "$ROOT/README.md" "README must name all supported platforms"
-grep_required 'Codex-first' "$ROOT/README.md" "README must state Codex-first positioning"
+grep_required '共享 skill package' "$ROOT/README.md" "README must describe the shared package"
+grep_required '各宿主仍负责发现 skill、调用原生工具、执行权限策略和产生实际回复' "$ROOT/README.md" \
+  "README must preserve the host-owned runtime boundary"
 grep_required '默认的完整全局刷新使用 `./install.sh all`' "$ROOT/README.md" \
   "README must make the full global refresh explicit"
 grep_required 'check-update.sh --readiness' "$ROOT/README.md" "README must show the global readiness check"
 grep_required '不会把 Teamwork skills 或 agents 安装到该仓库中' "$ROOT/README.md" \
   "README must keep init-project limited to project context"
-grep_required '回复会先给出结论或它代表的含义' "$ROOT/README.md" \
+grep_required '先给出结论或它代表的含义' "$ROOT/README.md" \
   "README must promise an audience-first response"
 grep_required '技术细节只在确有帮助或你要求时展开' "$ROOT/README.md" \
   "README must relevance-gate technical detail"
-grep_required '只有出现明确的连续性信号时，才保存一份包含目标、已定选择、未决问题、关键证据和继续点的紧凑摘要' "$ROOT/README.md" \
-  "README must describe signal-gated durable continuity"
+grep_required '用户明确要求先提问或挑战时，可保存一份包含目标、已定选择、未决问题、关键证据和继续点的紧凑摘要' "$ROOT/README.md" \
+  "README must describe authorized durable continuity"
+grep_required '自动进入计划流程本身不授予写入讨论文档的权限' "$ROOT/README.md" \
+  "README must keep automatic planning entry read-only"
 grep_required '只删除已确认由 Teamwork 生成的条目' "$ROOT/README.md" \
   "README must require safe legacy cleanup"
 grep_required '绝不要整体删除 `.agents`、`.codex`、`.cursor` 或 `.claude`' "$ROOT/README.md" \
@@ -48,18 +52,23 @@ current_changelog_en="$(awk -v prefix="## $current_version -" '
 git -C "$ROOT" ls-files --error-unmatch "README.en.md" >/dev/null 2>&1 || fail "README.en.md must be tracked by git"
 grep_required '\[中文\](README.md)' "$ROOT/README.en.md" "English README must link to default Chinese README"
 grep_required 'Codex, Cursor, and Claude Code' "$ROOT/README.en.md" "English README must name all supported platforms"
-grep_required 'Codex-first skill package' "$ROOT/README.en.md" "English README must state Codex-first positioning"
+grep_required 'one shared skill package adapted to Codex, Cursor, and Claude Code' "$ROOT/README.en.md" \
+  "English README must describe the shared package"
+grep_required 'Each host still owns skill discovery, native tool calls, permission policy, and the responses produced at runtime' "$ROOT/README.en.md" \
+  "English README must preserve the host-owned runtime boundary"
 grep_required 'The default full global refresh is `./install.sh all`' "$ROOT/README.en.md" \
   "English README must make the full global refresh explicit"
 grep_required 'check-update.sh --readiness' "$ROOT/README.en.md" "English README must show the global readiness check"
 grep_required 'it does not install Teamwork skills or agents into the repository' "$ROOT/README.en.md" \
   "English README must keep init-project limited to project context"
-grep_required 'Replies lead with the conclusion or what it means' "$ROOT/README.en.md" \
+grep_required 'starts with the conclusion or what it means' "$ROOT/README.en.md" \
   "English README must promise an audience-first response"
 grep_required 'Technical detail appears when it is useful or requested' "$ROOT/README.en.md" \
   "English README must relevance-gate technical detail"
-grep_required 'Only observable continuity signals create one compact summary of the goal, settled choices, open question, key evidence, and continue point' "$ROOT/README.en.md" \
-  "English README must describe signal-gated durable continuity"
+grep_required 'an explicit request to be questioned or challenged may save one compact summary of the goal, settled choices, open question, key evidence, and continue point' "$ROOT/README.en.md" \
+  "English README must describe authorized durable continuity"
+grep_required 'Entering a planning flow automatically does not authorize a discussion write' "$ROOT/README.en.md" \
+  "English README must keep automatic planning entry read-only"
 grep_required 'Delete only entries you have confirmed Teamwork generated' "$ROOT/README.en.md" \
   "English README must require safe legacy cleanup"
 grep_required 'never the whole `.agents`, `.codex`, `.cursor`, or `.claude` directory' "$ROOT/README.en.md" \
@@ -106,7 +115,7 @@ for guide in CODEX.md CURSOR.md CLAUDE.md; do
   normalized_required 'rather than narrating internal workflow labels or version details' "$guide_path" \
     "$guide must not make internal process narration the response"
   grep_required 'one compact summary of the goal' "$guide_path" "$guide must offer compact durable continuity when useful"
-  normalized_required 'ordinary requests do not need one' "$guide_path" \
+  normalized_required 'Ordinary requests do not need one' "$guide_path" \
     "$guide must keep durable continuity optional"
   grep_required 'teamwork-init' "$guide_path" "$guide must point users to project-context setup"
   grep_required 'teamwork-update' "$guide_path" "$guide must point users to global refresh guidance"
@@ -116,6 +125,8 @@ done
 
 # Keep platform-specific details only where they change a user's setup or use.
 grep_required 'Codex native capabilities' "$ROOT/CODEX.md" "CODEX.md must identify the native execution layer"
+grep_required '~/.agents/skills' "$ROOT/CODEX.md" \
+  "CODEX.md must document the supported Codex user-skill location"
 grep_required 'Restart Codex after a routing change' "$ROOT/CODEX.md" "CODEX.md must preserve the required restart"
 grep_required '/hooks' "$ROOT/CODEX.md" "CODEX.md must explain the user-owned hook trust step"
 grep_required 'Cursor `Task` subagents' "$ROOT/CURSOR.md" "CURSOR.md must document its native subagent option"
@@ -145,6 +156,13 @@ grep_required 'cursor-policy' "$ROOT/install.sh" "installer must support cursor-
 grep_required 'cursor-policy-copy' "$ROOT/install.sh" "installer must support cursor-policy-copy target"
 grep_required 'claude-policy' "$ROOT/install.sh" "installer must support claude-policy target"
 grep_required 'configure_codex_routing' "$ROOT/scripts/install/targets.sh" "installer must configure user-level Codex routing"
+grep_required 'CODEX_USER_SKILLS_ROOT="\$HOME/\.agents/skills"' "$ROOT/scripts/install/common.sh" \
+  "Codex skills must use the supported user skill root"
+grep_required 'preflight_legacy_codex_skills' "$ROOT/scripts/install/common.sh" \
+  "Codex skill migration must fail closed before legacy cleanup"
+grep_absent 'install_skill_set "\$HOME/\.codex/skills"' \
+  "Codex installer must not create a second legacy skill root" \
+  "$ROOT/scripts/install/targets.sh"
 grep_required 'no-codex-routing' "$ROOT/install.sh" "installer must expose a Codex routing opt-out"
 grep_absent 'configure_codex_native_questions\|codex-native-questions\|default_mode_request_user_input\|code_mode_only' \
   "installer must not own or mutate the host native-input capability" \
@@ -152,6 +170,12 @@ grep_absent 'configure_codex_native_questions\|codex-native-questions\|default_m
 grep_required 'one main thread plus up to eight' "$ROOT/scripts/install/common.sh" \
   "installer help must document the root-inclusive thread limit"
 grep_required 'codex_routing_status' "$ROOT/scripts/check-update.sh" "check-update must inspect Codex routing"
+grep_required 'MANAGED_INSTALL_READY=' "$ROOT/scripts/check-update.sh" \
+  "readiness must retain a managed-install-only signal"
+grep_required 'HOST_ACTIVATION=manual-action-required' "$ROOT/scripts/check-update.sh" \
+  "readiness must not turn static install checks into a live activation claim"
+grep_required 'MANUAL_ACTIONS=' "$ROOT/scripts/check-update.sh" \
+  "readiness must list remaining host-owned actions"
 grep_required 'latest_remote_tag_version' "$ROOT/scripts/check-update.sh" \
   "check-update must inspect the latest remote semver tag"
 grep_required 'latest_github_release_version' "$ROOT/scripts/check-update.sh" \
@@ -162,11 +186,12 @@ grep_required 'Native interaction tools are host capabilities' "$ROOT/skills/tea
 grep_required 'Native interaction tools remain host-owned' "$ROOT/skills/teamwork-update/SKILL.md" \
   "teamwork-update must keep interaction capability runtime-owned"
 for refresh_contract in \
-  'Refresh global user installations and requested project context only' \
+  'Refresh global user installations only' \
   'check-update.sh --readiness' \
   'global-only' \
   'skills, agents, managed policy, and routing' \
-  'without creating project-local package copies' \
+  'Project initialization and project-context' \
+  'belong to `teamwork-init`' \
   'INSTALL_READY=yes' \
   'Never edit `VERSION`'; do
   grep_required "$refresh_contract" "$ROOT/skills/teamwork-update/SKILL.md" \
@@ -190,15 +215,17 @@ grep_absent 'One release unit contains\|complete release unit\|Write changelogs 
   "$ROOT/skills/teamwork-update/SKILL.md" "$ROOT/skills/using-teamwork/SKILL.md" \
   "$ROOT/skills/using-teamwork/references/check-update.md" "$ROOT/CODEX.md"
 for release_contract in 'One release unit contains' 'both changelogs' '`v<VERSION>` tag' 'GitHub Release' 'report `release-ready`, not `released`'; do
-  grep_required "$release_contract" "$ROOT/AGENTS.md" \
+  normalized_required "$release_contract" "$ROOT/AGENTS.md" \
     "AGENTS.md missing atomic maintainer release contract: $release_contract"
 done
 for changelog_contract in 'Write changelogs for users, not maintainers' 'Before -> After' 'exact upgrade action or that no action is needed' 'reads like an engineering report is not release-ready'; do
   grep_required "$changelog_contract" "$ROOT/AGENTS.md" \
     "AGENTS.md missing user-facing changelog contract: $changelog_contract"
 done
-grep_required 'Being on the default branch alone is not a reason' "$ROOT/AGENTS.md" \
-  "project Git policy must not create branches only because the current branch is default"
+grep_required 'direct mainline release' "$ROOT/AGENTS.md" \
+  "project Git policy must preserve the direct mainline release default"
+normalized_required 'Create a branch or pull request only when the user explicitly requests it or repository protection requires it' "$ROOT/AGENTS.md" \
+  "project Git policy must keep branch creation user- or protection-owned"
 grep_required 'codex-routing' "$ROOT/skills/using-teamwork/references/check-update.md" \
   "update readiness reference must report Codex routing drift"
 grep_required 'latest GitHub Release' "$ROOT/skills/using-teamwork/references/check-update.md" \
@@ -217,8 +244,8 @@ grep_required 'non-reserved `teamwork`' "$ROOT/skills/using-teamwork/references/
 [[ "$(wc -l < "$ROOT/README.en.md")" -le 200 ]] || fail "English README should stay concise"
 line_count_max "$ROOT/skills/using-teamwork/SKILL.md" 80 "using-teamwork should stay concise"
 word_count_max "$ROOT/skills/using-teamwork/SKILL.md" 450 "using-teamwork should stay concise"
-line_count_max "$ROOT/skills/grill-me/SKILL.md" 35 "grill-me should stay concise"
-word_count_max "$ROOT/skills/grill-me/SKILL.md" 245 "grill-me should stay concise"
+line_count_max "$ROOT/skills/grill-me/SKILL.md" 50 "grill-me should stay concise"
+word_count_max "$ROOT/skills/grill-me/SKILL.md" 380 "grill-me should stay concise"
 line_count_max "$ROOT/skills/teamwork-init/SKILL.md" 95 "teamwork-init should stay concise"
 word_count_max "$ROOT/skills/teamwork-init/SKILL.md" 650 "teamwork-init should stay concise"
 line_count_max "$ROOT/skills/teamwork-debug/SKILL.md" 85 "teamwork-debug should stay concise"
@@ -236,7 +263,7 @@ word_count_max "$ROOT/skills/teamwork-execute/SKILL.md" 650 "teamwork-execute sh
 line_count_max "$ROOT/skills/teamwork-update/SKILL.md" 70 "teamwork-update should stay concise"
 word_count_max "$ROOT/skills/teamwork-update/SKILL.md" 450 "teamwork-update should stay concise"
 line_count_max "$ROOT/skills/using-teamwork/references/workflow-contract.md" 150 "workflow contract reference should stay focused"
-word_count_max "$ROOT/skills/using-teamwork/references/workflow-contract.md" 950 "workflow contract reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/workflow-contract.md" 1050 "workflow contract reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" 150 "subagent dispatch reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/subagent-dispatch.md" 1050 "subagent dispatch reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/subagent-contract.md" 145 "subagent contract reference should stay focused"
@@ -254,11 +281,11 @@ word_count_max "$ROOT/skills/using-teamwork/references/routing-policy.md" 520 "r
 line_count_max "$ROOT/skills/using-teamwork/references/role-playbook.md" 100 "role playbook reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/role-playbook.md" 650 "role playbook reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/artifact-protocol.md" 100 "artifact protocol reference should stay focused"
-word_count_max "$ROOT/skills/using-teamwork/references/artifact-protocol.md" 650 "artifact protocol reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/artifact-protocol.md" 700 "artifact protocol reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/goal-iteration.md" 90 "goal iteration reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/goal-iteration.md" 520 "goal iteration reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/plan-output.md" 90 "plan output reference should stay focused"
-word_count_max "$ROOT/skills/using-teamwork/references/plan-output.md" 460 "plan output reference should stay focused"
+word_count_max "$ROOT/skills/using-teamwork/references/plan-output.md" 500 "plan output reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/review-checks.md" 60 "review checks reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/review-checks.md" 460 "review checks reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/project-init.md" 85 "project init reference should stay focused"
@@ -266,7 +293,7 @@ word_count_max "$ROOT/skills/using-teamwork/references/project-init.md" 650 "pro
 grep_required 'durable marker blocks protocol reads and writes' \
   "$ROOT/skills/using-teamwork/references/project-init.md" \
   "project init must document hard-interruption recovery instead of instant multi-file atomicity"
-line_count_max "$ROOT/skills/using-teamwork/references/check-update.md" 70 "check update reference should stay focused"
+line_count_max "$ROOT/skills/using-teamwork/references/check-update.md" 80 "check update reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/check-update.md" 500 "check update reference should stay focused"
 line_count_max "$ROOT/skills/using-teamwork/references/research-protocol.md" 60 "research protocol reference should stay focused"
 word_count_max "$ROOT/skills/using-teamwork/references/research-protocol.md" 430 "research protocol reference should stay focused"
@@ -287,8 +314,8 @@ grep_absent 'nature-writing\|nature-polishing' \
   "$ROOT/skills/using-teamwork" "$ROOT/skills/grill-me" "$ROOT/scripts/install/policy.sh" \
   "$ROOT/scripts/teamwork_tooling/evaluation" "$ROOT/evals/teamwork/cases"
 grep_absent 'grill-mode.md' "retired grill-mode reference must be removed" "$ROOT/skills" "$ROOT/templates"
-normalized_required 'clear tasks stay native' "$ENTRYPOINT" "router must preserve the native fast path"
-for intent in 'explicitly asks to be grilled or challenged' 'requests questions before action' 'continues an active grill'; do
+normalized_required 'Clear tasks stay native' "$ENTRYPOINT" "router must preserve the native fast path"
+for intent in 'asks to be challenged, grilled, or questioned before action' 'ask me first' '先问我' 'continues that discussion'; do
   grep_required "$intent" "$ROOT/skills/grill-me/SKILL.md" \
     "grill-me description must expose semantic activation intent: $intent"
 done
@@ -357,7 +384,7 @@ grep_required 'only when breadth makes' "$ROOT/skills/using-teamwork/references/
   "research matrices must be conditional"
 grep_required 'not an acceptance' \
   "$ROOT/skills/using-teamwork/references/plan-output.md" "plan format must remain flexible"
-for anchor in 'Codex Plan Mode Bridge' 'shared Ask Gate' "host's native" 'execution-critical value' 'Readiness gate'; do
+for anchor in 'Codex Plan Mode Bridge' 'shared Ask Gate' 'request_user_input' 'execution-critical value' 'Readiness gate'; do
   grep_required "$anchor" "$ROOT/skills/using-teamwork/references/plan-output.md" \
     "Codex Plan mode bridge must preserve $anchor"
 done

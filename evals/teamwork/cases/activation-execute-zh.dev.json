@@ -1,0 +1,13 @@
+{
+  "id": "activation-execute-zh",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/teamwork-execute/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "迁移清单已经确认，按清单修改并运行其中的检查。",
+  "expected": {"language": "zh", "route": "execute", "observable": "scoped_change_and_checks", "requires": ["weak_cue", "observable_contract", "static_contract_only"]},
+  "must": ["只实施已确认的改动并运行指定检查"],
+  "must_not": ["重新打开已解决的需求或扩大范围"],
+  "rubric": "assistance-quality",
+  "evidence": "Static weak-cue routing contract; it does not prove live model activation."
+}

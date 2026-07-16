@@ -821,6 +821,44 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
             raise EvalError(
                 f"{display_path(path)}: {case_id} route must be {required_route}"
             )
+    if case_id in REQUIRED_ACTIVATION_CASES:
+        language, route, required_target, observable = REQUIRED_ACTIVATION_CASES[case_id]
+        expected = data["expected"]
+        if target != required_target:
+            raise EvalError(
+                f"{display_path(path)}: weak-cue target must be {required_target}"
+            )
+        for field, required in (
+            ("language", language),
+            ("route", route),
+            ("observable", observable),
+        ):
+            if expected.get(field) != required:
+                raise EvalError(
+                    f"{display_path(path)}: weak-cue {field} must be {required}"
+                )
+        requires = expected.get("requires")
+        if not isinstance(requires, list) or not all(
+            isinstance(item, str) and item.strip() for item in requires
+        ):
+            raise EvalError(
+                f"{display_path(path)}: weak-cue expected.requires must be a string list"
+            )
+        missing_activation = sorted(REQUIRED_ACTIVATION_COVERAGE - set(requires))
+        if missing_activation:
+            raise EvalError(
+                f"{display_path(path)}: weak-cue coverage missing: "
+                f"{', '.join(missing_activation)}"
+            )
+        prompt = data["prompt"]
+        if ACTIVATION_PROMPT_STAGE_RE.search(prompt):
+            raise EvalError(
+                f"{display_path(path)}: weak-cue prompt must omit stage and skill names"
+            )
+        if set(platforms) != PLATFORMS:
+            raise EvalError(
+                f"{display_path(path)}: weak-cue case must cover codex, cursor, and claude"
+            )
     require_string_list(data["must"], "must", path)
     require_string_list(data["must_not"], "must_not", path)
     evidence = data["evidence"]
@@ -832,6 +870,12 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
         and all(isinstance(item, str) and item.strip() for item in evidence)
     ):
         raise EvalError(f"{display_path(path)}: evidence must be a non-empty string or string list")
+    if case_id in REQUIRED_ACTIVATION_CASES:
+        evidence_text = " ".join(evidence) if isinstance(evidence, list) else evidence
+        if "does not prove live model activation" not in evidence_text.casefold():
+            raise EvalError(
+                f"{display_path(path)}: weak-cue evidence must retain its static-only limit"
+            )
 
     serialized_case = json.dumps(data, sort_keys=True).lower()
     retired_case_terms = [
@@ -1525,6 +1569,11 @@ def selected_cases(selection: str) -> list[dict[str, Any]]:
     if missing_discussion_cases:
         raise EvalError(
             "missing discussion case(s): " + ", ".join(missing_discussion_cases)
+        )
+    missing_activation_cases = sorted(set(REQUIRED_ACTIVATION_CASES) - seen)
+    if missing_activation_cases:
+        raise EvalError(
+            "missing weak-cue case(s): " + ", ".join(missing_activation_cases)
         )
     for skill, required_cases in REQUIRED_SKILL_CONTRACT_CASES.items():
         missing_skill_cases = sorted(required_cases - seen)

@@ -1,0 +1,13 @@
+{
+  "id": "activation-debug-zh",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/teamwork-debug/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "保存测试偶发失败，先复现并找出原因再改。",
+  "expected": {"language": "zh", "route": "debug", "observable": "repro_before_fix", "requires": ["weak_cue", "observable_contract", "static_contract_only"]},
+  "must": ["先复现并区分原因，再提出修复"],
+  "must_not": ["仅凭症状猜补丁"],
+  "rubric": "assistance-quality",
+  "evidence": "Static weak-cue routing contract; it does not prove live model activation."
+}

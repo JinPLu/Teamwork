@@ -1,6 +1,6 @@
 ---
 name: teamwork-goal
-description: Use when the user asks to keep going, fix until green, converge on a verifiable target, or work within an explicit budget.
+description: Use when the user asks Codex to keep working until a verifiable result, fix until green, converge without stopping, or operate within an explicit budget.
 ---
 
 # Teamwork Goal

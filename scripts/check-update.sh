@@ -183,6 +183,19 @@ skills_content_status() {
   fi
 }
 
+legacy_codex_skills_status() {
+  local legacy_root="${CODEX_HOME:-$HOME/.codex}/skills"
+  local skill
+  [[ -d "$legacy_root" ]] || { echo "clear"; return 0; }
+  for skill in "${SKILLS[@]}"; do
+    if [[ -e "$legacy_root/$skill" || -L "$legacy_root/$skill" ]]; then
+      echo "duplicate"
+      return 0
+    fi
+  done
+  echo "clear"
+}
+
 agents_status() {
   local dest_root="$1"
   local ext="$2"
@@ -379,12 +392,12 @@ policy_status() {
 
   if grep -q "$marker" "$file" \
     && [[ "$policy_text" == *"Work within the user's request"* ]] \
-    && [[ "$policy_text" == *'Read-only requests do not authorize changes'* ]] \
-    && [[ "$policy_text" == *'Inspect discoverable evidence before asking'* ]] \
-    && [[ "$policy_text" == *'pause only the dependent branch'* ]] \
-    && [[ "$policy_text" == *'Answers/confirmations grant no effect authority'* ]] \
-    && [[ "$policy_text" == *'Never invent required state'* ]] \
-    && [[ "$policy_text" == *'Delegate only worthwhile independent work'* ]]; then
+    && [[ "$policy_text" == *'read-only grants no changes'* ]] \
+    && [[ "$policy_text" == *'Inspect evidence before asking'* ]] \
+    && [[ "$policy_text" == *'pause dependent work'* ]] \
+    && [[ "$policy_text" == *'Answers grant no effect authority'* ]] \
+    && [[ "$policy_text" == *'never invent state'* ]] \
+    && [[ "$policy_text" == *'delegate only worthwhile work'* ]]; then
     echo "ok"
   else
     echo "missing"
@@ -524,20 +537,21 @@ git_local_state() {
 }
 
 print_readiness() {
-  local source_version profile codex_v cursor_v claude_v
+  local source_version profile codex_v cursor_v claude_v codex_notifications
   source_version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
   profile="$(source_profile)"
-  codex_v="$(read_installed_version "$HOME/.codex/skills")"
+  codex_v="$(read_installed_version "$HOME/.agents/skills")"
   cursor_v="$(read_installed_version "$HOME/.cursor/skills")"
   claude_v="$(read_installed_version "$HOME/.claude/skills")"
 
   local ready=yes
   local missing=()
 
-  [[ "$(skills_status "$HOME/.codex/skills")" == "ok" ]] || { ready=no; missing+=("codex-skills"); }
+  [[ "$(skills_status "$HOME/.agents/skills")" == "ok" ]] || { ready=no; missing+=("codex-skills"); }
   [[ "$(skills_status "$HOME/.cursor/skills")" == "ok" ]] || { ready=no; missing+=("cursor-skills"); }
   [[ "$(skills_status "$HOME/.claude/skills")" == "ok" ]] || { ready=no; missing+=("claude-skills"); }
-  [[ "$(skills_content_status "$HOME/.codex/skills")" == "current" ]] || { ready=no; missing+=("codex-skill-content"); }
+  [[ "$(skills_content_status "$HOME/.agents/skills")" == "current" ]] || { ready=no; missing+=("codex-skill-content"); }
+  [[ "$(legacy_codex_skills_status)" == "clear" ]] || { ready=no; missing+=("codex-legacy-skills"); }
   [[ "$(skills_content_status "$HOME/.cursor/skills")" == "current" ]] || { ready=no; missing+=("cursor-skill-content"); }
   [[ "$(skills_content_status "$HOME/.claude/skills")" == "current" ]] || { ready=no; missing+=("claude-skill-content"); }
   [[ "$(agents_status "$HOME/.codex/agents" toml "${CODEX_AGENTS[@]}")" == "ok" ]] || { ready=no; missing+=("codex-agents"); }
@@ -559,17 +573,26 @@ print_readiness() {
     fi
   done
 
+  codex_notifications="$(notification_status codex)"
+  local manual_actions=("cursor-policy-paste")
+  if [[ "$codex_notifications" == "review-required" ]]; then
+    manual_actions+=("codex-hook-trust")
+  fi
+
   echo "INSTALL_READY=$ready"
+  echo "MANAGED_INSTALL_READY=$ready"
   echo "SOURCE_VERSION=$source_version"
   echo "PROFILE=$profile"
   echo "CODEX_VERSION=$codex_v"
   echo "CURSOR_VERSION=$cursor_v"
   echo "CLAUDE_VERSION=$claude_v"
-  echo "CODEX_NOTIFICATIONS=$(notification_status codex)"
+  echo "CODEX_NOTIFICATIONS=$codex_notifications"
   echo "CODEX_ROUTING=$(codex_routing_status)"
   echo "CLAUDE_NOTIFICATIONS=$(notification_status claude)"
   echo "CURSOR_NOTIFICATIONS=$(notification_status cursor)"
   echo "MISSING=$(IFS=,; echo "${missing[*]-}")"
+  echo "HOST_ACTIVATION=manual-action-required"
+  echo "MANUAL_ACTIONS=$(IFS=,; echo "${manual_actions[*]}")"
   echo "NEXT=cd \"$ROOT\" && ./install.sh all --profile $profile"
   echo "CURSOR_POLICY=./install.sh cursor-policy-copy"
 }
@@ -621,7 +644,7 @@ print_report() {
   for platform in codex cursor claude; do
     case "$platform" in
       codex)
-        dest_skills="$HOME/.codex/skills"
+        dest_skills="$HOME/.agents/skills"
         dest_agents="$HOME/.codex/agents"
         ext="toml"
         agents_ref=("${CODEX_AGENTS[@]}")
@@ -660,6 +683,10 @@ print_report() {
   codex_routing_s="$(codex_routing_status)"
   echo "config: $codex_routing_s"
   [[ "$codex_routing_s" == "ready" ]] || note_issue
+  local legacy_codex_skills_s
+  legacy_codex_skills_s="$(legacy_codex_skills_status)"
+  echo "legacy skill root: $legacy_codex_skills_s"
+  [[ "$legacy_codex_skills_s" == "clear" ]] || note_issue
   echo
 
   echo "--- Optional notifications ---"

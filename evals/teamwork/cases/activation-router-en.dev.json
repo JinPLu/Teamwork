@@ -1,0 +1,13 @@
+{
+  "id": "activation-router-en",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "The provider may have changed this API. Confirm what is true, choose the approach, apply it, and check the result.",
+  "expected": {"language": "en", "route": "router", "observable": "ordered_stages", "requires": ["weak_cue", "observable_contract", "static_contract_only"]},
+  "must": ["resolve the unstable fact before choosing and applying an approach"],
+  "must_not": ["edit first or narrate internal stage labels"],
+  "rubric": "assistance-quality",
+  "evidence": "Static weak-cue routing contract; it does not prove live model activation."
+}

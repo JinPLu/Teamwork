@@ -1,6 +1,6 @@
 ---
 name: teamwork-execute
-description: Use when an accepted plan, checklist, approved scope, or known root-cause fix should be implemented, continued, resumed, or verified with focused action.
+description: Use when the user asks to carry out an accepted plan or checklist, implement an approved change, apply a known fix, continue scoped work, or verify it.
 ---
 
 # Teamwork Execute

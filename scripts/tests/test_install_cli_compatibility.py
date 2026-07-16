@@ -128,7 +128,8 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout.decode())
         codex_policy = (home / ".codex" / "AGENTS.md").read_text()
         self.assertIn("<!-- TEAMWORK_CODEX_GLOBAL_START -->", codex_policy)
-        self.assertTrue((home / ".codex" / "skills" / "teamwork-plan").is_dir())
+        self.assertTrue((home / ".agents" / "skills" / "teamwork-plan").is_dir())
+        self.assertFalse((home / ".codex" / "skills" / "teamwork-plan").exists())
         self.assertTrue(
             (home / ".codex" / "agents" / "teamwork-reviewer.toml").is_file()
         )

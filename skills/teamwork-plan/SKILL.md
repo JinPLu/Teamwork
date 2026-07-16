@@ -15,16 +15,18 @@ Turn evidence into executable scope, falsifiable proof, and stop boundaries.
 
 Use for requested planning or non-trivial action lacking an accepted plan. Route
 unclear external behavior/architecture to research, reproducible failures to
-debug; tiny fixed-scope work may execute.
+debug; fixed-scope work may execute.
 
 ## Do And Boundaries
 
 Resolve decision-critical gaps and map requirements to proof. Define
 scope/protected surfaces; for code identify owner/flow, tests/config, invariants,
-and the lowest-maintenance solution before the smallest direct change.
+and the lowest-maintenance solution before the direct change.
 
 A plan is simple only with fixed scope/risk and no material user decision.
-Every non-simple Plan enters evidence-first `grill-me`, independent of file count. Once
+Every non-simple Plan enters evidence-first `grill-me` decision policy,
+independent of file count. This automatic policy entry is not a user-originated
+explicit Grill and grants no discussion-record or other write authority. Once
 choices resolve, summarize them in the plan; no extra confirmation turn. A recap
 or plan confirmation grants no implementation, release, external-effect, or other authority.
 

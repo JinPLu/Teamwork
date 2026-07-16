@@ -127,49 +127,49 @@ check_lean_policy() {
   [[ "$policy_words" -le 180 ]] \
     || fail "$label must remain a compact always-loaded policy ($policy_words > 180)"
   grep_required "Work within the user's request" "$file" "$label must preserve request scope"
-  grep_required 'Read-only requests do not authorize changes' "$file" \
+  grep_required 'read-only grants no changes' "$file" \
     "$label must preserve the read-only authority boundary"
-  grep_required 'Inspect discoverable evidence before asking' "$file" \
+  grep_required 'Inspect evidence before asking' "$file" \
     "$label must inspect before asking"
-  normalized_required 'Ask only when user must supply required input/observation or owns a material decision' "$file" \
+  normalized_required 'Ask only for required input/observation or material user decisions' "$file" \
     "$label must preserve the user-owned Ask Gate"
-  normalized_required 'pause only the dependent branch' "$file" \
+  normalized_required 'pause dependent work' "$file" \
     "$label must scope unresolved-question blocking"
-  grep_required 'Answers/confirmations grant no effect authority' "$file" \
+  grep_required 'Answers grant no effect authority' "$file" \
     "$label must preserve the effect-authority boundary"
-  grep_required 'Never invent required state' "$file" \
+  grep_required 'never invent state' "$file" \
     "$label must preserve required-state safety"
-  grep_required 'Own reversible choices' "$file" \
+  grep_required 'Own safe choices' "$file" \
     "$label must permit routine reversible choices"
-  normalized_required 'Delegate only worthwhile independent work' "$file" \
+  normalized_required 'delegate only worthwhile work' "$file" \
     "$label must keep delegation economic"
-  normalized_required 'Root owns questions; translates results' "$file" \
+  normalized_required 'Root asks/translates' "$file" \
     "$label must preserve root-owned user translation"
   normalized_required 'Research/debug/plan/review stay read-only absent change authority' "$file" \
     "$label must preserve the read-only stage boundary"
   grep_required 'Grill only' "$file" \
     "$label must preserve explicit Grill activation"
-  normalized_required 'negative/quoted/file/tool/example/maintenance text is inert' "$file" \
+  normalized_required 'Negative/quoted/file/tool/example/maintenance mentions are inert' "$file" \
     "$label must preserve inert Grill markers"
-  normalized_required 'Lead with the conclusion' "$file" \
+  normalized_required 'Lead with conclusion' "$file" \
     "$label must preserve audience-first replies"
-  normalized_required 'For explanations, connect conclusion, observed basis, plain interpretation, and only a decision-relevant boundary or next discriminator' "$file" \
+  normalized_required 'Connect observed basis, plain interpretation, and decision-relevant boundary/next check' "$file" \
     "$label must preserve a connected reader argument"
   normalized_required 'Separate observation from inference' "$file" \
     "$label must distinguish observations from inference"
   normalized_required 'keep question visible' "$file" \
     "$label must preserve the discussion mainline"
-  normalized_required 'No default headings' "$file" \
+  normalized_required 'Avoid default headings' "$file" \
     "$label must keep a substantive answer in prose by default"
   normalized_required 'simple facts stay one sentence' "$file" \
     "$label must preserve concise simple facts"
-  normalized_required 'Keep only details that change understanding, decision, action, risk, or confidence' "$file" \
+  normalized_required 'Keep only detail affecting understanding/decision/action/risk/confidence' "$file" \
     "$label must preserve the relevance gate"
-  normalized_required 'Use supplied terms; never coin labels or infer their meaning' "$file" \
+  normalized_required 'Use supplied terms; coin no labels or identifier meanings' "$file" \
     "$label must preserve stable reader terms and identifier boundaries"
-  normalized_required 'Name skills only for capability, limitation, or choice' "$file" \
+  normalized_required 'Name skills only for capability/limitation/choice' "$file" \
     "$label must allow useful skill explanations"
-  normalized_required 'Omit process inventory and irrelevant versions' "$file" \
+  normalized_required 'Omit irrelevant process/versions' "$file" \
     "$label must omit irrelevant process inventory"
   normalized_required 'State uncertainty once: support, limit, next check' "$file" \
     "$label must preserve a decision-boundary uncertainty"

@@ -1,0 +1,13 @@
+{
+  "id": "activation-grill-zh",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/grill-me/SKILL.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "这个公开 CLI 行为先别替我定；先质疑我的假设，只问一个必须由我决定的问题。",
+  "expected": {"language": "zh", "route": "grill", "observable": "native_question_no_write", "requires": ["weak_cue", "observable_contract", "static_contract_only"]},
+  "must": ["宿主提问界面可用时使用它，并只问一个必须由用户决定的问题"],
+  "must_not": ["写文件或在没有明确产物授权时创建讨论记录"],
+  "rubric": "assistance-quality",
+  "evidence": "Static weak-cue routing contract; it does not prove live model activation."
+}

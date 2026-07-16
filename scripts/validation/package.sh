@@ -260,6 +260,21 @@ for case_id in \
   [[ -f "$ROOT/evals/teamwork/cases/$case_id.dev.json" ]] \
     || fail "missing ask-predicate eval case: $case_id"
 done
+for case_id in \
+  activation-native-en activation-native-zh \
+  activation-router-en activation-router-zh \
+  activation-research-en activation-research-zh \
+  activation-debug-en activation-debug-zh \
+  activation-plan-en activation-plan-zh \
+  activation-grill-en activation-grill-zh \
+  activation-execute-en activation-execute-zh \
+  activation-review-en activation-review-zh \
+  activation-goal-en activation-goal-zh \
+  activation-init-en activation-init-zh \
+  activation-update-en activation-update-zh; do
+  [[ -f "$ROOT/evals/teamwork/cases/$case_id.dev.json" ]] \
+    || fail "missing bilingual weak-cue eval case: $case_id"
+done
 while IFS= read -r active_source; do
   if grep -Eiq 'Task Contract|Contract version|Finding-state|Finding state|FINDING_STATUSES|base_review_id|corrective delta review|Replay Preflight|Stage Entry Card|truth identity|frozen card|scope delta gate' "$active_source"; then
     fail "retired workflow lifecycle term remains in ${active_source#"$ROOT"/}"

@@ -48,8 +48,11 @@ configure_codex_routing() {
 }
 
 install_codex() {
+  preflight_teamwork_skill_root "$CODEX_USER_SKILLS_ROOT" "Codex user skill root"
+  preflight_legacy_codex_skills "$(codex_home_path)/skills"
+  preflight_owned_legacy_cleanup "$(codex_home_path)/skills"
   configure_codex_routing
-  install_skill_set "$HOME/.codex/skills" "Codex"
+  install_codex_skill_set
   install_codex_agent_set "$HOME/.codex/agents" "user"
   install_codex_global_policy
   configure_user_notifications codex
