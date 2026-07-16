@@ -7,16 +7,16 @@
   "prompt": "Implement an accepted multi-file plan that changes shared workflow behavior.",
   "expected": {
     "route": "execute",
-    "requires": ["owner/control-flow context", "focused verification", "fresh review", "accepted_scope", "discovery_classification", "failed_ac_monotonicity"]
+    "requires": ["owner/control-flow context", "real_result_first", "named_boundary_only", "discovery_classification", "stop_after_result"]
   },
   "must": [
-    "understand current owner, tests/config, and invariants before edits",
-    "report verification evidence and delegated Worker packets"
+    "understand only the owner, state, and invariants needed for the next safe change",
+    "exercise the shortest real result path and check only the named shared boundary"
   ],
   "must_not": [
     "invent required paths, models, commands, or fallbacks",
-    "add broad wrappers or modes to avoid understanding the current path"
+    "add broad wrappers, full-suite ceremony, Worker packets, or an automatic review after the result works"
   ],
   "rubric": "assistance-quality",
-  "evidence": "Protects engineering discipline for non-lightweight coding tasks."
+  "evidence": "Protects direct delivery while retaining a named shared-boundary check."
 }

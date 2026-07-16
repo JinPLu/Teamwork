@@ -23,25 +23,25 @@ user-owned values before creating goal state.
 ## Do And Boundaries
 
 Use Codex native goal state only when the user explicitly requests Goal mode or
-accepts a Goal Proposal; otherwise keep a rolling report in
-`docs/teamwork/reports/`. Record the target, protected boundaries, Goal
-Invariants, verification, and the budget supplied by the user/runtime or
-accepted plan. Do not invent a fixed iteration budget.
+accepts a Goal Proposal. Otherwise keep state in the thread; create a rolling
+report only when cross-turn continuity actually needs it. Retain the target,
+protected boundaries, Goal Invariants, and any supplied budget. Do not invent a
+fixed iteration budget.
 
 Before retrying, identify the preserved scope/invariants, failed claim and
 stage, prior evidence, do-not-repeat constraints, and strategy change. Re-enter
 Plan only when accepted scope or criteria must change.
 
-Route only the affected stage: broad gaps to research, unknown-cause failures to
-debug, known fixes to execute, and changed/final acceptance to review. Do not
-replay the full workflow. Record each result and strategy change; accept only on
-focused proof and required review.
+Route only the current blocker: broad gaps to research, unknown-cause failures
+to debug, and known fixes to execute. Review only when the user asks or a named
+high-risk governing gate requires it. Do not replay the workflow or repeat an
+unchanged strategy.
 
 ## Done When
 
-Mark complete only after the success signal and required review pass. Otherwise
-preserve the current attempt evidence and report the next evidence-backed
-strategy, remaining supplied budget if defined, or the specific stop reason.
+Mark complete when the real success signal passes and no named protected boundary
+remains. Otherwise preserve the current failure and try only an evidence-backed
+different strategy, or stop for the specific blocker.
 
 ## Escalate
 

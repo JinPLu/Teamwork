@@ -1,6 +1,6 @@
 ---
 name: teamwork-execute
-description: Use when the user asks to carry out an accepted plan or checklist, implement an approved change, apply a known fix, continue scoped work, or verify it.
+description: Use when the user asks to implement, build, change, fix, or continue scoped work and the result-producing path is clear enough to act.
 ---
 
 # Teamwork Execute
@@ -9,43 +9,42 @@ Read `skills/using-teamwork/references/workflow-contract.md` before proceeding.
 
 ## Outcome
 
-Implement and verify the accepted scope with the smallest direct change.
-Execution does not reopen requirements or expand scope.
+Produce the requested working result through the shortest authorized path.
+Do not reopen scope; verification only supports delivery.
 
 ## Enter When
 
-Use when an accepted plan, scope, or known root-cause fix has resolved
-decision-critical requirements. Required files, commands, environments,
-credentials, paths, ports, models, and configs must be explicit or discoverable.
+Use when the user authorizes a change and target, result, and boundaries are
+explicit or discoverable. A plan is optional; missing state blocks only the
+dependent action.
 
 ## Do And Boundaries
 
-Re-read scope, criteria, authority, and invariants; inspect owner/flow and
-tests/config. Apply the solution surface within scope; change the
-current producer path, avoiding masking wrappers, fallbacks, or guessed state.
-Preserve unrelated changes; delegate only disjoint work.
+Inspect only the owner, flow, state, and invariants needed for the next safe
+change. Modify the current producer path, avoiding masking wrappers, fallbacks,
+or guessed state. Preserve unrelated changes; delegate only disjoint work.
 
-Maintain `AC -> change/no-change -> evidence -> result/strength`. Before acting,
-classify discoveries:
+Reach the shortest safe real run or artifact as early as possible. Use an
+auxiliary test, build, review, or inspection only when it unlocks the next
+change, distinguishes the current failure, directly checks changed behavior, or
+protects a named high-risk boundary. Never substitute plan/mock/static success
+for an available real path. Before broadening work, classify discoveries:
 
 - `regression` or `accepted_scope_violation`: fix in scope or stop;
 - `pre_existing`: record without attributing or repairing;
 - `out_of_scope`: pause and route through the Ask Gate; or
 - `suggestion`: record without editing.
 
-Failed AC evidence stays failed until direct evidence changes that AC.
-
-Verify against the acceptance signal, adding broader checks for planned or
-shared/public changes. Report commands, artifacts, diffs, or observed
-behavior accurately: build-only and blocked checks are not behavioral proof.
-For an unclear reproducible failure, gather only the evidence warranted to
-confirm or reject the current explanation; route to debug if root cause remains
-uncertain. Remove temporary instrumentation and touched-diff slop.
+On a real failure, fix the first result blocker and rerun the same real path. Use
+Debug only while uncertainty prevents a safe fix. Reuse unchanged evidence;
+repeat only after a relevant code/environment change, new failure or hypothesis,
+or named boundary. Report material results/blockers; remove temporary
+instrumentation and diff slop.
 
 ## Done When
 
-Each accepted criterion has an in-scope result and proportionate direct evidence;
-temporary work is removed and deviations, risks, or blockers stay explicit.
+The requested result is observed on the real path, or the nearest available
+direct path is truthfully blocked. With no unchecked named boundary, stop.
 
 ## Escalate
 

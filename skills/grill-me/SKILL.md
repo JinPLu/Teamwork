@@ -6,11 +6,9 @@ description: Use when the user asks to be challenged, grilled, or questioned bef
 Read `skills/using-teamwork/references/workflow-contract.md` and
 `skills/using-teamwork/references/artifact-protocol.md` completely at entry.
 
-Enter for an explicit request while preserving trigger provenance. A
-user-originated challenge or question-first request is explicit Grill. The
-decision policy is entered automatically from every non-simple Plan, but that
-automatic entry is not explicit Grill and grants no write authority.
-Artifact usefulness never creates authority. Ordinary clarification stays out.
+Enter only for a user-originated challenge or question-first request while
+preserving trigger provenance. Plan complexity, artifact usefulness, and ordinary
+clarification do not activate Grill or create authority.
 Apply Ask Gate; own safe, reversible, implementation-level details.
 
 Keep goal/current focus: one decision at a time; each question advances
@@ -27,7 +25,7 @@ concise text question. Teamwork never enables or emulates a host capability.
 A user-originated request establishes the explicit form: Explicit Grill
 authorizes only its supporting `docs/teamwork/` discussion record unless the user
 says no files. That authority covers its lifecycle until revoked, closed, or
-replaced. Automatic Plan entry grants none. Short Grill stays artifact-free.
+replaced. Short Grill stays artifact-free.
 Create a record only when one
 settled conclusion leaves a distinct comparison, measurement, or decision open
 before the next action.

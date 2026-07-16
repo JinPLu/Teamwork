@@ -37,7 +37,9 @@ readiness, and host configuration; do not reconstruct a timeless
 profile-to-model mapping. Report it only when material. Refresh via
 `./install.sh --profile <profile> all` only with install authority.
 
-Before bootstrap or writes, run `./scripts/check-update.sh --readiness`.
+Before deterministic bootstrap or a global install, run
+`./scripts/check-update.sh --readiness`. Ordinary semantic instruction edits do
+not require a global freshness pass unless install state affects the requested result.
 
 When `INSTALL_READY=no`, run `NEXT` only within authority. Treat remaining gaps as
 reported gaps, not stop conditions.
@@ -69,10 +71,10 @@ protected server state, destructive effects, or other protected actions.
 5. Migrate through temporary copy, validation, then atomic replacement. Failure
    leaves original bytes unchanged; without a safe migrator preserve custom or
    legacy content and report the candidate.
-6. Verify changed surfaces and limit claims to their evidence tier; static checks
-   do not prove live host behavior.
-7. For each internal workflow or instruction rule changed, audit the canonical
-   owner, user effect, and verification; summarize user effect in plain language.
+6. Exercise the nearest real changed surface when available; otherwise report the
+   exact activation limit instead of adding proxy validation.
+7. For an internal rule change, confirm its canonical owner and user-visible
+   effect, then stop unless a named protected boundary needs another check.
 An equivalent audit with no new evidence, classification, or mainline change
 writes nothing and reports `no-change`.
 

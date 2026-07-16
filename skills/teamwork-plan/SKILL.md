@@ -1,6 +1,6 @@
 ---
 name: teamwork-plan
-description: Use when plan/design is requested, whenever Codex is in Plan mode, or a non-trivial change needs evidence-backed scope, verification, or acceptance before action.
+description: Use when plan/design is requested, Codex is in Plan mode, or an unresolved material choice or protected public boundary must be settled before action.
 ---
 
 # Teamwork Plan
@@ -13,29 +13,30 @@ Turn evidence into executable scope, falsifiable proof, and stop boundaries.
 
 ## Enter When
 
-Use for requested planning or non-trivial action lacking an accepted plan. Route
-unclear external behavior/architecture to research, reproducible failures to
-debug; fixed-scope work may execute.
+Use for requested planning, an unresolved material choice, or a protected
+boundary. Route unclear external
+behavior to research and unknown-cause failures to debug. Clear authorized work
+executes without first manufacturing a plan.
 
 ## Do And Boundaries
 
-Resolve decision-critical gaps and map requirements to proof. Define
-scope/protected surfaces; for code identify owner/flow, tests/config, invariants,
-and the lowest-maintenance solution before the direct change.
+Resolve only decision-critical gaps. Define scope and protected surfaces; for
+code identify the owner, flow, and invariants needed for the shortest working
+path. Verification belongs in the plan only when it directly checks the result
+or a named protected boundary.
 
-A plan is simple only with fixed scope/risk and no material user decision.
-Every non-simple Plan enters evidence-first `grill-me` decision policy,
-independent of file count. This automatic policy entry is not a user-originated
-explicit Grill and grants no discussion-record or other write authority. Once
-choices resolve, summarize them in the plan; no extra confirmation turn. A recap
-or plan confirmation grants no implementation, release, external-effect, or other authority.
+Plan complexity never activates `grill-me`. Resolve discoverable facts directly;
+when a material user-owned decision remains, apply the shared Ask Gate and ask
+only that question. Once choices resolve, summarize them in the plan; no extra
+confirmation turn. A recap or plan confirmation grants no implementation,
+release, external-effect, or other authority.
 
-For every material decision, use a brief, human-readable `Settled: ...` /
+For every material decision, use a human-readable `Settled: ...` /
 `Still open: ...` checkpoint: the resolved choice, remaining choice, or `none`;
 it grants neither confirmation nor execution authority.
 
-Source critical values from user, repository, or justified derivation. Leave
-unresolved values open, blocking only dependent work; recommendations are not facts.
+Source critical values from user or repository. Leave unresolved values open,
+blocking only dependent work; recommendations are not facts.
 
 Write owned actions, dependencies, verification, and stop/replan conditions to
 execute without redesign. Delegate only independent tracks; use durable plans for
@@ -49,8 +50,8 @@ Acceptance comes only from the user or governing workflow.
 
 ## Escalate
 
-Apply the Ask Gate in `workflow-contract.md` to unresolved Plan inputs and
-decisions. Return to research/debug when evidence cannot support a plan.
+Apply the shared Ask Gate to unresolved inputs or decisions. Return to
+research/debug when evidence cannot support a plan.
 
 ## Conditional Protocols
 

@@ -2,7 +2,7 @@
 
 # Claude Code Usage
 
-Teamwork for Claude Code adapts the same evidence-first skill package used by
+Teamwork for Claude Code adapts the same result-first skill package used by
 Codex and Cursor. Claude Code native capabilities—editing, shell execution,
 MCP, permissions, `Task` subagents, planning, and verification—remain the
 execution layer. Claude Code owns skill discovery, available tools, permission
@@ -57,6 +57,11 @@ request to be questioned, challenged, or grilled expresses question-first
 intent and may select `grill-me`; otherwise Teamwork asks only for required
 input or a material user-owned decision that it cannot discover safely.
 
+Clear authorized change/build work goes directly to the shortest real result
+path. Planning, tests, validation, and review are support only; an available
+real run cannot be replaced by a proxy check, and work stops when the requested
+result is obtained unless a named high-risk boundary remains.
+
 For planning, Teamwork grounds scope, required values, and verification in
 evidence. Entering or confirming a plan authorizes neither implementation nor
 writing a discussion record.
@@ -80,7 +85,7 @@ from separation or fresh context. Installed roles include `explore`, `designer`,
 `judge`, `worker`, `code-reviewer`, plus `deep-judge` and `deep-reviewer` for
 higher-risk review. Each returns a compact conclusion, evidence, unresolved
 impact, and next action. The main agent keeps responsibility for scope,
-integration, verification, and a plain-language response—the conclusion or what
+integration, and a plain-language response—the conclusion or what
 it means, why it matters, and what follows—rather than exposing coordination
 mechanics.
 

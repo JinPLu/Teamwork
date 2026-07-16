@@ -2,19 +2,20 @@
 
 [中文](README.md) · [Changelog](CHANGELOG.en.md) · [Contributing](CONTRIBUTING.md) · [MIT License](LICENSE)
 
-**Help Codex, Cursor, and Claude Code gather evidence before acting and finish complex research or engineering work with checkable results.**
+**Help Codex, Cursor, and Claude Code produce the real result first, using research, tests, and review only when they advance delivery or protect a named boundary.**
 
-Teamwork is one shared skill package adapted to Codex, Cursor, and Claude Code. Each host still owns skill discovery, native tool calls, permission policy, and the responses produced at runtime. After installation, you can usually describe your goal in natural language; the host uses the request and skill descriptions to select research, debugging, planning, execution, or review. That selection is model behavior, not deterministic automatic routing. For substantive explanations, Teamwork asks for a short argument that starts with the conclusion or what it means, connects the observed facts to their plain interpretation, and includes only a boundary or comparison that could change the decision. Technical detail appears when it is useful or requested, rather than as unexplained process, version, or label narration.
+Teamwork is one shared skill package adapted to Codex, Cursor, and Claude Code. Each host still owns skill discovery, native tool calls, permission policy, and the responses produced at runtime. After installation, you can usually describe your goal in natural language. Clear authorized change/build work goes straight to the shortest real path; planning, tests, validation, and review are support and cannot replace an available real run, and work stops when the requested result is obtained. The host still uses the request and skill descriptions to select research, debugging, planning, execution, or review. That selection is model behavior, not deterministic automatic routing. For substantive explanations, Teamwork asks for a short argument that starts with the conclusion or what it means, connects the observed facts to their plain interpretation, and includes only a boundary or comparison that could change the decision. Technical detail appears when it is useful or requested, rather than as unexplained process, version, or label narration.
 
 ![Teamwork workflow](assets/teamwork-workflow-gpt-image-2.png)
 
 ## What You Get
 
 - **Evidence-grounded research:** Use primary sources, project files, and real configuration instead of inventing paths, ports, models, or parameters.
+- **Real result first:** Modify, generate, or run what the user actually requested; add support checks only for the current blocker, changed behavior, or a named high-risk boundary, then stop when the result appears.
 - **Questions only when needed:** Inspect discoverable facts first and ask only about decisions that change the outcome, scope, acceptance, or authority.
-- **Bounded collaboration:** Use subagents only when work splits cleanly; the main agent keeps ownership of scope, integration, and final verification.
-- **Checkable completion evidence:** Show whether the task is done with sources, logs, tests, diffs, or review results.
-- **Recoverable discussions:** In an initialized repository where the user has authorized writes and the runtime can write, an explicit request to be questioned or challenged may save one compact summary of the goal, settled choices, open question, key evidence, and continue point for a later task. Entering a planning flow automatically does not authorize a discussion write; ordinary replies do not grow merely to leave a record.
+- **Bounded collaboration:** Use subagents only when work splits cleanly; the main agent keeps ownership of scope and integration without replaying completed work.
+- **Real-path completion:** Prefer the actual artifact, command, or runtime result; plans, mocks, static checks, and proxy tests cannot turn an unrun target into completion.
+- **Recoverable discussions:** In an initialized repository where the user has authorized writes and the runtime can write, an explicit request to be questioned or challenged may save one compact summary of the goal, settled choices, open question, key evidence, and continue point for a later task. An ordinary Plan does not automatically enter Grill or write a discussion record; ordinary replies do not grow merely to leave one.
 
 Teamwork is a good fit for literature and field research, technical evaluation, complex plans, reproducible failures, CI, cross-file implementation, strict review, and “keep going until it passes” work. One-line facts and obvious small edits do not get forced into a workflow.
 
@@ -36,7 +37,7 @@ Then usually ask for the result directly. Natural language expresses intent; whe
 ```text
 Research this field, its key papers, and the existing code, then propose an executable plan.
 Find the root cause of this CI failure; confirm it with logs and a reproduction before fixing it.
-Execute the accepted plan and verify it; keep iterating until it passes or reaches a real blocker.
+Implement directly and exercise the shortest real path early; fix the first real blocker and stop when it works.
 Strictly review this output for false success, defensive fallback, and AI bloat.
 Grill me: challenge only decisions that change the outcome, and stop when none remain.
 ```

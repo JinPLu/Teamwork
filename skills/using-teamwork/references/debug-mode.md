@@ -6,18 +6,18 @@ servers, MCP, browser tools, CI, or NDJSON.
 
 ## Contract
 
-Debug is an evidence loop before or around a fix:
+Use only the parts needed to remove uncertainty blocking the next safe fix:
 
-| Phase | Required Decision |
+| Tool | Use only when it changes the next action |
 |---|---|
-| Frame | Expected behavior, actual behavior, repro path, acceptance signal |
-| Hypothesize | Plausible causes needed to choose the next discriminating evidence; do not add causes to meet a quota |
-| Instrument | Minimal temporary probes mapped to hypotheses |
-| Reproduce | Agent-run command/test/browser/CI repro, or human-in-loop repro on the same surface |
-| Analyze | Runtime evidence confirms/rejects hypotheses and names root cause |
-| Route | `research`, `plan`, `execute`, or `blocked` |
-| Verify | Re-run repro and focused checks after the fix |
-| Cleanup | Remove debug logs/probes/scaffolding unless observability is planned |
+| Frame | The actual command/surface and first blocking error are not already clear |
+| Hypothesize | More than one cause would lead to a different fix |
+| Instrument | Existing evidence cannot distinguish those causes |
+| Reproduce | The supplied failure is stale, ambiguous, or not on the target surface |
+| Analyze | Evidence now selects the next safe fix |
+| Fix | The user authorized repair and the narrow change is supported |
+| Re-run | Execute the same real path after the change |
+| Cleanup | Remove temporary probes used for that decision |
 
 ## Instrumentation
 
@@ -43,9 +43,10 @@ Wrong-surface or inconclusive checks are not a pass.
 ## Diagnosis Heuristics
 
 Fix root causes, not symptoms. Revert refuted probes and guards that were only
-used for diagnosis. Check whether the same pattern appears elsewhere, not only
-the one failing instance. For restart, cache, session, or migration bugs, inspect
-persisted state and lifecycle boundaries before assuming new code is wrong.
+used for diagnosis. Check the same pattern elsewhere only for a shared component,
+repeated failure, or named public boundary. For restart, cache, session, or
+migration bugs, inspect persisted state and lifecycle boundaries before assuming
+new code is wrong.
 Treat live-runtime capture and offline trace/profile/heap analysis as different
 surfaces; name which one supplied the evidence.
 
@@ -69,10 +70,10 @@ Debug Findings:
 
 ## Acceptance Rules
 
-A debug-derived fix is not acceptable without repro evidence or a justified
-non-repro path, hypothesis-to-evidence mapping, root-cause evidence, post-fix
-verification, and cleanup evidence. Leftover temporary instrumentation is a
-review failure unless the accepted plan explicitly keeps it as observability.
+A debug-derived fix is complete when the same real failure path now works and
+temporary instrumentation is removed. Hypothesis maps, extra repros, and
+adjacent checks are required only when they actually selected the fix or protect
+a named boundary.
 
 ## Stop Rules
 

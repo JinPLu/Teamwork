@@ -1,6 +1,6 @@
 # Cursor Usage
 
-Teamwork for Cursor adapts the same evidence-first skill package used by Codex
+Teamwork for Cursor adapts the same result-first skill package used by Codex
 and Claude Code. Cursor's editor, shell, MCP, permissions, browser tools, `Task`
 subagents, custom agents, and verification remain the execution layer. Cursor
 owns skill discovery, available tools, permission prompts, interaction UI, and
@@ -53,6 +53,11 @@ questioned, challenged, or grilled expresses question-first intent and may
 select `grill-me`; otherwise Teamwork asks only for required input or a material
 user-owned decision that it cannot discover safely.
 
+Clear authorized change/build work goes directly to the shortest real result
+path. Planning, tests, validation, and review are support only; an available
+real run cannot be replaced by a proxy check, and work stops when the requested
+result is obtained unless a named high-risk boundary remains.
+
 For planning, Teamwork grounds scope, required values, and verification in
 evidence. Entering or confirming a plan authorizes neither implementation nor
 writing a discussion record.
@@ -74,7 +79,7 @@ requests do not need one.
 Teamwork may use Cursor `Task` subagents or installed custom agents for
 independent work that benefits from separation or fresh context. Each returns a
 compact conclusion, evidence, unresolved impact, and next action. The main
-agent keeps responsibility for scope, integration, verification, and a
+agent keeps responsibility for scope, integration, and a
 plain-language response—the conclusion or what it means, why it matters, and what
 follows—rather than exposing coordination mechanics.
 

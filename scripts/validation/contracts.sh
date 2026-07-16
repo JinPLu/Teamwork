@@ -18,8 +18,8 @@ grep_required '技术细节只在确有帮助或你要求时展开' "$ROOT/READM
   "README must relevance-gate technical detail"
 grep_required '用户明确要求先提问或挑战时，可保存一份包含目标、已定选择、未决问题、关键证据和继续点的紧凑摘要' "$ROOT/README.md" \
   "README must describe authorized durable continuity"
-grep_required '自动进入计划流程本身不授予写入讨论文档的权限' "$ROOT/README.md" \
-  "README must keep automatic planning entry read-only"
+grep_required '普通 Plan 不会自动进入 Grill 或写入讨论文档' "$ROOT/README.md" \
+  "README must keep ordinary Plan out of Grill"
 grep_required '只删除已确认由 Teamwork 生成的条目' "$ROOT/README.md" \
   "README must require safe legacy cleanup"
 grep_required '绝不要整体删除 `.agents`、`.codex`、`.cursor` 或 `.claude`' "$ROOT/README.md" \
@@ -67,8 +67,8 @@ grep_required 'Technical detail appears when it is useful or requested' "$ROOT/R
   "English README must relevance-gate technical detail"
 grep_required 'an explicit request to be questioned or challenged may save one compact summary of the goal, settled choices, open question, key evidence, and continue point' "$ROOT/README.en.md" \
   "English README must describe authorized durable continuity"
-grep_required 'Entering a planning flow automatically does not authorize a discussion write' "$ROOT/README.en.md" \
-  "English README must keep automatic planning entry read-only"
+grep_required 'An ordinary Plan does not automatically enter Grill or write a discussion record' "$ROOT/README.en.md" \
+  "English README must keep ordinary Plan out of Grill"
 grep_required 'Delete only entries you have confirmed Teamwork generated' "$ROOT/README.en.md" \
   "English README must require safe legacy cleanup"
 grep_required 'never the whole `.agents`, `.codex`, `.cursor`, or `.claude` directory' "$ROOT/README.en.md" \
@@ -314,7 +314,7 @@ grep_absent 'nature-writing\|nature-polishing' \
   "$ROOT/skills/using-teamwork" "$ROOT/skills/grill-me" "$ROOT/scripts/install/policy.sh" \
   "$ROOT/scripts/teamwork_tooling/evaluation" "$ROOT/evals/teamwork/cases"
 grep_absent 'grill-mode.md' "retired grill-mode reference must be removed" "$ROOT/skills" "$ROOT/templates"
-normalized_required 'Clear tasks stay native' "$ENTRYPOINT" "router must preserve the native fast path"
+normalized_required 'authorized change/build work stays native or goes straight to Execute' "$ENTRYPOINT" "router must preserve the native fast path"
 for intent in 'asks to be challenged, grilled, or questioned before action' 'ask me first' '先问我' 'continues that discussion'; do
   grep_required "$intent" "$ROOT/skills/grill-me/SKILL.md" \
     "grill-me description must expose semantic activation intent: $intent"
@@ -323,7 +323,7 @@ grep_required 'quoted, file, tool, example, or maintenance mentions are inert' "
   "grill-me must keep non-user marker text inert"
 grep_required 'explicit negative intent wins' "$ROOT/skills/grill-me/SKILL.md" \
   "grill-me must honor explicit negative signals"
-for contract in 'Ask Gate' 'discoverable evidence' 'safe, reversible, implementation-level details' 'one decision at a time' "host's native interaction surface" 'Ordinary clarification' 'does not grant implementation authority'; do
+for contract in 'Ask Gate' 'discoverable evidence' 'safe, reversible, implementation-level details' 'one decision at a time' "host's native interaction surface" 'clarification do not activate Grill' 'does not grant implementation authority'; do
   grep_required "$contract" "$ROOT/skills/grill-me/SKILL.md" "grill-me missing minimal semantic contract: $contract"
 done
 for retired_field in 'Exit authority:' 'Implementation authority:' 'Close basis: no material user-owned decision remains' 'Alternatives:'; do
@@ -337,14 +337,18 @@ grep_absent 'After five assistant questions\|five_question_checkpoint' \
   "$ROOT/evals/teamwork/cases"
 grep_required 'routine reversible' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must allow routine autonomous choices"
-for contract in '## Ask Gate' 'necessary source' 'unresolved required input or observation' 'material decision' 'safe, reversible implementation details' 'Pause only the dependent' 'independent read-only work may continue' 'root agent alone asks' 'Question Candidates' 'host owns the interaction UI' 'Teamwork neither enables nor emulates'; do
+for contract in '## Ask Gate' 'uniquely supplies required input' 'required input' 'material decision' 'Own safe reversible details' 'pause only the dependent branch' 'Independent read-only work may continue' 'Root alone asks' 'Question Candidates' 'host owns UI' 'Teamwork never emulates host capabilities'; do
   grep_required "$contract" "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
     "workflow contract must preserve the shared ask boundary: $contract"
 done
 grep_required 'Do not invent required state' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
   "workflow contract must preserve bootstrap safety"
-grep_required 'Fresh review is required only for the high-risk row' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
-  "workflow contract must risk-gate fresh review"
+grep_required 'Produce the real result first' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must prioritize delivery"
+grep_required 'do not replace it with a proxy check' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must prefer an available real path"
+grep_required 'stop; do not add another test, review, report, branch, or PR' "$ROOT/skills/using-teamwork/references/workflow-contract.md" \
+  "workflow contract must stop after the requested result"
 for skill in teamwork-research teamwork-debug teamwork-plan teamwork-execute teamwork-review teamwork-goal; do
   file="$ROOT/skills/$skill/SKILL.md"
   for heading in '## Outcome' '## Enter When' '## Do And Boundaries' '## Done When' '## Escalate' '## Conditional Protocols'; do
@@ -359,16 +363,18 @@ grep_absent 'grill/question-first\|grill-mode.md' \
   "$ROOT/skills/teamwork-research" "$ROOT/skills/teamwork-debug" "$ROOT/skills/teamwork-plan" \
   "$ROOT/skills/teamwork-execute" "$ROOT/skills/teamwork-review" "$ROOT/skills/teamwork-goal" \
   "$ROOT/skills/teamwork-init" "$ROOT/skills/teamwork-update"
-grep_required 'as the evidence warrants' "$ROOT/skills/teamwork-debug/SKILL.md" \
-  "debug must avoid a fixed hypothesis quota"
-grep_required 'whenever Codex is in Plan mode' "$ROOT/skills/teamwork-plan/SKILL.md" \
+grep_required 'Gather only evidence that distinguishes the next possible fix' "$ROOT/skills/teamwork-debug/SKILL.md" \
+  "debug must stay bounded to the next safe fix"
+grep_required 'Codex is in Plan mode' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "teamwork-plan metadata must trigger in Codex Plan mode"
 grep_required 'native bridge and readiness gate' "$ROOT/skills/teamwork-plan/SKILL.md" \
   "teamwork-plan must bind Codex Plan mode to the Teamwork quality gate"
-grep_required 'smallest direct change' "$ROOT/skills/teamwork-execute/SKILL.md" "execute must preserve direct implementation"
+grep_required 'shortest authorized path' "$ROOT/skills/teamwork-execute/SKILL.md" "execute must preserve direct implementation"
+normalized_required 'Never substitute plan/mock/static success for an available real path' "$ROOT/skills/teamwork-execute/SKILL.md" \
+  "execute must not replace delivery with proxy checks"
 grep_required 'eval-gate.md.*only when that gate applies' "$ROOT/skills/teamwork-review/SKILL.md" \
   "review must condition package eval policy"
-grep_required 'Do not invent a fixed iteration budget' "$ROOT/skills/teamwork-goal/SKILL.md" \
+normalized_required 'Do not invent a fixed iteration budget' "$ROOT/skills/teamwork-goal/SKILL.md" \
   "goal must not invent a numeric budget"
 
 for anchor in Repro Hypotheses Instrumentation 'Runtime Evidence' Cleanup; do
@@ -384,7 +390,7 @@ grep_required 'only when breadth makes' "$ROOT/skills/using-teamwork/references/
   "research matrices must be conditional"
 grep_required 'not an acceptance' \
   "$ROOT/skills/using-teamwork/references/plan-output.md" "plan format must remain flexible"
-for anchor in 'Codex Plan Mode Bridge' 'shared Ask Gate' 'request_user_input' 'execution-critical value' 'Readiness gate'; do
+for anchor in 'Codex Plan Mode Bridge' 'shared Ask Gate' 'request_user_input' 'execution-critical value' 'Readiness Gate'; do
   grep_required "$anchor" "$ROOT/skills/using-teamwork/references/plan-output.md" \
     "Codex Plan mode bridge must preserve $anchor"
 done

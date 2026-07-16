@@ -7,12 +7,12 @@
   "prompt": "Implement an accepted local change when the canonical owner already exposes a boundary-appropriate host/platform built-in that satisfies the behavior and proof requirements.",
   "expected": {
     "route": "existing_owner",
-    "requires": ["canonical_owner", "boundary_builtin_or_dependency", "minimal_new_logic", "proportional_proof"]
+    "requires": ["canonical_owner", "boundary_builtin_or_dependency", "minimal_new_logic", "real_result_first", "stop_after_result"]
   },
   "must": [
     "prefer the canonical owner and suitable host/platform built-in over a new wrapper or dependency",
-    "use new logic only when direct evidence shows the lower-maintenance surface is insufficient",
-    "retain proportional verification for the accepted behavior"
+    "use new logic only when the lower-maintenance surface cannot produce the requested result",
+    "exercise the real result path once and stop when it works"
   ],
   "must_not": [
     "add a parallel mode, wrapper, or dependency without a boundary need",

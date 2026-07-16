@@ -7,15 +7,15 @@
   "prompt": "A flaky UI test fails with unclear root cause.",
   "expected": {
     "route": "debug",
-    "requires": ["expected/actual behavior", "repro", "hypotheses", "runtime evidence", "repro_before_fix", "discriminating_hypotheses", "safe_fix_route"]
+    "requires": ["first_blocking_error", "discriminating_evidence", "same_path_rerun", "no_broad_investigation"]
   },
   "must": [
-    "gather same-surface repro evidence before fixing",
-    "route to execute only after root cause or safe fix scope is clear"
+    "start from the actual failing surface and first blocking error",
+    "gather only evidence that chooses the next safe fix, then rerun the same path"
   ],
   "must_not": [
-    "guess a fix from logs alone",
-    "treat wrong-surface or inconclusive checks as a pass"
+    "build a hypothesis matrix or inspect unrelated instances by default",
+    "replace the real failing path with a proxy check"
   ],
   "rubric": "assistance-quality",
   "evidence": "Captures the debug-to-execute boundary."

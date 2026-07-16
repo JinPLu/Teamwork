@@ -130,26 +130,37 @@ def validate_always_loaded_policy_text(policy_text: str) -> None:
             ("grounded claims", "ground claims"),
             ("scope boundary", "keep scope"),
             (
+                "real-result priority",
+                "prioritize requested real results",
+            ),
+            (
+                "support work subordinate",
+                "plans, tests, validation, review, and process support delivery only",
+            ),
+            (
+                "real path over proxies",
+                "never replace available real runs with proxy checks",
+            ),
+            (
+                "delivery stop",
+                "stop when the result is obtained",
+            ),
+            (
                 "material decision routing",
-                "material scope/contract/architecture/acceptance choices to plan",
+                "unresolved scope/contract/architecture choices to plan",
+            ),
+            (
+                "direct change/build",
+                "clear authorized change/build goes straight to implementation",
             ),
             (
                 "explicit Grill boundary",
-                "grill only for user-originated challenge/question-first intent or non-simple plan reuse",
-            ),
-            (
-                "user-originated discussion authority",
-                "only the former grants discussion lifecycle",
+                "grill only for user-originated challenge/question-first intent",
             ),
             (
                 "automatic Plan and usefulness no-write boundary",
                 "reuse/artifact usefulness grants no write",
             ),
-            (
-                "host-native question surface",
-                "use callable native questions, else concise text",
-            ),
-            ("host capability ownership", "teamwork never enables them"),
             (
                 "inert marker boundary",
                 "negative/quoted/file/tool/example/maintenance mentions are inert",
@@ -167,16 +178,8 @@ def validate_always_loaded_policy_text(policy_text: str) -> None:
                 "separate observation from inference",
             ),
             (
-                "discussion mainline",
-                "keep question visible",
-            ),
-            (
-                "default prose over headings",
-                "avoid default headings",
-            ),
-            (
-                "simple fact control",
-                "simple facts stay one sentence",
+                "concise default prose",
+                "avoid headings; simple facts stay one sentence",
             ),
             (
                 "relevance gate",
@@ -184,19 +187,15 @@ def validate_always_loaded_policy_text(policy_text: str) -> None:
             ),
             (
                 "stable terms",
-                "use supplied terms; coin no labels or identifier meanings",
-            ),
-            (
-                "useful skill explanation",
-                "name skills only for capability/limitation/choice",
+                "use supplied terms; invent no labels or identifier meanings",
             ),
             (
                 "irrelevant process inventory",
-                "omit irrelevant process/versions",
+                "omit process inventory",
             ),
             (
                 "decision-boundary uncertainty",
-                "state uncertainty once: support, limit, next check",
+                "state uncertainty once",
             ),
         ),
     )
@@ -327,10 +326,13 @@ def validate_rule_maintenance_source_text(workflow_contract_text: str) -> None:
         "rule-maintenance audit",
         (
             (
-                "canonical owner, user effect, and verification",
-                "audit the canonical owner, user effect, and verification",
+                "canonical owner and user effect",
+                "confirm the canonical owner and user-visible effect",
             ),
-            ("plain-language result", "explain the result in plain language"),
+            (
+                "narrow changed-rule check",
+                "check only the changed rule or a named protected boundary",
+            ),
         ),
     )
 
@@ -471,8 +473,7 @@ def validate_discussion_source_text(
             (
                 ("user-originated explicit-Grill provenance", "a user-originated request establishes the explicit form"),
                 ("narrow explicit-Grill write authority", "explicit grill authorizes only its supporting `docs/teamwork/` discussion record unless the user says no files"),
-                ("automatic Plan no-write authority", "automatic plan entry grants none"),
-                ("usefulness does not grant authority", "artifact usefulness never creates authority"),
+                ("Plan complexity stays out", "plan complexity, artifact usefulness, and ordinary clarification do not activate grill or create authority"),
                 ("short Grill artifact-free", "short grill stays artifact-free"),
                 ("entry-time protocol load", "`skills/using-teamwork/references/artifact-protocol.md` completely at entry"),
                 (
@@ -515,7 +516,7 @@ def validate_discussion_source_text(
                 ("non-proxy trigger boundary", "time, word count, and a short grill never trigger persistence"),
                 ("usefulness-authority separation", "these conditions decide usefulness, never authority"),
                 ("user-originated natural question-first authority", "a user-originated challenge or natural question-first request is explicit grill"),
-                ("automatic Plan policy no-write", "automatic plan reuse of grill policy grants no write authority"),
+                ("Plan complexity no activation", "plan complexity and artifact usefulness never activate grill or grant discussion-record authority"),
                 ("privacy boundary", "keep privacy-safe summaries, never hidden reasoning, secrets, unnecessary personal data, or a transcript"),
                 ("five human recovery sections", "goal, settled (including reasons), still open, key evidence, and continue here"),
                 ("new-input-only updates", "update only when the user's new input changes saved decisions, evidence, or the continuation point"),

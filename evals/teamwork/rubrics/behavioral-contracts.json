@@ -24,7 +24,7 @@
     },
     {
       "name": "ask_predicate_and_authority",
-      "description": "Simple or discoverable work asks nothing; required input, observation, material decisions, and confirmations ask in any applicable stage, with Plan auto-entering Grill only when non-simple, and confirmation granting no implementation or release authority."
+      "description": "Simple or discoverable work asks nothing; required input, observation, and material decisions use the shared Ask Gate in the current stage. Plan complexity does not activate Grill, and confirmation grants no implementation or release authority."
     },
     {
       "name": "bounded_review_and_progress",

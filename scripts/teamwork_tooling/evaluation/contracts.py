@@ -184,13 +184,14 @@ REQUIRED_ASK_PREDICATE_CASES = {
     "ask-required-observation-review": {"review_stage", "required_observation", "ask_outside_grill"},
     "ask-required-input-goal": {"goal_stage", "required_input", "ask_outside_grill"},
     "plan-ask-readiness": {
-        "non_simple_auto_grill",
+        "plan_uses_shared_ask_gate",
+        "plan_complexity_not_grill",
         "brief_decision_checkpoint",
         "settled_and_open_visible",
         "no_execution_authority",
     },
     "review-bounded-recheck": {"stable_finding_ids", "review_taxonomy", "blocker_classification", "one_corrective_recheck"},
-    "goal-dependent-branch-retry": {"affected_branch_only", "independent_work_continues", "native_goal_authority"},
+    "goal-dependent-branch-retry": {"current_blocker_only", "independent_work_continues", "native_goal_authority"},
     "ask-confirmation-authority": {"plan_acceptance_only", "no_implementation_authority", "no_release_authority"},
     "ask-subagent-root-ownership": {"question_candidate", "root_only_asks", "deduplicate"},
     "ask-independent-readonly-progress": {"dependent_branch_only", "independent_read_only_continues"},
@@ -208,13 +209,16 @@ REQUIRED_MINIMALITY_CASES = {
         "canonical_owner",
         "boundary_builtin_or_dependency",
         "minimal_new_logic",
-        "proportional_proof",
+        "real_result_first",
+        "stop_after_result",
     },
     "minimality-justified-surface": {
         "accepted_behavior_justifies_new_logic",
         "justified_abstraction_or_dependency",
         "multi_file_allowed",
         "proportional_proof",
+        "real_result_first",
+        "stop_after_result",
         "no_code_golf",
     },
     "minimality-review-classification": {
@@ -270,6 +274,7 @@ REQUIRED_DISCUSSION_CASES = {
     },
     "discussion-unauthorized-candidate": {
         "discussion_checkpoint_candidate",
+        "ordinary_plan_no_grill",
         "durable_continuity_not_guaranteed",
         "no_canonical_memory_change",
         "no_write_authority",
@@ -350,8 +355,8 @@ REQUIRED_RULE_MAINTENANCE_CASES = {
     "rule-maintenance-audit": {
         "canonical_owner",
         "user_effect",
-        "verification",
-        "plain_language_summary",
+        "narrow_changed_rule_check",
+        "no_validation_ceremony",
         "static_contract_only",
     },
 }
@@ -390,7 +395,7 @@ ACTIVATION_PROMPT_STAGE_RE = re.compile(
     r"(?:研究阶段|调试阶段|计划阶段|规划阶段|执行阶段|评审阶段|审查阶段|目标模式|初始化阶段|更新阶段))"
 )
 REQUIRED_SKILL_CASE_CLAUSES = {
-    "native-lightweight-control": {"complete_stage_inventory", "native_fast_path"},
+    "native-lightweight-control": {"native_fast_path", "real_result_first", "stop_after_result"},
     "grill-explicit-skill-invocation": {"explicit_activation", "no_enactment"},
     "grill-negative-signal-control": {"negative_signal_wins", "no_activation"},
     "grill-quoted-marker-control": {"quoted_marker_inert", "no_activation"},
@@ -402,20 +407,23 @@ REQUIRED_SKILL_CASE_CLAUSES = {
     },
     "research-source-quality": {"observed_inferred_claimed", "read_only_boundary"},
     "debug-repro-before-fix": {
-        "repro_before_fix",
-        "discriminating_hypotheses",
-        "safe_fix_route",
+        "first_blocking_error",
+        "discriminating_evidence",
+        "same_path_rerun",
+        "no_broad_investigation",
     },
     "plan-ask-readiness": {
-        "non_simple_auto_grill",
+        "plan_uses_shared_ask_gate",
+        "plan_complexity_not_grill",
         "brief_decision_checkpoint",
         "settled_and_open_visible",
         "no_execution_authority",
     },
     "complex-coding-discipline": {
-        "accepted_scope",
+        "real_result_first",
+        "named_boundary_only",
         "discovery_classification",
-        "failed_ac_monotonicity",
+        "stop_after_result",
     },
     "review-bounded-recheck": {
         "review_taxonomy",
@@ -426,7 +434,8 @@ REQUIRED_SKILL_CASE_CLAUSES = {
         "native_goal_authority",
         "preserved_invariants",
         "strategy_delta",
-        "affected_branch_only",
+        "current_blocker_only",
+        "real_success_signal",
     },
     "init-readiness-contract": {
         "readiness_gaps_reported",
@@ -463,7 +472,10 @@ SKILL_SOURCE_CONTRACTS = {
     "using-teamwork": (
         "skills/using-teamwork/SKILL.md",
         (
-            ("Native fast path", "clear tasks stay native"),
+            (
+                "Native fast path",
+                "authorized change/build work stays native or goes straight to execute",
+            ),
             (
                 "known-facts native explanation",
                 "when all decision-relevant facts are supplied, a stable explanation stays native",
@@ -486,15 +498,12 @@ SKILL_SOURCE_CONTRACTS = {
     "grill-me": (
         "skills/grill-me/SKILL.md",
         (
-            ("explicit activation", "enter for an explicit request"),
+            ("explicit activation", "enter only for a user-originated challenge or question-first request"),
             (
                 "frontmatter natural explicit entry",
                 "description: Use when the user asks to be challenged, grilled, or questioned before action",
             ),
-            (
-                "automatic non-simple Plan body entry",
-                "automatically from every non-simple plan",
-            ),
+            ("Plan complexity stays out", "plan complexity, artifact usefulness, and ordinary clarification do not activate grill"),
             ("negative intent wins", "explicit negative intent wins"),
             ("inert mentions", "quoted, file, tool, example, or maintenance mentions are inert"),
             (
@@ -523,16 +532,18 @@ SKILL_SOURCE_CONTRACTS = {
     "teamwork-debug": (
         "skills/teamwork-debug/SKILL.md",
         (
-            ("natural debug intent", "description: Use when something fails, crashes, flakes, regresses, or behaves unexpectedly"),
-            ("repro before fix", "state expected versus actual behavior, the repro"),
-            ("discriminating hypotheses", "name discriminating evidence"),
-            ("safe fix route", "route an accepted fix to execution"),
+            ("unknown-cause debug intent", "description: Use when a failure, crash, flake, regression, or unexpected result has an unknown cause"),
+            ("real failure first", "start from the actual failing command, environment, and first blocking error"),
+            ("discriminating evidence only", "gather only evidence that distinguishes the next possible fix"),
+            ("same-path rerun", "rerun the same real path"),
         ),
     ),
     "teamwork-plan": (
         "skills/teamwork-plan/SKILL.md",
         (
-            ("non-simple material Grill", "every non-simple plan enters evidence-first `grill-me`"),
+            ("Plan complexity does not activate Grill", "plan complexity never activates `grill-me`"),
+            ("shared Ask Gate", "apply the shared ask gate and ask only that question"),
+            ("clear work executes", "clear authorized work executes without first manufacturing a plan"),
             ("resolved choices captured in the plan", "summarize them in the plan"),
             (
                 "brief Settled/Still open checkpoint",
@@ -544,10 +555,12 @@ SKILL_SOURCE_CONTRACTS = {
     "teamwork-execute": (
         "skills/teamwork-execute/SKILL.md",
         (
-            ("natural execute intent", "description: Use when the user asks to carry out an accepted plan or checklist"),
-            ("accepted scope", "use when an accepted plan, scope, or known root-cause fix"),
+            ("natural execute intent", "description: Use when the user asks to implement, build, change, fix, or continue scoped work"),
+            ("plan optional", "a plan is optional"),
+            ("real path first", "reach the shortest safe real run or artifact as early as possible"),
             ("discovery classification", "classify discoveries:"),
-            ("failed-AC monotonicity", "failed ac evidence stays failed until direct evidence changes that ac"),
+            ("proxy checks cannot replace delivery", "never substitute plan/mock/static success for an available real path"),
+            ("stop after result", "with no unchecked named boundary, stop"),
         ),
     ),
     "teamwork-review": (
@@ -555,7 +568,8 @@ SKILL_SOURCE_CONTRACTS = {
         (
             ("natural review intent", "description: Use when the user asks whether work is correct or complete"),
             ("review taxonomy must be BLOCKER, FOLLOW-UP, or SUGGESTION", "one class: `blocker`, `follow-up`, or `suggestion`"),
-            ("risk-gated fresh review", "fresh context is required for high-risk, public-contract, delegated, security, destructive, release, or goal acceptance"),
+            ("no completion review ceremony", "do not start an independent review merely because implementation finished"),
+            ("risk-gated fresh review", "public/shared contracts, release, destructive action, or security/permission/data boundaries"),
             ("one bounded recheck", "permit one corrective recheck"),
         ),
     ),
@@ -566,7 +580,8 @@ SKILL_SOURCE_CONTRACTS = {
             ("explicit user request or accepted Goal Proposal", "only when the user explicitly requests goal mode or accepts a goal proposal"),
             ("preserved Goal Invariants", "identify the preserved scope/invariants, failed claim and stage, prior evidence, do-not-repeat constraints"),
             ("strategy delta", "stop on repeated no-progress without an evidence-backed strategy delta"),
-            ("affected stage", "route only the affected stage"),
+            ("current blocker only", "route only the current blocker"),
+            ("real success signal", "mark complete when the real success signal passes"),
         ),
     ),
     "teamwork-init": (

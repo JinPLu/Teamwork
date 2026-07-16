@@ -7,11 +7,11 @@
   "prompt": "Implement accepted behavior whose boundary and reuse needs require new logic, a justified abstraction or dependency, changes in multiple owner files, and proportional proof.",
   "expected": {
     "route": "evidence_justified_surface",
-    "requires": ["accepted_behavior_justifies_new_logic", "justified_abstraction_or_dependency", "multi_file_allowed", "proportional_proof", "no_code_golf"]
+    "requires": ["accepted_behavior_justifies_new_logic", "justified_abstraction_or_dependency", "multi_file_allowed", "proportional_proof", "real_result_first", "stop_after_result", "no_code_golf"]
   },
   "must": [
     "allow evidence to justify new logic, an abstraction or dependency, and multiple files",
-    "optimize maintenance obligations without trading away clarity, accepted behavior, or proportional verification"
+    "exercise the real result path without trading away clarity or a named protected-boundary check, then stop"
   ],
   "must_not": [
     "score minimality by lines of code or file count",

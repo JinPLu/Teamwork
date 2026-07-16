@@ -8,6 +8,12 @@ delegation, or verification will improve the result without slowing down simple
 requests. Codex owns skill discovery, tool availability, permission prompts,
 interaction UI, and the behavior produced by the selected model.
 
+For clear authorized change/build work, Teamwork sends Codex straight to the
+shortest real result path. Plans, tests, validation, and review are support only:
+they must unblock delivery, distinguish the current failure, check changed
+behavior, or protect a named high-risk boundary. An available real run is never
+replaced by a proxy check, and work stops when the requested result is obtained.
+
 ## Install
 
 Global setup:
@@ -64,8 +70,8 @@ selection matters. Teamwork is most useful for:
 - research grounded in papers, official documentation, project files, or
   source history;
 - reproducible debugging based on logs and runtime evidence;
-- plans with explicit scope and verification;
-- implementation of an accepted plan or known root-cause fix;
+- plans only when requested or a material choice/protected boundary blocks action;
+- direct implementation of authorized change/build work or a known fix;
 - fresh review for unsupported completion claims, risky fallbacks, or clutter;
 - long-running work that should continue until verified or genuinely blocked.
 
@@ -101,7 +107,7 @@ the selected repository rather than changing every project for the user.
 Codex custom agents are useful only for independent work that benefits from
 separation or fresh context. Each returns a compact conclusion, evidence,
 unresolved impact, and next action. The root agent remains responsible for
-scope, integration, verification, and a plain-language response—the conclusion
+scope, integration, and a plain-language response—the conclusion
 or what it means, why it matters, and what follows—rather than exposing coordination
 mechanics.
 

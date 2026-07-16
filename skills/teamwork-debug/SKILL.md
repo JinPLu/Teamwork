@@ -1,6 +1,6 @@
 ---
 name: teamwork-debug
-description: Use when something fails, crashes, flakes, regresses, or behaves unexpectedly and the cause must be reproduced and distinguished before a safe fix.
+description: Use when a failure, crash, flake, regression, or unexpected result has an unknown cause that blocks a safe fix.
 ---
 
 # Teamwork Debug
@@ -9,37 +9,30 @@ Read `skills/using-teamwork/references/workflow-contract.md` before proceeding.
 
 ## Outcome
 
-Use runtime evidence to identify a supported root cause and the smallest safe
-fix route. Debug is diagnosis, not a general cleanup or refactor stage.
+Remove only the uncertainty blocking the next safe fix. Debug is not a general
+investigation, cleanup, or refactor stage.
 
 ## Enter When
 
-Use for failures, crashes, CI errors, UI symptoms, regressions, or performance
-problems unsafe to infer from source alone. Stay in research when the
-environment or repro is unknown; route an accepted fix to execution, or an
-architectural/public-contract fix to planning.
+Use when the cause cannot safely be inferred from the real failure. A supplied
+error and clear narrow fix may execute directly. Stay in research when the
+environment or repro surface is unknown; use Plan only when the fix changes a
+protected public boundary.
 
 ## Do And Boundaries
 
-State expected versus actual behavior, the repro, acceptance signal, and
-protected boundaries. Confirm commands, environment, paths, credentials,
-models, and targets from user input or source/config; never switch targets or
-invent defaults to manufacture a repro. Form only as many plausible hypotheses
-as the evidence warrants and name discriminating evidence. Add minimal useful
-instrumentation, reproduce, reject unsupported explanations, and state the
-evidence-backed cause. Use human observation only when the agent cannot operate
-the relevant session or UI; route that observation request through the root
-under the Ask Gate in `workflow-contract.md`.
-
-Implement only a user-accepted confirming fix. Afterward, rerun the evidence
-needed to test the claimed fix and likely regressions, proportional to the
-surface and risk, and remove temporary instrumentation without broadening cleanup.
+Start from the actual failing command, environment, and first blocking error.
+Gather only evidence that distinguishes the next possible fix; add temporary
+instrumentation only when the existing failure cannot decide it. Never switch
+targets or invent defaults to manufacture a repro. When the user already asked
+for a fix and evidence supports a narrow change, implement it without an extra
+confirmation cycle. Then rerun the same real path. Check adjacent behavior only
+for a named shared/high-risk boundary, and remove temporary instrumentation.
 
 ## Done When
 
-The observed failure and expected behavior are clear; evidence supports a root
-cause or explicitly bounded uncertainty; temporary instrumentation is removed;
-and the fix route, proof strength, remaining risk, and next route are truthful.
+The real path works, or the remaining uncertainty is the specific blocker to the
+next safe change. Stop when further diagnosis would not change that next action.
 
 ## Escalate
 

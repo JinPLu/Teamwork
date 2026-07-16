@@ -10,25 +10,25 @@ execution.
 |---|---|---|
 | "What is this?", "where is X?", tiny edit, obvious local fix | native | Direct answer or low-risk edit needs no Teamwork ceremony. |
 | "Why?", "which option?", "is this current?", unfamiliar API, unclear repro surface | research | Source of truth, facts, or scope need evidence before action. |
-| Failing test, flaky run, CI failure, runtime log, UI symptom, regression, crash | debug | A real or likely repro can decide root cause. |
-| "Design", "plan", public contract, architecture, risky refactor | plan | Scope, acceptance, verification, or dispatch must be locked before edits. |
-| "Go ahead", "implement the plan", "continue", accepted checklist | execute | Scope is accepted; work is implementation and verification. |
-| "Review", "check this diff", "did we miss anything?", strict quality, deslop | review | Acceptance, issues, or maintainability need read-only scrutiny. |
+| Failure with unknown cause, flaky run, unclear CI/runtime symptom | debug | Only discriminating runtime evidence can choose a safe fix. |
+| "Design", "plan", unresolved public choice, protected boundary | plan | A material choice or boundary must be settled before edits. |
+| "Build", "fix", "change", "go ahead", "implement", "continue" | execute | The request authorizes direct result-producing work; a plan is optional. |
+| "Review", "check this diff", "did we miss anything?" | review | The user requested a read-only verdict. |
 | "Keep going", "until green", "iterate until done", explicit budget | goal | The user wants autonomous convergence with stop rules. |
 | "Set up Teamwork", AGENTS/CODEX/CURSOR/CLAUDE, migrate rules | init | Project instruction and install readiness work. |
 | "Update Teamwork", version, release, refresh installed skills | update | Package/install surface maintenance. |
 
 ## Tie-Breakers
 
-- Symptom with unknown cause and runnable evidence beats plan/execute: route
-  debug before speculative fixes.
+- A supplied error with a clear narrow fix may execute directly; use Debug only
+  while unknown cause blocks a safe change.
 - Unknown source of truth, dependency behavior, or repro surface beats debug:
   route research until the surface is clear enough to test.
 - Known root cause plus a public/protected or decision-heavy fix routes plan.
-- Known root cause plus accepted narrow fix routes execute; tiny obvious fixes
-  may stay native.
+- Known root cause plus authorized narrow fix routes execute; clear fixes may
+  stay native regardless of file count.
 - "Do not fix yet" means research, debug, or review only.
-- Explicit stage names are force switches unless they conflict with the user's
+- Explicit stage names select a method but do not replace or expand the user's
   requested action boundary.
 
 ## Smart Defaults

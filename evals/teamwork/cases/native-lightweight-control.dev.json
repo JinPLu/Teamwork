@@ -9,15 +9,15 @@
     "route": "native",
     "burden": "minimal",
     "dispatch": "none",
-    "requires": ["complete_stage_inventory", "native_fast_path"]
+    "requires": ["native_fast_path", "real_result_first", "stop_after_result"]
   },
   "must": [
-    "act directly when the edit is obvious and low risk",
-    "avoid unnecessary subagent dispatch or durable planning"
+    "make the requested edit directly",
+    "stop once the requested result is complete"
   ],
   "must_not": [
-    "force a Teamwork stage label for a trivial edit",
-    "ask the user about routine naming or formatting choices"
+    "inventory Teamwork stages or create a durable plan",
+    "add an unrelated test, review, or reporting phase"
   ],
   "rubric": "assistance-quality",
   "evidence": "Negative control for over-routing and user burden."

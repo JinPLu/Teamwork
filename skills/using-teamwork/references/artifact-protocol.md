@@ -20,7 +20,8 @@ Time, word count, and a short Grill never trigger persistence. These conditions
 decide usefulness, never authority. Creation and later updates require authority;
 a user-originated challenge or natural question-first request is explicit Grill
 and grants only its supporting discussion-record lifecycle unless the user says
-no files. Automatic Plan reuse of Grill policy grants no write authority.
+no files. Plan complexity and artifact usefulness never activate Grill or grant
+discussion-record authority.
 
 Do not wait for a second settled choice when the first conclusion already
 determines an open next check. The record exists to preserve that conclusion,

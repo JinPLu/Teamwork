@@ -131,6 +131,14 @@ check_lean_policy() {
     "$label must preserve the read-only authority boundary"
   grep_required 'Inspect evidence before asking' "$file" \
     "$label must inspect before asking"
+  normalized_required 'Prioritize requested real results' "$file" \
+    "$label must prioritize delivery"
+  normalized_required 'Plans, tests, validation, review, and process support delivery only' "$file" \
+    "$label must keep support work subordinate"
+  normalized_required 'never replace available real runs with proxy checks' "$file" \
+    "$label must prefer the real result path"
+  normalized_required 'stop when the result is obtained' "$file" \
+    "$label must stop after delivery"
   normalized_required 'Ask only for required input/observation or material user decisions' "$file" \
     "$label must preserve the user-owned Ask Gate"
   normalized_required 'pause dependent work' "$file" \
@@ -147,6 +155,8 @@ check_lean_policy() {
     "$label must preserve root-owned user translation"
   normalized_required 'Research/debug/plan/review stay read-only absent change authority' "$file" \
     "$label must preserve the read-only stage boundary"
+  normalized_required 'Clear authorized change/build goes straight to implementation' "$file" \
+    "$label must preserve direct execution"
   grep_required 'Grill only' "$file" \
     "$label must preserve explicit Grill activation"
   normalized_required 'Negative/quoted/file/tool/example/maintenance mentions are inert' "$file" \
@@ -156,22 +166,16 @@ check_lean_policy() {
   normalized_required 'Connect observed basis, plain interpretation, and decision-relevant boundary/next check' "$file" \
     "$label must preserve a connected reader argument"
   normalized_required 'Separate observation from inference' "$file" \
-    "$label must distinguish observations from inference"
-  normalized_required 'keep question visible' "$file" \
-    "$label must preserve the discussion mainline"
-  normalized_required 'Avoid default headings' "$file" \
-    "$label must keep a substantive answer in prose by default"
-  normalized_required 'simple facts stay one sentence' "$file" \
-    "$label must preserve concise simple facts"
+    "$label must separate observation from inference"
+  normalized_required 'Avoid headings; simple facts stay one sentence' "$file" \
+    "$label must preserve concise default prose"
   normalized_required 'Keep only detail affecting understanding/decision/action/risk/confidence' "$file" \
     "$label must preserve the relevance gate"
-  normalized_required 'Use supplied terms; coin no labels or identifier meanings' "$file" \
+  normalized_required 'Use supplied terms; invent no labels or identifier meanings' "$file" \
     "$label must preserve stable reader terms and identifier boundaries"
-  normalized_required 'Name skills only for capability/limitation/choice' "$file" \
-    "$label must allow useful skill explanations"
-  normalized_required 'Omit irrelevant process/versions' "$file" \
+  normalized_required 'omit process inventory' "$file" \
     "$label must omit irrelevant process inventory"
-  normalized_required 'State uncertainty once: support, limit, next check' "$file" \
+  normalized_required 'State uncertainty once' "$file" \
     "$label must preserve a decision-boundary uncertainty"
   if [[ "$label" == *Cursor* || "$label" == *Claude* ]]; then
     ! grep -Eq 'request_user_input|Codex CLI|Codex native|every material user decision|grill ceremony|text choice card' "$file" \

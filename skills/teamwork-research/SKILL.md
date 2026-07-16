@@ -29,7 +29,8 @@ model, platform, method, or upstream behavior may have changed; never send
 private source to public search. Distinguish important `observed`, `inferred`,
 and `claimed` findings, preserve meaningful dissent, and cite the evidence that
 supports the conclusion. Research does not authorize edits, external writes,
-or invented runtime values.
+or invented runtime values. Stop as soon as evidence is sufficient for the next
+answer or result-producing action; do not broaden the survey for completeness.
 
 Write `docs/teamwork/research/YYYY-MM-DD-<slug>.md` only when findings need
 cross-turn reuse, support a durable plan or goal, or justify a consequential

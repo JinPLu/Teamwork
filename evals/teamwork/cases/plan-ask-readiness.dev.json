@@ -4,14 +4,14 @@
   "source": "synthetic",
   "target": "skills/teamwork-plan/SKILL.md",
   "platforms": ["codex"],
-  "prompt": "Plan a non-simple public workflow change. Inspect first, resolve discoverable facts, enter Grill for any remaining material user decision, then show a brief Settled / Still open checkpoint before the final plan. Do not implement or release anything.",
+  "prompt": "Plan a public workflow change. Inspect first, resolve discoverable facts, use the shared Ask Gate for any remaining material user decision, then show a brief Settled / Still open checkpoint before the final plan. Do not enter Grill, implement, or release anything.",
   "expected": {
-    "route": "plan_then_grill_if_needed",
-    "requires": ["non_simple_auto_grill", "automatic_plan_reuse_no_write_authority", "brief_decision_checkpoint", "settled_and_open_visible", "no_execution_authority"]
+    "route": "plan_with_shared_ask_gate",
+    "requires": ["plan_uses_shared_ask_gate", "plan_complexity_not_grill", "brief_decision_checkpoint", "settled_and_open_visible", "no_execution_authority"]
   },
   "must": [
-    "auto-enter Grill for a non-simple plan after evidence has resolved discoverable facts",
-    "preserve automatic Plan provenance and grant no discussion-record write authority",
+    "resolve discoverable facts and use the shared Ask Gate only for a remaining material user decision",
+    "keep Plan complexity from activating Grill or discussion-record writes",
     "ask only material user decisions and show which choices are settled versus still open before the final plan",
     "keep the checkpoint brief and use it to expose any decision that still needs user input",
     "treat any recap or confirmation as planning alignment only"
@@ -19,7 +19,7 @@
   "must_not": [
     "ask for repository facts the agent can discover",
     "treat confirmation as implementation or release authority",
-    "treat automatic Grill policy reuse or artifact usefulness as write authority",
+    "treat Plan complexity or artifact usefulness as Grill activation or write authority",
     "add lifecycle packets or persistent state"
   ],
   "rubric": "behavioral-contracts",

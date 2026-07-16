@@ -13,11 +13,9 @@ questions are not completion, and the host owns wait/timeout/resume.
 
 ## Decision Gate
 
-Classify from evidence, not file count. A plan is simple only with fixed
-scope/risk and no material user-owned decision; otherwise reuse `grill-me`
-decision policy. This automatic reuse is not user-originated explicit Grill and
-grants no discussion-record write authority. Explicit negative intent suppresses
-the interview, not required-input or safety gates.
+Plan complexity and file count never activate `grill-me`. Resolve discoverable
+facts directly; apply the shared Ask Gate only when required input or a material
+user-owned decision still blocks the plan.
 
 Inspect evidence. Resolve evidence/agent-owned gaps; apply the shared Ask Gate
 and ask one recommended material decision at a time.
@@ -30,17 +28,12 @@ and `Still open: <remaining choice or none>`. Keep it brief and human-readable:
 it informs the next action but is not an extra confirmation turn or authority
 grant.
 
-Readiness gate before the final plan:
+## Readiness Gate
 
-- inspect owner/flow, tests/config, artifacts, and protected boundaries;
-- classify gaps as evidence-owned, agent-owned, user-decision, required-input, or
-  confirmation; resolve the first two and send remaining candidates through the Ask Gate;
-- source critical values as `user`, `repository`, `derived`, or `unresolved`;
-  justify derivations and pause only dependent actions;
-- reconcile corrections and discard invalidated premises;
-- map each requirement to an owned action and proof; name each phase's surface,
-  inputs, output, dependencies, verification, and stop/replan condition; and
-- state scope/non-goals, protected surfaces, risks, blockers, and next action.
+Before the final plan, inspect only decision-relevant owners and protected
+boundaries, resolve discoverable facts, reconcile corrections, and map the
+shortest result-producing steps. Add verification only for the result itself or
+a named protected boundary, plus the stop/replan condition.
 
 ## Chat Plan
 

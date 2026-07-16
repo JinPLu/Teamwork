@@ -1,7 +1,9 @@
 # Verification Patterns
 
-Use when a claim needs proof stronger than "tests ran" or an executor summary.
-This is a proof lens, not a Teamwork stage.
+Use only when the user explicitly asks for verification, a comparison claim
+needs measurement, or a named protected boundary requires proof stronger than
+the real result already observed. This is a proof lens, not a Teamwork stage or
+an ordinary build/fix completion requirement.
 
 ## Claim Frame
 
@@ -15,10 +17,9 @@ Threshold:
 Surface:
 ```
 
-For bug, UI, performance, memory, migration, or parity claims, capture baseline
-before treatment when practical. Use the same command, input, account, data,
-warmup, and environment. If a baseline is impossible, say why and mark the proof
-weaker.
+Capture baseline/treatment only when the claim is comparative, such as
+performance, memory, migration, parity, or regression. Do not create an A/B
+exercise for an ordinary fix whose real success path is directly observable.
 
 ## Strength
 
@@ -43,14 +44,14 @@ proof. For explicit "verify this" requests, return one claim verdict:
   generated file, screenshot, trace, profile, database row, or diff.
 - Reading code, seeing a green typecheck, or trusting a subagent summary is not
   behavioral verification.
-- Map every acceptance criterion to evidence: command, artifact, observation,
-  result, and strength.
-- Keep an acceptance trace: criterion -> candidate change/no-change rationale
-  -> direct evidence -> result -> strength. Preserve a failed, blocked, or
-  partial result for that same criterion until new direct evidence changes it.
+- Map only explicit acceptance criteria and named protected boundaries to direct
+  evidence. Do not create a trace packet for ordinary work.
 - For manual smoke, record source, steps, observed state, pass/fail, and any
   artifact path.
 - Preserve negative results. `NOT VERIFIED`, `failed`, and `blocked` are useful.
+- Reuse unchanged evidence. Repeat only after a relevant change, new failure, new
+  discriminating hypothesis, or boundary-specific need; stop after the claim is
+  decided.
 
 ## Internal Record
 

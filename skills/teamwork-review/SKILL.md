@@ -9,15 +9,16 @@ Read `skills/using-teamwork/references/workflow-contract.md` before proceeding.
 
 ## Outcome
 
-Issue an independent, evidence-based `accept`, `revise`, or `blocked` verdict
-for a plan, execution, or output. Review does not fix findings.
+Issue an evidence-based `accept`, `revise`, or `blocked` verdict for a candidate.
+Review does not fix findings.
 
 ## Enter When
 
-Use for requested review, acceptance, or risk-gated completion. Give a fresh
-Judge/Reviewer the scope, criteria, candidate, and direct evidence. Fresh context
-is required for high-risk, public-contract, delegated, security, destructive, release, or
-goal acceptance; lightweight checks may self-review otherwise.
+Use for requested review or a named high-risk governing gate. Do not start an
+independent review merely because implementation finished. Give a fresh
+Judge/Reviewer the scope, criteria, candidate, and direct evidence only for
+public/shared contracts, release, destructive action, or security/permission/data
+boundaries when that workflow requires it; ordinary work stops at its real result.
 
 ## Do And Boundaries
 

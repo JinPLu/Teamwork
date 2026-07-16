@@ -4,24 +4,24 @@
   "source": "review",
   "target": "skills/using-teamwork/references/workflow-contract.md",
   "platforms": ["codex", "cursor", "claude"],
-  "prompt": "Change an internal instruction only after identifying its canonical owner, the user-visible effect, the verification that protects it, and a plain-language explanation of the result.",
+  "prompt": "Change an internal instruction at its canonical owner, state the user-visible effect, and check only the changed rule or a named protected boundary.",
   "expected": {
     "requires": [
       "canonical_owner",
       "user_effect",
-      "verification",
-      "plain_language_summary",
+      "narrow_changed_rule_check",
+      "no_validation_ceremony",
       "static_contract_only"
     ]
   },
   "must": [
-    "audit an internal rule change against its canonical owner and user effect",
-    "name verification proportionate to the changed behavior",
-    "explain the outcome in plain language"
+    "change the canonical owner and state the user-visible effect",
+    "check only the changed rule or a named protected boundary",
+    "stop when that result is established"
   ],
   "must_not": [
     "delete wording merely to reduce a footprint",
-    "describe internal maintenance as user value without evidence"
+    "create a broad validation exercise for a narrow rule change"
   ],
   "rubric": "behavioral-contracts",
   "evidence": "Static rule-maintenance safeguard; it checks source-contract coverage rather than live behavior."

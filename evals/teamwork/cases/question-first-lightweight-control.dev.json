@@ -11,11 +11,12 @@
   },
   "must": [
     "act directly when the task is clear, low-risk, and evidence-sufficient",
-    "avoid asking about routine naming, formatting, or equivalent choices"
+    "avoid asking about routine naming, formatting, or equivalent choices",
+    "stop when the requested edit is complete"
   ],
   "must_not": [
     "enter grill mode or require a fixed interview packet",
-    "dispatch subagents or create a durable plan for the typo"
+    "dispatch subagents, create a durable plan, or add a verification phase for the typo"
   ],
   "rubric": "assistance-quality",
   "evidence": "docs/teamwork/plans/2026-07-08-question-first-interaction-override.md"

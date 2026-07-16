@@ -4,19 +4,19 @@
   "source": "synthetic",
   "target": "skills/using-teamwork/references/artifact-protocol.md",
   "platforms": ["codex", "cursor", "claude"],
-  "prompt": "A non-simple Plan automatically reuses Grill decision policy and reaches an otherwise useful discussion checkpoint before handoff; the user did not request challenge, question-first interaction, or saved discussion memory.",
+  "prompt": "An ordinary Plan reaches an otherwise useful discussion checkpoint before handoff; the user did not request challenge, question-first interaction, or saved discussion memory.",
   "expected": {
-    "requires": ["discussion_checkpoint_candidate", "automatic_plan_reuse_provenance", "usefulness_never_grants_authority", "durable_continuity_not_guaranteed", "no_canonical_memory_change", "no_write_authority", "static_contract_only"]
+    "requires": ["discussion_checkpoint_candidate", "ordinary_plan_no_grill", "usefulness_never_grants_authority", "durable_continuity_not_guaranteed", "no_canonical_memory_change", "no_write_authority", "static_contract_only"]
   },
   "must": [
     "give the goal, settled choices, open choice, key evidence, and continuation point in natural domain language",
-    "preserve automatic Plan provenance and treat the usefulness condition as no write authority",
+    "keep the checkpoint in ordinary Plan output and treat usefulness as no Grill activation or write authority",
     "state once that this was not saved and may be lost across sessions"
   ],
   "must_not": [
     "show an invented checkpoint label",
     "write docs/teamwork/discussion/ or imply canonical memory changed",
-    "upgrade automatic Grill policy reuse into user-originated explicit Grill",
+    "upgrade ordinary Plan complexity into user-originated explicit Grill",
     "claim this offline authored case proves live model behavior"
   ],
   "rubric": "behavioral-contracts",

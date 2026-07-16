@@ -668,8 +668,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
     def test_natural_intent_descriptions_are_source_contracts(self) -> None:
         mutations = {
             "teamwork-research": ("the user needs facts checked before action", "the stage is available", "natural research intent"),
-            "teamwork-debug": ("something fails, crashes, flakes, regresses, or behaves unexpectedly", "the stage is available", "natural debug intent"),
-            "teamwork-execute": ("the user asks to carry out an accepted plan or checklist", "the stage is available", "natural execute intent"),
+            "teamwork-debug": ("a failure, crash, flake, regression, or unexpected result has an unknown cause", "the stage is available", "unknown-cause debug intent"),
+            "teamwork-execute": ("the user asks to implement, build, change, fix, or continue scoped work", "the stage is available", "natural execute intent"),
             "teamwork-review": ("the user asks whether work is correct or complete", "the stage is available", "natural review intent"),
             "teamwork-goal": ("the user asks Codex to keep working until a verifiable result", "the stage is available", "natural goal intent"),
             "teamwork-init": ("a project needs agent instructions or Teamwork context set up", "the stage is available", "natural init intent"),
@@ -756,7 +756,7 @@ class SemanticSourceMutationTests(unittest.TestCase):
     def test_using_teamwork_rejects_removed_native_fast_path(self) -> None:
         self.assert_skill_contract_rejected(
             "using-teamwork",
-            "Clear tasks stay native",
+            "authorized change/build work stays native or goes straight to Execute",
             "All tasks enter a Teamwork stage",
             "Native fast path",
         )
@@ -782,7 +782,7 @@ class SemanticSourceMutationTests(unittest.TestCase):
     def test_grill_rejects_removed_explicit_activation(self) -> None:
         self.assert_skill_contract_rejected(
             "grill-me",
-            "Enter for an explicit request",
+            "Enter only for a user-originated challenge or question-first request",
             "Enter whenever available",
             "explicit activation",
         )
@@ -796,12 +796,12 @@ class SemanticSourceMutationTests(unittest.TestCase):
         with self.assertRaisesRegex(EvalError, "must not overlap Plan activation"):
             validate_skill_source_contract("grill-me", mutated)
 
-    def test_grill_rejects_removed_automatic_plan_body_entry(self) -> None:
+    def test_grill_rejects_plan_complexity_activation(self) -> None:
         self.assert_skill_contract_rejected(
             "grill-me",
-            "automatically from every non-simple Plan",
-            "optionally from a non-simple Plan",
-            "automatic non-simple Plan body entry",
+            "Plan complexity, artifact usefulness, and ordinary\nclarification do not activate Grill",
+            "Plan complexity activates Grill",
+            "Plan complexity stays out",
         )
 
     def test_grill_requires_an_evidence_backed_recommendation_per_question(self) -> None:
@@ -854,28 +854,28 @@ class SemanticSourceMutationTests(unittest.TestCase):
             "supplied-facts native boundary",
         )
 
-    def test_debug_rejects_removed_discriminating_hypotheses(self) -> None:
+    def test_debug_rejects_unbounded_evidence_gathering(self) -> None:
         self.assert_skill_contract_rejected(
             "teamwork-debug",
-            "name discriminating evidence",
+            "Gather only evidence that distinguishes the next possible fix",
             "collect any evidence",
-            "discriminating hypotheses",
+            "discriminating evidence only",
         )
 
-    def test_plan_rejects_optional_non_simple_grill(self) -> None:
+    def test_plan_rejects_complexity_activating_grill(self) -> None:
         self.assert_skill_contract_rejected(
             "teamwork-plan",
-            "Every non-simple Plan enters evidence-first `grill-me`",
-            "A non-simple Plan may enter `grill-me`",
-            "non-simple material Grill",
+            "Plan complexity never activates `grill-me`",
+            "Plan complexity activates `grill-me`",
+            "Plan complexity does not activate Grill",
         )
 
-    def test_execute_rejects_reset_failed_ac_evidence(self) -> None:
+    def test_execute_rejects_proxy_success(self) -> None:
         self.assert_skill_contract_rejected(
             "teamwork-execute",
-            "Failed AC evidence stays failed until direct evidence changes that AC",
-            "Failed AC evidence resets after any edit",
-            "failed-AC monotonicity",
+            "Never substitute plan/mock/static success\nfor an available real path",
+            "Treat plan/mock/static success as completion",
+            "proxy checks cannot replace delivery",
         )
 
     def test_init_rejects_global_failure_hard_gate(self) -> None:
@@ -999,34 +999,25 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_always_loaded_policy_requires_observation_inference_separation(self) -> None:
         mutated = self.policy.replace(
-            "Separate observation from inference;",
-            "Blend observation and inference together;",
+            "Separate observation from inference.",
+            "Blend observation and inference together.",
         )
         self.assertNotEqual(mutated, self.policy)
         with self.assertRaisesRegex(EvalError, "observation/inference separation"):
             validate_always_loaded_policy_text(mutated)
 
-    def test_always_loaded_policy_requires_discussion_mainline(self) -> None:
+    def test_always_loaded_policy_preserves_concise_default_prose(self) -> None:
         mutated = self.policy.replace(
-            "keep\nquestion visible.",
-            "restart from a different question each turn;",
+            "Avoid headings; simple facts stay one sentence.",
+            "Use headings and expand simple facts.",
         )
         self.assertNotEqual(mutated, self.policy)
-        with self.assertRaisesRegex(EvalError, "discussion mainline"):
-            validate_always_loaded_policy_text(mutated)
-
-    def test_always_loaded_policy_rejects_default_headings(self) -> None:
-        mutated = self.policy.replace(
-            "Avoid default headings;",
-            "Use headings for every substantive answer;",
-        )
-        self.assertNotEqual(mutated, self.policy)
-        with self.assertRaisesRegex(EvalError, "default prose over headings"):
+        with self.assertRaisesRegex(EvalError, "concise default prose"):
             validate_always_loaded_policy_text(mutated)
 
     def test_always_loaded_policy_rejects_inferred_label_meaning(self) -> None:
         mutated = self.policy.replace(
-            "Use supplied\nterms; coin no labels or identifier meanings.",
+            "Use supplied terms;\ninvent no labels or identifier meanings.",
             "Infer a label's meaning whenever it sounds suggestive.",
         )
         self.assertNotEqual(mutated, self.policy)
@@ -1056,7 +1047,7 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_always_loaded_policy_routes_material_decisions_to_plan(self) -> None:
         mutated = self.policy.replace(
-            "material scope/contract/architecture/acceptance choices to plan",
+            "unresolved scope/contract/architecture choices to plan",
             "material decisions directly to execution",
         )
         self.assertNotEqual(mutated, self.policy)
@@ -1065,31 +1056,21 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_always_loaded_policy_preserves_grill_authority_provenance(self) -> None:
         mutated = self.policy.replace(
-            "the former grants discussion lifecycle. Reuse/artifact usefulness grants no\n"
-            "write.",
+            "Grill only for user-originated\n"
+            "challenge/question-first intent; reuse/artifact usefulness grants no write.",
             "Any automatic Plan or useful artifact condition grants discussion writes.",
         )
         self.assertNotEqual(mutated, self.policy)
-        with self.assertRaisesRegex(EvalError, "user-originated discussion authority"):
+        with self.assertRaisesRegex(EvalError, "explicit Grill boundary"):
             validate_always_loaded_policy_text(mutated)
 
-    def test_always_loaded_policy_keeps_native_questions_host_owned(self) -> None:
+    def test_always_loaded_policy_requires_direct_change_build(self) -> None:
         mutated = self.policy.replace(
-            "Use callable native questions, else concise text;\n"
-            "Teamwork never enables them.",
-            "Teamwork enables a shared question tool on every host.",
+            "Clear authorized\nchange/build goes straight to implementation.",
+            "Clear change/build goes through planning and review.",
         )
         self.assertNotEqual(mutated, self.policy)
-        with self.assertRaisesRegex(EvalError, "host-native question surface"):
-            validate_always_loaded_policy_text(mutated)
-
-    def test_always_loaded_policy_preserves_simple_fact_control(self) -> None:
-        mutated = self.policy.replace(
-            "simple facts stay one sentence",
-            "expand simple facts into full reports",
-        )
-        self.assertNotEqual(mutated, self.policy)
-        with self.assertRaisesRegex(EvalError, "simple fact control"):
+        with self.assertRaisesRegex(EvalError, "direct change/build"):
             validate_always_loaded_policy_text(mutated)
 
     def test_always_loaded_policy_preserves_full_relevance_gate(self) -> None:
@@ -1112,7 +1093,7 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_always_loaded_policy_requires_missing_discriminator_uncertainty(self) -> None:
         mutated = self.policy.replace(
-            "State\nuncertainty once: support, limit, next check.",
+            "State uncertainty once.",
             "Repeat a generic caveat without a decision boundary.",
         )
         self.assertNotEqual(mutated, self.policy)
@@ -1270,11 +1251,12 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_rule_maintenance_source_rejects_missing_user_effect_audit(self) -> None:
         mutated = self.workflow_contract.replace(
-            "audit the canonical owner, user effect, and verification",
+            "Confirm the canonical owner and\n"
+            "   user-visible effect; check only the changed rule or a named protected boundary.",
             "minimize the internal wording",
         )
         self.assertNotEqual(mutated, self.workflow_contract)
-        with self.assertRaisesRegex(EvalError, "canonical owner, user effect, and verification"):
+        with self.assertRaisesRegex(EvalError, "canonical owner and user effect"):
             validate_rule_maintenance_source_text(mutated)
 
     def test_decision_checkpoint_rejects_lost_still_open_field(self) -> None:
@@ -1395,14 +1377,15 @@ class SemanticSourceMutationTests(unittest.TestCase):
                 self.discussion_template,
             )
 
-    def test_discussion_source_rejects_automatic_plan_write_authority(self) -> None:
+    def test_discussion_source_rejects_plan_complexity_activation(self) -> None:
         grill = self.skill_sources["grill-me"]
         mutated = grill.replace(
-            "Automatic Plan entry grants none.",
-            "Automatic Plan entry grants discussion writes.",
+            "Plan complexity, artifact usefulness, and ordinary\n"
+            "clarification do not activate Grill or create authority.",
+            "Plan complexity activates Grill and grants discussion writes.",
         )
         self.assertNotEqual(mutated, grill)
-        with self.assertRaisesRegex(EvalError, "automatic Plan no-write authority"):
+        with self.assertRaisesRegex(EvalError, "Plan complexity stays out"):
             validate_discussion_source_text(
                 mutated,
                 self.skill_sources["using-teamwork"],
