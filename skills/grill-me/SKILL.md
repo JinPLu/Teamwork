@@ -25,10 +25,14 @@ concise text question. Teamwork never enables or emulates a host capability.
 A user-originated request establishes the explicit form: Explicit Grill
 authorizes only its supporting `docs/teamwork/` discussion record unless the user
 says no files. That authority covers its lifecycle until revoked, closed, or
-replaced. Short Grill stays artifact-free.
-Create a record only when one
-settled conclusion leaves a distinct comparison, measurement, or decision open
-before the next action.
+replaced. Activation, usefulness, and write authority remain separate. Shortness
+alone does not trigger persistence and cannot veto another usefulness condition;
+a short Grill with no other usefulness trigger stays artifact-free.
+
+Use `artifact-protocol.md` as the sole owner of discussion usefulness and
+lifecycle. Its four independent usefulness triggers are explicit save/resume,
+known handoff or compaction, a settled conclusion with an open discriminator, or
+three real branches. Shortness neither triggers nor vetoes a record.
 
 When that usefulness trigger and discussion authority both hold in an initialized,
 writable project, execute the transaction this turn before user-visible reply,

@@ -124,8 +124,8 @@ check_lean_policy() {
     /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_END -->/ { inside = 0; next }
     inside { print }
   ' "$file" | wc -w | tr -d ' ')"
-  [[ "$policy_words" -le 180 ]] \
-    || fail "$label must remain a compact always-loaded policy ($policy_words > 180)"
+  [[ "$policy_words" -le 210 ]] \
+    || fail "$label must remain a compact always-loaded policy ($policy_words > 210)"
   grep_required "Work within the user's request" "$file" "$label must preserve request scope"
   grep_required 'read-only grants no changes' "$file" \
     "$label must preserve the read-only authority boundary"

@@ -8,6 +8,7 @@ from teamwork_tooling.semantic_review import (
     SemanticReviewError,
     message_sha256,
     trajectory_sha256,
+    validate_accepted_ledger_v2,
     validate_semantic_review,
 )
 
@@ -98,6 +99,44 @@ def sample_review(verdict: str = "ACCEPT") -> dict[str, object]:
         "rationale": "The cited turns support the criterion outcomes and verdict.",
         "confidence": 0.85,
         "timestamp": "2026-07-15T10:30:00Z",
+    }
+
+
+def accepted_ledger_v2_entry(claim_type: str = "SOURCE_PARITY", lane: str = "STATIC_OFFLINE") -> dict[str, object]:
+    provenance: dict[str, object] = {
+        "package_version": "3.4.0",
+        "source_sha256": "a" * 64,
+    }
+    if lane == "HELPER_BLACK_BOX":
+        provenance["helper_test_sha256"] = "b" * 64
+    if lane == "LIVE":
+        provenance.update(
+            {
+                "host": "codex",
+                "model": "test-model",
+                "config_sha256": "c" * 64,
+                "prompt_sha256": "d" * 64,
+                "repeats": 2,
+                "trajectory_sha256": "e" * 64,
+                "review_sha256": "f" * 64,
+            }
+        )
+    if claim_type == "AUTOMATIC_ACTIVATION":
+        provenance["host_activation_event"] = {
+            "trajectory_sha256": "e" * 64,
+            "event": 1,
+        }
+    return {
+        "schema_version": 2,
+        "package_version": "3.4.0",
+        "behavior_claims": [
+            {
+                "type": claim_type,
+                "evidence_lane": lane,
+                "claim_limits": ["Bounded to recorded evidence."],
+                "provenance": provenance,
+            }
+        ],
     }
 
 
@@ -232,6 +271,65 @@ class SemanticReviewContractTests(unittest.TestCase):
         review = sample_review()
         review["confidence"] = True
         self.assert_invalid(review, "confidence must be a number")
+
+
+class AcceptedLedgerV2Tests(unittest.TestCase):
+    def test_accepts_matching_static_helper_and_live_provenance(self) -> None:
+        static = accepted_ledger_v2_entry()
+        helper = accepted_ledger_v2_entry("HELPER_BLACK_BOX", "HELPER_BLACK_BOX")
+        live = accepted_ledger_v2_entry("EXPLICIT_ACTIVATION", "LIVE")
+        validate_accepted_ledger_v2([{"date": "2026-07-15"}, static, helper, live])
+
+    def test_rejects_v1_fallback_after_first_v2_row(self) -> None:
+        with self.assertRaisesRegex(SemanticReviewError, "must remain schema_version 2"):
+            validate_accepted_ledger_v2([accepted_ledger_v2_entry(), {"date": "2026-07-16"}])
+
+    def test_rejects_missing_or_mismatched_behavior_provenance(self) -> None:
+        entry = accepted_ledger_v2_entry()
+        claim = entry["behavior_claims"][0]
+        claim["provenance"].pop("source_sha256")
+        with self.assertRaisesRegex(SemanticReviewError, "requires source_sha256 or skill_manifest_sha256"):
+            validate_accepted_ledger_v2([entry])
+
+        entry = accepted_ledger_v2_entry()
+        entry["behavior_claims"][0]["provenance"]["package_version"] = "3.3.0"
+        with self.assertRaisesRegex(SemanticReviewError, "does not match ledger package_version"):
+            validate_accepted_ledger_v2([entry])
+
+    def test_rejects_claim_type_and_evidence_lane_mismatches(self) -> None:
+        for claim_type, lane in (
+            ("EXPLICIT_ACTIVATION", "STATIC_OFFLINE"),
+            ("HELPER_BLACK_BOX", "STATIC_OFFLINE"),
+            ("SOURCE_PARITY", "HELPER_BLACK_BOX"),
+        ):
+            with self.subTest(claim_type=claim_type, lane=lane):
+                entry = accepted_ledger_v2_entry(claim_type, lane)
+                with self.assertRaisesRegex(
+                    SemanticReviewError, f"evidence_lane does not match {claim_type}"
+                ):
+                    validate_accepted_ledger_v2([entry])
+
+    def test_rejects_live_claim_without_complete_live_provenance(self) -> None:
+        entry = accepted_ledger_v2_entry("EXPLICIT_ACTIVATION", "LIVE")
+        entry["behavior_claims"][0]["provenance"].pop("prompt_sha256")
+        with self.assertRaisesRegex(SemanticReviewError, "missing live fields: prompt_sha256"):
+            validate_accepted_ledger_v2([entry])
+
+    def test_rejects_automatic_activation_without_host_event(self) -> None:
+        entry = accepted_ledger_v2_entry("AUTOMATIC_ACTIVATION", "LIVE")
+        entry["behavior_claims"][0]["provenance"].pop("host_activation_event")
+        with self.assertRaisesRegex(SemanticReviewError, "automatic activation requires LIVE HOST_ACTIVATION_EVENT provenance"):
+            validate_accepted_ledger_v2([entry])
+
+    def test_rejects_host_event_bound_to_another_trajectory(self) -> None:
+        entry = accepted_ledger_v2_entry("AUTOMATIC_ACTIVATION", "LIVE")
+        entry["behavior_claims"][0]["provenance"]["host_activation_event"][
+            "trajectory_sha256"
+        ] = "0" * 64
+        with self.assertRaisesRegex(
+            SemanticReviewError, "host_activation_event trajectory does not match"
+        ):
+            validate_accepted_ledger_v2([entry])
 
 
 if __name__ == "__main__":

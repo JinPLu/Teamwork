@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "description": "Claude Code adapter skills for evidence-grounded research, debugging, planning, execution, review, and long-running goals.",
   "author": {
     "name": "JinPLu",
@@ -35,7 +35,7 @@
       "Research this problem from primary sources and project evidence, then recommend the next safe action.",
       "Diagnose this reproducible failure with logs or runtime evidence before changing code.",
       "Create a scoped, reviewable plan with sourced required values and explicit verification.",
-      "Execute the accepted scope, verify the result, and report any genuine blocker.",
+      "Execute authorized scope directly. A plan is optional. Authority is separate from plan acceptance. Verify only the changed path or a named protected boundary. Re-enter Plan only when new evidence changes accepted scope or criteria. Fresh review only when the user asks or an accepted risk gate requires it.",
       "Use independent Claude Code Task subagents when the work splits cleanly, while keeping integration and final verification with the main agent.",
       "Strictly review this result for unsupported claims, risky fallbacks, and unnecessary complexity.",
       "Initialize or refresh Teamwork for one selected repository without changing unrelated user or project configuration."

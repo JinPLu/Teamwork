@@ -30,6 +30,22 @@ ACTIVATION_SOURCE_KINDS = {
     "EXPLICIT_INVOCATION",
     "HOST_ACTIVATION_EVENT",
 }
+ACCEPTED_LEDGER_V2 = 2
+BEHAVIOR_EVIDENCE_LANES = {"STATIC_OFFLINE", "HELPER_BLACK_BOX", "LIVE"}
+BEHAVIOR_CLAIMS = {
+    "SOURCE_PARITY",
+    "HELPER_BLACK_BOX",
+    "AVAILABILITY_ONLY",
+    "EXPLICIT_ACTIVATION",
+    "AUTOMATIC_ACTIVATION",
+}
+BEHAVIOR_CLAIM_LANES = {
+    "SOURCE_PARITY": {"STATIC_OFFLINE"},
+    "HELPER_BLACK_BOX": {"HELPER_BLACK_BOX"},
+    "AVAILABILITY_ONLY": {"STATIC_OFFLINE", "LIVE"},
+    "EXPLICIT_ACTIVATION": {"LIVE"},
+    "AUTOMATIC_ACTIVATION": {"LIVE"},
+}
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 UTC_TIMESTAMP_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$"
@@ -331,6 +347,126 @@ def _rubric_contract(rubric: Any) -> tuple[str, dict[str, Any], list[str]]:
             raise SemanticReviewError(f"rubric contains duplicate criterion: {criterion_id}")
         criteria.append(criterion_id)
     return rubric_id, dict(score), criteria
+
+
+def _require_sha256(value: Any, field: str) -> str:
+    if not isinstance(value, str) or not SHA256_RE.fullmatch(value):
+        raise SemanticReviewError(f"{field} must be lowercase SHA-256")
+    return value
+
+
+def _validate_behavior_provenance(
+    claim: Mapping[str, Any], field: str, package_version: str
+) -> None:
+    _require_exact_fields(
+        claim,
+        {"type", "evidence_lane", "claim_limits", "provenance"},
+        field,
+    )
+    claim_type = claim["type"]
+    if claim_type not in BEHAVIOR_CLAIMS:
+        raise SemanticReviewError(f"{field}.type has unknown behavior claim: {claim_type!r}")
+    lane = claim["evidence_lane"]
+    if lane not in BEHAVIOR_EVIDENCE_LANES:
+        raise SemanticReviewError(f"{field}.evidence_lane has unknown lane: {lane!r}")
+    if lane not in BEHAVIOR_CLAIM_LANES[claim_type]:
+        expected = ", ".join(sorted(BEHAVIOR_CLAIM_LANES[claim_type]))
+        raise SemanticReviewError(
+            f"{field}.evidence_lane does not match {claim_type}; expected: {expected}"
+        )
+    limits = claim["claim_limits"]
+    if not isinstance(limits, list) or not limits:
+        raise SemanticReviewError(f"{field}.claim_limits must be a non-empty list")
+    for index, limit in enumerate(limits):
+        _require_nonempty_string(limit, f"{field}.claim_limits[{index}]")
+    provenance = _require_object(claim["provenance"], f"{field}.provenance")
+    if _require_nonempty_string(provenance.get("package_version"), f"{field}.provenance.package_version") != package_version:
+        raise SemanticReviewError(f"{field}.provenance.package_version does not match ledger package_version")
+
+    if lane in {"STATIC_OFFLINE", "HELPER_BLACK_BOX"}:
+        source_hash = provenance.get("source_sha256")
+        manifest_hash = provenance.get("skill_manifest_sha256")
+        if source_hash is None and manifest_hash is None:
+            raise SemanticReviewError(f"{field}.provenance requires source_sha256 or skill_manifest_sha256")
+        if source_hash is not None:
+            _require_sha256(source_hash, f"{field}.provenance.source_sha256")
+        if manifest_hash is not None:
+            _require_sha256(manifest_hash, f"{field}.provenance.skill_manifest_sha256")
+    if lane == "HELPER_BLACK_BOX":
+        _require_sha256(provenance.get("helper_test_sha256"), f"{field}.provenance.helper_test_sha256")
+    if lane == "LIVE":
+        required = {
+            "host",
+            "model",
+            "config_sha256",
+            "prompt_sha256",
+            "repeats",
+            "trajectory_sha256",
+            "review_sha256",
+        }
+        missing = sorted(required - set(provenance))
+        if missing:
+            raise SemanticReviewError(f"{field}.provenance missing live fields: {', '.join(missing)}")
+        _require_nonempty_string(provenance["host"], f"{field}.provenance.host")
+        _require_nonempty_string(provenance["model"], f"{field}.provenance.model")
+        for name in ("config_sha256", "prompt_sha256", "trajectory_sha256", "review_sha256"):
+            _require_sha256(provenance[name], f"{field}.provenance.{name}")
+        repeats = provenance["repeats"]
+        if not isinstance(repeats, int) or isinstance(repeats, bool) or repeats < 1:
+            raise SemanticReviewError(f"{field}.provenance.repeats must be a positive integer")
+    if claim_type == "AUTOMATIC_ACTIVATION":
+        if lane != "LIVE" or not isinstance(provenance.get("host_activation_event"), dict):
+            raise SemanticReviewError(
+                f"{field} automatic activation requires LIVE HOST_ACTIVATION_EVENT provenance"
+            )
+        event = provenance["host_activation_event"]
+        _require_exact_fields(event, {"trajectory_sha256", "event"}, f"{field}.provenance.host_activation_event")
+        event_trajectory = _require_sha256(
+            event["trajectory_sha256"],
+            f"{field}.provenance.host_activation_event.trajectory_sha256",
+        )
+        if event_trajectory != provenance["trajectory_sha256"]:
+            raise SemanticReviewError(
+                f"{field}.provenance.host_activation_event trajectory does not match live trajectory_sha256"
+            )
+        if not isinstance(event["event"], int) or isinstance(event["event"], bool) or event["event"] < 1:
+            raise SemanticReviewError(f"{field}.provenance.host_activation_event.event must be a positive integer")
+
+
+def validate_accepted_ledger_v2(entries: Any) -> None:
+    """Validate append-only accepted-ledger v2 behavior provenance.
+
+    Historical v1 rows remain valid. Once a v2 row appears, every following row
+    must remain v2 so a later release cannot silently shed behavior provenance.
+    """
+
+    if not isinstance(entries, list) or not entries:
+        raise SemanticReviewError("accepted ledger entries must be a non-empty list")
+    v2_seen = False
+    for index, raw_entry in enumerate(entries, start=1):
+        field = f"accepted ledger[{index}]"
+        entry = _require_object(raw_entry, field)
+        version = entry.get("schema_version", 1)
+        if version == ACCEPTED_LEDGER_V2:
+            v2_seen = True
+            missing = sorted({"schema_version", "package_version", "behavior_claims"} - set(entry))
+            if missing:
+                raise SemanticReviewError(f"{field} missing v2 fields: {', '.join(missing)}")
+            package_version = _require_nonempty_string(entry["package_version"], f"{field}.package_version")
+            claims = entry["behavior_claims"]
+            if not isinstance(claims, list) or not claims:
+                raise SemanticReviewError(f"{field}.behavior_claims must be a non-empty list")
+            for claim_index, raw_claim in enumerate(claims):
+                _validate_behavior_provenance(
+                    _require_object(raw_claim, f"{field}.behavior_claims[{claim_index}]"),
+                    f"{field}.behavior_claims[{claim_index}]",
+                    package_version,
+                )
+            continue
+        if v2_seen:
+            raise SemanticReviewError(f"{field} must remain schema_version {ACCEPTED_LEDGER_V2} after the first v2 row")
+        if version != 1:
+            raise SemanticReviewError(f"{field} has unsupported schema_version: {version!r}")
 
 
 def _validate_activation_evidence(

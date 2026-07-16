@@ -16,9 +16,9 @@ COMPACTNESS_LIMITS = {
     # These are ceilings, not a deletion incentive. Source-contract tests protect
     # the minimum behavior-bearing instructions independently of this guard.
     "union": {"words": 20500, "bytes": 150000},
-    "codex": {"words": 180, "bytes": 1800},
-    "cursor": {"words": 180, "bytes": 1800},
-    "claude": {"words": 180, "bytes": 1800},
+    "codex": {"words": 210, "bytes": 1800},
+    "cursor": {"words": 210, "bytes": 1800},
+    "claude": {"words": 210, "bytes": 1800},
 }
 
 

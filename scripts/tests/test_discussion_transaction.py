@@ -322,6 +322,26 @@ Choose the evidence that should lead the next reply.
         readme = readme.replace("- Active discussion route: none", f"- Active discussion route: {ARTIFACT}")
         (self.memory / "README.md").write_text(readme, encoding="utf-8")
 
+    def add_opaque_decision_map(self, path: str = ARTIFACT) -> str:
+        decision_map = """## Decision map
+
+```mermaid
+flowchart LR
+    Start((Observed state))
+    Choice{User-owned choice}
+    Start -->|changes action| Choice
+```
+
+"""
+        artifact = self.project / path
+        artifact.write_text(
+            artifact.read_text(encoding="utf-8").replace(
+                "## Continue here\n", decision_map + "## Continue here\n"
+            ),
+            encoding="utf-8",
+        )
+        return decision_map
+
     def test_inspect_defaults_project_root_to_working_directory(self) -> None:
         result = subprocess.run(
             [sys.executable, str(CLI), "inspect"],
@@ -631,6 +651,7 @@ os.mkdir("teamwork", 0o755, dir_fd=docs_fd)
         common_record = {
             "title", "search_keys", "abstract", "linked_artifacts", "summary",
             "goal", "settled", "still_open", "key_evidence", "continue_here",
+            "decision_map",
         }
         expected = {
             "create": ("create", common_record | {"topic", "slug"}, set()),
@@ -659,6 +680,13 @@ os.mkdir("teamwork", 0o755, dir_fd=docs_fd)
                     self.assertEqual(template["schema_version"], 1)
                     self.assertEqual(template["operation"], operation)
                     self.assertEqual(set(template["record"]), record_fields)
+                    self.assertEqual(
+                        template["record"]["decision_map"],
+                        {
+                            "action": "omit" if lifecycle == "create" else "preserve",
+                            "replacement": None,
+                        },
+                    )
                     self.assertEqual(
                         set(template["current_summary"]),
                         {"last_updated", "current_focus", "progress_summary", "latest_result", "next_action"},
@@ -794,6 +822,223 @@ Choose the evidence that should lead the next reply.
         self.assertIn("- Active discussion: none.", (self.memory / "current.md").read_text(encoding="utf-8"))
         self.assertIn("- Active discussion route: none", (self.memory / "README.md").read_text(encoding="utf-8"))
         self.validate()
+
+    def test_inspect_returns_complete_current_summary_and_optional_map_state(self) -> None:
+        initial = json.loads(self.inspect_cli().stdout)
+        self.assertEqual(
+            initial["current_summary"],
+            {
+                "last_updated": "2026-07-15",
+                "current_focus": "Initial Teamwork project setup.",
+                "progress_summary": "Teamwork runtime memory was initialized for this project.",
+                "latest_result": "Project instructions and Teamwork runtime memory are ready for use.",
+                "next_action": "Replace this digest when material project state changes.",
+            },
+        )
+        self.activate_fixture()
+        self.add_opaque_decision_map()
+
+        inspected = self.inspect_cli()
+
+        self.assertEqual(inspected.returncode, 0, inspected.stderr)
+        payload = json.loads(inspected.stdout)
+        self.assertEqual(payload["active"]["artifact"]["decision_map"], {"present": True})
+        self.assertEqual(payload["current_summary"], initial["current_summary"])
+
+    def test_omitted_decision_map_preserves_opaque_block_on_update_and_close(self) -> None:
+        self.activate_fixture()
+        decision_map = self.add_opaque_decision_map()
+
+        update = self.run_cli(self.spec("update", summary="Updated while preserving the map."))
+
+        self.assertEqual(update.returncode, 0, update.stderr)
+        self.assertIn(decision_map, (self.project / ARTIFACT).read_text(encoding="utf-8"))
+        close = self.run_cli(self.spec("close"))
+        self.assertEqual(close.returncode, 0, close.stderr)
+        self.assertIn(decision_map, (self.project / ARTIFACT).read_text(encoding="utf-8"))
+        self.validate()
+
+    def test_typed_decision_map_replaces_and_null_clears_existing_block(self) -> None:
+        self.activate_fixture()
+        opaque = self.add_opaque_decision_map()
+        replacement = {
+            "direction": "TB",
+            "nodes": [
+                {"id": "Observed", "label": "Observed evidence"},
+                {"id": "Result", "label": "Working result"},
+            ],
+            "edges": [{"from": "Observed", "to": "Result", "label": "supports"}],
+        }
+
+        replaced = self.run_cli(self.spec("update", decision_map=replacement))
+
+        self.assertEqual(replaced.returncode, 0, replaced.stderr)
+        artifact = (self.project / ARTIFACT).read_text(encoding="utf-8")
+        self.assertNotIn(opaque, artifact)
+        self.assertIn('Observed["Observed evidence"]', artifact)
+        cleared = self.run_cli(self.spec("update", decision_map=None))
+        self.assertEqual(cleared.returncode, 0, cleared.stderr)
+        self.assertNotIn("## Decision map", (self.project / ARTIFACT).read_text(encoding="utf-8"))
+        self.validate()
+
+    def test_schema_decision_map_actions_preserve_replace_and_clear(self) -> None:
+        self.activate_fixture()
+        opaque = self.add_opaque_decision_map()
+
+        def schema_request(action: str, replacement: object = None) -> dict[str, object]:
+            schema = subprocess.run(
+                [sys.executable, str(CLI), "schema", "update"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(schema.returncode, 0, schema.stderr)
+            request = json.loads(schema.stdout)
+            base = self.spec("update")
+            request["expected_revision"] = base["expected_revision"]
+            for key, value in base["record"].items():
+                request["record"][key] = value
+            request["record"]["decision_map"] = {
+                "action": action,
+                "replacement": replacement,
+            }
+            request["current_summary"] = base["current_summary"]
+            return request
+
+        preserved = self.run_cli(schema_request("preserve"))
+        self.assertEqual(preserved.returncode, 0, preserved.stderr)
+        self.assertIn(opaque, (self.project / ARTIFACT).read_text(encoding="utf-8"))
+
+        replacement = {
+            "direction": "LR",
+            "nodes": [
+                {"id": "Before", "label": "Before state"},
+                {"id": "After", "label": "After state"},
+            ],
+            "edges": [{"from": "Before", "to": "After", "label": "updates"}],
+        }
+        replaced = self.run_cli(schema_request("replace", replacement))
+        self.assertEqual(replaced.returncode, 0, replaced.stderr)
+        artifact = (self.project / ARTIFACT).read_text(encoding="utf-8")
+        self.assertNotIn(opaque, artifact)
+        self.assertIn('Before["Before state"]', artifact)
+
+        cleared = self.run_cli(schema_request("clear"))
+        self.assertEqual(cleared.returncode, 0, cleared.stderr)
+        self.assertNotIn("## Decision map", (self.project / ARTIFACT).read_text(encoding="utf-8"))
+        self.validate()
+
+    def test_replace_preserves_map_applies_to_and_stable_supersession_lineage(self) -> None:
+        self.activate_fixture()
+        decision_map = self.add_opaque_decision_map()
+        index = self.load_index()
+        active = index["entries"][-1]
+        active["applies_to"] = ["skills/using-teamwork/", "README.md"]
+        active["supersedes"] = [
+            "docs/teamwork/discussion/2026-07-13-earlier-wording.md",
+            ARTIFACT,
+        ]
+        (self.memory / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
+
+        replaced = self.run_cli(
+            self.spec("replace", topic="successor-wording", slug="successor-wording")
+        )
+
+        self.assertEqual(replaced.returncode, 0, replaced.stderr)
+        successor = json.loads(replaced.stdout)["path"]
+        new_entry = self.load_index()["entries"][-1]
+        self.assertEqual(new_entry["applies_to"], active["applies_to"])
+        self.assertEqual(
+            new_entry["supersedes"],
+            ["docs/teamwork/discussion/2026-07-13-earlier-wording.md", ARTIFACT],
+        )
+        self.assertIn(decision_map, (self.project / successor).read_text(encoding="utf-8"))
+
+        updated = self.run_cli(self.spec("update", summary="Successor updated."))
+        self.assertEqual(updated.returncode, 0, updated.stderr)
+        self.assertEqual(self.load_index()["entries"][-1]["applies_to"], active["applies_to"])
+        closed = self.run_cli(self.spec("close"))
+        self.assertEqual(closed.returncode, 0, closed.stderr)
+        self.assertEqual(self.load_index()["entries"][-1]["applies_to"], active["applies_to"])
+        self.validate()
+
+    def test_unknown_active_entry_metadata_fails_before_marker_without_changes(self) -> None:
+        self.activate_fixture()
+        index = self.load_index()
+        index["entries"][-1]["opaque_extension"] = {"must": "not be dropped"}
+        (self.memory / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
+        request = self.spec("update")
+        before = self.filesystem_state()
+
+        result = self.run_cli(request)
+
+        self.assertNotEqual(result.returncode, 0)
+        error = json.loads(result.stderr)
+        self.assertEqual(error["category"], "PREWRITE_SAFE")
+        self.assertIn("opaque_extension", error["message"])
+        self.assertFalse((self.memory / ".discussion-transaction.json").exists())
+        self.assertEqual(self.filesystem_state(), before)
+
+    def test_create_allocates_third_suffix_without_touching_occupants(self) -> None:
+        discussion = self.memory / "discussion"
+        discussion.mkdir()
+        base = self.project / ARTIFACT
+        base.write_text("filesystem occupant\n", encoding="utf-8")
+        indexed_path = "docs/teamwork/discussion/2026-07-15-output-wording-2.md"
+        indexed_artifact = self.project / indexed_path
+        indexed_artifact.write_text(self.artifact("accepted"), encoding="utf-8")
+        indexed_entry = self.entry("Historical indexed occupant.")
+        indexed_entry.update(
+            kind="discussion",
+            path=indexed_path,
+            status="accepted",
+            currentness="historical",
+            authority="supporting",
+            evidence_paths=[indexed_path],
+        )
+        self.write_index([copy.deepcopy(self.initial_entry), indexed_entry], active=None)
+        base_before = base.read_bytes()
+        indexed_before = indexed_artifact.read_bytes()
+
+        result = self.run_cli(self.spec("create"))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        allocated = "docs/teamwork/discussion/2026-07-15-output-wording-3.md"
+        self.assertEqual(json.loads(result.stdout)["path"], allocated)
+        self.assertEqual(base.read_bytes(), base_before)
+        self.assertEqual(indexed_artifact.read_bytes(), indexed_before)
+        self.assertTrue((self.project / allocated).is_file())
+        self.validate()
+
+    def test_malformed_historical_artifact_is_prewrite_safe_without_marker(self) -> None:
+        discussion = self.memory / "discussion"
+        discussion.mkdir()
+        historical_path = "docs/teamwork/discussion/2026-07-14-historical-wording.md"
+        historical = self.project / historical_path
+        historical.write_text(
+            self.artifact("accepted").replace("## Continue here", "## Missing continue"),
+            encoding="utf-8",
+        )
+        historical_entry = self.entry("Malformed historical checkpoint.")
+        historical_entry.update(
+            kind="discussion",
+            path=historical_path,
+            status="accepted",
+            currentness="historical",
+            authority="supporting",
+            evidence_paths=[historical_path],
+        )
+        self.write_index([copy.deepcopy(self.initial_entry), historical_entry], active=None)
+        request = self.spec("create", expected_revision="0" * 64)
+        before = self.filesystem_state()
+
+        result = self.run_cli(request)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(json.loads(result.stderr)["category"], "PREWRITE_SAFE")
+        self.assertFalse((self.memory / ".discussion-transaction.json").exists())
+        self.assertEqual(self.filesystem_state(), before)
 
     def test_superseded_close_is_semantic_and_clears_all_anchors(self) -> None:
         self.activate_fixture()

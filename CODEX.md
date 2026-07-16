@@ -8,11 +8,14 @@ delegation, or verification will improve the result without slowing down simple
 requests. Codex owns skill discovery, tool availability, permission prompts,
 interaction UI, and the behavior produced by the selected model.
 
-For clear authorized change/build work, Teamwork sends Codex straight to the
-shortest real result path. Plans, tests, validation, and review are support only:
-they must unblock delivery, distinguish the current failure, check changed
-behavior, or protect a named high-risk boundary. An available real run is never
-replaced by a proxy check, and work stops when the requested result is obtained.
+Clear scope, criteria, and effect authority send Codex change/build work directly
+to the shortest real result path; an accepted plan is optional and never supplies
+missing authority. Return to Plan only when new evidence changes accepted scope
+or criteria. Plans, tests, validation, and review are support only: they must
+unblock delivery, distinguish the current failure, check the changed path, or
+protect a named high-risk boundary. Fresh review occurs only when the user or an
+accepted risk gate requires it; an available real run is never replaced by a
+proxy check, and work stops when the requested result is obtained.
 
 ## Install
 
@@ -90,8 +93,10 @@ when you ask, rather than narrating internal workflow labels or version details.
 In a repository initialized for Teamwork, when the user has authorized writes,
 the runtime can write, and an explicit question-first discussion leaves a next
 comparison or decision open, Teamwork can save one compact summary of the goal,
-settled choices, open question, key evidence, and continue point. Ordinary
-requests do not need one.
+settled choices, open question, key evidence, and continue point. Explicit
+save/resume, an approaching handoff or compaction, or three real branches also
+make it useful; shortness neither triggers nor vetoes it. Ordinary requests do
+not need one.
 
 Codex Plan mode and `teamwork-plan` share one planning path: Codex owns the host
 UI and plan state, while Teamwork grounds scope, required values, and

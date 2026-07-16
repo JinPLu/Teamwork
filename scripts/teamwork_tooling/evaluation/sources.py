@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from typing import Mapping
 
 from .contracts import EvalError, ROOT, SKILL_SOURCE_CONTRACTS
 
@@ -465,6 +466,10 @@ def validate_discussion_source_text(
         raise EvalError(f"{path}: use the singular discussion path")
     if "`docs/teamwork/discussion/YYYY-MM-DD-<slug>.md`" not in artifact_protocol_text:
         raise EvalError(f"{path}: preserve the singular discussion path")
+    if re.search(r"(?i)\bshort grill stays artifact-free\b", grill_text):
+        raise EvalError(
+            "skills/grill-me/SKILL.md: absolute short-Grill rule must not veto another usefulness trigger"
+        )
 
     source_contracts = (
         (
@@ -474,7 +479,10 @@ def validate_discussion_source_text(
                 ("user-originated explicit-Grill provenance", "a user-originated request establishes the explicit form"),
                 ("narrow explicit-Grill write authority", "explicit grill authorizes only its supporting `docs/teamwork/` discussion record unless the user says no files"),
                 ("Plan complexity stays out", "plan complexity, artifact usefulness, and ordinary clarification do not activate grill or create authority"),
-                ("short Grill artifact-free", "short grill stays artifact-free"),
+                (
+                    "shortness no-trigger/no-veto",
+                    "shortness alone does not trigger persistence and cannot veto another usefulness condition",
+                ),
                 ("entry-time protocol load", "`skills/using-teamwork/references/artifact-protocol.md` completely at entry"),
                 (
                     "pre-reply persistence gate",
@@ -514,6 +522,7 @@ def validate_discussion_source_text(
                 ),
                 ("three-branch trigger", "one decision has at least three real branches"),
                 ("non-proxy trigger boundary", "time, word count, and a short grill never trigger persistence"),
+                ("shortness no veto", "shortness cannot veto another condition"),
                 ("usefulness-authority separation", "these conditions decide usefulness, never authority"),
                 ("user-originated natural question-first authority", "a user-originated challenge or natural question-first request is explicit grill"),
                 ("Plan complexity no activation", "plan complexity and artifact usefulness never activate grill or grant discussion-record authority"),
@@ -529,6 +538,10 @@ def validate_discussion_source_text(
                 ("inspect sole read path", "its result is the only discovery and reading source for canonical discussion state, anchors, and artifacts"),
                 ("no direct canonical reads", "do not directly read `index.json`, `current.md`, `readme.md`, or a discussion artifact"),
                 ("self-describing request schema", "run `schema <operation>` and fill exactly its json shape"),
+                (
+                    "decision-map action grammar",
+                    "`decision_map.action` is `preserve`, `clear`, `replace`, or create-only `omit`",
+                ),
                 ("no helper-source inference", "never inspect helper source"),
                 ("semantic helper rendering", "the helper derives the path, index entry, and rendered artifact"),
                 ("opaque revision reuse", "reuse the opaque `revision` unchanged"),
@@ -668,6 +681,69 @@ def validate_release_boundary_source_text(
         )
 
 
+OUTCOME_FIRST_PARITY_SOURCES = {
+    "skills/using-teamwork/references/workflow-contract.md": "skills/using-teamwork/references/workflow-contract.md",
+    "skills/teamwork-execute/SKILL.md": "skills/teamwork-execute/SKILL.md",
+    "skills/using-teamwork/references/routing-policy.md": "skills/using-teamwork/references/routing-policy.md",
+    "skills/using-teamwork/references/role-playbook.md": "skills/using-teamwork/references/role-playbook.md",
+    "scripts/install/policy.sh": "scripts/install/policy.sh",
+    "templates/codex-agents/teamwork-worker.toml": "templates/codex-agents/teamwork-worker.toml",
+    "templates/cursor-agents/worker.md": "templates/cursor-agents/worker.md",
+    "templates/claude-agents/worker.md": "templates/claude-agents/worker.md",
+    ".claude-plugin/plugin.json": ".claude-plugin/plugin.json",
+    ".codex-plugin/plugin.json": ".codex-plugin/plugin.json",
+}
+
+OUTCOME_FIRST_PARITY_CLAUSES = (
+    ("plan optional", "a plan is optional"),
+    ("authority separate from plan acceptance", "authority is separate from plan acceptance"),
+    ("focused verification", "verify only the changed path or a named protected boundary"),
+    ("bounded Plan re-entry", "re-enter plan only when new evidence changes accepted scope or criteria"),
+    ("risk-gated review", "fresh review only when the user asks or an accepted risk gate requires it"),
+)
+OUTCOME_FIRST_COMPACT_POLICY_CLAUSES = {
+    "plan optional": "plan optional",
+    "authority separate from plan acceptance": "authority separate from plan acceptance",
+    "focused verification": "verify changed path or named boundary",
+    "bounded Plan re-entry": "replan only for new accepted-scope/criteria evidence",
+    "risk-gated review": "fresh review only on user request or accepted risk gate",
+}
+
+OUTCOME_FIRST_OPPOSITES = (
+    ("mandatory plan", re.compile(r"(?i)\b(?:a |an )?plan\s+(?:is\s+)?(?:always\s+)?(?:mandatory|required)\b")),
+    ("every full suite", re.compile(r"(?i)\b(?:every|each|always)\b[^.\n]{0,80}\bfull(?:\s+test)?\s+suite\b")),
+    ("automatic fresh/final review", re.compile(r"(?i)\b(?:automatically|always|every)\b[^.\n]{0,80}\b(?:fresh|final|independent)\s+review\b")),
+    ("confirmation grants authority", re.compile(r"(?i)\bconfirmation\s+(?:grants|authorizes)\s+(?:implementation|write|effect|release|execution)\s+authority\b")),
+)
+
+
+def validate_outcome_first_source_parity(source_texts: Mapping[str, str]) -> None:
+    """Require every producer to preserve and not contradict outcome-first rules."""
+
+    expected_paths = set(OUTCOME_FIRST_PARITY_SOURCES)
+    actual_paths = set(source_texts)
+    missing = sorted(expected_paths - actual_paths)
+    unknown = sorted(actual_paths - expected_paths)
+    if missing or unknown:
+        details = []
+        if missing:
+            details.append(f"missing sources: {', '.join(missing)}")
+        if unknown:
+            details.append(f"unknown sources: {', '.join(unknown)}")
+        raise EvalError(f"outcome-first parity source set mismatch ({'; '.join(details)})")
+    for path, text in source_texts.items():
+        normalized = normalize_semantic_text(text)
+        for label, clause in OUTCOME_FIRST_PARITY_CLAUSES:
+            accepted = [clause]
+            if path == "scripts/install/policy.sh":
+                accepted.append(OUTCOME_FIRST_COMPACT_POLICY_CLAUSES[label])
+            if not any(normalize_semantic_text(item) in normalized for item in accepted):
+                raise EvalError(f"{path}: outcome-first parity must preserve {label}")
+        for label, pattern in OUTCOME_FIRST_OPPOSITES:
+            if pattern.search(text):
+                raise EvalError(f"{path}: outcome-first parity rejects {label}")
+
+
 def validate_semantic_sources() -> None:
     for skill, (path, _) in SKILL_SOURCE_CONTRACTS.items():
         if skill in {"teamwork-review", "teamwork-goal"}:
@@ -742,4 +818,10 @@ def validate_semantic_sources() -> None:
         ),
         (ROOT / "CODEX.md").read_text(encoding="utf-8"),
         (ROOT / "skills/using-teamwork/references/changelog-guide.md").exists(),
+    )
+    validate_outcome_first_source_parity(
+        {
+            path: (ROOT / relative_path).read_text(encoding="utf-8")
+            for path, relative_path in OUTCOME_FIRST_PARITY_SOURCES.items()
+        }
     )

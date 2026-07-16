@@ -11,11 +11,11 @@ Teamwork is one shared skill package adapted to Codex, Cursor, and Claude Code. 
 ## What You Get
 
 - **Evidence-grounded research:** Use primary sources, project files, and real configuration instead of inventing paths, ports, models, or parameters.
-- **Real result first:** Modify, generate, or run what the user actually requested; add support checks only for the current blocker, changed behavior, or a named high-risk boundary, then stop when the result appears.
+- **Real result first:** Clear scope, acceptance criteria, and effect authority permit direct modification, generation, or execution; an accepted plan is optional and never supplies authority. Return to Plan only when new evidence changes accepted scope or criteria. Check only the changed path or a named high-risk boundary, stop when the result appears, and use independent review only when the user or an accepted risk gate requires it.
 - **Questions only when needed:** Inspect discoverable facts first and ask only about decisions that change the outcome, scope, acceptance, or authority.
 - **Bounded collaboration:** Use subagents only when work splits cleanly; the main agent keeps ownership of scope and integration without replaying completed work.
 - **Real-path completion:** Prefer the actual artifact, command, or runtime result; plans, mocks, static checks, and proxy tests cannot turn an unrun target into completion.
-- **Recoverable discussions:** In an initialized repository where the user has authorized writes and the runtime can write, an explicit request to be questioned or challenged may save one compact summary of the goal, settled choices, open question, key evidence, and continue point for a later task. An ordinary Plan does not automatically enter Grill or write a discussion record; ordinary replies do not grow merely to leave one.
+- **Recoverable discussions:** In an initialized repository where the user has authorized writes and the runtime can write, an explicit request to be questioned or challenged may save one compact summary of the goal, settled choices, open question, key evidence, and continue point for a later task. Any one of explicit save/resume, an approaching handoff or compaction, a settled conclusion with an open discriminator, or three real branches makes it useful; shortness neither triggers nor vetoes it. An ordinary Plan does not automatically enter Grill or write a discussion record.
 
 Teamwork is a good fit for literature and field research, technical evaluation, complex plans, reproducible failures, CI, cross-file implementation, strict review, and “keep going until it passes” work. One-line facts and obvious small edits do not get forced into a workflow.
 

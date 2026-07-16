@@ -20,37 +20,37 @@ dependent action.
 
 ## Do And Boundaries
 
-Inspect only the owner, flow, state, and invariants needed for the next safe
-change. Modify the current producer path, avoiding masking wrappers, fallbacks,
-or guessed state. Preserve unrelated changes; delegate only disjoint work.
+Inspect only the owner, state, and invariants needed. Modify the current producer;
+avoid masking wrappers, fallbacks, or guessed state. Preserve unrelated changes;
+delegate disjoint work.
 
-Reach the shortest safe real run or artifact as early as possible. Use an
-auxiliary test, build, review, or inspection only when it unlocks the next
-change, distinguishes the current failure, directly checks changed behavior, or
-protects a named high-risk boundary. Never substitute plan/mock/static success
-for an available real path. Before broadening work, classify discoveries:
+Reach the shortest safe real run or artifact as early as possible. Verify only the changed path
+or a named protected boundary. Other checks may only unlock change or distinguish
+failure. Never substitute plan/mock/static success for an available real path.
+Before broadening, classify discoveries:
 
 - `regression` or `accepted_scope_violation`: fix in scope or stop;
 - `pre_existing`: record without attributing or repairing;
 - `out_of_scope`: pause and route through the Ask Gate; or
 - `suggestion`: record without editing.
 
-On a real failure, fix the first result blocker and rerun the same real path. Use
-Debug only while uncertainty prevents a safe fix. Reuse unchanged evidence;
-repeat only after a relevant code/environment change, new failure or hypothesis,
-or named boundary. Report material results/blockers; remove temporary
-instrumentation and diff slop.
+On failure, fix the first blocker and rerun the same real path. Use Debug only
+while uncertainty prevents a safe fix. Reuse unchanged evidence; repeat only
+after relevant change, new failure or hypothesis, or a named boundary. Report
+blockers; remove instrumentation and diff slop.
 
 ## Done When
 
-The requested result is observed on the real path, or the nearest available
-direct path is truthfully blocked. With no unchecked named boundary, stop.
+Stop when the requested result is observed or the nearest direct path is
+truthfully blocked. With no unchecked named boundary, stop.
 
 ## Escalate
 
-When required state or authority is absent, apply the Ask Gate through the root
-before blocking. Stop when new evidence invalidates scope or a change would
-affect protected/public behavior; route back to research, debug, or plan.
+Apply the Ask Gate through the root only when state or authority is absent.
+Authority is separate from plan acceptance. Re-enter Plan only when new evidence
+changes accepted scope or criteria. Fresh review only when the user asks or an
+accepted risk gate requires it. Protected/public changes require direct boundary
+evidence.
 
 ## Conditional Protocols
 

@@ -57,10 +57,12 @@ request to be questioned, challenged, or grilled expresses question-first
 intent and may select `grill-me`; otherwise Teamwork asks only for required
 input or a material user-owned decision that it cannot discover safely.
 
-Clear authorized change/build work goes directly to the shortest real result
-path. Planning, tests, validation, and review are support only; an available
-real run cannot be replaced by a proxy check, and work stops when the requested
-result is obtained unless a named high-risk boundary remains.
+Clear scope, criteria, and effect authority send change/build work directly to
+the shortest real result path; an accepted plan is optional and never supplies
+missing authority. Return to Plan only when new evidence changes accepted scope
+or criteria. Planning, tests, validation, and review are support only: verify
+only the changed path or a named high-risk boundary, and use fresh review only
+when the user or an accepted risk gate requires it.
 
 For planning, Teamwork grounds scope, required values, and verification in
 evidence. Entering or confirming a plan authorizes neither implementation nor
@@ -75,8 +77,10 @@ when you ask, rather than narrating internal workflow labels or version details.
 In a repository initialized for Teamwork, when the user has authorized writes,
 the runtime can write, and an explicit question-first discussion leaves a next
 comparison or decision open, Teamwork can save one compact summary of the goal,
-settled choices, open question, key evidence, and continue point. Ordinary
-requests do not need one.
+settled choices, open question, key evidence, and continue point. Explicit
+save/resume, an approaching handoff or compaction, or three real branches also
+make it useful; shortness neither triggers nor vetoes it. Ordinary requests do
+not need one.
 
 ## Subagents
 

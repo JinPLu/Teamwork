@@ -16,7 +16,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from teamwork_tooling import live_canary
-from teamwork_tooling.semantic_review import trajectory_sha256
+from teamwork_tooling.semantic_review import trajectory_sha256, validate_accepted_ledger_v2
 
 
 RUBRIC_PATH = ROOT / "evals/teamwork/rubrics/teamwork-live-semantic-v1.json"
@@ -232,6 +232,7 @@ class LiveCanaryRunTests(unittest.TestCase):
         self.assertEqual(manifest["arm"], "opaque-candidate")
         self.assertEqual(manifest["package_version"], "9.9.9")
         self.assertEqual(manifest["host"]["codex_version"], "codex-cli 0.test")
+        self.assertEqual(manifest["repeats"], 1)
         self.assertEqual(stat.S_IMODE(manifest_path.stat().st_mode), 0o400)
         self.assertEqual(stat.S_IMODE(self.review_dir.stat().st_mode), 0o700)
 
@@ -320,6 +321,7 @@ class LiveCanaryFinalizeTests(unittest.TestCase):
             "record_type": "teamwork_installed_canary_manifest",
             "package_version": "9.9.9",
             "profile": "performance-first",
+            "repeats": 1,
             "host": {"codex_version": "codex-cli 0.test"},
             "activation_evidence": {
                 "claim": "AVAILABILITY_ONLY",
@@ -406,6 +408,37 @@ class LiveCanaryFinalizeTests(unittest.TestCase):
         self.assertIn("usage", result)
         self.assertIn("reported_costs", result)
         self.assertIn("trajectory_sha256", result["hashes"])
+        self.assertIn("prompt_sha256", result["hashes"])
+        self.assertEqual(
+            result["provenance"],
+            {
+                "package_version": "9.9.9",
+                "evidence_lane": "LIVE",
+                "host": "codex",
+                "model": "fake-model",
+                "config_sha256": result["hashes"]["manifest_sha256"],
+                "prompt_sha256": result["hashes"]["prompt_sha256"],
+                "repeats": 1,
+                "trajectory_sha256": result["hashes"]["trajectory_sha256"],
+                "review_sha256": result["hashes"]["review_sha256"],
+            },
+        )
+        validate_accepted_ledger_v2(
+            [
+                {
+                    "schema_version": 2,
+                    "package_version": summary["package_version"],
+                    "behavior_claims": [
+                        {
+                            "type": "AVAILABILITY_ONLY",
+                            "evidence_lane": "LIVE",
+                            "claim_limits": summary["claim_limits"],
+                            "provenance": result["provenance"],
+                        }
+                    ],
+                }
+            ]
+        )
 
 
 if __name__ == "__main__":

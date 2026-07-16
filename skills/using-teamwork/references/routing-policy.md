@@ -29,7 +29,10 @@ execution.
   stay native regardless of file count.
 - "Do not fix yet" means research, debug, or review only.
 - Explicit stage names select a method but do not replace or expand the user's
-  requested action boundary.
+  requested action boundary. A plan is optional. Authority is separate from plan
+  acceptance. Re-enter Plan only when new evidence changes accepted scope or criteria.
+- Verify only the changed path or a named protected boundary. Fresh review only
+  when the user asks or an accepted risk gate requires it.
 
 ## Smart Defaults
 

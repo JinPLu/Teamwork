@@ -4,6 +4,16 @@
 
 This changelog explains what changed for users. Maintainer implementation details belong in Git commits or pull requests.
 
+## 3.4.0 - 2026-07-16
+
+This release makes explicit question-first discussions easier to resume without turning ordinary work into Grill, and keeps execution focused on the result rather than mandatory ceremony.
+
+- Explicit Grill and useful continuity — Before: a short Grill could be treated as a reason not to save an explicitly useful discussion, while a settled conclusion with one open next decision was the only listed usefulness signal. After: only a user request to be questioned or challenged activates Grill or its narrow discussion-record authority. Within that boundary, any one of explicit save/resume, approaching handoff or compaction, a settled conclusion with an open discriminator, or three real branches can preserve continuity; shortness neither creates nor vetoes a record. This keeps ordinary discussion and Plan work artifact-free while preserving the context users explicitly need.
+- Outcome-first execution — Before: downstream wording could make an accepted plan, broad verification, or a fresh final review appear mandatory. After: clear scope, criteria, and effect authority are enough to execute; a plan remains optional and cannot grant authority. Verification covers the changed path or a named protected boundary, and fresh review occurs only when the user or an accepted risk gate requires it. New evidence returns work to Plan only when it changes accepted scope or criteria.
+- To upgrade: From the Teamwork repository, run `./install.sh all`, then `./scripts/check-update.sh --readiness`. Run `./install.sh --project-root "<project-path>" init-project` only when that repository needs refreshed Teamwork context.
+
+Limit: malformed discussion history or an indeterminate journal still fails closed rather than being repaired automatically. Static and helper checks do not prove automatic skill activation or equivalent live behavior across Codex, Cursor, and Claude Code; without a host activation event, this release makes neither claim.
+
 ## 3.3.0 - 2026-07-16
 
 This release makes Teamwork produce the user's real result first while remaining easier to activate in ordinary language; tests, validation, and internal process no longer substitute for delivery.
