@@ -4,7 +4,7 @@
 
 **Help Codex, Cursor, and Claude Code gather evidence before acting and finish complex research or engineering work with checkable results.**
 
-Teamwork is a Codex-first skill package. After installation, describe your goal in natural language as usual. Teamwork organizes research, debugging, planning, execution, and review when the task needs them, while simple requests stay direct. Replies lead with the conclusion or what it means, then why it matters and the decision or action that follows. Technical detail appears when it is useful or requested, rather than as unexplained process, version, or label narration.
+Teamwork is a Codex-first skill package. After installation, describe your goal in natural language as usual. Teamwork organizes research, debugging, planning, execution, and review when the task needs them, while simple requests stay direct. Replies lead with the conclusion or what it means. For a substantive discussion, they connect observed facts, their plain interpretation, and only the boundary or next comparison that could change the decision. Continuing discussions keep the current question visible. Technical detail appears when it is useful or requested, rather than as unexplained process, version, or label narration.
 
 ![Teamwork workflow](assets/teamwork-workflow-gpt-image-2.png)
 
@@ -14,7 +14,7 @@ Teamwork is a Codex-first skill package. After installation, describe your goal 
 - **More focused questions:** Inspect discoverable facts first and ask you only about decisions that change the outcome, scope, acceptance, or authority.
 - **Controlled collaboration:** Use subagents only when work splits cleanly; the main agent keeps ownership of scope, integration, and final verification.
 - **Clear completion evidence:** Show whether the task is truly done with sources, logs, tests, diffs, or review results.
-- **Recoverable long discussions:** Only observable continuity signals create one compact summary of the goal, settled choices, open question, key evidence, and continue point; ordinary replies stay brief and direct.
+- **Recoverable discussions:** Only observable continuity signals create one compact summary of the goal, settled choices, open question, key evidence, and continue point; one material conclusion with an unresolved next comparison or decision is enough to create it. Ordinary replies stay brief and direct.
 
 Teamwork is a good fit for literature and field research, technical evaluation, complex plans, reproducible failures, CI, cross-file implementation, strict review, and “keep going until it passes” work. One-line facts and obvious small edits do not get forced into a workflow.
 

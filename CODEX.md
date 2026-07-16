@@ -64,12 +64,15 @@ path. Explicitly ask to be questioned, challenged, or “grilled” to activate
 `grill-me`; otherwise Teamwork asks only when required input or a material
 user-owned decision cannot be discovered safely.
 
-Replies lead with the conclusion or what it means, then why it matters and the
-decision or action next. They add technical detail when it helps or when you ask,
-rather than narrating internal workflow labels or version details. When a long
-discussion needs continuity, Teamwork can save one compact summary of the goal,
-settled choices, open question, key evidence, and continue point; ordinary
-requests do not need one.
+Replies lead with the conclusion or what it means. For a substantive discussion,
+they connect observed facts, their plain interpretation, and only the boundary or
+next comparison that could change the decision; continuing discussion keeps its
+current question visible. This is a reasoning order, not a fixed answer format,
+and simple facts stay one sentence. They add technical detail when it helps or
+when you ask, rather than narrating internal workflow labels or version details.
+When a material conclusion leaves a next comparison or decision open, Teamwork
+can save one compact summary of the goal, settled choices, open question, key
+evidence, and continue point; ordinary requests do not need one.
 
 Codex Plan mode and `teamwork-plan` share one planning path: Codex owns the host
 UI and plan state, while Teamwork grounds scope, required values, and

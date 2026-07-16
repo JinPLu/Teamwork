@@ -101,7 +101,7 @@ for guide in CODEX.md CURSOR.md CLAUDE.md; do
     "$guide must keep init-project from creating local package copies"
   grep_required 'Replies lead with the conclusion or what it means' "$guide_path" \
     "$guide must lead with the conclusion or meaning"
-  grep_required 'technical detail when it helps or when you ask' "$guide_path" \
+  normalized_required 'technical detail when it helps or when you ask' "$guide_path" \
     "$guide must relevance-gate technical detail"
   normalized_required 'rather than narrating internal workflow labels or version details' "$guide_path" \
     "$guide must not make internal process narration the response"
@@ -282,6 +282,10 @@ done
 grep_required 'references/workflow-contract.md' "$ENTRYPOINT" "router must reference the shared workflow contract"
 grep_required 'routing-policy.md' "$ENTRYPOINT" "router must load routing policy only for unclear routes"
 grep_required 'skills/grill-me/SKILL.md' "$ENTRYPOINT" "router must defer explicit grill work to grill-me"
+grep_absent 'nature-writing\|nature-polishing' \
+  "reader dialogue policy must stay native to Teamwork, not depend on external academic-writing skills" \
+  "$ROOT/skills/using-teamwork" "$ROOT/skills/grill-me" "$ROOT/scripts/install/policy.sh" \
+  "$ROOT/scripts/teamwork_tooling/evaluation" "$ROOT/evals/teamwork/cases"
 grep_absent 'grill-mode.md' "retired grill-mode reference must be removed" "$ROOT/skills" "$ROOT/templates"
 normalized_required 'clear tasks stay native' "$ENTRYPOINT" "router must preserve the native fast path"
 for intent in 'explicitly asks to be grilled or challenged' 'requests questions before action' 'continues an active grill'; do

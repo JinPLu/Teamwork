@@ -107,7 +107,7 @@ def validate_always_loaded_policy_text(policy_text: str) -> None:
             ("request scope", "work within the user's request"),
             (
                 "root translation",
-                "root owns user questions and translates results",
+                "root owns questions; translates results",
             ),
             (
                 "specific Ask Gate",
@@ -137,35 +137,47 @@ def validate_always_loaded_policy_text(policy_text: str) -> None:
             ),
             (
                 "audience-first reply",
-                "lead with the needed conclusion",
+                "lead with the conclusion",
             ),
             (
-                "evidence-derived explanation",
-                "derive explanations from observed facts and a plain mechanism",
+                "connected reader argument",
+                "for explanations, connect conclusion, observed basis, plain interpretation, and only a decision-relevant boundary or next discriminator",
             ),
             (
-                "conditional explanation and action",
-                "add useful cause/limits/action",
+                "observation/inference separation",
+                "separate observation from inference",
             ),
             (
-                "shortest complete answer",
-                "use the shortest complete answer",
+                "discussion mainline",
+                "keep question visible",
+            ),
+            (
+                "default prose over headings",
+                "no default headings",
+            ),
+            (
+                "simple fact control",
+                "simple facts stay one sentence",
+            ),
+            (
+                "relevance gate",
+                "keep only details that change understanding, decision, action, risk, or confidence",
+            ),
+            (
+                "stable terms",
+                "use supplied terms; never coin labels or infer their meaning",
             ),
             (
                 "useful skill explanation",
-                "briefly name skills for capability/limits/choice",
+                "name skills only for capability, limitation, or choice",
             ),
             (
-                "irrelevant engineering inventory",
-                "omit engineering/process inventory that cannot change understanding, decisions, action, risk, or confidence",
+                "irrelevant process inventory",
+                "omit process inventory and irrelevant versions",
             ),
             (
-                "specific material uncertainty",
-                "state uncertainty once: unknown, impact, needed evidence",
-            ),
-            (
-                "missing-discriminator uncertainty",
-                "for no-comparison results use only: “the signal is promising, but we cannot tell how much came from x; next compare with a similar group.” stop; omit proof status and cause lists",
+                "decision-boundary uncertainty",
+                "state uncertainty once: support, limit, next check",
             ),
         ),
     )
@@ -194,16 +206,16 @@ def validate_audience_source_text(workflow_contract_text: str) -> None:
                 "lead with the conclusion the user needs",
             ),
             (
-                "evidence-derived explanation",
-                "when explanation is needed, derive it from observed facts and a plain-language mechanism",
+                "connected reader argument",
+                "for a substantive explanation or discussion, make one connected argument: conclusion, observed basis, plain-language interpretation, and, only if it changes a decision, a concrete boundary or next discriminator",
             ),
             (
-                "conditional cause or action",
-                "add a cause, limitation, or next step only when it helps that current need",
+                "observation/inference separation",
+                "state observed facts separately from inference",
             ),
             (
                 "no fixed answer template",
-                "first-principles reasoning is an evidence discipline, not a fixed section template or reason to delay the answer",
+                "this is an order of reasoning, not headings or a fixed answer template",
             ),
             (
                 "shortest complete answer",
@@ -213,10 +225,38 @@ def validate_audience_source_text(workflow_contract_text: str) -> None:
                 "stop after the decision boundary",
                 "once the conclusion and decision boundary are clear, stop; do not restate them",
             ),
+            (
+                "discussion mainline",
+                "in a continuing discussion, retain the current question or decision",
+            ),
+            (
+                "mainline advancement",
+                "each reply must advance it with an answer, evidence, comparison, interpretation, or boundary",
+            ),
+            (
+                "mainline change transparency",
+                "if the question changes, say why",
+            ),
+            (
+                "no mainline displacement",
+                "do not let a status update or an implementation detail displace the main line",
+            ),
             ("relevance gate", "use a relevance gate"),
             (
                 "decision-relevant detail",
                 "change the user's understanding, decision, action, risk, or confidence",
+            ),
+            (
+                "stable terms",
+                "use the user's or repository's established terms",
+            ),
+            (
+                "no coined labels",
+                "define a necessary unfamiliar term before using it, and never coin a label to organize an answer",
+            ),
+            (
+                "identifier semantics",
+                "treat a supplied identifier as a name, not evidence of its contents; never infer a number, property, or causal role from it",
             ),
             (
                 "useful skill explanation",
@@ -224,31 +264,23 @@ def validate_audience_source_text(workflow_contract_text: str) -> None:
             ),
             (
                 "irrelevant engineering inventory",
-                "omit engineering process and implementation inventory—such as routes, files, subagents, and test counts—",
+                "omit engineering process and implementation inventory—such as routes, files, subagents, and test counts—unless relevant",
             ),
             (
-                "irrelevant versions and labels",
-                "omit irrelevant versions, unexplained or self-invented labels",
+                "decision-boundary uncertainty",
+                "treat uncertainty as a decision boundary: say what the evidence supports, what it cannot decide, and what comparison, measurement, or observation would change the decision",
             ),
             (
-                "concrete evidence boundary",
-                "prefer the concrete boundary—what the evidence supports and what it cannot attribute—over a stock caveat",
-            ),
-            (
-                "generic proof-status omission",
-                "for no-comparison results, use one conclusion and one action: “the signal is promising, but we cannot tell how much came from x; next compare with a similar group.” stop; omit proof status and imagined causes",
-            ),
-            (
-                "missing-discriminator explanation",
-                "otherwise name the missing comparison, measurement, or observation",
+                "no stock proof-status",
+                "do not substitute a stock proof-status sentence for that boundary",
             ),
             (
                 "alternative-cause relevance",
                 "mention an alternative cause only when it changes action or confidence",
             ),
             (
-                "specific material uncertainty",
-                "state material uncertainty once: unknown, impact, and what resolves it",
+                "material uncertainty once",
+                "state material uncertainty once",
             ),
             ("no false certainty", "never turn it into certainty"),
         ),
@@ -348,11 +380,21 @@ def validate_discussion_template_text(template_text: str) -> None:
         raise EvalError(f"{path}: template must require a specific topic H1")
 
     required_sections = {
-        "Goal": ("objective", "mainline or project goal"),
-        "Settled": ("settled choice", "why it was chosen"),
-        "Still open": ("unresolved item", "why it matters"),
-        "Key evidence": ("source or observation", "established"),
-        "Continue here": ("exact next question or action", "evidence needed"),
+        "Goal": ("objective", "current question"),
+        "Settled": ("conclusion", "observed basis", "why it guides the next decision"),
+        "Still open": (
+            "distinct comparison, measurement, or decision",
+            "why it matters",
+        ),
+        "Key evidence": (
+            "source or observation",
+            "what it establishes",
+            "not a list of files or process steps",
+        ),
+        "Continue here": (
+            "exact next question, comparison, or action",
+            "evidence needed",
+        ),
     }
     headings = re.findall(r"(?m)^## ([^\n]+)\s*$", template_text)
     retired = sorted(
@@ -397,12 +439,18 @@ def validate_discussion_source_text(
                 ("narrow explicit-Grill write authority", "explicit grill authorizes only its supporting `docs/teamwork/` discussion record unless the user says no files"),
                 ("short Grill artifact-free", "short grill stays artifact-free"),
                 ("entry-time protocol load", "`skills/using-teamwork/references/artifact-protocol.md` completely at entry"),
-                ("pre-question persistence gate", "after a trigger, persist before asking"),
+                (
+                    "pre-reply persistence gate",
+                    "after a trigger, when writable, execute the transaction this turn before user-visible reply, comment, or question",
+                ),
+                (
+                    "same-turn persistence",
+                    "never emit plan/status; first visible text follows success",
+                ),
                 ("continued Grill canonical discovery", "on continuation or completion, inspect canonical state"),
-                ("continued Grill mutation boundary", "update only when new input changes it; close only when scope resolves"),
-                ("stated-scope completion", "when its stated scope is resolved, stop and close the discussion; never invent another decision"),
-                ("continuity-only reply", "state only saved decisions, resume context, or completion"),
-                ("useful skill explanation", "a brief skill name or purpose is welcome when it helps explain a capability, limit, or choice"),
+                ("continued Grill mutation boundary", "update only for new input and close when scope resolves"),
+                ("stated-scope completion", "when scope resolves, stop and close discussion; invent no further decision"),
+                ("continuity-only reply", "replies state only saved decisions, resume context, or completion"),
             ),
         ),
         (
@@ -419,7 +467,14 @@ def validate_discussion_source_text(
                 ("canonical subordination", "stays subordinate to canonical project sources"),
                 ("explicit save trigger", "the user explicitly asks to save or resume later"),
                 ("handoff trigger", "a known handoff or context compaction is approaching"),
-                ("settled-and-open trigger", "at least two substantive choices are settled while at least one remains open"),
+                (
+                    "single-conclusion open-discriminator trigger",
+                    "a material conclusion is settled and a distinct comparison, measurement, or decision remains open before the next action",
+                ),
+                (
+                    "no second-settled-choice threshold",
+                    "do not wait for a second settled choice when the first conclusion already determines an open next check",
+                ),
                 ("three-branch trigger", "one decision has at least three real branches"),
                 ("non-proxy trigger boundary", "time, word count, and a short grill never trigger persistence"),
                 ("privacy boundary", "keep privacy-safe summaries, never hidden reasoning, secrets, unnecessary personal data, or a transcript"),
@@ -468,13 +523,13 @@ def validate_mainline_focus_source_text(
 ) -> None:
     source_contracts = {
         "skills/grill-me/SKILL.md": (
-            "hold one mainline: the global goal, current focus, and why the next question can change the project-level decision",
+            "keep goal/current focus: one decision at a time; each question advances decision",
             "on drift, topic switch, or compaction",
-            "do not repeat it every turn",
-            "each advances the mainline",
+            "restate without repetition",
             "drop distractions",
-            "when its stated scope is resolved, stop and close the discussion; never invent another decision",
-            "ask in the user's domain language",
+            "never repeat answered decisions",
+            "when scope resolves, stop and close discussion; invent no further decision",
+            "use user's domain language",
         ),
         "skills/using-teamwork/references/project-init.md": (
             "form the smallest init-local project model needed",

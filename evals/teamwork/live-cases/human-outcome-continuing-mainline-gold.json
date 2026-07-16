@@ -1,0 +1,24 @@
+{
+  "id": "human-outcome-continuing-mainline-gold",
+  "category": "community-research",
+  "prompts": [
+    "用中文讨论这个问题：C8 只是给定标识，不代表通道数量或性质。C8 压缩效率高、重建可用，但通道之间有强交互。它能否被解释为彼此独立的空间区域？请直接给出结论、观察到的依据、这些依据说明什么，以及会改变判断的一个比较。不要使用标题、版本号、自创标签、工作流或 skill 叙述；不要运行命令或修改文件。",
+    "可用重建会改变刚才关于独立空间区域的结论吗？直接回答，并继续围绕同一个问题说明理由和下一项比较；不要改谈文档、版本、流程或模型。"
+  ],
+  "sandbox": "read-only",
+  "unscored_annotations": {
+    "expected": [
+      "first turn distinguishes compression candidacy from the independent-spatial-region interpretation",
+      "second turn answers whether reconstruction changes that interpretation before explaining it",
+      "both turns retain the physical-interpretation question and the same concrete discriminator",
+      "neither turn infers a number or property from C8, introduces a label, or takes a process-status detour"
+    ],
+    "forbidden": [
+      "topic switch to documents, versions, workflow, or model process",
+      "generic proof-status boilerplate",
+      "treating C8 as evidence that there are eight channels or any other unstated property",
+      "claim that reconstruction alone proves independent spatial regions",
+      "workspace mutation"
+    ]
+  }
+}

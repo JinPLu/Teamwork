@@ -315,6 +315,226 @@ def validate_audience_reply_case(data: dict[str, Any], path: Path) -> None:
         )
 
 
+def validate_reader_argument_case(data: dict[str, Any], path: Path) -> None:
+    """Keep the reader-facing argument as a compact authored contrast.
+
+    This fixture checks its own anchors and negative controls. It does not claim
+    that an arbitrary live model will follow the argument order.
+    """
+
+    response = require_string(data.get("authored_response"), "authored_response", path)
+    checks = data.get("response_checks")
+    required_checks = {
+        "conclusion",
+        "observed_basis",
+        "interpretation",
+        "current_decision",
+        "next_discriminator",
+    }
+    if not isinstance(checks, dict) or set(checks) != required_checks:
+        raise EvalError(
+            f"{display_path(path)}: reader argument response_checks must contain exactly "
+            f"{sorted(required_checks)}"
+        )
+
+    normalized_response = normalize_semantic_text(response)
+    positions: list[int] = []
+    for field in (
+        "conclusion",
+        "observed_basis",
+        "interpretation",
+        "current_decision",
+        "next_discriminator",
+    ):
+        phrase = require_string(checks[field], f"response_checks.{field}", path)
+        position = normalized_response.find(normalize_semantic_text(phrase))
+        if position < 0:
+            raise EvalError(f"{display_path(path)}: authored_response loses {field}")
+        positions.append(position)
+    if positions != sorted(positions) or len(set(positions)) != len(positions):
+        raise EvalError(
+            f"{display_path(path)}: reader argument must keep conclusion, basis, "
+            "interpretation, decision, and discriminator in order"
+        )
+    if GENERIC_CAVEAT_RE.search(response):
+        raise EvalError(
+            f"{display_path(path)}: reader argument uses a stock proof-status caveat"
+        )
+    if IRRELEVANT_PROCESS_NARRATION_RE.search(response):
+        raise EvalError(
+            f"{display_path(path)}: reader argument includes irrelevant process narration"
+        )
+    if re.search(r"(?i)\bq9\b|证据阶梯|自创标签", response):
+        raise EvalError(
+            f"{display_path(path)}: reader argument introduces a self-invented label"
+        )
+    if re.search(r"C8\s*(?:表示|指(?:的是)?|means?)\s*(?:八|eight)|八个通道", response):
+        raise EvalError(
+            f"{display_path(path)}: reader argument infers meaning from the C8 identifier"
+        )
+
+    controls = data.get("negative_controls")
+    expected_controls = {
+        "fact_dump",
+        "generic_proof_status",
+        "invented_label",
+        "identifier_as_evidence",
+        "mainline_displaced",
+    }
+    if not isinstance(controls, list) or len(controls) != len(expected_controls):
+        raise EvalError(
+            f"{display_path(path)}: reader argument negative_controls must contain "
+            "five named failure modes"
+        )
+    seen_controls: set[str] = set()
+    for index, control in enumerate(controls, start=1):
+        if not isinstance(control, dict) or set(control) != {"id", "response"}:
+            raise EvalError(
+                f"{display_path(path)}: reader argument negative control {index} "
+                "must contain exactly id and response"
+            )
+        control_id = require_string(control.get("id"), "negative_controls.id", path)
+        text = require_string(control.get("response"), "negative_controls.response", path)
+        if control_id in seen_controls:
+            raise EvalError(
+                f"{display_path(path)}: duplicate reader argument negative control: {control_id}"
+            )
+        seen_controls.add(control_id)
+        normalized = normalize_semantic_text(text)
+        if control_id == "fact_dump" and (
+            normalize_semantic_text(checks["interpretation"]) in normalized
+            or normalize_semantic_text(checks["next_discriminator"]) in normalized
+        ):
+            raise EvalError(
+                f"{display_path(path)}: fact_dump control no longer omits the explanation or discriminator"
+            )
+        if control_id == "generic_proof_status" and not GENERIC_CAVEAT_RE.search(text):
+            raise EvalError(
+                f"{display_path(path)}: generic_proof_status control loses its stock caveat"
+            )
+        if control_id == "invented_label" and not re.search(
+            r"(?i)\bq9\b|证据阶梯|自创标签", text
+        ):
+            raise EvalError(
+                f"{display_path(path)}: invented_label control loses its invented term"
+            )
+        if control_id == "identifier_as_evidence" and not re.search(
+            r"C8\s*(?:表示|指(?:的是)?|means?)\s*(?:八|eight)|八个通道", text
+        ):
+            raise EvalError(
+                f"{display_path(path)}: identifier_as_evidence control loses its unsupported inference"
+            )
+        if control_id == "mainline_displaced" and not re.search(
+            r"讨论文档|持久化|版本|工作流", text
+        ):
+            raise EvalError(
+                f"{display_path(path)}: mainline_displaced control loses its status diversion"
+            )
+    if seen_controls != expected_controls:
+        raise EvalError(
+            f"{display_path(path)}: reader argument negative_controls must cover "
+            f"{', '.join(sorted(expected_controls))}"
+        )
+
+
+def validate_continuing_mainline_case(data: dict[str, Any], path: Path) -> None:
+    """Protect the authored contrast between an advancing discussion and status drift."""
+
+    mainline = require_string(data.get("mainline"), "mainline", path)
+    turns = data.get("turns")
+    anchors = data.get("turn_anchors")
+    if not isinstance(turns, list) or len(turns) != 2:
+        raise EvalError(
+            f"{display_path(path)}: continuing discussion must contain exactly two authored turns"
+        )
+    if not isinstance(anchors, list) or len(anchors) != len(turns):
+        raise EvalError(
+            f"{display_path(path)}: continuing discussion must contain anchors for each turn"
+        )
+
+    for index, (turn, turn_anchors) in enumerate(zip(turns, anchors), start=1):
+        if not isinstance(turn, dict) or set(turn) != {"user", "assistant"}:
+            raise EvalError(
+                f"{display_path(path)}: continuing discussion turn {index} must contain exactly user and assistant"
+            )
+        require_string(turn.get("user"), "turns.user", path)
+        assistant = require_string(turn.get("assistant"), "turns.assistant", path)
+        if not isinstance(turn_anchors, dict) or set(turn_anchors) != {
+            "answer",
+            "mainline",
+            "advance",
+        }:
+            raise EvalError(
+                f"{display_path(path)}: continuing discussion turn {index} anchors must contain "
+                "answer, mainline, and advance"
+            )
+        normalized = normalize_semantic_text(assistant)
+        for field in ("answer", "mainline", "advance"):
+            phrase = require_string(turn_anchors.get(field), f"turn_anchors.{field}", path)
+            if normalize_semantic_text(phrase) not in normalized:
+                raise EvalError(
+                    f"{display_path(path)}: continuing discussion turn {index} loses {field}"
+                )
+        first_sentence = re.split(r"[。.!?！？]", assistant, maxsplit=1)[0]
+        if normalize_semantic_text(turn_anchors["answer"]) not in normalize_semantic_text(
+            first_sentence
+        ):
+            raise EvalError(
+                f"{display_path(path)}: continuing discussion turn {index} must answer before status"
+            )
+        if normalize_semantic_text(mainline) not in normalized:
+            raise EvalError(
+                f"{display_path(path)}: continuing discussion turn {index} loses the mainline"
+            )
+        if re.search(r"版本|讨论文档|持久化|工作流|三个文件", assistant):
+            raise EvalError(
+                f"{display_path(path)}: continuing discussion turn {index} includes status drift"
+            )
+
+    controls = data.get("negative_controls")
+    expected_controls = {"status_displacement", "topic_switch", "invented_label"}
+    if not isinstance(controls, list) or len(controls) != len(expected_controls):
+        raise EvalError(
+            f"{display_path(path)}: continuing discussion negative_controls must contain "
+            "three named failure modes"
+        )
+    seen_controls: set[str] = set()
+    for index, control in enumerate(controls, start=1):
+        if not isinstance(control, dict) or set(control) != {"id", "response"}:
+            raise EvalError(
+                f"{display_path(path)}: continuing discussion negative control {index} "
+                "must contain exactly id and response"
+            )
+        control_id = require_string(control.get("id"), "negative_controls.id", path)
+        text = require_string(control.get("response"), "negative_controls.response", path)
+        if control_id in seen_controls:
+            raise EvalError(
+                f"{display_path(path)}: duplicate continuing discussion negative control: {control_id}"
+            )
+        seen_controls.add(control_id)
+        if control_id == "status_displacement" and not re.search(
+            r"版本|讨论文档|持久化|工作流", text
+        ):
+            raise EvalError(
+                f"{display_path(path)}: status_displacement control loses the status diversion"
+            )
+        if control_id == "topic_switch" and normalize_semantic_text(mainline) in normalize_semantic_text(text):
+            raise EvalError(
+                f"{display_path(path)}: topic_switch control still follows the mainline"
+            )
+        if control_id == "invented_label" and not re.search(
+            r"(?i)\bq9\b|证据阶梯|自创标签", text
+        ):
+            raise EvalError(
+                f"{display_path(path)}: invented_label control loses its invented term"
+            )
+    if seen_controls != expected_controls:
+        raise EvalError(
+            f"{display_path(path)}: continuing discussion negative_controls must cover "
+            f"{', '.join(sorted(expected_controls))}"
+        )
+
+
 def validate_skill_explanation_contrast_case(data: dict[str, Any], path: Path) -> None:
     """Keep skill relevance distinct from engineering-process leakage."""
 
@@ -739,6 +959,10 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
             )
     if case_id == "audience-first-community-research":
         validate_audience_reply_case(data, path)
+    if case_id == "audience-reader-argument":
+        validate_reader_argument_case(data, path)
+    if case_id == "audience-continuing-mainline":
+        validate_continuing_mainline_case(data, path)
     if case_id == "audience-skill-explanation-contrast":
         validate_skill_explanation_contrast_case(data, path)
     if case_id == "audience-one-sentence-fact-control":

@@ -253,6 +253,14 @@ REQUIRED_DISCUSSION_CASES = {
         "readback_verified_anchors",
         "static_contract_only",
     },
+    "discussion-single-conclusion-continuity": {
+        "single_conclusion_open_discriminator_trigger",
+        "no_second_settled_choice_threshold",
+        "persistence_before_next_question",
+        "same_turn_persistence_no_status_deferral",
+        "five_section_human_recovery",
+        "static_contract_only",
+    },
     "discussion-resume-no-new-input": {
         "inspect_canonical_state",
         "resume_without_new_input_is_read_only",
@@ -310,6 +318,21 @@ REQUIRED_AUDIENCE_CASES = {
         "one_sentence_control",
         "no_forced_cause",
         "no_forced_action",
+        "static_contract_only",
+    },
+    "audience-reader-argument": {
+        "connected_reader_argument",
+        "observation_inference_separation",
+        "term_stability",
+        "decision_boundary",
+        "no_stock_proof_status",
+        "static_contract_only",
+    },
+    "audience-continuing-mainline": {
+        "discussion_mainline",
+        "mainline_advanced",
+        "status_displacement_rejected",
+        "term_stability",
         "static_contract_only",
     },
 }
@@ -404,10 +427,10 @@ SKILL_SOURCE_CONTRACTS = {
     "using-teamwork": (
         "skills/using-teamwork/SKILL.md",
         (
-            ("Native fast path", "small, clear tasks stay native"),
+            ("Native fast path", "clear tasks stay native"),
             (
                 "known-facts native explanation",
-                "when the prompt already contains all decision-relevant facts, a stable explanation stays native",
+                "when all decision-relevant facts are supplied, a stable explanation stays native",
             ),
             (
                 "supplied-facts concise explanation",
@@ -440,11 +463,11 @@ SKILL_SOURCE_CONTRACTS = {
             ("inert mentions", "quoted, file, tool, example, or maintenance mentions are inert"),
             (
                 "evidence-backed recommended answer",
-                "before every question, inspect discoverable evidence and give a recommended answer grounded in it",
+                "before each question, inspect discoverable evidence and give grounded recommendation",
             ),
             (
                 "concise text fallback",
-                "when callable; otherwise ask one concise text question",
+                "host's native interaction surface if callable, else one concise text question",
             ),
             ("no execution authority", "confirmation does not grant implementation authority"),
         ),

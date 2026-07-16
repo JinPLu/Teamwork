@@ -4,6 +4,16 @@
 
 This changelog explains what changed for users. Maintainer implementation details belong in Git commits or pull requests.
 
+## 3.2.0 - 2026-07-16
+
+This release makes research-minded discussion easier to follow and resume without turning ordinary collaboration into academic prose or a process log.
+
+- Reader-facing argument — Before: internal implementation detail, version labels, invented terms, or generic “not proven” caveats could interrupt the answer. After: substantive discussion connects the conclusion, observed basis, plain-language interpretation, and only a decision-relevant comparison boundary; observations and inferences stay distinct. Simple facts can still receive a direct one-sentence answer.
+- Timely discussion memory — Before: a first settled conclusion could still leave the next question unsaved while waiting for more conclusions, or the assistant could narrate the save process first. After: one settled conclusion plus a distinct open comparison, measurement, or decision creates a compact record in the same turn before the user-visible reply, which contains only the saved conclusion and continuation point.
+- To upgrade: From the Teamwork repository, run `./install.sh all --profile gpt56-role`, then `./scripts/check-update.sh --readiness`. Cursor User Rules still require the prompted manual paste; existing projects do not need Teamwork package copies.
+
+Limit: this is not an academic-writing feature and adds no external academic-writing dependency. Offline checks and one isolated Codex trajectory support the behavior, but they do not guarantee every model reply reaches the same quality or establish Cursor and Claude Code runtime parity.
+
 ## 3.1.1 - 2026-07-15
 
 This patch release completes the evidence record for 3.1.0 without changing runtime behavior.

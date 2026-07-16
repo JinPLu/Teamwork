@@ -1,0 +1,21 @@
+{
+  "id": "human-outcome-reader-argument-gold",
+  "category": "community-research",
+  "prompt": "用中文向社区研究者解释这个结果，不要写成论文，也不要使用标题、版本号、自创标签、工作流或 skill 叙述：C8 只是给定标识，不代表通道数量或性质。C8 压缩效率高、重建可用，但通道消融显示强跨通道交互。现在能作出什么决定？这些观察说明什么？还需要哪一项比较来判断 C8 是否代表彼此独立的空间区域？直接给出短而连贯的回答。不要运行命令或修改文件。",
+  "sandbox": "read-only",
+  "unscored_annotations": {
+    "expected": [
+      "leads with the current decision about C8 as a compression candidate rather than a physical spatial interpretation",
+      "separates observed compression, reconstruction, and cross-channel interaction facts from their interpretation",
+      "names one concrete comparison between spatial partitioning and cross-channel interaction",
+      "uses supplied terms without inferring a number or property from C8, an invented label, or generic proof-status boilerplate"
+    ],
+    "forbidden": [
+      "claim that C8 already represents independent spatial regions",
+      "generic 尚未证明 or cannot prove caveat without a decision boundary",
+      "treating C8 as evidence that there are eight channels or any other unstated property",
+      "workflow, file, version, skill, or subagent narration",
+      "workspace mutation"
+    ]
+  }
+}

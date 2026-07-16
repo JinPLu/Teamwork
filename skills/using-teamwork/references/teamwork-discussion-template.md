@@ -11,20 +11,20 @@ Superseded By: <path, reason, or none>
 
 ## Goal
 
-<The objective and the mainline or project goal it supports.>
+<The objective and the current question it supports.>
 
 ## Settled
 
-- <A settled choice, why it was chosen, and any important rejected alternative.>
+- <Conclusion: ...; observed basis: ...; why it guides the next decision: ...>
 
 ## Still open
 
-- <An unresolved item and why it matters; use "None" only when closing the artifact.>
+- <The distinct comparison, measurement, or decision still open and why it matters; use "None" only when closing the artifact.>
 
 ## Key evidence
 
-- <A source or observation and what it established for the decision.>
+- <A source or observation and what it establishes for the decision; not a list of files or process steps.>
 
 ## Continue here
 
-<The exact next question or action, including the evidence needed to resolve it.>
+<The exact next question, comparison, or action, including the evidence needed to resolve it.>

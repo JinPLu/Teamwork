@@ -1,0 +1,61 @@
+{
+  "id": "audience-reader-argument",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/workflow-contract.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "A team is deciding whether C8 can be described as a spatially independent physical representation. C8 has high compression efficiency and usable reconstruction, but channel ablations show strong cross-channel interactions. Explain what can be decided now, what the observations mean, and the one comparison needed to assess the spatial interpretation. Write for community researchers. Use only the terms supplied here; do not introduce internal labels, workflow narration, or generic proof-status caveats.",
+  "expected": {
+    "requires": [
+      "connected_reader_argument",
+      "observation_inference_separation",
+      "term_stability",
+      "decision_boundary",
+      "no_stock_proof_status",
+      "static_contract_only"
+    ]
+  },
+  "must": [
+    "connect the conclusion to the observed compression, reconstruction, and channel-interaction evidence",
+    "separate what is observed from what it means for the spatial interpretation",
+    "name one concrete comparison that would change the interpretation"
+  ],
+  "must_not": [
+    "replace the interpretation with a fact dump",
+    "use generic proof-status wording such as 尚未证明",
+    "infer an unsupported number or property from the identifier C8",
+    "introduce a version, a self-invented label, or workflow status instead of advancing the decision"
+  ],
+  "authored_response": "结论：C8 可以继续作为压缩候选，但不能解释为彼此独立的空间区域。已观察到它压缩效率高、重建可用，而且通道间存在强交互。这说明这些通道没有显示出彼此独立的空间含义。因此现在可以比较 C8 的压缩与重建表现；若要判断空间解释，需要直接比较空间划分和跨通道交互。",
+  "response_checks": {
+    "conclusion": "C8 可以继续作为压缩候选",
+    "observed_basis": "压缩效率高、重建可用，而且通道间存在强交互",
+    "interpretation": "这些通道没有显示出彼此独立的空间含义",
+    "current_decision": "现在可以比较 C8 的压缩与重建表现",
+    "next_discriminator": "直接比较空间划分和跨通道交互"
+  },
+  "negative_controls": [
+    {
+      "id": "fact_dump",
+      "response": "C8 的压缩效率高，重建可用，通道间存在强交互。"
+    },
+    {
+      "id": "generic_proof_status",
+      "response": "C8 很有前景，但尚未证明。"
+    },
+    {
+      "id": "invented_label",
+      "response": "C8 已通过 Q9 证据阶梯，因此可以进入下一阶段。"
+    },
+    {
+      "id": "identifier_as_evidence",
+      "response": "C8 表示八个通道，因此它们天然对应八个空间区域。"
+    },
+    {
+      "id": "mainline_displaced",
+      "response": "我先持久化讨论文档并更新版本，再处理这条结果。"
+    }
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Offline authored contrast for reader-readable argument order, stable terms, a concrete decision boundary, and status-drift rejection; it does not prove live model behavior."
+}

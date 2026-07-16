@@ -1,6 +1,6 @@
 # Artifact Protocol
 
-Research, plan, and report artifacts remain under their matching
+Research, plan, and report artifacts remain under
 `docs/teamwork/` directories. A discussion record is supporting continuity only:
 it is not a transcript or execution authority, and stays subordinate to canonical
 project sources.
@@ -12,20 +12,25 @@ observable condition holds:
 
 - the user explicitly asks to save or resume later;
 - a known handoff or context compaction is approaching;
-- at least two substantive choices are settled while at least one remains open;
+- a material conclusion is settled and a distinct comparison, measurement, or
+  decision remains open before the next action;
 - one decision has at least three real branches.
 
 Time, word count, and a short Grill never trigger persistence. Creation and later
 updates require authority; explicit Grill grants only its supporting discussion
 record unless the user says no files.
 
+Do not wait for a second settled choice when the first conclusion already
+determines an open next check. The record exists to preserve that conclusion,
+its basis, and the unresolved discriminator—not to archive a long conversation.
+
 ## Content and Lifecycle
 
 Keep privacy-safe summaries, never hidden reasoning, secrets, unnecessary
-personal data, or a transcript. A recoverable record contains a concrete title
+personal data, or a transcript. A recoverable record contains a title
 and five sections: Goal, Settled (including reasons), Still open, Key evidence,
 and Continue here. A Decision map is optional only when it clarifies at least
-three real branches.
+three branches.
 
 Update only when the user's new input changes saved decisions, evidence, or the
 continuation point, not merely because a turn resumed. Opening, recovering, or

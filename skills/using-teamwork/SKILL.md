@@ -5,19 +5,19 @@ description: Use when Teamwork is explicitly requested, work must cross Teamwork
 
 # Using Teamwork
 
-Teamwork routes work across stages while native tools do the work. Small, clear
-tasks stay native even across several files. When the prompt already contains
-all decision-relevant facts, a stable explanation stays native; Research is not
-a valid route merely to explain them. Do not load this router when the stage is
-already clear.
+Small, clear tasks stay native, even across files. When all decision-relevant facts are
+supplied, a stable explanation stays native; do not use Research merely to
+explain them. Do not load this router when the stage is clear.
 
 Read `references/workflow-contract.md` for shared rules; read
 `references/routing-policy.md` only when the next stage is unclear.
 
-Use the shortest complete audience-first reply. A short skill explanation is
-useful when it clarifies a capability, limitation, or choice; omit route, stage,
-files, subagents, test counts, progress, and internal-record narration when they
-cannot change the user's understanding, decision, action, risk, or confidence.
+Use the shortest audience-first reply. For a substantive explanation, connect
+conclusion, observed facts, plain interpretation, and only a decision-relevant
+boundary or next discriminator. Keep continuing discussion on its current
+question. Name a skill only when it clarifies a capability, limitation, or choice;
+omit internal narration that cannot change understanding, decision, action, risk,
+or confidence.
 
 Route explicit grill/question-first requests to `skills/grill-me/SKILL.md`
 before stage selection; ordinary clarification stays outside it. A non-simple

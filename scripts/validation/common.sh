@@ -143,7 +143,7 @@ check_lean_policy() {
     "$label must permit routine reversible choices"
   normalized_required 'Delegate only worthwhile independent work' "$file" \
     "$label must keep delegation economic"
-  normalized_required 'Root owns user questions and translates results' "$file" \
+  normalized_required 'Root owns questions; translates results' "$file" \
     "$label must preserve root-owned user translation"
   normalized_required 'Research/debug/plan/review stay read-only absent change authority' "$file" \
     "$label must preserve the read-only stage boundary"
@@ -151,22 +151,28 @@ check_lean_policy() {
     "$label must preserve explicit Grill activation"
   normalized_required 'negative/quoted/file/tool/example/maintenance text is inert' "$file" \
     "$label must preserve inert Grill markers"
-  normalized_required 'Lead with the needed conclusion' "$file" \
+  normalized_required 'Lead with the conclusion' "$file" \
     "$label must preserve audience-first replies"
-  normalized_required 'Derive explanations from observed facts and a plain mechanism' "$file" \
-    "$label must preserve first-principles explanation"
-  normalized_required 'use the shortest complete answer' "$file" \
-    "$label must preserve concise complete answers"
-  normalized_required 'Briefly name skills for capability/limits/choice' "$file" \
-    "$label must allow useful skill explanations"
-  normalized_required 'Omit engineering/process inventory that cannot change understanding, decisions, action, risk, or confidence' "$file" \
-    "$label must omit irrelevant engineering inventory"
-  grep_required 'Omit irrelevant versions' "$file" \
+  normalized_required 'For explanations, connect conclusion, observed basis, plain interpretation, and only a decision-relevant boundary or next discriminator' "$file" \
+    "$label must preserve a connected reader argument"
+  normalized_required 'Separate observation from inference' "$file" \
+    "$label must distinguish observations from inference"
+  normalized_required 'keep question visible' "$file" \
+    "$label must preserve the discussion mainline"
+  normalized_required 'No default headings' "$file" \
+    "$label must keep a substantive answer in prose by default"
+  normalized_required 'simple facts stay one sentence' "$file" \
+    "$label must preserve concise simple facts"
+  normalized_required 'Keep only details that change understanding, decision, action, risk, or confidence' "$file" \
     "$label must preserve the relevance gate"
-  normalized_required 'State uncertainty once: unknown, impact, needed evidence' "$file" \
-    "$label must preserve specific material uncertainty"
-  normalized_required 'For no-comparison results use only: “The signal is promising, but we cannot tell how much came from X; next compare with a similar group.” Stop; omit proof status and cause lists' "$file" \
-    "$label must explain uncertainty without a speculative list or repeated caveat"
+  normalized_required 'Use supplied terms; never coin labels or infer their meaning' "$file" \
+    "$label must preserve stable reader terms and identifier boundaries"
+  normalized_required 'Name skills only for capability, limitation, or choice' "$file" \
+    "$label must allow useful skill explanations"
+  normalized_required 'Omit process inventory and irrelevant versions' "$file" \
+    "$label must omit irrelevant process inventory"
+  normalized_required 'State uncertainty once: support, limit, next check' "$file" \
+    "$label must preserve a decision-boundary uncertainty"
   if [[ "$label" == *Cursor* || "$label" == *Claude* ]]; then
     ! grep -Eq 'request_user_input|Codex CLI|Codex native|every material user decision|grill ceremony|text choice card' "$file" \
       || fail "$label must not contain Codex-native adapter wording"

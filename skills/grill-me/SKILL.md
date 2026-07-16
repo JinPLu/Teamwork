@@ -6,26 +6,29 @@ description: Use when user explicitly asks to be grilled or challenged, requests
 Read `skills/using-teamwork/references/workflow-contract.md` and
 `skills/using-teamwork/references/artifact-protocol.md` completely at entry.
 
-Enter for an explicit request or automatically from every non-simple Plan. Apply
-Ask Gate; own safe, reversible, implementation-level details. Ordinary clarification stays outside.
+Enter for an explicit request or automatically from every non-simple Plan;
+Ordinary clarification stays out. Apply Ask Gate; own safe, reversible, implementation-level details.
 
-Hold one mainline: the global goal, current focus, and why the next question can
-change the project-level decision. On drift, topic switch, or compaction,
-restate; do not repeat it every turn. Ask one decision at a time; each advances
-the mainline. Drop distractions; never repeat answered decisions. Before every
-question, inspect discoverable evidence and give a recommended answer grounded in it.
+Keep goal/current focus: one decision at a time; each question advances
+decision. On drift, topic switch, or compaction, restate without
+repetition; drop distractions; never repeat answered decisions. Before each
+question, inspect discoverable evidence and give grounded recommendation. Use connected
+argument for material choices; do not replace decision with status or
+implementation detail.
 
-Ask in the user's domain language. Use host's native interaction surface
-when callable; otherwise ask one concise text question.
+Use user's domain language; host's native interaction surface if callable, else
+one concise text question.
 
-Explicit Grill authorizes only its supporting `docs/teamwork/`
-discussion record unless the user says no files. Short Grill stays artifact-free.
-After a trigger, persist before asking. On continuation or completion, inspect
-canonical state. Update only when new input changes it; close only when scope resolves.
+Explicit Grill authorizes only its supporting `docs/teamwork/` discussion record
+unless the user says no files. Short Grill stays artifact-free. Create it when
+one settled conclusion leaves a distinct comparison, measurement, or decision
+open before the next action.
 
-When its stated scope is resolved, stop and close the discussion; never invent
-another decision. Confirmation does not grant implementation authority.
+After a trigger, when writable, execute the transaction this turn before
+user-visible reply, comment, or question. Never emit plan/status; first
+visible text follows success. On continuation or completion, inspect canonical
+state; update only for new input and close when scope resolves.
 
-Replies state only saved decisions, resume context, or completion. Omit process
-inventory. A brief skill name or purpose is welcome when it helps
-explain a capability, limit, or choice.
+When scope resolves, stop and close discussion; invent no further decision.
+Confirmation does not grant implementation authority. Replies state only saved
+decisions, resume context, or completion; omit process inventory.

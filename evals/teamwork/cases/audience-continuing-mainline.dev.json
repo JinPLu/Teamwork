@@ -1,0 +1,66 @@
+{
+  "id": "audience-continuing-mainline",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/workflow-contract.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Continue a discussion about whether C8 can be interpreted as a spatially independent physical representation. The first answer must address the interpretation from the observed channel interactions. The user then asks whether usable reconstruction changes that conclusion. Keep the same decision visible, answer the follow-up directly, and do not replace the discussion with document, version, or workflow status.",
+  "expected": {
+    "requires": [
+      "discussion_mainline",
+      "mainline_advanced",
+      "status_displacement_rejected",
+      "term_stability",
+      "static_contract_only"
+    ]
+  },
+  "must": [
+    "retain the spatial-interpretation question across both replies",
+    "answer the reconstruction follow-up before adding any explanation",
+    "advance the same decision with the comparison that would resolve it"
+  ],
+  "must_not": [
+    "substitute version, persistence, or workflow status for the answer",
+    "switch to an unrelated documentation topic",
+    "introduce an unprovided internal label"
+  ],
+  "mainline": "独立的空间区域",
+  "turns": [
+    {
+      "user": "C8 的高压缩和可用重建是否足以把它解释为空间上独立的物理表示？",
+      "assistant": "结论：C8 可以继续作为压缩候选，但不能解释为彼此独立的空间区域。强交互说明通道不是彼此独立的物理坐标；要判断独立的空间区域这一解释，需要比较空间划分和跨通道交互。"
+    },
+    {
+      "user": "那可用重建是否足以改变这个结论？",
+      "assistant": "不能。可用重建只说明 C8 保留了足以重建的信息，不说明它对应独立的空间区域。因此讨论仍围绕独立的空间区域这一解释推进，下一步仍比较空间划分和跨通道交互。"
+    }
+  ],
+  "turn_anchors": [
+    {
+      "answer": "C8 可以继续作为压缩候选",
+      "mainline": "独立的空间区域",
+      "advance": "比较空间划分和跨通道交互"
+    },
+    {
+      "answer": "不能",
+      "mainline": "独立的空间区域",
+      "advance": "仍比较空间划分和跨通道交互"
+    }
+  ],
+  "negative_controls": [
+    {
+      "id": "status_displacement",
+      "response": "我先更新版本并持久化讨论文档，然后再回答。"
+    },
+    {
+      "id": "topic_switch",
+      "response": "现在应当转而讨论文档排版和安装流程。"
+    },
+    {
+      "id": "invented_label",
+      "response": "C8 是 Q9 证据阶梯中的一个节点。"
+    }
+  ],
+  "rubric": "assistance-quality",
+  "evidence": "Offline authored two-turn contrast for retaining and advancing one user-facing decision; it does not prove live model behavior."
+}
