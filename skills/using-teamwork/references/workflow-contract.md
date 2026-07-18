@@ -1,7 +1,6 @@
 # Workflow Contract
 
-Shared safety and acceptance rules. Stage skills own their methods; load
-references only when needed.
+Shared rules; load references only when needed.
 
 ## Core Rules
 
@@ -17,11 +16,13 @@ references only when needed.
    Confirm unapproved destructive, credential-sensitive, paid, public, or
    external-system actions.
 4. **Produce the real result first.** Take the shortest authorized path to
-   create, change, or run the requested work. Planning, tests, validation,
-   review, and narration support delivery only. Use them only to unlock the next
-   result action, distinguish the current failure, directly check changed
-   behavior, or protect a named high-risk boundary. When a safe real path exists,
-   do not replace it with a proxy check. Stop when the requested result is observed.
+   create, change, or run requested work. A plan is optional. Authority is
+   separate from plan acceptance. Re-enter Plan only when new evidence changes
+   accepted scope or criteria. Planning, tests, validation, review, and narration
+   support delivery only. Verify only the changed path or a named protected
+   boundary. Fresh review only when the user asks or an accepted risk gate
+   requires it. When a safe real path exists, do not replace it with a proxy check.
+   Stop at result.
 5. **Keep code direct.** Understand only the owner, state, and invariants needed
    for the next safe change; choose the lowest-maintenance solution satisfying
    behavior. No-change needs accepted evidence. When boundaries fit, prefer the canonical owner/pattern, language or host/platform built-ins, a
@@ -68,7 +69,7 @@ the decision. Do not substitute a stock proof-status sentence for that boundary.
 Mention an alternative cause only when it changes action or confidence. State
 material uncertainty once; never turn it into certainty.
 
-For a material decision affecting the next action, give a brief human-readable
+For a material decision affecting the next action, give a human-readable
 checkpoint: `Settled: <resolved choice and why>` / `Still open: <remaining
 choice or none>`. Omit it when none exists. It is not a process dump or
 authority grant.
@@ -102,7 +103,7 @@ unaffected in-scope work may continue.
 |---|---|---|
 | Low: clear, reversible, local | Direct execution | Observe the result or nearest focused check |
 | Medium: unfamiliar, ambiguous, repeated failure, or meaningful behavior change | Current-blocker stage only | Real path or nearest direct check; material residual risk only |
-| High: public/shared contract, migration, release, destructive, or security/permission/data | Name boundary; durable scope only if needed | Direct boundary evidence; fresh review only if required |
+| High: public/shared contract, migration, release, destructive, or security/permission/data | Name boundary; durable scope only if needed | Direct boundary evidence; fresh review only when the user or accepted risk gate requires it |
 
 File count does not set risk; public impact and failure cost do.
 

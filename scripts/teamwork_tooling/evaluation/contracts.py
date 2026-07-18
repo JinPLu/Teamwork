@@ -257,6 +257,30 @@ REQUIRED_DISCUSSION_CASES = {
         "readback_verified_anchors",
         "static_contract_only",
     },
+    "discussion-explicit-save-only": {
+        "explicit_save_or_resume_trigger",
+        "explicit_grill_narrow_discussion_authority",
+        "independent_usefulness_trigger",
+        "static_contract_only",
+    },
+    "discussion-handoff-only": {
+        "handoff_or_compaction_trigger",
+        "explicit_grill_narrow_discussion_authority",
+        "independent_usefulness_trigger",
+        "static_contract_only",
+    },
+    "discussion-three-branch-only": {
+        "three_real_branches_trigger",
+        "explicit_grill_narrow_discussion_authority",
+        "independent_usefulness_trigger",
+        "static_contract_only",
+    },
+    "discussion-short-explicit-save": {
+        "explicit_save_or_resume_trigger",
+        "explicit_grill_narrow_discussion_authority",
+        "shortness_not_a_veto",
+        "static_contract_only",
+    },
     "discussion-single-conclusion-continuity": {
         "single_conclusion_open_discriminator_trigger",
         "no_second_settled_choice_threshold",

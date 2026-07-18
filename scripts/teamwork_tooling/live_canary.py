@@ -263,6 +263,15 @@ def _redacted_usage(value: Any) -> Any:
     }
 
 
+def _prompt_sha256(record: Mapping[str, Any]) -> str:
+    """Bind retained evidence to prompts without retaining prompt prose."""
+
+    turns = record.get("turns")
+    prompts = [turn.get("prompt") for turn in turns if isinstance(turn, dict)] if isinstance(turns, list) else []
+    encoded = json.dumps(prompts, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    return _sha256_bytes(encoded)
+
+
 def _redacted_costs(value: Any) -> list[int | float | None] | None:
     if not isinstance(value, list):
         return None
@@ -409,6 +418,7 @@ def _run_command(args: argparse.Namespace) -> int:
             "host": {"codex_version": codex_version},
             "requested_model": args.model,
             "requested_effort": args.effort,
+            "repeats": args.repeats,
             "dry_run": args.dry_run,
             "trajectory_limit": args.max_trajectories,
             "inventory": entries,
@@ -543,6 +553,18 @@ def _finalize_command(args: argparse.Namespace) -> int:
                 "trajectory_sha256": digest,
                 "review_sha256": _sha256_file(files[run_id]),
                 "manifest_sha256": manifest_sha,
+                "prompt_sha256": _prompt_sha256(record),
+            },
+            "provenance": {
+                "package_version": manifest.get("package_version"),
+                "evidence_lane": "LIVE",
+                "host": "codex",
+                "model": record.get("resolved_model") or record.get("model"),
+                "config_sha256": manifest_sha,
+                "prompt_sha256": _prompt_sha256(record),
+                "repeats": manifest.get("repeats"),
+                "trajectory_sha256": digest,
+                "review_sha256": _sha256_file(files[run_id]),
             },
             "activation_claim": "AVAILABILITY_ONLY",
         })

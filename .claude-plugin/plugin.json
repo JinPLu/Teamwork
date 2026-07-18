@@ -23,7 +23,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Evidence-grounded teamwork for complex Claude Code tasks.",
-    "longDescription": "A Claude Code adapter for research, reproducible debugging, reviewable planning, scoped execution, fresh review, and long-running goals. Simple work stays on the native fast path; Task subagents are used only when independent work benefits from separation. Claude Code remains in control of editing, tools, permissions, and interaction.",
+    "longDescription": "A Claude Code adapter for research, reproducible debugging, reviewable planning, scoped execution, fresh review, and long-running goals. A plan is optional; authority is separate from plan acceptance. Verify only the changed path or a named protected boundary. Re-enter Plan only when new evidence changes accepted scope or criteria. Fresh review only when the user asks or an accepted risk gate requires it. Simple work stays on the native fast path; Task subagents are used only when independent work benefits from separation. Claude Code remains in control of editing, tools, permissions, and interaction.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -33,7 +33,7 @@
     "websiteURL": "https://github.com/JinPLu/Teamwork",
     "defaultPrompt": [
       "Research this problem from primary sources and project evidence, then recommend the next safe action.",
-      "Execute the accepted scope, verify the result, and report any genuine blocker.",
+      "Execute authorized scope. Plans are optional. Verify changed path or named boundary; review only if requested or risk-gated.",
       "Initialize or refresh Teamwork for one selected repository without changing unrelated user or project configuration."
     ],
     "brandColor": "#2563EB"

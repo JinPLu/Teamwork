@@ -552,6 +552,8 @@ if codex.get("version") != version:
     raise SystemExit("FAIL: Codex manifest version must match VERSION")
 if codex.get("interface", {}).get("defaultPrompt") is None or len(codex["interface"]["defaultPrompt"]) != 3:
     raise SystemExit("FAIL: Codex manifest must expose exactly three default prompts")
+if any(not isinstance(prompt, str) or len(prompt) > 128 for prompt in codex["interface"]["defaultPrompt"]):
+    raise SystemExit("FAIL: Codex default prompts must be strings of at most 128 characters")
 if bundle_manifest != codex:
     raise SystemExit("FAIL: Marketplace bundle manifest must match the canonical Codex manifest")
 if "hooks" in bundle_manifest:
@@ -600,6 +602,11 @@ if "Claude Code" not in claude.get("description", ""):
     raise SystemExit("FAIL: Claude manifest description must mention Claude Code")
 if claude.get("version") != version:
     raise SystemExit("FAIL: Claude manifest version must match VERSION")
+claude_prompts = claude.get("interface", {}).get("defaultPrompt")
+if not isinstance(claude_prompts, list) or len(claude_prompts) != 3 or any(
+    not isinstance(prompt, str) or len(prompt) > 128 for prompt in claude_prompts
+):
+    raise SystemExit("FAIL: Claude default prompts must be three strings of at most 128 characters")
 PY
 while IFS= read -r bundle_file; do
   rel="${bundle_file#"$ROOT"/}"

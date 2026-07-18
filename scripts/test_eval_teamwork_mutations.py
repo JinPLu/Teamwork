@@ -32,6 +32,7 @@ from teamwork_tooling.evaluation.sources import (
     validate_maintainer_release_source_text,
     validate_minimal_handoff_source_text,
     validate_minimality_source_text,
+    validate_outcome_first_source_parity,
     validate_release_boundary_source_text,
     validate_rule_maintenance_source_text,
     validate_semantic_source_text,
@@ -364,6 +365,34 @@ class CaseSchemaMutationTests(unittest.TestCase):
         with self.assertRaisesRegex(EvalError, "discussion coverage missing"):
             self.validate(data)
 
+    def test_discussion_usefulness_cases_isolate_each_positive_trigger(self) -> None:
+        cases = {
+            "discussion-explicit-save-only.dev.json": "explicit_save_or_resume_trigger",
+            "discussion-handoff-only.dev.json": "handoff_or_compaction_trigger",
+            "discussion-three-branch-only.dev.json": "three_real_branches_trigger",
+            "discussion-short-explicit-save.dev.json": "explicit_save_or_resume_trigger",
+        }
+        trigger_requirements = {
+            "explicit_save_or_resume_trigger",
+            "handoff_or_compaction_trigger",
+            "three_real_branches_trigger",
+        }
+        for name, trigger in cases.items():
+            with self.subTest(name=name):
+                data = self.load_case(name)
+                requires = set(data["expected"]["requires"])
+                self.assertEqual(requires & trigger_requirements, {trigger})
+                self.validate(data)
+                data["expected"]["requires"].remove(trigger)
+                with self.assertRaisesRegex(EvalError, "discussion coverage missing"):
+                    self.validate(data)
+
+        short_control = self.load_case("discussion-short-grill.dev.json")
+        self.assertFalse(
+            set(short_control["expected"]["requires"]) & trigger_requirements
+        )
+        self.validate(short_control)
+
     def test_discussion_case_locks_question_and_readback_gate_coverage(self) -> None:
         for requirement in (
             "persistence_before_next_question",
@@ -614,6 +643,50 @@ class CaseSchemaMutationTests(unittest.TestCase):
         data["expected"]["requires"].remove("user_effect")
         with self.assertRaisesRegex(EvalError, "rule-maintenance coverage missing"):
             self.validate(data)
+
+
+class OutcomeFirstParityMutationTests(unittest.TestCase):
+    @staticmethod
+    def parity_text() -> str:
+        return "\n".join(
+            (
+                "A plan is optional.",
+                "Authority is separate from plan acceptance.",
+                "Verify only the changed path or a named protected boundary.",
+                "Re-enter Plan only when new evidence changes accepted scope or criteria.",
+                "Fresh review only when the user asks or an accepted risk gate requires it.",
+            )
+        )
+
+    def test_each_producer_rejects_an_additive_opposite_rule(self) -> None:
+        sources = {
+            path: self.parity_text()
+            for path in (
+                "skills/using-teamwork/references/workflow-contract.md",
+                "skills/teamwork-execute/SKILL.md",
+                "skills/using-teamwork/references/routing-policy.md",
+                "skills/using-teamwork/references/role-playbook.md",
+                "scripts/install/policy.sh",
+                "templates/codex-agents/teamwork-worker.toml",
+                "templates/cursor-agents/worker.md",
+                "templates/claude-agents/worker.md",
+                ".claude-plugin/plugin.json",
+                ".codex-plugin/plugin.json",
+            )
+        }
+        opposites = (
+            ("A plan is mandatory.", "mandatory plan"),
+            ("Every change requires the full test suite.", "every full suite"),
+            ("Always perform a fresh review after implementation.", "automatic fresh/final review"),
+            ("Confirmation grants implementation authority.", "confirmation grants authority"),
+        )
+        for path in sources:
+            for opposite, error in opposites:
+                with self.subTest(path=path, opposite=opposite):
+                    mutated = dict(sources)
+                    mutated[path] += "\n" + opposite
+                    with self.assertRaisesRegex(EvalError, error):
+                        validate_outcome_first_source_parity(mutated)
 
 
 class SemanticSourceMutationTests(unittest.TestCase):
@@ -873,7 +946,7 @@ class SemanticSourceMutationTests(unittest.TestCase):
     def test_execute_rejects_proxy_success(self) -> None:
         self.assert_skill_contract_rejected(
             "teamwork-execute",
-            "Never substitute plan/mock/static success\nfor an available real path",
+            "Never substitute plan/mock/static success for an available real path",
             "Treat plan/mock/static success as completion",
             "proxy checks cannot replace delivery",
         )
@@ -989,8 +1062,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_always_loaded_policy_requires_a_connected_reader_argument(self) -> None:
         mutated = self.policy.replace(
-            "Connect observed basis, plain interpretation, and\n"
-            "decision-relevant boundary/next check.",
+            "Connect observed\n"
+            "basis, plain interpretation, and decision-relevant boundary/next check.",
             "List observations without connecting them to a decision.",
         )
         self.assertNotEqual(mutated, self.policy)
@@ -999,7 +1072,7 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_always_loaded_policy_requires_observation_inference_separation(self) -> None:
         mutated = self.policy.replace(
-            "Separate observation from inference.",
+            "Separate\nobservation from inference.",
             "Blend observation and inference together.",
         )
         self.assertNotEqual(mutated, self.policy)
@@ -1017,7 +1090,7 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_always_loaded_policy_rejects_inferred_label_meaning(self) -> None:
         mutated = self.policy.replace(
-            "Use supplied terms;\ninvent no labels or identifier meanings.",
+            "Use supplied\nterms; invent no labels or identifier meanings.",
             "Infer a label's meaning whenever it sounds suggestive.",
         )
         self.assertNotEqual(mutated, self.policy)
@@ -1056,8 +1129,8 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_always_loaded_policy_preserves_grill_authority_provenance(self) -> None:
         mutated = self.policy.replace(
-            "Grill only for user-originated\n"
-            "challenge/question-first intent; reuse/artifact usefulness grants no write.",
+            "Grill only for user-originated challenge/question-first intent;\n"
+            "reuse/artifact usefulness grants no write.",
             "Any automatic Plan or useful artifact condition grants discussion writes.",
         )
         self.assertNotEqual(mutated, self.policy)
@@ -1066,7 +1139,7 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_always_loaded_policy_requires_direct_change_build(self) -> None:
         mutated = self.policy.replace(
-            "Clear authorized\nchange/build goes straight to implementation.",
+            "Clear authorized change/build\ngoes straight to implementation.",
             "Clear change/build goes through planning and review.",
         )
         self.assertNotEqual(mutated, self.policy)
@@ -1400,7 +1473,7 @@ class SemanticSourceMutationTests(unittest.TestCase):
             encoding="utf-8"
         )
         mutated = protocol.replace(
-            "These conditions\ndecide usefulness, never authority.",
+            "These conditions decide usefulness, never authority.",
             "These useful conditions grant write authority.",
         )
         self.assertNotEqual(mutated, protocol)
@@ -1412,13 +1485,10 @@ class SemanticSourceMutationTests(unittest.TestCase):
                 self.discussion_template,
             )
 
-    def test_discussion_source_rejects_short_grill_writes(self) -> None:
+    def test_discussion_source_rejects_additive_absolute_short_grill_rule(self) -> None:
         grill = self.skill_sources["grill-me"]
-        mutated = grill.replace(
-            "Short Grill stays artifact-free", "Short Grill writes a discussion record"
-        )
-        self.assertNotEqual(mutated, grill)
-        with self.assertRaisesRegex(EvalError, "short Grill artifact-free"):
+        mutated = grill + "\nShort Grill stays artifact-free.\n"
+        with self.assertRaisesRegex(EvalError, "absolute short-Grill rule"):
             validate_discussion_source_text(
                 mutated,
                 self.skill_sources["using-teamwork"],
@@ -1576,15 +1646,20 @@ class SemanticSourceMutationTests(unittest.TestCase):
 
     def test_discussion_source_requires_semantic_record_and_opaque_revision(self) -> None:
         self.assert_discussion_protocol_rejected(
-            "The helper derives the path, index entry, and rendered artifact",
+            "The helper derives the path,\n   index entry, and rendered artifact",
             "Manually choose a path and render the index entry and artifact",
             "semantic helper rendering",
         )
         self.assert_discussion_protocol_rejected(
-            "Run\n   `schema <operation>` and fill exactly its JSON shape; never inspect helper\n"
-            "   source.",
+            "Run\n   `schema <operation>` and fill exactly its JSON shape",
             "Construct an undocumented request by reading the helper source.",
             "self-describing request schema",
+        )
+        self.assert_discussion_protocol_rejected(
+            "`decision_map.action` is `preserve`, `clear`, `replace`, or create-only\n"
+            "   `omit`",
+            "Decision-map actions are undocumented.",
+            "decision-map action grammar",
         )
         self.assert_discussion_protocol_rejected(
             "Reuse the opaque `revision` unchanged",

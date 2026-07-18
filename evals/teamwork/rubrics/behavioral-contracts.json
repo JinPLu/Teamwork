@@ -11,6 +11,14 @@
       "description": "The response honors owned paths, protected boundaries, platform limits, and accepted-plan constraints."
     },
     {
+      "name": "outcome_first_parity",
+      "description": "Static/offline source evidence requires plan-optional execution, authority separate from plan acceptance, focused verification, Plan re-entry only for changed accepted scope or criteria, and fresh review only when requested or risk-gated; it does not prove automatic host activation or cross-host runtime parity."
+    },
+    {
+      "name": "discussion_persistence_predicates",
+      "description": "Static/offline discussion evidence keeps activation, usefulness, and write authority independent; explicit save/resume, approaching handoff/compaction, a settled conclusion plus open discriminator, or at least three real branches are alternative usefulness triggers, while shortness is neither a trigger nor a veto."
+    },
+    {
       "name": "evidence_quality",
       "description": "Claims are backed by observed files, command output, source lookup, or clearly labeled inference."
     },

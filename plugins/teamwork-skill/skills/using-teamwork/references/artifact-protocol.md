@@ -16,8 +16,9 @@ observable condition holds:
   decision remains open before the next action;
 - one decision has at least three real branches.
 
-Time, word count, and a short Grill never trigger persistence. These conditions
-decide usefulness, never authority. Creation and later updates require authority;
+Time, word count, and a short Grill never trigger persistence. Shortness cannot
+veto another condition. These conditions decide usefulness, never authority.
+Creation and later updates require authority;
 a user-originated challenge or natural question-first request is explicit Grill
 and grants only its supporting discussion-record lifecycle unless the user says
 no files. Plan complexity and artifact usefulness never activate Grill or grant
@@ -58,7 +59,9 @@ state:
    `index.json`, `current.md`, `README.md`, or a discussion artifact.
 2. Decide create, update, close, supersede, or replace from that state. Run
    `schema <operation>` and fill exactly its JSON shape; never inspect helper
-   source. The helper derives the path, index entry, and rendered artifact.
+   source. `decision_map.action` is `preserve`, `clear`, `replace`, or create-only
+   `omit`; `replace` fills the typed `replacement`. The helper derives the path,
+   index entry, and rendered artifact.
 3. Reuse the opaque `revision` unchanged in exactly one
    `apply --request-json <JSON>`, or `--request <file>` when quoting is unsafe.
    Never use stdin. `apply` is the only writer and performs replacement atomically;

@@ -29,14 +29,16 @@ resources.
 
 ## Worker
 
-Execute only the accepted owned scope. Read the current owner/control flow and
-relevant tests/config before editing. Prefer changing the existing path; do not
-add fallback, wrapper, mode, or broad catch to hide missing state.
+Execute only the accepted owned scope. A plan is optional. Authority is separate
+from plan acceptance. Read the current owner/control flow and relevant
+tests/config before editing. Prefer changing the existing path; do not add
+fallback, wrapper, mode, or broad catch to hide missing state.
 
 Use a failing test first when it efficiently locks a behavior change or
 regression. For an unclear reproducible failure, follow `debug-mode.md` before
-fixing. Run focused verification and report partial or unavailable proof
-without rounding it up to completion.
+fixing. Verify only the changed path or a named protected boundary, and report
+partial or unavailable proof without rounding it up to completion. Re-enter Plan
+only when new evidence changes accepted scope or criteria.
 
 ## Reviewer
 
@@ -45,10 +47,10 @@ summaries remain claims. Map requirements to evidence, report actionable
 `BLOCKER | FOLLOW-UP | SUGGESTION` findings, and push back on unsupported or out-of-scope
 feedback. For re-review, check the prior required fixes and their evidence.
 
-Use fresh context when the risk matrix requires independent acceptance:
-security/destructive work, public contracts, releases, goal completion, or
-delegated writes. Same-context verification is sufficient elsewhere unless the
-user asks for independent review.
+Fresh review only when the user asks or an accepted risk gate requires it, such
+as a named security, destructive, public-contract, or release boundary. Delegated
+writes and goal completion do not by themselves require a fresh review.
+Same-context verification is sufficient elsewhere.
 
 ## Deep Judge / Reviewer
 

@@ -21,6 +21,7 @@ from pathlib import Path
 
 PLUGIN_NAME = "teamwork-skill"
 RUNTIME_MARKER = "TEAMWORK_CODEX_PLUGIN_RUNTIME=1\n"
+MAX_DEFAULT_PROMPT_CHARS = 128
 COPY_ITEMS = (
     ("VERSION", "VERSION"),
     (".codex-plugin", ".codex-plugin"),
@@ -115,6 +116,10 @@ def validate_source(root: Path) -> None:
     prompts = manifest.get("interface", {}).get("defaultPrompt")
     if not isinstance(prompts, list) or len(prompts) != 3:
         raise SystemExit("canonical plugin manifest must expose exactly three default prompts")
+    if any(not isinstance(prompt, str) or len(prompt) > MAX_DEFAULT_PROMPT_CHARS for prompt in prompts):
+        raise SystemExit(
+            f"canonical plugin default prompts must be strings of at most {MAX_DEFAULT_PROMPT_CHARS} characters"
+        )
     validate_marketplace(root)
 
 

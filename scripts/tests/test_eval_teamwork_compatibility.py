@@ -15,7 +15,8 @@ ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "eval-teamwork.py"
 sys.path.insert(0, str(SCRIPT.parent))
 
-from teamwork_tooling.evaluation.cases import selected_cases
+from teamwork_tooling.evaluation.cases import selected_cases, validate_ledger_lines
+from teamwork_tooling.evaluation.contracts import EvalError
 
 
 class EvalTeamworkCompatibilityTests(unittest.TestCase):
@@ -89,6 +90,33 @@ class EvalTeamworkCompatibilityTests(unittest.TestCase):
             b"OK: optimizer ledger passed (1 rows)\n",
             result.stdout,
         )
+
+    def test_accepted_ledger_reader_enforces_v2_no_downgrade(self) -> None:
+        v2 = {
+            "date": "2026-07-16",
+            "schema_version": 2,
+            "package_version": "3.4.0",
+            "behavior_claims": [
+                {
+                    "type": "SOURCE_PARITY",
+                    "evidence_lane": "STATIC_OFFLINE",
+                    "claim_limits": ["Bounded to recorded source evidence."],
+                    "provenance": {
+                        "package_version": "3.4.0",
+                        "source_sha256": "a" * 64,
+                    },
+                }
+            ],
+        }
+        legacy = {"date": "2026-07-17"}
+        with tempfile.TemporaryDirectory() as temporary:
+            ledger = Path(temporary) / "accepted.jsonl"
+            ledger.write_text(
+                json.dumps(v2) + "\n" + json.dumps(legacy) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(EvalError, "must remain schema_version 2"):
+                validate_ledger_lines(ledger, "accepted.jsonl", {"date"})
 
 
 if __name__ == "__main__":

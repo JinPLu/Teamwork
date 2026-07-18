@@ -4,6 +4,15 @@ REAL_CODEX="${TEAMWORK_REAL_CODEX:-$(command -v codex 2>/dev/null || true)}"
 if [[ -n "$REAL_CODEX" && ! -x "$REAL_CODEX" ]]; then
   REAL_CODEX=""
 fi
+CODEX_AGENTS=(
+  teamwork-explorer
+  teamwork-worker
+  teamwork-designer
+  teamwork-judge
+  teamwork-reviewer
+  teamwork-deep-judge
+  teamwork-deep-reviewer
+)
 
 # --- Lean role templates ---
 while IFS= read -r template; do
@@ -1221,11 +1230,21 @@ if [[ -z "$REAL_CODEX" ]]; then
 else
   marketplace_home="$tmp/home-marketplace"
   marketplace_codex_home="$tmp/codex-marketplace"
-  mkdir -p "$marketplace_home" "$marketplace_codex_home"
+  # The real Codex CLI may materialize a local Marketplace source while it
+  # installs it.  Exercise that behavior through an isolated copy so the
+  # smoke test proves cache execution without ever mutating this checkout.
+  marketplace_source="$tmp/marketplace-source"
+  mkdir -p "$marketplace_home" "$marketplace_codex_home" \
+    "$marketplace_source/.agents/plugins" "$marketplace_source/plugins"
+  cp "$ROOT/.agents/plugins/marketplace.json" \
+    "$marketplace_source/.agents/plugins/marketplace.json"
+  cp -R "$ROOT/plugins/teamwork-skill" "$marketplace_source/plugins/teamwork-skill"
   HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
-    "$REAL_CODEX" plugin marketplace add "$ROOT" --json > "$tmp/marketplace-add.json"
+    "$REAL_CODEX" plugin marketplace add "$marketplace_source" --json > "$tmp/marketplace-add.json"
   HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
     "$REAL_CODEX" plugin add teamwork-skill@teamwork --json > "$tmp/plugin-add.json"
+  [[ -d "$ROOT/plugins/teamwork-skill" ]] \
+    || fail "Marketplace smoke must not mutate the release plugin bundle"
   cache_root="$marketplace_codex_home/plugins/cache/teamwork/teamwork-skill/$(tr -d '[:space:]' < "$ROOT/VERSION")"
   [[ -d "$cache_root" ]] || fail "Marketplace install must cache teamwork-skill by VERSION"
   [[ -f "$cache_root/.teamwork-plugin-runtime" ]] \

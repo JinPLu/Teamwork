@@ -6,14 +6,14 @@
 
 ## 3.4.0 - 2026-07-18
 
-这次更新把 Teamwork 变成可从 Codex Marketplace 安装的完整插件，同时把影响用户级配置的首次启用保留为明确选择。
+这次更新把 Teamwork 变成可从 Codex Marketplace 安装的完整插件，同时保持首次用户级配置必须明确确认，也让普通执行继续以结果而不是流程仪式为中心。
 
-- Codex 一步拿到全部 Skill：此前，Codex 用户必须先 checkout 仓库并运行安装器，10 个 Skill 与 agents、路由和全局规则绑在同一条本地脚本路径上；现在，添加 `JinPLu/Teamwork@v3.4.0` Marketplace 并安装 `teamwork-skill@teamwork` 后，全部 10 个 Skill 会直接从插件缓存可用。新任务中调用 `$teamwork-update` 才会展示并在明确同意后配置完整 Codex 能力。
-- 完整能力仍由用户确认：此前，安装脚本会复制 user Skill 并同时修改 agents、路由、策略和通知；现在，插件首次启用只配置 Codex agents、路由、受管全局策略和可选通知，最后才写 activation 标记。它只清理已验证的旧 Teamwork Skill，不会创建 `~/.agents/skills` 副本，也会在遇到未知同名旧内容时停止并提示迁移。
-- 更可靠地刷新：此前，更新检查只能以 checkout 为基准；现在，插件模式同时核对 `codex plugin list --json`、缓存 manifest、activation 标记、agents、路由、策略、通知和遗留重复项。Marketplace 升级后重新安装插件，开启新任务并调用 `$teamwork-update` 即可刷新。
-- 升级方式：运行 `codex plugin marketplace add JinPLu/Teamwork@v3.4.0`、`codex plugin add teamwork-skill@teamwork`，然后开启新 Codex 任务并调用 `$teamwork-update`。现有 checkout 用户可在 3.4.x 继续使用 `./install.sh codex`；Cursor 与 Claude Code 的安装方式不变。
+- Codex 一步拿到全部 Skill：此前，Codex 用户必须先 checkout 仓库并运行安装器，10 个 Skill 与 agents、路由和全局规则绑在同一条本地脚本路径上；现在，添加 `JinPLu/Teamwork@v3.4.0` Marketplace 并安装 `teamwork-skill@teamwork` 后，全部 10 个 Skill 会直接从插件缓存可用。新任务中调用 `$teamwork-update` 会先展示完整 Codex 设置，只有明确同意后才应用。
+- 完整能力仍由用户确认：此前，安装会复制 user Skill 并同时修改 agents、路由、策略和通知；现在，插件启用只配置 Codex agents、路由、受管策略和可选通知，最后才写 activation 标记；它只清理已验证的旧 Teamwork Skill，绝不创建 `~/.agents/skills` 副本。
+- 连续性更好但不增加仪式：此前，短 Grill 可能阻止保存一段明确有用的讨论，已接受 plan 也可能看起来像执行前提；现在，只有用户明确要求被提问或挑战才会激活 Grill。显式保存/稍后恢复、交接、已定结论仍有明确未决比较，或至少三条真实分支均可保留连续性；范围、验收标准和执行权限明确即可直接执行，只验证改动路径或明确边界，独立复查仅在用户或已接受风险门槛要求时进行。
+- 升级方式：Codex 用户运行 `codex plugin marketplace add JinPLu/Teamwork@v3.4.0`，再运行 `codex plugin add teamwork-skill@teamwork`，开启新任务并调用 `$teamwork-update`。checkout 用户可在 3.4.x 继续运行 `./install.sh all` 和 `./scripts/check-update.sh --readiness`；Cursor 与 Claude Code 的安装方式不变。
 
-限制：插件安装不会静默改写用户配置，也不会自动信任 hook。启用完整能力后仍需重启 Codex；若启用了通知，还须在 `/hooks` 只信任 Teamwork 的 `Stop` 与 `PermissionRequest` 两项。缓存、安装和隔离 bootstrap 已验证，但这不保证每次自然语言请求都会选择某项 Skill，也不代表 Cursor 或 Claude Code 的运行时行为已经等价。
+限制：插件安装不会静默改写用户配置，也不会自动信任 hook。启用完整能力后仍需重启 Codex；若启用了通知，还须在 `/hooks` 只信任 Teamwork 的 `Stop` 与 `PermissionRequest` 两项。损坏的讨论历史仍会 fail closed，不会自动修复。缓存、安装和隔离 bootstrap 检查不能保证每次自然语言请求都会选择某项 Skill，也不代表 Codex、Cursor 与 Claude Code 的运行时行为已经等价。
 
 ## 3.3.0 - 2026-07-16
 

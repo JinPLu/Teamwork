@@ -1,0 +1,22 @@
+{
+  "id": "discussion-explicit-save-only",
+  "split": "dev",
+  "source": "synthetic",
+  "target": "skills/using-teamwork/references/artifact-protocol.md",
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "The user explicitly activated Grill and asks to save this discussion for later recovery. No handoff is near, there is no settled-plus-open discriminator, and only two real branches remain.",
+  "expected": {
+    "requires": ["explicit_save_or_resume_trigger", "explicit_grill_narrow_discussion_authority", "independent_usefulness_trigger", "static_contract_only"]
+  },
+  "must": [
+    "treat the explicit save or later-resume request as independently sufficient usefulness under the existing explicit Grill authority",
+    "write only the supporting discussion checkpoint through the canonical transaction"
+  ],
+  "must_not": [
+    "require handoff, a settled conclusion plus open discriminator, or three branches before saving",
+    "treat usefulness as activation or broader implementation authority",
+    "claim this offline authored case proves live model behavior"
+  ],
+  "rubric": "behavioral-contracts",
+  "evidence": "Offline static discussion-contract fixture; it isolates the explicit-save usefulness trigger and does not prove live model behavior."
+}

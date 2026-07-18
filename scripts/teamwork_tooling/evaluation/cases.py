@@ -11,6 +11,7 @@ from grill_contract import has_legacy_grill_ceremony, question_count
 
 from .contracts import *  # noqa: F403
 from .sources import normalize_semantic_text, validate_semantic_sources
+from ..semantic_review import SemanticReviewError, validate_accepted_ledger_v2
 
 
 INTERNAL_RESEARCH_DETAIL_RE = re.compile(
@@ -1218,6 +1219,7 @@ def validate_ledger_lines(path: Path, name: str, required_fields: set[str]) -> i
     if not lines:
         raise EvalError(f"{display_path(path)}: ledger must not be empty")
     line_count = 0
+    entries: list[dict[str, Any]] = []
     for index, line in enumerate(lines, start=1):
         if not line.strip():
             continue
@@ -1233,7 +1235,13 @@ def validate_ledger_lines(path: Path, name: str, required_fields: set[str]) -> i
             raise EvalError(f"{display_path(path)}:{index}: missing ledger fields: {', '.join(missing)}")
         if name == "optimizer-candidates.jsonl":
             validate_optimizer_candidate_entry(data, path, index)
+        entries.append(data)
         line_count += 1
+    if name == "accepted.jsonl":
+        try:
+            validate_accepted_ledger_v2(entries)
+        except SemanticReviewError as exc:
+            raise EvalError(f"{display_path(path)}: {exc}") from exc
     return line_count
 
 

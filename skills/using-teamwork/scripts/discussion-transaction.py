@@ -34,6 +34,11 @@ REQUIRED_HEADERS = (
     "Superseded By",
 )
 REQUIRED_SECTIONS = ("Goal", "Settled", "Still open", "Key evidence", "Continue here")
+CANONICAL_DISCUSSION_ENTRY_FIELDS = {
+    "topic", "kind", "title", "status", "currentness", "authority", "path",
+    "linked", "evidence_paths", "supersedes", "search_keys", "updated", "summary",
+}
+INHERITED_DISCUSSION_ENTRY_FIELDS = {"applies_to"}
 ENTRY_REQUIRED = (
     "topic",
     "kind",
@@ -166,6 +171,10 @@ def schema_template(lifecycle: str) -> dict[str, object]:
     if lifecycle in {"create", "replace"}:
         record["topic"] = "<topic-kebab-case>"
         record["slug"] = "<slug-kebab-case>"
+    record["decision_map"] = {
+        "action": "omit" if lifecycle == "create" else "preserve",
+        "replacement": None,
+    }
     template: dict[str, object] = {
         "schema_version": 1,
         "operation": operation,
@@ -267,6 +276,39 @@ def parse_decision_map(value: object) -> dict[str, object]:
     return {"direction": direction, "nodes": nodes, "edges": edges}
 
 
+def parse_decision_map_request(
+    value: object, *, operation: str
+) -> tuple[bool, dict[str, object] | None]:
+    if value is None:
+        return True, None
+    decision = require_object(value, label="record.decision_map")
+    if set(decision) == {"direction", "nodes", "edges"}:
+        return True, parse_decision_map(decision)
+    if set(decision) != {"action", "replacement"}:
+        fail(
+            "record.decision_map must be a typed map or contain action and replacement"
+        )
+    action = decision["action"]
+    replacement = decision["replacement"]
+    if action == "preserve":
+        if operation == "create" or replacement is not None:
+            fail("record.decision_map preserve requires an existing discussion and null replacement")
+        return False, None
+    if action == "omit":
+        if operation != "create" or replacement is not None:
+            fail("record.decision_map omit is create-only and requires null replacement")
+        return True, None
+    if action == "clear":
+        if operation == "create" or replacement is not None:
+            fail("record.decision_map clear requires an existing discussion and null replacement")
+        return True, None
+    if action == "replace":
+        if replacement is None:
+            fail("record.decision_map replace requires a typed replacement")
+        return True, parse_decision_map(replacement)
+    fail("record.decision_map.action must be preserve, omit, clear, or replace")
+
+
 def parse_record(value: object, *, operation: str) -> dict[str, object]:
     record = require_object(value, label="spec.record")
     required = set(RECORD_COMMON_FIELDS)
@@ -292,7 +334,11 @@ def parse_record(value: object, *, operation: str) -> dict[str, object]:
         parsed["topic"] = validate_slug(record["topic"], label="record.topic")
         parsed["slug"] = validate_slug(record["slug"], label="record.slug")
     if "decision_map" in record:
-        parsed["decision_map"] = parse_decision_map(record["decision_map"])
+        should_set, decision_map = parse_decision_map_request(
+            record["decision_map"], operation=operation
+        )
+        if should_set:
+            parsed["decision_map"] = decision_map
     return parsed
 
 
@@ -361,6 +407,21 @@ def section(text: str, heading: str) -> str:
     return matches[0].group("body").strip()
 
 
+def optional_decision_map(text: str) -> tuple[str, str] | None:
+    matches = list(
+        re.finditer(
+            r"(?P<block>^## Decision map\s*$\n(?P<body>.*?))(?=^## |\Z)",
+            text,
+            re.MULTILINE | re.DOTALL,
+        )
+    )
+    if len(matches) > 1:
+        fail("artifact Decision map section must appear at most once")
+    if not matches:
+        return None
+    return matches[0].group("block"), matches[0].group("body").strip()
+
+
 def is_none(value: str) -> bool:
     normalized = re.sub(r"^[\s>*+-]+", "", value.strip().lower()).strip("`*_ .")
     return normalized in {"none", "n/a", "not applicable", "nothing"}
@@ -409,17 +470,9 @@ def validate_artifact(text: str, *, operation: str, entry: dict[str, object]) ->
         fail("active artifact Still open must name an unresolved item")
     if status != "active" and not is_none(bodies["Still open"]):
         fail("closed artifact Still open must explicitly be none")
-    decision_maps = list(
-        re.finditer(
-            r"^## Decision map\s*$\n(?P<body>.*?)(?=^## |\Z)",
-            text,
-            re.MULTILINE | re.DOTALL,
-        )
-    )
-    if len(decision_maps) > 1:
-        fail("artifact Decision map section must appear at most once")
-    if decision_maps:
-        body = decision_maps[0].group("body").strip()
+    decision_map = optional_decision_map(text)
+    if decision_map is not None:
+        _, body = decision_map
         mermaid = re.search(r"```mermaid\s*\n(?P<diagram>.*?)```", body, re.DOTALL)
         if mermaid is None:
             fail("artifact Decision map must contain Mermaid")
@@ -453,7 +506,12 @@ def render_decision_map(decision: dict[str, object]) -> str:
 
 
 def render_artifact(
-    record: dict[str, object], *, status: str, updated: str, superseded_by: str
+    record: dict[str, object],
+    *,
+    status: str,
+    updated: str,
+    superseded_by: str,
+    decision_map_text: str | None,
 ) -> str:
     search_keys = record["search_keys"]
     linked = record["linked_artifacts"]
@@ -466,11 +524,7 @@ def render_artifact(
     if status != "active" and still_open:
         fail("closed record still_open must be empty")
     linked_text = ", ".join(linked) if linked else "none"
-    decision_text = ""
-    if "decision_map" in record:
-        decision = record["decision_map"]
-        assert isinstance(decision, dict)
-        decision_text = render_decision_map(decision)
+    decision_text = decision_map_text or ""
     text = f"""Artifact Type: discussion
 Status: {status}
 Authority: supporting
@@ -505,6 +559,32 @@ Superseded By: {superseded_by}
     return text
 
 
+def inherited_entry_metadata(entry: dict[str, object] | None) -> dict[str, object]:
+    if entry is None:
+        return {}
+    unknown = sorted(
+        set(entry) - CANONICAL_DISCUSSION_ENTRY_FIELDS - INHERITED_DISCUSSION_ENTRY_FIELDS
+    )
+    if unknown:
+        fail(f"unsupported discussion entry metadata: {', '.join(unknown)}")
+    inherited: dict[str, object] = {}
+    if "applies_to" in entry:
+        inherited["applies_to"] = require_string_list(
+            entry["applies_to"], label="discussion entry applies_to", allow_empty=True
+        )
+    return inherited
+
+
+def stable_unique(values: list[str]) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        if value not in seen:
+            seen.add(value)
+            result.append(value)
+    return result
+
+
 def canonical_entry_from_record(
     record: dict[str, object],
     *,
@@ -513,8 +593,9 @@ def canonical_entry_from_record(
     status: str,
     updated: str,
     supersedes: list[str],
+    inherited: dict[str, object],
 ) -> dict[str, object]:
-    return {
+    entry = {
         "topic": topic,
         "kind": "discussion",
         "title": record["title"],
@@ -529,6 +610,8 @@ def canonical_entry_from_record(
         "updated": updated,
         "summary": record["summary"],
     }
+    entry.update(inherited)
+    return entry
 
 
 def rewrite_replaced_artifact(text: str, *, new_path: str, updated: str) -> str:
@@ -734,7 +817,7 @@ def validate_agreement(index: dict[str, object], current: str, readme: str) -> s
 
 def parsed_artifact_record(text: str) -> dict[str, object]:
     headers = artifact_headers(text)
-    return {
+    record = {
         "headers": {
             key: values[0] if len(values) == 1 else values
             for key, values in headers.items()
@@ -742,6 +825,9 @@ def parsed_artifact_record(text: str) -> dict[str, object]:
         "title": (re.findall(r"^# (?!#)(.+?)\s*$", text, re.MULTILINE) or [None])[0],
         "sections": {heading: section(text, heading) for heading in REQUIRED_SECTIONS},
     }
+    if optional_decision_map(text) is not None:
+        record["decision_map"] = {"present": True}
+    return record
 
 
 def replace_unique_line(text: str, marker: str, value: str, *, suffix: str = "") -> str:
@@ -753,6 +839,22 @@ def replace_unique_line(text: str, marker: str, value: str, *, suffix: str = "")
     ending = lines[index][len(lines[index].rstrip("\r\n")) :]
     lines[index] = f"{marker} {value}{suffix}{ending}"
     return "".join(lines)
+
+
+def parsed_current_summary(text: str) -> dict[str, str]:
+    result: dict[str, str] = {}
+    lines = text.splitlines()
+    for key in SUMMARY_FIELDS:
+        marker = SUMMARY_MARKERS[key]
+        values = [line[len(marker) :].strip() for line in lines if line.startswith(marker)]
+        if len(values) != 1:
+            fail(f"current.md must contain exactly one summary marker: {marker}")
+        result[key] = require_single_line(values[0], label=f"current.md {marker}")
+    try:
+        date.fromisoformat(result["last_updated"])
+    except ValueError:
+        fail("current.md Last Updated must be a valid YYYY-MM-DD date")
+    return result
 
 
 def updated_current(text: str, summary: dict[str, str], active: str | None) -> str:
@@ -1287,6 +1389,7 @@ def inspect_project(project_root: str) -> dict[str, object]:
         current = decode_fd(current_snap)
         readme = decode_fd(readme_snap)
         active_path = validate_agreement(index, current, readme)
+        current_summary = parsed_current_summary(current)
         artifacts = discussion_snapshots(tree, index)
         active_record = None
         if active_path != "none":
@@ -1302,6 +1405,7 @@ def inspect_project(project_root: str) -> dict[str, object]:
         return {
             "initialized": True,
             "revision": fd_revision(tree.metadata(), [index_snap, current_snap, readme_snap, *artifacts.values()]),
+            "current_summary": current_summary,
             "active": active_record,
         }
     finally:
@@ -1367,6 +1471,28 @@ def entry_exists(parent_fd: int, name: str) -> bool:
         return True
     except FileNotFoundError:
         return False
+
+
+def allocate_discussion_path(
+    tree: FdTree,
+    entries: list[object],
+    *,
+    updated: str,
+    slug: str,
+) -> str:
+    indexed_paths = {
+        entry.get("path") for entry in entries if isinstance(entry, dict)
+    }
+    for ordinal in range(1, 10001):
+        suffix = "" if ordinal == 1 else f"-{ordinal}"
+        name = f"{updated}-{slug}{suffix}.md"
+        path = f"docs/teamwork/discussion/{name}"
+        if path in indexed_paths:
+            continue
+        if "discussion" in tree.fds and entry_exists(tree.fds["discussion"], name):
+            continue
+        return path
+    fail("cannot allocate a collision-free discussion artifact path")
 
 
 def create_marker(tree: FdTree, metadata: dict[str, object]) -> bytes:
@@ -1726,14 +1852,17 @@ def run(project_root: str, spec_value: object) -> dict[str, object]:
         old_position = active_matches[0][0] if active_matches else None
         old_entry = active_matches[0][1] if active_matches else None
         old_snapshot = existing_artifacts.get(old_path) if old_path else None
+        inherited = inherited_entry_metadata(old_entry if isinstance(old_entry, dict) else None)
+        old_decision_map = None
+        if old_snapshot is not None:
+            decision_map = optional_decision_map(decode_fd(old_snapshot))
+            old_decision_map = decision_map[0] if decision_map is not None else None
         if operation in {"create", "replace"}:
             slug = record["slug"]
             assert isinstance(slug, str)
-            new_path = f"docs/teamwork/discussion/{updated}-{slug}.md"
-            if any(isinstance(entry, dict) and entry.get("kind") == "discussion" and entry.get("path") == new_path for entry in entries):
-                fail("derived discussion path already has an index entry")
-            if new_path == old_path:
-                fail("replace must derive a distinct successor path")
+            new_path = allocate_discussion_path(
+                tree, entries, updated=updated, slug=slug
+            )
         else:
             assert old_path is not None
             new_path = old_path
@@ -1753,10 +1882,18 @@ def run(project_root: str, spec_value: object) -> dict[str, object]:
         else:
             assert isinstance(old_entry, dict) and isinstance(old_entry.get("topic"), str)
             topic = old_entry["topic"]
-        prior_supersedes = []
-        if isinstance(old_entry, dict) and isinstance(old_entry.get("supersedes"), list):
-            prior_supersedes = list(old_entry["supersedes"])
-        entry_supersedes = [old_path] if operation == "replace" and old_path else prior_supersedes
+        prior_supersedes: list[str] = []
+        if isinstance(old_entry, dict) and "supersedes" in old_entry:
+            prior_supersedes = require_string_list(
+                old_entry["supersedes"],
+                label="discussion entry supersedes",
+                allow_empty=True,
+            )
+        entry_supersedes = stable_unique(
+            [*prior_supersedes, old_path]
+            if operation == "replace" and old_path
+            else prior_supersedes
+        )
         final_entry = canonical_entry_from_record(
             record,
             topic=topic,
@@ -1764,12 +1901,23 @@ def run(project_root: str, spec_value: object) -> dict[str, object]:
             status=new_status,
             updated=updated,
             supersedes=entry_supersedes,
+            inherited=inherited,
         )
+        if "decision_map" in record:
+            decision = record["decision_map"]
+            decision_map_text = (
+                render_decision_map(decision) if isinstance(decision, dict) else None
+            )
+        elif operation == "create":
+            decision_map_text = None
+        else:
+            decision_map_text = old_decision_map
         artifact_text = render_artifact(
             record,
             status=new_status,
             updated=updated,
             superseded_by=artifact_superseded_by or "none",
+            decision_map_text=decision_map_text,
         )
         validate_artifact(
             artifact_text,
