@@ -1,43 +1,69 @@
-# Teamwork
+<p align="center">
+  <img src="assets/teamwork-workflow-gpt-image-2.png" alt="Teamwork workflow" width="760">
+</p>
+
+<h1 align="center">Teamwork</h1>
+
+<p align="center">
+  Help Codex, Cursor, and Claude Code deliver the real result first; use research, tests, and review only when they advance delivery or protect a named boundary.
+</p>
+
+<p align="center">
+  <a href="https://github.com/JinPLu/Teamwork/releases"><img src="https://img.shields.io/github/v/release/JinPLu/Teamwork?display_name=tag&amp;sort=semver" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2563EB" alt="MIT License"></a>
+  <img src="https://img.shields.io/badge/platforms-Codex%20%C2%B7%20Cursor%20%C2%B7%20Claude%20Code-0F766E" alt="Supports Codex, Cursor, and Claude Code">
+</p>
 
 [中文](README.md) · [Changelog](CHANGELOG.en.md) · [Contributing](CONTRIBUTING.md) · [MIT License](LICENSE)
 
-**Help Codex, Cursor, and Claude Code produce the real result first, using research, tests, and review only when they advance delivery or protect a named boundary.**
+---
 
-Teamwork is one shared skill package adapted to Codex, Cursor, and Claude Code. Each host still owns skill discovery, native tool calls, permission policy, and the responses produced at runtime. After installation, you can usually describe your goal in natural language. Clear authorized change/build work goes straight to the shortest real path; planning, tests, validation, and review are support and cannot replace an available real run, and work stops when the requested result is obtained. The host still uses the request and skill descriptions to select research, debugging, planning, execution, or review. That selection is model behavior, not deterministic automatic routing. For substantive explanations, Teamwork asks for a short argument that starts with the conclusion or what it means, connects the observed facts to their plain interpretation, and includes only a boundary or comparison that could change the decision. Technical detail appears when it is useful or requested, rather than as unexplained process, version, or label narration.
+## ✨ What it solves
 
-![Teamwork workflow](assets/teamwork-workflow-gpt-image-2.png)
+Teamwork is one shared skill package adapted to Codex, Cursor, and Claude Code. It does not take over the host: Each host still owns skill discovery, native tool calls, permission policy, and the responses produced at runtime.
 
-## What You Get
+Usually, describe the outcome you want. When scope, acceptance criteria, and authority are clear, Teamwork takes the shortest real path. Plans, tests, validation, and review are support, never substitutes for an available real run; work stops when the result is obtained. Choosing research, debugging, planning, execution, or review remains model behavior rather than deterministic routing.
 
-- **Evidence-grounded research:** Use primary sources, project files, and real configuration instead of inventing paths, ports, models, or parameters.
-- **Real result first:** Clear scope, acceptance criteria, and effect authority permit direct modification, generation, or execution; an accepted plan is optional and never supplies authority. Return to Plan only when new evidence changes accepted scope or criteria. Check only the changed path or a named high-risk boundary, stop when the result appears, and use independent review only when the user or an accepted risk gate requires it.
-- **Questions only when needed:** Inspect discoverable facts first and ask only about decisions that change the outcome, scope, acceptance, or authority.
-- **Bounded collaboration:** Use subagents only when work splits cleanly; the main agent keeps ownership of scope and integration without replaying completed work.
-- **Real-path completion:** Prefer the actual artifact, command, or runtime result; plans, mocks, static checks, and proxy tests cannot turn an unrun target into completion.
-- **Recoverable discussions:** In an initialized repository where the user has authorized writes and the runtime can write, an explicit request to be questioned or challenged may save one compact summary of the goal, settled choices, open question, key evidence, and continue point for a later task. Any one of explicit save/resume, an approaching handoff or compaction, a settled conclusion with an open discriminator, or three real branches makes it useful; shortness neither triggers nor vetoes it. An ordinary Plan does not automatically enter Grill or write a discussion record.
+| 🎯 Focus | What you get |
+| --- | --- |
+| **Evidence-grounded work** | Use primary sources, project files, and real configuration instead of invented paths, ports, models, or parameters. |
+| **Real result first** | A plan neither grants authority nor blocks execution; verify only the changed path or a named high-risk boundary. |
+| **Questions only when needed** | Inspect discoverable facts first, then ask only about decisions that change outcome, scope, acceptance, or authority. |
+| **Bounded collaboration** | Use subagents only when the work splits cleanly; the main task retains scope and integration ownership. |
+| **Recoverable discussions** | Save useful continuity only for explicit save/resume, an approaching handoff, an open discriminator, or enough real branches. |
 
-Teamwork is a good fit for literature and field research, technical evaluation, complex plans, reproducible failures, CI, cross-file implementation, strict review, and “keep going until it passes” work. One-line facts and obvious small edits do not get forced into a workflow.
+> [!TIP]
+> One-line facts and obvious small edits are not forced through a workflow. Teamwork is most useful for research, technical choices, CI, cross-file implementation, strict review, and “keep going until it passes” work.
 
-## Quick Start
+### 🧭 Communication and continuity
 
-You need a working Codex, Cursor, or Claude Code installation. For Codex, the
-Marketplace plugin is now the recommended entry point. Add the pinned 3.4.0
-Marketplace, install the plugin, start a new task, then explicitly enable its
-full Codex integration:
+For substantive explanations, Teamwork starts with the conclusion or what it means, then connects observed facts, their plain interpretation, and the boundary that could change the decision. Technical detail appears when it is useful or requested.
+
+In an initialized repository where the user has authorized writes and the runtime can write, an explicit request to be questioned or challenged may save one compact summary of the goal, settled choices, open question, key evidence, and continue point. Explicit save/resume, an approaching handoff, an open discriminator, or enough real branches can also make that continuity useful. An ordinary Plan does not automatically enter Grill or write a discussion record.
+
+---
+
+## 🚀 Quick start
+
+### Codex: Marketplace plugin (recommended)
 
 ```bash
 codex plugin marketplace add JinPLu/Teamwork@v3.4.0
 codex plugin add teamwork-skill@teamwork
 ```
 
-In the new Codex task, invoke `$teamwork-update`. It first shows the agents,
-routing, managed policy, notification choice, and verified legacy-skill cleanup
-it would make; confirm that one enablement action. All 10 Teamwork skills are
-available immediately from the installed plugin, while the user-level Codex
-configuration remains an explicit choice.
+Then start a new Codex task and invoke:
 
-For Cursor, Claude Code, or the legacy checkout workflow:
+```text
+$teamwork-update
+```
+
+All ten Teamwork skills are available from the plugin cache as soon as the plugin is installed.
+
+> [!IMPORTANT]
+> Full first-time enablement still requires your explicit approval. `$teamwork-update` explains the Codex agents, routing, managed policy, notification choice, and verified legacy-skill cleanup it would apply. It never creates `~/.agents/skills` copies or overwrites content whose ownership is uncertain.
+
+### Cursor, Claude Code, or the checkout compatibility path
 
 ```bash
 git clone https://github.com/JinPLu/Teamwork.git
@@ -46,7 +72,7 @@ cd Teamwork
 ./scripts/check-update.sh --readiness
 ```
 
-Then usually ask for the result directly. Natural language expresses intent; when exact routing matters, explicitly invoke a skill supported by the host:
+Then ask for the outcome directly. Explicitly invoke a host-supported skill only when exact routing matters:
 
 ```text
 Research this field, its key papers, and the existing code, then propose an executable plan.
@@ -56,74 +82,49 @@ Strictly review this output for false success, defensive fallback, and AI bloat.
 Grill me: challenge only decisions that change the outcome, and stop when none remain.
 ```
 
-## Install
+---
 
-| Target | Command |
-|---|---|
-| Codex (recommended) | `codex plugin marketplace add JinPLu/Teamwork@v3.4.0` → `codex plugin add teamwork-skill@teamwork` → new task: `$teamwork-update` |
-| Codex checkout (3.4.x compatibility) | `./install.sh codex` |
-| Cursor | `./install.sh cursor` |
-| Claude Code | `./install.sh claude` |
-| All platforms | `./install.sh all` |
+## 🧩 Choose an installation path
 
-The Marketplace install makes all 10 skills available without a checkout. Its
-explicit first enablement configures only Codex agents, routing, the managed
-global policy, and optional notifications; it never creates `~/.agents/skills`
-copies. `teamwork-init` can then set up one repository through the plugin's
-Codex-only project path. Cursor and Claude Code continue to use the repository
-installer. `./install.sh codex` remains supported during the 3.4.x compatibility
-window, but safely stops if a plugin activation marker is already present.
+| Target | Recommended entry point | Follow-up |
+| --- | --- | --- |
+| **Codex** | `codex plugin marketplace add JinPLu/Teamwork@v3.4.0` → `codex plugin add teamwork-skill@teamwork` | Start a new task and run `$teamwork-update` |
+| **Codex checkout** (3.4.x compatibility) | `./install.sh codex` | For local development or users not ready to migrate to the plugin |
+| **Cursor** | `./install.sh cursor` | Copy the Cursor User Rules |
+| **Claude Code** | `./install.sh claude` | Use the managed global policy |
+| **All platforms** | `./install.sh all` | Refresh every global Teamwork surface |
 
-The checkout commands make Teamwork skills and agents available to the current
-user; they do not modify every project automatically. The default full global
-refresh is `./install.sh all`. To establish Teamwork context for one repository,
-use `teamwork-init`, or use the `init-project` command below with an explicit
-project path.
+The Marketplace bundle is a complete runtime: it does not require users to keep a checkout, and carries the ten skills, Codex-specific install/update logic, agent templates, and notification resources. `teamwork-init` can establish project context for one repository through the plugin's Codex-only path; Cursor and Claude Code continue to use the repository installer.
 
-The default installation uses the `performance-first` profile. See every target and option with:
+### Common checkout options
 
 ```bash
 ./install.sh --help
-```
-
-Common options:
-
-```bash
 ./install.sh --profile cost-first codex
 ./install.sh --notifications codex
 ./install.sh --project-root /path/to/project init-project
 ```
 
 - `--profile cost-first`: prefer current lower-cost models.
-- `--notifications`: add main-turn completion and permission-request sounds to direct platform installs; subagents stay silent. Full `all`/`init-project` installs enable them by default; use `--no-notifications` to opt out. After a Codex install, run `/hooks` in the CLI and trust the two Teamwork hooks individually.
-- `init-project`: establish Teamwork context for one selected repository, including project instructions and, when available, a work-record entrypoint and CodeGraph. It also refreshes the current user's global skills, agents, and default rules; it does not install Teamwork skills or agents into the repository.
+- `--notifications`: add main-turn completion and permission-request feedback to direct platform installs. Full `all` / `init-project` installs enable it by default; use `--no-notifications` to opt out.
+- `init-project`: establish instructions, available work-record entrypoints, and CodeGraph context for one selected repository while refreshing the current user's global Teamwork surfaces; it does not install Teamwork skills or agents into the repository.
 
-Migration note: existing project-level Teamwork copies are no longer supported or refreshed. Delete only entries you have confirmed Teamwork generated—never the whole `.agents`, `.codex`, `.cursor`, or `.claude` directory—then run `./install.sh all`.
+The default full global refresh is `./install.sh all`.
 
-Restart Codex after a user-level installation changes role routing; its hooks
-still require individual trust in the CLI. The Marketplace bundle deliberately
-does not declare plugin hooks: if notifications are enabled, `/hooks` must
-individually trust the stable Teamwork `Stop` and `PermissionRequest` handlers.
-Cursor User Rules still require a manual copy-and-paste step that the installer
-cannot verify. The installer manages only Teamwork-owned directories, marked
-rules, and bounded configuration; it does not take over platform permissions,
-MCP, browser, test settings, or host model behavior. See the [Codex guide](CODEX.md), [Cursor guide](CURSOR.md), and [Claude Code guide](CLAUDE.md) for platform details.
+---
 
-`./scripts/check-update.sh --readiness` checks the freshness and completeness of Teamwork-managed files and configuration. It does not prove that the manual Cursor User Rules or Codex hook-trust steps are complete, or that a particular natural-language request will activate a specific skill.
+## 🔄 Updates and release reminders
 
-## Update
-
-For an installed Codex plugin, upgrade the Marketplace, reinstall the plugin,
-then start a new task and invoke `$teamwork-update` to refresh its managed
-Codex-only surface:
+### Update an installed Codex plugin
 
 ```bash
 codex plugin marketplace upgrade teamwork
 codex plugin add teamwork-skill@teamwork
 ```
 
-For the checkout workflow, update the repository, use the full global install,
-then check its state:
+Then start a new task and invoke `$teamwork-update` to check and refresh its managed Codex-only surface.
+
+### Update the checkout workflow
 
 ```bash
 git pull --ff-only
@@ -131,14 +132,28 @@ git pull --ff-only
 ./scripts/check-update.sh --readiness
 ```
 
-The default full global refresh is `./install.sh all`. In an assistant session,
-`teamwork-update` can check and guide this global refresh; `teamwork-init`
-handles project context.
+### 🔔 Prefer a reminder instead of remembering versions?
 
-## More Information
+Open [JinPLu/Teamwork](https://github.com/JinPLu/Teamwork), choose **Watch** → **Custom**, then select **Releases**. GitHub notifies you in its inbox—and by email when enabled—when a new Release is published. It informs you of an update; it does not automatically upgrade a local plugin or configuration. [GitHub notification documentation](https://docs.github.com/en/subscriptions-and-notifications/get-started/configuring-notifications)
+
+---
+
+## 🛡️ Safety boundaries and migration
+
+> [!WARNING]
+> Delete only entries you have confirmed Teamwork generated, never the whole `.agents`, `.codex`, `.cursor`, or `.claude` directory. The installer stops for same-name content that is unknown or modified and asks for human review.
+
+- Marketplace first enablement configures only Codex agents, routing, managed policy, and optional notifications; it does not copy user skills.
+- When notifications are enabled, restart Codex, open `/hooks`, and trust only Teamwork's `Stop` and `PermissionRequest` handlers—never trust-all.
+- Cursor User Rules still need a manual copy-and-paste; the installer cannot verify that host-owned step.
+- `./scripts/check-update.sh --readiness` verifies Teamwork-managed files and configuration only. It does not prove a manual host action is complete or guarantee that a natural-language request selects a particular skill.
+
+---
+
+## 📚 Learn more
 
 - [Changelog](CHANGELOG.en.md): user-visible changes in each release.
-- [Codex guide](CODEX.md), [Cursor guide](CURSOR.md), and [Claude Code guide](CLAUDE.md): platform setup and advanced usage.
+- [Codex guide](CODEX.md), [Cursor guide](CURSOR.md), and [Claude Code guide](CLAUDE.md): platform setup and advanced use.
 - [Repository architecture](docs/architecture.md): canonical sources, generated directories, stable commands, and change owners.
 - [Contributing](CONTRIBUTING.md): change scope and verification requirements.
-- [GitHub Issues](https://github.com/JinPLu/Teamwork/issues): problems and suggestions.
+- [GitHub Issues](https://github.com/JinPLu/Teamwork/issues): report a problem or suggest an improvement.
