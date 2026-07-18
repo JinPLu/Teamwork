@@ -56,10 +56,14 @@ initialization, and a final freshness check. Until the tag and GitHub Release
 exist, report `release-ready`, not `released`.
 
 Write changelogs for users, not maintainers. Lead with the problem and outcome;
-for behavior, installation, or workflow changes state at least one explicit
-Before -> After difference and why it matters. State the exact upgrade action or that no action is needed,
+give each important change a short, natural headline that names the experience
+users will notice. For behavior, installation, or workflow changes state at
+least one explicit Before -> After difference and why it matters, then name the
+primary subskill or user-facing workflow responsible so readers can tell what
+actually changed. State the exact upgrade action or that no action is needed,
 plus an important limit in plain language. Chinese and English must communicate
-the same change naturally. Move internal contract names,
+the same change naturally rather than translating engineering labels literally.
+Move internal contract names,
 mutation details, schemas, and test counts to commits, ledgers, validation, or a
 separate Release verification section. A technically accurate changelog that
 reads like an engineering report is not release-ready.

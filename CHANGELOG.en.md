@@ -4,56 +4,68 @@
 
 This changelog explains what changed for users. Maintainer implementation details belong in Git commits or pull requests.
 
+## 3.4.1 - 2026-07-19
+
+**The changelog finally leads with the human story.**
+
+Recent releases made meaningful differences to everyday use, but their changelog entries read like reports about workflow, validation, and installation machinery. Now each important change starts with the result you will actually notice, explains the Before → After difference, and names the primary subskill or user-facing workflow that made it happen.
+
+- Recent entries have been rewritten: 3.4.0 leads with one-step Codex installation, 3.3.0 with finishing the task before adding checks, and 3.2.0/3.1.0 with more natural, resumable discussion. Owners such as `teamwork-update`, `teamwork-execute`, `grill-me`, and `using-teamwork` now follow the experience instead of replacing it as the headline.
+- Future entries follow the same rule: the repository release policy now requires a human headline, an experience-level difference, and the primary subskill or workflow. This documentation rule does not change Teamwork runtime behavior.
+- To upgrade: no action is needed. Users already on 3.4.0 gain no new runtime capability; 3.4.1 changes only the documentation and how future releases are explained.
+
+Limit: naming a subskill explains where a change comes from; it does not guarantee that every natural-language request will invoke that subskill. The host and model still make the runtime selection.
+
 ## 3.4.0 - 2026-07-18
 
-This release makes Teamwork a full Codex Marketplace plugin, while keeping first-time user configuration explicit and ordinary work outcome-first.
+**Codex can now install Teamwork in one step.**
 
-- All Codex skills from one install — Before: Codex users needed a checkout and repository installer, with all 10 skills coupled to agents, routing, and global rules. After: add `JinPLu/Teamwork@v3.4.0` and install `teamwork-skill@teamwork` to make all 10 skills available from the plugin cache; in a new task, `$teamwork-update` shows the full Codex setup and applies it only after explicit approval.
-- Full capability still needs consent — Before: installation copied user skills while changing agents, routing, policy, and notifications. After: plugin activation configures only Codex agents, routing, managed policy, and optional notifications, writes its marker last, removes only verified legacy Teamwork skill copies, and never creates `~/.agents/skills` copies.
-- Better continuity without ceremony — Before: a short Grill could block an explicitly useful saved discussion, and accepted plans could appear mandatory before execution. After: only an explicit request to be questioned or challenged activates Grill; explicit save/resume, a handoff, an open discriminator, or three real branches can preserve continuity. Clear scope, criteria, and authority allow direct execution; verify the changed path or named boundary, and use fresh review only when requested or risk-gated.
+- One-step installation, owned by `teamwork-update` and the Codex plugin activation flow — Before: Codex users had to check out the repository and run its installer to get all 10 skills. After: add `JinPLu/Teamwork@v3.4.0`, install `teamwork-skill@teamwork`, and invoke `$teamwork-update` in a new task; it shows the complete setup and, after explicit approval, enables agents, routing, policy, and optional notifications together.
+- No silent configuration changes, also owned by `teamwork-update` — Before: the local installer coupled skill copies with several user-configuration changes. After: Marketplace skills work directly from the plugin cache, full setup is confirmed separately, only verified legacy Teamwork skills are removed, and no `~/.agents/skills` copies are created.
+- Save discussions worth continuing without burdening ordinary work, owned jointly by `grill-me`, `using-teamwork`, and `teamwork-execute` — Before: a short Grill could block an explicitly useful save, while an accepted plan could look mandatory before execution. After: explicit save/resume, a handoff, one clear open comparison, or genuinely branching discussion can preserve continuity. When task scope and authority are already clear, execution starts directly and checks only the changed path or named boundary.
 - To upgrade: for Codex, run `codex plugin marketplace add JinPLu/Teamwork@v3.4.0`, then `codex plugin add teamwork-skill@teamwork`; start a new task and invoke `$teamwork-update`. Checkout users can continue with `./install.sh all` and `./scripts/check-update.sh --readiness` during 3.4.x; Cursor and Claude Code installation is unchanged.
 
 Limit: plugin installation does not silently rewrite user configuration or auto-trust hooks. Restart Codex after full activation; with notifications enabled, trust only Teamwork `Stop` and `PermissionRequest` in `/hooks`. Malformed discussion history still fails closed. Cache, installation, and isolated bootstrap checks do not guarantee a particular natural-language skill selection or equivalent runtime behavior across Codex, Cursor, and Claude Code.
 
 ## 3.3.0 - 2026-07-16
 
-This release makes Teamwork produce the user's real result first while remaining easier to activate in ordinary language; tests, validation, and internal process no longer substitute for delivery.
+**No test sprees: finish the task first, then check what matters.**
 
-- Get the work done first — Before: a clear change or run request could still expand into research, planning, testing, review, and reporting loops, with proxy checks standing in for an available real run. After: authorized change/build work goes straight to the shortest real path. Support checks are added only for the current blocker, changed behavior, or a named high-risk boundary, and work stops as soon as the real result is obtained instead of adding another test, review, branch, or PR.
-- Natural activation — Before: everyday requests such as “ask me first,” “find the cause,” or “continue with the accepted approach” could fail to visibly activate Grill, Research, Debug, or Execute. After: each capability matches user intent directly, with English and Chinese weak-cue regression coverage. Simple requests still use the native fast path instead of gaining extra workflow.
-- Reader-facing discussion — Before: implementation detail, versions, process, and invented terms could obscure the answer. After: replies lead with the conclusion, then connect observed support, a plain-language interpretation, and only the boundary that changes the decision. Simple facts remain one sentence; a skill name can still explain a relevant capability or limit.
-- Useful, recoverable discussion records — Before: the persistence trigger and write authority were unclear, so real projects rarely produced a recoverable discussion document. After: a record is written only when the user explicitly requests Grill, the project is initialized, and the discussion has a useful continuation point. An ordinary Plan uses the shared Ask Gate for a genuinely unresolved user decision; it does not automatically enter Grill or write a discussion record.
-- Clear update and initialization roles — Before: refreshing global capabilities and refreshing project context could be conflated. After: `teamwork-update` refreshes global Teamwork only, while `teamwork-init` initializes or refreshes a selected project. Codex skills migrate to the single `~/.agents/skills` root; if the legacy root cannot be cleaned safely, installation stops before changing the new location.
+- Finish first and add only the checks that matter, led by `teamwork-execute` — Before: even a clear change or run request could expand into research, planning, testing, review, and reporting loops, with a static check standing in for an available real run. After: clear authority goes straight to the shortest real path. Verification is added only for the current blocker, the actual change, or a named high-risk boundary. Once the result exists, Teamwork stops instead of appending another test, review, branch, or PR.
+- Say it naturally and reach the right capability, improved across the `using-teamwork` router and subskills such as `grill-me`, `teamwork-research`, `teamwork-debug`, and `teamwork-execute` — Before: “ask me first,” “find the cause,” or “continue with the accepted approach” could miss the intended capability. After: ordinary language maps more directly to discussion, research, diagnosis, or execution, while simple requests remain simple.
+- Get the conclusion before the process, owned by the shared communication rules in `using-teamwork` — Before: implementation detail, versions, and workflow could obscure the answer. After: replies lead with the conclusion and add only the support or boundary that changes the decision. A simple fact can stay one sentence.
+- Record only discussions worth resuming, led by `grill-me` — Before: save triggers and write authority were unclear. After: Teamwork writes a discussion record only when you explicitly ask to discuss first, the project is initialized, and there is a useful conclusion or question to continue. An ordinary plan does not automatically become a discussion artifact.
+- Keep updates and project setup separate, owned by `teamwork-update` and `teamwork-init` respectively — The former refreshes global Teamwork; the latter handles instructions and context for one selected project. If a legacy directory cannot be cleaned safely, installation stops before changing the new location.
 - To upgrade: From the Teamwork repository, run `./install.sh all`, then `./scripts/check-update.sh --readiness`. To give an existing project the full project context and discussion-record capability, also run `./install.sh --project-root "<project-path>" init-project`.
 
 Limit: the host model and router still decide whether a skill is invoked. The rules reduce valueless process but cannot guarantee that every model turn takes the shortest path, and they do not bypass explicit release, migration, permission, security, or destructive-operation boundaries. Cursor User Rules still require the prompted manual paste.
 
 ## 3.2.0 - 2026-07-16
 
-This release makes research-minded discussion easier to follow and resume without turning ordinary collaboration into academic prose or a process log.
+**Discussion sounds more human and is easier to resume.**
 
-- Reader-facing argument — Before: internal implementation detail, version labels, invented terms, or generic “not proven” caveats could interrupt the answer. After: substantive discussion connects the conclusion, observed basis, plain-language interpretation, and only a decision-relevant comparison boundary; observations and inferences stay distinct. Simple facts can still receive a direct one-sentence answer.
-- Timely discussion memory — Before: a first settled conclusion could still leave the next question unsaved while waiting for more conclusions, or the assistant could narrate the save process first. After: one settled conclusion plus a distinct open comparison, measurement, or decision creates a compact record in the same turn before the user-visible reply, which contains only the saved conclusion and continuation point.
+- Explain the point clearly, improved in the shared communication rules under `using-teamwork` — Before: internal detail, version labels, invented terms, or repeated “not proven” caveats could interrupt the answer. After: substantive discussion connects the conclusion, observed basis, plain-language interpretation, and only the boundary that affects the decision. Observation and inference stay distinct, while simple facts can still get a one-sentence answer.
+- Come back knowing where to continue, improved in `grill-me` and the discussion-record flow — Before: after one conclusion was settled, the next open question could remain unsaved, or the reply could lead with a narration of the save process. After: one settled conclusion plus one clear comparison, measurement, or decision creates a compact record first; the reply says only what was saved and where the conversation continues.
 - To upgrade: From the Teamwork repository, run `./install.sh all --profile gpt56-role`, then `./scripts/check-update.sh --readiness`. Cursor User Rules still require the prompted manual paste; existing projects do not need Teamwork package copies.
 
 Limit: this is not an academic-writing feature and adds no external academic-writing dependency. Offline checks and one isolated Codex trajectory support the behavior, but they do not guarantee every model reply reaches the same quality or establish Cursor and Claude Code runtime parity.
 
 ## 3.1.1 - 2026-07-15
 
-This patch release completes the evidence record for 3.1.0 without changing runtime behavior.
+**No update needed: Teamwork behaves exactly as before.**
 
-- Release record — Before: 3.1.0 had tests for discussion continuity, audience-first replies, and safer initialization, but no tracked accepted record tying those behavior deltas to their evidence. After: one compact tracked record captures the same behavior, evals, validation, reviewer evidence, and limits for future release audits.
-- To upgrade: From the Teamwork repository, run `./install.sh all`, then `./scripts/check-update.sh --readiness`. Existing projects do not need Teamwork package copies.
+- This release only completes the record — Before: 3.1.0 had checks for discussion continuity, audience-first replies, and safer initialization, but no tracked accepted record for later releases to inspect. After: the existing changes, their evidence, and their limits are traceable. No subskill or runtime behavior changed.
+- To upgrade: no action is needed; existing projects do not need Teamwork package copies.
 
 Limit: this patch adds no runtime capability. Its record covers offline evals, package validation, and one isolated Codex scenario; it still does not establish host compaction or Cursor/Claude Code runtime parity.
 
 ## 3.1.0 - 2026-07-15
 
-This release makes long discussions recoverable and ordinary replies easier to read.
+**Long discussion interrupted? Come back and pick up where you left off.**
 
-- Discussion continuity — Before: persistence depended on vague judgment and several hand-written files. After: observable continuity signals create one compact five-section summary—goal, settled choices, open question, key evidence, and continue point. A fresh session recovers only the unresolved item, does not re-ask settled choices, and clears the summary once the question is resolved. Short discussions remain artifact-free.
-- Audience-first replies — Before: engineering process, version details, invented labels, and repeated caveats could obscure the answer. After: replies lead with the conclusion, then only decision-relevant facts, mechanism, and next action. A useful skill name may still appear when it explains a capability or limit.
-- Safer project migration — Initialization can recover from process interruption under the project lock and rejects unknown files, malformed journals, and reused temporary resources instead of continuing from partial state.
+- Resume long discussions, owned by `grill-me` and the discussion-record flow — Before: persistence depended on vague judgment and several hand-maintained files. After: a discussion that truly needs another session keeps one compact summary of the goal, settled choices, open question, key evidence, and continue point. A fresh session resumes only what remains unresolved and does not re-ask settled choices; short discussions still create no file.
+- Hear the point first, owned by the shared communication rules under `using-teamwork` — Before: engineering process, version detail, and repeated caveats could obscure the answer. After: replies lead with the conclusion, followed only by decision-relevant facts and the next action.
+- Avoid half-finished initialization state, owned by `teamwork-init` — Initialization recovers under the project lock and rejects unknown files, malformed journals, and reused temporary resources instead of continuing from untrusted partial state.
 - To upgrade: From the Teamwork repository, run `./install.sh all`, then `./scripts/check-update.sh --readiness`. Existing projects do not need Teamwork package copies; run `./install.sh --project-root "<project-path>" init-project` when project context needs refreshing.
 
 Limit: live behavior was verified in one isolated Codex scenario. Fresh-thread recovery is not an actual host compaction test and does not establish Cursor or Claude Code runtime parity.
