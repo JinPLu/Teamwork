@@ -1,110 +1,115 @@
-# Cursor Usage
+# Teamwork for Cursor
 
-Teamwork for Cursor adapts the same result-first skill package used by Codex
-and Claude Code. Cursor's editor, shell, MCP, permissions, browser tools, `Task`
-subagents, custom agents, and verification remain the execution layer. Cursor
-owns skill discovery, available tools, permission prompts, interaction UI, and
-the behavior produced by its selected model.
+Teamwork helps Cursor research unfamiliar code, diagnose failures, plan changes,
+implement scoped work, review results, and keep long-running tasks grounded in
+evidence. Cursor still controls editing, shell commands, MCP and browser tools,
+permissions, and the model that does the work.
 
-## Install
+## Quick setup
 
-Global setup:
+From this checkout, install Teamwork for every supported platform:
 
 ```bash
 ./install.sh all
+```
+
+For Cursor only, use:
+
+```bash
 ./install.sh cursor
+```
+
+Cursor stores User Rules in its own settings, so one manual step is required:
+
+```bash
+./install.sh cursor-policy-copy
+```
+
+Paste the copied block into **Cursor Settings -> Rules -> User Rules**. If
+clipboard copying is unavailable, run `./install.sh cursor-policy` and copy the
+printed block. The installer cannot complete or verify this Cursor setting.
+
+The default `performance-first` profile balances everyday work with deeper
+review. To favor lower-cost model choices, install with:
+
+```bash
 ./install.sh cursor --profile cost-first
 ```
 
-Use `./install.sh all` for the default full global refresh. The platform-specific
-commands above are for a deliberately narrower setup. None initialize every
-repository. Establish context for one selected repository with:
+Run `./install.sh --help` to see the advanced profiles. Use `--link` only when
+you want an installation to track this checkout during Teamwork development.
+
+## Initialize a project
+
+Set up Teamwork context for a repository with:
 
 ```bash
 ./install.sh --project-root /path/to/project init-project
 ```
 
-`init-project` refreshes the current user's global Teamwork surfaces and sets
-up the selected repository's Teamwork context, such as project instructions and
-available work-record or CodeGraph entrypoints. It does not install Teamwork
-skills or agents into the repository. Use `--link` only when the installation
-should track this checkout during development.
+This refreshes the current user's global Teamwork installation, then adds the
+selected repository's project instructions, work-record entrypoints, and
+CodeGraph context when available. It does not copy Teamwork skills or agents
+into the repository.
 
-Cursor stores User Rules outside a normal project file. Run
-`./install.sh cursor-policy-copy` (or print the block with `cursor-policy`), then
-paste it manually into Cursor Settings -> Rules -> User Rules. The installer
-cannot verify that this manual step was completed.
+## Everyday use
 
-The default `performance-first` profile balances routine work and review depth.
-Use `--profile cost-first` when lower-cost choices matter; `./install.sh --help`
-lists advanced profiles when you need them.
+Ask Cursor for the outcome you want in ordinary language. For example:
 
-Teamwork does not install Cursor notification sounds because the local hook path
-has not been live-verified.
+- “Research how authentication works here and cite the relevant code.”
+- “Diagnose why this test started failing.”
+- “Plan the migration, but don't change files yet.”
+- “Implement this change and verify the affected path.”
+- “Review this diff for correctness and missing evidence.”
+- “Keep working until the named checks pass.”
 
-## How To Use
+Teamwork can select research, debugging, planning, execution, review, or
+long-running goal guidance from your request. Selection depends on Cursor and
+the active model; explicitly name a skill when exact selection matters. Small
+edits and simple questions can stay on Cursor's native path.
 
-Ask naturally for research, debugging, a plan, execution, strict review, or a
-verified long-running outcome. Cursor uses the request and skill descriptions
-to select a capability; this is model behavior, not deterministic automatic
-routing. Explicitly invoke a skill when exact selection matters. Tiny edits and
-one-line questions remain on Cursor's native path. An explicit request to be
-questioned, challenged, or grilled expresses question-first intent and may
-select `grill-me`; otherwise Teamwork asks only for required input or a material
-user-owned decision that it cannot discover safely.
+Replies lead with the conclusion; technical detail appears only when it helps
+or you ask.
 
-Clear scope, criteria, and effect authority send change/build work directly to
-the shortest real result path; an accepted plan is optional and never supplies
-missing authority. Return to Plan only when new evidence changes accepted scope
-or criteria. Planning, tests, validation, and review are support only: verify
-only the changed path or a named high-risk boundary, and use fresh review only
-when the user or an accepted risk gate requires it.
+A plan helps settle scope and choices, but accepting one does not authorize file
+changes. Say clearly when you want Cursor to implement, edit, run commands, or
+make another external change. If you ask to be challenged, questioned, or
+“grilled” before action, Teamwork can use its question-first workflow.
 
-For planning, Teamwork grounds scope, required values, and verification in
-evidence. Entering or confirming a plan authorizes neither implementation nor
-writing a discussion record.
+## Agents and continuity
 
-Replies lead with the conclusion or what it means. For a substantive discussion,
-they connect observed facts, their plain interpretation, and only the boundary or
-next comparison that could change the decision; continuing discussion keeps its
-current question visible. This is a reasoning order, not a fixed answer format,
-and simple facts stay one sentence. They add technical detail when it helps or
-when you ask, rather than narrating internal workflow labels or version details.
-In a repository initialized for Teamwork, when the user has authorized writes,
-the runtime can write, and an explicit question-first discussion leaves a next
-comparison or decision open, Teamwork can save one compact summary of the goal,
-settled choices, open question, key evidence, and continue point. Explicit
-save/resume, an approaching handoff or compaction, or three real branches also
-make it useful; shortness neither triggers nor vetoes it. Ordinary requests do
-not need one.
+The installer adds Cursor custom agents for focused exploration, implementation,
+design, review, and deeper scrutiny. Teamwork may also use Cursor `Task`
+subagents when independent work benefits from separate context. The main agent
+remains responsible for scope, integrating the results, and explaining the
+outcome plainly; subagents are not required for routine work.
 
-## Subagents
+When useful and authorized, Teamwork can save one compact summary of the goal,
+settled choices, open question, key evidence, and continue point. Ordinary
+requests do not need one.
 
-Teamwork may use Cursor `Task` subagents or installed custom agents for
-independent work that benefits from separation or fresh context. Each returns a
-compact conclusion, evidence, unresolved impact, and next action. The main
-agent keeps responsibility for scope, integration, and a
-plain-language response—the conclusion or what it means, why it matters, and what
-follows—rather than exposing coordination mechanics.
+## Updates and troubleshooting
 
-## Long Tasks And Handoffs
+Check whether the global installation is ready:
 
-When continuity is useful, Teamwork can save that compact summary in a repository
-where the user has authorized writes. It is supporting context, not execution
-authority and not a requirement for ordinary replies. Repeated failures return to
-evidence gathering or debugging before another implementation attempt.
+```bash
+./scripts/check-update.sh --readiness
+```
 
-## Evidence, Limits, And Updates
+Use `teamwork-update` for guided global refreshes, or refresh explicitly with:
 
-Paths, ports, models, credentials, commands, and execution modes must come from
-the user, repository, configuration, tests, or an accepted plan. Teamwork does
-not take over Cursor permissions, MCP, browser, or test settings, and it does
-not emulate structured question tools that the current runtime does not expose.
+```bash
+./install.sh all
+```
 
-Use `teamwork-init` to configure one selected repository. Use
-`teamwork-update` to check and guide a global refresh; the explicit refresh
-command is `./install.sh all`. Check the global installation with
-`./scripts/check-update.sh --readiness`. Refreshing an installation is not a
-maintainer version release. This readiness check covers Teamwork-managed files
-and bounded configuration; it cannot verify the manual Cursor User Rules step
-or prove live skill selection and model behavior.
+Use `teamwork-init` when the issue is one repository's instructions or context.
+If readiness still reports `cursor-policy-manual`, rerun
+`./install.sh cursor-policy-copy` and paste the result into Cursor User Rules;
+that manual action cannot be detected automatically.
+
+Teamwork does not override Cursor permissions, MCP, browser, test settings, or
+interaction UI. It will not invent paths, ports, credentials, models, commands,
+or execution modes that are absent from your request or project evidence.
+Natural-language skill selection also cannot be guaranteed. Cursor notification
+sounds are intentionally not installed because its local hook path has not been
+live-verified.

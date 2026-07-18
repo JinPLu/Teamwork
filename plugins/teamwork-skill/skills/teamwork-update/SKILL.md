@@ -24,10 +24,12 @@ skills to `~/.agents/skills`.
 
 An explicit update for an activated plugin authorizes the same refresh. Bootstrap,
 then rerun cache-root `--plugin --readiness`. When `PLUGIN_CACHE` or
-`PLUGIN_CATALOG` is stale, upgrade Marketplace, reinstall `teamwork-skill@teamwork`,
-open a new task, and invoke `$teamwork-update`. Restart Codex after routing
-changes. For `CODEX_NOTIFICATIONS=review-required`, inspect `/hooks` and trust
-only Teamwork `Stop` and `PermissionRequest`, never trust-all.
+`PLUGIN_CATALOG` is stale, remove the `teamwork` Marketplace, add
+`JinPLu/Teamwork` again without a pinned tag, reinstall
+`teamwork-skill@teamwork`, open a new task, and invoke `$teamwork-update`. The
+unpinned Marketplace can advance through future upgrades. Restart Codex after
+routing changes. For `CODEX_NOTIFICATIONS=review-required`, inspect `/hooks`
+and trust only Teamwork `Stop` and `PermissionRequest`, never trust-all.
 
 ## Checkout Workflow
 

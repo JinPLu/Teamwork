@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 from typing import Mapping
 
@@ -709,6 +710,11 @@ OUTCOME_FIRST_COMPACT_POLICY_CLAUSES = {
     "risk-gated review": "fresh review only on user request or accepted risk gate",
 }
 
+PUBLIC_PLUGIN_DESCRIPTIONS = {
+    ".codex-plugin/plugin.json": "Codex",
+    ".claude-plugin/plugin.json": "Claude Code",
+}
+
 OUTCOME_FIRST_OPPOSITES = (
     ("mandatory plan", re.compile(r"(?i)\b(?:a |an )?plan\s+(?:is\s+)?(?:always\s+)?(?:mandatory|required)\b")),
     ("every full suite", re.compile(r"(?i)\b(?:every|each|always)\b[^.\n]{0,80}\bfull(?:\s+test)?\s+suite\b")),
@@ -718,7 +724,7 @@ OUTCOME_FIRST_OPPOSITES = (
 
 
 def validate_outcome_first_source_parity(source_texts: Mapping[str, str]) -> None:
-    """Require every producer to preserve and not contradict outcome-first rules."""
+    """Protect internal parity and concise public plugin-description boundaries."""
 
     expected_paths = set(OUTCOME_FIRST_PARITY_SOURCES)
     actual_paths = set(source_texts)
@@ -733,12 +739,50 @@ def validate_outcome_first_source_parity(source_texts: Mapping[str, str]) -> Non
         raise EvalError(f"outcome-first parity source set mismatch ({'; '.join(details)})")
     for path, text in source_texts.items():
         normalized = normalize_semantic_text(text)
-        for label, clause in OUTCOME_FIRST_PARITY_CLAUSES:
-            accepted = [clause]
-            if path == "scripts/install/policy.sh":
-                accepted.append(OUTCOME_FIRST_COMPACT_POLICY_CLAUSES[label])
-            if not any(normalize_semantic_text(item) in normalized for item in accepted):
-                raise EvalError(f"{path}: outcome-first parity must preserve {label}")
+        if path in PUBLIC_PLUGIN_DESCRIPTIONS:
+            try:
+                manifest = json.loads(text)
+                description = manifest["interface"]["longDescription"]
+            except (json.JSONDecodeError, KeyError, TypeError) as error:
+                raise EvalError(
+                    f"{path}: public plugin description must be readable"
+                ) from error
+            if not isinstance(description, str):
+                raise EvalError(f"{path}: public plugin description must be text")
+            description_normalized = normalize_semantic_text(description)
+            outcome_terms = (
+                re.compile(r"\b(?:research|evidence)\b"),
+                re.compile(r"\b(?:diagnos\w*|debug\w*)\b"),
+                re.compile(r"\b(?:execute\w*|build\w*|engineering)\b"),
+                re.compile(r"\b(?:review\w*|verif\w*)\b"),
+            )
+            if not all(pattern.search(description_normalized) for pattern in outcome_terms):
+                raise EvalError(f"{path}: public plugin description must state user outcomes")
+            if not re.search(
+                r"\b(?:you|users?)\b.{0,40}\b(?:choose|control|define)\w*\b.{0,30}\bscope\b",
+                description_normalized,
+            ) or not re.search(
+                r"\b(?:you|users?)\b.{0,40}\b(?:authoriz\w*|approv\w*|grant\w* permission)\b.{0,40}\b(?:changes?|writes?|actions?)\b",
+                description_normalized,
+            ):
+                raise EvalError(
+                    f"{path}: public plugin description must preserve user-chosen scope and authorization"
+                )
+            host = normalize_semantic_text(PUBLIC_PLUGIN_DESCRIPTIONS[path])
+            if host not in description_normalized or not re.search(
+                r"\b(?:remain\w*|stay\w*|keep\w*|retain\w*)\b.{0,35}\bcontrol\w*\b.{0,35}\btools\b.{0,25}\bpermissions\b",
+                description_normalized,
+            ):
+                raise EvalError(
+                    f"{path}: public plugin description must preserve host control"
+                )
+        else:
+            for label, clause in OUTCOME_FIRST_PARITY_CLAUSES:
+                accepted = [clause]
+                if path == "scripts/install/policy.sh":
+                    accepted.append(OUTCOME_FIRST_COMPACT_POLICY_CLAUSES[label])
+                if not any(normalize_semantic_text(item) in normalized for item in accepted):
+                    raise EvalError(f"{path}: outcome-first parity must preserve {label}")
         for label, pattern in OUTCOME_FIRST_OPPOSITES:
             if pattern.search(text):
                 raise EvalError(f"{path}: outcome-first parity rejects {label}")

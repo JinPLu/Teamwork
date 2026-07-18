@@ -3,26 +3,33 @@
 # --- Public documentation ---
 # Keep these checks about outcomes and user actions. Internal implementation
 # details belong with their owners, not in the platform guides.
+normalized_regex_required() {
+  local pattern="$1"
+  local file="$2"
+  local message="$3"
+  local text
+  text="$(tr '\n' ' ' < "$file")"
+  printf '%s\n' "$text" | grep -Eqi "$pattern" || fail "$message"
+}
+
 grep_required 'Codex、Cursor 和 Claude Code' "$ROOT/README.md" "README must name all supported platforms"
-grep_required '共享 skill package' "$ROOT/README.md" "README must describe the shared package"
-grep_required '各宿主仍负责发现 skill、调用原生工具、执行权限策略和产生实际回复' "$ROOT/README.md" \
+grep_required '可安装到 Codex、Cursor 和 Claude Code 的 Skills' "$ROOT/README.md" \
+  "README must describe one package for all supported hosts"
+grep_required '工具调用、权限确认、Skill 选择和最终回复仍由' "$ROOT/README.md" \
   "README must preserve the host-owned runtime boundary"
-grep_required '默认的完整全局刷新使用 `./install.sh all`' "$ROOT/README.md" \
-  "README must make the full global refresh explicit"
+grep_required '全局 Skills 和 agents' "$ROOT/README.md" \
+  "README must explain the global multi-host install outcome"
+grep_required '\./install\.sh all' "$ROOT/README.md" "README must show the full global refresh command"
 grep_required 'check-update.sh --readiness' "$ROOT/README.md" "README must show the global readiness check"
-grep_required '不会把 Teamwork skills 或 agents 安装到该仓库中' "$ROOT/README.md" \
+grep_required '不会把 Skills 或 agents 复制进目标仓库' "$ROOT/README.md" \
   "README must keep init-project limited to project context"
-grep_required '先给出结论或它代表的含义' "$ROOT/README.md" \
-  "README must promise an audience-first response"
-grep_required '技术细节只在确有帮助或你要求时展开' "$ROOT/README.md" \
-  "README must relevance-gate technical detail"
-grep_required '用户明确要求先提问或挑战时，可保存一份包含目标、已定选择、未决问题、关键证据和继续点的紧凑摘要' "$ROOT/README.md" \
+grep_required '明确要求“先问我”或 `grill me` 可保存一份紧凑的讨论继续点' "$ROOT/README.md" \
   "README must describe authorized durable continuity"
-grep_required '普通 Plan 不会自动进入 Grill 或写入讨论文档' "$ROOT/README.md" \
+grep_required '普通计划不会自动创建这类记录' "$ROOT/README.md" \
   "README must keep ordinary Plan out of Grill"
 grep_required '只删除已确认由 Teamwork 生成的条目' "$ROOT/README.md" \
   "README must require safe legacy cleanup"
-grep_required '绝不要整体删除 `.agents`、`.codex`、`.cursor` 或 `.claude`' "$ROOT/README.md" \
+grep_required '不要整体删除 `.agents`、`.codex`、`.cursor` 或 `.claude`' "$ROOT/README.md" \
   "README must protect unrelated legacy directories"
 grep_required '\[English\](README.en.md)' "$ROOT/README.md" "default README must link to English README"
 grep_required '\[Codex\](CODEX.md)' "$ROOT/README.md" "README must link to the detailed Codex guide"
@@ -52,26 +59,18 @@ current_changelog_en="$(awk -v prefix="## $current_version -" '
 git -C "$ROOT" ls-files --error-unmatch "README.en.md" >/dev/null 2>&1 || fail "README.en.md must be tracked by git"
 grep_required '\[中文\](README.md)' "$ROOT/README.en.md" "English README must link to default Chinese README"
 grep_required 'Codex, Cursor, and Claude Code' "$ROOT/README.en.md" "English README must name all supported platforms"
-grep_required 'one shared skill package adapted to Codex, Cursor, and Claude Code' "$ROOT/README.en.md" \
+grep_required 'shared skill package' "$ROOT/README.en.md" \
   "English README must describe the shared package"
-grep_required 'Each host still owns skill discovery, native tool calls, permission policy, and the responses produced at runtime' "$ROOT/README.en.md" \
+grep_required 'still control skill discovery, native tools, permissions, and runtime responses' "$ROOT/README.en.md" \
   "English README must preserve the host-owned runtime boundary"
-grep_required 'The default full global refresh is `./install.sh all`' "$ROOT/README.en.md" \
+grep_required 'default complete checkout refresh is `./install.sh all`' "$ROOT/README.en.md" \
   "English README must make the full global refresh explicit"
 grep_required 'check-update.sh --readiness' "$ROOT/README.en.md" "English README must show the global readiness check"
-grep_required 'it does not install Teamwork skills or agents into the repository' "$ROOT/README.en.md" \
+grep_required 'does not install Teamwork skills or agents inside that repository' "$ROOT/README.en.md" \
   "English README must keep init-project limited to project context"
-grep_required 'starts with the conclusion or what it means' "$ROOT/README.en.md" \
-  "English README must promise an audience-first response"
-grep_required 'Technical detail appears when it is useful or requested' "$ROOT/README.en.md" \
-  "English README must relevance-gate technical detail"
-grep_required 'an explicit request to be questioned or challenged may save one compact summary of the goal, settled choices, open question, key evidence, and continue point' "$ROOT/README.en.md" \
-  "English README must describe authorized durable continuity"
-grep_required 'An ordinary Plan does not automatically enter Grill or write a discussion record' "$ROOT/README.en.md" \
-  "English README must keep ordinary Plan out of Grill"
 grep_required 'Delete only entries you have confirmed Teamwork generated' "$ROOT/README.en.md" \
   "English README must require safe legacy cleanup"
-grep_required 'never the whole `.agents`, `.codex`, `.cursor`, or `.claude` directory' "$ROOT/README.en.md" \
+grep_required 'never an entire `.agents`, `.codex`, `.cursor`, or `.claude` directory' "$ROOT/README.en.md" \
   "English README must protect unrelated legacy directories"
 grep_required '\[Codex guide\](CODEX.md)' "$ROOT/README.en.md" "English README must link to the detailed Codex guide"
 grep_required '\[Cursor guide\](CURSOR.md)' "$ROOT/README.en.md" "English README must link to the detailed Cursor guide"
@@ -98,41 +97,38 @@ grep_absent 'Follow `active.current`, then `active.discussion`\|read the active 
   "project retrieval instructions must not direct-read active discussion state" \
   "$ROOT/AGENTS.md" \
   "$ROOT/skills/using-teamwork/references/teamwork-index-readme-template.md"
-# Every platform guide carries the shared public promise. This protects the
-# user-facing contract without making a guide narrate versioning, routing,
-# host goal modes, or maintainer test implementation.
+# Every platform guide carries the user actions and boundaries needed on that
+# host. Shared prose belongs in the README and need not be repeated verbatim.
 for guide in CODEX.md CURSOR.md CLAUDE.md; do
   guide_path="$ROOT/$guide"
   grep_required '\./install\.sh all' "$guide_path" "$guide must document the full global refresh command"
-  grep_required 'default full global refresh' "$guide_path" "$guide must make that refresh global"
   grep_required 'init-project' "$guide_path" "$guide must document project-context setup"
-  normalized_required 'It does not install Teamwork skills or agents into the repository' "$guide_path" \
-    "$guide must keep init-project from creating local package copies"
-  grep_required 'Replies lead with the conclusion or what it means' "$guide_path" \
-    "$guide must lead with the conclusion or meaning"
-  normalized_required 'technical detail when it helps or when you ask' "$guide_path" \
-    "$guide must relevance-gate technical detail"
-  normalized_required 'rather than narrating internal workflow labels or version details' "$guide_path" \
-    "$guide must not make internal process narration the response"
-  grep_required 'one compact summary of the goal' "$guide_path" "$guide must offer compact durable continuity when useful"
-  normalized_required 'Ordinary requests do not need one' "$guide_path" \
-    "$guide must keep durable continuity optional"
-  grep_required 'teamwork-init' "$guide_path" "$guide must point users to project-context setup"
-  grep_required 'teamwork-update' "$guide_path" "$guide must point users to global refresh guidance"
+  normalized_regex_required 'does not (copy|install).*teamwork skills or agents.*(repository|repo)' "$guide_path" \
+    "$guide must keep init-project from copying the package into a repository"
+  grep_required_ci 'research' "$guide_path" "$guide must state the research outcome"
+  grep_required_ci 'diagnos' "$guide_path" "$guide must state the diagnosis outcome"
+  grep_required_ci 'implement' "$guide_path" "$guide must state the implementation outcome"
+  grep_required_ci 'review' "$guide_path" "$guide must state the review outcome"
+  normalized_regex_required '(compact.{0,180}authoriz|authoriz.{0,180}compact)' "$guide_path" \
+    "$guide must describe authorization-bound compact continuity"
+  grep_required_ci 'tools' "$guide_path" "$guide must state the host tool boundary"
+  grep_required_ci 'permissions' "$guide_path" "$guide must state the host permission boundary"
   grep_required 'check-update.sh --readiness' "$guide_path" "$guide must document the global readiness check"
-  grep_required 'grill-me' "$guide_path" "$guide must document explicit grill-me invocation"
 done
 
+# One canonical platform guide states the shared reply promise without forcing
+# all public pages to narrate the internal communication contract.
+normalized_regex_required 'repl(y|ies).{0,40}conclusion.{0,100}technical detail.{0,80}(helps|useful|ask|requested)' \
+  "$ROOT/CODEX.md" "public docs must promise audience-first, relevance-gated replies"
+
 # Keep platform-specific details only where they change a user's setup or use.
-grep_required 'Codex native capabilities' "$ROOT/CODEX.md" "CODEX.md must identify the native execution layer"
 grep_required '~/.agents/skills' "$ROOT/CODEX.md" \
   "CODEX.md must document the supported Codex user-skill location"
-grep_required 'Restart Codex after a routing change' "$ROOT/CODEX.md" "CODEX.md must preserve the required restart"
+grep_required 'Restart Codex after.*routing change' "$ROOT/CODEX.md" "CODEX.md must preserve the required restart"
 grep_required '/hooks' "$ROOT/CODEX.md" "CODEX.md must explain the user-owned hook trust step"
-grep_required 'Cursor `Task` subagents' "$ROOT/CURSOR.md" "CURSOR.md must document its native subagent option"
+normalized_required 'Cursor `Task` subagents' "$ROOT/CURSOR.md" "CURSOR.md must document its native subagent option"
 grep_required 'cursor-policy-copy' "$ROOT/CURSOR.md" "CURSOR.md must document the manual User Rules setup"
-grep_required 'Claude Code native capabilities' "$ROOT/CLAUDE.md" "CLAUDE.md must identify the native execution layer"
-grep_required 'Claude Code `Task` subagents' "$ROOT/CLAUDE.md" "CLAUDE.md must document its native subagent option"
+grep_required 'Claude Code `Task` agents' "$ROOT/CLAUDE.md" "CLAUDE.md must document its native subagent option"
 grep_required 'claude-policy' "$ROOT/CLAUDE.md" "CLAUDE.md must document global-policy review"
 
 # --- Maintainer eval docs ---

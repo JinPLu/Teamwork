@@ -747,7 +747,7 @@ print_plugin_readiness() {
   echo "HOST_ACTIVATION=manual-action-required"
   echo "MANUAL_ACTIONS=$(IFS=,; echo "${manual_actions[*]}")"
   if [[ "$catalog" != "enabled" || "$cache" != current* ]]; then
-    echo "NEXT=codex plugin marketplace upgrade teamwork && codex plugin add teamwork-skill@teamwork && # start a new Codex task and run \$teamwork-update"
+    echo "NEXT=codex plugin marketplace remove teamwork && codex plugin marketplace add JinPLu/Teamwork && codex plugin add teamwork-skill@teamwork && # start a new Codex task and run \$teamwork-update"
   else
     echo "NEXT=# start a new Codex task and run \$teamwork-update to enable or refresh full Teamwork"
   fi
@@ -762,7 +762,7 @@ print_plugin_report() {
   echo
   print_plugin_readiness || readiness_rc=$?
   echo
-  echo "Marketplace updates: codex plugin marketplace upgrade teamwork, then reinstall teamwork-skill@teamwork."
+  echo "Marketplace updates: remove teamwork, add JinPLu/Teamwork without a pinned tag, then reinstall teamwork-skill@teamwork."
   echo "Activation: begin a new Codex task and run \$teamwork-update; first activation requires explicit approval."
   echo "Host action: restart Codex. When notifications are enabled, inspect /hooks and trust only Teamwork Stop and PermissionRequest."
   if (( readiness_rc != 0 )); then

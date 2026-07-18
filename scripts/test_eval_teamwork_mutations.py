@@ -658,7 +658,23 @@ class OutcomeFirstParityMutationTests(unittest.TestCase):
             )
         )
 
-    def test_each_producer_rejects_an_additive_opposite_rule(self) -> None:
+    @staticmethod
+    def plugin_description(host: str) -> str:
+        return json.dumps(
+            {
+                "interface": {
+                    "longDescription": (
+                        "Teamwork helps you move complex research and engineering tasks "
+                        "from uncertain questions to verified results. Use it to gather "
+                        "evidence, diagnose failures, plan decisions, execute scoped "
+                        "changes, and review work. You choose the scope and authorize "
+                        f"changes; {host} remains in control of tools and permissions."
+                    )
+                }
+            }
+        )
+
+    def parity_sources(self) -> dict[str, str]:
         sources = {
             path: self.parity_text()
             for path in (
@@ -670,10 +686,14 @@ class OutcomeFirstParityMutationTests(unittest.TestCase):
                 "templates/codex-agents/teamwork-worker.toml",
                 "templates/cursor-agents/worker.md",
                 "templates/claude-agents/worker.md",
-                ".claude-plugin/plugin.json",
-                ".codex-plugin/plugin.json",
             )
         }
+        sources[".codex-plugin/plugin.json"] = self.plugin_description("Codex")
+        sources[".claude-plugin/plugin.json"] = self.plugin_description("Claude Code")
+        return sources
+
+    def test_each_producer_rejects_an_additive_opposite_rule(self) -> None:
+        sources = self.parity_sources()
         opposites = (
             ("A plan is mandatory.", "mandatory plan"),
             ("Every change requires the full test suite.", "every full suite"),
@@ -684,7 +704,34 @@ class OutcomeFirstParityMutationTests(unittest.TestCase):
             for opposite, error in opposites:
                 with self.subTest(path=path, opposite=opposite):
                     mutated = dict(sources)
-                    mutated[path] += "\n" + opposite
+                    if path.endswith("plugin.json"):
+                        manifest = json.loads(mutated[path])
+                        manifest["interface"]["longDescription"] += " " + opposite
+                        mutated[path] = json.dumps(manifest)
+                    else:
+                        mutated[path] += "\n" + opposite
+                    with self.assertRaisesRegex(EvalError, error):
+                        validate_outcome_first_source_parity(mutated)
+
+    def test_public_plugin_descriptions_do_not_repeat_internal_parity_clauses(self) -> None:
+        validate_outcome_first_source_parity(self.parity_sources())
+
+    def test_public_plugin_descriptions_preserve_concise_user_boundaries(self) -> None:
+        mutations = (
+            ("diagnose failures", "handle failures", "user outcomes"),
+            ("You choose the scope", "The scope is fixed", "user-chosen scope"),
+            ("authorize changes", "observe changes", "user-chosen scope"),
+            ("remains in control", "is informed", "host control"),
+        )
+        for path in (".codex-plugin/plugin.json", ".claude-plugin/plugin.json"):
+            for old, new, error in mutations:
+                with self.subTest(path=path, boundary=error):
+                    mutated = self.parity_sources()
+                    manifest = json.loads(mutated[path])
+                    description = manifest["interface"]["longDescription"]
+                    self.assertIn(old, description)
+                    manifest["interface"]["longDescription"] = description.replace(old, new)
+                    mutated[path] = json.dumps(manifest)
                     with self.assertRaisesRegex(EvalError, error):
                         validate_outcome_first_source_parity(mutated)
 

@@ -68,6 +68,12 @@ mutation details, schemas, and test counts to commits, ledgers, validation, or a
 separate Release verification section. A technically accurate changelog that
 reads like an engineering report is not release-ready.
 
+Apply the same audience-first standard to every public document and plugin
+listing. Start with what users can accomplish, keep the shortest complete setup
+and usage path easy to find, and retain internal architecture or process only
+when it changes a user action, boundary, or expectation. README and platform
+guides should link to one canonical explanation instead of repeating it.
+
 Use patch for non-behavioral fixes, minor for compatible features, and major for
 incompatible public contracts. Inspect remote/tag/Release state before edits;
 update metadata and changelogs together; run relevant dev eval, full validation,

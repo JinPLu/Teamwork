@@ -48,10 +48,11 @@ only verified Teamwork legacy skill copies and never writes
 Codex-only bootstrap.
 
 When `PLUGIN_CACHE` or `PLUGIN_CATALOG` is stale, run `codex plugin marketplace
-upgrade teamwork`, reinstall `teamwork-skill@teamwork`, open a new Codex task,
-and invoke `$teamwork-update`. After bootstrap, restart Codex. If notifications
-are enabled, `/hooks` still requires individual trust for the exact two Teamwork
-hooks.
+remove teamwork`, add `JinPLu/Teamwork` again without a pinned tag, reinstall
+`teamwork-skill@teamwork`, open a new Codex task, and invoke `$teamwork-update`.
+The unpinned Marketplace can advance through future upgrades. After bootstrap,
+restart Codex. If notifications are enabled, `/hooks` still requires individual
+trust for the exact two Teamwork hooks.
 
 ## Release Boundary
 

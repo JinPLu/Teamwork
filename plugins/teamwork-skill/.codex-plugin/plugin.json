@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "3.4.1",
+  "version": "3.4.2",
   "description": "Codex-first skills, with Cursor and Claude Code adapters, for evidence-grounded research, debugging, planning, execution, review, and long-running goals.",
   "author": {
     "name": "JinPLu",
@@ -23,7 +23,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Evidence-grounded teamwork for complex Codex research and engineering.",
-    "longDescription": "A Codex-first skill package for research, reproducible debugging, reviewable planning, scoped execution, fresh review, and long-running goals. A plan is optional; authority is separate from plan acceptance. Verify only the changed path or a named protected boundary. Re-enter Plan only when new evidence changes accepted scope or criteria. Fresh review only when the user asks or an accepted risk gate requires it. Simple work stays on the native fast path; independent subagents are used only when they improve the result. Host-native interaction tools remain in control.",
+    "longDescription": "Teamwork helps you move complex research and engineering tasks from uncertain questions to verified results. Use it to gather evidence, diagnose failures, plan decisions, execute scoped changes, review work, or keep a long-running goal moving. You choose the scope and authorize changes; Codex remains in control of tools and permissions.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [

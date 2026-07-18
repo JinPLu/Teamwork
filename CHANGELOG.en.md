@@ -2,420 +2,355 @@
 
 [中文](CHANGELOG.md)
 
-This changelog explains what changed for users. Maintainer implementation details belong in Git commits or pull requests.
+This changelog explains what changed for users. Maintainer details belong in Git history.
+
+## 3.4.2 - 2026-07-19
+
+**Every user-facing document now leads with the outcome—and gets there faster.**
+
+- Before: older changelog entries still read like engineering records, while the README and platform guides repeated internal workflow detail. After: all 44 historical releases begin with what users notice and keep only useful Before → After context, responsible subskills, upgrade actions, and material limits.
+- The README now answers what Teamwork helps you accomplish and how to start quickly. The Codex, Cursor, and Claude Code guides keep only the setup, manual steps, everyday use, and troubleshooting specific to each host. Marketplace descriptions now explain the user benefit in a few sentences.
+- Future public docs follow the same rule: brevity first, user outcome first, and internal architecture or maintenance detail only when it changes an action, boundary, or expectation.
+- Codex Marketplace setup no longer recommends pinning one release tag. Before: `upgrade` could only refresh that same tag and could not advance to a newer release. After: remove the old `teamwork` Marketplace and add unpinned `JinPLu/Teamwork` once; future updates can advance normally. This fix is owned by `teamwork-update`.
+- To upgrade: users on 3.4.1 need no update for existing capabilities. To fix future Marketplace updates, follow the README update sequence once to replace the pinned Marketplace.
+
+Limit: shorter docs do not make natural-language skill selection deterministic. The host and model still choose which skill runs. After replacing the Marketplace, start a new task and invoke `$teamwork-update`.
 
 ## 3.4.1 - 2026-07-19
 
-**The changelog finally leads with the human story.**
+**Release notes now explain the experience first.**
 
-Recent releases made meaningful differences to everyday use, but their changelog entries read like reports about workflow, validation, and installation machinery. Now each important change starts with the result you will actually notice, explains the Before → After difference, and names the primary subskill or user-facing workflow that made it happen.
+The 3.4.0–3.1.0 entries now lead with what users notice, add a useful Before → After comparison, and name the responsible workflow only after the story. Future entries follow the same style.
 
-- Recent entries have been rewritten: 3.4.0 leads with one-step Codex installation, 3.3.0 with finishing the task before adding checks, and 3.2.0/3.1.0 with more natural, resumable discussion. Owners such as `teamwork-update`, `teamwork-execute`, `grill-me`, and `using-teamwork` now follow the experience instead of replacing it as the headline.
-- Future entries follow the same rule: the repository release policy now requires a human headline, an experience-level difference, and the primary subskill or workflow. This documentation rule does not change Teamwork runtime behavior.
-- To upgrade: no action is needed. Users already on 3.4.0 gain no new runtime capability; 3.4.1 changes only the documentation and how future releases are explained.
+This is documentation-only: Teamwork runtime behavior did not change. No upgrade is needed, and users on 3.4.0 gain no new runtime capability.
 
-Limit: naming a subskill explains where a change comes from; it does not guarantee that every natural-language request will invoke that subskill. The host and model still make the runtime selection.
+Limit: a named subskill explains the source of a change, but the host and model still decide which skill a natural-language request invokes.
 
 ## 3.4.0 - 2026-07-18
 
-**Codex can now install Teamwork in one step.**
+**Codex can install Teamwork in one step.**
 
-- One-step installation, owned by `teamwork-update` and the Codex plugin activation flow — Before: Codex users had to check out the repository and run its installer to get all 10 skills. After: add `JinPLu/Teamwork@v3.4.0`, install `teamwork-skill@teamwork`, and invoke `$teamwork-update` in a new task; it shows the complete setup and, after explicit approval, enables agents, routing, policy, and optional notifications together.
-- No silent configuration changes, also owned by `teamwork-update` — Before: the local installer coupled skill copies with several user-configuration changes. After: Marketplace skills work directly from the plugin cache, full setup is confirmed separately, only verified legacy Teamwork skills are removed, and no `~/.agents/skills` copies are created.
-- Save discussions worth continuing without burdening ordinary work, owned jointly by `grill-me`, `using-teamwork`, and `teamwork-execute` — Before: a short Grill could block an explicitly useful save, while an accepted plan could look mandatory before execution. After: explicit save/resume, a handoff, one clear open comparison, or genuinely branching discussion can preserve continuity. When task scope and authority are already clear, execution starts directly and checks only the changed path or named boundary.
-- To upgrade: for Codex, run `codex plugin marketplace add JinPLu/Teamwork@v3.4.0`, then `codex plugin add teamwork-skill@teamwork`; start a new task and invoke `$teamwork-update`. Checkout users can continue with `./install.sh all` and `./scripts/check-update.sh --readiness` during 3.4.x; Cursor and Claude Code installation is unchanged.
+- Before → After: Codex users no longer need a repository checkout to install all ten skills. Add `JinPLu/Teamwork@v3.4.0`, install `teamwork-skill@teamwork`, then invoke `$teamwork-update` in a new task. After approval, `teamwork-update` enables agents, routing, policy, and optional notifications together.
+- Marketplace skills run from the plugin cache. Full configuration remains separately confirmed; only verified legacy Teamwork skills are removed, and Teamwork does not create `~/.agents/skills` copies.
+- `grill-me` and the discussion workflow can save an explicit resume request, handoff, clear open comparison, or genuinely branching discussion. Clear authorized work still goes straight to `teamwork-execute`, which checks only the changed path or a named boundary.
+- To upgrade in Codex: run `codex plugin marketplace add JinPLu/Teamwork@v3.4.0`, then `codex plugin add teamwork-skill@teamwork`; start a new task and invoke `$teamwork-update`. Checkout users may keep using `./install.sh all` and `./scripts/check-update.sh --readiness` during 3.4.x. Cursor and Claude Code installation did not change.
 
-Limit: plugin installation does not silently rewrite user configuration or auto-trust hooks. Restart Codex after full activation; with notifications enabled, trust only Teamwork `Stop` and `PermissionRequest` in `/hooks`. Malformed discussion history still fails closed. Cache, installation, and isolated bootstrap checks do not guarantee a particular natural-language skill selection or equivalent runtime behavior across Codex, Cursor, and Claude Code.
+Limit: plugin installation does not silently rewrite user configuration or auto-trust hooks. Restart Codex after full activation. If notifications are enabled, trust only Teamwork `Stop` and `PermissionRequest` in `/hooks`. Malformed discussion history fails closed. Installation checks cannot guarantee a particular skill selection or identical runtime behavior across platforms.
 
 ## 3.3.0 - 2026-07-16
 
-**No test sprees: finish the task first, then check what matters.**
+**Teamwork finishes the task before adding checks.**
 
-- Finish first and add only the checks that matter, led by `teamwork-execute` — Before: even a clear change or run request could expand into research, planning, testing, review, and reporting loops, with a static check standing in for an available real run. After: clear authority goes straight to the shortest real path. Verification is added only for the current blocker, the actual change, or a named high-risk boundary. Once the result exists, Teamwork stops instead of appending another test, review, branch, or PR.
-- Say it naturally and reach the right capability, improved across the `using-teamwork` router and subskills such as `grill-me`, `teamwork-research`, `teamwork-debug`, and `teamwork-execute` — Before: “ask me first,” “find the cause,” or “continue with the accepted approach” could miss the intended capability. After: ordinary language maps more directly to discussion, research, diagnosis, or execution, while simple requests remain simple.
-- Get the conclusion before the process, owned by the shared communication rules in `using-teamwork` — Before: implementation detail, versions, and workflow could obscure the answer. After: replies lead with the conclusion and add only the support or boundary that changes the decision. A simple fact can stay one sentence.
-- Record only discussions worth resuming, led by `grill-me` — Before: save triggers and write authority were unclear. After: Teamwork writes a discussion record only when you explicitly ask to discuss first, the project is initialized, and there is a useful conclusion or question to continue. An ordinary plan does not automatically become a discussion artifact.
-- Keep updates and project setup separate, owned by `teamwork-update` and `teamwork-init` respectively — The former refreshes global Teamwork; the latter handles instructions and context for one selected project. If a legacy directory cannot be cleaned safely, installation stops before changing the new location.
-- To upgrade: From the Teamwork repository, run `./install.sh all`, then `./scripts/check-update.sh --readiness`. To give an existing project the full project context and discussion-record capability, also run `./install.sh --project-root "<project-path>" init-project`.
+- Before → After: a clear change or run request no longer expands automatically into research, planning, testing, review, and reporting. `teamwork-execute` takes the shortest real path, verifies the current blocker, changed path, or named high-risk boundary, then stops when the result exists.
+- Natural requests such as “ask me first,” “find the cause,” and “continue with the accepted approach” route more reliably through `using-teamwork` to discussion, research, diagnosis, or execution.
+- Replies lead with the conclusion and keep only decision-relevant support. `grill-me` records a discussion only when you explicitly ask to discuss first, the project is initialized, and there is something useful to resume; a plan alone creates no discussion record.
+- `teamwork-update` refreshes global Teamwork, while `teamwork-init` owns one project’s instructions and context. Unsafe legacy cleanup stops before the new location is changed.
+- To upgrade: run `./install.sh all`, then `./scripts/check-update.sh --readiness`. For full context and discussion records in an existing project, also run `./install.sh --project-root "<project-path>" init-project`.
 
-Limit: the host model and router still decide whether a skill is invoked. The rules reduce valueless process but cannot guarantee that every model turn takes the shortest path, and they do not bypass explicit release, migration, permission, security, or destructive-operation boundaries. Cursor User Rules still require the prompted manual paste.
+Limit: the host model still chooses whether to invoke a skill. These rules do not bypass release, migration, permission, security, or destructive-operation boundaries, and Cursor User Rules still require the prompted manual paste.
 
 ## 3.2.0 - 2026-07-16
 
-**Discussion sounds more human and is easier to resume.**
+**Discussion sounds more natural and resumes at the right question.**
 
-- Explain the point clearly, improved in the shared communication rules under `using-teamwork` — Before: internal detail, version labels, invented terms, or repeated “not proven” caveats could interrupt the answer. After: substantive discussion connects the conclusion, observed basis, plain-language interpretation, and only the boundary that affects the decision. Observation and inference stay distinct, while simple facts can still get a one-sentence answer.
-- Come back knowing where to continue, improved in `grill-me` and the discussion-record flow — Before: after one conclusion was settled, the next open question could remain unsaved, or the reply could lead with a narration of the save process. After: one settled conclusion plus one clear comparison, measurement, or decision creates a compact record first; the reply says only what was saved and where the conversation continues.
-- To upgrade: From the Teamwork repository, run `./install.sh all --profile gpt56-role`, then `./scripts/check-update.sh --readiness`. Cursor User Rules still require the prompted manual paste; existing projects do not need Teamwork package copies.
+- Before → After: replies no longer foreground internal labels, version detail, invented terms, or repeated caveats. Shared `using-teamwork` rules connect the conclusion, evidence, interpretation, and only the boundary that affects the decision, while keeping observation separate from inference.
+- When `grill-me` settles one point but leaves one clear comparison, measurement, or decision open, it saves a compact continuation record first and tells you where the conversation resumes.
+- To upgrade: run `./install.sh all --profile gpt56-role`, then `./scripts/check-update.sh --readiness`. Cursor User Rules still require the prompted manual paste; projects do not need Teamwork package copies.
 
-Limit: this is not an academic-writing feature and adds no external academic-writing dependency. Offline checks and one isolated Codex trajectory support the behavior, but they do not guarantee every model reply reaches the same quality or establish Cursor and Claude Code runtime parity.
+Limit: this is not an academic-writing feature and adds no academic-writing dependency. Offline checks and one isolated Codex run do not guarantee identical reply quality or Cursor/Claude Code parity.
 
 ## 3.1.1 - 2026-07-15
 
-**No update needed: Teamwork behaves exactly as before.**
+**No update is needed: Teamwork behaves exactly as in 3.1.0.**
 
-- This release only completes the record — Before: 3.1.0 had checks for discussion continuity, audience-first replies, and safer initialization, but no tracked accepted record for later releases to inspect. After: the existing changes, their evidence, and their limits are traceable. No subskill or runtime behavior changed.
-- To upgrade: no action is needed; existing projects do not need Teamwork package copies.
+This patch records the already accepted evidence and limits for discussion continuity, audience-first replies, and safer initialization. Runtime behavior and all subskills are unchanged; existing projects need no Teamwork package copies.
 
-Limit: this patch adds no runtime capability. Its record covers offline evals, package validation, and one isolated Codex scenario; it still does not establish host compaction or Cursor/Claude Code runtime parity.
+Limit: the record covers offline evaluation, package validation, and one isolated Codex scenario, not real host compaction or Cursor/Claude Code parity.
 
 ## 3.1.0 - 2026-07-15
 
-**Long discussion interrupted? Come back and pick up where you left off.**
+**An interrupted discussion can pick up where it left off.**
 
-- Resume long discussions, owned by `grill-me` and the discussion-record flow — Before: persistence depended on vague judgment and several hand-maintained files. After: a discussion that truly needs another session keeps one compact summary of the goal, settled choices, open question, key evidence, and continue point. A fresh session resumes only what remains unresolved and does not re-ask settled choices; short discussions still create no file.
-- Hear the point first, owned by the shared communication rules under `using-teamwork` — Before: engineering process, version detail, and repeated caveats could obscure the answer. After: replies lead with the conclusion, followed only by decision-relevant facts and the next action.
-- Avoid half-finished initialization state, owned by `teamwork-init` — Initialization recovers under the project lock and rejects unknown files, malformed journals, and reused temporary resources instead of continuing from untrusted partial state.
-- To upgrade: From the Teamwork repository, run `./install.sh all`, then `./scripts/check-update.sh --readiness`. Existing projects do not need Teamwork package copies; run `./install.sh --project-root "<project-path>" init-project` when project context needs refreshing.
+- Before → After: long or branching `grill-me` sessions keep one compact summary of the goal, settled choices, open question, key evidence, and continue point. A new session does not re-ask settled choices, and short discussions still create no file.
+- Replies put the point first and omit process detail that does not change a decision.
+- `teamwork-init` recovers under the project lock and rejects unknown files, malformed journals, and reused temporary resources instead of trusting partial state.
+- To upgrade: run `./install.sh all`, then `./scripts/check-update.sh --readiness`. Projects need no package copies; use `./install.sh --project-root "<project-path>" init-project` only to refresh project context.
 
-Limit: live behavior was verified in one isolated Codex scenario. Fresh-thread recovery is not an actual host compaction test and does not establish Cursor or Claude Code runtime parity.
+Limit: one isolated Codex scenario was run. Fresh-thread recovery was not a host compaction test and did not establish Cursor or Claude Code parity.
 
 ## 3.0.0 - 2026-07-15
 
-This release makes ordinary replies more direct and simplifies project setup.
+**Replies are more direct, and project setup is simpler.**
 
-- Reply style: Ordinary replies no longer open with internal workflow. They may previously have started with a version number, stage, invented label, or repeated caveat; now they begin with the conclusion, why it matters, and the next step. Internal implementation, versions, and uncertainty appear only when you ask or when they affect a decision or action.
-- Discussion continuity: Eligible long discussions, handoffs, and material branches can keep a recoverable route map and Playback when Teamwork has write authority. Without that authority, you receive a checkpoint candidate and continuity cannot be guaranteed. Ordinary replies do not become engineering records, and rule changes must identify their owner, user effect, and verification.
-- Project setup: The former `project`, `project-codex-agents`, and `check-update --project` routes no longer work. `init-project` now refreshes the global Teamwork installation and writes only project instructions, memory, and CodeGraph context; it never copies skills or agents into the project.
-- To upgrade: From the Teamwork repository, run `./install.sh all`, then `./scripts/check-update.sh --readiness`. To initialize project context, run `./install.sh --project-root "<project-path>" init-project`. When removing legacy copies, delete only assets you have confirmed were generated by Teamwork—never delete entire `.agents`, `.codex`, `.cursor`, or `.claude` directories.
+- Replies now begin with the conclusion, why it matters, and the next step instead of versions, stages, invented labels, or repeated caveats.
+- Eligible long discussions, handoffs, and material branches can keep a route map and Playback when Teamwork has write authority. Without it, Teamwork returns only a checkpoint candidate. Ordinary replies do not become engineering records, and internal rule changes must still name their owner, user effect, and verification.
+- Before → After: the removed `project`, `project-codex-agents`, and `check-update --project` routes no longer copy skills or agents into projects. `init-project` refreshes global Teamwork and writes only project instructions, memory, and CodeGraph context.
+- To upgrade: run `./install.sh all`, then `./scripts/check-update.sh --readiness`. Initialize context with `./install.sh --project-root "<project-path>" init-project`. Remove only confirmed Teamwork-generated legacy assets, never whole `.agents`, `.codex`, `.cursor`, or `.claude` directories.
 
-Evidence limit: Offline package and installer checks cover these changes. No paid or live model comparison was run, so this release does not claim better real-answer quality or equivalent runtime behavior across Codex, Cursor, and Claude Code.
+Limit: offline package and installer checks support these changes. No paid or live model comparison established better answer quality or cross-platform runtime parity.
 
 ## 2.22.0 - 2026-07-15
 
-Shared rules: Teamwork became leaner and more portable without weakening the boundaries around research, execution, and review.
+**Teamwork became leaner and more portable without weakening its boundaries.**
 
-- Leaner instructions: Shared asking, reporting, planning, and review guidance moved out of repeated global rules, stage skills, agent templates, and project initialization. Each stage kept its own responsibility and completion conditions, and simple tasks stayed direct.
-- Privacy protection: Public package checks reject real home directories, session identifiers, private network addresses, credential-shaped values, and force-tracked private runtime artifacts. Explicit public transports and synthetic examples remain allowed.
-- Safer initialization: New projects receive a compact, portable Teamwork block and a header-first index. Complete legacy indexes remain compatible, reruns preserve existing content byte for byte, and partial hybrid layouts are rejected instead of silently rewritten.
-- Maintainer comparison: Prompt alternatives can be compared blind with independent reviewers and the same fixed cases. Raw model output stays private, and instruction size can decide only a complete tie. Ordinary users need no action.
-- Historical upgrade path for 2.22.0: From the Teamwork repository, run `./scripts/check-update.sh --readiness --project "$PWD"`, execute the printed `NEXT`, and repeat until `INSTALL_READY=yes`. Cursor User Rules still required the prompted manual paste. These project-local update routes were later removed in 3.0.0; use the 3.0.0 instructions above for current installations.
+- Shared guidance stopped being repeated across global rules, skills, agents, and project setup; each stage kept its responsibility, and simple work stayed direct.
+- Public-package checks reject real home paths, session IDs, private network addresses, credential-shaped values, and force-tracked private artifacts while allowing explicit public transports and synthetic examples.
+- New projects receive a compact Teamwork block and header-first index. Complete legacy indexes remain compatible and reruns preserve content byte for byte; partial hybrid layouts are rejected.
+- Maintainers can compare prompt alternatives blind on fixed cases without publishing raw model output. Instruction size breaks only a complete tie, and this did not add a step to ordinary work.
+- Historical 2.22.0 upgrade: run `./scripts/check-update.sh --readiness --project "$PWD"`, execute the printed `NEXT`, and repeat until `INSTALL_READY=yes`; paste Cursor User Rules when prompted. Version 3.0.0 later removed these project-local routes, so current users should follow 3.0.0 above.
 
-Evidence limit: Offline package, installer, privacy, and comparison-workflow checks covered this release. No paid model comparison was run, so it did not establish better real-answer quality or runtime equivalence across Codex, Cursor, and Claude Code.
+Limit: offline package, installer, privacy, and comparison checks did not prove better live answers or cross-platform runtime parity.
 
 ## 2.21.1 - 2026-07-15
 
-Installed-run visibility: Codex behavior became easier for maintainers to inspect, with no change required for everyday use.
+**Everyday behavior did not change; installed Codex runs became easier to inspect privately.**
 
-- Everyday use: Installation, evaluation, and validation kept the same commands and outputs, so ordinary use did not change.
-- Private installation checks: Maintainers gained an optional small-sample check of a real installed Codex run. It used a private temporary home and retained only a redacted summary, allowing an installation check without keeping the original conversation.
-- Historical upgrade path for 2.21.1: From the Teamwork repository, run `./scripts/check-update.sh --readiness --project "$PWD"`, execute the printed `NEXT`, and repeat until `INSTALL_READY=yes`. No new user configuration was required; Cursor User Rules still required the prompted manual paste. Project-local update routes were later removed in 3.0.0.
+Install, evaluation, and validation commands and outputs stayed the same. Maintainers gained an optional small-sample installed-run check using a private temporary home and retaining only a redacted summary. Teamwork runtime behavior did not change.
 
-Evidence limit: This compatible maintenance patch did not show that ordinary answers were better than in 2.21.0. Its small sample did not establish broad reliability, automatic activation, or equivalent runtime behavior across Codex, Cursor, and Claude Code.
+Historical 2.21.1 upgrade: run `./scripts/check-update.sh --readiness --project "$PWD"`, execute `NEXT`, and repeat until `INSTALL_READY=yes`; no new configuration was required, though Cursor User Rules still needed the manual paste. Version 3.0.0 later removed project-local update routes.
+
+Limit: the sample did not show better ordinary answers, broad reliability, automatic activation, or cross-platform parity.
 
 ## 2.21.0 - 2026-07-15
 
-Discussion continuity: Long discussions could recover their important decisions after a pause, while initialization and updates gained clearer authority boundaries.
+**Long discussions could preserve their important decisions.**
 
-- Discussion recovery: Long, cross-context, or materially branching Grill sessions could store a `discussion/` artifact with a flowchart, keyed notes, and plain-text Playback. Research still owned evidence, and Plan still owned executable scope.
-- Lightweight discussions: Ordinary Grill sessions created no file. A saved discussion recorded material route checkpoints rather than a turn-by-turn transcript and never granted execution authority. Without write permission, Teamwork returned only a candidate summary and warned that continuity was not guaranteed.
-- Respectful initialization: `teamwork-init` inspected existing project content and preserved human-written documentation, project trackers, and custom material.
-- Clear release authority: `teamwork-update` refreshed installed Teamwork files only; publishing a new version required an explicit maintainer request.
-- Historical upgrade path for 2.21.0: From the Teamwork repository, run `./scripts/check-update.sh --readiness --project "$PWD"`, execute the printed `NEXT`, and repeat until `INSTALL_READY=yes`. Cursor User Rules still required the prompted manual paste. Project-local update routes were later removed in 3.0.0.
+- Long, cross-context, or branching `grill-me` sessions could save a `discussion/` artifact with a flowchart, keyed notes, and Playback. Research still owned evidence, and Plan still owned executable scope.
+- Ordinary discussions created no file. Saved records captured material checkpoints, not transcripts, and never granted execution authority; without write permission, Teamwork returned only a candidate and warned that continuity was not guaranteed.
+- `teamwork-init` preserved human-written docs, trackers, and custom content. `teamwork-update` refreshed installed files but could not publish a release without an explicit maintainer request.
+- Historical 2.21.0 upgrade: run `./scripts/check-update.sh --readiness --project "$PWD"`, execute `NEXT`, and repeat until `INSTALL_READY=yes`; paste Cursor User Rules when prompted. Version 3.0.0 later removed project-local update routes.
 
-Evidence limit: Offline checks covered authored recovery scenarios, installation, and release rules. They did not prove that every real discussion would be understood, that context compaction would always recover correctly, or that Codex, Cursor, and Claude Code behaved identically at runtime.
+Limit: offline scenarios did not prove perfect discussion understanding, compaction recovery, or cross-platform parity.
 
 ## 2.20.0 - 2026-07-14
 
-Maintainable changes: Simple work became less likely to accumulate unnecessary code, and a project install could prepare Teamwork for all three supported platforms.
+**Simple changes stopped accumulating unnecessary code.**
 
-- Maintainable changes: Local work starts from the code that already owns the behavior. Wrappers, configuration modes, fallback paths, duplicate modules, abstractions, and dependencies require justification from the accepted behavior; appropriate multi-file changes and tests remain welcome.
-- Historical project coverage: One project install prepared all ten Teamwork skills for Codex, Cursor, and Claude Code while preserving unrelated local content. This project-local package route was later removed in 3.0.0.
-- Clear update failures: Checks named whether Codex, Cursor, or Claude Code project skills were missing, outdated, or different instead of returning one generic project status.
-- Current authority: Unaccepted, superseded, or otherwise inapplicable plans no longer directed execution.
-- Historical upgrade path for 2.20.0: Run `./scripts/check-update.sh --readiness` from the Teamwork repository. Add `--project <project-path>` when refreshing a project, run the printed `NEXT`, and repeat the check until `INSTALL_READY=yes`. Project-local installation and update routes were later removed in 3.0.0.
+- Work begins in the code that owns the behavior; wrappers, extra modes, fallbacks, duplicate modules, abstractions, and dependencies need a real requirement. Appropriate multi-file changes and tests remain welcome.
+- One project install then prepared all ten skills for Codex, Cursor, and Claude Code while preserving unrelated content. Version 3.0.0 later removed project-local packages.
+- Update checks named the platform and whether skills were missing, stale, or different. Unaccepted, superseded, or inapplicable plans no longer directed execution.
+- Historical 2.20.0 upgrade: run `./scripts/check-update.sh --readiness`; add `--project <project-path>` for a project, execute `NEXT`, and repeat until `INSTALL_READY=yes`. Version 3.0.0 later removed these project routes.
 
-Evidence limit: These were workflow and installation safeguards. They did not guarantee that every model response would be minimal or prove complete runtime behavior across Codex, Cursor, and Claude Code.
+Limit: these safeguards did not guarantee minimal model output or complete cross-platform runtime behavior.
 
 ## 2.19.0 - 2026-07-13
 
-Notification setup: Full initialization and updates began installing and checking completion and permission sounds automatically.
+**Full setup could add completion and permission sounds automatically.**
 
-- Notification defaults: `install.sh all` and `init-project` installed main-turn completion and permission-request sounds for Codex and Claude Code by default. Direct platform installs remained opt-in, and `--no-notifications` removed only Teamwork-owned handlers.
-- Runnable-hook checks: `check-update.sh` queried the Codex runtime and reported trusted, review-required, or unverifiable status; when review was needed, it provided a `/hooks` action.
-- Permission boundary: `teamwork-init` and `teamwork-update` verified the exact Teamwork notifier command and trusted `Stop` and `PermissionRequest` separately. They never enabled trust-all or trusted unrelated hooks.
+`install.sh all` and `init-project` installed Codex and Claude Code sounds by default; direct platform installs stayed opt-in, and `--no-notifications` removed only Teamwork handlers. Readiness checks reported Codex hooks as trusted, review-required, or unverifiable and supplied a `/hooks` action when needed. `teamwork-init` and `teamwork-update` verified the exact notifier and trusted `Stop` and `PermissionRequest` separately—never trust-all or unrelated hooks.
 
-Verification: The macOS sound path was verified live.
+Limit: the sound path was verified live only on macOS.
 
 ## 2.18.0 - 2026-07-13
 
-Questioning boundary: Teamwork inspected available evidence first and interrupted only for input or decisions that truly belonged to you.
+**Teamwork asks only when the answer truly belongs to you.**
 
-- Fewer interruptions: Teamwork checks available evidence first and asks only when you must supply missing input or observation, or when your decision materially changes the result. Ordinary clarification no longer requires `grill-me`.
-- Independent progress: Only the branch that depends on your answer pauses; unrelated read-only investigation can continue.
-- Coordinated questions: Subagents return question candidates to the root agent, which rechecks and deduplicates them before asking you.
-- Lighter task state: This release removed the detailed task-versioning and status-record system introduced in 2.17. Teamwork keeps only the facts needed to continue safely, such as the goal, scope, acceptance conditions, authority, blockers, and stop conditions.
-- Bounded convergence: Reviews still separate blocking problems from optional follow-ups and allow one focused recheck after fixes. Long-running Goal work retries only affected branches and requires an explicit request or accepted proposal before entering Codex Goal state.
-- Accurate release status: A release missing its tag or GitHub Release is reported as ready to release, never as already released. Ordinary users need no action.
+- It inspects evidence first, asks only for missing user input or a material decision, and pauses only the dependent branch. Ordinary clarification does not require `grill-me`; subagent question candidates are rechecked and deduplicated by the root agent.
+- The detailed task records from 2.17 were replaced by the minimum safe working facts: goal, scope, acceptance, authority, blockers, and stop conditions.
+- Reviews still separate blockers from optional follow-ups, allow one focused recheck, and retry only affected Goal branches. Entering Codex Goal state still requires an explicit request or accepted proposal.
+- A release without its tag or GitHub Release is called release-ready, never released. Ordinary users need no action.
 
-Evidence limit: Offline checks covered the shared three-platform rules and installation compatibility. Limited Codex evidence supported the new question boundary and authority handling, but did not prove every workflow, natural question deduplication, or equivalent Cursor and Claude Code runtime behavior.
+Limit: offline three-platform checks and limited Codex evidence did not prove every question, natural deduplication, or cross-platform runtime parity.
 
 ## 2.17.0 - 2026-07-13
 
-Review convergence: Plans and reviews gained bounded convergence rules so complex work would not restart indefinitely.
+**Complex plans and reviews converge instead of restarting forever.**
 
-- Earlier decisions: Before a non-simple Plan, Teamwork inspects repository and configuration evidence, asks one genuinely user-owned question at a time with a recommendation, and shows a short Decision Summary.
-- Bounded review: Independent review gets one full pass and one focused follow-up. After fixes, the same reviewer checks the original findings and any regressions caused by the fixes; simple tasks can still verify directly.
-- Meaningful blockers: Only failed acceptance conditions, protected-boundary breaches, regressions, or missing required evidence can block completion. Preferences and optional improvements cannot.
-- Focused recovery: Known fixes return to implementation, unknown causes to diagnosis, and scope changes to planning, so failed verification repeats only the work needed to resolve it.
-- Historical task records: Larger multi-step work used a versioned task record so accepted conditions and scope changes remained explicit, while simple tasks needed none. Version 2.18 replaced this with a lighter set of working facts.
-- Quieter progress: Updates focus on new decisions, blockers, verification, and completion instead of repeatedly restating the plan or announcing another review.
+- Non-simple planning checks evidence, asks one genuinely user-owned question at a time with a recommendation, and shows a short Decision Summary.
+- Independent review gets one full pass and one focused follow-up. After fixes, the same reviewer rechecks the original findings and any fix-caused regressions. Only failed acceptance, protected-boundary breaches, regressions, or missing required evidence block completion; preferences do not.
+- Known fixes return to implementation, unknown causes to diagnosis, and scope changes to planning. Progress updates mention only new decisions, blockers, verification, and completion.
+- Larger tasks temporarily used versioned records; 2.18 replaced them with lighter working facts. Versions 2.17 and 2.18 also replaced 2.16’s fixed question count and explicit discussion status.
 
-Compatibility and limits: Plan and Review remained available, and Codex role-model tiers were not lowered. This release reduced workflow repetition and rework but did not promise to eliminate GPT-5.6 Sol/high single-call latency. It also replaced 2.16's fixed question count and explicit discussion status with questions asked only when useful; 2.18 later replaced the task-record behavior described here.
+Limit: Plan and Review remained available, Codex role tiers were not lowered, and the release did not promise to remove GPT-5.6 Sol/high single-call latency.
 
 ## 2.16.0 - 2026-07-13
 
-Guided discussion: Users gained a discoverable `grill-me` interaction, and Codex subagents began using their configured role models and effort.
+**Guided discussion became discoverable, and Codex subagents used their configured models.**
 
-- Historical question behavior: `grill-me` asked zero to three genuinely outcome-changing, user-owned questions and did not manufacture questions about reversible details such as language, file count, naming, or internal layout. Versions 2.17 and 2.18 later superseded this behavior.
-- Discussion authority: Multi-turn discussions kept an explicit active or closed state. Your instructions to stop, proceed, delegate judgment, or replace the task remained authoritative; running out of useful questions never granted permission to implement. Version 2.17 later removed the fixed question count and explicit status.
-- Configured subagent models: Codex subagents used the models and reasoning levels selected by their installation profile instead of inheriting the main thread's reasoning level.
-- Session capacity: The Codex limit became 9 threads—one main thread and up to eight subagents. Project-only installs left user-level configuration untouched, and an explicit opt-out remained available.
-- Activation and evidence: The routing change received a limited Codex 0.144.0 check. Users had to restart Codex before new tasks could load it. Cross-platform `grill-me` behavior was checked only statically and offline, not live.
+- `grill-me` asked zero to three outcome-changing questions and never manufactured questions about reversible details. It kept an explicit active/closed state, and silence never granted permission to implement. Versions 2.17–2.18 later replaced these rules.
+- Codex subagents used the installation profile’s model and effort instead of inheriting the main thread’s effort. Capacity became nine threads: one main plus eight subagents; project-only installs left user configuration untouched, with an opt-out.
+- Users had to restart Codex to load the routing change. It received a limited Codex 0.144.0 check; cross-platform discussion behavior was checked only offline.
 
 ## 2.15.0 - 2026-07-13
 
-Long-task continuity: Work became less likely to drift, with optional sounds when the main task finished or needed attention.
+**Long work became less likely to drift, with optional sounds for attention.**
 
-- Correction handling: User corrections invalidate outdated delegated work, preventing duplicate collaboration or stale results from steering the task.
-- Honest completion: Partial or unverified work stays visibly incomplete instead of being reported as full completion.
-- Quiet notifications: Optional Codex sounds notify only for the main task; background tasks stay silent.
-- Private diagnostics: Read-only checks expose agent setup and unusually long tasks without exposing conversation text.
-- Platform limit: Sound behavior was tested on macOS. Claude Code remained unverified, and Cursor was unsupported.
+Corrections invalidate stale delegated work, and partial or unverified results remain visibly incomplete. Optional Codex sounds notify only for the main task; background tasks stay silent. Read-only diagnostics reveal agent setup and unusually long tasks without conversation text.
+
+Limit: sounds were tested on macOS; Claude Code was unverified and Cursor unsupported.
 
 ## 2.14.0 - 2026-07-11
 
-Model profile updates: Subagent model choices were refreshed across every platform and installation profile.
+**Installation profiles gained refreshed model choices across all platforms.**
 
-- Codex profiles: `performance-first` used GPT-5.6 Terra/Sol, while `cost-first` used Luna/Terra/Sol. New `gpt56-high` and `gpt56-xhigh` profiles pinned every role to Sol.
-- Compatibility names: `gpt56-role`, `gpt55-high`, and `gpt55-xhigh` remained available, but no Codex profile called GPT-5.5.
-- Platform mappings: Cursor used the then-current native Composer 2.5, Sonnet 4.6, and Opus 4.8 mappings, with non-Fast Composer 2.5 for `cost-first`. Claude Code used the aliases available at the time—`haiku`, `sonnet`, and `opus`—and moved Deep roles to `max`.
-- Consistent installs: Copy, link, global, and the then-current project-local installations used the same model mappings. Project-local package installation was later removed in 3.0.0.
+Codex `performance-first` used GPT-5.6 Terra/Sol, `cost-first` used Luna/Terra/Sol, and new `gpt56-high`/`gpt56-xhigh` profiles pinned all roles to Sol. Compatibility names `gpt56-role`, `gpt55-high`, and `gpt55-xhigh` remained, but no profile called GPT-5.5. Cursor used Composer 2.5, Sonnet 4.6, and Opus 4.8 mappings, with non-Fast Composer for `cost-first`; Claude Code used `haiku`, `sonnet`, and `opus`, with Deep roles at `max`. Copy, link, global, and then-current project installs shared these mappings; 3.0.0 later removed project-local packages.
 
 ## 2.13.0 - 2026-07-10
 
-Risk-based rigor: Complex work kept stronger quality controls while well-specified simple tasks stayed direct.
+**Simple tasks stayed direct while risky work kept stronger controls.**
 
-- Direct simple work: Well-specified tasks can proceed without mandatory hypothesis lists, tables, durable records, or independent review.
-- Risk-based rigor: Only outcome-changing decisions that genuinely belong to the user interrupt progress. Test-first work, alternatives, durable memory, and fresh review activate according to risk.
-- Smaller context footprint: Shorter shared instructions across Codex, Cursor, and Claude Code reduce time spent rereading and restating process.
-- Role-based Codex profile: `gpt56-role` assigns different GPT-5.6 models and reasoning levels according to each subagent's job instead of giving every role the same high reasoning level.
-- Safety boundary: When an explicitly pinned model or reasoning tier is unavailable, the run fails clearly rather than silently changing models or lowering effort.
+Well-specified tasks no longer required hypothesis lists, tables, durable records, or independent review. User questions, test-first work, alternatives, memory, and fresh review activate only when risk justifies them. Shorter shared instructions reduce repeated process across platforms. Codex `gpt56-role` assigns models and effort by job, and an unavailable pinned model or effort fails clearly instead of silently downgrading.
 
-Release history: `2.12.0` was not released separately; its role-tiering capabilities shipped in `2.13.0`.
+Release history: `2.12.0` was not released separately; its role-tiering features shipped in `2.13.0`.
 
 ## 2.11.1 - 2026-07-08
 
-Small tasks and explicit discussion: Small tasks stayed direct, but an explicit request to discuss first could no longer be ignored.
+**Small fixes stayed fast, but “discuss first” could no longer be ignored.**
 
-- Lightweight fixes: A one-line change can still complete without extra questions, subagents, or a durable plan.
-- Discussion requests: Teamwork honors an explicit request for `grill-me`, discussion first, or challenged assumptions even on a small task.
-- Material decisions: Install and update work stops at an unanswered material decision instead of treating confirmation as optional.
-- Regression protection: Maintainer checks guard against reintroducing unnecessary questions, plans, or delegation. Ordinary users need no action for those checks.
+One-line changes still need no extra questions, subagents, or durable plan. An explicit request for `grill-me`, discussion, or challenged assumptions pauses even small work, and unanswered material install/update decisions stop progress. Maintainer checks guard against unnecessary questions, plans, and delegation without adding any ordinary-user action.
 
 ## 2.11.0 - 2026-07-08
 
-Decision confirmation and installation freshness: Outcome-changing decisions were confirmed consistently, and stale installations became easier to detect.
+**Material decisions were confirmed consistently, and stale installs became visible.**
 
-- Evidence-first decisions: Complex or uncertain work checks available evidence first, then returns only decisions that genuinely require you, with a recommendation.
-- Consistent confirmation: The same boundary applies throughout a task, so one part cannot continue after another promised to wait.
-- Lightweight safeguards: Ordinary requests avoid unnecessary interviews. The supporting offline evidence did not prove live platform behavior.
-- Content-aware updates: `check-update.sh` checks installed content as well as version numbers, detecting actual drift in global and the then-current project-local skills or agents.
-- Runnable historical setup: Project update commands available at the time and profile examples became directly runnable, and `gpt55-high` could pin Codex subagents to GPT-5.5/high. Project-local update routes were later removed in 3.0.0.
+Complex work checks evidence before returning only genuinely user-owned decisions with a recommendation; the same confirmation boundary holds throughout the task. Ordinary work avoids unnecessary interviews, though offline evidence did not prove live behavior. `check-update.sh` compares content as well as versions across global and then-current project installs. Historical project commands and profile examples became runnable, and `gpt55-high` could pin Codex subagents to GPT-5.5/high; 3.0.0 later removed project-local routes.
 
 ## 2.10.0 - 2026-07-08
 
-Maintainer comparison: Prompt changes could be compared repeatably instead of being chosen by impression.
+**Prompt changes became comparable without changing everyday Teamwork behavior.**
 
-- Fair comparisons: Previous and candidate behaviors can run on the same tasks before a change is accepted.
-- Decision evidence: Candidate evaluation records the model, configuration, verification, rollback path, and independent review, so a best-looking output cannot stand alone as evidence.
-- Recorded outcomes: Accepted and rejected candidates stay documented, reducing the chance that a failed direction will be rediscovered later.
-- Everyday use: This tooling applies only to Teamwork maintenance and adds no stage to ordinary user tasks; ordinary users need no action.
-- Evidence limit: The release supplied comparison infrastructure but did not claim that Teamwork had completed an automatic real-world optimization run.
+Maintainers could run old and candidate behavior on the same tasks, record model, configuration, verification, rollback, and independent review, and retain accepted or rejected outcomes. This added no user-facing workflow stage: runtime behavior for ordinary tasks did not change, and users needed no action.
+
+Limit: the comparison machinery did not itself prove a real-world optimization.
 
 ## 2.9.0 - 2026-07-08
 
-Offline regression checks: Teamwork's own behavior changes gained reusable checks before release.
+**Release checks became reusable without changing everyday Teamwork behavior.**
 
-- Offline coverage: Maintainers gained reusable checks for simple and complex work, debugging, research, review, long-running goals, installation assets, and cross-platform boundaries.
-- Release evidence: Behavior changes require recorded evidence and an explicit acceptance or rejection instead of shipping on appearance alone.
-- Everyday use: These checks govern Teamwork maintenance only and add no stage to ordinary user work.
-- Evidence limit: Offline results show consistency with recorded cases, not actual Codex, Cursor, or Claude runtime behavior.
+Maintainers gained offline cases for simple and complex work, debugging, research, review, goals, installation, and platform boundaries, plus recorded acceptance or rejection. These checks added no stage to ordinary runtime behavior and required no user action.
+
+Limit: offline consistency did not prove actual Codex, Cursor, or Claude Code behavior.
 
 ## 2.8.1 - 2026-07-08
 
-Discussion during implementation: “Discuss first” and maintainable-code rules began applying during execution, not just planning.
+**“Discuss first” and maintainable-code rules now apply during implementation.**
 
-- Discussion pause: A request to discuss first pauses dependent conclusions, direction choices, edits, and delegation, not only code generation.
-- Direct implementation: Code changes start from the existing implementation and its accepted behavior, reducing duplicate solutions and avoidable maintenance.
-- Review protection: Fixes are checked for unsupported branches, guessed defaults, and fallback paths.
-- Fresh installations: Update checks detect stale installed skills, agents, or global policy.
-- Platform consistency: Codex, Cursor, and Claude Code share the same confirmation and code-maintenance boundaries.
+A discussion request pauses dependent conclusions, choices, edits, and delegation. Changes begin in the existing implementation, and review rejects guessed defaults, unsupported branches, wrappers, and fallbacks. Freshness checks detect stale skills, agents, or global policy across Codex, Cursor, and Claude Code.
 
 ## 2.8.0 - 2026-07-08
 
-Discuss-first requests: An explicit request to be grilled stopped dependent work until you answered or opted out.
+**An explicit request to be grilled now pauses dependent work.**
 
-- Guided discussion: When you say grill me, ask first, or challenge assumptions, Teamwork asks at least one outcome-changing question and recommends an answer.
-- Confirmation boundary: All dependent work, including delegated and long-running work, waits for your confirmation or explicit exit.
-- Consistent pause: The same rule applies throughout the task, preventing background action after a promise to discuss first.
-- Content-aware updates: Installed skill content is compared directly, catching stale rules even when the version matches.
-- Platform consistency: Codex, Cursor, and Claude Code global installations share this interaction boundary.
+When you say “grill me,” “ask first,” or “challenge assumptions,” Teamwork asks at least one outcome-changing question with a recommendation. Dependent root, delegated, and Goal work waits until you answer or opt out. Content-aware update checks catch stale rules even when versions match, and the same boundary applies across all three platforms.
 
 ## 2.7.1 - 2026-07-07
 
-Direct code changes: Code edits and reviews became more direct and maintainable.
+**Code changes and reviews became more direct and maintainable.**
 
-- Existing ownership: Changes start from the code that already owns the behavior instead of adding a parallel implementation without evidence.
-- Review protection: Reviews reject unsupported modes, wrappers, fallbacks, guessed defaults, and code that hides missing required state.
-- Platform consistency: Codex, Cursor, and Claude Code change the existing path when possible, add alternatives only when accepted behavior requires and verifies them, and fail clearly when required state is missing.
+Teamwork changes the existing owner instead of adding a parallel implementation without evidence. Reviews reject unsupported modes, wrappers, fallbacks, guessed defaults, and hidden missing state. All three platforms fail clearly when required state is absent and add alternatives only when accepted behavior requires and verifies them.
 
 ## 2.7.0 - 2026-07-01
 
-Quality-first Codex profile: Codex users could explicitly maximize reasoning while answers and progress updates became less rushed.
+**Codex gained a quality-first profile, and replies became less rushed.**
 
-- Quality-first Codex profile: `gpt55-xhigh` configured every Teamwork Codex subagent to use `gpt-5.5` with `xhigh` reasoning. Cursor and Claude Code kept their native performance-first model tiers.
-- Historical project target: `project-codex-agents` refreshed only project-local `.codex/agents` without touching Cursor or Claude Code project surfaces. This route was removed in 3.0.0.
-- Evidence before output: Non-lightweight or evidence-sensitive work reads sources, checks interpretation, and verifies results first. Optional progress updates stay brief and tied to decisions, blockers, or verification.
-- Cleaner replies: Routine work no longer displays internal routing labels, while important delegation, review, and skipped actions remain traceable.
+`gpt55-xhigh` set every Codex subagent to GPT-5.5 with `xhigh` reasoning; Cursor and Claude Code kept native performance-first tiers. The historical `project-codex-agents` target refreshed only project `.codex/agents` and was removed in 3.0.0. Evidence-sensitive work reads, interprets, and verifies before answering; progress stays tied to decisions, blockers, or checks. Routine replies hide internal routing labels, while important delegation, review, and skipped actions remain traceable.
 
 ## 2.6.0 - 2026-06-23
 
-Evidence-led research: Research broadened beyond the first source, missing required state stopped producing guessed defaults, and public documentation became easier to use.
+**Research looks beyond the first source, and missing values are no longer guessed.**
 
-- Broader research: A supplied article, paper, URL, repository, or report is a starting point rather than the research boundary. Teamwork expands toward primary and neighboring sources, counter-evidence, and unanswered questions.
-- Better-supported recommendations: Source quality, counter-evidence, coverage gaps, and open questions are considered before choosing a direction.
-- Safety boundary: Missing environment variables, paths, ports, model names, hyperparameters, credentials, configuration, or invariants cause Teamwork to ask, research, or stop instead of inventing defaults or fallback behavior.
-- Maintainability review: Reviews look for unnecessary generated code, overly broad error handling, silent defaults, hidden fallbacks, and regressions.
-- Clearer documentation: Public guides lead with why to use Teamwork, when it helps, what changes, and where advanced platform details live.
-- Platform baseline: Codex, Cursor, and Claude Code global policies share the same safety rules.
+A supplied paper, URL, repository, or report is a starting point: `teamwork-research` seeks primary and neighboring sources, counter-evidence, gaps, and open questions before recommending. Missing paths, ports, models, hyperparameters, credentials, configuration, or invariants cause a question, research, or stop—not an invented default. Review flags unnecessary code, broad error handling, silent defaults, hidden fallbacks, and regressions. Public guides became outcome-first, and all three global policies share these safety rules.
+
+Limit: offline checks and limited runtime evidence did not prove equivalent behavior across Codex, Cursor, and Claude Code.
 
 ## 2.5.0 - 2026-06-22
 
-Safer long-task retries: Long-running Goal work stopped blindly retrying after failure.
+**Long-running Goal work stopped retrying failures blindly.**
 
-- Safe continuation: Long-running goals keep enough information about each attempt and its result to continue safely across turns.
-- Smarter retries: A failed attempt is reviewed before retrying to distinguish missing evidence, an outdated plan, the wrong scope, and an implementation mistake.
-- Historical project setup: `scripts/init-project.sh` was added to prepare Teamwork project context and the then-current project-local installation. Project-local package installation was later removed in 3.0.0.
+Goals retain enough attempt history to continue safely, and a failure is classified as missing evidence, stale plan, wrong scope, or implementation error before retrying. The historical `scripts/init-project.sh` also prepared project context and a project-local package; 3.0.0 later removed project-local installation.
 
 ## 2.4.1 - 2026-06-21
 
-Cursor rule setup: Global-rule setup became easier and its manual step became harder to miss.
+**Cursor’s required manual setup became harder to miss.**
 
-- Clipboard setup: `./install.sh cursor-policy-copy` copies the Cursor User Rules policy text to the clipboard.
-- Required manual step: Documentation and readiness checks explicitly call out the Cursor User Rules paste.
+`./install.sh cursor-policy-copy` copies the Cursor User Rules text to the clipboard, and readiness checks call out the required paste. Teamwork runtime behavior did not change.
 
 ## 2.4.0 - 2026-06-21
 
-Natural-language routing: Requests routed more reliably while simple tasks stayed lightweight.
+**Natural-language requests route more reliably while simple work stays light.**
 
-- Natural requests: Everyday wording maps more reliably to the Teamwork capability it needs.
-- Lightweight execution: Simple tasks stay near the platform's native fast path, while larger tasks load only the guidance they need.
+Everyday wording maps more consistently to the needed Teamwork capability. Small tasks stay close to the host’s native fast path, while larger tasks load only the guidance they need.
 
 ## 2.3.0 - 2026-06-21
 
-Evidence-first debugging: Bug reports began producing diagnosis evidence before guessed fixes.
+**Bug reports now produce evidence before guessed fixes.**
 
-- Evidence-first debugging: The new `teamwork-debug` skill uses reproduction, logs, competing explanations, and runtime evidence before suggesting a fix.
-- Clear diagnosis: Root cause, symptoms, and conclusions without enough evidence are kept separate.
-- Clean investigations: Temporary logs and diagnostic probes must be removed so debugging does not leave new technical debt.
-- Update reliability: Upstream remote detection in `scripts/check-update.sh` was fixed.
+The new `teamwork-debug` uses reproduction, logs, competing explanations, and runtime evidence. It separates root cause, symptoms, and unsupported conclusions, and removes temporary probes afterward. This release also fixed upstream-remote detection in `scripts/check-update.sh`.
 
 ## 2.2.0 - 2026-06-16
 
-Installation freshness: Installations and updates became directly checkable.
+**Installation freshness became directly checkable.**
 
-- Freshness checks: `scripts/check-update.sh` reports whether Teamwork installations are stale.
-- Historical project support: Installed-version markers, `--project-root`, and broader project-local installation support were added. Project-local package installation was later removed in 3.0.0.
-- Platform consistency: Installation behavior became more consistent across Codex, Cursor, and Claude Code.
+`scripts/check-update.sh` reports stale installs. Version markers, `--project-root`, and broader project-local support made behavior more consistent across platforms; 3.0.0 later removed project-local package installation.
 
 ## 2.0.0 - 2026-06-16
 
-Direct progress: Clear requests moved forward with fewer interruptions.
+**Clear requests move forward with fewer interruptions.**
 
-- Direct progress: Teamwork proceeds when the task is clear and asks only about real blockers or core decisions.
-- Consistent delegation: Subtask rules became easier to apply without adding steps to ordinary work.
-- Lean maintenance checks: Installation and package integrity remain covered with less maintenance overhead. Ordinary users need no action.
+Teamwork asks only about blockers or core decisions, applies delegation rules consistently without burdening ordinary work, and keeps package-integrity checks lean. Users needed no action for the maintenance checks.
 
 ## 1.11.0 - 1.15.0 - 2026-06-11 to 2026-06-16
 
-Progressive guidance: These releases made skills load progressively and kept deep research context manageable.
+**Skills load progressively, and deep research returns a smaller useful context.**
 
-- Broader updates: `teamwork-update` refreshes more of the installed package.
-- Progressive guidance: Skills load detailed instructions only when the task needs them, reducing unnecessary context.
-- Focused research: Deep research can search broadly while returning only the most useful evidence to the main conversation.
-- Current documentation: An optional lookup policy supports then-current library and API information.
+`teamwork-update` refreshes more of the installed package. Detailed guidance loads only when needed, broad research returns only its best evidence to the main conversation, and an optional lookup policy supports then-current library and API information.
 
 ## 1.5.0 - 1.10.0 - 2026-06-05
 
-Durable collaboration: These releases turned Teamwork from a set of workflow prompts into a system with memory and acceptance boundaries.
+**Teamwork gained durable context and safer decision boundaries.**
 
-- Durable context: Project memory lets important work survive across sessions.
-- Safer decisions: External memory is imported more carefully, and consequential choices require confirmation.
-- Missing values: Required state causes a clear stop instead of an invented default; later releases reduced the workflow overhead without removing reviewability.
+Project memory lets important work survive sessions. External memory is imported carefully, consequential choices require confirmation, and missing required state stops clearly instead of producing a guessed default. Later releases reduced the overhead without removing reviewability.
 
 ## 1.2.0 - 1.4.1 - 2026-06-04 to 2026-06-05
 
-Cost and performance choice: These releases let Codex users choose between cost and performance at installation time.
+**Codex users could choose cost or performance at installation time.**
 
-- Installation profiles: Codex added `performance-first` and `cost-first` choices.
-- Matching defaults: Codex subagent settings follow the selected cost or performance preference.
+The new `performance-first` and `cost-first` profiles set subagent defaults to match that choice.
 
 ## 1.0.0 - 1.1.2 - 2026-06-01 to 2026-06-04
 
-Collaboration foundations: These releases established the Teamwork collaboration structure.
+**Teamwork established reliable routing and clearer delegated handoffs.**
 
-- Reliable routing: Requests reach the right kind of help more consistently.
-- Clear handoffs: Subagent ownership and completion expectations make delegated work easier to finish cleanly.
+Requests reach the right kind of help more consistently, while ownership and completion expectations help delegated work finish cleanly.
 
 ## 0.14.0 - 2026-06-01
 
-Reusable authorization: Codex Teamwork authorization became reusable across projects.
+**Codex authorization became reusable across projects.**
 
-- Global policy: A managed Teamwork block is installed in `~/.codex/AGENTS.md`.
-- Reusable authorization: Users no longer need to repeat subagent permission in every project.
+A managed Teamwork block in `~/.codex/AGENTS.md` means users no longer repeat subagent permission in every project.
 
 ## 0.13.0 - 2026-05-31
 
-Parallel delegation: Codex parallel-agent authorization became clearer.
+**Codex users gained clearer boundaries for parallel delegation.**
 
-- Parallel delegation: Codex users can distribute work across subagents with clearer authorization boundaries.
+Work could be distributed across subagents with more explicit authorization.
 
 ## 0.12.0 - 2026-05-28
 
-Claude Code support: Claude Code became a first-class Teamwork platform.
+**Claude Code became a first-class Teamwork platform.**
 
-- Claude Code support: Teamwork gained installation, documentation, and subagent support for the platform.
-- Package confidence: Maintainer checks cover the new Claude Code surfaces.
+Teamwork added installation, documentation, subagent support, and package checks for Claude Code.
 
 ## 0.11.0 - 2026-05-27
 
-Cursor support: Cursor became a first-class Teamwork platform.
+**Cursor became a first-class Teamwork platform.**
 
-- Cursor support: Teamwork gained installation, documentation, subagent mapping, and long-running goal guidance for the platform.
-- Platform-specific guidance: Documentation describes each platform in its own terms instead of assuming Codex behavior.
+Teamwork added Cursor installation, documentation, subagent mappings, and long-running Goal guidance, using platform-specific terms instead of assuming Codex behavior.
 
 ## 0.10.0 - 2026-05-27
 
-Capability discovery: Teamwork stopped declaring subagents unavailable before checking and stopped treating self-checks as independent acceptance.
+**Teamwork checks available capabilities and requires genuinely independent acceptance.**
 
-- Capability discovery: Teamwork checks dispatch options before concluding that subagents are unavailable.
-- Independent acceptance: Larger tasks cannot treat a self-check as separate review, and skipping an independent reviewer must be explained clearly.
+It no longer declares subagents unavailable before checking dispatch options. Larger tasks cannot treat self-review as independent acceptance, and skipping an independent reviewer must be explained.
 
 ## 0.9.0 - 2026-05-27
 
-Versioned workflow package: Teamwork became a versioned workflow package with focused skills and evidence-based acceptance.
+**Teamwork became an installable, versioned workflow package.**
 
-- Installable package: Teamwork gained explicit versions and a repeatable installation path.
-- Project setup: Initialization arrived through `teamwork-init`.
-- Focused guidance: Skills load only when their kind of work is needed.
-- Reviewable larger work: Durable records and evidence-based review support complex tasks, while requests can route automatically to the appropriate skill.
+It gained repeatable installation, `teamwork-init`, focused on-demand skills, automatic routing, durable records, and evidence-based review for larger work.
 
 ## Pre-0.9.0 - 2026-05-12 to 2026-05-26
 
-Teamwork's early evolution: This period records the evolution from one optimization skill into Teamwork.
+**Teamwork grew from one optimization prompt into a collaboration system.**
 
-- Starting point: The project began as a single optimization workflow.
-- Specialized help: Research, planning, implementation, review, and long-running goals gradually became separate capabilities.
-- Reliable continuation: Long-running goal commands, evidence checks, durable plans, and automatic Codex routing were added.
-- Teamwork identity: The package was renamed Teamwork and narrowed to a Codex-first skill package before later expanding again to multiple platforms.
+Research, planning, implementation, review, and long-running goals became separate capabilities. Evidence checks, durable plans, Goal commands, and automatic Codex routing enabled reliable continuation. The package was renamed Teamwork, became Codex-first, and later expanded to multiple platforms.

@@ -1,62 +1,116 @@
-# Codex Usage
+# Teamwork for Codex
 
-Teamwork for Codex adapts the same shared skill package used by Cursor and
-Claude Code. Codex native capabilities—editing, shell execution, plans,
-custom agents, permissions, MCP, browser tools, and review—remain the execution
-layer. Teamwork helps decide when extra research, debugging, planning,
-delegation, or verification will improve the result without slowing down simple
-requests. Codex owns skill discovery, tool availability, permission prompts,
-interaction UI, and the behavior produced by the selected model.
+Teamwork helps Codex research from evidence, diagnose failures, make plans when
+they are useful, implement scoped changes, review risky work, and keep going
+until a result is verified. For small questions and obvious edits, Codex stays
+on its normal fast path.
 
-Clear scope, criteria, and effect authority send Codex change/build work directly
-to the shortest real result path; an accepted plan is optional and never supplies
-missing authority. Return to Plan only when new evidence changes accepted scope
-or criteria. Plans, tests, validation, and review are support only: they must
-unblock delivery, distinguish the current failure, check the changed path, or
-protect a named high-risk boundary. Fresh review occurs only when the user or an
-accepted risk gate requires it; an available real run is never replaced by a
-proxy check, and work stops when the requested result is obtained.
+## Quick start: Marketplace plugin
 
-## Install
-
-### Marketplace plugin (recommended)
-
-Install the 3.4.0 Teamwork Marketplace and plugin:
+Install the Marketplace and plugin:
 
 ```bash
-codex plugin marketplace add JinPLu/Teamwork@v3.4.0
+codex plugin marketplace add JinPLu/Teamwork
 codex plugin add teamwork-skill@teamwork
 ```
 
-The plugin immediately contributes all 10 Teamwork skills from Codex's plugin
-cache. Start a new Codex task and invoke `$teamwork-update` to see the proposed
-full setup. First enablement needs explicit approval because it writes Codex
-agents, routing, the Teamwork-managed global policy, and the selected
-notification configuration. It removes only verified legacy Teamwork skill
-copies, never creates `~/.agents/skills`, and preserves unrelated configuration.
+Open a new Codex task and run:
 
-The default profile is `performance-first`; `$teamwork-update` can use another
-existing profile or opt out with `--no-notifications`. After any routing change,
-restart Codex. If notifications are enabled, run `/hooks` and trust only the
-Teamwork `Stop` and `PermissionRequest` handlers individually. The plugin
-manifest deliberately declares no hooks, so plugin installation never bypasses
-that trust boundary.
+```text
+$teamwork-update
+```
 
-To update, run:
+The ten Teamwork skills are available immediately from the plugin cache.
+`$teamwork-update` completes the recommended setup by proposing Codex agents,
+routing, the Teamwork-managed global policy, and your notification choice. The
+first full enablement waits for your explicit approval. It does not copy skills
+to `~/.agents/skills`, and it removes only verified legacy Teamwork copies.
+
+Restart Codex after routing changes. If notifications are enabled, open `/hooks`
+and trust the Teamwork `Stop` and `PermissionRequest` handlers individually.
+Never use trust-all. The plugin intentionally ships no pretrusted hooks, so this
+manual Codex step cannot be completed by the installer.
+
+## Everyday use
+
+Describe the result you want in normal language:
+
+```text
+Research this choice from official sources and the repository, then recommend what to do.
+Find the cause of this CI failure from logs and a reproduction, then fix it.
+Implement this change and verify the changed path.
+Review this diff for correctness, regressions, and unsupported completion claims.
+Keep working until the test is green or you are genuinely blocked.
+```
+
+Codex selects skills from your request, but selection is model behavior rather
+than a deterministic router. Invoke a skill explicitly when the exact workflow
+matters, for example `$teamwork-research`, `$teamwork-debug`,
+`$teamwork-execute`, `$teamwork-review`, or `$teamwork-goal`. Use
+`$teamwork-plan` when you want a plan or a material decision must be settled
+before action. Use `$grill-me` when you explicitly want Codex to challenge your
+assumptions before proceeding.
+
+Teamwork adds only the amount of process that helps the result: evidence for
+research, reproduction for unknown failures, bounded implementation for clear
+changes, and fresh review when you ask for it or a high-risk boundary requires
+it. Codex still owns permissions, tools, Plan mode, browser and MCP access, and
+the final response.
+
+Replies lead with the conclusion; technical detail appears only when it helps
+or you ask. When useful and authorized, Teamwork can save one compact summary
+of the goal, settled choices, open question, key evidence, and continue point.
+Ordinary requests do not need one.
+
+## Agents and profiles
+
+The full setup installs seven Codex agent roles under `~/.codex/agents` and
+configures routing for one main task plus up to eight subagents. They give Codex
+separate read-only contexts for evidence and design, a bounded worker for
+independent implementation, and fresh-context judges and reviewers for work
+that benefits from an independent check. Codex uses them only when the work
+splits cleanly; the main task remains responsible for scope and integration.
+
+The default `performance-first` profile balances routine work with deeper
+review. Choose `cost-first` when lower-cost models should handle routine reading,
+design, and implementation while stronger models remain available for review.
+`./install.sh --help` lists the advanced compatibility profiles. Installation
+and readiness checks confirm configuration, not that Codex will spawn an agent
+for a particular natural-language request. Subagents do not send Teamwork
+completion or permission notifications.
+
+## Initialize one project
+
+Ask `$teamwork-init` to initialize a selected repository, or use the checkout
+command below:
 
 ```bash
-codex plugin marketplace upgrade teamwork
+./install.sh --project-root /path/to/project init-project
+```
+
+This refreshes the current user's global Teamwork setup and adds project
+instructions, Teamwork work-record entrypoints, and CodeGraph context when
+available. It does not copy Teamwork skills or agents into the repository.
+Initializing one project does not modify every other project.
+
+## Update the Marketplace installation
+
+```bash
+codex plugin marketplace remove teamwork
+codex plugin marketplace add JinPLu/Teamwork
 codex plugin add teamwork-skill@teamwork
 ```
 
-Then open a new task and invoke `$teamwork-update` again. Its plugin readiness
-check verifies `codex plugin list --json`, cache version, activation marker,
-agents, routing, policy, notification status, and duplicate legacy copies.
+Then open a new task and run `$teamwork-update` again. It checks the Marketplace
+catalog and cache, activation marker, agents, routing, policy, notifications,
+and duplicate legacy copies before refreshing the managed setup. Restart Codex
+after any routing change and repeat the manual `/hooks` review when requested.
 
-### Checkout compatibility (3.4.x)
+## Checkout compatibility (3.4.x)
 
-The repository installer remains available for Cursor, Claude Code, and a
-temporary Codex compatibility path:
+The repository installer remains available for local development, Cursor and
+Claude Code users, and Codex users who have not activated the Marketplace
+workflow:
 
 ```bash
 ./install.sh all
@@ -66,119 +120,44 @@ temporary Codex compatibility path:
 ./install.sh codex --no-notifications
 ```
 
-Use `./install.sh all` for the default full global refresh from a checkout. The platform-specific
-commands above are for a deliberately narrower setup. None initialize every
-repository. Establish context for one selected repository with:
+Use `./install.sh all` for the default full global refresh, or a platform command
+for a narrower installation. Direct `codex` installs leave notifications
+unchanged unless `--notifications` or `--no-notifications` is supplied; `all`
+and `init-project` enable them by default. Use `--link` only when developing
+from this checkout.
 
-```bash
-./install.sh --project-root /path/to/project init-project
-```
+The checkout Codex target installs skills under `~/.agents/skills`, agents under
+`~/.codex/agents`, and the Teamwork-managed global policy and routing while
+preserving unrelated configuration. Older Teamwork copies under
+`~/.codex/skills` are migration input, not the supported checkout location. If
+Marketplace activation already exists, `./install.sh codex` stops instead of
+creating duplicate skills; open a new task and use `$teamwork-update`.
 
-`init-project` refreshes the current user's global Teamwork surfaces and sets
-up the selected repository's Teamwork context, such as project instructions and
-available work-record or CodeGraph entrypoints. It does not install Teamwork
-skills or agents into the repository. Use `--link` only when developing from
-this checkout.
-
-The checkout Codex target installs user skills under `~/.agents/skills` and
-custom agent roles under `~/.codex/agents`. Older Teamwork copies under
-`~/.codex/skills` are migration input, not the supported checkout runtime
-location. If `~/.codex/teamwork/plugin-activation.json` exists, `./install.sh
-codex` safely stops and directs you to `$teamwork-update` rather than creating
-duplicate skills. Custom-agent routing stays on Teamwork's currently compatible
-Codex path; installation and readiness checks do not prove a live spawn.
-
-The default `performance-first` profile balances routine work and review depth.
-Use `--profile cost-first` when lower-cost choices matter; `./install.sh --help`
-lists advanced profiles when you need them.
-
-Global Codex installs maintain Teamwork's role routing while preserving unrelated
-user configuration. Restart Codex after a routing change. If another tool owns
-that configuration, consult `./install.sh --help` before changing it.
-
-Notifications are opt-in for direct Codex installs and enabled by default for
-`all` and `init-project`. They cover main-turn completion and permission
-requests; subagents remain silent. After installation, open the Codex CLI, run
-`/hooks`, and review and trust each Teamwork hook. The installer cannot perform
-that user-owned trust step.
-
-## How To Use
-
-Ask for the outcome in normal language. Codex uses the request and each skill's
-description to select a suitable capability, but this is model behavior rather
-than deterministic automatic routing. Explicitly invoke a skill when exact
-selection matters. Teamwork is most useful for:
-
-- research grounded in papers, official documentation, project files, or
-  source history;
-- reproducible debugging based on logs and runtime evidence;
-- plans only when requested or a material choice/protected boundary blocks action;
-- direct implementation of authorized change/build work or a known fix;
-- fresh review for unsupported completion claims, risky fallbacks, or clutter;
-- long-running work that should continue until verified or genuinely blocked.
-
-Small facts, tiny edits, and obvious local fixes stay on Codex's native fast
-path. An explicit request to be questioned, challenged, or “grilled” expresses
-question-first intent and may select `grill-me`; otherwise Teamwork asks only
-when required input or a material user-owned decision cannot be discovered
-safely.
-
-Replies lead with the conclusion or what it means. For a substantive discussion,
-they connect observed facts, their plain interpretation, and only the boundary or
-next comparison that could change the decision; continuing discussion keeps its
-current question visible. This is a reasoning order, not a fixed answer format,
-and simple facts stay one sentence. They add technical detail when it helps or
-when you ask, rather than narrating internal workflow labels or version details.
-In a repository initialized for Teamwork, when the user has authorized writes,
-the runtime can write, and an explicit question-first discussion leaves a next
-comparison or decision open, Teamwork can save one compact summary of the goal,
-settled choices, open question, key evidence, and continue point. Explicit
-save/resume, an approaching handoff or compaction, or three real branches also
-make it useful; shortness neither triggers nor vetoes it. Ordinary requests do
-not need one.
-
-Codex Plan mode and `teamwork-plan` share one planning path: Codex owns the host
-UI and plan state, while Teamwork grounds scope, required values, and
-verification in evidence. Entering or confirming a plan authorizes neither
-implementation nor writing a discussion record.
-
-Use `teamwork-init` to set up one repository, align its project instructions,
-or add the optional Teamwork work-record and CodeGraph entrypoints. It targets
-the selected repository rather than changing every project for the user.
-
-## Subagents And Goals
-
-Codex custom agents are useful only for independent work that benefits from
-separation or fresh context. Each returns a compact conclusion, evidence,
-unresolved impact, and next action. The root agent remains responsible for
-scope, integration, and a plain-language response—the conclusion
-or what it means, why it matters, and what follows—rather than exposing coordination
-mechanics.
-
-Use native Codex goal state when the user explicitly requests it or accepts a
-goal proposal. Numeric budgets must come from the user or runtime; Teamwork does
-not invent one.
-
-## Evidence, Limits, And Updates
-
-Teamwork relies on sources, repository files, configuration, tests, logs,
-diffs, screenshots, and review evidence. It does not enable platform tools,
-change permission policy, configure MCP or browsers, or prove model behavior by
-installation alone. Codex owns its native structured-question UI; Teamwork uses
-it only when the runtime exposes it and otherwise asks concisely in text.
-
-Use `teamwork-update` to check and guide a global Teamwork refresh. From the
-Marketplace it resolves and runs the bundled cache runtime; from a checkout it
-uses `./install.sh all`. Refreshing an installation is separate from publishing
-a new Teamwork version.
-
-Useful global check:
+Check a checkout installation with:
 
 ```bash
 ./scripts/check-update.sh --readiness
-# Plugin runtime: <plugin-root>/scripts/check-update.sh --plugin --readiness
 ```
 
-This reports freshness and completeness of Teamwork-managed files and bounded
-configuration. It does not verify that the user has trusted Codex hooks or that
-a natural-language request will select a particular skill at runtime.
+For the plugin runtime, `$teamwork-update` resolves and runs the equivalent
+plugin-cache readiness check, so you do not need to keep a checkout.
+
+## Troubleshooting
+
+- **The plugin is installed, but agents or routing are missing:** open a new
+  task, run `$teamwork-update`, review its proposed changes, and approve the
+  first full enablement.
+- **The plugin cache or catalog is stale:** run the Marketplace update sequence
+  above, open a new task, and run `$teamwork-update` again.
+- **Readiness is green but notifications do not run:** restart Codex, inspect
+  `/hooks`, and trust only Teamwork `Stop` and `PermissionRequest`. Static
+  readiness cannot perform or verify this host-owned trust step.
+- **Installation stops on an existing file:** do not delete whole `.agents` or
+  `.codex` directories. Teamwork refuses to overwrite same-name content whose
+  ownership or contents it cannot verify; inspect that specific conflict first.
+- **A request did not select the skill or agent you expected:** invoke the skill
+  explicitly. Installed configuration cannot guarantee model routing or a live
+  agent spawn for every prompt.
+
+See the [main README](README.en.md) for the cross-platform overview and the
+[changelog](CHANGELOG.en.md) for user-visible changes.

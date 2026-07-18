@@ -1,116 +1,132 @@
 @AGENTS.md
 
-# Claude Code Usage
+# Teamwork for Claude Code
 
-Teamwork for Claude Code adapts the same result-first skill package used by
-Codex and Cursor. Claude Code native capabilities—editing, shell execution,
-MCP, permissions, `Task` subagents, planning, and verification—remain the
-execution layer. Claude Code owns skill discovery, available tools, permission
-prompts, interaction UI, hook trust, and the behavior produced by its selected
-model.
+Teamwork helps Claude Code research, diagnose failures, plan, implement scoped
+changes, review completed work, and keep going until a result is verified.
+Claude Code still performs the actual work and controls its tools and prompts.
 
-## Install
+## Quick setup
 
-Global setup:
+From this checkout, install Teamwork for every supported platform:
 
 ```bash
 ./install.sh all
+```
+
+For Claude Code only, use:
+
+```bash
 ./install.sh claude
+```
+
+Both commands install the skills, agents, and Teamwork-managed global policy.
+`all` and `init-project` enable completion and permission sounds by default. A
+direct Claude install leaves notification settings unchanged unless chosen:
+
+```bash
 ./install.sh claude --profile cost-first
 ./install.sh claude --profile cost-first --notifications
 ./install.sh claude --no-notifications
 ```
 
-Use `./install.sh all` for the default full global refresh. The platform-specific
-commands above are for a deliberately narrower setup. None initialize every
-repository. Establish context for one selected repository with:
+The default `performance-first` profile balances routine work and review depth;
+`cost-first` favors lower-cost choices. Run `./install.sh --help` for advanced
+profiles. Use `--link` only to develop Teamwork from this checkout.
+
+Initialize each repository that needs project context:
 
 ```bash
 ./install.sh --project-root /path/to/project init-project
 ```
 
-`init-project` refreshes the current user's global Teamwork surfaces and sets
-up the selected repository's Teamwork context, such as project instructions and
-available work-record or CodeGraph entrypoints. It does not install Teamwork
-skills or agents into the repository. A direct Claude install also maintains the
-Teamwork-owned global policy; `claude-policy` prints that block for manual
-review. Use `--link` only for local development.
+This refreshes the global installation and sets up the selected repository's
+instructions, work-record entrypoints, and available CodeGraph context. It does
+not copy Teamwork skills or agents into the repository.
 
-Notifications are opt-in for direct installs and enabled by default for `all`
-and `init-project`. They cover main-turn completion and permission requests;
-subagents remain silent. Installation is tested in isolation, but live Claude
-event delivery has not been verified, and plugin activation remains subject to
-Claude Code's hook trust controls.
+## Everyday use
 
-The default `performance-first` profile balances routine work and review depth.
-Use `--profile cost-first` when lower-cost choices matter; `./install.sh --help`
-lists advanced profiles when you need them.
+Ask for the outcome you want:
 
-## How To Use
+- “Research the current options and recommend one with sources.”
+- “Diagnose why this test started failing.”
+- “Plan this migration, but do not implement it yet.”
+- “Implement this scoped change and verify the changed path.”
+- “Review this diff against the requirements.”
+- “Keep working until this command is green.”
 
-Ask for research, debugging, a plan, execution of accepted scope, strict review,
-or a verified long-running outcome. Claude Code uses the request and skill
-descriptions to select a capability; this is model behavior, not deterministic
-automatic routing. Explicitly invoke a skill when exact selection matters.
-Small questions and tiny edits remain on Claude Code's native path. An explicit
-request to be questioned, challenged, or grilled expresses question-first
-intent and may select `grill-me`; otherwise Teamwork asks only for required
-input or a material user-owned decision that it cannot discover safely.
+The matching skills work by outcome: research gathers evidence; debug finds an
+unknown cause before code changes; plan settles material choices; execute
+produces an authorized result; review checks finished work; and goal supports
+long-running convergence.
 
-Clear scope, criteria, and effect authority send change/build work directly to
-the shortest real result path; an accepted plan is optional and never supplies
-missing authority. Return to Plan only when new evidence changes accepted scope
-or criteria. Planning, tests, validation, and review are support only: verify
-only the changed path or a named high-risk boundary, and use fresh review only
-when the user or an accepted risk gate requires it.
+Claude Code selects skills from your request, so selection is model behavior,
+not deterministic routing. Name a skill when exact selection matters. Small
+questions and edits can stay on the native path. Asking to be “challenged,”
+“questioned,” or “grilled” can select `grill-me`; ordinary work asks only for
+required input or a decision Claude Code cannot safely make.
 
-For planning, Teamwork grounds scope, required values, and verification in
-evidence. Entering or confirming a plan authorizes neither implementation nor
-writing a discussion record.
+Replies lead with the conclusion; technical detail appears only when it helps or
+you ask.
 
-Replies lead with the conclusion or what it means. For a substantive discussion,
-they connect observed facts, their plain interpretation, and only the boundary or
-next comparison that could change the decision; continuing discussion keeps its
-current question visible. This is a reasoning order, not a fixed answer format,
-and simple facts stay one sentence. They add technical detail when it helps or
-when you ask, rather than narrating internal workflow labels or version details.
-In a repository initialized for Teamwork, when the user has authorized writes,
-the runtime can write, and an explicit question-first discussion leaves a next
-comparison or decision open, Teamwork can save one compact summary of the goal,
-settled choices, open question, key evidence, and continue point. Explicit
-save/resume, an approaching handoff or compaction, or three real branches also
-make it useful; shortness neither triggers nor vetoes it. Ordinary requests do
-not need one.
+A clear change request can go directly to implementation. A plan is optional,
+and approving one does not authorize edits. Research, debugging, planning, and
+review stay read-only without separate change authority. Verification focuses
+on the changed path or a named high-risk boundary.
 
-## Subagents
+When useful and authorized, Teamwork can save one compact summary of the goal,
+settled choices, open question, key evidence, and continue point. Ordinary
+requests do not need one.
 
-Teamwork may use Claude Code `Task` subagents for independent work that benefits
-from separation or fresh context. Installed roles include `explore`, `designer`,
-`judge`, `worker`, `code-reviewer`, plus `deep-judge` and `deep-reviewer` for
-higher-risk review. Each returns a compact conclusion, evidence, unresolved
-impact, and next action. The main agent keeps responsibility for scope,
-integration, and a plain-language response—the conclusion or what
-it means, why it matters, and what follows—rather than exposing coordination
-mechanics.
+## Agents and profiles
 
-## Long Tasks And Handoffs
+Teamwork may use Claude Code `Task` agents for independent work or fresh context:
 
-When continuity is useful, Teamwork can save that compact summary in a repository
-where the user has authorized writes. It is supporting context, not execution
-authority and not a requirement for ordinary replies. Repeated failures return to
-evidence gathering or debugging before another implementation attempt.
+- `explore` gathers evidence without editing.
+- `designer` compares genuine design choices.
+- `judge` checks whether a consequential plan is executable.
+- `worker` implements one bounded slice.
+- `code-reviewer` independently reviews completed work.
+- `deep-judge` and `deep-reviewer` scrutinize higher-risk work.
 
-## Evidence, Limits, And Updates
+The main turn owns scope, integration, and the final answer. Agents are optional.
 
-Paths, ports, models, credentials, commands, and execution modes must come from
-the user, repository, configuration, tests, or an accepted plan. Teamwork does
-not take over Claude Code permissions, MCP, or test settings, and it does not
-emulate structured question tools that the current runtime does not expose.
+## Policy and notifications
 
-Use `teamwork-init` to configure one selected repository. Use
-`teamwork-update` to check and guide a global refresh; the explicit refresh
-command is `./install.sh all`. Check the global installation with
-`./scripts/check-update.sh --readiness`. Refreshing an installation is not a
-maintainer version release. This readiness check covers Teamwork-managed files
-and bounded configuration; it does not verify Claude Code hook trust or prove
-live skill selection and model behavior.
+Claude installs maintain only the Teamwork-owned block in
+`~/.claude/CLAUDE.md` and preserve other content. Inspect the block without
+installing it with:
+
+```bash
+./install.sh claude-policy
+```
+
+Notifications cover main-turn completion and permission requests; subagents are
+silent. `--no-notifications` removes only Teamwork-owned handlers. Hook activation
+still depends on Claude Code trust. Installation is tested in isolation, but
+live Claude event delivery has not been verified.
+
+Teamwork does not override Claude Code permissions, MCP, tests, tools, UI, or
+model behavior. Required paths, ports, credentials, commands, models, and
+execution modes must come from you or repository evidence. Teamwork does not
+guess them or emulate unavailable host features.
+
+## Update and troubleshoot
+
+Check whether the global installation is complete and current:
+
+```bash
+./scripts/check-update.sh --readiness
+```
+
+Use `teamwork-update` to check or guide a global refresh, or run:
+
+```bash
+./install.sh all
+```
+
+Use `teamwork-init` when a repository needs project context. If selection is
+wrong, invoke the skill by name. If notifications do not fire, check hook trust
+and your notification choice. Readiness covers Teamwork-managed files and
+bounded configuration; it cannot prove live hook delivery, skill selection, or
+model behavior.
