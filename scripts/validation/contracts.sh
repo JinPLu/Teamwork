@@ -199,8 +199,8 @@ for refresh_contract in \
 done
 grep_required 'Project-local install targets were removed' "$ROOT/install.sh" \
   "installer must reject the removed project-local package targets"
-grep_required 'project-root is valid only with the init-project target' "$ROOT/install.sh" \
-  "installer must reserve --project-root for init-project context setup"
+grep_required 'project-root is valid only with the init-project or plugin-init-project target' "$ROOT/install.sh" \
+  "installer must reserve --project-root for checkout or Marketplace project-context setup"
 grep_required 'project-only was removed' "$ROOT/scripts/init-project.sh" \
   "init-project must reject the removed project-only path"
 grep_required 'project was removed' "$ROOT/scripts/check-update.sh" \

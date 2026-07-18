@@ -21,9 +21,23 @@ Teamwork is a good fit for literature and field research, technical evaluation, 
 
 ## Quick Start
 
-You need a working Codex, Cursor, or Claude Code installation. The repository installer runs through Bash.
+You need a working Codex, Cursor, or Claude Code installation. For Codex, the
+Marketplace plugin is now the recommended entry point. Add the pinned 3.4.0
+Marketplace, install the plugin, start a new task, then explicitly enable its
+full Codex integration:
 
-For the full global setup:
+```bash
+codex plugin marketplace add JinPLu/Teamwork@v3.4.0
+codex plugin add teamwork-skill@teamwork
+```
+
+In the new Codex task, invoke `$teamwork-update`. It first shows the agents,
+routing, managed policy, notification choice, and verified legacy-skill cleanup
+it would make; confirm that one enablement action. All 10 Teamwork skills are
+available immediately from the installed plugin, while the user-level Codex
+configuration remains an explicit choice.
+
+For Cursor, Claude Code, or the legacy checkout workflow:
 
 ```bash
 git clone https://github.com/JinPLu/Teamwork.git
@@ -46,12 +60,25 @@ Grill me: challenge only decisions that change the outcome, and stop when none r
 
 | Target | Command |
 |---|---|
-| Codex | `./install.sh codex` |
+| Codex (recommended) | `codex plugin marketplace add JinPLu/Teamwork@v3.4.0` → `codex plugin add teamwork-skill@teamwork` → new task: `$teamwork-update` |
+| Codex checkout (3.4.x compatibility) | `./install.sh codex` |
 | Cursor | `./install.sh cursor` |
 | Claude Code | `./install.sh claude` |
 | All platforms | `./install.sh all` |
 
-These global commands make Teamwork skills and agents available to the current user; they do not modify every project automatically. The default full global refresh is `./install.sh all`. To establish Teamwork context for one repository, use `teamwork-init`, or use the `init-project` command below with an explicit project path.
+The Marketplace install makes all 10 skills available without a checkout. Its
+explicit first enablement configures only Codex agents, routing, the managed
+global policy, and optional notifications; it never creates `~/.agents/skills`
+copies. `teamwork-init` can then set up one repository through the plugin's
+Codex-only project path. Cursor and Claude Code continue to use the repository
+installer. `./install.sh codex` remains supported during the 3.4.x compatibility
+window, but safely stops if a plugin activation marker is already present.
+
+The checkout commands make Teamwork skills and agents available to the current
+user; they do not modify every project automatically. The default full global
+refresh is `./install.sh all`. To establish Teamwork context for one repository,
+use `teamwork-init`, or use the `init-project` command below with an explicit
+project path.
 
 The default installation uses the `performance-first` profile. See every target and option with:
 
@@ -73,13 +100,30 @@ Common options:
 
 Migration note: existing project-level Teamwork copies are no longer supported or refreshed. Delete only entries you have confirmed Teamwork generated—never the whole `.agents`, `.codex`, `.cursor`, or `.claude` directory—then run `./install.sh all`.
 
-Restart Codex after a user-level installation changes role routing; its hooks still require individual trust in the CLI. Cursor User Rules still require a manual copy-and-paste step that the installer cannot verify. The installer manages only Teamwork-owned directories, marked rules, and bounded configuration; it does not take over platform permissions, MCP, browser, test settings, or host model behavior. See the [Codex guide](CODEX.md), [Cursor guide](CURSOR.md), and [Claude Code guide](CLAUDE.md) for platform details.
+Restart Codex after a user-level installation changes role routing; its hooks
+still require individual trust in the CLI. The Marketplace bundle deliberately
+does not declare plugin hooks: if notifications are enabled, `/hooks` must
+individually trust the stable Teamwork `Stop` and `PermissionRequest` handlers.
+Cursor User Rules still require a manual copy-and-paste step that the installer
+cannot verify. The installer manages only Teamwork-owned directories, marked
+rules, and bounded configuration; it does not take over platform permissions,
+MCP, browser, test settings, or host model behavior. See the [Codex guide](CODEX.md), [Cursor guide](CURSOR.md), and [Claude Code guide](CLAUDE.md) for platform details.
 
 `./scripts/check-update.sh --readiness` checks the freshness and completeness of Teamwork-managed files and configuration. It does not prove that the manual Cursor User Rules or Codex hook-trust steps are complete, or that a particular natural-language request will activate a specific skill.
 
 ## Update
 
-After updating the repository, use the full global install to refresh Teamwork for the current user, then check its state:
+For an installed Codex plugin, upgrade the Marketplace, reinstall the plugin,
+then start a new task and invoke `$teamwork-update` to refresh its managed
+Codex-only surface:
+
+```bash
+codex plugin marketplace upgrade teamwork
+codex plugin add teamwork-skill@teamwork
+```
+
+For the checkout workflow, update the repository, use the full global install,
+then check its state:
 
 ```bash
 git pull --ff-only
@@ -87,7 +131,9 @@ git pull --ff-only
 ./scripts/check-update.sh --readiness
 ```
 
-In an assistant session, `teamwork-update` can check and guide this global refresh; `teamwork-init` handles project context.
+The default full global refresh is `./install.sh all`. In an assistant session,
+`teamwork-update` can check and guide this global refresh; `teamwork-init`
+handles project context.
 
 ## More Information
 

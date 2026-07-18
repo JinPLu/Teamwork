@@ -16,7 +16,44 @@ replaced by a proxy check, and work stops when the requested result is obtained.
 
 ## Install
 
-Global setup:
+### Marketplace plugin (recommended)
+
+Install the 3.4.0 Teamwork Marketplace and plugin:
+
+```bash
+codex plugin marketplace add JinPLu/Teamwork@v3.4.0
+codex plugin add teamwork-skill@teamwork
+```
+
+The plugin immediately contributes all 10 Teamwork skills from Codex's plugin
+cache. Start a new Codex task and invoke `$teamwork-update` to see the proposed
+full setup. First enablement needs explicit approval because it writes Codex
+agents, routing, the Teamwork-managed global policy, and the selected
+notification configuration. It removes only verified legacy Teamwork skill
+copies, never creates `~/.agents/skills`, and preserves unrelated configuration.
+
+The default profile is `performance-first`; `$teamwork-update` can use another
+existing profile or opt out with `--no-notifications`. After any routing change,
+restart Codex. If notifications are enabled, run `/hooks` and trust only the
+Teamwork `Stop` and `PermissionRequest` handlers individually. The plugin
+manifest deliberately declares no hooks, so plugin installation never bypasses
+that trust boundary.
+
+To update, run:
+
+```bash
+codex plugin marketplace upgrade teamwork
+codex plugin add teamwork-skill@teamwork
+```
+
+Then open a new task and invoke `$teamwork-update` again. Its plugin readiness
+check verifies `codex plugin list --json`, cache version, activation marker,
+agents, routing, policy, notification status, and duplicate legacy copies.
+
+### Checkout compatibility (3.4.x)
+
+The repository installer remains available for Cursor, Claude Code, and a
+temporary Codex compatibility path:
 
 ```bash
 ./install.sh all
@@ -26,7 +63,7 @@ Global setup:
 ./install.sh codex --no-notifications
 ```
 
-Use `./install.sh all` for the default full global refresh. The platform-specific
+Use `./install.sh all` for the default full global refresh from a checkout. The platform-specific
 commands above are for a deliberately narrower setup. None initialize every
 repository. Establish context for one selected repository with:
 
@@ -40,10 +77,12 @@ available work-record or CodeGraph entrypoints. It does not install Teamwork
 skills or agents into the repository. Use `--link` only when developing from
 this checkout.
 
-The current supported Codex target installs user skills under
-`~/.agents/skills` and custom agent roles under `~/.codex/agents`. Older
-Teamwork copies under `~/.codex/skills` are migration input, not the supported
-runtime location. Custom-agent routing stays on Teamwork's currently compatible
+The checkout Codex target installs user skills under `~/.agents/skills` and
+custom agent roles under `~/.codex/agents`. Older Teamwork copies under
+`~/.codex/skills` are migration input, not the supported checkout runtime
+location. If `~/.codex/teamwork/plugin-activation.json` exists, `./install.sh
+codex` safely stops and directs you to `$teamwork-update` rather than creating
+duplicate skills. Custom-agent routing stays on Teamwork's currently compatible
 Codex path; installation and readiness checks do not prove a live spawn.
 
 The default `performance-first` profile balances routine work and review depth.
@@ -123,14 +162,16 @@ change permission policy, configure MCP or browsers, or prove model behavior by
 installation alone. Codex owns its native structured-question UI; Teamwork uses
 it only when the runtime exposes it and otherwise asks concisely in text.
 
-Use `teamwork-update` to check and guide a global Teamwork refresh from this
-checkout. The explicit refresh command is `./install.sh all`; refreshing an
-installation is separate from publishing a new Teamwork version.
+Use `teamwork-update` to check and guide a global Teamwork refresh. From the
+Marketplace it resolves and runs the bundled cache runtime; from a checkout it
+uses `./install.sh all`. Refreshing an installation is separate from publishing
+a new Teamwork version.
 
 Useful global check:
 
 ```bash
 ./scripts/check-update.sh --readiness
+# Plugin runtime: <plugin-root>/scripts/check-update.sh --plugin --readiness
 ```
 
 This reports freshness and completeness of Teamwork-managed files and bounded

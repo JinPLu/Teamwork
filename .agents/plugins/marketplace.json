@@ -1,0 +1,20 @@
+{
+  "name": "teamwork",
+  "interface": {
+    "displayName": "Teamwork"
+  },
+  "plugins": [
+    {
+      "name": "teamwork-skill",
+      "source": {
+        "source": "local",
+        "path": "./plugins/teamwork-skill"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

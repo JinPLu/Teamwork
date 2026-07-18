@@ -12,6 +12,7 @@ import unittest
 from codex_routing_config import RoutingConfigError
 from codex_routing_config import apply_config
 from codex_routing_config import inspect_config
+from codex_routing_config import preview_config
 
 
 class CodexRoutingConfigTests(unittest.TestCase):
@@ -101,6 +102,15 @@ class CodexRoutingConfigTests(unittest.TestCase):
         self.assertEqual(second.status, "current")
         self.assertFalse(second.restart_required)
         self.assertEqual(self.config.read_bytes(), after_first)
+
+    def test_preview_validates_the_exact_migration_without_writing(self) -> None:
+        original = '[features]\njs_repl = false\n'
+        self.write(original)
+        report = preview_config(self.config)
+        self.assertEqual(report.status, "would-update")
+        self.assertTrue(report.ready)
+        self.assertTrue(report.restart_required)
+        self.assertEqual(self.read(), original)
 
     def test_invalid_toml_is_rejected_without_mutation(self) -> None:
         original = '[features\ninvalid = true\n'

@@ -4,6 +4,17 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 3.4.0 - 2026-07-18
+
+这次更新把 Teamwork 变成可从 Codex Marketplace 安装的完整插件，同时把影响用户级配置的首次启用保留为明确选择。
+
+- Codex 一步拿到全部 Skill：此前，Codex 用户必须先 checkout 仓库并运行安装器，10 个 Skill 与 agents、路由和全局规则绑在同一条本地脚本路径上；现在，添加 `JinPLu/Teamwork@v3.4.0` Marketplace 并安装 `teamwork-skill@teamwork` 后，全部 10 个 Skill 会直接从插件缓存可用。新任务中调用 `$teamwork-update` 才会展示并在明确同意后配置完整 Codex 能力。
+- 完整能力仍由用户确认：此前，安装脚本会复制 user Skill 并同时修改 agents、路由、策略和通知；现在，插件首次启用只配置 Codex agents、路由、受管全局策略和可选通知，最后才写 activation 标记。它只清理已验证的旧 Teamwork Skill，不会创建 `~/.agents/skills` 副本，也会在遇到未知同名旧内容时停止并提示迁移。
+- 更可靠地刷新：此前，更新检查只能以 checkout 为基准；现在，插件模式同时核对 `codex plugin list --json`、缓存 manifest、activation 标记、agents、路由、策略、通知和遗留重复项。Marketplace 升级后重新安装插件，开启新任务并调用 `$teamwork-update` 即可刷新。
+- 升级方式：运行 `codex plugin marketplace add JinPLu/Teamwork@v3.4.0`、`codex plugin add teamwork-skill@teamwork`，然后开启新 Codex 任务并调用 `$teamwork-update`。现有 checkout 用户可在 3.4.x 继续使用 `./install.sh codex`；Cursor 与 Claude Code 的安装方式不变。
+
+限制：插件安装不会静默改写用户配置，也不会自动信任 hook。启用完整能力后仍需重启 Codex；若启用了通知，还须在 `/hooks` 只信任 Teamwork 的 `Stop` 与 `PermissionRequest` 两项。缓存、安装和隔离 bootstrap 已验证，但这不保证每次自然语言请求都会选择某项 Skill，也不代表 Cursor 或 Claude Code 的运行时行为已经等价。
+
 ## 3.3.0 - 2026-07-16
 
 这次更新让 Teamwork 先把用户要的真实结果做出来，同时更容易被自然语言触发；测试、验证和内部流程不再取代实际交付。

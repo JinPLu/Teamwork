@@ -4,6 +4,17 @@
 
 This changelog explains what changed for users. Maintainer implementation details belong in Git commits or pull requests.
 
+## 3.4.0 - 2026-07-18
+
+This release makes Teamwork a full Codex Marketplace plugin while keeping the first change to user-level configuration an explicit choice.
+
+- All Codex skills from one install — Before: Codex users needed a checkout and a repository installer, with the 10 skills coupled to agents, routing, and global rules. After: adding `JinPLu/Teamwork@v3.4.0` and installing `teamwork-skill@teamwork` makes all 10 skills available from the plugin cache. In a new task, `$teamwork-update` shows the full Codex setup and applies it only after explicit approval.
+- Full capability still needs consent — Before: the installer copied user skills while also changing agents, routing, policy, and notifications. After: first plugin activation configures only Codex agents, routing, managed global policy, and optional notifications, then writes its activation marker last. It removes only verified legacy Teamwork skills, never creates `~/.agents/skills` copies, and stops with migration guidance for unknown same-name content.
+- Refresh is cache-aware — Before: update checks were checkout-based. After: plugin mode checks `codex plugin list --json`, the cached manifest, activation marker, agents, routing, policy, notifications, and duplicate legacy copies. Upgrade the Marketplace, reinstall the plugin, start a new task, and invoke `$teamwork-update` to refresh.
+- To upgrade: run `codex plugin marketplace add JinPLu/Teamwork@v3.4.0`, then `codex plugin add teamwork-skill@teamwork`; start a new Codex task and invoke `$teamwork-update`. Existing checkout users can continue using `./install.sh codex` during 3.4.x; Cursor and Claude Code installation is unchanged.
+
+Limit: plugin installation does not silently rewrite user configuration or auto-trust hooks. Restart Codex after full activation; when notifications are enabled, trust only Teamwork `Stop` and `PermissionRequest` in `/hooks`. Cache, installation, and isolated bootstrap were verified, but this does not guarantee that every natural-language request selects a particular skill or establish Cursor/Claude Code runtime parity.
+
 ## 3.3.0 - 2026-07-16
 
 This release makes Teamwork produce the user's real result first while remaining easier to activate in ordinary language; tests, validation, and internal process no longer substitute for delivery.

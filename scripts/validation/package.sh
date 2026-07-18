@@ -139,31 +139,39 @@ actual_reference_inventory="$(
 
 # --- Installed skill helper inventory ---
 discussion_transaction_helper="skills/using-teamwork/scripts/discussion-transaction.py"
+plugin_runtime_locator="skills/using-teamwork/scripts/plugin-runtime-root.py"
 [[ -f "$ROOT/$discussion_transaction_helper" ]] \
   || fail "missing $discussion_transaction_helper"
 git_known_package_file "$discussion_transaction_helper" \
   || fail "$discussion_transaction_helper is not known to git; use git add -N before release validation"
 [[ -x "$ROOT/$discussion_transaction_helper" ]] \
   || fail "$discussion_transaction_helper must be executable"
-expected_using_teamwork_script_inventory="discussion-transaction.py"
+[[ -f "$ROOT/$plugin_runtime_locator" ]] \
+  || fail "missing $plugin_runtime_locator"
+git_known_package_file "$plugin_runtime_locator" \
+  || fail "$plugin_runtime_locator is not known to git; use git add -N before release validation"
+[[ -x "$ROOT/$plugin_runtime_locator" ]] \
+  || fail "$plugin_runtime_locator must be executable"
+expected_using_teamwork_script_inventory="$(printf '%s\n' discussion-transaction.py plugin-runtime-root.py | sort)"
 actual_using_teamwork_script_inventory="$(
   find "$ROOT/skills/using-teamwork/scripts" -maxdepth 1 -type f \
     -exec basename {} \; | sort
 )"
 [[ "$actual_using_teamwork_script_inventory" == "$expected_using_teamwork_script_inventory" ]] \
   || fail "using-teamwork scripts inventory drifted"
-python3 - "$ROOT/$discussion_transaction_helper" <<'PY'
+python3 - "$ROOT/$discussion_transaction_helper" "$ROOT/$plugin_runtime_locator" <<'PY'
 import pathlib
 import py_compile
 import sys
 import tempfile
 
 with tempfile.TemporaryDirectory() as directory:
-    py_compile.compile(
-        sys.argv[1],
-        cfile=str(pathlib.Path(directory) / "discussion-transaction.pyc"),
-        doraise=True,
-    )
+    for source in sys.argv[1:]:
+        py_compile.compile(
+            source,
+            cfile=str(pathlib.Path(directory) / (pathlib.Path(source).stem + ".pyc")),
+            doraise=True,
+        )
 PY
 
 # --- Eval harness inventory ---
@@ -512,6 +520,16 @@ fi
 # --- Plugin manifests ---
 [[ -f "$ROOT/.codex-plugin/plugin.json" ]] || fail "missing Codex plugin manifest"
 [[ -f "$ROOT/.claude-plugin/plugin.json" ]] || fail "missing Claude Code plugin manifest"
+for plugin_file in scripts/build-codex-plugin.py scripts/plugin-activation.py .agents/plugins/marketplace.json; do
+  [[ -f "$ROOT/$plugin_file" ]] || fail "missing $plugin_file"
+  git_known_package_file "$plugin_file" \
+    || fail "$plugin_file is not known to git; use git add -N before release validation"
+done
+[[ -x "$ROOT/scripts/build-codex-plugin.py" ]] || fail "build-codex-plugin.py must be executable"
+[[ -x "$ROOT/scripts/plugin-activation.py" ]] || fail "plugin-activation.py must be executable"
+python3 -m py_compile "$ROOT/scripts/build-codex-plugin.py" "$ROOT/scripts/plugin-activation.py"
+python3 "$ROOT/scripts/build-codex-plugin.py" --check \
+  || fail "tracked Codex Marketplace bundle must match canonical inputs"
 python3 -m json.tool "$ROOT/.codex-plugin/plugin.json" >/dev/null
 python3 -m json.tool "$ROOT/.claude-plugin/plugin.json" >/dev/null
 python3 - "$ROOT" <<'PY'
@@ -522,6 +540,9 @@ import sys
 root = pathlib.Path(sys.argv[1])
 codex = json.loads((root / ".codex-plugin/plugin.json").read_text())
 claude = json.loads((root / ".claude-plugin/plugin.json").read_text())
+bundle = root / "plugins/teamwork-skill"
+bundle_manifest = json.loads((bundle / ".codex-plugin/plugin.json").read_text())
+marketplace = json.loads((root / ".agents/plugins/marketplace.json").read_text())
 version = (root / "VERSION").read_text().strip()
 if codex.get("skills") != "./skills/":
     raise SystemExit("FAIL: Codex manifest skills must remain ./skills/")
@@ -529,6 +550,50 @@ if "Codex" not in codex.get("description", ""):
     raise SystemExit("FAIL: Codex manifest description must mention Codex")
 if codex.get("version") != version:
     raise SystemExit("FAIL: Codex manifest version must match VERSION")
+if codex.get("interface", {}).get("defaultPrompt") is None or len(codex["interface"]["defaultPrompt"]) != 3:
+    raise SystemExit("FAIL: Codex manifest must expose exactly three default prompts")
+if bundle_manifest != codex:
+    raise SystemExit("FAIL: Marketplace bundle manifest must match the canonical Codex manifest")
+if "hooks" in bundle_manifest:
+    raise SystemExit("FAIL: Marketplace bundle manifest must not declare hooks")
+expected_marketplace = {
+    "name": "teamwork",
+    "interface": {"displayName": "Teamwork"},
+    "plugins": [{
+        "name": "teamwork-skill",
+        "source": {"source": "local", "path": "./plugins/teamwork-skill"},
+        "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+        "category": "Productivity",
+    }],
+}
+if marketplace != expected_marketplace:
+    raise SystemExit("FAIL: Marketplace manifest drifted from the Teamwork contract")
+expected_skills = {
+    "using-teamwork", "grill-me", "teamwork-debug", "teamwork-init", "teamwork-goal",
+    "teamwork-research", "teamwork-plan", "teamwork-execute", "teamwork-review", "teamwork-update",
+}
+actual_skills = {path.name for path in (bundle / "skills").iterdir() if path.is_dir()}
+if actual_skills != expected_skills:
+    raise SystemExit("FAIL: Marketplace bundle must include exactly the ten Teamwork skills")
+required_runtime = {
+    "install.sh",
+    "scripts/check-update.sh",
+    "scripts/configure-codex-routing.py",
+    "scripts/configure-notifications.py",
+    "scripts/init-project.sh",
+    "scripts/init-project-files.py",
+    "scripts/plugin-activation.py",
+    "templates/codex-agents/teamwork-worker.toml",
+    "hooks/notify.py",
+    "skills/using-teamwork/scripts/plugin-runtime-root.py",
+}
+for rel in required_runtime:
+    if not (bundle / rel).is_file():
+        raise SystemExit(f"FAIL: Marketplace bundle is missing runtime input: {rel}")
+if (bundle / "hooks/hooks.json").exists():
+    raise SystemExit("FAIL: Marketplace bundle must not expose plugin-bundled hooks")
+if (bundle / ".teamwork-plugin-runtime").read_text() != "TEAMWORK_CODEX_PLUGIN_RUNTIME=1\n":
+    raise SystemExit("FAIL: Marketplace bundle runtime marker is invalid")
 if claude.get("skills") != "./skills/":
     raise SystemExit("FAIL: Claude manifest skills must remain ./skills/")
 if "Claude Code" not in claude.get("description", ""):
@@ -536,6 +601,11 @@ if "Claude Code" not in claude.get("description", ""):
 if claude.get("version") != version:
     raise SystemExit("FAIL: Claude manifest version must match VERSION")
 PY
+while IFS= read -r bundle_file; do
+  rel="${bundle_file#"$ROOT"/}"
+  git_known_package_file "$rel" \
+    || fail "$rel is not known to git; build outputs must be tracked"
+done < <(find "$ROOT/plugins/teamwork-skill" -type f -o -type l | sort)
 
 # --- Notification hooks and private session audit ---
 for hook_file in hooks/hooks.json hooks/notify.py scripts/configure-notifications.py scripts/test_notify_hook.py scripts/audit-codex-sessions.py; do

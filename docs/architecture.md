@@ -17,6 +17,7 @@ evals/teamwork/
   ledgers/                      accepted/rejected evaluation records
   outputs/                      curated authored output fixtures
 scripts/
+  build-codex-plugin.py       deterministic Marketplace bundle producer/checker
   validate.sh                   stable validation entrypoint
   eval-teamwork.py              stable deterministic evaluation entrypoint
   run-teamwork-live-eval.py     stable live trajectory recorder
@@ -29,6 +30,9 @@ scripts/
 install.sh                      stable installer dispatcher
 .codex-plugin/                  authored Codex package metadata
 .claude-plugin/                 authored Claude Code package metadata
+.agents/plugins/marketplace.json
+                                authored repository Marketplace catalog
+plugins/teamwork-skill/         tracked generated Codex Marketplace runtime
 VERSION, CHANGELOG*, README*    authored release and public documentation
 docs/architecture.md            this tracked architecture contract
 CONTRIBUTING.md                 contributor entrypoint
@@ -36,7 +40,8 @@ CONTRIBUTING.md                 contributor entrypoint
 
 The following are sinks, not package sources:
 
-- `.agents/`, `.codex/`, `.cursor/`, and `.claude/` may be legacy or generated
+- `.agents/` except `.agents/plugins/marketplace.json`, `.codex/`, `.cursor/`,
+  and `.claude/` may be legacy or generated
   local installation paths. Supported project setup does not create or refresh
   them; edit `skills/`, `templates/`, or the relevant producer instead of an
   installed copy.
@@ -52,8 +57,12 @@ remain untracked and belong in temporary review storage or an intentional
 `docs/teamwork/reports/` artifact.
 
 Tracked public docs, assets, manifests, evaluation cases, rubrics, and ledgers
-are authored source. Generated evidence may verify those sources, but it does
-not define them.
+are authored source. `plugins/teamwork-skill/` is the deliberate exception to
+the usual generated-output rule: it is a versioned Marketplace release artifact
+generated only by `scripts/build-codex-plugin.py` from the current skills,
+Codex runtime, agent templates, notification runtime, `VERSION`, and root
+Codex manifest. Generated evidence may verify those sources, but it does not
+define them.
 
 ## Dependency Direction
 
@@ -64,7 +73,7 @@ inputs, never back from generated installations:
 public commands
   -> coarse producer modules
     -> skills / templates / hooks / eval inputs / manifests / VERSION
-      -> generated install, validation, or evaluation output
+      -> generated Marketplace bundle, install, validation, or evaluation output
 ```
 
 `skills/` owns workflow meaning. Platform adapters in `templates/` express that
@@ -73,12 +82,21 @@ and evaluation consume canonical inputs and emit evidence. Installers consume
 canonical inputs and write platform-local sinks. A sink must never be read as a
 fallback source when its producer input is absent.
 
+`scripts/build-codex-plugin.py` is the only producer for
+`plugins/teamwork-skill/`; `--check` rejects hand edits or an incomplete runtime
+closure. The Marketplace package runs from Codex's cache and may not rely on a
+user checkout. Its `plugin-codex-bootstrap` target owns only Codex agents,
+routing, managed policy, notifications, verified legacy cleanup, and the
+atomic activation marker; plugin skills remain plugin-owned rather than copied
+into a user skill root.
+
 ## Stable Commands
 
 Keep these public producer commands and their CLI behavior compatible:
 
 ```bash
 ./install.sh [options] TARGET
+./scripts/build-codex-plugin.py [--check]
 ./scripts/validate.sh
 python3 scripts/eval-teamwork.py [options]
 ```
@@ -106,6 +124,7 @@ routing/configuration; it adds no third-party Python dependency.
 | Platform agent role, prompt adapter, or model profile | `templates/*-agents/` | Profile/render validation for every affected platform |
 | Notifications | `hooks/` and notification configuration scripts | Hook manifest validation and focused hook tests |
 | Install targets, destinations, policy blocks, or profiles | `install.sh` and `scripts/install/` | Isolated-home and project-context fixtures |
+| Codex Marketplace bundle, catalog, activation marker, or cache bootstrap | `scripts/build-codex-plugin.py`, `.agents/plugins/marketplace.json`, `plugins/teamwork-skill/`, and Codex installer runtime | Bundle `--check`, Marketplace cache install, isolated bootstrap, and legacy-protection checks |
 | Package validation behavior | `scripts/validate.sh` and validation modules | Focused harness tests, including a representative failing mutation |
 | Deterministic or semantic evaluation | `scripts/eval-teamwork.py`, evaluation modules, and `evals/teamwork/` | Case/rubric schema checks and mutation-sensitive tests |
 | Live trajectory recording | `scripts/run-teamwork-live-eval.py` and live-eval fixtures | Isolated, bounded runner tests; claims limited to observed treatment |
@@ -114,7 +133,8 @@ routing/configuration; it adds no third-party Python dependency.
 
 ## Anti-Drift Rules
 
-- Change canonical producers, never generated copies or local install roots.
+- Change canonical producers, never generated copies or local install roots;
+  regenerate the tracked Marketplace bundle rather than editing it by hand.
 - Update the owning skill first for workflow behavior; keep platform adapters
   aligned without creating parallel semantics.
 - Preserve the stable command paths, arguments, exit behavior, and install

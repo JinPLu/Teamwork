@@ -54,8 +54,11 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         result = self.run_install("--help")
         output = result.stdout.decode()
         self.assertEqual(result.returncode, 0, output)
-        self.assertIn("codex|cursor|claude|all|init-project", output)
-        self.assertIn("`--project-root` is valid only with `init-project`.", output)
+        self.assertIn("codex|cursor|claude|all|init-project|plugin-codex-bootstrap", output)
+        self.assertIn(
+            "`--project-root` is valid only with `init-project` or `plugin-init-project`.",
+            output,
+        )
         self.assertNotIn("project-codex-agents", output)
         self.assertNotRegex(output, r"(?m)^\s+project\s+")
 
@@ -94,7 +97,10 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         result = self.run_install("--project-root", str(project), "codex")
         output = result.stdout.decode()
         self.assertEqual(result.returncode, 2, output)
-        self.assertIn("--project-root is valid only with the init-project target.", output)
+        self.assertIn(
+            "--project-root is valid only with the init-project or plugin-init-project target.",
+            output,
+        )
 
     def test_profile_aliases_render_expected_codex_models(self) -> None:
         expectations = {

@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+REAL_CODEX="${TEAMWORK_REAL_CODEX:-$(command -v codex 2>/dev/null || true)}"
+if [[ -n "$REAL_CODEX" && ! -x "$REAL_CODEX" ]]; then
+  REAL_CODEX=""
+fi
+
 # --- Lean role templates ---
 while IFS= read -r template; do
   ! grep -q 'grill/question-first' "$template" \
@@ -1207,3 +1212,149 @@ for agent in explore worker designer judge code-reviewer deep-judge deep-reviewe
   [[ -L "$tmp/home-cursor-agents-link/.cursor/agents/$agent.md" ]] \
     || fail "cursor-agents link install must symlink $agent.md"
 done
+
+# --- Codex Marketplace cache and plugin bootstrap ---
+if [[ -z "$REAL_CODEX" ]]; then
+  [[ "${TEAMWORK_REQUIRE_MARKETPLACE_SMOKE:-0}" != "1" ]] \
+    || fail "real Codex CLI is required for the Marketplace smoke"
+  echo "SKIP: Codex Marketplace smoke (codex CLI unavailable)"
+else
+  marketplace_home="$tmp/home-marketplace"
+  marketplace_codex_home="$tmp/codex-marketplace"
+  mkdir -p "$marketplace_home" "$marketplace_codex_home"
+  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
+    "$REAL_CODEX" plugin marketplace add "$ROOT" --json > "$tmp/marketplace-add.json"
+  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
+    "$REAL_CODEX" plugin add teamwork-skill@teamwork --json > "$tmp/plugin-add.json"
+  cache_root="$marketplace_codex_home/plugins/cache/teamwork/teamwork-skill/$(tr -d '[:space:]' < "$ROOT/VERSION")"
+  [[ -d "$cache_root" ]] || fail "Marketplace install must cache teamwork-skill by VERSION"
+  [[ -f "$cache_root/.teamwork-plugin-runtime" ]] \
+    || fail "Marketplace cache must preserve Teamwork runtime marker"
+  [[ -f "$cache_root/scripts/plugin-activation.py" ]] \
+    || fail "Marketplace cache must preserve plugin activation runtime"
+  [[ ! -e "$cache_root/hooks/hooks.json" ]] \
+    || fail "Marketplace cache must not expose plugin-bundled hooks"
+  for skill in "${SKILLS[@]}"; do
+    [[ -f "$cache_root/skills/$skill/SKILL.md" ]] \
+      || fail "Marketplace cache must contain Teamwork skill $skill"
+  done
+
+  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
+    "$cache_root/install.sh" plugin-codex-bootstrap >/dev/null
+  [[ -f "$marketplace_codex_home/teamwork/plugin-activation.json" ]] \
+    || fail "plugin bootstrap must write activation marker last"
+  [[ -f "$marketplace_codex_home/teamwork/notify.py" ]] \
+    || fail "plugin bootstrap must install stable Codex notifier"
+  [[ "$(python3 "$cache_root/scripts/configure-notifications.py" status \
+    --config "$marketplace_codex_home/hooks.json" \
+    --notifier "$marketplace_codex_home/teamwork/notify.py")" == "installed" ]] \
+    || fail "plugin bootstrap must configure Codex notifications by default"
+  [[ ! -e "$marketplace_home/.agents/skills" ]] \
+    || fail "plugin bootstrap must not create a user skill copy"
+  for agent in "${CODEX_AGENTS[@]}"; do
+    [[ -f "$marketplace_codex_home/agents/$agent.toml" ]] \
+      || fail "plugin bootstrap must install Codex agent $agent"
+  done
+  grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$marketplace_codex_home/AGENTS.md" \
+    "plugin bootstrap must install the Codex global policy"
+  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
+    "$cache_root/skills/using-teamwork/scripts/plugin-runtime-root.py" > "$tmp/plugin-runtime-root.out"
+  [[ "$(cat "$tmp/plugin-runtime-root.out")" == "$(cd "$cache_root" && pwd -P)" ]] \
+    || fail "plugin runtime locator must resolve the cache root"
+
+  # A repeated bootstrap may render a different supported profile and remove
+  # notifications without creating duplicate skills or hooks.
+  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
+    "$cache_root/install.sh" --profile cost-first --no-notifications plugin-codex-bootstrap >/dev/null
+  grep_required '^model = "gpt-5.6-luna"$' "$marketplace_codex_home/agents/teamwork-explorer.toml" \
+    "plugin bootstrap must render the requested Codex profile"
+  [[ ! -e "$marketplace_codex_home/teamwork/notify.py" ]] \
+    || fail "plugin bootstrap --no-notifications must remove only its stable notifier"
+  grep_required '"profile": "cost-first"' "$marketplace_codex_home/teamwork/plugin-activation.json" \
+    "activation marker must record the selected profile"
+  real_codex_dir="$(dirname "$REAL_CODEX")"
+  PATH="$real_codex_dir:$PATH" HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
+    "$cache_root/scripts/check-update.sh" --plugin --readiness --no-fetch > "$tmp/plugin-readiness.out"
+  grep_required '^MANAGED_INSTALL_READY=yes$' "$tmp/plugin-readiness.out" \
+    "plugin readiness must verify the cached full Codex setup"
+  grep_required '^PLUGIN_CATALOG=enabled$' "$tmp/plugin-readiness.out" \
+    "plugin readiness must inspect codex plugin list JSON"
+  grep_required '^PLUGIN_CACHE=current' "$tmp/plugin-readiness.out" \
+    "plugin readiness must inspect cache version"
+  grep_required '^CODEX_LEGACY_SKILLS=clear$' "$tmp/plugin-readiness.out" \
+    "plugin readiness must reject duplicate legacy skills"
+
+  # Simulate a Marketplace update waiting for the next task; bootstrap refreshes
+  # the stale activation marker from the cache without copying skills.
+  "$cache_root/scripts/plugin-activation.py" write \
+    --path "$marketplace_codex_home/teamwork/plugin-activation.json" \
+    --version 0.0.0 --profile cost-first --notifications disabled >/dev/null
+  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
+    "$cache_root/install.sh" --profile cost-first --no-notifications plugin-codex-bootstrap >/dev/null
+  grep_required '"version": "'"$(tr -d '[:space:]' < "$ROOT/VERSION")"'"' \
+    "$marketplace_codex_home/teamwork/plugin-activation.json" \
+    "new-task plugin refresh must update a stale activation marker"
+  if HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" "$ROOT/install.sh" codex >/dev/null 2>&1; then
+    fail "legacy Codex installer must stop when plugin activation is present"
+  fi
+  [[ ! -e "$marketplace_home/.agents/skills" ]] \
+    || fail "legacy installer stop must not create duplicate skills"
+
+  plugin_project="$tmp/plugin-init-project"
+  mkdir -p "$plugin_project"
+  printf '# Plugin Init Smoke\n' > "$plugin_project/README.md"
+  plugin_project="$(cd "$plugin_project" && pwd -P)"
+  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
+    TEAMWORK_INIT_CODEGRAPH=0 TEAMWORK_INIT_CURSOR_POLICY_COPY=0 \
+    "$cache_root/install.sh" --no-notifications --project-root "$plugin_project" plugin-init-project >/dev/null
+  [[ -f "$plugin_project/docs/teamwork/index.json" ]] \
+    || fail "plugin-init-project must create Teamwork project context"
+  [[ ! -e "$marketplace_home/.cursor" && ! -e "$marketplace_home/.claude" ]] \
+    || fail "plugin-init-project must not install non-Codex platform surfaces"
+
+  unknown_plugin_home="$tmp/home-plugin-unknown-legacy"
+  unknown_plugin_codex_home="$tmp/codex-plugin-unknown-legacy"
+  mkdir -p "$unknown_plugin_home/.agents/skills/teamwork-update" "$unknown_plugin_codex_home"
+  printf '%s\n' 'unowned content' > "$unknown_plugin_home/.agents/skills/teamwork-update/SKILL.md"
+  if HOME="$unknown_plugin_home" CODEX_HOME="$unknown_plugin_codex_home" \
+    "$cache_root/install.sh" --no-notifications plugin-codex-bootstrap >/dev/null 2>&1; then
+    fail "plugin bootstrap must reject unknown same-name legacy skill content"
+  fi
+  [[ ! -e "$unknown_plugin_codex_home/config.toml" \
+    && ! -e "$unknown_plugin_codex_home/teamwork/plugin-activation.json" ]] \
+    || fail "unknown legacy skill protection must fail before Codex configuration writes"
+
+  failed_plugin_home="$tmp/home-plugin-invalid-notifications"
+  failed_plugin_codex_home="$tmp/codex-plugin-invalid-notifications"
+  mkdir -p "$failed_plugin_home" "$failed_plugin_codex_home"
+  printf '%s\n' '{broken-json' > "$failed_plugin_codex_home/hooks.json"
+  if HOME="$failed_plugin_home" CODEX_HOME="$failed_plugin_codex_home" \
+    "$cache_root/install.sh" plugin-codex-bootstrap >/dev/null 2>&1; then
+    fail "plugin bootstrap must reject invalid notification config before mutation"
+  fi
+  [[ ! -e "$failed_plugin_codex_home/config.toml" \
+    && ! -e "$failed_plugin_codex_home/agents" \
+    && ! -e "$failed_plugin_codex_home/AGENTS.md" \
+    && ! -e "$failed_plugin_codex_home/teamwork/plugin-activation.json" ]] \
+    || fail "failed plugin bootstrap must not rewrite Codex managed configuration"
+
+  migrated_plugin_home="$tmp/home-plugin-migration"
+  migrated_plugin_codex_home="$tmp/codex-plugin-migration"
+  mkdir -p "$migrated_plugin_home/.agents/skills" "$migrated_plugin_codex_home"
+  for skill in "${SKILLS[@]}"; do
+    cp -R "$cache_root/skills/$skill" "$migrated_plugin_home/.agents/skills/$skill"
+  done
+  printf '%s\n' "$(tr -d '[:space:]' < "$ROOT/VERSION")" > "$migrated_plugin_home/.agents/skills/.teamwork-version"
+  printf '%s\n' performance-first > "$migrated_plugin_home/.agents/skills/.teamwork-profile"
+  printf '%s\n' 'preserve unrelated content' > "$migrated_plugin_home/.agents/skills/unrelated.txt"
+  HOME="$migrated_plugin_home" CODEX_HOME="$migrated_plugin_codex_home" \
+    "$cache_root/install.sh" --no-notifications plugin-codex-bootstrap >/dev/null
+  for skill in "${SKILLS[@]}"; do
+    [[ ! -e "$migrated_plugin_home/.agents/skills/$skill" ]] \
+      || fail "plugin migration must remove verified legacy skill $skill"
+  done
+  [[ -f "$migrated_plugin_home/.agents/skills/unrelated.txt" ]] \
+    || fail "plugin migration must preserve unrelated user skill-root content"
+  [[ ! -e "$migrated_plugin_home/.agents/skills/.teamwork-version" ]] \
+    || fail "plugin migration must remove its ownership marker"
+fi
