@@ -59,7 +59,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     project|project-codex-agents)
-      echo "Project-local install targets were removed. Use ./install.sh --project-root <path> init-project to refresh global Teamwork surfaces and set up project context." >&2
+      echo "Project-local install targets were removed. Use ./install.sh --project-root <path> init-project to set up only that project's context; refresh global Teamwork surfaces separately." >&2
       usage
       exit 2
       ;;
@@ -105,7 +105,7 @@ case "$NOTIFICATIONS_ACTION" in
 esac
 
 case "${TARGET:-codex}" in
-  all|init-project|plugin-codex-bootstrap|plugin-init-project)
+  all|plugin-codex-bootstrap)
     if [[ "$NOTIFICATIONS_ACTION" == "preserve" ]]; then
       NOTIFICATIONS_ACTION="install"
     fi
@@ -138,14 +138,6 @@ if [[ -n "$PROJECT_ROOT" && "${TARGET:-codex}" != "init-project" && "${TARGET:-c
   usage
   exit 2
 fi
-
-case "${TARGET:-codex}" in
-  codex-policy|cursor-policy|cursor-policy-copy|claude-policy|init-project|plugin-codex-bootstrap|plugin-init-project)
-    ;;
-  *)
-    printf '%s\n' "$CODEX_PROFILE" > "$ROOT/.teamwork-profile"
-    ;;
-esac
 
 case "${TARGET:-codex}" in
   codex)

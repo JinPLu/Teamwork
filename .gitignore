@@ -10,6 +10,7 @@ dist/
 # Local workflow artifacts. Keep them in the working tree, but do not publish
 # them to GitHub unless a specific artifact is intentionally force-added.
 docs/teamwork/plans/
+docs/teamwork/design/
 docs/teamwork/discussion/
 docs/teamwork/research/
 docs/teamwork/reports/
@@ -28,6 +29,7 @@ docs/superpowers/
 # Teamwork local runtime state
 .codegraph/
 docs/teamwork/plans/
+docs/teamwork/design/
 docs/teamwork/discussion/
 docs/teamwork/research/
 docs/teamwork/reports/
@@ -35,4 +37,11 @@ docs/teamwork/workflows/
 docs/teamwork/index.json
 docs/teamwork/README.md
 docs/teamwork/current.md
+.teamwork-init-transaction.json
+.*.teamwork-init-*
+docs/teamwork/.teamwork-init-transaction.json
+# Legacy v3 location retained as a fail-closed migration interlock.
+docs/teamwork/.discussion-transaction.json
+docs/teamwork/discussion/.discussion-transaction.json
+docs/teamwork/.*.teamwork-init-*
 # TEAMWORK_LOCAL_END

@@ -1,0 +1,78 @@
+{
+   "evidence" : "Static contract fixture; live activation requires separate evidence.",
+   "expected" : {
+      "capability" : "design",
+      "language" : "en",
+      "requires" : [
+         "local-constraints-first",
+         "genuine-tradeoffs-only",
+         "recommend-first",
+         "one-user-owned-decision",
+         "read-only",
+         "no-implementation"
+      ],
+      "scenario" : "activation"
+   },
+   "id" : "design-activation-en",
+   "must" : [
+      "inspect local constraints before exploring genuine tradeoffs",
+      "recommend a direction before asking one user-owned material decision"
+   ],
+   "must_not" : [
+      "implement, edit files, or silently turn the result into an execution plan"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-design/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-explorer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-researcher.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/researcher.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/researcher.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-designer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/designer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/designer.md"
+      }
+   ],
+   "prompt" : "We have not chosen whether the public API should be synchronous, queued, or hybrid. Help me settle the architecture before any coding.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

@@ -1,0 +1,52 @@
+{
+   "evidence" : "Static external-research contract fixture.",
+   "expected" : {
+      "capability" : "research",
+      "language" : "en",
+      "requires" : [
+         "external-sources",
+         "current-or-multi-source",
+         "citations",
+         "fact-inference-separation",
+         "read-only"
+      ],
+      "scenario" : "external"
+   },
+   "id" : "research-external-en",
+   "must" : [
+      "check current external sources, cite them, and separate sourced facts from inference"
+   ],
+   "must_not" : [
+      "edit the project, publish externally, or present memory as current evidence"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-research/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-researcher.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/researcher.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/researcher.md"
+      }
+   ],
+   "prompt" : "Compare the provider's current retry limits and pricing using authoritative public sources, with links.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

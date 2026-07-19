@@ -1,21 +1,17 @@
 #!/usr/bin/env bash
 
-ENTRYPOINT="$ROOT/skills/using-teamwork/SKILL.md"
-SKILLS=(
-  using-teamwork
-  grill-me
-  teamwork-debug
-  teamwork-init
-  teamwork-goal
-  teamwork-research
-  teamwork-plan
-  teamwork-execute
-  teamwork-review
-  teamwork-update
+SKILLS=()
+while IFS= read -r skill; do
+  SKILLS+=("$skill")
+done < <(
+  find "$ROOT/skills" -mindepth 2 -maxdepth 2 -type f -name SKILL.md \
+    -exec dirname {} \; | xargs -n1 basename | sort
 )
+CANONICAL_SKILL_COUNT=10
 RETIRED_SKILLS=(
   teamwork
-  teamwork-design
+  using-teamwork
+  teamwork-execute
   run-analyze-optimize
   run-analyze-design
   run-analyze-execute
@@ -118,65 +114,38 @@ check_lean_policy() {
   local file="$1"
   local _profile="$2"
   local label="$3"
-  local policy_words
+  local policy_words policy_text
   policy_words="$(awk '
     /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_START -->/ { inside = 1; next }
     /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_END -->/ { inside = 0; next }
     inside { print }
   ' "$file" | wc -w | tr -d ' ')"
-  [[ "$policy_words" -le 210 ]] \
-    || fail "$label must remain a compact always-loaded policy ($policy_words > 210)"
-  grep_required "Work within the user's request" "$file" "$label must preserve request scope"
-  grep_required 'read-only grants no changes' "$file" \
-    "$label must preserve the read-only authority boundary"
-  grep_required 'Inspect evidence before asking' "$file" \
-    "$label must inspect before asking"
-  normalized_required 'Prioritize requested real results' "$file" \
-    "$label must prioritize delivery"
-  normalized_required 'Plans, tests, validation, review, and process support delivery only' "$file" \
-    "$label must keep support work subordinate"
-  normalized_required 'never replace available real runs with proxy checks' "$file" \
-    "$label must prefer the real result path"
-  normalized_required 'stop when the result is obtained' "$file" \
-    "$label must stop after delivery"
-  normalized_required 'Ask only for required input/observation or material user decisions' "$file" \
-    "$label must preserve the user-owned Ask Gate"
-  normalized_required 'pause dependent work' "$file" \
-    "$label must scope unresolved-question blocking"
-  grep_required 'Answers grant no effect authority' "$file" \
-    "$label must preserve the effect-authority boundary"
-  grep_required 'never invent state' "$file" \
-    "$label must preserve required-state safety"
-  grep_required 'Own safe choices' "$file" \
-    "$label must permit routine reversible choices"
-  normalized_required 'delegate only worthwhile work' "$file" \
-    "$label must keep delegation economic"
-  normalized_required 'Root asks/translates' "$file" \
-    "$label must preserve root-owned user translation"
-  normalized_required 'Research/debug/plan/review stay read-only absent change authority' "$file" \
-    "$label must preserve the read-only stage boundary"
-  normalized_required 'Clear authorized change/build goes straight to implementation' "$file" \
-    "$label must preserve direct execution"
-  grep_required 'Grill only' "$file" \
-    "$label must preserve explicit Grill activation"
-  normalized_required 'Negative/quoted/file/tool/example/maintenance mentions are inert' "$file" \
-    "$label must preserve inert Grill markers"
-  normalized_required 'Lead with conclusion' "$file" \
-    "$label must preserve audience-first replies"
-  normalized_required 'Connect observed basis, plain interpretation, and decision-relevant boundary/next check' "$file" \
-    "$label must preserve a connected reader argument"
-  normalized_required 'Separate observation from inference' "$file" \
-    "$label must separate observation from inference"
-  normalized_required 'Avoid headings; simple facts stay one sentence' "$file" \
-    "$label must preserve concise default prose"
-  normalized_required 'Keep only detail affecting understanding/decision/action/risk/confidence' "$file" \
-    "$label must preserve the relevance gate"
-  normalized_required 'Use supplied terms; invent no labels or identifier meanings' "$file" \
-    "$label must preserve stable reader terms and identifier boundaries"
-  normalized_required 'omit process inventory' "$file" \
-    "$label must omit irrelevant process inventory"
-  normalized_required 'State uncertainty once' "$file" \
-    "$label must preserve a decision-boundary uncertainty"
+  [[ "$policy_words" -le 340 ]] \
+    || fail "$label must remain a compact always-loaded policy ($policy_words > 340)"
+  policy_text="$(tr '\n' ' ' < "$file")"
+  for contract in \
+    "request scope::work within the user.?s request" \
+    "read-only authority::read.only.{0,100}(authority|effect)" \
+    "inspect before asking::inspect.{0,50}(before|prior to).{0,30}ask" \
+    "one user-owned question::ask.{0,100}(required input|user.owned decision).{0,100}one at a time" \
+    "dependent work only::pause only dependent work" \
+    "local-native boundary::local.{0,120}(repository|source|configuration).{0,120}native" \
+    "external Research boundary::external.{0,100}(current|multi.source|citation).{0,100}research" \
+    "Design ownership::unresolved material direction.{0,60}design" \
+    "Plan ownership::plan only translates an already selected direction" \
+    "natural Grill no-write::natural question.first intent.{0,80}no file write" \
+    "evidence discipline::distinguish observation from inference" \
+    "real-path verification::verify.{0,80}real path" \
+    "support checks not delivery::tests.{0,100}validation.{0,100}(never replace|support delivery)" \
+    "economic delegation::delegate only independent.{0,40}worthwhile" \
+    "root question ownership::root owns user questions" \
+    "conclusion-first replies::lead with the conclusion" \
+    "relevance gate::detail that changes understanding.{0,80}decision.{0,80}risk"; do
+    contract_label="${contract%%::*}"
+    pattern="${contract#*::}"
+    printf '%s\n' "$policy_text" | grep -Eqi "$pattern" \
+      || fail "$label must preserve $contract_label"
+  done
   if [[ "$label" == *Cursor* || "$label" == *Claude* ]]; then
     ! grep -Eq 'request_user_input|Codex CLI|Codex native|every material user decision|grill ceremony|text choice card' "$file" \
       || fail "$label must not contain Codex-native adapter wording"
@@ -228,7 +197,7 @@ for raw_target in re.findall(r"!\[[^\]]*\]\(([^)]+)\)", text):
     )
     if known.returncode != 0:
         raise SystemExit(
-            f"FAIL: {file.relative_to(root)} image is not known to git: {rel}; use git add -N before release validation"
+            f"FAIL: {file.relative_to(root)} image is absent from the active validation index: {rel}"
         )
 PY
 }

@@ -1,0 +1,68 @@
+{
+   "evidence" : "Static Update ownership fixture.",
+   "expected" : {
+      "capability" : "update",
+      "language" : "en",
+      "requires" : [
+         "global-only",
+         "preserve-profile",
+         "readiness-check",
+         "no-project-init",
+         "no-release-metadata"
+      ],
+      "scenario" : "global-refresh"
+   },
+   "id" : "update-global-en",
+   "must" : [
+      "refresh only the global install, preserve its profile, and check readiness"
+   ],
+   "must_not" : [
+      "initialize project context or change release metadata"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-update/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-explorer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-worker.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/worker.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/worker.md"
+      },
+      {
+         "class" : "installer",
+         "source" : "scripts/check-update.sh"
+      }
+   ],
+   "prompt" : "Refresh my globally installed Teamwork package and verify readiness, but do not initialize this project or publish a release.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

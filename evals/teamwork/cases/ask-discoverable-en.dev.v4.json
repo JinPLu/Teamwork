@@ -1,0 +1,35 @@
+{
+   "evidence" : "Static Ask Gate native control.",
+   "expected" : {
+      "capability" : "ask",
+      "language" : "en",
+      "requires" : [
+         "inspect-first",
+         "zero-questions",
+         "no-grill",
+         "direct-answer"
+      ],
+      "scenario" : "discoverable-native"
+   },
+   "id" : "ask-discoverable-en",
+   "must" : [
+      "inspect first and answer the discoverable fact directly with zero questions"
+   ],
+   "must_not" : [
+      "activate Grill or ask the user to supply repository facts"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      }
+   ],
+   "prompt" : "Determine which local validation command owns topology checks and answer from the repository.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

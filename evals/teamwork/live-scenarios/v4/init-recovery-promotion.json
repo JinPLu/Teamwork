@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "case_id": "init-recovery-promotion",
+  "private_paths": [],
+  "files": [
+    {"path":"scenario/init-input.txt","content":"Project-only initialization must preserve audit-only, recovery, and external-memory promotion boundaries.\n"},
+    {"path":"scenario/init-state.json","content":"{\"initialized\":false,\"recovery_checked\":false}\n"},
+    {"path":"scenario/init-result.txt","content":"PENDING\n"},
+    {"path":"scenario/verify.py","content":"import json\nfrom pathlib import Path\nstate = json.loads(Path('scenario/init-state.json').read_text())\nassert state['initialized'] is True\nassert state['recovery_checked'] is True\nassert 'EVIDENCE_INIT_RECOVERY_V4' in Path('scenario/init-result.txt').read_text()\n"}
+  ],
+  "verification": {"argv":["python3","scenario/verify.py"],"immutable_paths":["scenario/verify.py"]}
+}

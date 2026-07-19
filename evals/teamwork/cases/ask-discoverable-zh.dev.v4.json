@@ -1,0 +1,35 @@
+{
+   "evidence" : "静态 Ask Gate 原生对照。",
+   "expected" : {
+      "capability" : "ask",
+      "language" : "zh",
+      "requires" : [
+         "inspect-first",
+         "zero-questions",
+         "no-grill",
+         "direct-answer"
+      ],
+      "scenario" : "discoverable-native"
+   },
+   "id" : "ask-discoverable-zh",
+   "must" : [
+      "先检查本地证据，零提问直接回答可发现事实"
+   ],
+   "must_not" : [
+      "激活 Grill 或让用户提供仓库中已有的事实"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      }
+   ],
+   "prompt" : "从仓库中查明哪个本地验证命令负责拓扑检查，然后直接回答。",
+   "source" : "synthetic",
+   "split" : "dev"
+}

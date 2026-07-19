@@ -1,286 +1,343 @@
+from __future__ import annotations
+
+import json
 import os
-import selectors
+import stat
 import subprocess
+import sys
 import tempfile
-import threading
-import time
 import unittest
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-INIT = ROOT / "scripts/init-project.sh"
-TEMPLATE = ROOT / "skills/using-teamwork/references/teamwork-index-template.json"
-READY = "TEAMWORK_TEST_CODEGRAPH_READY"
-DEADLINE_SECONDS = 10.0
+FILES = ROOT / "scripts/init-project-files.py"
+ACTIVE_DISCUSSION_PATH = "docs/teamwork/discussion/2026-07-15-output-wording.md"
 
 
-class InitProjectAbaRegressionTests(unittest.TestCase):
-    def make_fake_codegraph(self, base: Path) -> Path:
-        bin_dir = base / "bin"
-        bin_dir.mkdir()
-        codegraph = bin_dir / "codegraph"
-        codegraph.write_text(
-            f"""#!/bin/sh
-printf '%s\\n' '{READY}'
-IFS= read -r command
-if [ "$command" != GO ]; then
-  printf '%s\\n' "expected GO, got: $command" >&2
-  exit 97
-fi
-exit 0
-""",
+class InitProjectAbaTests(unittest.TestCase):
+    @staticmethod
+    def state(root: Path) -> dict[str, tuple[object, ...]]:
+        result: dict[str, tuple[object, ...]] = {}
+        for path in sorted((root, *root.rglob("*")), key=lambda item: item.as_posix()):
+            info = path.lstat()
+            relative = "." if path == root else path.relative_to(root).as_posix()
+            if stat.S_ISREG(info.st_mode):
+                result[relative] = (
+                    "file",
+                    info.st_mode,
+                    info.st_dev,
+                    info.st_ino,
+                    info.st_mtime_ns,
+                    path.read_bytes(),
+                )
+            elif stat.S_ISDIR(info.st_mode):
+                result[relative] = ("directory", info.st_mode, info.st_dev, info.st_ino)
+            else:
+                result[relative] = ("other", info.st_mode)
+        return result
+
+    @staticmethod
+    def run_files(project: Path, action: str, *args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+        run_env = os.environ.copy()
+        if env:
+            run_env.update(env)
+        return subprocess.run(
+            [sys.executable, str(FILES), "--project-root", str(project), action, *args],
+            cwd=ROOT,
+            env=run_env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+    def initialize(self, project: Path) -> None:
+        result = self.run_files(
+            project,
+            "write-context",
+            "--today",
+            "2026-07-19",
+            "--project-label",
+            "Fixture",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    @staticmethod
+    def legacy_discussion() -> str:
+        return """Artifact Type: discussion
+Status: active
+Authority: supporting
+Last Updated: 2026-07-15
+
+# Researcher-facing output wording
+
+## Goal
+
+Keep replies concise and decision-relevant.
+
+## Settled
+
+- Use plain wording.
+
+## Still open
+
+- Which evidence should lead the reply?
+
+## Key evidence
+
+- The audience rubric rejects internal process inventory.
+
+## Continue here
+
+Choose the evidence that should lead the next reply.
+"""
+
+    def install_legacy_active_discussion(self, project: Path) -> None:
+        memory = project / "docs/teamwork"
+        discussion = memory / "discussion"
+        discussion.mkdir()
+        (project / ACTIVE_DISCUSSION_PATH).write_text(self.legacy_discussion(), encoding="utf-8")
+        index_path = memory / "index.json"
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        index["active"]["discussion"] = ACTIVE_DISCUSSION_PATH
+        index["entries"].append(
+            {
+                "topic": "output-wording",
+                "kind": "discussion",
+                "title": "Researcher-facing output wording",
+                "status": "active",
+                "currentness": "current",
+                "authority": "supporting",
+                "path": ACTIVE_DISCUSSION_PATH,
+                "applies_to": ["docs/teamwork/discussion/"],
+                "linked": [],
+                "evidence_paths": [ACTIVE_DISCUSSION_PATH],
+                "supersedes": [],
+                "search_keys": ["output wording", "evidence order"],
+                "updated": "2026-07-15",
+                "summary": "Tracks the active output wording decision.",
+            }
+        )
+        index_path.write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
+
+    @staticmethod
+    def install_legacy_plan_candidates(project: Path) -> None:
+        selected = "docs/teamwork/plans/2026-07-19-selected.md"
+        prior = "docs/teamwork/plans/2026-07-18-prior.md"
+        plans = project / "docs/teamwork/plans"
+        plans.mkdir(exist_ok=True)
+        (project / selected).write_text(
+            "Artifact Type: plan\nLast Updated: 2026-07-19\n\n# Selected plan\n",
             encoding="utf-8",
         )
-        codegraph.chmod(0o755)
-        return bin_dir
-
-    def start_init(self, project: Path, home: Path, bin_dir: Path) -> subprocess.Popen[str]:
-        env = os.environ.copy()
-        env.update(
-            {
-                "HOME": str(home),
-                "PATH": f"{bin_dir}{os.pathsep}{env['PATH']}",
-                "TEAMWORK_INIT_CODEGRAPH": "1",
-                "TEAMWORK_INIT_CURSOR_POLICY_COPY": "0",
-            }
+        (project / prior).write_text(
+            "Artifact Type: plan\nLast Updated: 2026-07-18\n\n# Prior plan\n",
+            encoding="utf-8",
         )
-        return subprocess.Popen(
-            [
-                str(INIT),
-                "--copy",
-                "--no-cursor-policy-copy",
-                "--project-root",
-                str(project),
-            ],
-            cwd=ROOT,
-            env=env,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        )
-
-    def wait_for_ready(self, process: subprocess.Popen[str], deadline: float) -> str:
-        assert process.stdout is not None
-        lines: list[str] = []
-        with selectors.DefaultSelector() as selector:
-            selector.register(process.stdout, selectors.EVENT_READ)
-            while True:
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    self.fail(
-                        f"init did not reach fake codegraph within {DEADLINE_SECONDS:g}s; "
-                        f"output so far:\n{''.join(lines)}"
-                    )
-                events = selector.select(remaining)
-                if not events:
-                    continue
-                line = process.stdout.readline()
-                if line:
-                    lines.append(line)
-                    if line.rstrip("\r\n") == READY:
-                        return "".join(lines)
-                    continue
-                returncode = process.poll()
-                if returncode is not None:
-                    self.fail(
-                        f"init exited with {returncode} before fake codegraph READY; "
-                        f"output:\n{''.join(lines)}"
-                    )
-
-    def send_go(self, process: subprocess.Popen[str]) -> None:
-        assert process.stdin is not None
-        process.stdin.write("GO\n")
-        process.stdin.flush()
-
-    def finish(
-        self,
-        process: subprocess.Popen[str],
-        deadline: float,
-        prefix: str,
-    ) -> tuple[int, str]:
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
-            self.fail(f"init exceeded the {DEADLINE_SECONDS:g}s test deadline")
-        try:
-            tail, _ = process.communicate(timeout=remaining)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            tail, _ = process.communicate()
-            self.fail(
-                f"init exceeded the {DEADLINE_SECONDS:g}s test deadline; "
-                f"output:\n{prefix}{tail}"
+        index_path = project / "docs/teamwork/index.json"
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        index["active"]["plan"] = selected
+        for path, title, topic, updated in (
+            (selected, "Selected plan", "selected", "2026-07-19"),
+            (prior, "Prior plan", "prior", "2026-07-18"),
+        ):
+            index["entries"].append(
+                {
+                    "topic": topic,
+                    "kind": "plan",
+                    "title": title,
+                    "status": "accepted",
+                    "currentness": "current",
+                    "authority": "active-summary",
+                    "path": path,
+                    "updated": updated,
+                    "summary": f"Plan fixture for {title}.",
+                }
             )
-        return process.returncode, prefix + tail
+        index_path.write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
 
-    def stop_process(self, process: subprocess.Popen[str]) -> None:
-        if process.poll() is None:
-            process.kill()
-            process.communicate()
-
-    def filesystem_state(self, root: Path) -> dict[str, tuple[object, ...]]:
-        state: dict[str, tuple[object, ...]] = {}
-        for path in sorted((root, *root.rglob("*")), key=lambda item: str(item)):
-            relative = "." if path == root else path.relative_to(root).as_posix()
-            mode = path.lstat().st_mode
-            if path.is_symlink():
-                state[relative] = ("symlink", mode, os.readlink(path))
-            elif path.is_file():
-                state[relative] = ("file", mode, path.read_bytes())
-            elif path.is_dir():
-                state[relative] = ("directory", mode)
-            else:
-                state[relative] = ("other", mode)
-        return state
-
-    def test_existing_teamwork_directory_aba_does_not_redirect_runtime_writes(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp).resolve()
-            project = base / "project"
-            docs = project / "docs"
-            memory = docs / "teamwork"
-            original = docs / "teamwork-original"
-            transient_saved = docs / "teamwork-transient"
-            home = base / "home"
-            memory.mkdir(parents=True)
-            home.mkdir()
-            (memory / "index.json").write_bytes(TEMPLATE.read_bytes())
-            (memory / "current.md").write_bytes(
-                b"# Existing current\n\n- Active discussion: none.\n"
-            )
-            (memory / "README.md").write_bytes(
-                b"# Existing runtime README\n\n- Active discussion route: none\n"
-            )
-            (memory / "retained-sentinel.txt").write_bytes(b"retained directory\n")
-
-            runtime_names = ("index.json", "current.md", "README.md")
-            runtime_before = {
-                name: (
-                    (memory / name).read_bytes(),
-                    (memory / name).stat().st_dev,
-                    (memory / name).stat().st_ino,
-                )
-                for name in runtime_names
-            }
-            memory_identity = (memory.stat().st_dev, memory.stat().st_ino)
-            bin_dir = self.make_fake_codegraph(base)
-            process = self.start_init(project, home, bin_dir)
-            deadline = time.monotonic() + DEADLINE_SECONDS
-            stop_observer = threading.Event()
-            observer_result: list[str] = []
-            observer_error: list[BaseException] = []
-            observer: threading.Thread | None = None
-
-            try:
-                prefix = self.wait_for_ready(process, deadline)
-                memory.rename(original)
-                memory.mkdir()
-
-                def observe_and_restore() -> None:
-                    try:
-                        while time.monotonic() < deadline:
-                            if (memory / "index.json").exists():
-                                observer_result.append("redirected")
-                                break
-                            if (project / "AGENTS.md").exists():
-                                observer_result.append("retained")
-                                break
-                            returncode = process.poll()
-                            if returncode is not None:
-                                raise AssertionError(
-                                    f"init exited with {returncode} before a deterministic restore signal"
-                                )
-                            if stop_observer.wait(0.01):
-                                return
-                        else:
-                            raise AssertionError("no restore signal before the 10s deadline")
-                        memory.rename(transient_saved)
-                        original.rename(memory)
-                    except BaseException as exc:
-                        observer_error.append(exc)
-
-                observer = threading.Thread(target=observe_and_restore, daemon=True)
-                observer.start()
-                self.send_go(process)
-                returncode, output = self.finish(process, deadline, prefix)
-                observer.join(max(0.0, deadline - time.monotonic()))
-
-                self.assertFalse(observer.is_alive(), "restore observer did not terminate")
-                self.assertFalse(observer_error, observer_error[0] if observer_error else None)
-                self.assertEqual(returncode, 0, output)
-                self.assertEqual(observer_result, ["retained"], output)
-                self.assertEqual((memory.stat().st_dev, memory.stat().st_ino), memory_identity)
-                self.assertEqual(
-                    (memory / "retained-sentinel.txt").read_bytes(),
-                    b"retained directory\n",
-                )
-                for name, (expected_bytes, expected_device, expected_inode) in runtime_before.items():
-                    path = memory / name
-                    self.assertEqual(path.read_bytes(), expected_bytes, name)
-                    self.assertEqual((path.stat().st_dev, path.stat().st_ino), (expected_device, expected_inode))
-                    self.assertFalse((transient_saved / name).exists(), name)
-                self.assertTrue((project / "AGENTS.md").is_file())
-            finally:
-                stop_observer.set()
-                self.stop_process(process)
-                if observer is not None:
-                    observer.join(1.0)
-                if original.exists() and memory.exists() and not transient_saved.exists():
-                    memory.rename(transient_saved)
-                    original.rename(memory)
-
-    def test_marker_created_at_codegraph_pause_blocks_all_later_project_writes(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp).resolve()
-            project = base / "project"
-            home = base / "home"
+    def test_hard_interruption_recovers_the_exact_empty_prestate(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary).resolve() / "project"
             project.mkdir()
-            home.mkdir()
-            bin_dir = self.make_fake_codegraph(base)
-            process = self.start_init(project, home, bin_dir)
-            deadline = time.monotonic() + DEADLINE_SECONDS
+            before = self.state(project)
 
-            try:
-                prefix = self.wait_for_ready(process, deadline)
-                memory = project / "docs/teamwork"
-                memory.mkdir(parents=True, exist_ok=True)
-                for path in (
-                    memory / "index.json",
-                    memory / "current.md",
-                    memory / "README.md",
-                    project / "AGENTS.md",
-                    project / ".gitignore",
-                ):
-                    self.assertFalse(path.exists(), f"unexpected pre-marker write: {path}")
-                home_at_marker = self.filesystem_state(home)
-                marker = memory / ".discussion-transaction.json"
-                marker.write_text(
-                    '{"operation":"update","phase":"commit"}\n',
-                    encoding="utf-8",
+            interrupted = self.run_files(
+                project,
+                "write-context",
+                "--today",
+                "2026-07-19",
+                env={"TEAMWORK_TEST_HARD_EXIT_INIT_REPLACE_AT": "1"},
+            )
+
+            self.assertEqual(interrupted.returncode, 86, interrupted.stderr)
+            self.assertTrue((project / ".teamwork-init-transaction.json").is_file())
+            recovered = self.run_files(project, "preflight")
+            self.assertEqual(recovered.returncode, 0, recovered.stderr)
+            self.assertEqual(self.state(project), before)
+            self.assertFalse((project / ".teamwork-init-transaction.json").exists())
+
+    def test_each_journal_phase_recovers_or_finishes_durably(self) -> None:
+        rollback_phases = {"preparing", "prepared", "committing"}
+        for phase in ("preparing", "prepared", "committing", "committed", "cleanup"):
+            with self.subTest(phase=phase), tempfile.TemporaryDirectory() as temporary:
+                project = Path(temporary).resolve() / "project"
+                project.mkdir()
+                before = self.state(project)
+
+                interrupted = self.run_files(
+                    project,
+                    "write-context",
+                    "--today",
+                    "2026-07-19",
+                    env={"TEAMWORK_TEST_HARD_EXIT_INIT_PHASE": phase},
                 )
 
-                self.send_go(process)
-                returncode, output = self.finish(process, deadline, prefix)
+                self.assertEqual(interrupted.returncode, 86, interrupted.stderr)
+                recovered = self.run_files(project, "preflight")
+                self.assertEqual(recovered.returncode, 0, recovered.stderr)
+                self.assertFalse((project / ".teamwork-init-transaction.json").exists())
+                if phase in rollback_phases:
+                    self.assertEqual(self.state(project), before)
+                else:
+                    self.assertEqual(self.run_files(project, "validate").returncode, 0)
 
-                self.assertNotEqual(returncode, 0, output)
-                self.assertIn("unfinished discussion transaction marker", output)
-                self.assertEqual(self.filesystem_state(home), home_at_marker)
-                self.assertEqual(
-                    marker.read_bytes(),
-                    b'{"operation":"update","phase":"commit"}\n',
+    def test_aba_change_preserves_the_external_replacement_and_journal(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary).resolve() / "project"
+            project.mkdir()
+            self.initialize(project)
+            ignored = project / ".gitignore"
+            ignored.write_text(
+                ignored.read_text(encoding="utf-8").replace(".codegraph/\n", ""),
+                encoding="utf-8",
+            )
+
+            interrupted = self.run_files(
+                project,
+                "write-context",
+                "--today",
+                "2026-07-19",
+                "--project-label",
+                "Changed",
+                env={"TEAMWORK_TEST_HARD_EXIT_INIT_REPLACE_AT": "1"},
+            )
+
+            self.assertEqual(interrupted.returncode, 86, interrupted.stderr)
+            agents = project / "AGENTS.md"
+            agents.write_text("external writer wins\n", encoding="utf-8")
+            recovered = self.run_files(project, "preflight")
+
+            self.assertNotEqual(recovered.returncode, 0)
+            self.assertIn("changed externally", recovered.stderr)
+            self.assertEqual(agents.read_text(encoding="utf-8"), "external writer wins\n")
+            self.assertTrue((project / ".teamwork-init-transaction.json").is_file())
+
+    def test_w4_delete_recovers_exact_prestate_or_finishes_when_committed(self) -> None:
+        for case in ("after-delete", "committed"):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary:
+                project = Path(temporary).resolve() / "project"
+                project.mkdir()
+                self.initialize(project)
+                self.install_legacy_active_discussion(project)
+                before = self.state(project)
+                env = (
+                    {"TEAMWORK_TEST_HARD_EXIT_INIT_REPLACE_AT": "2"}
+                    if case == "after-delete"
+                    else {"TEAMWORK_TEST_HARD_EXIT_INIT_PHASE": "committed"}
                 )
-                for path in (
-                    memory / "index.json",
-                    memory / "current.md",
-                    memory / "README.md",
-                    project / "AGENTS.md",
-                    project / ".gitignore",
-                ):
-                    self.assertFalse(path.exists(), f"write occurred after marker: {path}")
-            finally:
-                self.stop_process(process)
+
+                interrupted = self.run_files(
+                    project,
+                    "write-context",
+                    "--today",
+                    "2026-07-19",
+                    "--project-label",
+                    "Fixture",
+                    env=env,
+                )
+
+                self.assertEqual(interrupted.returncode, 86, interrupted.stderr)
+                recovered = self.run_files(project, "preflight")
+                self.assertEqual(recovered.returncode, 0, recovered.stderr)
+                old_artifact = project / ACTIVE_DISCUSSION_PATH
+                current_artifact = project / "docs/teamwork/discussion/current.md"
+                if case == "after-delete":
+                    self.assertEqual(self.state(project), before)
+                    self.assertTrue(old_artifact.is_file())
+                    self.assertFalse(current_artifact.exists())
+                else:
+                    self.assertFalse(old_artifact.exists())
+                    self.assertTrue(current_artifact.is_file())
+                    self.assertEqual(self.run_files(project, "validate").returncode, 0)
+
+    def test_plan_currentness_repair_recovers_exact_prestate_after_interruption(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary).resolve() / "project"
+            project.mkdir()
+            self.initialize(project)
+            self.install_legacy_plan_candidates(project)
+            before = self.state(project)
+
+            interrupted = self.run_files(
+                project,
+                "write-context",
+                "--today",
+                "2026-07-19",
+                "--project-label",
+                "Fixture",
+                env={"TEAMWORK_TEST_HARD_EXIT_INIT_REPLACE_AT": "1"},
+            )
+
+            self.assertEqual(interrupted.returncode, 86, interrupted.stderr)
+            self.assertTrue((project / ".teamwork-init-transaction.json").is_file())
+            recovered = self.run_files(project, "preflight")
+            self.assertEqual(recovered.returncode, 0, recovered.stderr)
+            self.assertEqual(self.state(project), before)
+            self.assertFalse((project / ".teamwork-init-transaction.json").exists())
+
+    def test_root_journal_recovers_when_the_docs_mirror_lags_one_generation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary).resolve() / "project"
+            project.mkdir()
+            self.initialize(project)
+            ignored = project / ".gitignore"
+            ignored.write_text(
+                ignored.read_text(encoding="utf-8").replace(".codegraph/\n", ""),
+                encoding="utf-8",
+            )
+            before = self.state(project)
+
+            interrupted = self.run_files(
+                project,
+                "write-context",
+                "--today",
+                "2026-07-19",
+                "--project-label",
+                "Changed",
+                env={"TEAMWORK_TEST_HARD_EXIT_INIT_PHASE": "prepared"},
+            )
+
+            self.assertEqual(interrupted.returncode, 86, interrupted.stderr)
+            root_marker = project / ".teamwork-init-transaction.json"
+            mirror_marker = project / "docs/teamwork/.teamwork-init-transaction.json"
+            root_journal = json.loads(root_marker.read_text(encoding="utf-8"))
+            self.assertEqual(root_journal["phase"], "prepared")
+            self.assertEqual(root_journal, json.loads(mirror_marker.read_text(encoding="utf-8")))
+            # This is the durable state after root's atomic marker replacement
+            # succeeds and the process exits before replacing the mirror.
+            root_journal["phase"] = "committing"
+            root_marker.write_text(
+                json.dumps(root_journal, sort_keys=True, separators=(",", ":")) + "\n",
+                encoding="utf-8",
+            )
+
+            recovered = self.run_files(project, "preflight")
+
+            self.assertEqual(recovered.returncode, 0, recovered.stderr)
+            self.assertEqual(self.state(project), before)
+            self.assertFalse(root_marker.exists())
+            self.assertFalse(mirror_marker.exists())
 
 
 if __name__ == "__main__":

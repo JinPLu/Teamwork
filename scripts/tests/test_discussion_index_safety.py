@@ -1,668 +1,346 @@
-#!/usr/bin/env python3
+from __future__ import annotations
+
+import hashlib
 import json
-import os
+import runpy
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest import mock
-
-from scripts import validate_teamwork_index as validator
 
 
 ROOT = Path(__file__).resolve().parents[2]
-VALIDATOR = ROOT / "scripts/validate_teamwork_index.py"
-DISCUSSION_PATH = "docs/teamwork/discussion/2026-07-15-path-safety.md"
+CLI = ROOT / "scripts/discussion-transaction.py"
+TEMPLATES = ROOT / "templates/teamwork-memory"
+CONTRACT = runpy.run_path(str(CLI), run_name="teamwork_discussion_migration_contract")
 
 
 class DiscussionIndexSafetyTests(unittest.TestCase):
-    def artifact(
-        self,
-        *,
-        status: str = "active",
-        still_open: str | None = None,
-        superseded_by: str | None = None,
-    ) -> str:
-        if still_open is None:
-            still_open = (
-                "- Confirm every runtime-memory path is a regular project file."
-                if status == "active"
-                else "None."
-            )
-        if superseded_by is None:
-            superseded_by = "Replaced by a later discussion route." if status == "superseded" else "none"
-        return f"""Artifact Type: discussion
-Status: {status}
-Authority: supporting
-Last Updated: 2026-07-15
-Search Keys: path, safety, discussion
-Abstract: Preserve the discussion validator path-safety decision.
-Linked Artifacts: none
-Superseded By: {superseded_by}
-
-# Keep discussion artifacts inside the project
-
-## Goal
-
-Prevent runtime-memory validation from following external symbolic links.
-
-## Settled
-
-- Runtime memory belongs to the project that owns its index.
-
-## Still open
-
-{still_open}
-
-## Key evidence
-
-- Symbolic links can otherwise make validation read an external file.
-
-## Continue here
-
-Run the focused validator safety tests.
-"""
-
-    def index(self, *, active_discussion: bool = True) -> dict:
-        active = {
-            "current": "docs/teamwork/current.md",
-            "discussion": DISCUSSION_PATH if active_discussion else None,
-            "results": [],
-        }
-        entries = [
-            {
-                "topic": "continuity",
-                "kind": "progress",
-                "title": "Current state",
-                "status": "active",
-                "currentness": "current",
-                "authority": "active-summary",
-                "path": "docs/teamwork/current.md",
-                "updated": "2026-07-15",
-                "summary": "Current runtime state.",
-            }
-        ]
-        if active_discussion:
-            entries.append(
-                {
-                    "topic": "path-safety",
-                    "kind": "discussion",
-                    "title": "Discussion path safety",
-                    "status": "active",
-                    "currentness": "current",
-                    "authority": "supporting",
-                    "path": DISCUSSION_PATH,
-                    "updated": "2026-07-15",
-                    "summary": "Keep discussion artifacts inside the project.",
-                }
-            )
-        return {
-            "schema_version": 1,
-            "last_updated": "2026-07-15",
-            "project": {"name": "fixture", "root": ".", "description": "Validator fixture."},
-            "source_of_truth_order": ["docs/teamwork/index.json"],
-            "ignore_globs": [".planning/**"],
-            "budgets": {"header_first": True},
-            "active": active,
-            "entries": entries,
-            "profiles": {"default": {}},
-        }
-
-    def write_project(self, base: Path, index: dict, *, artifact_status: str = "active") -> Path:
-        project = base / "project"
-        (project / "docs/teamwork/discussion").mkdir(parents=True)
-        (project / "docs/teamwork/index.json").write_text(json.dumps(index), encoding="utf-8")
-        anchor = index["active"]["discussion"] or "none"
-        (project / "docs/teamwork/current.md").write_text(
-            f"# Current\n\n- Active discussion: {anchor}.\n", encoding="utf-8"
-        )
-        (project / "docs/teamwork/README.md").write_text(
-            f"# Runtime memory\n\n- Active discussion route: {anchor}\n", encoding="utf-8"
-        )
-        if any(entry["kind"] == "discussion" for entry in index["entries"]):
-            (project / DISCUSSION_PATH).write_text(
-                self.artifact(status=artifact_status), encoding="utf-8"
-            )
+    def initialized_project(self, temporary: str) -> Path:
+        project = Path(temporary) / "project"
+        memory = project / "docs/teamwork"
+        memory.mkdir(parents=True)
+        for name in ("index.json", "current.md", "README.md"):
+            (memory / name).write_bytes((TEMPLATES / name).read_bytes())
         return project
 
-    def run_validator(self, project: Path) -> subprocess.CompletedProcess[str]:
+    def command(self, *arguments: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
-            [sys.executable, str(VALIDATOR), str(project / "docs/teamwork/index.json")],
+            [sys.executable, str(CLI), *arguments],
             cwd=ROOT,
             text=True,
             capture_output=True,
             check=False,
         )
 
-    def test_rejects_external_discussion_artifact_symlink(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
-            project = self.write_project(base, self.index())
-            outside = base / "outside-artifact.md"
-            outside.write_text(self.artifact(), encoding="utf-8")
-            (project / DISCUSSION_PATH).unlink()
-            os.symlink(outside, project / DISCUSSION_PATH)
+    def test_ordinary_templates_have_no_discussion_anchor_or_mirror(self) -> None:
+        index = json.loads((TEMPLATES / "index.json").read_text(encoding="utf-8"))
+        self.assertNotIn("discussion", index["active"])
+        combined = "\n".join(
+            (TEMPLATES / name).read_text(encoding="utf-8")
+            for name in ("index.json", "current.md", "README.md")
+        ).lower()
+        self.assertNotIn("active discussion", combined)
+        self.assertNotIn("active_discussion", combined)
+        self.assertNotIn("discussion/current.md", (TEMPLATES / "index.json").read_text(encoding="utf-8"))
 
-            result = self.run_validator(project)
+    def test_discussion_never_initializes_ordinary_memory(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary) / "uninitialized"
+            project.mkdir()
+            result = self.command("inspect", "--project-root", str(project))
+            self.assertNotEqual(result.returncode, 0)
+            self.assertFalse((project / "docs").exists())
 
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn("must be a regular project file", result.stderr)
+    def test_unindexed_archive_never_becomes_active_and_ordinary_pointer_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = self.initialized_project(temporary)
+            discussion = project / "docs/teamwork/discussion"
+            discussion.mkdir()
+            (discussion / "2026-07-19-rogue.md").write_text("# rogue\n", encoding="utf-8")
+            inspected = self.command("inspect", "--project-root", str(project))
+            self.assertEqual(inspected.returncode, 0, inspected.stderr)
+            self.assertIsNone(json.loads(inspected.stdout)["active"])
 
-    def test_accepts_single_link_regular_canonical_files(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            project = self.write_project(Path(tmp), self.index())
-
-            result = self.run_validator(project)
-
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn("PASS: Teamwork index contract/template validation", result.stdout)
-
-    def test_rejects_hardlinked_active_discussion_artifact(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
-            project = self.write_project(base, self.index())
-            os.link(project / DISCUSSION_PATH, base / "artifact-hardlink.md")
-
-            result = self.run_validator(project)
-
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn("discussion artifact must have exactly one hard link", result.stderr)
-
-    def test_rejects_hardlinked_historical_discussion_artifacts(self) -> None:
-        for status, authority in (("accepted", "supporting"), ("superseded", "superseded")):
-            with self.subTest(status=status), tempfile.TemporaryDirectory() as tmp:
-                base = Path(tmp)
-                index = self.index(active_discussion=False)
-                index["entries"].append(
-                    {
-                        "topic": "path-safety",
-                        "kind": "discussion",
-                        "title": "Discussion path safety",
-                        "status": status,
-                        "currentness": "historical",
-                        "authority": authority,
-                        "path": DISCUSSION_PATH,
-                        "updated": "2026-07-15",
-                        "summary": "Keep discussion artifacts inside the project.",
-                    }
-                )
-                project = self.write_project(base, index, artifact_status=status)
-                os.link(project / DISCUSSION_PATH, base / f"{status}-artifact-hardlink.md")
-
-                result = self.run_validator(project)
-
-                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-                self.assertIn(
-                    "discussion artifact must have exactly one hard link",
-                    result.stderr,
-                )
-
-    def test_rejects_partial_canonical_state_when_transaction_marker_exists(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            project = self.write_project(Path(tmp), self.index())
-            (project / "docs/teamwork/current.md").write_bytes(b"partial canonical bytes")
-            (project / "docs/teamwork/.discussion-transaction.json").write_text(
-                '{"phase":"prepared"}',
-                encoding="utf-8",
-            )
-
-            result = self.run_validator(project)
-
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn("pending or indeterminate discussion transaction", result.stderr)
-
-    def test_rejects_transaction_marker_of_any_filesystem_type(self) -> None:
-        marker_kinds = ("regular", "symlink", "directory", "fifo")
-        for marker_kind in marker_kinds:
-            with self.subTest(marker_kind=marker_kind), tempfile.TemporaryDirectory() as tmp:
-                base = Path(tmp)
-                project = self.write_project(base, self.index())
-                marker = project / "docs/teamwork/.discussion-transaction.json"
-                if marker_kind == "regular":
-                    marker.write_text("{}", encoding="utf-8")
-                elif marker_kind == "symlink":
-                    outside = base / "outside-marker.json"
-                    outside.write_text("{}", encoding="utf-8")
-                    os.symlink(outside, marker)
-                elif marker_kind == "directory":
-                    marker.mkdir()
-                else:
-                    os.mkfifo(marker)
-
-                result = self.run_validator(project)
-
-                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-                self.assertIn(
-                    "pending or indeterminate discussion transaction",
-                    result.stderr,
-                )
-
-    def test_rejects_special_active_discussion_artifact(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            project = self.write_project(Path(tmp), self.index())
-            artifact = project / DISCUSSION_PATH
-            artifact.unlink()
-            os.mkfifo(artifact)
-
-            result = self.run_validator(project)
-
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn("discussion artifact must be a regular project file", result.stderr)
-
-    def test_rejects_file_replacement_during_fd_read(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            project = self.write_project(Path(tmp), self.index())
-            current = project / "docs/teamwork/current.md"
-            displaced = project / "docs/teamwork/displaced-current.md"
-            reader = validator.SafeProjectReader(project)
-            original_read = os.read
-            replaced = False
-
-            def replace_then_read(fd: int, size: int) -> bytes:
-                nonlocal replaced
-                if not replaced:
-                    replaced = True
-                    current.rename(displaced)
-                    current.write_text(displaced.read_text(encoding="utf-8"), encoding="utf-8")
-                return original_read(fd, size)
-
-            try:
-                with mock.patch.object(validator.os, "read", side_effect=replace_then_read):
-                    with self.assertRaisesRegex(
-                        validator.ValidationError,
-                        "active.current changed identity while being read",
-                    ):
-                        reader.read_text(
-                            validator.PurePosixPath("docs/teamwork/current.md"),
-                            "active.current",
-                        )
-            finally:
-                reader.close()
-
-    def test_rejects_canonical_namespace_replacement_during_fd_read(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            project = self.write_project(Path(tmp), self.index())
-            memory = project / "docs/teamwork"
-            displaced = project / "docs/displaced-teamwork"
-            reader = validator.SafeProjectReader(project)
-            original_read = os.read
-            replaced = False
-
-            def replace_namespace_then_read(fd: int, size: int) -> bytes:
-                nonlocal replaced
-                if not replaced:
-                    replaced = True
-                    memory.rename(displaced)
-                    memory.mkdir()
-                return original_read(fd, size)
-
-            try:
-                with mock.patch.object(
-                    validator.os,
-                    "read",
-                    side_effect=replace_namespace_then_read,
-                ):
-                    with self.assertRaisesRegex(
-                        validator.ValidationError,
-                        "canonical docs/teamwork namespace changed identity",
-                    ):
-                        reader.read_text(
-                            validator.PurePosixPath("docs/teamwork/current.md"),
-                            "active.current",
-                        )
-            finally:
-                reader.close()
-
-    def test_rejects_invalid_calendar_dates(self) -> None:
-        mutations = (
-            ("index", lambda index: index.__setitem__("last_updated", "2026-02-30")),
-            ("entry", lambda index: index["entries"][0].__setitem__("updated", "2026-02-30")),
-        )
-        for label, mutate in mutations:
-            with self.subTest(label=label), tempfile.TemporaryDirectory() as tmp:
-                index = self.index()
-                mutate(index)
-                project = self.write_project(Path(tmp), index)
-
-                result = self.run_validator(project)
-
-                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-                self.assertIn("must be a valid YYYY-MM-DD date", result.stderr)
-
-        with tempfile.TemporaryDirectory() as tmp:
-            project = self.write_project(Path(tmp), self.index())
-            artifact = self.artifact().replace(
-                "Last Updated: 2026-07-15",
-                "Last Updated: 2026-02-30",
-            )
-            (project / DISCUSSION_PATH).write_text(artifact, encoding="utf-8")
-
-            result = self.run_validator(project)
-
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn(
-                "discussion artifact Last Updated must be a valid YYYY-MM-DD date",
-                result.stderr,
-            )
-
-    def test_requires_coherent_superseded_by_header(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            project = self.write_project(Path(tmp), self.index())
-            artifact = self.artifact().replace("Superseded By: none\n", "")
-            (project / DISCUSSION_PATH).write_text(artifact, encoding="utf-8")
-
-            result = self.run_validator(project)
-
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn("discussion artifact missing header: Superseded By", result.stderr)
-
-        with tempfile.TemporaryDirectory() as tmp:
-            project = self.write_project(Path(tmp), self.index())
-            (project / DISCUSSION_PATH).write_text(
-                self.artifact(superseded_by="another route"),
-                encoding="utf-8",
-            )
-
-            result = self.run_validator(project)
-
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn("active discussion artifact Superseded By must be none", result.stderr)
-
-        with tempfile.TemporaryDirectory() as tmp:
-            index = self.index(active_discussion=False)
-            index["entries"].append(
-                {
-                    "topic": "path-safety",
-                    "kind": "discussion",
-                    "title": "Discussion path safety",
-                    "status": "superseded",
-                    "currentness": "historical",
-                    "authority": "superseded",
-                    "path": DISCUSSION_PATH,
-                    "updated": "2026-07-15",
-                    "summary": "Keep discussion artifacts inside the project.",
-                }
-            )
-            project = self.write_project(Path(tmp), index, artifact_status="superseded")
-            (project / DISCUSSION_PATH).write_text(
-                self.artifact(status="superseded", superseded_by="none"),
-                encoding="utf-8",
-            )
-
-            result = self.run_validator(project)
-
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn(
-                "superseded discussion artifact must name a successor or reason",
-                result.stderr,
-            )
-
-    def test_rejects_index_file_symlink_before_reading_it(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
-            project = self.write_project(base, self.index())
             index_path = project / "docs/teamwork/index.json"
-            outside = base / "outside-index.json"
-            index_path.rename(outside)
-            os.symlink(outside, index_path)
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            index["active"]["current"] = "docs/teamwork/discussion/current.md"
+            index_path.write_text(json.dumps(index), encoding="utf-8")
+            validated = self.command("artifact-index-validate", "--project-root", str(project))
+            self.assertNotEqual(validated.returncode, 0)
+            self.assertEqual(json.loads(validated.stderr)["category"], "PREWRITE_SAFE")
 
-            result = self.run_validator(project)
-
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn("index input must be a regular project file", result.stderr)
-
-    def test_rejects_symlinked_runtime_memory_ancestors(self) -> None:
-        for relative_ancestor in (Path("docs"), Path("docs/teamwork")):
-            with self.subTest(ancestor=relative_ancestor), tempfile.TemporaryDirectory() as tmp:
-                base = Path(tmp)
-                project = self.write_project(base, self.index())
-                ancestor = project / relative_ancestor
-                outside = base / f"outside-{'-'.join(relative_ancestor.parts)}"
-                ancestor.rename(outside)
-                os.symlink(outside, ancestor)
-
-                result = self.run_validator(project)
-
-                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-                self.assertIn("must be a non-symlink directory", result.stderr)
-
-    def test_rejects_symlinked_project_root(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
-            project = self.write_project(base, self.index())
-            linked_project = base / "linked-project"
-            os.symlink(project, linked_project)
-
-            result = self.run_validator(linked_project)
-
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn(
-                "index input project root must be a non-symlink directory",
-                result.stderr,
+    def legacy_artifact(self, *, title: str, status: str, updated: str) -> str:
+        return "\n".join(
+            (
+                "Artifact Type: discussion",
+                f"Status: {status}",
+                "Authority: supporting",
+                f"Last Updated: {updated}",
+                "",
+                f"# {title}",
+                "",
+                "## Goal",
+                "",
+                "Preserve the decision.",
+                "",
+                "## Current branch",
+                "",
+                "Select the recovery route.",
+                "",
+                "## Settled",
+                "",
+                "- One existing constraint.",
+                "",
+                "## Still open",
+                "",
+                "- One remaining choice." if status == "active" else "- None",
+                "",
+                "## Return path",
+                "",
+                "Return to the named choice.",
+                "",
+                "## Blockers",
+                "",
+                "- none",
+                "",
+                "## Convergence",
+                "",
+                "A verified decision.",
+                "",
+                "## Key evidence",
+                "",
+                "- Existing source snapshot.",
+                "",
             )
+        )
 
-    def test_rejects_symlinked_discussion_directory_ancestor(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
-            project = self.write_project(base, self.index())
-            discussion_dir = project / "docs/teamwork/discussion"
-            outside_dir = base / "outside-discussion"
-            outside_dir.mkdir()
-            (outside_dir / Path(DISCUSSION_PATH).name).write_text(
-                self.artifact(), encoding="utf-8"
-            )
-            (project / DISCUSSION_PATH).unlink()
-            discussion_dir.rmdir()
-            os.symlink(outside_dir, discussion_dir)
+    def test_pure_v2_migration_maps_one_active_record_and_keeps_closed_archives(self) -> None:
+        active = "docs/teamwork/discussion/2026-07-19-live-route.md"
+        closed = "docs/teamwork/discussion/2026-07-18-closed-route.md"
+        index = {
+            "entries": [
+                {"kind": "discussion", "path": active, "title": "Live route", "status": "active", "currentness": "current"},
+                {"kind": "discussion", "path": closed, "title": "Closed route", "status": "accepted", "currentness": "historical"},
+            ],
+            "active": {"discussion": active},
+        }
+        plan = CONTRACT["plan_v342_discussion_migration"](
+            json.dumps(index),
+            {
+                active: self.legacy_artifact(title="Live route", status="active", updated="2026-07-19"),
+                closed: self.legacy_artifact(title="Closed route", status="accepted", updated="2026-07-18"),
+            },
+        )
+        self.assertEqual(plan["schema_version"], 2)
+        self.assertEqual(plan["active_path"], "docs/teamwork/discussion/current.md")
+        self.assertEqual(plan["deletes"], [active])
+        self.assertEqual(set(plan["writes"]), {"docs/teamwork/discussion/current.md", closed})
+        state = CONTRACT["validate_discussion_artifact"](plan["writes"]["docs/teamwork/discussion/current.md"])
+        self.assertEqual(state["migration_source"]["path"], active)
+        self.assertIn("Artifact Type: discussion", state["migration_source"]["source_text"])
 
-            result = self.run_validator(project)
+    def test_v342_migration_encodes_multiline_legacy_scalars_injectively_and_preserves_raw_source(self) -> None:
+        path = "docs/teamwork/discussion/2026-07-19-live-route.md"
+        index = {
+            "entries": [
+                {"kind": "discussion", "path": path, "title": "Live route", "status": "active", "currentness": "current"},
+            ],
+            "active": {"discussion": path},
+        }
+        legacy = self.legacy_artifact(title="Live route", status="active", updated="2026-07-19")
+        legacy = (
+            legacy.replace("Preserve the decision.", "Preserve the decision.\nKeep the recovery meaning visible.")
+            .replace("Select the recovery route.", "Select the recovery route.\nDo not replay an unchanged branch.")
+            .replace("Return to the named choice.", "Return to the named choice.\nResume from the direct evidence.")
+            .replace("A verified decision.", "A verified decision.\nThe acceptance signal must be direct.")
+        )
 
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn("must be a regular project file", result.stderr)
+        plan = CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: legacy})
+        state = CONTRACT["validate_discussion_artifact"](plan["writes"]["docs/teamwork/discussion/current.md"])
 
-    def test_rejects_duplicate_historical_discussion_paths(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
-            index = self.index(active_discussion=False)
-            historical = {
-                "topic": "path-safety",
-                "kind": "discussion",
-                "title": "Discussion path safety",
-                "status": "accepted",
-                "currentness": "historical",
-                "authority": "supporting",
-                "path": DISCUSSION_PATH,
-                "updated": "2026-07-15",
-                "summary": "Keep discussion artifacts inside the project.",
-            }
-            index["entries"].extend((historical, {**historical, "topic": "other-route"}))
-            project = self.write_project(base, index, artifact_status="accepted")
+        self.assertEqual(state["goal"], r"Preserve the decision.\nKeep the recovery meaning visible.")
+        self.assertEqual(state["current_branch"], r"Select the recovery route.\nDo not replay an unchanged branch.")
+        self.assertEqual(state["return_path"], r"Return to the named choice.\nResume from the direct evidence.")
+        self.assertEqual(state["convergence"], r"A verified decision.\nThe acceptance signal must be direct.")
+        self.assertEqual(
+            CONTRACT["_decode_legacy_scalar"](state["goal"]),
+            ["Preserve the decision.", "Keep the recovery meaning visible."],
+        )
+        self.assertEqual(state["migration_source"]["source_text"], legacy)
 
-            result = self.run_validator(project)
+        literal_delimiter = legacy.replace(
+            "Preserve the decision.\nKeep the recovery meaning visible.",
+            "Preserve the decision. / Keep the recovery meaning visible.",
+        )
+        delimiter_state = CONTRACT["validate_discussion_artifact"](
+            CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: literal_delimiter})["writes"]["docs/teamwork/discussion/current.md"]
+        )
+        self.assertEqual(delimiter_state["goal"], "Preserve the decision. / Keep the recovery meaning visible.")
+        self.assertNotEqual(delimiter_state["goal"], state["goal"])
 
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn("duplicate discussion entries.path", result.stderr)
+        literal_escape = legacy.replace(
+            "Preserve the decision.\nKeep the recovery meaning visible.",
+            r"A literal \n marker remains content.",
+        )
+        escaped_state = CONTRACT["validate_discussion_artifact"](
+            CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: literal_escape})["writes"]["docs/teamwork/discussion/current.md"]
+        )
+        self.assertEqual(escaped_state["goal"], r"A literal \\n marker remains content.")
+        self.assertEqual(CONTRACT["_decode_legacy_scalar"](escaped_state["goal"]), [r"A literal \n marker remains content."])
 
-    def test_rejects_closed_discussion_with_an_unresolved_item(self) -> None:
-        for status, authority in (("accepted", "supporting"), ("superseded", "superseded")):
-            with self.subTest(status=status), tempfile.TemporaryDirectory() as tmp:
-                base = Path(tmp)
-                index = self.index(active_discussion=False)
-                index["entries"].append(
-                    {
-                        "topic": "path-safety",
-                        "kind": "discussion",
-                        "title": "Discussion path safety",
-                        "status": status,
-                        "currentness": "historical",
-                        "authority": authority,
-                        "path": DISCUSSION_PATH,
-                        "updated": "2026-07-15",
-                        "summary": "Keep discussion artifacts inside the project.",
-                    }
+        for unsafe in ("\x0bLeading VT", "Trailing FF\x0c", "Trailing FS\x1c"):
+            with self.subTest(unsafe=repr(unsafe)):
+                unsafe_legacy = legacy.replace(
+                    "Preserve the decision.\nKeep the recovery meaning visible.", unsafe
                 )
-                project = self.write_project(base, index, artifact_status=status)
-                (project / DISCUSSION_PATH).write_text(
-                    self.artifact(
-                        status=status,
-                        still_open="- Decide whether another safety check is required.",
-                    ),
-                    encoding="utf-8",
-                )
+                with self.assertRaises(CONTRACT["TransactionError"]):
+                    CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: unsafe_legacy})
 
-                result = self.run_validator(project)
+    def test_v342_migration_rejects_unsafe_controls_in_heading_title_and_date_before_matching(self) -> None:
+        path = "docs/teamwork/discussion/2026-07-19-control-route.md"
+        index = {
+            "entries": [
+                {"kind": "discussion", "path": path, "title": "Control route", "status": "active", "currentness": "current"},
+            ],
+            "active": {"discussion": path},
+        }
+        legacy = self.legacy_artifact(title="Control route", status="active", updated="2026-07-19")
+        variants = {
+            "tabbed_heading": legacy.replace("## Goal", "##\tGoal\t\x0b"),
+            "title": legacy.replace("# Control route", "# Control\x0b route"),
+            "date": legacy.replace("Last Updated: 2026-07-19", "Last Updated: 2026-07-19\x0b"),
+        }
+        for label, unsafe_legacy in variants.items():
+            with self.subTest(label=label):
+                with self.assertRaises(CONTRACT["TransactionError"]):
+                    CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: unsafe_legacy})
 
-                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-                self.assertIn(
-                    "closed discussion artifact Still open must explicitly be none",
-                    result.stderr,
-                )
+    def test_v342_migration_reads_crlf_scalars_and_continue_here_without_fallback(self) -> None:
+        path = "docs/teamwork/discussion/2026-07-19-crlf-route.md"
+        index = {
+            "entries": [
+                {"kind": "discussion", "path": path, "title": "CRLF route", "status": "active", "currentness": "current"},
+            ],
+            "active": {"discussion": path},
+        }
+        legacy = self.legacy_artifact(title="CRLF route", status="active", updated="2026-07-19")
+        legacy = (
+            legacy.replace("Preserve the decision.", "Goal line one.\tkeeps tab formatting.\nGoal line two.")
+            .replace("Select the recovery route.", "Branch line one.\nBranch line two.")
+            .replace("Return to the named choice.", "Return line one.\nReturn line two.")
+            .replace("A verified decision.", "Convergence line one.\nConvergence line two.")
+            .replace("\n", "\r\n")
+        )
 
-    def test_rejects_duplicate_required_discussion_header(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
-            project = self.write_project(base, self.index())
-            artifact = self.artifact().replace(
-                "Status: active\n",
-                "Status: accepted\nStatus: active\n",
-            )
-            (project / DISCUSSION_PATH).write_text(artifact, encoding="utf-8")
+        state = CONTRACT["validate_discussion_artifact"](
+            CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: legacy})["writes"]["docs/teamwork/discussion/current.md"]
+        )
+        self.assertEqual(state["goal"], r"Goal line one. keeps tab formatting.\nGoal line two.")
+        self.assertEqual(state["current_branch"], r"Branch line one.\nBranch line two.")
+        self.assertEqual(state["return_path"], r"Return line one.\nReturn line two.")
+        self.assertEqual(state["convergence"], r"Convergence line one.\nConvergence line two.")
+        self.assertNotIn("none recorded", {state["goal"], state["current_branch"], state["return_path"], state["convergence"]})
+        self.assertIn("\t", legacy)
+        self.assertEqual(state["migration_source"]["source_text"], legacy)
 
-            result = self.run_validator(project)
+        continue_path = "docs/teamwork/discussion/2026-07-19-continue-route.md"
+        continue_index = {
+            "entries": [
+                {"kind": "discussion", "path": continue_path, "title": "Continue route", "status": "active", "currentness": "current"},
+            ],
+            "active": {"discussion": continue_path},
+        }
+        continue_legacy = self.legacy_artifact(title="Continue route", status="active", updated="2026-07-19")
+        continue_legacy = continue_legacy.replace(
+            "## Return path\n\nReturn to the named choice.\n\n",
+            "## Continue here\n\nContinue line one.\nContinue line two.\n\n",
+        ).replace("\n", "\r\n")
+        continue_state = CONTRACT["validate_discussion_artifact"](
+            CONTRACT["plan_v342_discussion_migration"](json.dumps(continue_index), {continue_path: continue_legacy})["writes"]["docs/teamwork/discussion/current.md"]
+        )
+        self.assertEqual(continue_state["return_path"], r"Continue line one.\nContinue line two.")
+        self.assertNotEqual(continue_state["return_path"], "none recorded")
+        self.assertEqual(continue_state["migration_source"]["source_text"], continue_legacy)
 
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn(
-                "discussion artifact header must appear exactly once: Status",
-                result.stderr,
-            )
-
-    def test_rejects_duplicate_required_discussion_section(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
-            project = self.write_project(base, self.index())
-            artifact = self.artifact() + """
-## Still open
-
-- Confirm no second unresolved item can hide behind the first section.
-"""
-            (project / DISCUSSION_PATH).write_text(artifact, encoding="utf-8")
-
-            result = self.run_validator(project)
-
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn(
-                "discussion artifact section must appear exactly once: Still open",
-                result.stderr,
-            )
-
-    def test_rejects_duplicate_optional_decision_map(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
-            project = self.write_project(base, self.index())
-            decision_map = """
-## Decision map
-
-```mermaid
-flowchart LR
-    input[Input] --> validation[Validation]
-```
-"""
-            (project / DISCUSSION_PATH).write_text(
-                self.artifact() + decision_map + decision_map,
-                encoding="utf-8",
-            )
-
-            result = self.run_validator(project)
-
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn(
-                "discussion artifact section must appear at most once: Decision map",
-                result.stderr,
-            )
-
-    def test_rejects_external_current_and_readme_symlinks(self) -> None:
-        for runtime_path in ("docs/teamwork/current.md", "docs/teamwork/README.md"):
-            with self.subTest(runtime_path=runtime_path), tempfile.TemporaryDirectory() as tmp:
-                base = Path(tmp)
-                project = self.write_project(base, self.index())
-                target = project / runtime_path
-                outside = base / target.name
-                outside.write_text(target.read_text(encoding="utf-8"), encoding="utf-8")
-                target.unlink()
-                os.symlink(outside, target)
-
-                result = self.run_validator(project)
-
-                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-                self.assertIn("must be a regular project file", result.stderr)
-
-    def test_rejects_switching_active_current_away_from_the_canonical_digest(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
-            index = self.index()
-            alternate_path = "docs/teamwork/alternate-current.md"
-            index["active"]["current"] = alternate_path
-            index["entries"][0]["path"] = alternate_path
-            project = self.write_project(base, index)
-            (project / "docs/teamwork/current.md").rename(project / alternate_path)
-
-            result = self.run_validator(project)
-
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn(
-                "actual project index active.current must be docs/teamwork/current.md",
-                result.stderr,
-            )
-
-    def test_rejects_candidate_discussion_even_without_an_artifact(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
-            index = self.index(active_discussion=False)
-            index["entries"].append(
-                {
-                    "topic": "candidate-route",
-                    "kind": "discussion",
-                    "title": "Candidate discussion route",
-                    "status": "candidate",
-                    "currentness": "candidate",
-                    "authority": "candidate",
-                    "path": DISCUSSION_PATH,
-                    "updated": "2026-07-15",
-                    "summary": "Candidate route has no artifact yet.",
+    def test_v342_migration_accepts_v3_horizontal_tabs_and_immediate_section_bodies(self) -> None:
+        for newline, suffix in (("\n", "lf"), ("\r\n", "crlf")):
+            with self.subTest(newline=repr(newline)):
+                path = f"docs/teamwork/discussion/2026-07-18-tabbed-{suffix}.md"
+                index = {
+                    "entries": [
+                        {
+                            "kind": "discussion",
+                            "path": path,
+                            "title": "Index fallback title",
+                            "status": "active",
+                            "currentness": "current",
+                        },
+                    ],
+                    "active": {"discussion": path},
                 }
-            )
-            project = self.write_project(base, index)
-            (project / DISCUSSION_PATH).unlink()
+                legacy = self.legacy_artifact(title="Tabbed legacy title", status="active", updated="2026-07-19")
+                legacy = (
+                    legacy.replace("Last Updated: 2026-07-19", "Last\tUpdated\t:\t2026-07-20\t")
+                    .replace("# Tabbed legacy title", "#\tTabbed legacy title\t")
+                    .replace(
+                        "## Goal\n\nPreserve the decision.\n\n",
+                        "##\tGoal\t\nGoal follows its heading immediately.\n\n",
+                    )
+                    .replace(
+                        "## Return path\n\nReturn to the named choice.\n\n",
+                        "## Return\tpath\t\n\t\nReturn follows a tab-only separator.\n\n",
+                    )
+                    .replace("\n", newline)
+                )
 
-            result = self.run_validator(project)
+                state = CONTRACT["validate_discussion_artifact"](
+                    CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: legacy})["writes"]["docs/teamwork/discussion/current.md"]
+                )
+                self.assertEqual(state["title"], "Tabbed legacy title")
+                self.assertEqual(state["updated"], "2026-07-20")
+                self.assertEqual(state["goal"], "Goal follows its heading immediately.")
+                self.assertEqual(state["return_path"], "Return follows a tab-only separator.")
+                self.assertNotIn("none recorded", {state["goal"], state["return_path"]})
+                self.assertEqual(state["migration_source"]["source_text"], legacy)
+                self.assertEqual(state["migration_source"]["sha256"], hashlib.sha256(legacy.encode("utf-8")).hexdigest())
 
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn("discussion entry status has unknown value: candidate", result.stderr)
-
-    def test_rejects_undefined_discussion_index_status(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
-            index = self.index(active_discussion=False)
-            index["entries"].append(
-                {
-                    "topic": "blocked-route",
-                    "kind": "discussion",
-                    "title": "Blocked discussion route",
-                    "status": "blocked",
-                    "currentness": "historical",
-                    "authority": "supporting",
-                    "path": DISCUSSION_PATH,
-                    "updated": "2026-07-15",
-                    "summary": "This status is outside the discussion protocol.",
+    def test_v342_migration_accepts_tabbed_continue_here_with_immediate_body(self) -> None:
+        for newline, suffix in (("\n", "lf"), ("\r\n", "crlf")):
+            with self.subTest(newline=repr(newline)):
+                path = f"docs/teamwork/discussion/2026-07-19-continue-tabs-{suffix}.md"
+                index = {
+                    "entries": [
+                        {
+                            "kind": "discussion",
+                            "path": path,
+                            "title": "Continue route",
+                            "status": "active",
+                            "currentness": "current",
+                        },
+                    ],
+                    "active": {"discussion": path},
                 }
-            )
-            project = self.write_project(base, index, artifact_status="blocked")
+                legacy = self.legacy_artifact(title="Continue route", status="active", updated="2026-07-19")
+                legacy = legacy.replace(
+                    "## Return path\n\nReturn to the named choice.\n\n",
+                    "##\tContinue\there\t\nContinue follows its heading immediately.\n\n",
+                ).replace("\n", newline)
 
-            result = self.run_validator(project)
+                state = CONTRACT["validate_discussion_artifact"](
+                    CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: legacy})["writes"]["docs/teamwork/discussion/current.md"]
+                )
+                self.assertEqual(state["return_path"], "Continue follows its heading immediately.")
+                self.assertNotEqual(state["return_path"], "none recorded")
+                self.assertEqual(state["migration_source"]["source_text"], legacy)
+                self.assertEqual(state["migration_source"]["sha256"], hashlib.sha256(legacy.encode("utf-8")).hexdigest())
 
-            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
-            self.assertIn("discussion entry status has unknown value", result.stderr)
+    def test_migration_rejects_unknown_or_incomplete_artifact_inputs(self) -> None:
+        path = "docs/teamwork/discussion/2026-07-19-live-route.md"
+        index = {"entries": [{"kind": "discussion", "path": path, "title": "Live", "status": "active", "currentness": "current"}], "active": {"discussion": path}}
+        with self.assertRaises(CONTRACT["TransactionError"]):
+            CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {"docs/teamwork/discussion/2026-07-19-extra.md": "x"})
 
 
 if __name__ == "__main__":

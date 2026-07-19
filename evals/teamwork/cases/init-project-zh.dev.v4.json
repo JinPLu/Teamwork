@@ -1,0 +1,67 @@
+{
+   "evidence" : "静态 Init 归属样例。",
+   "expected" : {
+      "capability" : "init",
+      "language" : "zh",
+      "requires" : [
+         "project-only",
+         "preserve-human-docs",
+         "no-global-refresh",
+         "no-external-install"
+      ],
+      "scenario" : "project-context"
+   },
+   "id" : "init-project-zh",
+   "must" : [
+      "把改动限制在项目上下文，并保留人类维护的文档"
+   ],
+   "must_not" : [
+      "刷新全局安装或未经批准安装外部工具"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-init/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-explorer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-worker.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/worker.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/worker.md"
+      },
+      {
+         "class" : "artifact-engine",
+         "source" : "scripts/init-project-files.py"
+      }
+   ],
+   "prompt" : "为这个仓库初始化 Teamwork 上下文，同时保留现有的人类文档。",
+   "source" : "synthetic",
+   "split" : "dev"
+}

@@ -1,0 +1,57 @@
+{
+   "evidence" : "Static paired cohesion control.",
+   "expected" : {
+      "capability" : "native",
+      "language" : "en",
+      "requires" : [
+         "paired-control",
+         "root-and-worker-owner",
+         "real-result-first",
+         "canonical-reuse",
+         "proportional-proof",
+         "cohesive-structure",
+         "scope-preservation",
+         "residue-cleanup",
+         "stop-after-proof"
+      ],
+      "scenario" : "engineering-quality"
+   },
+   "id" : "native-quality-cohesive-structure",
+   "must" : [
+      "judge project cohesion"
+   ],
+   "must_not" : [
+      "use fewer files as the quality oracle"
+   ],
+   "pair" : {
+      "dimension" : "cohesive-structure",
+      "negative" : "Accept justified cohesive multi-file work required by the boundary.",
+      "positive" : "Reject a wrong-layer single-use helper, duplicate owner, or thin wrapper."
+   },
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-worker.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/worker.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/worker.md"
+      }
+   ],
+   "prompt" : "Review structure for cohesion rather than file count.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

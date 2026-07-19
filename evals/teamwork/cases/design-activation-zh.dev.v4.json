@@ -1,0 +1,78 @@
+{
+   "evidence" : "静态契约样例；不构成真实模型激活证据。",
+   "expected" : {
+      "capability" : "design",
+      "language" : "zh",
+      "requires" : [
+         "local-constraints-first",
+         "genuine-tradeoffs-only",
+         "recommend-first",
+         "one-user-owned-decision",
+         "read-only",
+         "no-implementation"
+      ],
+      "scenario" : "activation"
+   },
+   "id" : "design-activation-zh",
+   "must" : [
+      "先检查本地约束，只为真实取舍提出方案，并先给推荐",
+      "一次只问一个由用户决定的实质问题"
+   ],
+   "must_not" : [
+      "实施、修改文件或悄悄转成执行计划"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-design/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-explorer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-researcher.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/researcher.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/researcher.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-designer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/designer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/designer.md"
+      }
+   ],
+   "prompt" : "公开 API 还没有确定要同步、排队还是混合模式。请在写代码前帮我收敛架构。",
+   "source" : "synthetic",
+   "split" : "dev"
+}

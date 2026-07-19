@@ -9,17 +9,26 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 COMPACTNESS_LIMITS = {
-    # These are ceilings, not a deletion incentive. Source-contract tests protect
-    # the minimum behavior-bearing instructions independently of this guard.
-    "union": {"words": 20500, "bytes": 150000},
-    "codex": {"words": 210, "bytes": 1800},
-    "cursor": {"words": 210, "bytes": 1800},
-    "claude": {"words": 210, "bytes": 1800},
+    # The v4 architecture removes the router, generic Execute skill, and the
+    # shared behavioral-reference graph. These ceilings intentionally make that
+    # simplification observable without rewarding code-golf inside a skill.
+    "union": {"words": 12500, "bytes": 95000},
+    "skills": {"words": 6000, "bytes": 45000},
+    "codex": {"words": 340, "bytes": 2800},
+    "cursor": {"words": 340, "bytes": 2800},
+    "claude": {"words": 340, "bytes": 2800},
 }
+MAX_SKILL_WORDS = 900
+CANONICAL_SKILL_COUNT = 10
+CANONICAL_REFERENCE_COUNT = 3
+
+sys.path.insert(0, str(ROOT / "scripts"))
+from teamwork_tooling.evaluation.sources import validate_skill_topology  # noqa: E402
 
 
 def normalized(text: str) -> str:
@@ -103,8 +112,22 @@ def measure() -> dict[str, object]:
     )
     surfaces.extend(generated_surfaces())
 
+    topology = validate_skill_topology(ROOT)
+    skill_texts = [
+        (ROOT / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+        for skill in topology["skills"]
+    ]
+    skill_sizes = [size(text) for text in skill_texts]
     result: dict[str, object] = {
-        "union": {"surfaces": len(surfaces), **size("\n".join(normalized(x) for x in surfaces))}
+        "union": {"surfaces": len(surfaces), **size("\n".join(normalized(x) for x in surfaces))},
+        "skills": {
+            "surfaces": len(skill_texts),
+            **size("\n".join(normalized(text) for text in skill_texts)),
+            "max_skill_words": max(item["words"] for item in skill_sizes),
+            "behavior_references": len(topology["behavior_references"]),
+            "cross_skill_loads": len(topology["cross_skill_loads"]),
+            "dependency_cycles": len(topology["cycles"]),
+        },
     }
     for platform in ("codex", "cursor", "claude"):
         rendered = subprocess.run(
@@ -137,6 +160,30 @@ def compactness_failures(result: dict[str, object]) -> list[str]:
                     f"{surface} {metric} exceeds compactness limit: "
                     f"{measured[metric]} > {limit[metric]}"
                 )
+    skills = result["skills"]
+    assert isinstance(skills, dict)
+    # Callers that compare only byte/word ceilings may pass synthetic legacy
+    # measurements. Topology is enforced whenever the real measurement fields
+    # are present; the source validator independently enforces it on every eval.
+    if "surfaces" in skills:
+        if int(skills["surfaces"]) != CANONICAL_SKILL_COUNT:
+            failures.append(
+                "canonical skill inventory must contain "
+                f"{CANONICAL_SKILL_COUNT} skills: {skills['surfaces']}"
+            )
+        if int(skills["max_skill_words"]) > MAX_SKILL_WORDS:
+            failures.append(
+                f"largest SKILL.md exceeds focused-skill limit: "
+                f"{skills['max_skill_words']} > {MAX_SKILL_WORDS}"
+            )
+        if int(skills["behavior_references"]) != CANONICAL_REFERENCE_COUNT:
+            failures.append(
+                "canonical reference inventory must contain "
+                f"{CANONICAL_REFERENCE_COUNT} references: {skills['behavior_references']}"
+            )
+        for metric in ("cross_skill_loads", "dependency_cycles"):
+            if int(skills[metric]) != 0:
+                failures.append(f"skill topology must keep {metric}=0: {skills[metric]}")
     return failures
 
 
@@ -154,7 +201,7 @@ def main() -> int:
     if args.json:
         print(json.dumps({"limits": COMPACTNESS_LIMITS, "measured": result, "failures": failures}, sort_keys=True))
     else:
-        for surface in ("union", "codex", "cursor", "claude"):
+        for surface in ("union", "skills", "codex", "cursor", "claude"):
             print(f"{surface}: {result[surface]}")
         for failure in failures:
             print(f"FAIL: {failure}")

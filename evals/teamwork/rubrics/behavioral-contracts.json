@@ -1,50 +1,50 @@
 {
   "id": "behavioral-contracts",
-  "version": 1,
+  "version": 4,
   "dimensions": [
     {
-      "name": "routing_precision",
-      "description": "The response chooses native, research, debug, plan, execute, review, goal, init, or update only when the task evidence warrants it."
+      "name": "capability_precision",
+      "description": "External/current/multi-source research uses Research; local repository, source, configuration, test, log, runtime, and artifact inspection remains native. Unresolved material alternatives use Design, while Plan only translates an already selected direction."
     },
     {
-      "name": "scope_control",
-      "description": "The response honors owned paths, protected boundaries, platform limits, and accepted-plan constraints."
+      "name": "design_quality",
+      "description": "Design inspects local constraints first, explores two or three alternatives only for genuine tradeoffs, recommends a direction before asking one user-owned material decision at a time, and does not silently plan or implement."
     },
     {
-      "name": "outcome_first_parity",
-      "description": "Static/offline source evidence requires plan-optional execution, authority separate from plan acceptance, focused verification, Plan re-entry only for changed accepted scope or criteria, and fresh review only when requested or risk-gated; it does not prove automatic host activation or cross-host runtime parity."
+      "name": "research_quality",
+      "description": "Research uses current authoritative or primary external sources, preserves source conflicts, provides useful citations, separates fact from inference, minimizes sensitive disclosure, and stays read-only."
     },
     {
-      "name": "discussion_persistence_predicates",
-      "description": "Static/offline discussion evidence keeps activation, usefulness, and write authority independent; explicit save/resume, approaching handoff/compaction, a settled conclusion plus open discriminator, or at least three real branches are alternative usefulness triggers, while shortness is neither a trigger nor a veto."
-    },
-    {
-      "name": "evidence_quality",
-      "description": "Claims are backed by observed files, command output, source lookup, or clearly labeled inference."
-    },
-    {
-      "name": "user_burden",
-      "description": "The response avoids unnecessary plans, questions, artifacts, gates, and subagent dispatch for lightweight work."
+      "name": "grill_authority_and_persistence",
+      "description": "Ordinary natural question-first intent is conversation-only and writes nothing. An explicit $grill-me save, resume, or record request may persist only through the managed inspect -> schema -> apply transaction; an independently-major Grill automatically records its state through that same route. Authorized persistence requires a named, initialized writable project; no-files intent overrides it, and neither discussion nor persistence grants implementation authority."
     },
     {
       "name": "plan_readiness",
-      "description": "A proposed plan states accepted scope and criteria, maps them to owned actions and proof, sources execution-critical values, and leaves only genuinely dependent work unresolved."
+      "description": "Plan requires an already selected direction and turns it into owned ordered actions, dependencies, direct proof, and stop or replan conditions without comparing options, redesigning, or implementing."
     },
     {
-      "name": "ask_predicate_and_authority",
-      "description": "Simple or discoverable work asks nothing; required input, observation, and material decisions use the shared Ask Gate in the current stage. Plan complexity does not activate Grill, and confirmation grants no implementation or release authority."
+      "name": "scope_privacy_and_authority",
+      "description": "The response stays inside requested scope, keeps sensitive local values out of external queries, and never treats an answer, recommendation, plan, or saved discussion as change or external-effect authority."
     },
     {
-      "name": "bounded_review_and_progress",
-      "description": "Reviews keep stable finding IDs, classify acceptance blockers, allow one bounded corrective recheck, and pause only dependent branches while independent read-only work continues."
-    },
-    {
-      "name": "question_ownership",
-      "description": "Subagents return deduplicatable Question Candidates, the root alone asks the user, and hosts without a native input tool use one concise text question."
+      "name": "compact_architecture",
+      "description": "Each public skill owns its behavior directly: no router skill, generic Execute skill, behavioral reference graph, skill-to-skill loading, or hidden cross-skill lifecycle is required."
     },
     {
       "name": "release_governance",
-      "description": "Release claims rely on non-empty release evals, validation evidence, ledgers, and fresh review when required."
+      "description": "Release claims require a non-empty held-out split covering the external Research boundary, Design versus Plan, and Grill persistence authority. Installed host parity additionally requires twelve records and all eight observed formal roles inside every host/profile slice; typed FAIL and UNSUPPORTED records remain blockers."
+    },
+    {
+      "name": "producer_binding",
+      "description": "Every behavior case binds to its canonical Root policy, Skill, role template, artifact engine, installer, or public contract source. An unrelated existing file is not capability evidence, and host-rendered claims bind all three role templates."
+    },
+    {
+      "name": "native_engineering_quality",
+      "description": "Native and Worker delivery prefers the canonical owner and existing platform capabilities, permits justified cohesive structure and explicitly accepted product fallbacks, chooses regression tests or direct validation proportionally, removes only self-created residue, preserves unrelated work, produces the real result first, and stops after named proof."
+    },
+    {
+      "name": "live_identity_and_privacy",
+      "description": "Release-critical trajectories contain actual host and invocation identity, model and effort observations, tool and authority evidence, sanitized-input binding, privacy status, and artifact or direct result evidence; prompt text and installed templates alone cannot satisfy these fields."
     }
   ]
 }

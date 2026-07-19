@@ -1,7 +1,7 @@
 {
   "name": "teamwork-skill",
-  "version": "3.4.2",
-  "description": "Claude Code adapter skills for evidence-grounded research, debugging, planning, execution, review, and long-running goals.",
+  "version": "4.0.0",
+  "description": "Claude Code adapter skills for cited external research, decision design, debugging, review, project setup, and long-running goals; routine local work stays native.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"
@@ -16,14 +16,16 @@
     "workflow",
     "agents",
     "planning",
+    "design",
+    "research",
     "grill-me",
     "review"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Teamwork",
-    "shortDescription": "Evidence-grounded teamwork for complex Claude Code tasks.",
-    "longDescription": "Teamwork helps you move complex research and engineering tasks from uncertain questions to verified results. Use it to gather evidence, diagnose failures, plan decisions, execute scoped changes, review work, or keep a long-running goal moving. You choose the scope and authorize changes; Claude Code remains in control of tools and permissions.",
+    "shortDescription": "External research and decision design where native Claude Code benefits from stronger constraints.",
+    "longDescription": "Teamwork adds focused workflows for cited external research, decision design and brainstorming, failure diagnosis, adversarial review, explicit question-led discussion, project setup, and long-running convergence. Routine local inspection and authorized implementation stay with Claude Code's native workflow, while focused read-only local evidence questions use teamwork-explore; no router or execution skill is required. You choose the scope and authorize changes; Claude Code remains in control of tools and permissions.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -32,9 +34,9 @@
     ],
     "websiteURL": "https://github.com/JinPLu/Teamwork",
     "defaultPrompt": [
-      "Research this problem from primary sources and project evidence, then recommend the next safe action.",
-      "Execute authorized scope. Plans are optional. Verify changed path or named boundary; review only if requested or risk-gated.",
-      "Initialize or refresh Teamwork for one selected repository without changing unrelated user or project configuration."
+      "Use $teamwork-research to investigate this current external question from primary sources with linked citations.",
+      "Use $teamwork-design to inspect context, explore viable options, ask material questions, and produce a decision-ready design.",
+      "Implement this scoped change with native Claude Code behavior and verify the changed path."
     ],
     "brandColor": "#2563EB"
   }

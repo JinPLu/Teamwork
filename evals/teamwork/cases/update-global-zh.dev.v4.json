@@ -1,0 +1,68 @@
+{
+   "evidence" : "静态 Update 归属样例。",
+   "expected" : {
+      "capability" : "update",
+      "language" : "zh",
+      "requires" : [
+         "global-only",
+         "preserve-profile",
+         "readiness-check",
+         "no-project-init",
+         "no-release-metadata"
+      ],
+      "scenario" : "global-refresh"
+   },
+   "id" : "update-global-zh",
+   "must" : [
+      "只刷新全局安装，保留安装配置并检查就绪状态"
+   ],
+   "must_not" : [
+      "初始化项目上下文或修改发布元数据"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-update/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-explorer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-worker.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/worker.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/worker.md"
+      },
+      {
+         "class" : "installer",
+         "source" : "scripts/check-update.sh"
+      }
+   ],
+   "prompt" : "刷新我全局安装的 Teamwork 并验证就绪状态，但不要初始化这个项目，也不要发布版本。",
+   "source" : "synthetic",
+   "split" : "dev"
+}

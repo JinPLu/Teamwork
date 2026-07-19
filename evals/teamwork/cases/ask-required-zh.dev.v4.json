@@ -1,0 +1,36 @@
+{
+   "evidence" : "静态必要输入 Ask Gate 样例。",
+   "expected" : {
+      "capability" : "ask",
+      "language" : "zh",
+      "requires" : [
+         "one-required-question",
+         "dependent-branch-only",
+         "independent-read-only-continues",
+         "no-grill",
+         "no-enactment"
+      ],
+      "scenario" : "required-input"
+   },
+   "id" : "ask-required-zh",
+   "must" : [
+      "只问一个必要输入问题，只暂停依赖分支，并继续独立只读检查"
+   ],
+   "must_not" : [
+      "激活 Grill、执行迁移或编造账户标识"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      }
+   ],
+   "prompt" : "准备迁移步骤，但项目里没有执行所必需的目标账户标识。",
+   "source" : "synthetic",
+   "split" : "dev"
+}

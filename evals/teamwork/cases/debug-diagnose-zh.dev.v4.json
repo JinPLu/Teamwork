@@ -1,0 +1,52 @@
+{
+   "evidence" : "静态 Debug 行为样例。",
+   "expected" : {
+      "capability" : "debug",
+      "language" : "zh",
+      "requires" : [
+         "actual-failure-first",
+         "discriminating-evidence",
+         "authorized-fix-only",
+         "same-path-rerun",
+         "no-scope-broadening"
+      ],
+      "scenario" : "diagnose-and-fix"
+   },
+   "id" : "debug-diagnose-zh",
+   "must" : [
+      "从真实失败出发，用证据区分假设，并在窄修复后重跑同一路径"
+   ],
+   "must_not" : [
+      "扩大范围、重构无关代码或在证据前猜修复"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-debug/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-debugger.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/debugger.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/debugger.md"
+      }
+   ],
+   "prompt" : "集成测试现在会以未知退出码间歇失败。请诊断，并且只应用已经授权的窄修复。",
+   "source" : "bug",
+   "split" : "dev"
+}

@@ -30,8 +30,44 @@ class InstructionFootprintTests(unittest.TestCase):
         self.assertEqual(
             compactness_failures(result),
             [
-                "union words exceeds compactness limit: 20501 > 20500",
-                "codex bytes exceeds compactness limit: 1801 > 1800",
+                "union words exceeds compactness limit: "
+                f"{COMPACTNESS_LIMITS['union']['words'] + 1} > "
+                f"{COMPACTNESS_LIMITS['union']['words']}",
+                "codex bytes exceeds compactness limit: "
+                f"{COMPACTNESS_LIMITS['codex']['bytes'] + 1} > "
+                f"{COMPACTNESS_LIMITS['codex']['bytes']}",
+            ],
+        )
+
+    def test_v4_skill_and_reference_inventory_is_exact(self) -> None:
+        result = {key: dict(value) for key, value in COMPACTNESS_LIMITS.items()}
+        result["skills"].update(
+            {
+                "surfaces": 10,
+                "max_skill_words": 1,
+                "behavior_references": 3,
+                "cross_skill_loads": 0,
+                "dependency_cycles": 0,
+            }
+        )
+        self.assertEqual(compactness_failures(result), [])
+
+    def test_v4_skill_and_reference_inventory_rejects_legacy_counts(self) -> None:
+        result = {key: dict(value) for key, value in COMPACTNESS_LIMITS.items()}
+        result["skills"].update(
+            {
+                "surfaces": 9,
+                "max_skill_words": 1,
+                "behavior_references": 0,
+                "cross_skill_loads": 0,
+                "dependency_cycles": 0,
+            }
+        )
+        self.assertEqual(
+            compactness_failures(result),
+            [
+                "canonical skill inventory must contain 10 skills: 9",
+                "canonical reference inventory must contain 3 references: 0",
             ],
         )
 

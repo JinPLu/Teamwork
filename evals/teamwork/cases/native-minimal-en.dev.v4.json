@@ -1,0 +1,48 @@
+{
+   "evidence" : "Static minimal-change control.",
+   "expected" : {
+      "capability" : "native",
+      "language" : "en",
+      "requires" : [
+         "canonical-owner",
+         "builtin-or-installed-dependency",
+         "minimal-new-logic",
+         "proportional-proof",
+         "no-code-golf"
+      ],
+      "scenario" : "minimal-change"
+   },
+   "id" : "native-minimal-en",
+   "must" : [
+      "prefer the canonical owner and boundary-appropriate built-in or installed dependency before minimal new logic"
+   ],
+   "must_not" : [
+      "code-golf, weaken proof, or add a parallel wrapper"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-worker.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/worker.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/worker.md"
+      }
+   ],
+   "prompt" : "Fix the private parser defect using the smallest maintainable change that satisfies the accepted behavior.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

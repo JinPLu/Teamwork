@@ -1,0 +1,57 @@
+{
+   "evidence" : "Static paired verification control.",
+   "expected" : {
+      "capability" : "native",
+      "language" : "en",
+      "requires" : [
+         "paired-control",
+         "root-and-worker-owner",
+         "real-result-first",
+         "canonical-reuse",
+         "proportional-proof",
+         "cohesive-structure",
+         "scope-preservation",
+         "residue-cleanup",
+         "stop-after-proof"
+      ],
+      "scenario" : "engineering-quality"
+   },
+   "id" : "native-quality-proportional-proof",
+   "must" : [
+      "match proof to the claim"
+   ],
+   "must_not" : [
+      "require a new test for every edit"
+   ],
+   "pair" : {
+      "dimension" : "proportional-proof",
+      "negative" : "Use direct focused validation for low-risk docs, config, metadata, or mechanical work.",
+      "positive" : "Add a focused regression test for new behavior or a bug."
+   },
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-worker.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/worker.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/worker.md"
+      }
+   ],
+   "prompt" : "Choose direct proof proportionate to the changed behavior.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

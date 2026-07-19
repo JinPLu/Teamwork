@@ -1,0 +1,48 @@
+{
+   "evidence" : "静态最小改动对照。",
+   "expected" : {
+      "capability" : "native",
+      "language" : "zh",
+      "requires" : [
+         "canonical-owner",
+         "builtin-or-installed-dependency",
+         "minimal-new-logic",
+         "proportional-proof",
+         "no-code-golf"
+      ],
+      "scenario" : "minimal-change"
+   },
+   "id" : "native-minimal-zh",
+   "must" : [
+      "优先复用 canonical owner 与边界合适的内置能力或已安装依赖，再写最小新逻辑"
+   ],
+   "must_not" : [
+      "为了少行数而削弱证明，或增加平行包装层"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-worker.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/worker.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/worker.md"
+      }
+   ],
+   "prompt" : "用满足已接受行为的最小可维护改动修复私有解析器缺陷。",
+   "source" : "synthetic",
+   "split" : "dev"
+}

@@ -1,0 +1,45 @@
+{
+   "evidence" : "静态显式保存契约。",
+   "expected" : {
+      "capability" : "grill",
+      "language" : "zh",
+      "requires" : [
+         "explicit-skill-and-save",
+         "managed-transaction-only",
+         "initialized-writable-project",
+         "no-files-overrides",
+         "transaction-owned-writer",
+         "no-implementation"
+      ],
+      "scenario" : "explicit-save"
+   },
+   "id" : "grill-save-zh",
+   "must" : [
+      "仅在已初始化、可写的项目中，通过受管 inspect -> schema -> apply 事务保存；事务拥有写入权限并维护 active discussion/current.md 状态，同时保留权限边界"
+   ],
+   "must_not" : [
+      "直接写讨论 Markdown、索引或其他文件；实施或把保存当成实施授权；no files 必须覆盖保存事务"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/grill-me/SKILL.md"
+      },
+      {
+         "class" : "artifact-engine",
+         "source" : "scripts/discussion-transaction.py"
+      }
+   ],
+   "prompt" : "$grill-me 并保存这次讨论，方便以后恢复。",
+   "source" : "synthetic",
+   "split" : "dev"
+}

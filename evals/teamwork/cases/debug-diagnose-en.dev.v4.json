@@ -1,0 +1,52 @@
+{
+   "evidence" : "Static Debug behavior fixture.",
+   "expected" : {
+      "capability" : "debug",
+      "language" : "en",
+      "requires" : [
+         "actual-failure-first",
+         "discriminating-evidence",
+         "authorized-fix-only",
+         "same-path-rerun",
+         "no-scope-broadening"
+      ],
+      "scenario" : "diagnose-and-fix"
+   },
+   "id" : "debug-diagnose-en",
+   "must" : [
+      "start from the actual failure, distinguish hypotheses, and rerun the same path after a narrow authorized fix"
+   ],
+   "must_not" : [
+      "broaden scope, redesign unrelated code, or guess a fix before evidence"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-debug/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-debugger.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/debugger.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/debugger.md"
+      }
+   ],
+   "prompt" : "The integration test now fails intermittently with an unknown exit code. Diagnose it and apply only an already-authorized narrow fix.",
+   "source" : "bug",
+   "split" : "dev"
+}

@@ -22,13 +22,14 @@ except ModuleNotFoundError:  # Python < 3.11 uses the narrow fallback below.
 
 
 EXPECTED_PROFILES = {
+    "teamwork-researcher.toml": ("teamwork_researcher", "read-only"),
     "teamwork-explorer.toml": ("teamwork_explorer", "read-only"),
     "teamwork-worker.toml": ("teamwork_worker", "workspace-write"),
+    "teamwork-debugger.toml": ("teamwork_debugger", "workspace-write"),
     "teamwork-designer.toml": ("teamwork_designer", "read-only"),
-    "teamwork-judge.toml": ("teamwork_judge", "read-only"),
+    "teamwork-planner.toml": ("teamwork_planner", "workspace-write"),
+    "teamwork-plan-reviewer.toml": ("teamwork_plan_reviewer", "read-only"),
     "teamwork-reviewer.toml": ("teamwork_reviewer", "read-only"),
-    "teamwork-deep-judge.toml": ("teamwork_deep_judge", "read-only"),
-    "teamwork-deep-reviewer.toml": ("teamwork_deep_reviewer", "read-only"),
 }
 REQUIRED_FIELDS = {
     "name",
@@ -39,7 +40,7 @@ REQUIRED_FIELDS = {
     "model_reasoning_effort",
     "sandbox_mode",
 }
-LEAF_CONTRACT = "You are a leaf agent. Do not delegate or spawn other agents."
+LEAF_CONTRACT = "Do not spawn or delegate."
 NICKNAME_PATTERN = re.compile(r"^[A-Za-z0-9 _-]+$")
 PROMPT_MARKERS = {
     "global_policy": "Teamwork Codex Global Policy",
@@ -159,6 +160,8 @@ def validate_profiles(agents_dir: pathlib.Path) -> tuple[list[dict[str, Any]], i
     for path in sorted(agents_dir.glob("*.toml")):
         if path.name in EXPECTED_PROFILES:
             continue
+        if path.name.startswith("teamwork-"):
+            raise CheckFailure(f"unexpected Teamwork profile: {path}")
         data = load_profile(path)
         name = data.get("name")
         if isinstance(name, str):

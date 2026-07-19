@@ -1,0 +1,57 @@
+{
+   "evidence" : "Static paired scope control.",
+   "expected" : {
+      "capability" : "native",
+      "language" : "en",
+      "requires" : [
+         "paired-control",
+         "root-and-worker-owner",
+         "real-result-first",
+         "canonical-reuse",
+         "proportional-proof",
+         "cohesive-structure",
+         "scope-preservation",
+         "residue-cleanup",
+         "stop-after-proof"
+      ],
+      "scenario" : "engineering-quality"
+   },
+   "id" : "native-quality-scope-residue",
+   "must" : [
+      "remove only owned residue"
+   ],
+   "must_not" : [
+      "clean or revert unrelated work"
+   ],
+   "pair" : {
+      "dimension" : "scope-residue",
+      "negative" : "Preserve unrelated dirty work and pre-existing debt outside the owned scope.",
+      "positive" : "Remove self-created instrumentation, temporary logs, and stale scaffolding."
+   },
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-worker.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/worker.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/worker.md"
+      }
+   ],
+   "prompt" : "Clean only residue introduced by the owned change.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

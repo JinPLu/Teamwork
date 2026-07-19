@@ -1,7 +1,7 @@
 {
   "id": "research-pilot",
   "category": "research",
-  "prompt": "Inspect this repository and explain, with exact local file evidence, why scripts/eval-teamwork.py must not be described as a live model evaluation. Do not modify files.",
+  "prompt": "Using current official Python sources, identify the latest stable Python 3 release available today, cite the direct supporting pages, and distinguish the sourced fact from any inference. Do not modify files or perform external writes.",
   "sandbox": "read-only",
   "unscored_annotations": {
     "expected": ["uses repository evidence", "distinguishes offline fixture validation from live model behavior"],

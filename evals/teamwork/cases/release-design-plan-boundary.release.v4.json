@@ -1,0 +1,79 @@
+{
+   "evidence" : "Held-out static Design-versus-Plan release boundary.",
+   "expected" : {
+      "capability" : "design",
+      "language" : "en",
+      "requires" : [
+         "unresolved-options-use-design",
+         "selected-direction-uses-plan",
+         "no-silent-transition",
+         "no-implementation"
+      ],
+      "scenario" : "design-vs-plan"
+   },
+   "id" : "release-design-plan-boundary",
+   "must" : [
+      "use Design for unresolved material options and Plan only for the selected direction"
+   ],
+   "must_not" : [
+      "silently transition between capabilities, implement, or edit files"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-design/SKILL.md"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-plan/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-designer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/designer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/designer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-planner.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/planner.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/planner.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-plan-reviewer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/plan-reviewer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/plan-reviewer.md"
+      }
+   ],
+   "prompt" : "One request has unresolved architecture tradeoffs; another already chose a direction and only needs ordered actions. Keep their owners distinct.",
+   "source" : "release",
+   "split" : "release"
+}

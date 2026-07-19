@@ -1,0 +1,35 @@
+{
+   "evidence" : "静态跨平台边界样例。",
+   "expected" : {
+      "capability" : "platform",
+      "language" : "zh",
+      "requires" : [
+         "host-tools",
+         "host-permissions",
+         "no-emulation",
+         "semantic-not-mechanical-parity"
+      ],
+      "scenario" : "host-boundary"
+   },
+   "id" : "platform-boundary-zh",
+   "must" : [
+      "保持语义行为一致，同时把工具、权限与交互机制留给各宿主"
+   ],
+   "must_not" : [
+      "模拟不可用的宿主工具或声称运行机制逐字节相同"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      }
+   ],
+   "prompt" : "说明相同的 Teamwork 行为如何在 Codex、Cursor 和 Claude Code 中运行。",
+   "source" : "synthetic",
+   "split" : "dev"
+}

@@ -1,126 +1,85 @@
 # Teamwork Eval Harness
 
-This directory contains tracked fixtures for Teamwork package maintenance.
-The harness is producer-side evidence, not a runtime stage for ordinary user
-tasks.
+This directory contains maintainer evidence for Teamwork. It is not a runtime
+stage and does not wrap ordinary user work.
 
-## Layout
+## Deterministic v4 cases
 
-- `cases/*.json`: compact behavioral cases for Teamwork skills, references, and
-  package governance.
-- `live-cases/*.json`: maintainer-only Codex trajectory pilots. These are small
-  development probes, not release cases or optimizer inputs.
-- `rubrics/*.json`: scoring contracts used by cases.
-- `ledgers/accepted.jsonl` and `ledgers/rejected.jsonl`: package decisions.
-- `ledgers/harness-candidates.jsonl`: deterministic harness candidate history.
-- `ledgers/optimizer-candidates.jsonl` when present: Candidate Ledger V2 rows
-  for real SkillOpt-Lite/HarnessOpt-Lite pilot runs, with rows pointing to
-  evidence artifacts rather than placeholders.
-- samples/candidate workspaces: keep compact reusable samples in tracked
-  eval artifacts only when promoted; keep large runs under
-  `docs/teamwork/reports/`.
-
-Large trajectories and run reports belong in `docs/teamwork/reports/`; promote
-only compact, reusable expectations into `cases/`.
-
-## Splits
-
-- `dev`: used while developing skill or harness changes.
-- `release`: frozen audit cases for release or public-contract claims.
-
-Release cases are not secret, but they are never optimizer inputs. Candidate
-generation must not read release prompts, expected outputs, rubrics, or failure
-notes; release findings become new dev-case planning before retuning.
-
-## Commands
+Active cases use `cases/*.v4.json`. The offline runner validates their schema,
+targets, three-host declaration, source limits, capability coverage, skill
+topology, rubrics, and ledgers:
 
 ```bash
 python3 scripts/eval-teamwork.py --split dev
 python3 scripts/eval-teamwork.py --split release
 python3 scripts/eval-teamwork.py --all
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_eval_teamwork_mutations.py
 ```
 
-The first runner is deterministic and offline. It validates fixture shape,
-split/platform/source values, target paths, rubrics, ledgers, and non-empty
-behavior expectations. It does not execute Codex, Cursor, Claude, or prove live
-model behavior. Eval output is evidence, not final acceptance.
+The cases are organized by capability metadata rather than hard-coded case IDs.
+The dev matrix keeps bilingual coverage for:
 
-## Four evidence lanes
+- external Research and the local-evidence Native negative control;
+- Design activation, selected-direction Plan, and their ownership boundary;
+- ordinary natural question-first Grill with no file write, plus explicit
+  `$grill-me` save persistence and independently-major automatic persistence
+  through the managed `inspect -> schema -> apply` transaction;
+- Debug, Goal, Review, Init, Update, Ask Gate, minimal native change,
+  monotonic verification, permission/privacy, and cross-platform host ownership.
 
-Keep these lanes separate because they support different claims:
+The release split is deliberately small but non-empty. It holds out three public
+boundaries: external Research versus local Native inspection, unresolved Design
+versus selected-direction Plan, and ordinary no-write Grill versus explicit
+persistence or independently-major automatic persistence through the managed
+transaction. Release cases are never
+optimizer inputs.
 
-1. **Static contract:** `scripts/eval-teamwork.py` checks tracked fixture and
-   source contracts offline. It does not run a model.
-2. **Native transport:** `scripts/codex_app_server_user_input.py` checks the
-   Codex app-server `request_user_input` lifecycle and bounded request count. It
-   does not mount a Teamwork skill or score whether a question is useful.
-3. **Installed semantic:** `scripts/run-installed-teamwork-live-eval.py` makes
-   Teamwork available in an isolated Codex home and records read-only answers
-   for external review. The three `weak-cue-*-pilot` cases avoid spelling out
-   the desired answer structure. A good response supports only a response-quality
-   finding: without a recorded host activation event, it does not prove which
-   skill loaded automatically.
-4. **Disposable discussion write:** an explicitly authorized experiment uses a
-   disposable initialized project, captures a pre-treatment manifest outside
-   that project with `scripts/discussion-write-evidence.py snapshot`, performs
-   the workspace-write treatment, then runs `verify`. This lane alone can show
-   that the observed write footprint stayed within the discussion allowlist; an
-   endpoint manifest cannot show a write that was completely restored between
-   snapshots.
+The deterministic runner does not execute Codex, Cursor, or Claude Code and does
+not prove automatic skill activation. It proves only that tracked source and
+fixtures preserve the declared static contract. Mutation tests must show that
+removing or inverting a protected boundary makes the harness fail.
 
-Do not combine these into one green status. Report the lane, host, model,
-prompt set, repeats, and unresolved evidence limit with every behavioral claim.
+## What v4 removed
 
-The Codex Plan-mode fixture treats native Plan mode as the interaction
-transport and `teamwork-plan` as the quality gate. It rejects question-only
-completion, unsourced locked values, and phases without ownership or proof. This
-is a static contract; live Plan-mode quality still requires a fresh app-server
-trajectory with `collaborationMode` set to Plan.
+The active harness no longer protects the retired router, generic Execute skill,
+an exact reference inventory, shared behavioral-reference prose, staged packet
+terminology, transaction-helper anchors, multi-file discussion lifecycle, or
+fixed source sentences. Each of the ten public skills owns its behavior in one
+`SKILL.md`; topology validation rejects behavioral references, skill-local
+behavior scripts, cross-skill loading, dependency cycles, and retired skill
+names.
 
-Ask-predicate and convergence fixtures are offline behavioral contracts. They
-cover zero-question simple work, discoverable facts, required input or human
-observation in every Teamwork stage, Plan's non-simple Grill entry and resolved
-choices, authority preservation after confirmation, root-owned deduplicated
-Question Candidates, dependent-branch-only blocking, concise text fallback,
-stable review finding IDs, blocker classification, and one bounded corrective
-recheck. They contain no persistent workflow state. They validate fixture shape
-and intended behavior only; they do not prove a live model follows it.
+Mechanical safety tests for ordinary memory/index handling remain separate from
+behavior activation. Grill persistence has one public contract: ordinary natural
+question-first language is conversation-only; explicit save/resume/record may
+persist only through the managed `inspect -> schema -> apply` transaction, while
+an independently-major Grill automatically records its state through that same
+route in a named, initialized writable project;
+`no files` overrides it; no discussion action grants implementation authority.
 
-Explicit grill cases label every candidate with an internal fixture key, owner
-(`evidence`, `agent`, `user-decision`, `required-input`, or `confirmation`),
-grounding requirement, and expected action. Per-turn annotations identify which
-user-owned candidates an authored answer asks about; those keys are test-oracle
-metadata, not a user-visible protocol. Paired private/public,
-internal/package, observable/preference, threshold, and reversibility cases
-test semantic ownership; global language, filename, naming, or confidence word
-bans are not treated as a materiality oracle. These authored contrasts remain
-static, targeted contract fixtures, not evidence that any model makes the same
-judgment or that a native adapter is available.
+## Evidence lanes
 
-## Maintainer-only live trajectories
+Keep evidence lanes separate:
 
-`scripts/run-teamwork-live-eval.py` is a separate, stdlib-only live lane. Schema
-v5 keeps one-shot cases on `codex exec --ephemeral --json`; multi-turn cases
-start a persistent session and continue only through
-`codex exec resume <session-id> --json`. Each turn records its prompt, argv,
-events, final answer, controller state, usage, reported cost when available, and
-elapsed time. The record also exposes prompts consumed/remaining and the exact
-termination reason. The recorder checks only bounded question count, absence of
-retired grill ceremony, and read-only event structure. Question ownership and
-usefulness require separate semantic review. Execution, structure, and model
-provenance have separate statuses; suspension is inconclusive, and a runtime
-that does not report the resolved model remains unavailable for live-verification
-claims. This lane measures only its recorded Codex host/model/mode trajectory;
-it does not establish Cursor or Claude parity. A missing session id fails
-without `--last` or fallback.
+1. **Static contract** — `eval-teamwork.py` and mutation tests validate tracked
+   source and fixture behavior offline.
+2. **Native transport** — `scripts/codex_app_server_user_input.py` checks the
+   Codex request/response transport only; it does not mount or score a skill.
+3. **Installed semantic** — the Codex, Cursor, and Claude installed-v4 adapters
+   consume one prepared candidate manifest, materialize only its frozen Git tree,
+   install into disposable host homes, and emit the shared v4 trajectory schema.
+4. **Disposable write** — an explicitly authorized test uses a disposable
+   initialized project and before/after manifests. Only this lane can support a
+   claim about the observed Grill write footprint.
 
-All execution-critical inputs are explicit. The tracked cases remain read-only
-pilots. Although the recorder can parse a `workspace-write` declaration, its
-structural gate intentionally rejects mutation; it is not evidence for a write
-workflow. Test a deliberate write only in a disposable project with the
-controlled discussion-lifecycle allowlist and a before/after manifest. Use
-`--dry-run` in CI or before a live experiment to validate case and output
-schemas without invoking Codex:
+Do not merge these into one green claim. Record the host, model, prompt set,
+repeats, sandbox, and unresolved evidence limit.
+
+## Live trajectories
+
+`scripts/run-teamwork-live-eval.py` keeps one-shot cases on `codex exec
+--ephemeral --json`; multi-turn cases use `codex exec resume <session-id>
+--json`. Use `--dry-run` first:
 
 ```bash
 python3 scripts/run-teamwork-live-eval.py \
@@ -135,144 +94,45 @@ python3 scripts/run-teamwork-live-eval.py \
   --dry-run
 ```
 
-Remove `--dry-run` only for an intentional maintainer experiment. Choose a new
-output path for every invocation; the runner refuses to overwrite provenance.
-Large live trajectories belong under `docs/teamwork/reports/`, not in tracked
-eval outputs. The fake-Codex integration test exercises resume argv ordering,
-session propagation, and missing-session failure without model spend:
+Large trajectories and paid-run evidence belong under ignored
+`docs/teamwork/reports/`, not in tracked case outputs. The fake-Codex test checks
+resume argv, session propagation, and missing-session failure without model
+spend:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_live_eval_runner.py
-PYTHONDONTWRITEBYTECODE=1 python3 scripts/test_eval_teamwork_mutations.py
 ```
 
-### Opt-in installed-Codex semantic canary
+The release matrix is `live-cases/v4-release-matrix.json`. It has exactly twelve
+cases, an explicit host/profile/role model-and-effort map, and a candidate-tracked
+scenario for each case. Each Codex, Cursor, and Claude slice for both
+`performance-first` and `cost-first` must emit twelve records and observe all
+eight formal roles inside that slice. `run-teamwork-release-matrix.py verify`
+checks 72 records against `schemas/host-trajectory-v4.schema.json`, the precise
+case binding, and persisted artifact hashes.
 
-`scripts/run-installed-teamwork-live-eval.py` adds an isolated installed-package
-lane. It creates a new mode-0700 review directory, installs the selected Codex
-profile with copies under a temporary `HOME`, runs only case files that declare
-`read-only`, records an allowlisted installed-file manifest, and deletes the
-temporary home. The authentication source is copied to the temporary Codex home
-at mode 0600 and is never included in the manifest. The supplied work directory
-must be a Git worktree because the underlying recorder binds every result to
-repository provenance. The wrapper does not sanitize that worktree: a run from
-a checkout containing project-local `.agents/`, `.codex/`, `.cursor/`, or
-`.claude/` surfaces may be influenced by them. Use a clean committed snapshot
-without those generated roots when the treatment is meant to isolate the
-user-level installation. Start with the offline path,
-which performs the isolated install and asks the underlying runner for dry-run
-records without reading authentication or invoking a model:
+Every installed-v4 adapter requires `--project-root` and
+`--candidate-manifest`. It cryptographically binds the exact base commit,
+candidate tree, paths-manifest hash, allowed path/status records, Git delta, and
+every post-image before extracting only that tree. Cases, schema, and setup
+fixtures are then read only from that extracted candidate; a dirty source case or
+schema cannot affect the run. The runner never inventories the dirty worktree and
+rejects symlinked or external candidate, matrix, and output paths. Every fresh
+scenario requires a non-agent host tool trace marker or a changed workspace
+result with its case-specific marker and an unchanged candidate-tracked post-run
+verifier. Outputs
+and evidence hashes belong only under the ignored
+`evals/teamwork/outputs/installed-v4/` namespace. A missing binary,
+authentication/identity gap, unobservable actual model/effort/tool/authority,
+privacy failure, or absent direct result is `UNSUPPORTED` or `FAIL`; neither can
+be rewritten as success. Cursor and Claude prerequisites are fixed in
+`protocols/cursor-installed-live.md` and `protocols/claude-installed-live.md`.
 
-```bash
-python3 scripts/run-installed-teamwork-live-eval.py run \
-  --model gpt-5.6-sol \
-  --effort max \
-  --profile performance-first \
-  --workdir "$PWD" \
-  --cases evals/teamwork/live-cases/*.json \
-  --repeats 1 \
-  --timeout-seconds 1800 \
-  --max-trajectories 5 \
-  --review-dir /tmp/teamwork-installed-canary-dry \
-  --dry-run
-```
+## Ledgers and optimization
 
-For an intentional paid canary, choose another new review directory and provide
-the existing Codex authentication file explicitly. The product of case count and
-repeats must not exceed the explicit maximum:
-
-```bash
-python3 scripts/run-installed-teamwork-live-eval.py run \
-  --model gpt-5.6-sol \
-  --effort max \
-  --profile performance-first \
-  --workdir "$PWD" \
-  --cases evals/teamwork/live-cases/*.json \
-  --repeats 1 \
-  --timeout-seconds 1800 \
-  --max-trajectories 5 \
-  --review-dir /tmp/teamwork-installed-canary-live \
-  --auth-file "$HOME/.codex/auth.json"
-```
-
-Place exactly one external review per raw trajectory at
-`REVIEW_DIR/reviews/RUN_ID.json`, using
-`evals/teamwork/rubrics/teamwork-live-semantic-v1.json`. Finalization validates
-every review against the exact run and canonical trajectory hash before writing
-`summary.json`. Raw trajectories and review files are retained by default; use
-`--delete-raw` on the finalize invocation only when the retained reviews are
-ready and the raw trajectories no longer need inspection. Choose one of these
-finalization forms for a review directory:
-
-```bash
-python3 scripts/run-installed-teamwork-live-eval.py finalize \
-  --review-dir /tmp/teamwork-installed-canary-live \
-  --rubric evals/teamwork/rubrics/teamwork-live-semantic-v1.json
-
-python3 scripts/run-installed-teamwork-live-eval.py finalize \
-  --review-dir /tmp/teamwork-installed-canary-live \
-  --rubric evals/teamwork/rubrics/teamwork-live-semantic-v1.json \
-  --delete-raw
-```
-
-The manifest proves only which Teamwork skills, agents, policy, configuration,
-version, and profile files were available to that isolated Codex run. External
-review can judge the retained trajectory. Neither artifact proves automatic
-skill activation, general reliability, or equivalent behavior in Cursor or
-Claude Code. The summary retains statuses, model provenance, usage, reported
-cost, verdicts, scores, and hashes; it does not retain prompt, response, event,
-or reviewer-rationale prose.
-
-### Blind pairwise comparison
-
-`compare prepare` accepts exactly two opaque `--arm ID=CANARY_DIR` inputs from
-the installed-Codex lane, verifies matched frozen cases/repeats and hard gates,
-then writes balanced left/right packets for exactly two independent reviewers.
-`compare finalize` binds judgments to trajectory hashes, rejects arm-map leaks
-or disagreement, and applies the predeclared A→B or B→C rule. An all-tie A→B
-selection additionally requires `teamwork-pairwise-footprint-v1` evidence bound
-to both source manifest hashes; the harness recomputes the allowlisted
-`installed_inventory_bytes` metric from those manifests.
-
-```bash
-python3 scripts/run-installed-teamwork-live-eval.py compare prepare --help
-python3 scripts/run-installed-teamwork-live-eval.py compare finalize --help
-```
-
-Raw trajectories, controller maps, reviews, and results remain private under the
-chosen review directory. Offline schemas and fake-run tests do not prove live
-model quality, justify spend, or establish Cursor/Claude behavioral parity.
-
-For a reader-facing narrative change, the minimum development comparison is the
-three tracked `weak-cue-*-pilot` prompts with two independent trajectories per
-arm. Both arms must use the same prompt, model, effort, host, sandbox, and runner
-configuration. Two independent reviewers then judge every matched pair without
-seeing the arm map. Acceptance requires the candidate to be no worse on all six
-matched pairs, better on at least one, and free of any hard-gate failure or
-reviewer disagreement. A response-quality win is not evidence of hidden skill
-auto-loading; only a recorded host activation event could support that separate
-claim. The comparison command currently admits only its declared frozen set, so
-the weak-cue set must be explicitly promoted to that set before the command can
-be used for this acceptance claim.
-
-`scripts/codex_app_server_user_input.py` separately probes the Codex app-server
-`request_user_input` lifecycle when that capability is callable. It never mounts
-a skill, configures Codex, checks a CLI version, or treats native transport as
-proof of grill semantics. The ordinary, explicit-grill, zero-question, and
-simple-control scenarios state bounded behavioral expectations; question
-quality remains `not_evaluated` until a human or model reviewer inspects an
-opted-in run. By default the probe retains hashes and sanitized structure, never
-assistant prose, native-question text, or user answers. Its fake-server test is
-offline; an intentional live smoke must supply explicit `--model`, `--effort`,
-`--repeats`, and `--timeout-seconds` values. `--review-dir` explicitly writes
-native questions, rejected question payloads, and delimited assistant items to
-a temporary reviewer directory; the caller must delete it after review.
-
-For prompt A/B work, compare baseline and slim arms with the same non-treatment
-configuration: model, effort, cases, repeats, sandbox, runner hash, and relevant
-repository state. Pin the intentionally different treatment with the arm and
-skill-tree hash recorded in each row; do not describe the two worktrees as
-identical. Only after selecting the prompt candidate should a second experiment
-compare `medium`, `high`, and `max`. These pilot cases support development
-calibration; they must not be used as release tuning data or as proof of
-cross-platform behavior.
+`ledgers/accepted.jsonl`, `rejected.jsonl`, and
+`harness-candidates.jsonl` record maintainer decisions. An optional
+`optimizer-candidates.jsonl` must point to real package evidence and may use dev
+cases only. Candidate generation must not read release prompts, expected values,
+rubrics, or failure notes. A release failure becomes a new dev-case requirement
+before retuning.

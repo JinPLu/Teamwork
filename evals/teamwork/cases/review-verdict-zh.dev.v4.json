@@ -1,0 +1,52 @@
+{
+   "evidence" : "静态 Review 行为样例。",
+   "expected" : {
+      "capability" : "review",
+      "language" : "zh",
+      "requires" : [
+         "read-only",
+         "acceptance-criteria",
+         "evidence-backed-findings",
+         "proportional-verification",
+         "no-fix"
+      ],
+      "scenario" : "evidence-verdict"
+   },
+   "id" : "review-verdict-zh",
+   "must" : [
+      "按验收标准给出有证据、验证强度相称的结论"
+   ],
+   "must_not" : [
+      "修复实现、修改文件或扩展到无关清理"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-review/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-reviewer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/reviewer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/reviewer.md"
+      }
+   ],
+   "prompt" : "根据验收标准复查这个已完成的改动，并判断它是否完整。",
+   "source" : "review",
+   "split" : "dev"
+}

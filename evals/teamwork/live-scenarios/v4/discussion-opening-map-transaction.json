@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "case_id": "discussion-opening-map-transaction",
+  "private_paths": [],
+  "files": [
+    {"path":"scenario/discussion-input.txt","content":"Use inspect, schema, and apply for the authorized discussion transaction; do not write discussion Markdown directly.\n"},
+    {"path":"scenario/discussion-state.json","content":"{\"operation\":\"pending\",\"expected_revision\":null,\"active\":null}\n"},
+    {"path":"scenario/discussion-result.txt","content":"PENDING\n"},
+    {"path":"scenario/verify.py","content":"import json\nfrom pathlib import Path\nstate = json.loads(Path('scenario/discussion-state.json').read_text())\nassert state['operation'] in {'create', 'update', 'close'}\nassert isinstance(state['expected_revision'], str) and state['expected_revision']\nassert state['active'] == 'discussion/current.md'\nassert 'EVIDENCE_DISCUSSION_TRANSACTION_V4' in Path('scenario/discussion-result.txt').read_text()\n"}
+  ],
+  "verification": {"argv":["python3","scenario/verify.py"],"immutable_paths":["scenario/verify.py"]}
+}

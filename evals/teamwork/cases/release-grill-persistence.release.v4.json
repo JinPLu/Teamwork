@@ -1,0 +1,47 @@
+{
+   "evidence" : "Held-out static Grill persistence release boundary.",
+   "expected" : {
+      "capability" : "grill",
+      "language" : "en",
+      "requires" : [
+         "ordinary-no-write",
+         "major-change-auto-transaction",
+         "explicit-save-authorizes-transaction",
+         "managed-transaction-only",
+         "initialized-writable-project",
+         "no-files-overrides",
+         "transaction-owned-writer",
+         "no-implementation"
+      ],
+      "scenario" : "persistence-boundary"
+   },
+   "id" : "release-grill-persistence",
+   "must" : [
+      "keep ordinary question-first requests conversation-only; independently major Grill and explicit save use only the managed inspect -> schema -> apply transaction in an initialized writable project, with active discussion/current.md state under transaction-owned authority"
+   ],
+   "must_not" : [
+      "write when no files is present, directly write discussion Markdown or an index, implement, or infer implementation authority"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/grill-me/SKILL.md"
+      },
+      {
+         "class" : "artifact-engine",
+         "source" : "scripts/discussion-transaction.py"
+      }
+   ],
+   "prompt" : "Contrast 'ask me first' with '$grill-me and save', including the user's 'no files' override.",
+   "source" : "release",
+   "split" : "release"
+}

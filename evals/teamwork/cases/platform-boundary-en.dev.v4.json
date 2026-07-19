@@ -1,0 +1,35 @@
+{
+   "evidence" : "Static cross-platform boundary fixture.",
+   "expected" : {
+      "capability" : "platform",
+      "language" : "en",
+      "requires" : [
+         "host-tools",
+         "host-permissions",
+         "no-emulation",
+         "semantic-not-mechanical-parity"
+      ],
+      "scenario" : "host-boundary"
+   },
+   "id" : "platform-boundary-en",
+   "must" : [
+      "preserve semantic behavior while leaving tools, permissions, and interaction mechanics to each host"
+   ],
+   "must_not" : [
+      "emulate unavailable host tools or claim byte-identical runtime behavior"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      }
+   ],
+   "prompt" : "Explain how the same Teamwork behavior runs across Codex, Cursor, and Claude Code.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

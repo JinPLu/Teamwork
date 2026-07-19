@@ -1,0 +1,36 @@
+{
+   "evidence" : "Static required-input Ask Gate fixture.",
+   "expected" : {
+      "capability" : "ask",
+      "language" : "en",
+      "requires" : [
+         "one-required-question",
+         "dependent-branch-only",
+         "independent-read-only-continues",
+         "no-grill",
+         "no-enactment"
+      ],
+      "scenario" : "required-input"
+   },
+   "id" : "ask-required-en",
+   "must" : [
+      "ask one concise required-input question, pause only the dependent branch, and continue independent read-only inspection"
+   ],
+   "must_not" : [
+      "activate Grill, enact the migration, or invent the account identifier"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      }
+   ],
+   "prompt" : "Prepare the migration sequence, but the destination account identifier is required and is not available in the project.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

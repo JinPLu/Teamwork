@@ -1,0 +1,52 @@
+{
+   "evidence" : "静态外部调研契约样例。",
+   "expected" : {
+      "capability" : "research",
+      "language" : "zh",
+      "requires" : [
+         "external-sources",
+         "current-or-multi-source",
+         "citations",
+         "fact-inference-separation",
+         "read-only"
+      ],
+      "scenario" : "external"
+   },
+   "id" : "research-external-zh",
+   "must" : [
+      "核对有时效性的外部来源、附引用，并区分事实与推断"
+   ],
+   "must_not" : [
+      "修改项目、对外发布或把记忆当成当前证据"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-research/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-researcher.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/researcher.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/researcher.md"
+      }
+   ],
+   "prompt" : "请用权威公开来源比较供应商当前的重试限制和价格，并给出链接。",
+   "source" : "synthetic",
+   "split" : "dev"
+}

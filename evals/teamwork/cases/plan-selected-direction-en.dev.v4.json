@@ -1,0 +1,65 @@
+{
+   "evidence" : "Static direct-Plan control.",
+   "expected" : {
+      "capability" : "plan",
+      "language" : "en",
+      "requires" : [
+         "selected-direction-required",
+         "owned-actions",
+         "dependencies",
+         "direct-proof",
+         "no-redesign",
+         "no-implementation"
+      ],
+      "scenario" : "selected-direction"
+   },
+   "id" : "plan-selected-direction-en",
+   "must" : [
+      "translate the selected direction into owned ordered actions and direct proof"
+   ],
+   "must_not" : [
+      "compare new options, redesign the choice, implement, or edit files"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-plan/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-planner.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/planner.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/planner.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-plan-reviewer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/plan-reviewer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/plan-reviewer.md"
+      }
+   ],
+   "prompt" : "The queued architecture is already selected. Turn it into an implementation-ready sequence with owners, dependencies, direct checks, and stop conditions.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

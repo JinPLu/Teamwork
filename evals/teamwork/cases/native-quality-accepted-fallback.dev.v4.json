@@ -1,0 +1,57 @@
+{
+   "evidence" : "Static paired fallback control.",
+   "expected" : {
+      "capability" : "native",
+      "language" : "en",
+      "requires" : [
+         "paired-control",
+         "root-and-worker-owner",
+         "real-result-first",
+         "canonical-reuse",
+         "proportional-proof",
+         "cohesive-structure",
+         "scope-preservation",
+         "residue-cleanup",
+         "stop-after-proof"
+      ],
+      "scenario" : "engineering-quality"
+   },
+   "id" : "native-quality-accepted-fallback",
+   "must" : [
+      "preserve an accepted product boundary"
+   ],
+   "must_not" : [
+      "ban every fallback universally"
+   ],
+   "pair" : {
+      "dimension" : "accepted-fallback",
+      "negative" : "Retain a product fallback explicitly accepted by the requirements.",
+      "positive" : "Reject an unrequested wrapper, compatibility branch, or masking fallback."
+   },
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-worker.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/worker.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/worker.md"
+      }
+   ],
+   "prompt" : "Distinguish an unrequested parallel path from an accepted fallback.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

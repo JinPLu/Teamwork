@@ -1,871 +1,319 @@
-"""Validation of Teamwork source contracts."""
+"""Semantic and topology checks for the compact Teamwork skill set."""
 
 from __future__ import annotations
 
-import json
 import re
-from typing import Mapping
+from collections import defaultdict
+from pathlib import Path
+from typing import Iterable, Mapping
 
-from .contracts import EvalError, ROOT, SKILL_SOURCE_CONTRACTS
+from .contracts import (
+    CANONICAL_ROLES,
+    CANONICAL_SKILL_COUNT,
+    EvalError,
+    RETIRED_SKILLS,
+    ROLE_TEMPLATE_PATHS,
+    ROOT,
+)
 
 
 def normalize_semantic_text(text: str) -> str:
     return " ".join(text.split()).casefold()
 
 
-def validate_skill_source_contract(skill: str, source_text: str) -> None:
-    path, clauses = SKILL_SOURCE_CONTRACTS[skill]
-    normalized = normalize_semantic_text(source_text)
-    for label, clause in clauses:
-        if normalize_semantic_text(clause) not in normalized:
-            raise EvalError(f"{path}: skill contract must preserve {label}")
-    if skill == "grill-me":
-        frontmatter = source_text.split("---", 2)[1]
-        if "non-simple plan" in normalize_semantic_text(frontmatter):
-            raise EvalError(
-                f"{path}: Grill frontmatter must not overlap Plan activation"
-            )
+def discover_skill_inventory(root: Path = ROOT) -> dict[str, Path]:
+    """Discover canonical skills from the public filesystem surface."""
+
+    skill_root = root / "skills"
+    if not skill_root.is_dir():
+        raise EvalError("skills/ is missing")
+    inventory: dict[str, Path] = {}
+    for directory in sorted(path for path in skill_root.iterdir() if path.is_dir()):
+        skill_file = directory / "SKILL.md"
+        if not skill_file.is_file():
+            raise EvalError(f"skills/{directory.name}: top-level skill directory lacks SKILL.md")
+        inventory[directory.name] = skill_file
+    return inventory
 
 
-def validate_semantic_source_text(
-    review_text: str, goal_text: str, role_playbook_text: str
-) -> None:
-    validate_skill_source_contract("teamwork-review", review_text)
-    if re.search(
-        r"(?i)one class:\s*`blocker`\s*,\s*`major`\s*,\s*(?:or\s*)?`minor`",
-        review_text,
-    ):
-        raise EvalError(
-            "skills/teamwork-review/SKILL.md: retired blocker/major/minor taxonomy remains"
-        )
-
-    role_taxonomy = "`BLOCKER | FOLLOW-UP | SUGGESTION` findings"
-    if role_taxonomy not in role_playbook_text:
-        raise EvalError(
-            "skills/using-teamwork/references/role-playbook.md: review taxonomy must be "
-            "BLOCKER | FOLLOW-UP | SUGGESTION"
-        )
-    if re.search(
-        r"(?i)`blocker\s*\|\s*major\s*\|\s*minor`",
-        role_playbook_text,
-    ):
-        raise EvalError(
-            "skills/using-teamwork/references/role-playbook.md: retired "
-            "blocker | major | minor taxonomy remains"
-        )
-
-    validate_skill_source_contract("teamwork-goal", goal_text)
-    normalized_goal = normalize_semantic_text(goal_text)
-    if re.search(r"(?i)native goal state.{0,80}when available", normalized_goal):
-        raise EvalError(
-            "skills/teamwork-goal/SKILL.md: native goal state must not activate merely "
-            "when available"
-        )
-
-
-def validate_minimality_source_text(
-    workflow_contract_text: str, review_lenses_text: str
-) -> None:
-    workflow = " ".join(workflow_contract_text.split())
-    review_lenses = " ".join(review_lenses_text.split())
-    for anchor in (
-        "the canonical owner/pattern, language or host/platform built-ins, a "
-        "boundary-appropriate installed dependency, then minimal new logic",
-        "not fewer lines or files",
-        "Never trade away clarity, correctness, security, accessibility, portability, "
-        "accepted behavior, or proportional verification",
-    ):
-        if anchor not in workflow:
-            raise EvalError(
-                "skills/using-teamwork/references/workflow-contract.md: minimality "
-                f"boundary must preserve {anchor}"
-            )
-    for anchor in (
-        "unaccepted cleanup as `SUGGESTION` or `out_of_scope`, not as a reason to "
-        "expand the candidate",
-        "Do not score minimality by LOC or file count",
-        "Justified abstractions, dependencies, and multi-file changes are not slop "
-        "when they improve cost without weakening proof",
-    ):
-        if anchor not in review_lenses:
-            raise EvalError(
-                "skills/using-teamwork/references/review-lenses.md: minimality review "
-                f"boundary must preserve {anchor}"
-            )
-
-
-def _require_source_clauses(
-    path: str, text: str, family: str, clauses: tuple[tuple[str, str], ...]
-) -> None:
-    normalized = normalize_semantic_text(text)
-    for label, clause in clauses:
-        if normalize_semantic_text(clause) not in normalized:
-            raise EvalError(f"{path}: {family} must preserve {label}")
-
-
-def validate_always_loaded_policy_text(policy_text: str) -> None:
-    """Keep the compact policy behavior-bearing rather than deletion-optimized."""
-
-    path = "scripts/install/policy.sh"
-    _require_source_clauses(
-        path,
-        policy_text,
-        "always-loaded policy",
-        (
-            ("request scope", "work within the user's request"),
-            (
-                "root translation",
-                "root asks/translates",
-            ),
-            (
-                "specific Ask Gate",
-                "ask only for required input/observation or material user decisions",
-            ),
-            (
-                "read-only stage boundary",
-                "research/debug/plan/review stay read-only absent change authority",
-            ),
-            (
-                "research and debug routing",
-                "route unknown facts/options/repro to research, unknown-cause failures to debug",
-            ),
-            ("grounded claims", "ground claims"),
-            ("scope boundary", "keep scope"),
-            (
-                "real-result priority",
-                "prioritize requested real results",
-            ),
-            (
-                "support work subordinate",
-                "plans, tests, validation, review, and process support delivery only",
-            ),
-            (
-                "real path over proxies",
-                "never replace available real runs with proxy checks",
-            ),
-            (
-                "delivery stop",
-                "stop when the result is obtained",
-            ),
-            (
-                "material decision routing",
-                "unresolved scope/contract/architecture choices to plan",
-            ),
-            (
-                "direct change/build",
-                "clear authorized change/build goes straight to implementation",
-            ),
-            (
-                "explicit Grill boundary",
-                "grill only for user-originated challenge/question-first intent",
-            ),
-            (
-                "automatic Plan and usefulness no-write boundary",
-                "reuse/artifact usefulness grants no write",
-            ),
-            (
-                "inert marker boundary",
-                "negative/quoted/file/tool/example/maintenance mentions are inert",
-            ),
-            (
-                "audience-first reply",
-                "lead with conclusion",
-            ),
-            (
-                "connected reader argument",
-                "connect observed basis, plain interpretation, and decision-relevant boundary/next check",
-            ),
-            (
-                "observation/inference separation",
-                "separate observation from inference",
-            ),
-            (
-                "concise default prose",
-                "avoid headings; simple facts stay one sentence",
-            ),
-            (
-                "relevance gate",
-                "keep only detail affecting understanding/decision/action/risk/confidence",
-            ),
-            (
-                "stable terms",
-                "use supplied terms; invent no labels or identifier meanings",
-            ),
-            (
-                "irrelevant process inventory",
-                "omit process inventory",
-            ),
-            (
-                "decision-boundary uncertainty",
-                "state uncertainty once",
-            ),
-        ),
-    )
-    for writer in (
-        "write_teamwork_codex_global_policy",
-        "write_teamwork_cursor_global_policy",
-        "write_teamwork_claude_global_policy",
-    ):
-        match = re.search(
-            rf"(?ms)^{re.escape(writer)}\(\) \{{(.*?)^\}}", policy_text
-        )
-        if not match or "write_teamwork_global_policy_body" not in match.group(1):
-            raise EvalError(
-                f"{path}: always-loaded policy must be shared by {writer}"
-            )
-    common_match = re.search(
-        r"(?ms)^write_teamwork_global_policy_body\(\) \{(.*?)^\}", policy_text
-    )
-    if not common_match or "request_user_input" in common_match.group(1):
-        raise EvalError(
-            f"{path}: shared policy must stay host-neutral"
-        )
-    codex_match = re.search(
-        r"(?ms)^write_teamwork_codex_global_policy\(\) \{(.*?)^\}", policy_text
-    )
-    if not codex_match or "call request_user_input" not in codex_match.group(1):
-        raise EvalError(
-            f"{path}: Codex policy must call request_user_input when callable"
-        )
-
-
-def validate_audience_source_text(workflow_contract_text: str) -> None:
-    _require_source_clauses(
-        "skills/using-teamwork/references/workflow-contract.md",
-        workflow_contract_text,
-        "audience-first contract",
-        (
-            (
-                "conclusion-first user need",
-                "lead with the conclusion the user needs",
-            ),
-            (
-                "connected reader argument",
-                "for a substantive explanation or discussion, make one connected argument: conclusion, observed basis, plain-language interpretation, and, only if it changes a decision, a concrete boundary or next discriminator",
-            ),
-            (
-                "observation/inference separation",
-                "state observed facts separately from inference",
-            ),
-            (
-                "no fixed answer template",
-                "this is an order of reasoning, not headings or a fixed answer template",
-            ),
-            (
-                "shortest complete answer",
-                "use the shortest complete answer, and keep a simple fact to one sentence",
-            ),
-            (
-                "stop after the decision boundary",
-                "once the conclusion and decision boundary are clear, stop; do not restate them",
-            ),
-            (
-                "discussion mainline",
-                "in a continuing discussion, retain the current question or decision",
-            ),
-            (
-                "mainline advancement",
-                "each reply must advance it with an answer, evidence, comparison, interpretation, or boundary",
-            ),
-            (
-                "mainline change transparency",
-                "if the question changes, say why",
-            ),
-            (
-                "no mainline displacement",
-                "do not let a status update or an implementation detail displace the main line",
-            ),
-            ("relevance gate", "use a relevance gate"),
-            (
-                "decision-relevant detail",
-                "change the user's understanding, decision, action, risk, or confidence",
-            ),
-            (
-                "stable terms",
-                "use the user's or repository's established terms",
-            ),
-            (
-                "no coined labels",
-                "define a necessary unfamiliar term before using it, and never coin a label to organize an answer",
-            ),
-            (
-                "identifier semantics",
-                "treat a supplied identifier as a name, not evidence of its contents; never infer a number, property, or causal role from it",
-            ),
-            (
-                "useful skill explanation",
-                "a brief skill name or explanation is allowed when it clarifies a capability, limitation, or reason for the approach",
-            ),
-            (
-                "irrelevant engineering inventory",
-                "omit engineering process and implementation inventory—such as routes, files, subagents, and test counts—unless relevant",
-            ),
-            (
-                "decision-boundary uncertainty",
-                "treat uncertainty as a decision boundary: say what the evidence supports, what it cannot decide, and what comparison, measurement, or observation would change the decision",
-            ),
-            (
-                "no stock proof-status",
-                "do not substitute a stock proof-status sentence for that boundary",
-            ),
-            (
-                "alternative-cause relevance",
-                "mention an alternative cause only when it changes action or confidence",
-            ),
-            (
-                "material uncertainty once",
-                "state material uncertainty once",
-            ),
-            ("no false certainty", "never turn it into certainty"),
-        ),
-    )
-
-
-def validate_rule_maintenance_source_text(workflow_contract_text: str) -> None:
-    _require_source_clauses(
-        "skills/using-teamwork/references/workflow-contract.md",
-        workflow_contract_text,
-        "rule-maintenance audit",
-        (
-            (
-                "canonical owner and user effect",
-                "confirm the canonical owner and user-visible effect",
-            ),
-            (
-                "narrow changed-rule check",
-                "check only the changed rule or a named protected boundary",
-            ),
-        ),
-    )
-
-
-def validate_decision_checkpoint_source_text(
-    workflow_contract_text: str, plan_text: str, plan_output_text: str
-) -> None:
-    sources = {
-        "skills/using-teamwork/references/workflow-contract.md": workflow_contract_text,
-        "skills/teamwork-plan/SKILL.md": plan_text,
-        "skills/using-teamwork/references/plan-output.md": plan_output_text,
-    }
-    for path, text in sources.items():
-        _require_source_clauses(
-            path,
-            text,
-            "brief decision checkpoint",
-            (
-                ("Settled field", "settled:"),
-                ("Still open field", "still open:"),
-                ("human-readable boundary", "human-readable"),
-                ("no authority grant", "authority"),
-            ),
-        )
-
-
-def validate_minimal_handoff_source_text(
-    subagent_contract_text: str, subagent_dispatch_text: str
-) -> None:
-    _require_source_clauses(
-        "skills/using-teamwork/references/subagent-contract.md",
-        subagent_contract_text,
-        "minimal subagent handoff",
-        (
-            ("Conclusion", "conclusion:"),
-            ("Direct Evidence", "direct evidence:"),
-            ("Unresolved Impact", "unresolved impact:"),
-            ("Next Action", "next action:"),
-            (
-                "root translation",
-                "root translates it into an audience-first response for people",
-            ),
-        ),
-    )
-    _require_source_clauses(
-        "skills/using-teamwork/references/subagent-dispatch.md",
-        subagent_dispatch_text,
-        "minimal subagent handoff",
-        (
-            (
-                "four-field return",
-                "conclusion, direct evidence, unresolved impact, and next action",
-            ),
-            ("root translation", "root translates internal results into an audience-first response"),
-        ),
-    )
-
-
-def discussion_section(text: str, heading: str) -> str:
-    match = re.search(
-        rf"(?ms)^## {re.escape(heading)}\s*$\n(.*?)(?=^## |\Z)", text
-    )
+def parse_frontmatter(source: str, path: str) -> tuple[str, str]:
+    match = re.match(r"\A---\n(.*?)\n---(?:\n|\Z)", source, re.DOTALL)
     if not match:
-        raise EvalError(
-            "skills/using-teamwork/references/teamwork-discussion-template.md: "
-            f"missing {heading} section"
-        )
-    return match.group(1).strip()
-
-
-def validate_discussion_template_text(template_text: str) -> None:
-    path = "skills/using-teamwork/references/teamwork-discussion-template.md"
-    if not re.search(r"(?m)^Artifact Type: discussion\s*$", template_text):
-        raise EvalError(f"{path}: header must declare Artifact Type: discussion")
-    if not re.search(r"(?m)^Authority: supporting\s*$", template_text):
-        raise EvalError(f"{path}: header must declare Authority: supporting")
-    if not re.search(
-        r"(?m)^# <Specific decision or continuation title>\s*$", template_text
-    ):
-        raise EvalError(f"{path}: template must require a specific topic H1")
-
-    required_sections = {
-        "Goal": ("objective", "current question"),
-        "Settled": ("conclusion", "observed basis", "why it guides the next decision"),
-        "Still open": (
-            "distinct comparison, measurement, or decision",
-            "why it matters",
-        ),
-        "Key evidence": (
-            "source or observation",
-            "what it establishes",
-            "not a list of files or process steps",
-        ),
-        "Continue here": (
-            "exact next question, comparison, or action",
-            "evidence needed",
-        ),
-    }
-    headings = re.findall(r"(?m)^## ([^\n]+)\s*$", template_text)
-    retired = sorted(
-        set(headings)
-        & {"Starting Question", "Decision State", "Route Map", "Textual Playback", "Update Rules"}
-    )
-    if retired:
-        raise EvalError(f"{path}: template retains retired section(s): {', '.join(retired)}")
-    unexpected = sorted(set(headings) - set(required_sections) - {"Decision map"})
-    if unexpected:
-        raise EvalError(f"{path}: template has unexpected recovery section(s): {', '.join(unexpected)}")
-    for heading, anchors in required_sections.items():
-        section = normalize_semantic_text(discussion_section(template_text, heading))
-        for anchor in anchors:
-            if normalize_semantic_text(anchor) not in section:
-                raise EvalError(f"{path}: {heading} must preserve {anchor}")
-
-    if "Decision map" in headings:
-        decision_map = discussion_section(template_text, "Decision map")
-        if "```mermaid" not in decision_map:
-            raise EvalError(f"{path}: optional Decision map must use Mermaid")
-
-
-def validate_discussion_source_text(
-    grill_text: str,
-    router_text: str,
-    artifact_protocol_text: str,
-    template_text: str,
-) -> None:
-    path = "skills/using-teamwork/references/artifact-protocol.md"
-    combined = "\n".join((grill_text, router_text, artifact_protocol_text, template_text))
-    if "docs/teamwork/discussions/" in combined:
-        raise EvalError(f"{path}: use the singular discussion path")
-    if "`docs/teamwork/discussion/YYYY-MM-DD-<slug>.md`" not in artifact_protocol_text:
-        raise EvalError(f"{path}: preserve the singular discussion path")
-    if re.search(r"(?i)\bshort grill stays artifact-free\b", grill_text):
-        raise EvalError(
-            "skills/grill-me/SKILL.md: absolute short-Grill rule must not veto another usefulness trigger"
-        )
-
-    source_contracts = (
-        (
-            "skills/grill-me/SKILL.md",
-            grill_text,
-            (
-                ("user-originated explicit-Grill provenance", "a user-originated request establishes the explicit form"),
-                ("narrow explicit-Grill write authority", "explicit grill authorizes only its supporting `docs/teamwork/` discussion record unless the user says no files"),
-                ("Plan complexity stays out", "plan complexity, artifact usefulness, and ordinary clarification do not activate grill or create authority"),
-                (
-                    "shortness no-trigger/no-veto",
-                    "shortness alone does not trigger persistence and cannot veto another usefulness condition",
-                ),
-                ("entry-time protocol load", "`skills/using-teamwork/references/artifact-protocol.md` completely at entry"),
-                (
-                    "pre-reply persistence gate",
-                    "when that usefulness trigger and discussion authority both hold in an initialized, writable project, execute the transaction this turn before user-visible reply, comment, or question",
-                ),
-                (
-                    "same-turn persistence",
-                    "never emit plan/status; first visible text follows success",
-                ),
-                ("continued Grill canonical discovery", "on continuation or completion, inspect canonical state"),
-                ("continued Grill mutation boundary", "update only for new input and close when scope resolves"),
-                ("stated-scope completion", "when scope resolves, stop and close discussion; invent no further decision"),
-                ("continuity-only reply", "replies state only saved decisions, resume context, or completion"),
-            ),
-        ),
-        (
-            "skills/using-teamwork/SKILL.md",
-            router_text,
-            (("task replacement termination", "task replacement ends it"),),
-        ),
-        (
-            path,
-            artifact_protocol_text,
-            (
-                ("supporting-only boundary", "a discussion record is supporting continuity only"),
-                ("not a transcript or authority", "it is not a transcript or execution authority"),
-                ("canonical subordination", "stays subordinate to canonical project sources"),
-                ("explicit save trigger", "the user explicitly asks to save or resume later"),
-                ("handoff trigger", "a known handoff or context compaction is approaching"),
-                (
-                    "single-conclusion open-discriminator trigger",
-                    "a material conclusion is settled and a distinct comparison, measurement, or decision remains open before the next action",
-                ),
-                (
-                    "no second-settled-choice threshold",
-                    "do not wait for a second settled choice when the first conclusion already determines an open next check",
-                ),
-                ("three-branch trigger", "one decision has at least three real branches"),
-                ("non-proxy trigger boundary", "time, word count, and a short grill never trigger persistence"),
-                ("shortness no veto", "shortness cannot veto another condition"),
-                ("usefulness-authority separation", "these conditions decide usefulness, never authority"),
-                ("user-originated natural question-first authority", "a user-originated challenge or natural question-first request is explicit grill"),
-                ("Plan complexity no activation", "plan complexity and artifact usefulness never activate grill or grant discussion-record authority"),
-                ("privacy boundary", "keep privacy-safe summaries, never hidden reasoning, secrets, unnecessary personal data, or a transcript"),
-                ("five human recovery sections", "goal, settled (including reasons), still open, key evidence, and continue here"),
-                ("new-input-only updates", "update only when the user's new input changes saved decisions, evidence, or the continuation point"),
-                ("read-only resume", "opening, recovering, or reading an existing discussion is read-only"),
-                ("resume skips mutation commands", "after `inspect`, do not run `schema` or `apply`; ask the saved unresolved question"),
-                ("scope-bounded closure", "the user's stated grill scope defines closure"),
-                ("loaded skill root", "resolve `scripts/discussion-transaction.py` from the already loaded `using-teamwork` skill root"),
-                ("helper sole runtime path", "this helper is the sole runtime path for discussion state"),
-                ("cwd-default inspect", "from the project root, run `inspect`; the helper defaults its project root to the current directory"),
-                ("inspect sole read path", "its result is the only discovery and reading source for canonical discussion state, anchors, and artifacts"),
-                ("no direct canonical reads", "do not directly read `index.json`, `current.md`, `readme.md`, or a discussion artifact"),
-                ("self-describing request schema", "run `schema <operation>` and fill exactly its json shape"),
-                (
-                    "decision-map action grammar",
-                    "`decision_map.action` is `preserve`, `clear`, `replace`, or create-only `omit`",
-                ),
-                ("no helper-source inference", "never inspect helper source"),
-                ("semantic helper rendering", "the helper derives the path, index entry, and rendered artifact"),
-                ("opaque revision reuse", "reuse the opaque `revision` unchanged"),
-                ("single structured apply", "in exactly one `apply --request-json <json>`"),
-                ("safe request-file fallback", "or `--request <file>` when quoting is unsafe"),
-                ("no stdin apply", "never use stdin"),
-                ("apply sole writer", "`apply` is the only writer"),
-                ("no direct or ad-hoc write path", "do not edit canonical files or substitute shell, validators, or another transaction"),
-                ("atomic replacement", "replacement atomically supersedes the old record, links it to the new record, and activates the new one"),
-                ("no close-create replacement", "never close and then create as separate transactions"),
-                ("no manual fallback write", "never manually repair or complete canonical state after a nonzero helper exit"),
-                ("helper failure stop", "stop the dependent question and any completion claim"),
-                ("pre-write fallback conditions", "absent discussion authority, `initialized: false`, a user no-files request, or host read-only state uses a natural-language fallback"),
-                ("plain fallback recovery", "goal, settled choices, open choice, key evidence, and continuation point"),
-                ("one-time continuity warning", "state once that it was not saved and may be lost across sessions"),
-                ("no post-apply fallback", "do not use this fallback after an attempted `apply`"),
-                ("continuity-value reply", "saved decisions, current resume context, or completed discussion"),
-                ("useful skill explanation", "a brief skill name or purpose is welcome when it helps explain a capability, limit, or choice"),
-            ),
-        ),
-    )
-    for source_path, text, clauses in source_contracts:
-        normalized = normalize_semantic_text(text)
-        for label, clause in clauses:
-            if normalize_semantic_text(clause) not in normalized:
-                raise EvalError(f"{source_path}: discussion contract must preserve {label}")
-    validate_discussion_template_text(template_text)
-
-
-def validate_mainline_focus_source_text(
-    grill_text: str, project_init_text: str, teamwork_init_text: str
-) -> None:
-    source_contracts = {
-        "skills/grill-me/SKILL.md": (
-            "keep goal/current focus: one decision at a time; each question advances decision",
-            "on drift, topic switch, or compaction",
-            "restate without repetition",
-            "drop distractions",
-            "never repeat answered decisions",
-            "when scope resolves, stop and close discussion; invent no further decision",
-            "do not promote a consequence of a settled answer into a new user decision unless the original request named that decision; stop at the requested boundary",
-            "use user's domain language",
-        ),
-        "skills/using-teamwork/references/project-init.md": (
-            "form the smallest init-local project model needed",
-            "give every rule or fact one primary owner",
-            "reuse the canonical tracker/runbook",
-            "writes nothing and reports `no-change`",
-        ),
-        "skills/teamwork-init/SKILL.md": (
-            "explicit `teamwork-init` defaults to **semantic init** unless the user asks only for audit or deterministic bootstrap",
-            "form the smallest evidenced init-local project model as an internal audit aid; never persist it or invent",
-            "use `keep`, `merge`, `migrate`, `remove`, `create`, or `unresolved` as optional internal classifications",
-        ),
-    }
-    sources = {
-        "skills/grill-me/SKILL.md": grill_text,
-        "skills/using-teamwork/references/project-init.md": project_init_text,
-        "skills/teamwork-init/SKILL.md": teamwork_init_text,
-    }
-    for path, anchors in source_contracts.items():
-        normalized = normalize_semantic_text(sources[path])
-        for anchor in anchors:
-            if normalize_semantic_text(anchor) not in normalized:
-                raise EvalError(f"{path}: mainline focus contract must preserve {anchor}")
-
-
-def validate_maintainer_release_source_text(agents_text: str) -> None:
-    normalized = normalize_semantic_text(agents_text)
-    for label, clause in (
-        ("AGENTS-owned maintainer release", "this root `agents.md`; a generic github publish/pr workflow does not replace"),
-        ("complete release unit", "one release unit contains `version`, both plugin manifests, both changelogs"),
-        ("user-facing changelog", "write changelogs for users, not maintainers"),
-        ("Before-to-After difference", "before -> after difference"),
-        ("exact user action", "the exact upgrade action or that no action is needed"),
-        ("engineering-report rejection", "reads like an engineering report is not release-ready"),
-        ("publication completion", "source, installations, remote tag, and github release must all be current"),
-    ):
-        if normalize_semantic_text(clause) not in normalized:
-            raise EvalError(f"AGENTS.md: maintainer release contract must preserve {label}")
-
-
-def validate_release_boundary_source_text(
-    update_text: str,
-    router_text: str,
-    check_update_text: str,
-    codex_text: str,
-    changelog_guide_exists: bool,
-) -> None:
-    sources = {
-        "skills/teamwork-update/SKILL.md": update_text,
-        "skills/using-teamwork/SKILL.md": router_text,
-        "skills/using-teamwork/references/check-update.md": check_update_text,
-        "CODEX.md": codex_text,
-    }
-    detailed_release_markers = (
-        "one release unit contains",
-        "complete release unit",
-        "write changelogs for users, not maintainers",
-        "until the tag and github release exist",
-        "`v<version>` tag",
-    )
-    authorization_patterns = (
-        re.compile(
-            r"(?im)^\s*(?:[-*]\s*|\d+\.\s*)?(?:also\s+)?"
-            r"(?:edit|update|bump|publish|create|push)\b[^\n]{0,160}"
-            r"\b(?:version|plugin manifests?|changelogs?|release commits?|tags?|github releases?)\b"
-        ),
-        re.compile(
-            r"(?im)^(?![^\n]*\b(?:do not|must not|cannot|never)\b)[^\n]{0,100}"
-            r"\b(?:may|can|should|must|will|authorized to)\s+(?:also\s+)?"
-            r"(?:edit|update|bump|publish|create|push)\b[^\n]{0,120}"
-            r"\b(?:version|plugin manifests?|changelogs?|release commits?|tags?|github releases?)\b"
-        ),
-        re.compile(
-            r"(?im)^(?![^\n]*\b(?:do not|must not|cannot|never)\b)[^\n]{0,120}"
-            r"\b(?:publication|release)\s+authority\b[^\n]{0,100}"
-            r"\b(?:edit|update|bump|write|publish|create|push)\b[^\n]{0,160}"
-            r"\b(?:version|plugin manifests?|changelogs?|release commits?|tags?|github releases?)\b"
-        ),
-    )
-    for path, text in sources.items():
-        normalized = normalize_semantic_text(text)
-        for marker in detailed_release_markers:
-            if marker in normalized:
-                raise EvalError(
-                    f"{path}: maintainer release policy must live only in root AGENTS.md"
-                )
-        if any(pattern.search(text) for pattern in authorization_patterns):
-            raise EvalError(
-                f"{path}: installed/user documentation must not authorize maintainer publication"
-            )
-    if changelog_guide_exists:
-        raise EvalError(
-            "skills/using-teamwork/references/changelog-guide.md: maintainer release "
-            "guidance must live only in root AGENTS.md"
-        )
-
-
-OUTCOME_FIRST_PARITY_SOURCES = {
-    "skills/using-teamwork/references/workflow-contract.md": "skills/using-teamwork/references/workflow-contract.md",
-    "skills/teamwork-execute/SKILL.md": "skills/teamwork-execute/SKILL.md",
-    "skills/using-teamwork/references/routing-policy.md": "skills/using-teamwork/references/routing-policy.md",
-    "skills/using-teamwork/references/role-playbook.md": "skills/using-teamwork/references/role-playbook.md",
-    "scripts/install/policy.sh": "scripts/install/policy.sh",
-    "templates/codex-agents/teamwork-worker.toml": "templates/codex-agents/teamwork-worker.toml",
-    "templates/cursor-agents/worker.md": "templates/cursor-agents/worker.md",
-    "templates/claude-agents/worker.md": "templates/claude-agents/worker.md",
-    ".claude-plugin/plugin.json": ".claude-plugin/plugin.json",
-    ".codex-plugin/plugin.json": ".codex-plugin/plugin.json",
-}
-
-OUTCOME_FIRST_PARITY_CLAUSES = (
-    ("plan optional", "a plan is optional"),
-    ("authority separate from plan acceptance", "authority is separate from plan acceptance"),
-    ("focused verification", "verify only the changed path or a named protected boundary"),
-    ("bounded Plan re-entry", "re-enter plan only when new evidence changes accepted scope or criteria"),
-    ("risk-gated review", "fresh review only when the user asks or an accepted risk gate requires it"),
-)
-OUTCOME_FIRST_COMPACT_POLICY_CLAUSES = {
-    "plan optional": "plan optional",
-    "authority separate from plan acceptance": "authority separate from plan acceptance",
-    "focused verification": "verify changed path or named boundary",
-    "bounded Plan re-entry": "replan only for new accepted-scope/criteria evidence",
-    "risk-gated review": "fresh review only on user request or accepted risk gate",
-}
-
-PUBLIC_PLUGIN_DESCRIPTIONS = {
-    ".codex-plugin/plugin.json": "Codex",
-    ".claude-plugin/plugin.json": "Claude Code",
-}
-
-OUTCOME_FIRST_OPPOSITES = (
-    ("mandatory plan", re.compile(r"(?i)\b(?:a |an )?plan\s+(?:is\s+)?(?:always\s+)?(?:mandatory|required)\b")),
-    ("every full suite", re.compile(r"(?i)\b(?:every|each|always)\b[^.\n]{0,80}\bfull(?:\s+test)?\s+suite\b")),
-    ("automatic fresh/final review", re.compile(r"(?i)\b(?:automatically|always|every)\b[^.\n]{0,80}\b(?:fresh|final|independent)\s+review\b")),
-    ("confirmation grants authority", re.compile(r"(?i)\bconfirmation\s+(?:grants|authorizes)\s+(?:implementation|write|effect|release|execution)\s+authority\b")),
-)
-
-
-def validate_outcome_first_source_parity(source_texts: Mapping[str, str]) -> None:
-    """Protect internal parity and concise public plugin-description boundaries."""
-
-    expected_paths = set(OUTCOME_FIRST_PARITY_SOURCES)
-    actual_paths = set(source_texts)
-    missing = sorted(expected_paths - actual_paths)
-    unknown = sorted(actual_paths - expected_paths)
-    if missing or unknown:
-        details = []
-        if missing:
-            details.append(f"missing sources: {', '.join(missing)}")
-        if unknown:
-            details.append(f"unknown sources: {', '.join(unknown)}")
-        raise EvalError(f"outcome-first parity source set mismatch ({'; '.join(details)})")
-    for path, text in source_texts.items():
-        normalized = normalize_semantic_text(text)
-        if path in PUBLIC_PLUGIN_DESCRIPTIONS:
-            try:
-                manifest = json.loads(text)
-                description = manifest["interface"]["longDescription"]
-            except (json.JSONDecodeError, KeyError, TypeError) as error:
-                raise EvalError(
-                    f"{path}: public plugin description must be readable"
-                ) from error
-            if not isinstance(description, str):
-                raise EvalError(f"{path}: public plugin description must be text")
-            description_normalized = normalize_semantic_text(description)
-            outcome_terms = (
-                re.compile(r"\b(?:research|evidence)\b"),
-                re.compile(r"\b(?:diagnos\w*|debug\w*)\b"),
-                re.compile(r"\b(?:execute\w*|build\w*|engineering)\b"),
-                re.compile(r"\b(?:review\w*|verif\w*)\b"),
-            )
-            if not all(pattern.search(description_normalized) for pattern in outcome_terms):
-                raise EvalError(f"{path}: public plugin description must state user outcomes")
-            if not re.search(
-                r"\b(?:you|users?)\b.{0,40}\b(?:choose|control|define)\w*\b.{0,30}\bscope\b",
-                description_normalized,
-            ) or not re.search(
-                r"\b(?:you|users?)\b.{0,40}\b(?:authoriz\w*|approv\w*|grant\w* permission)\b.{0,40}\b(?:changes?|writes?|actions?)\b",
-                description_normalized,
-            ):
-                raise EvalError(
-                    f"{path}: public plugin description must preserve user-chosen scope and authorization"
-                )
-            host = normalize_semantic_text(PUBLIC_PLUGIN_DESCRIPTIONS[path])
-            if host not in description_normalized or not re.search(
-                r"\b(?:remain\w*|stay\w*|keep\w*|retain\w*)\b.{0,35}\bcontrol\w*\b.{0,35}\btools\b.{0,25}\bpermissions\b",
-                description_normalized,
-            ):
-                raise EvalError(
-                    f"{path}: public plugin description must preserve host control"
-                )
-        else:
-            for label, clause in OUTCOME_FIRST_PARITY_CLAUSES:
-                accepted = [clause]
-                if path == "scripts/install/policy.sh":
-                    accepted.append(OUTCOME_FIRST_COMPACT_POLICY_CLAUSES[label])
-                if not any(normalize_semantic_text(item) in normalized for item in accepted):
-                    raise EvalError(f"{path}: outcome-first parity must preserve {label}")
-        for label, pattern in OUTCOME_FIRST_OPPOSITES:
-            if pattern.search(text):
-                raise EvalError(f"{path}: outcome-first parity rejects {label}")
-
-
-def validate_semantic_sources() -> None:
-    for skill, (path, _) in SKILL_SOURCE_CONTRACTS.items():
-        if skill in {"teamwork-review", "teamwork-goal"}:
+        raise EvalError(f"{path}: missing YAML frontmatter")
+    fields: dict[str, str] = {}
+    for line in match.group(1).splitlines():
+        if not line.strip():
             continue
-        validate_skill_source_contract(
-            skill,
-            (ROOT / path).read_text(encoding="utf-8"),
+        if ":" not in line:
+            raise EvalError(f"{path}: malformed frontmatter line: {line}")
+        key, value = line.split(":", 1)
+        if key in fields:
+            raise EvalError(f"{path}: duplicate frontmatter key: {key}")
+        fields[key] = value.strip()
+    if set(fields) != {"name", "description"}:
+        raise EvalError(f"{path}: frontmatter must contain only name and description")
+    if not fields["description"].startswith("Use when "):
+        raise EvalError(f"{path}: description must start with 'Use when '")
+    return fields["name"], fields["description"]
+
+
+def _require_concept(path: str, text: str, label: str, patterns: Iterable[str]) -> None:
+    if not any(re.search(pattern, text, re.IGNORECASE | re.DOTALL) for pattern in patterns):
+        raise EvalError(f"{path}: missing behavioral concept: {label}")
+
+
+def _forbid_concept(path: str, text: str, label: str, patterns: Iterable[str]) -> None:
+    for pattern in patterns:
+        if re.search(pattern, text, re.IGNORECASE | re.DOTALL):
+            raise EvalError(f"{path}: forbidden behavioral overlap: {label}")
+
+
+SKILL_CONCEPTS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
+    "teamwork-explore": (
+        ("local-only evidence", (r"local.{0,100}(?:repository|source|config|test|log|runtime|artifact)", r"本地.{0,100}(?:仓库|源码|配置|测试|日志|运行|产物)")),
+        ("read-only boundary", (r"read[- ]only", r"只读")),
+        ("no external research", (r"(?:do not|never|no).{0,50}(?:browse|external|web|research)", r"不.{0,40}(?:外部|联网|浏览|调研)")),
+    ),
+    "teamwork-research": (
+        ("external lookup trigger", (r"\bexternal\b", r"\bweb\b", r"外部(?:调研|资料|来源)")),
+        ("current or multi-source evidence", (r"current.{0,80}(?:source|fact)", r"multi[- ]source", r"(?:时效|当前).{0,40}(?:来源|事实)", r"多来源")),
+        ("citations", (r"\bcitations?\b", r"\bcite\b", r"引用|链接")),
+        ("local evidence stays native", (r"do not use for local repository/source/config/test/log/runtime/artifact inspection", r"external[- ]only.{0,100}do not inspect private local", r"(?:本地|代码库).{0,100}(?:原生|无需.*research|不.*research)")),
+        ("read-only boundary", (r"read[- ]only", r"does not authorize.{0,80}(?:edit|write)", r"只读|不授权.{0,40}(?:修改|写入)")),
+        ("privacy boundary", (r"(?:secret|credential|sensitive|private).{0,100}(?:query|disclos|source)", r"(?:秘密|凭据|敏感|私密).{0,100}(?:查询|披露|来源)")),
+    ),
+    "teamwork-design": (
+        ("unresolved material choice trigger", (r"unresolved.{0,100}(?:product|architecture|workflow|contract|choice|tradeoff)", r"(?:material.{0,100}trade[- ]off|direction).{0,100}not (?:yet )?settled", r"未解决.{0,100}(?:产品|架构|工作流|契约|选择|取舍)")),
+        ("local constraints first", (r"local.{0,80}(?:constraint|evidence|context).{0,80}(?:first|before)", r"先.{0,80}(?:本地|约束|证据|上下文)")),
+        ("genuine alternatives only", (r"(?:2|two).{0,20}(?:3|three).{0,100}(?:genuine|real|meaningful).{0,40}(?:tradeoff|alternative)", r"(?:2|两).{0,20}(?:3|三).{0,100}(?:真实|实质).{0,40}(?:取舍|方案)")),
+        ("recommendation before question", (r"recommend.{0,120}(?:before|then).{0,80}(?:ask|question)", r"先.{0,50}推荐.{0,80}(?:再|然后).{0,30}问")),
+        ("one user-owned decision", (r"(?:one|exactly one).{0,60}(?:user[- ]owned|material|choice).{0,50}(?:decision|choice|question)", r"user[- ]owned choices.{0,500}ask exactly one choice", r"一次.{0,50}(?:用户拥有|关键|实质).{0,30}(?:决定|选择|问题)")),
+        ("read-only and no implementation", (r"Design does not implement", r"(?:不实施|不实现).{0,180}(?:仅|只).{0,30}(?:artifact|文件)")),
+        ("managed Design transaction", (r"design-inspect.{0,500}design-schema.{0,500}design-apply", r"expected_revision.{0,500}design-apply")),
+        ("Plan boundary", (r"(?:selected|settled|chosen) direction.{0,160}\bplan\b", r"(?:Design is frozen|Freeze one durable Design).{0,300}Planner", r"controlled route returns.{0,180}Planner.{0,120}\bPlan\b", r"clear enough.{0,100}(?:execution )?plan", r"(?:已选|已确定|已收敛).{0,80}(?:方向|方案).{0,80}(?:plan|计划)")),
+    ),
+    "teamwork-plan": (
+        ("selected direction prerequisite", (r"(?:selected|settled|chosen) direction", r"(?:已选|已确定|已收敛).{0,50}(?:方向|方案)")),
+        ("owned ordered actions", (r"owned.{0,40}(?:ordered|sequence).{0,40}actions", r"ordered work units.{0,160}(?:owner|target surface)", r"(?:负责人|归属).{0,50}(?:顺序|有序).{0,40}(?:行动|步骤)")),
+        ("dependencies and direct proof", (r"dependenc.{0,100}(?:direct|real).{0,40}(?:proof|verification|check)", r"依赖.{0,100}(?:直接|真实).{0,30}(?:证明|验证)")),
+        ("stop or replan conditions", (r"(?:stop|replan).{0,40}conditions?", r"(?:停止|重新规划|重做计划).{0,40}条件")),
+        ("no redesign or implementation", (r"Do not redesign or implement", r"(?:do not|never|no).{0,40}(?:compare options|redesign).{0,100}(?:do not|never|no).{0,30}implement", r"不.{0,30}(?:比较方案|重新设计).{0,100}不.{0,20}(?:实施|实现)")),
+    ),
+    "grill-me": (
+        ("natural question-first trigger", (r"ask me first", r"questioned before action", r"先问我|先问清楚")),
+        ("ordinary activation is no-write", (r"Natural\s+question-first\s+requests\s+remain\s+conversation-only\s+unless\s+they\s+are\s+independently\s+major", r"自然语言.{0,100}(?:不写|不授权.{0,30}写)")),
+        ("major change auto-transaction", (r"Major-change Grill automatically records its state", r"major.{0,120}automatic.{0,120}(?:record|transaction)")),
+        ("explicit save persistence", (r"Explicit \$grill-me, save, record, or resume requests also authorize the record", r"\$grill-me.{0,120}(?:save|resume|record)")),
+        ("transaction-owned writer", (r"discussion-transaction\.py\s+inspect.{0,500}\bschema\b.{0,500}\bapply\b", r"apply is the sole discussion writer")),
+        ("initialized writable prerequisite", (r"(?:initialized|initialised).{0,80}writable", r"已初始化.{0,60}可写")),
+        ("no-files override", (r"no files.{0,180}(?:overrides?|wins|no write)", r"(?:不要文件|不落盘|no files).{0,120}(?:优先|不写|覆盖)")),
+        ("recommendation before one question", (r"recommend.{0,100}(?:before|then).{0,80}one.{0,30}(?:question|decision)", r"先.{0,40}推荐.{0,80}(?:一个|一次).{0,30}(?:问题|决定)")),
+        ("no implementation authority", (r"(?:never|does not|no).{0,40}(?:implement|implementation authority)", r"不.{0,30}(?:实施|实现|授权实现)")),
+    ),
+    "teamwork-debug": (
+        ("actual failure first", (r"actual.{0,40}(?:failure|failing)", r"真实.{0,30}(?:失败|报错)")),
+        ("discriminating hypothesis", (r"discriminat.{0,80}(?:hypothes|evidence)", r"hypotheses.{0,120}(?:distinguish|smallest observation)", r"区分.{0,50}(?:假设|证据)")),
+        ("authorized narrow fix", (r"authoriz.{0,60}(?:narrow|minimal).{0,30}fix", r"已授权.{0,50}(?:窄|最小).{0,20}修复")),
+        ("same-path rerun", (r"rerun.{0,40}(?:same|failing).{0,20}path", r"重跑.{0,40}(?:同一|失败).{0,20}路径")),
+    ),
+    "teamwork-review": (
+        ("read-only review", (r"read[- ]only", r"只读")),
+        ("evidence-backed verdict", (r"evidence[- ](?:backed|based).{0,40}(?:verdict|finding|conclusion|`accept`)", r"证据.{0,30}(?:结论|发现|判断)")),
+        ("acceptance boundary", (r"acceptance.{0,60}(?:criteria|evidence|boundary)", r"验收.{0,40}(?:标准|证据|边界)")),
+    ),
+    "teamwork-goal": (
+        ("explicit modifier", (r"explicit.{0,80}(?:goal|keep working|terminal)", r"明确.{0,60}(?:目标|持续工作|终止条件)")),
+        ("preserve scope", (r"preserv.{0,40}(?:scope|invariant)", r"保持.{0,40}(?:范围|不变量)")),
+        ("strategy delta", (r"strategy delta", r"策略变化|改变策略")),
+        ("real success signal", (r"real.{0,40}success signal", r"真实.{0,30}成功信号")),
+    ),
+    "teamwork-init": (
+        ("project-only ownership", (r"project.{0,80}(?:only|scope|context)", r"仅.{0,30}项目|项目.{0,50}(?:范围|上下文)")),
+        ("no global refresh", (r"(?:do not|never|no).{0,50}global.{0,30}(?:refresh|install|update)", r"不.{0,30}(?:全局刷新|全局安装|全局更新)")),
+    ),
+    "teamwork-update": (
+        ("global-only ownership", (r"global.{0,60}(?:only|installation|refresh)", r"仅.{0,30}全局|全局.{0,40}(?:安装|刷新)")),
+        ("no project initialization", (r"(?:do not|never|no).{0,60}project.{0,30}(?:init|context)", r"不.{0,30}(?:项目初始化|项目上下文)")),
+    ),
+}
+
+
+def validate_skill_source_contract(skill: str, source_text: str) -> None:
+    path = f"skills/{skill}/SKILL.md"
+    name, _description = parse_frontmatter(source_text, path)
+    if name != skill:
+        raise EvalError(f"{path}: frontmatter name must match directory")
+    concepts = SKILL_CONCEPTS.get(skill)
+    if concepts is None:
+        raise EvalError(f"{path}: no capability contract registered")
+    for label, patterns in concepts:
+        _require_concept(path, source_text, label, patterns)
+
+    if skill == "teamwork-research":
+        _forbid_concept(
+            path,
+            source_text,
+            "local repository inspection activates Research",
+            (r"(?:enter|activate|use).{0,50}research.{0,100}(?:local|repository|code|log|config|test)",),
         )
-    validate_semantic_source_text(
-        (ROOT / "skills/teamwork-review/SKILL.md").read_text(encoding="utf-8"),
-        (ROOT / "skills/teamwork-goal/SKILL.md").read_text(encoding="utf-8"),
-        (ROOT / "skills/using-teamwork/references/role-playbook.md").read_text(
-            encoding="utf-8"
-        ),
+    elif skill == "teamwork-plan":
+        _forbid_concept(
+            path,
+            source_text,
+            "Plan owns option discovery",
+            (r"(?<!do not )(?<!never )\b(?:generate|brainstorm|compare).{0,60}(?:alternatives|options)",),
+        )
+
+
+def dependency_cycles(edges: Mapping[str, Iterable[str]]) -> list[list[str]]:
+    """Return cycles in a small directed dependency graph."""
+
+    visiting: list[str] = []
+    active: set[str] = set()
+    visited: set[str] = set()
+    cycles: list[list[str]] = []
+
+    def visit(node: str) -> None:
+        if node in active:
+            start = visiting.index(node)
+            cycles.append(visiting[start:] + [node])
+            return
+        if node in visited:
+            return
+        active.add(node)
+        visiting.append(node)
+        for target in edges.get(node, ()):
+            visit(target)
+        visiting.pop()
+        active.remove(node)
+        visited.add(node)
+
+    for node in sorted(edges):
+        visit(node)
+    return cycles
+
+
+def validate_skill_topology(root: Path = ROOT) -> dict[str, object]:
+    inventory = discover_skill_inventory(root)
+    names = set(inventory)
+    if len(names) != CANONICAL_SKILL_COUNT:
+        raise EvalError(
+            f"skills/: canonical inventory must contain {CANONICAL_SKILL_COUNT} skills; "
+            f"discovered {len(names)}"
+        )
+    remaining_retired = sorted(names & RETIRED_SKILLS)
+    if remaining_retired:
+        raise EvalError(f"skills/: retired skill remains: {', '.join(remaining_retired)}")
+    for required in SKILL_CONCEPTS:
+        if required not in names:
+            raise EvalError(f"skills/: missing capability owner: {required}")
+
+    behavior_refs = sorted(
+        path.relative_to(root).as_posix()
+        for path in (root / "skills").glob("*/references/**/*")
+        if path.is_file()
     )
-    validate_minimality_source_text(
-        (ROOT / "skills/using-teamwork/references/workflow-contract.md").read_text(
-            encoding="utf-8"
-        ),
-        (ROOT / "skills/using-teamwork/references/review-lenses.md").read_text(
-            encoding="utf-8"
-        ),
+    allowed_refs = {
+        "skills/teamwork-research/references/deep-research.md",
+        "skills/teamwork-debug/references/runtime-diagnosis.md",
+        "skills/teamwork-review/references/strict-review.md",
+    }
+    unexpected_refs = sorted(set(behavior_refs) - allowed_refs)
+    if unexpected_refs:
+        raise EvalError(
+            "skills/: only the three named one-level advanced references are allowed: "
+            + ", ".join(unexpected_refs)
+        )
+    skill_scripts = sorted(
+        path.relative_to(root).as_posix()
+        for path in (root / "skills").glob("*/scripts/**/*")
+        if path.is_file()
     )
-    workflow_contract = (ROOT / "skills/using-teamwork/references/workflow-contract.md").read_text(
-        encoding="utf-8"
-    )
-    validate_always_loaded_policy_text(
-        (ROOT / "scripts/install/policy.sh").read_text(encoding="utf-8")
-    )
-    validate_audience_source_text(workflow_contract)
-    validate_rule_maintenance_source_text(workflow_contract)
-    validate_decision_checkpoint_source_text(
-        workflow_contract,
-        (ROOT / "skills/teamwork-plan/SKILL.md").read_text(encoding="utf-8"),
-        (ROOT / "skills/using-teamwork/references/plan-output.md").read_text(
-            encoding="utf-8"
-        ),
-    )
-    validate_minimal_handoff_source_text(
-        (ROOT / "skills/using-teamwork/references/subagent-contract.md").read_text(
-            encoding="utf-8"
-        ),
-        (ROOT / "skills/using-teamwork/references/subagent-dispatch.md").read_text(
-            encoding="utf-8"
-        ),
-    )
-    validate_mainline_focus_source_text(
-        (ROOT / "skills/grill-me/SKILL.md").read_text(encoding="utf-8"),
-        (ROOT / "skills/using-teamwork/references/project-init.md").read_text(
-            encoding="utf-8"
-        ),
-        (ROOT / "skills/teamwork-init/SKILL.md").read_text(encoding="utf-8"),
-    )
-    validate_discussion_source_text(
-        (ROOT / "skills/grill-me/SKILL.md").read_text(encoding="utf-8"),
-        (ROOT / "skills/using-teamwork/SKILL.md").read_text(encoding="utf-8"),
-        (ROOT / "skills/using-teamwork/references/artifact-protocol.md").read_text(
-            encoding="utf-8"
-        ),
-        (ROOT / "skills/using-teamwork/references/teamwork-discussion-template.md").read_text(
-            encoding="utf-8"
-        ),
-    )
-    validate_maintainer_release_source_text(
-        (ROOT / "AGENTS.md").read_text(encoding="utf-8")
-    )
-    validate_release_boundary_source_text(
-        (ROOT / "skills/teamwork-update/SKILL.md").read_text(encoding="utf-8"),
-        (ROOT / "skills/using-teamwork/SKILL.md").read_text(encoding="utf-8"),
-        (ROOT / "skills/using-teamwork/references/check-update.md").read_text(
-            encoding="utf-8"
-        ),
-        (ROOT / "CODEX.md").read_text(encoding="utf-8"),
-        (ROOT / "skills/using-teamwork/references/changelog-guide.md").exists(),
-    )
-    validate_outcome_first_source_parity(
-        {
-            path: (ROOT / relative_path).read_text(encoding="utf-8")
-            for path, relative_path in OUTCOME_FIRST_PARITY_SOURCES.items()
+    if skill_scripts:
+        raise EvalError(
+            "skills/: skill-local behavioral scripts are not allowed: "
+            + ", ".join(skill_scripts)
+        )
+
+    edges: dict[str, set[str]] = defaultdict(set)
+    cross_loads: list[str] = []
+    path_re = re.compile(r"skills/([a-z0-9-]+)/SKILL\.md")
+    for owner, path in inventory.items():
+        source = path.read_text(encoding="utf-8")
+        parse_frontmatter(source, f"skills/{owner}/SKILL.md")
+        for target in path_re.findall(source):
+            edges[owner].add(target)
+            if target != owner:
+                cross_loads.append(f"{owner}->{target}")
+        for referenced in re.findall(r"skills/([a-z0-9-]+)/references/[a-z0-9-]+\.md", source):
+            if referenced != owner:
+                cross_loads.append(f"{owner}->{referenced}-reference")
+    if cross_loads:
+        raise EvalError(
+            "skills/: a SKILL.md must not load another Teamwork skill: "
+            + ", ".join(sorted(cross_loads))
+        )
+    cycles = dependency_cycles(edges)
+    if cycles:
+        rendered = " ; ".join(" -> ".join(cycle) for cycle in cycles)
+        raise EvalError(f"skills/: skill dependency cycle: {rendered}")
+
+    return {
+        "skills": sorted(names),
+        "count": len(names),
+        "behavior_references": behavior_refs,
+        "cross_skill_loads": cross_loads,
+        "cycles": cycles,
+    }
+
+
+def validate_role_template_sources(root: Path = ROOT) -> None:
+    """Validate exact eight-role target semantics on every rendered host."""
+
+    for host, mapping in ROLE_TEMPLATE_PATHS.items():
+        expected = set(mapping.values())
+        directory = root / f"templates/{host}-agents"
+        observed = {
+            path.relative_to(root).as_posix()
+            for path in directory.iterdir()
+            if path.is_file()
         }
-    )
+        if observed != expected:
+            raise EvalError(
+                f"templates/{host}-agents/: expected exact eight-role inventory; "
+                f"missing={sorted(expected - observed)}, extra={sorted(observed - expected)}"
+            )
+        for role in CANONICAL_ROLES:
+            source_path = mapping[role]
+            source = (root / source_path).read_text(encoding="utf-8")
+            normalized = normalize_semantic_text(source).replace("_", "-")
+            declared = f'name = "teamwork-{role}"' if host == "codex" else f"name: {role}"
+            if declared not in normalized:
+                raise EvalError(f"{source_path}: role identity does not match {role}")
+            for label in (
+                "mission:", "owned scope:", "input:", "output:", "verify:",
+                "stop:", "tool boundary:", "write authority:", "acceptance limitation:",
+            ):
+                if label not in normalized:
+                    raise EvalError(f"{source_path}: missing role target field {label}")
+            for prohibition in ("do not spawn", "do not interact with the user", "do not expand scope", "do not self-accept"):
+                if prohibition not in normalized:
+                    raise EvalError(f"{source_path}: missing leaf-role boundary {prohibition}")
+            if role in {"designer", "plan-reviewer", "reviewer"} and "write authority: none" not in normalized:
+                raise EvalError(f"{source_path}: {role} must be strictly read-only")
+            if role == "planner" and "single" not in normalized:
+                raise EvalError(f"{source_path}: Planner lacks single-Plan-path authority")
+            if role == "debugger" and "immutable" not in normalized:
+                raise EvalError(f"{source_path}: Debugger lacks immutable dispatch authority")
+            if role == "researcher" and not all(term in normalized for term in ("sanitized", "private", "read-only")):
+                raise EvalError(f"{source_path}: Researcher lacks privacy/read-only semantics")
+            if role == "explorer" and not any(term in normalized for term in ("do not browse", "never browse")):
+                raise EvalError(f"{source_path}: Explorer lacks local-only semantics")
+
+
+def validate_semantic_sources(root: Path = ROOT) -> None:
+    topology = validate_skill_topology(root)
+    for skill in topology["skills"]:
+        path = root / "skills" / skill / "SKILL.md"
+        validate_skill_source_contract(skill, path.read_text(encoding="utf-8"))
+    validate_role_template_sources(root)

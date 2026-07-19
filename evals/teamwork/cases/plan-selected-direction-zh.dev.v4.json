@@ -1,0 +1,65 @@
+{
+   "evidence" : "静态直接 Plan 对照。",
+   "expected" : {
+      "capability" : "plan",
+      "language" : "zh",
+      "requires" : [
+         "selected-direction-required",
+         "owned-actions",
+         "dependencies",
+         "direct-proof",
+         "no-redesign",
+         "no-implementation"
+      ],
+      "scenario" : "selected-direction"
+   },
+   "id" : "plan-selected-direction-zh",
+   "must" : [
+      "把已选方向翻译成有归属、有顺序并可直接验证的行动"
+   ],
+   "must_not" : [
+      "重新比较方案、重新设计、实施或修改文件"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-plan/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-planner.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/planner.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/planner.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-plan-reviewer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/plan-reviewer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/plan-reviewer.md"
+      }
+   ],
+   "prompt" : "队列架构已经选定。请把它整理成带负责人、依赖、直接验证和停止条件的实施步骤。",
+   "source" : "synthetic",
+   "split" : "dev"
+}

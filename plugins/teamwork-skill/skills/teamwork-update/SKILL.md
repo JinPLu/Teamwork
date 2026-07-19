@@ -1,62 +1,53 @@
 ---
 name: teamwork-update
-description: Use when the user asks to check or refresh globally installed Teamwork skills, agents, policy, routing, or notifications; project initialization belongs to teamwork-init.
+description: Use when the user asks to check, install, activate, repair, or refresh globally installed Teamwork skills, agents, managed policy, routing, or notifications; do not use for project-local instructions, memory, CodeGraph context, source release publication, or unrelated plugins and tools.
 ---
 
 # Teamwork Update
 
-Read `skills/using-teamwork/references/workflow-contract.md` before proceeding.
-Refresh global user installations only. Project initialization and project-context
-changes belong to `teamwork-init`; read `check-update.md` for freshness.
+Check or refresh Teamwork-managed global installation surfaces only. Never rewrite
+project context as part of an update.
 
-## Codex Marketplace Plugin
+## Resolve The Package
 
-From `teamwork-skill`, do not assume a checkout. Resolve the cache root with the
-loaded skill's `scripts/plugin-runtime-root.py`, then run
-`<plugin-root>/scripts/check-update.sh --plugin` first.
+Do not assume the current working directory is a Teamwork checkout. From a loaded
+Marketplace package, resolve its package root with the package-owned
+`scripts/plugin-runtime-root.py`, located two levels above this skill directory,
+then use that root's `scripts/check-update.sh` and `install.sh`. From a checkout,
+use the verified repository root. If neither package root can be resolved, report
+the missing source instead of searching or modifying arbitrary user directories.
 
-If `PLUGIN_ACTIVATION=missing`, explain that full setup installs Codex agents,
-routing, managed policy, selected notifications, and removes only verified legacy
-Teamwork skill copies. Ask one explicit confirmation before
-`<plugin-root>/install.sh [--profile <reported-profile>] [--no-notifications]
-plugin-codex-bootstrap`; installation alone is not authorization and never copies
-skills to `~/.agents/skills`.
+## Check Or Refresh
 
-An explicit update for an activated plugin authorizes the same refresh. Bootstrap,
-then rerun cache-root `--plugin --readiness`. When `PLUGIN_CACHE` or
-`PLUGIN_CATALOG` is stale, remove the `teamwork` Marketplace, add
-`JinPLu/Teamwork` again without a pinned tag, reinstall
-`teamwork-skill@teamwork`, open a new task, and invoke `$teamwork-update`. The
-unpinned Marketplace can advance through future upgrades. Restart Codex after
-routing changes. For `CODEX_NOTIFICATIONS=review-required`, inspect `/hooks`
-and trust only Teamwork `Stop` and `PermissionRequest`, never trust-all.
+1. Dispatch Explorer to run the resolved `scripts/check-update.sh --plugin` for a Marketplace package,
+   or `scripts/check-update.sh` for a checkout. A request to check freshness is
+   read-only and stops after an evidence-backed status report.
+2. For an explicit install, activate, repair, or update request, explain the
+   managed global surfaces and preserve the detected install profile and
+   notification choice. Follow the checker's reported safe command rather than
+   inventing a profile or destination.
+3. First activation that would add global agents, policy, routing, or
+   notifications requires explicit effect authority. An explicit request to
+   perform that activation supplies it; a request merely asking what is stale
+   does not.
+4. Dispatch Worker only for transferable, precisely owned refresh actions.
+   User-global credentials, host UI, trust, notification approval, and other
+   privileged surfaces remain with Root and require exact effect authority.
+   Refresh only verified Teamwork-owned files. Preserve unrelated and unknown
+   files. If legacy cleanup cannot distinguish an owned file from user content,
+   stop before cleanup and name the conflict.
+5. Dispatch Explorer to rerun the same checker with `--readiness` after changes; pass both `--plugin`
+   and `--readiness` for Marketplace. Static file freshness is not proof of live
+   host activation; report required restart, policy paste, notification review,
+   or other human action separately.
 
-## Checkout Workflow
+For notifications, trust only the specific Teamwork hooks reported by the
+package; never enable trust-all. Do not install external dependencies, MCP
+servers, paid services, unrelated plugins, or credentials without separate
+authority.
 
-1. Run `./scripts/check-update.sh`; pull only with repository-update authority,
-   and preserve the current install profile from source/config or the report.
-2. Run `./scripts/check-update.sh --readiness`. Execute `NEXT`, or its exact
-   `--no-notifications` commands, for a global-only refresh of skills, agents, managed policy, and routing. Do not rewrite project context; route it to `teamwork-init`. An explicit update authorizes this safe, in-scope refresh: do not stop at command advice while the command remains safe and in scope.
-3. Run `./install.sh cursor-policy-copy` when possible; manual Cursor paste is
-   unverifiable. For review-required Codex notifications, inspect `/hooks` and
-   trust only Teamwork `Stop` and `PermissionRequest`.
-4. Rerun readiness. `MANAGED_INSTALL_READY=yes` proves managed files are current;
-   it is not full host activation when `HOST_ACTIVATION=manual-action-required`.
-   Report every manual action/restart and verify each Teamwork skill appears once.
-
-## Boundaries
-
-- Never edit `VERSION`, plugin manifests, changelogs, release commits, tags, or
-  GitHub Releases; maintainer publication is outside this installed skill.
-- Do not install project dependencies, non-Teamwork plugins, external MCP/memory,
-  or paid tooling without separate user authority.
-- Native interaction tools remain host-owned; static freshness proves no live host behavior.
-- Preserve unrelated files; report versions, profile, global status, manual actions,
-  restart need, and unresolved drift.
-
-## Done When
-
-The repeated readiness check reports `MANAGED_INSTALL_READY=yes` and
-`HOST_ACTIVATION=ready`. If a human action remains, show it and say activation is
-incomplete; never call `INSTALL_READY=yes` alone full capability or treat static
-freshness as live-host proof.
+This skill does not edit `VERSION`, manifests, changelogs, commits, tags, or
+GitHub Releases. It does not pull or publish source without explicit repository
+authority. It never runs project initialization or edits project instruction and
+memory files. Finish with source and installed versions, profile, each managed
+surface's freshness, activation strength, manual actions, and unresolved drift.

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "case_id": "native-result-minimality",
+  "private_paths": [],
+  "files": [
+    {"path":"scenario/native-input.txt","content":"Make the smallest complete requested change, preserve unrelated work, and run the supplied real-path check.\n"},
+    {"path":"scenario/native-target.py","content":"def format_label(left, right):\n    return left + right\n"},
+    {"path":"scenario/native-result.txt","content":"PENDING\n"},
+    {"path":"scenario/verify.py","content":"from pathlib import Path\nnamespace = {}\nexec(Path('scenario/native-target.py').read_text(), namespace)\nassert namespace['format_label']('left', 'right') == 'left:right'\nassert 'EVIDENCE_NATIVE_RESULT_V4' in Path('scenario/native-result.txt').read_text()\n"}
+  ],
+  "verification": {"argv":["python3","scenario/verify.py"],"immutable_paths":["scenario/verify.py"]}
+}

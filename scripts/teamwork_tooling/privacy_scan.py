@@ -24,6 +24,12 @@ class ValueAllowlist:
     rationale: str
 
 
+@dataclass(frozen=True)
+class IndexEntry:
+    path: str
+    blob_oid: str
+
+
 VALUE_ALLOWLISTS = (
     ValueAllowlist(
         "contextual-codex-id",
@@ -72,13 +78,48 @@ TOKEN_RE = re.compile(
 PEM_RE = re.compile(r"-----BEGIN (?:[A-Z0-9 ]+ )?PRIVATE KEY-----")
 
 
-def _git_paths(root: Path, *args: str) -> list[str]:
-    result = subprocess.run(
-        ["git", "-C", str(root), *args, "-z"],
+def _git(root: Path, *args: str) -> subprocess.CompletedProcess[bytes]:
+    """Run Git through the caller's explicit index and worktree environment."""
+
+    return subprocess.run(
+        ["git", "-C", str(root), *args],
         check=True,
         stdout=subprocess.PIPE,
     )
+
+
+def _git_paths(root: Path, *args: str) -> list[str]:
+    result = _git(root, *args, "-z")
     return [os.fsdecode(item) for item in result.stdout.split(b"\0") if item]
+
+
+def _index_entries(root: Path) -> list[IndexEntry]:
+    """Return stage-zero paths and blobs from the active Git index.
+
+    Reading the blob object rather than ``root / path`` is intentional: release
+    validation supplies an isolated candidate index, which may contain a newly
+    added file absent from the live worktree or a deletion whose old worktree
+    bytes must not be scanned.
+    """
+
+    result = _git(root, "ls-files", "--stage", "-z")
+    entries: list[IndexEntry] = []
+    for record in result.stdout.split(b"\0"):
+        if not record:
+            continue
+        try:
+            metadata, raw_path = record.split(b"\t", 1)
+            _mode, blob_oid, stage = metadata.split()
+        except ValueError as exc:
+            raise RuntimeError("malformed git ls-files --stage output") from exc
+        if stage != b"0":
+            continue
+        entries.append(IndexEntry(os.fsdecode(raw_path), os.fsdecode(blob_oid)))
+    return entries
+
+
+def _index_blob(root: Path, blob_oid: str) -> bytes:
+    return _git(root, "cat-file", "blob", blob_oid).stdout
 
 
 def _value_allowed(value: str, value_class: str) -> bool:
@@ -125,12 +166,9 @@ def scan_repository(root: Path) -> list[Finding]:
     root = root.resolve()
     findings: set[Finding] = set()
 
-    for path in _git_paths(root, "ls-files"):
-        tracked_path = root / path
-        if tracked_path.is_symlink():
-            data = os.fsencode(os.readlink(tracked_path))
-        else:
-            data = tracked_path.read_bytes()
+    for entry in _index_entries(root):
+        path = entry.path
+        data = _index_blob(root, entry.blob_oid)
         if b"\0" in data:
             continue
         text = data.decode("utf-8", errors="replace")

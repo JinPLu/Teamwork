@@ -1,57 +1,65 @@
 ---
 name: teamwork-research
-description: Use when the user needs facts checked before action, asks what is currently true, wants options compared, or an unknown or stale assumption requires source-of-truth evidence.
+description: Use when the requested answer depends on external sources, including current web, API, library, platform, literature, market, or ecosystem facts, multi-source comparison, source verification, or citations; do not use for local repository/source/config/test/log/runtime/artifact inspection, supplied-text explanation, clear implementation, or unknown-cause debugging.
 ---
 
 # Teamwork Research
 
-Read `skills/using-teamwork/references/workflow-contract.md` before proceeding.
+Answer an external question with decision-relevant, traceable evidence. Research
+is external-only: do not inspect private local repositories, logs, or artifacts;
+Root supplies a sanitized public question when project context informs it.
 
-## Outcome
+## Choose Depth
 
-Establish project reality and return an evidence-backed answer, comparison,
-debug route, or plan-ready recommendation without implementing the change.
+Use the lightest adequate depth:
 
-## Enter When
+- `lookup`: one canonical or official source for a stable fact, with its date or
+  version checked;
+- `research`: a material-claim map, primary-source-first comparison, an
+  independent source class where consequential, and explicit dissent or gaps;
+- `deep`: a research brief, search axes, source census, per-claim ledger,
+  contradiction challenge, coverage audit, and decision-sufficiency stop basis.
 
-Use when source of truth, current behavior, repro surface, alternatives, or risk
-is unclear. Treat a supplied article, URL, paper, repo, or report as seed
-evidence, not the research boundary. Route reproducible runtime failures to
-`teamwork-debug`. Do not enter merely to explain supplied facts when no lookup
-or stale-assumption check is needed; return to Native.
+Load `references/deep-research.md` only for `deep`, broad seed expansion across
+several source classes, or a strong material contradiction. The reference is an
+advanced method for this Skill, not another workflow stage.
 
-## Do And Boundaries
+## Method
 
-Define the question and decision signal, check relevant prior artifacts, then
-split independent evidence tracks only when fan-out has clear value. Read local
-primary evidence first. Use current external sources when an API, dependency,
-model, platform, method, or upstream behavior may have changed; never send
-private source to public search. Distinguish important `observed`, `inferred`,
-and `claimed` findings, preserve meaningful dissent, and cite the evidence that
-supports the conclusion. Research does not authorize edits, external writes,
-or invented runtime values. Stop as soon as evidence is sufficient for the next
-answer or result-producing action; do not broaden the survey for completeness.
+1. State the decision question, freshness cutoff, source policy, privacy
+   exclusions, and material claims. Treat a supplied URL, paper, dataset,
+   repository, or report as seed evidence rather than the whole boundary.
+2. Search by evidence gap. Prefer primary sources: official documentation and
+   changelogs, standards, original papers, first-party data, regulators, and
+   authoritative repositories. Use secondary sources for independent context.
+3. Record for each material claim the source, date or version, direct support,
+   counterevidence, inference, confidence, and citation. For consequential or
+   disputed claims, seek an independent source class or explain why one
+   authoritative source is sufficient.
+4. Follow decision-changing contradictions and rejected-source reasons instead
+   of averaging them away. Distinguish source statements, direct observations,
+   and inference. Never invent missing measurements, dates, or consensus.
+5. Cite the direct supporting page near each important claim and record explicit
+   not-found gaps. Source count is not claim coverage.
+6. Stop when every material claim has direct support or an explicit gap and more
+   searching would not change the decision. If evidence is insufficient, return
+   only the next decision-relevant discriminator.
 
-Write `docs/teamwork/research/YYYY-MM-DD-<slug>.md` only when findings need
-cross-turn reuse, support a durable plan or goal, or justify a consequential
-decision. External calibration alone does not require an artifact.
+Browse whenever freshness, precise attribution, or a referenced external source
+matters. Do not browse merely to re-check stable common knowledge unless the user
+asks for sources. Never send private source code, logs, credentials, personal
+data, or proprietary artifacts to a public service.
 
-## Done When
+Research is read-only by default. It does not authorize local edits, account
+changes, messages, purchases, uploads, or publication. Write a report only when
+the user explicitly requests a file deliverable, and then write only that
+deliverable at the requested or agreed path.
 
-The decision-relevant sources are covered, observations and inferences are
-distinguished where material, and the answer states supported conclusions,
-remaining uncertainty, and the appropriate next route. A durable artifact
-exists only when its trigger applies.
+Multi-agent fan-out is conditional: use it only for separable source classes,
+required public/private isolation, or one bounded verification of a consequential
+disputed claim. A normal comparison keeps one adaptive Researcher and one
+synthesis owner.
 
-## Escalate
-
-Apply the Ask Gate in `workflow-contract.md` when research needs user-supplied
-evidence or a user-owned decision. Stop when required evidence or access is
-unavailable.
-
-## Conditional Protocols
-
-Use `research-protocol.md` for lookup/deep research, `subagent-dispatch.md` and
-`subagent-contract.md` for fan-out, `artifact-protocol.md` for durable findings,
-and `optional-skills.md` for external tools. All paths are under
-`skills/using-teamwork/references/`.
+Lead with the supported conclusion. Include source census, material-claim
+coverage, citations, freshness, contradictions or rejected-source rationale,
+gaps, confidence, and the stop basis in proportion to the selected depth.

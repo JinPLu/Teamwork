@@ -2,6 +2,10 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=install/policy.sh
+source "$ROOT/scripts/install/policy.sh"
+# shellcheck source=install/profiles.sh
+source "$ROOT/scripts/install/profiles.sh"
 GITHUB_REPO="${TEAMWORK_GITHUB_REPO:-https://github.com/JinPLu/Teamwork}"
 READINESS=0
 FETCH_UPSTREAM=1
@@ -11,43 +15,50 @@ PLUGIN_ACTIVATION_PATH="$CODEX_HOME_DIR/teamwork/plugin-activation.json"
 STATUS_PROFILE_OVERRIDE=""
 
 SKILLS=(
-  using-teamwork
   grill-me
   teamwork-debug
+  teamwork-design
+  teamwork-explore
   teamwork-init
   teamwork-goal
   teamwork-research
   teamwork-plan
-  teamwork-execute
   teamwork-review
   teamwork-update
 )
+RETIRED_SKILLS=(
+  using-teamwork
+  teamwork-execute
+)
 CODEX_AGENTS=(
+  teamwork-researcher
   teamwork-explorer
-  teamwork-worker
+  teamwork-debugger
   teamwork-designer
-  teamwork-judge
+  teamwork-planner
+  teamwork-worker
+  teamwork-plan-reviewer
   teamwork-reviewer
-  teamwork-deep-judge
-  teamwork-deep-reviewer
 )
 CURSOR_AGENTS=(
-  explore
-  worker
+  researcher
+  explorer
+  debugger
   designer
-  judge
-  code-reviewer
-  deep-judge
-  deep-reviewer
+  planner
+  worker
+  plan-reviewer
+  reviewer
 )
 CLAUDE_AGENTS=(
-  explore
-  worker
+  researcher
+  explorer
+  debugger
   designer
-  judge
-  code-reviewer
-  deep-judge
-  deep-reviewer
+  planner
+  worker
+  plan-reviewer
+  reviewer
 )
 
 ISSUES=0
@@ -63,7 +74,7 @@ and model drift.
 
 Options:
   --plugin        Check the installed Codex Marketplace plugin surface only
-  --readiness     Compact machine-friendly output for teamwork-init gate
+  --readiness     Compact machine-friendly global installation freshness output
   --no-fetch      Skip git fetch / remote tag lookup
 USAGE
 }
@@ -76,14 +87,17 @@ semver_lt() {
 read_installed_version() {
   local dest_root="$1"
   local marker="$dest_root/.teamwork-version"
+  local skill
   if [[ -f "$marker" ]]; then
     tr -d '[:space:]' < "$marker"
     return 0
   fi
-  if [[ -d "$dest_root/using-teamwork" ]]; then
-    echo "unknown"
-    return 0
-  fi
+  for skill in "${SKILLS[@]}" "${RETIRED_SKILLS[@]}"; do
+    if [[ -e "$dest_root/$skill" || -L "$dest_root/$skill" ]]; then
+      echo "unknown"
+      return 0
+    fi
+  done
   echo "missing"
 }
 
@@ -171,21 +185,37 @@ skills_status() {
 
 skills_content_status() {
   local dest_root="$1"
-  local rel drift=0 missing=0
+  local skill source_file dest_item rel drift=0 missing=0 extra=0
   [[ -d "$dest_root" ]] || { echo "missing"; return 0; }
-  while IFS= read -r -d '' source_file; do
-    rel="${source_file#$ROOT/skills/}"
-    if [[ ! -f "$dest_root/$rel" ]]; then
-      missing=$((missing + 1))
-    elif ! cmp -s "$source_file" "$dest_root/$rel"; then
-      drift=$((drift + 1))
-    fi
-  done < <(find "$ROOT/skills" -type f -print0)
+  for skill in "${SKILLS[@]}"; do
+    while IFS= read -r -d '' source_file; do
+      rel="${source_file#$ROOT/skills/}"
+      if [[ ! -f "$dest_root/$rel" ]]; then
+        missing=$((missing + 1))
+      elif ! cmp -s "$source_file" "$dest_root/$rel"; then
+        drift=$((drift + 1))
+      fi
+    done < <(find "$ROOT/skills/$skill" -type f -print0)
 
-  if (( missing == 0 && drift == 0 )); then
+    if [[ -d "$dest_root/$skill" && ! -L "$dest_root/$skill" ]]; then
+      while IFS= read -r -d '' dest_item; do
+        rel="${dest_item#$dest_root/}"
+        if [[ ! -e "$ROOT/skills/$rel" && ! -L "$ROOT/skills/$rel" ]]; then
+          extra=$((extra + 1))
+        fi
+      done < <(find "$dest_root/$skill" -mindepth 1 -print0)
+    fi
+  done
+  for skill in "${RETIRED_SKILLS[@]}"; do
+    if [[ -e "$dest_root/$skill" || -L "$dest_root/$skill" ]]; then
+      extra=$((extra + 1))
+    fi
+  done
+
+  if (( missing == 0 && drift == 0 && extra == 0 )); then
     echo "current"
   else
-    echo "drift(missing=$missing,changed=$drift)"
+    echo "drift(missing=$missing,changed=$drift,extra=$extra)"
   fi
 }
 
@@ -193,7 +223,7 @@ legacy_codex_skills_status() {
   local legacy_root="$CODEX_HOME_DIR/skills"
   local skill
   [[ -d "$legacy_root" ]] || { echo "clear"; return 0; }
-  for skill in "${SKILLS[@]}"; do
+  for skill in "${SKILLS[@]}" "${RETIRED_SKILLS[@]}"; do
     if [[ -e "$legacy_root/$skill" || -L "$legacy_root/$skill" ]]; then
       echo "duplicate"
       return 0
@@ -227,7 +257,7 @@ agents_content_status() {
   local platform="$3"
   shift 3
   local agents=("$@")
-  local agent source expected tmp missing=0 drift=0
+  local agent source expected tmp missing=0 drift=0 extra=0
   [[ -d "$dest_root" ]] || { echo "missing"; return 0; }
   tmp="$(mktemp -d)"
   for agent in "${agents[@]}"; do
@@ -259,101 +289,40 @@ agents_content_status() {
       drift=$((drift + 1))
     fi
   done
+  while IFS= read -r agent; do
+    if [[ -n "$agent" && ( -e "$dest_root/$agent.$ext" || -L "$dest_root/$agent.$ext" ) ]]; then
+      extra=$((extra + 1))
+    fi
+  done < <(python3 - "$ROOT/scripts/tests/fixtures/v3.4.2-owned-surfaces.json" "$platform" "${agents[@]}" <<'PY'
+import json
+import pathlib
+import sys
+
+fixture = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+platform = sys.argv[2]
+active = set(sys.argv[3:])
+prefix = f"managed://installed-agent/{platform}/"
+old = set()
+for row in fixture.get("deterministic_surfaces", []):
+    path = row.get("path", "")
+    if row.get("surface_class") != "profile-rendered-agent" or not path.startswith(prefix):
+        continue
+    old.add(path.rsplit("/", 1)[-1].rsplit(".", 1)[0])
+for name in sorted(old - active):
+    print(name)
+PY
+  )
   rm -rf "$tmp"
-  if (( missing == 0 && drift == 0 )); then
+  if (( missing == 0 && drift == 0 && extra == 0 )); then
     echo "current"
   else
-    echo "drift(missing=$missing,changed=$drift)"
+    echo "drift(missing=$missing,changed=$drift,extra=$extra)"
   fi
-}
-
-codex_agent_profile_values() {
-  local agent="$1"
-  case "$(source_profile):$agent" in
-    performance-first:teamwork-explorer|gpt56-role:teamwork-explorer)
-      printf '%s %s\n' "gpt-5.6-terra" "medium"
-      ;;
-    performance-first:teamwork-worker|gpt56-role:teamwork-worker)
-      printf '%s %s\n' "gpt-5.6-sol" "medium"
-      ;;
-    performance-first:teamwork-designer|performance-first:teamwork-judge|performance-first:teamwork-reviewer|gpt56-role:teamwork-designer|gpt56-role:teamwork-judge|gpt56-role:teamwork-reviewer)
-      printf '%s %s\n' "gpt-5.6-sol" "high"
-      ;;
-    performance-first:teamwork-deep-judge|performance-first:teamwork-deep-reviewer|gpt56-role:teamwork-deep-judge|gpt56-role:teamwork-deep-reviewer)
-      printf '%s %s\n' "gpt-5.6-sol" "max"
-      ;;
-    gpt56-xhigh:*|gpt55-xhigh:*)
-      printf '%s %s\n' "gpt-5.6-sol" "xhigh"
-      ;;
-    gpt56-high:*|gpt55-high:*)
-      printf '%s %s\n' "gpt-5.6-sol" "high"
-      ;;
-    cost-first:teamwork-explorer|cost-first:teamwork-designer)
-      printf '%s %s\n' "gpt-5.6-luna" "medium"
-      ;;
-    cost-first:teamwork-worker)
-      printf '%s %s\n' "gpt-5.6-terra" "medium"
-      ;;
-    cost-first:teamwork-judge|cost-first:teamwork-reviewer)
-      printf '%s %s\n' "gpt-5.6-sol" "high"
-      ;;
-    cost-first:teamwork-deep-judge|cost-first:teamwork-deep-reviewer)
-      printf '%s %s\n' "gpt-5.6-sol" "max"
-      ;;
-    *)
-      printf '%s %s\n' "gpt-5.6-sol" "high"
-      ;;
-  esac
-}
-
-claude_agent_profile_values() {
-  local agent="$1"
-  case "$(source_profile):$agent" in
-    gpt56-role:explore|gpt56-role:designer|gpt56-role:worker|gpt56-high:explore|gpt56-high:designer|gpt56-high:worker|gpt56-xhigh:explore|gpt56-xhigh:designer|gpt56-xhigh:worker|gpt55-high:explore|gpt55-high:designer|gpt55-high:worker|gpt55-xhigh:explore|gpt55-xhigh:designer|gpt55-xhigh:worker)
-      printf '%s %s\n' "sonnet" "medium"
-      ;;
-    cost-first:explore|cost-first:designer|cost-first:worker)
-      printf '%s %s\n' "haiku" "medium"
-      ;;
-    gpt56-xhigh:deep-judge|gpt56-xhigh:deep-reviewer|gpt55-xhigh:deep-judge|gpt55-xhigh:deep-reviewer)
-      printf '%s %s\n' "opus" "xhigh"
-      ;;
-    *:deep-judge|*:deep-reviewer)
-      printf '%s %s\n' "opus" "max"
-      ;;
-    *:explore|*:designer|*:worker)
-      printf '%s %s\n' "sonnet" "medium"
-      ;;
-    *)
-      printf '%s %s\n' "opus" "high"
-      ;;
-  esac
-}
-
-cursor_agent_profile_values() {
-  local agent="$1"
-  case "$(source_profile):$agent" in
-    cost-first:explore|cost-first:designer|cost-first:worker)
-      printf '%s\n' "composer-2.5"
-      ;;
-    *:worker)
-      printf '%s\n' "composer-2.5-fast"
-      ;;
-    *:explore|*:designer)
-      printf '%s\n' "claude-sonnet-4-6"
-      ;;
-    *:judge|*:code-reviewer|*:deep-judge|*:deep-reviewer)
-      printf '%s\n' "claude-opus-4-8-thinking-high"
-      ;;
-    *)
-      printf '%s\n' "claude-sonnet-4-6"
-      ;;
-  esac
 }
 
 render_codex_agent_expected() {
   local source="$1" expected="$2" agent="$3" model effort
-  read -r model effort < <(codex_agent_profile_values "$agent")
+  read -r model effort < <(CODEX_PROFILE="$(source_profile)" codex_agent_profile_values "$agent")
   sed \
     -e "s/^model = .*/model = \"$model\"/" \
     -e "s/^model_reasoning_effort = .*/model_reasoning_effort = \"$effort\"/" \
@@ -362,7 +331,7 @@ render_codex_agent_expected() {
 
 render_claude_agent_expected() {
   local source="$1" expected="$2" agent="$3" model effort
-  read -r model effort < <(claude_agent_profile_values "$agent")
+  read -r model effort < <(CODEX_PROFILE="$(source_profile)" claude_agent_profile_values "$agent")
   sed \
     -e "s/^model: .*/model: $model/" \
     -e "s/^effort: .*/effort: $effort/" \
@@ -371,21 +340,25 @@ render_claude_agent_expected() {
 
 render_cursor_agent_expected() {
   local source="$1" expected="$2" agent="$3" model
-  read -r model < <(cursor_agent_profile_values "$agent")
+  read -r model < <(CODEX_PROFILE="$(source_profile)" cursor_agent_profile_values "$agent")
   sed -e "s/^model: .*/model: $model/" "$source" > "$expected"
 }
 
 policy_status() {
   local platform="$1"
-  local file marker policy_text
+  local file start_marker end_marker expected actual
   case "$platform" in
     codex)
       file="$CODEX_HOME_DIR/AGENTS.md"
-      marker="TEAMWORK_CODEX_GLOBAL_START"
+      start_marker="<!-- TEAMWORK_CODEX_GLOBAL_START -->"
+      end_marker="<!-- TEAMWORK_CODEX_GLOBAL_END -->"
+      expected="$(write_teamwork_codex_global_policy)"
       ;;
     claude)
       file="$HOME/.claude/CLAUDE.md"
-      marker="TEAMWORK_CLAUDE_GLOBAL_START"
+      start_marker="<!-- TEAMWORK_CLAUDE_GLOBAL_START -->"
+      end_marker="<!-- TEAMWORK_CLAUDE_GLOBAL_END -->"
+      expected="$(write_teamwork_claude_global_policy)"
       ;;
     cursor)
       echo "manual"
@@ -394,16 +367,13 @@ policy_status() {
   esac
 
   [[ -f "$file" ]] || { echo "missing"; return 0; }
-  policy_text="$(tr '\n' ' ' < "$file")"
+  actual="$(awk -v start="$start_marker" -v end="$end_marker" '
+    $0 == start { capture = 1 }
+    capture { print }
+    $0 == end { capture = 0 }
+  ' "$file")"
 
-  if grep -q "$marker" "$file" \
-    && [[ "$policy_text" == *"Work within the user's request"* ]] \
-    && [[ "$policy_text" == *'read-only grants no changes'* ]] \
-    && [[ "$policy_text" == *'Inspect evidence before asking'* ]] \
-    && [[ "$policy_text" == *'pause dependent work'* ]] \
-    && [[ "$policy_text" == *'Answers grant no effect authority'* ]] \
-    && [[ "$policy_text" == *'never invent state'* ]] \
-    && [[ "$policy_text" == *'delegate only worthwhile work'* ]]; then
+  if [[ "$actual" == "$expected" ]]; then
     echo "ok"
   else
     echo "missing"
@@ -433,17 +403,45 @@ note_issue() {
 }
 
 cursor_model_sample() {
-  local agent_file="$HOME/.cursor/agents/explore.md"
+  local agent_file="$HOME/.cursor/agents/explorer.md"
   [[ -f "$agent_file" ]] || { echo "missing"; return 0; }
   sed -n 's/^model: //p' "$agent_file" | head -n1
 }
 
+installed_profile_marker_status() {
+  local profiles=() root value first
+  for root in "$HOME/.agents/skills" "$HOME/.cursor/skills" "$HOME/.claude/skills"; do
+    if [[ -f "$root/.teamwork-profile" ]]; then
+      value="$(tr -d '[:space:]' < "$root/.teamwork-profile")"
+      profiles+=("$value")
+    fi
+  done
+  if (( ${#profiles[@]} == 0 )); then
+    echo "missing"
+    return 0
+  fi
+  first="${profiles[0]}"
+  for value in "${profiles[@]}"; do
+    if [[ "$value" != "$first" ]]; then
+      echo "mixed"
+      return 0
+    fi
+  done
+  echo "$first"
+}
+
 source_profile() {
+  local profile
   if [[ -n "$STATUS_PROFILE_OVERRIDE" ]]; then
     printf '%s\n' "$STATUS_PROFILE_OVERRIDE"
     return 0
   fi
-  tr -d '[:space:]' < "$ROOT/.teamwork-profile" 2>/dev/null || echo "performance-first"
+  profile="$(installed_profile_marker_status)"
+  if [[ "$profile" == "missing" ]]; then
+    echo "performance-first"
+    return 0
+  fi
+  echo "$profile"
 }
 
 upstream_version() {
@@ -666,7 +664,7 @@ plugin_legacy_skill_status() {
   local root skill
   for root in "$HOME/.agents/skills" "$CODEX_HOME_DIR/skills"; do
     [[ -d "$root" ]] || continue
-    for skill in "${SKILLS[@]}"; do
+    for skill in "${SKILLS[@]}" "${RETIRED_SKILLS[@]}"; do
       if [[ -e "$root/$skill" || -L "$root/$skill" ]]; then
         echo "duplicate"
         return 0
@@ -710,6 +708,7 @@ print_plugin_readiness() {
 
   local ready=yes
   local missing=()
+
   [[ "$catalog" == "enabled" ]] || { ready=no; missing+=("plugin-catalog"); }
   [[ "$cache" == current* ]] || { ready=no; missing+=("plugin-cache"); }
   [[ "$marker" == "current" ]] || { ready=no; missing+=("plugin-activation"); }
@@ -781,6 +780,15 @@ print_readiness() {
   local ready=yes
   local missing=()
 
+  case "$profile" in
+    performance-first|cost-first)
+      ;;
+    *)
+      ready=no
+      missing+=("profile")
+      ;;
+  esac
+
   [[ "$(skills_status "$HOME/.agents/skills")" == "ok" ]] || { ready=no; missing+=("codex-skills"); }
   [[ "$(skills_status "$HOME/.cursor/skills")" == "ok" ]] || { ready=no; missing+=("cursor-skills"); }
   [[ "$(skills_status "$HOME/.claude/skills")" == "ok" ]] || { ready=no; missing+=("claude-skills"); }
@@ -829,20 +837,22 @@ print_readiness() {
   echo "MANUAL_ACTIONS=$(IFS=,; echo "${manual_actions[*]}")"
   echo "NEXT=cd \"$ROOT\" && ./install.sh all --profile $profile"
   echo "CURSOR_POLICY=./install.sh cursor-policy-copy"
+  [[ "$ready" == "yes" ]]
 }
 
 print_report() {
-  local source_version upstream profile remote_tag github_release action
+  local source_version upstream profile profile_markers remote_tag github_release action
   source_version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
   upstream="$(upstream_version)"
   profile="$(source_profile)"
+  profile_markers="$(installed_profile_marker_status)"
   remote_tag="$(latest_remote_tag_version)"
   github_release="$(latest_github_release_version)"
 
   echo "=== Teamwork Update Report ==="
   echo "Checkout: $ROOT"
   echo "Source VERSION: $source_version"
-  echo "Install profile (checkout): $profile"
+  echo "Installed profile markers (derived): $profile_markers"
   echo "Git state: $(git_local_state)"
   if [[ -n "$upstream" ]]; then
     echo "Upstream VERSION: $upstream"
@@ -940,11 +950,11 @@ print_report() {
   echo
 
   echo "--- Model mapping (best-effort) ---"
-  echo "Cursor explore model: $(cursor_model_sample)"
-  echo "Expected performance-first Codex: Explorer=Terra/medium, Worker=Sol/medium, Designer/Judge/Reviewer=Sol/high, Deep=Sol/max"
-  echo "Expected gpt56-role Codex: compatibility alias of performance-first"
-  echo "Expected cost-first Cursor routine: composer-2.5"
-  echo "Expected performance-first explore: claude-sonnet-4-6"
+  echo "Cursor explorer model: $(cursor_model_sample)"
+  echo "Expected performance-first Codex: Researcher/Explorer/Debugger/Planner/Worker=GPT-5.5/high, Designer/Plan Reviewer=Sol/high, Reviewer=Sol/max"
+  echo "Expected cost-first Codex: Researcher/Explorer/Debugger/Planner/Worker=GPT-5.5/medium, Designer=Sol/medium, Plan Reviewer/Reviewer=Sol/high"
+  echo "Expected cost-first Cursor: Researcher/Explorer/Worker=composer-2.5"
+  echo "Expected performance-first Cursor Explorer: claude-sonnet-4-6"
   echo
 
   echo "--- Optional substrates ---"

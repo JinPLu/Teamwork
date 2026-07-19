@@ -1,0 +1,67 @@
+{
+   "evidence" : "Static Init ownership fixture.",
+   "expected" : {
+      "capability" : "init",
+      "language" : "en",
+      "requires" : [
+         "project-only",
+         "preserve-human-docs",
+         "no-global-refresh",
+         "no-external-install"
+      ],
+      "scenario" : "project-context"
+   },
+   "id" : "init-project-en",
+   "must" : [
+      "limit changes to project context and preserve human-owned documentation"
+   ],
+   "must_not" : [
+      "refresh global installations or install external tooling without approval"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-init/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-explorer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-worker.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/worker.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/worker.md"
+      },
+      {
+         "class" : "artifact-engine",
+         "source" : "scripts/init-project-files.py"
+      }
+   ],
+   "prompt" : "Initialize Teamwork context for this repository while preserving its existing human documentation.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

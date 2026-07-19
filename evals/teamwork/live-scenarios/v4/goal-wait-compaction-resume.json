@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "case_id": "goal-wait-compaction-resume",
+  "private_paths": [],
+  "files": [
+    {"path":"scenario/goal-input.txt","content":"Keep the explicit goal scope while changing strategy after a wait/resume boundary.\n"},
+    {"path":"scenario/goal-state.json","content":"{\"status\":\"active\",\"strategy_delta\":\"\"}\n"},
+    {"path":"scenario/goal-result.txt","content":"PENDING\n"},
+    {"path":"scenario/verify.py","content":"import json\nfrom pathlib import Path\nstate = json.loads(Path('scenario/goal-state.json').read_text())\nassert state['status'] == 'completed'\nassert isinstance(state['strategy_delta'], str) and state['strategy_delta']\nassert 'EVIDENCE_GOAL_SUCCESS_V4' in Path('scenario/goal-result.txt').read_text()\n"}
+  ],
+  "verification": {"argv":["python3","scenario/verify.py"],"immutable_paths":["scenario/verify.py"]}
+}

@@ -1,0 +1,50 @@
+{
+   "evidence" : "静态本地原生负对照。",
+   "expected" : {
+      "capability" : "native",
+      "language" : "zh",
+      "requires" : [
+         "local-inspection-native",
+         "no-research-activation",
+         "no-unnecessary-question"
+      ],
+      "scenario" : "local-evidence"
+   },
+   "id" : "local-evidence-native-zh",
+   "must" : [
+      "用原生工具检查本地代码与测试并直接回答"
+   ],
+   "must_not" : [
+      "激活外部 Research 或向用户询问可以在本地发现的事实"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-explore/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-explorer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/explorer.md"
+      }
+   ],
+   "prompt" : "找出本地哪个函数解析配置，并说明现有测试证明了什么。",
+   "source" : "synthetic",
+   "split" : "dev"
+}

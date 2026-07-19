@@ -1,0 +1,1 @@
+{"schema_version":1,"case_id":"cross-platform-role-proof","private_paths":[],"files":[{"path":"scenario/roles-probe.txt","content":"Probe marker: EVIDENCE_ALL_ROLES_V4\nRequire actual host-native evidence for researcher, explorer, debugger, designer, planner, worker, plan-reviewer, and reviewer.\n"}]}

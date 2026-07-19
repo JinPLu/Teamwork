@@ -1,0 +1,52 @@
+{
+   "evidence" : "Static Review behavior fixture.",
+   "expected" : {
+      "capability" : "review",
+      "language" : "en",
+      "requires" : [
+         "read-only",
+         "acceptance-criteria",
+         "evidence-backed-findings",
+         "proportional-verification",
+         "no-fix"
+      ],
+      "scenario" : "evidence-verdict"
+   },
+   "id" : "review-verdict-en",
+   "must" : [
+      "give an evidence-backed verdict against acceptance criteria with proportional verification"
+   ],
+   "must_not" : [
+      "fix the implementation, edit files, or expand into unrelated cleanup"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-review/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-reviewer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/reviewer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/reviewer.md"
+      }
+   ],
+   "prompt" : "Review this finished change against its acceptance criteria and tell me whether it is complete.",
+   "source" : "review",
+   "split" : "dev"
+}

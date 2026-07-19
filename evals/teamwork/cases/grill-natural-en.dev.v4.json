@@ -1,0 +1,43 @@
+{
+   "evidence" : "Static natural question-first no-write control.",
+   "expected" : {
+      "capability" : "grill",
+      "language" : "en",
+      "requires" : [
+         "natural-activation",
+         "ordinary-no-write",
+         "major-change-auto-transaction",
+         "recommend-first",
+         "one-material-question",
+         "transaction-owned-writer",
+         "no-files-overrides",
+         "no-implementation"
+      ],
+      "scenario" : "natural-question-first"
+   },
+   "id" : "grill-natural-en",
+   "must" : [
+      "keep ordinary question-first requests conversation-only; when the request is independently major, record state only through the managed inspect -> schema -> apply transaction, then give a recommendation before one material question while preserving authority"
+   ],
+   "must_not" : [
+      "directly write discussion Markdown, an index, or another file for an ordinary request; implement, edit, or treat an answer as implementation authority; no files must override any transaction"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/grill-me/SKILL.md"
+      }
+   ],
+   "prompt" : "Ask me first and challenge my API compatibility assumptions before we act.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

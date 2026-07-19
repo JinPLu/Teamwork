@@ -1,0 +1,57 @@
+{
+   "evidence" : "Static paired result and stop control.",
+   "expected" : {
+      "capability" : "native",
+      "language" : "en",
+      "requires" : [
+         "paired-control",
+         "root-and-worker-owner",
+         "real-result-first",
+         "canonical-reuse",
+         "proportional-proof",
+         "cohesive-structure",
+         "scope-preservation",
+         "residue-cleanup",
+         "stop-after-proof"
+      ],
+      "scenario" : "engineering-quality"
+   },
+   "id" : "native-quality-result-stop",
+   "must" : [
+      "deliver real path first and stop after proof"
+   ],
+   "must_not" : [
+      "substitute planning or tests for the result"
+   ],
+   "pair" : {
+      "dimension" : "result-stop",
+      "negative" : "After the result and named proof, stop without adding cleanup, review, or artifacts.",
+      "positive" : "Run the real requested path before supporting checks."
+   },
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-worker.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/worker.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/worker.md"
+      }
+   ],
+   "prompt" : "Deliver the requested result and stop after its named proof.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

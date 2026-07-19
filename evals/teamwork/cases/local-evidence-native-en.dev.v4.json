@@ -1,0 +1,50 @@
+{
+   "evidence" : "Static local-native negative control.",
+   "expected" : {
+      "capability" : "native",
+      "language" : "en",
+      "requires" : [
+         "local-inspection-native",
+         "no-research-activation",
+         "no-unnecessary-question"
+      ],
+      "scenario" : "local-evidence"
+   },
+   "id" : "local-evidence-native-en",
+   "must" : [
+      "inspect repository code and tests with native tools and answer directly"
+   ],
+   "must_not" : [
+      "activate external Research or ask the user for discoverable local facts"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-explore/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-explorer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/explorer.md"
+      }
+   ],
+   "prompt" : "Find which local function parses the config and explain what its tests prove.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

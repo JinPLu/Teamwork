@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "base_commit": "93572a3e8029b5348ee31d2a65b0c9a06b45beed",
+  "precedence": "forbidden-prefixes-then-exact-owner-then-default-forbidden",
+  "default_owner": "FORBIDDEN",
+  "forbidden_prefixes": [
+    ".claude/"
+  ],
+  "owners": [
+    {
+      "owner": "W0-inventory",
+      "paths": [
+        "evals/teamwork/ledgers/v4-capability-migration.jsonl",
+        "scripts/tests/fixtures/v3.4.2-owned-surfaces.json",
+        "scripts/tests/fixtures/v3.4.2-skill-inventory.json",
+        "scripts/tests/fixtures/v4-path-ownership.json",
+        "scripts/tests/test_v342_owned_surfaces.py",
+        "scripts/tests/test_v4_path_ownership.py"
+      ],
+      "prefixes": [],
+      "exclude": [],
+      "exclude_prefixes": []
+    },
+    {
+      "owner": "W1-evaluation",
+      "paths": [
+        "scripts/eval-teamwork.py",
+        "scripts/run-installed-claude-teamwork-live-eval.py",
+        "scripts/run-installed-cursor-teamwork-live-eval.py",
+        "scripts/run-installed-teamwork-live-eval.py",
+        "scripts/run-teamwork-live-eval.py",
+        "scripts/run-teamwork-release-matrix.py",
+        "scripts/teamwork_tooling/live_canary.py",
+        "scripts/test_eval_teamwork_mutations.py",
+        "scripts/test_live_eval_runner.py",
+        "scripts/tests/test_eval_teamwork_compatibility.py",
+        "scripts/tests/test_evaluation_contract_v4.py",
+        "scripts/tests/test_live_canary.py"
+      ],
+      "prefixes": [
+        "evals/teamwork/",
+        "scripts/teamwork_tooling/evaluation/"
+      ],
+      "exclude": [
+        "evals/teamwork/ledgers/v4-capability-migration.jsonl"
+      ],
+      "exclude_prefixes": [
+        "evals/teamwork/outputs/installed-v4/"
+      ]
+    },
+    {
+      "owner": "W2-policy",
+      "paths": [
+        "scripts/install/policy.sh",
+        "scripts/tests/test_policy_contract_v4.py"
+      ],
+      "prefixes": [],
+      "exclude": [],
+      "exclude_prefixes": []
+    },
+    {
+      "owner": "W2-skills",
+      "paths": [
+        "scripts/tests/test_skill_topology_v4.py"
+      ],
+      "prefixes": [
+        "skills/"
+      ],
+      "exclude": [],
+      "exclude_prefixes": []
+    },
+    {
+      "owner": "W3-roles",
+      "paths": [
+        "scripts/check-codex-routing.py",
+        "scripts/install/profiles.sh",
+        "scripts/tests/test_role_profiles_v4.py"
+      ],
+      "prefixes": [
+        "templates/claude-agents/",
+        "templates/codex-agents/",
+        "templates/cursor-agents/"
+      ],
+      "exclude": [],
+      "exclude_prefixes": []
+    },
+    {
+      "owner": "W3-installer",
+      "paths": [
+        "install.sh",
+        "scripts/check-update.sh",
+        "scripts/install/common.sh",
+        "scripts/install/targets.sh",
+        "scripts/tests/test_install_cli_compatibility.py",
+        "scripts/tests/test_v342_skill_upgrade.py"
+      ],
+      "prefixes": [],
+      "exclude": [],
+      "exclude_prefixes": []
+    },
+    {
+      "owner": "W4-artifacts",
+      "paths": [
+        "scripts/discussion-transaction.py",
+        "scripts/discussion-write-evidence.py",
+        "scripts/grill_contract.py",
+        "scripts/plugin-runtime-root.py",
+        "scripts/teamwork_tooling/discussion_lifecycle.py",
+        "scripts/tests/test_active_artifact_currentness.py",
+        "scripts/tests/test_design_artifact_schema.py",
+        "scripts/tests/test_discussion_artifact_schema.py",
+        "scripts/tests/test_discussion_index_safety.py",
+        "scripts/tests/test_discussion_lifecycle.py",
+        "scripts/tests/test_discussion_transaction.py",
+        "scripts/tests/test_goal_state_lifecycle.py"
+      ],
+      "prefixes": [
+        "templates/teamwork-memory/"
+      ],
+      "exclude": [],
+      "exclude_prefixes": []
+    },
+    {
+      "owner": "W5-init",
+      "paths": [
+        "scripts/init-project-files.py",
+        "scripts/init-project.sh",
+        "scripts/tests/test_init_project_aba.py",
+        "scripts/tests/test_init_project_files.py",
+        "scripts/tests/test_teamwork_index_init.py",
+        "scripts/validate_teamwork_index.py"
+      ],
+      "prefixes": [],
+      "exclude": [],
+      "exclude_prefixes": []
+    },
+    {
+      "owner": "W6-bundle-validation",
+      "paths": [
+        ".claude-plugin/plugin.json",
+        ".codex-plugin/plugin.json",
+        "VERSION",
+        "scripts/build-codex-plugin.py",
+        "scripts/teamwork_tooling/instruction_footprint.py",
+        "scripts/teamwork_tooling/privacy_scan.py",
+        "scripts/test_codex_app_server_user_input.py",
+        "scripts/test_codex_routing_config.py",
+        "scripts/tests/test_instruction_footprint.py",
+        "scripts/tests/test_privacy_scan.py",
+        "scripts/validate.sh"
+      ],
+      "prefixes": [
+        "plugins/teamwork-skill/",
+        "scripts/validation/"
+      ],
+      "exclude": [],
+      "exclude_prefixes": []
+    },
+    {
+      "owner": "W8-docs",
+      "paths": [
+        ".gitignore",
+        "AGENTS.md",
+        "CHANGELOG.en.md",
+        "CHANGELOG.md",
+        "CLAUDE.md",
+        "CODEX.md",
+        "CONTRIBUTING.md",
+        "CURSOR.md",
+        "README.en.md",
+        "README.md",
+        "docs/architecture.md"
+      ],
+      "prefixes": [],
+      "exclude": [],
+      "exclude_prefixes": []
+    },
+    {
+      "owner": "W9-release-index",
+      "paths": [
+        "scripts/release-index-transaction.py",
+        "scripts/tests/test_release_index_transaction.py"
+      ],
+      "prefixes": [],
+      "exclude": [],
+      "exclude_prefixes": []
+    },
+    {
+      "owner": "ROOT-RUNTIME",
+      "paths": [],
+      "prefixes": [
+        "docs/teamwork/design/",
+        "docs/teamwork/discussion/",
+        "docs/teamwork/plans/",
+        "docs/teamwork/reports/",
+        "docs/teamwork/research/",
+        "docs/teamwork/workflows/",
+        "evals/teamwork/outputs/installed-v4/"
+      ],
+      "exclude": [],
+      "exclude_prefixes": []
+    }
+  ],
+  "declared_runtime_outputs": [
+    "docs/teamwork/reports/v4-release-paths.json",
+    "docs/teamwork/reports/v4-release-candidate.json",
+    "docs/teamwork/reports/v4-release-index-state/candidate.index",
+    "docs/teamwork/reports/v4-implementation-review.json",
+    "docs/teamwork/reports/v4-release-commit-message.txt",
+    "docs/teamwork/reports/v4-release-notes.md",
+    "evals/teamwork/outputs/installed-v4/reviewer-acceptance.jsonl",
+    "evals/teamwork/outputs/installed-v4/codex/performance-first.jsonl",
+    "evals/teamwork/outputs/installed-v4/codex/cost-first.jsonl",
+    "evals/teamwork/outputs/installed-v4/cursor/performance-first.jsonl",
+    "evals/teamwork/outputs/installed-v4/cursor/cost-first.jsonl",
+    "evals/teamwork/outputs/installed-v4/claude/performance-first.jsonl",
+    "evals/teamwork/outputs/installed-v4/claude/cost-first.jsonl",
+    "evals/teamwork/outputs/installed-v4/matrix-summary.json"
+  ]
+}

@@ -35,23 +35,73 @@ COPY_ITEMS = (
     ("scripts/configure-notifications.py", "scripts/configure-notifications.py"),
     ("scripts/init-project.sh", "scripts/init-project.sh"),
     ("scripts/init-project-files.py", "scripts/init-project-files.py"),
+    ("scripts/discussion-transaction.py", "scripts/discussion-transaction.py"),
     ("scripts/plugin-activation.py", "scripts/plugin-activation.py"),
+    ("scripts/plugin-runtime-root.py", "scripts/plugin-runtime-root.py"),
     ("scripts/validate_teamwork_index.py", "scripts/validate_teamwork_index.py"),
+    (
+        "scripts/tests/fixtures/v3.4.2-owned-surfaces.json",
+        "scripts/tests/fixtures/v3.4.2-owned-surfaces.json",
+    ),
+    (
+        "evals/teamwork/ledgers/v4-capability-migration.jsonl",
+        "evals/teamwork/ledgers/v4-capability-migration.jsonl",
+    ),
     ("templates/codex-agents", "templates/codex-agents"),
+    ("templates/cursor-agents", "templates/cursor-agents"),
+    ("templates/claude-agents", "templates/claude-agents"),
+    ("templates/teamwork-memory", "templates/teamwork-memory"),
     ("hooks/notify.py", "hooks/notify.py"),
 )
 EXPECTED_SKILLS = (
-    "using-teamwork",
     "grill-me",
     "teamwork-debug",
+    "teamwork-design",
+    "teamwork-explore",
     "teamwork-init",
     "teamwork-goal",
     "teamwork-research",
     "teamwork-plan",
-    "teamwork-execute",
     "teamwork-review",
     "teamwork-update",
 )
+EXPECTED_REFERENCES = (
+    "skills/teamwork-debug/references/runtime-diagnosis.md",
+    "skills/teamwork-research/references/deep-research.md",
+    "skills/teamwork-review/references/strict-review.md",
+)
+EXPECTED_ROLE_TEMPLATES = {
+    "codex-agents": (
+        "teamwork-debugger.toml",
+        "teamwork-designer.toml",
+        "teamwork-explorer.toml",
+        "teamwork-plan-reviewer.toml",
+        "teamwork-planner.toml",
+        "teamwork-researcher.toml",
+        "teamwork-reviewer.toml",
+        "teamwork-worker.toml",
+    ),
+    "cursor-agents": (
+        "debugger.md",
+        "designer.md",
+        "explorer.md",
+        "plan-reviewer.md",
+        "planner.md",
+        "researcher.md",
+        "reviewer.md",
+        "worker.md",
+    ),
+    "claude-agents": (
+        "debugger.md",
+        "designer.md",
+        "explorer.md",
+        "plan-reviewer.md",
+        "planner.md",
+        "researcher.md",
+        "reviewer.md",
+        "worker.md",
+    ),
+}
 TRANSIENT_NAMES = {"__pycache__"}
 TRANSIENT_SUFFIXES = (".pyc", ".pyo")
 
@@ -107,19 +157,24 @@ def validate_marketplace(root: Path) -> None:
 
 def validate_source(root: Path) -> None:
     version = (root / "VERSION").read_text(encoding="utf-8").strip()
-    try:
-        manifest = json.loads((root / ".codex-plugin/plugin.json").read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise SystemExit(f"invalid canonical plugin manifest: {exc}") from exc
-    if manifest.get("name") != PLUGIN_NAME or manifest.get("version") != version:
-        raise SystemExit("canonical plugin manifest name/version must match VERSION")
-    prompts = manifest.get("interface", {}).get("defaultPrompt")
-    if not isinstance(prompts, list) or len(prompts) != 3:
-        raise SystemExit("canonical plugin manifest must expose exactly three default prompts")
-    if any(not isinstance(prompt, str) or len(prompt) > MAX_DEFAULT_PROMPT_CHARS for prompt in prompts):
-        raise SystemExit(
-            f"canonical plugin default prompts must be strings of at most {MAX_DEFAULT_PROMPT_CHARS} characters"
-        )
+    for manifest_rel, label in (
+        (".codex-plugin/plugin.json", "Codex"),
+        (".claude-plugin/plugin.json", "Claude Code"),
+    ):
+        try:
+            manifest = json.loads((root / manifest_rel).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise SystemExit(f"invalid canonical {label} plugin manifest: {exc}") from exc
+        if manifest.get("name") != PLUGIN_NAME or manifest.get("version") != version:
+            raise SystemExit(f"canonical {label} plugin manifest name/version must match VERSION")
+        prompts = manifest.get("interface", {}).get("defaultPrompt")
+        if not isinstance(prompts, list) or len(prompts) != 3:
+            raise SystemExit(f"canonical {label} plugin manifest must expose exactly three default prompts")
+        if any(not isinstance(prompt, str) or len(prompt) > MAX_DEFAULT_PROMPT_CHARS for prompt in prompts):
+            raise SystemExit(
+                f"canonical {label} plugin default prompts must be strings of at most "
+                f"{MAX_DEFAULT_PROMPT_CHARS} characters"
+            )
     validate_marketplace(root)
 
 
@@ -149,6 +204,23 @@ def validate_bundle(bundle: Path, root: Path) -> None:
     actual_skills = tuple(sorted(path.name for path in (bundle / "skills").iterdir() if path.is_dir()))
     if actual_skills != tuple(sorted(EXPECTED_SKILLS)):
         raise SystemExit("bundle must contain exactly the ten public Teamwork skills")
+    actual_references = tuple(
+        sorted(
+            path.relative_to(bundle).as_posix()
+            for path in (bundle / "skills").rglob("*")
+            if path.is_file() and "references" in path.relative_to(bundle).parts
+        )
+    )
+    if actual_references != EXPECTED_REFERENCES:
+        raise SystemExit("bundle must contain exactly the three public Teamwork references")
+    for directory, expected_files in EXPECTED_ROLE_TEMPLATES.items():
+        actual_files = tuple(
+            sorted(path.name for path in (bundle / "templates" / directory).iterdir() if path.is_file())
+        )
+        if actual_files != expected_files:
+            raise SystemExit(
+                f"bundle templates/{directory} must contain exactly the eight Teamwork role templates"
+            )
     if (bundle / "hooks/hooks.json").exists():
         raise SystemExit("bundle must not carry plugin-bundled hooks/hooks.json")
     if not (bundle / "hooks/notify.py").is_file():
@@ -162,8 +234,7 @@ def validate_bundle(bundle: Path, root: Path) -> None:
         "install.sh",
         "scripts/check-update.sh",
         "scripts/init-project.sh",
-        "skills/using-teamwork/scripts/discussion-transaction.py",
-        "skills/using-teamwork/scripts/plugin-runtime-root.py",
+        "scripts/plugin-runtime-root.py",
     ):
         path = bundle / executable
         if not path.is_file() or not os.access(path, os.X_OK):

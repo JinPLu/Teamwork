@@ -1,91 +1,76 @@
 ---
 name: teamwork-init
-description: Use when a project needs agent instructions or Teamwork context set up, audited, or slimmed, including memory, MCP/CodeGraph policy, or cross-platform instruction ownership.
+description: Use when the user asks to initialize, audit, repair, migrate, or slim project-local AI instructions, Teamwork context or memory, project routing, or local CodeGraph policy inside a named project; do not use for global skill, agent, policy, notification, plugin, or host installation and refresh.
 ---
 
 # Teamwork Init
 
-Audit, bootstrap, or organize project instructions using evidenced facts,
-canonical ownership, boundaries, and acceptance checks. It creates no authority.
+Make project-local agent context accurate, small, and maintainable. This skill
+owns only the named project; it never refreshes global Teamwork installations.
 
-Read `skills/using-teamwork/references/check-update.md` for readiness,
-`workflow-contract.md` for authorization/evidence, and `project-init.md` for
-init, ownership, migration, capability, and output rules.
+## Authority
 
-## Choose The Surface
+An audit request is read-only. An explicit initialize, repair, migrate, or slim
+request authorizes only the corresponding files inside the named project. It does
+not authorize edits under user-global config directories, host settings,
+credentials, plugin catalogs, global skills or agents, dependency installation,
+remote services, Git publication, or release work.
 
-Explicit `teamwork-init` defaults to **Semantic init** unless the user asks only
-for audit or deterministic bootstrap.
+Resolve the exact project root before writing. Preserve unrelated user content
+and existing managed-block boundaries. If ownership of an existing file is
+unclear and safe merging is impossible, stop with the concrete conflict instead
+of overwriting it.
 
-- **Audit-only:** inspect and classify; make no project or install changes.
-- **Deterministic bootstrap:** with authority, run `./install.sh --project-root
-  "<project-root>" init-project`; it refreshes global Teamwork and writes project
-  instructions, memory, and CodeGraph context, never project-local skills/agents.
-- **Semantic init:** inspect evidence, form only a proportional internal Project
-  Model, and apply authorized `project-init.md` edits.
+## Full Bootstrap And Candidate Inputs
 
-From the `teamwork-skill` Codex Marketplace plugin, do not assume a checkout.
-Resolve the cache root using the loaded skill's
-`scripts/plugin-runtime-root.py`; with authority, run
-`<plugin-root>/scripts/check-update.sh --plugin --readiness`, then
-`<plugin-root>/install.sh --project-root "<project-root>" plugin-init-project`.
-This configures only Codex agents, routing, policy, and selected notifications,
-never `~/.agents/skills`, Cursor, or Claude Code. If activation is missing,
-explain those changes and get the explicit first-enablement approval required by
-`teamwork-update`.
+Emit the complete Capability Matrix only for an explicit full bootstrap. An
+audit, repair, migration, or slimming request must not manufacture that broad
+matrix merely because it inspects some platform surfaces.
 
-Report bootstrap and semantic results separately. Audit never implies write authority.
+Treat external-memory or docs-graph output as candidate-only context, never as
+project or Teamwork truth. Candidate-promotion gates (all must pass): currentness
+| scope | direct evidence | privacy/protected-data review | Root authority. Do not
+promote it into instructions, memory, routing, or durable artifacts until those
+five gates pass. A logged, partial, or permissive gate result is not promotion; a
+failed or missing gate leaves the candidate unpromoted and is reported as a
+concrete limitation. No logged, partial, permissive, fallback, or exception path
+promotes candidate material.
 
-## Readiness And Profile
+## Project Workflow
 
-Use the installed profile unless evidence shows a material override. Read it from
-`.teamwork-profile`, readiness, and host configuration; do not invent a timeless
-profile-to-model mapping. Checkout refreshes use `./install.sh --profile
-<profile> all` only with authority; the Marketplace uses its activation marker
-and cache-root `plugin-init-project` route.
+1. Dispatch Explorer for the read-only audit of the instruction hierarchy,
+   applicable platform surfaces, canonical human docs, source/configuration,
+   test commands, runbooks, and
+   existing `docs/teamwork/` context. Ground every durable rule in project
+   evidence; do not invent commands, paths, architecture, model mappings, or
+   capabilities.
+2. Keep only stable facts that change agent behavior: project purpose, canonical
+   owners, required commands, boundaries, source-of-truth paths, and local tool
+   policy. Leave volatile progress, experiment output, and temporary failures in
+   their actual tracker or artifact.
+3. Give each fact one canonical owner. Merge duplicates and use short pointers or
+   platform-specific deltas elsewhere. Do not copy external documentation,
+   schemas, or large workflow manuals into project instructions.
+4. Keep local inspection and clear authorized implementation native. Describe
+   special tools such as CodeGraph only when configured or requested, including
+   when they should be preferred and what to do when unavailable.
+5. For Teamwork memory, preserve ordinary retrieval metadata separately from the
+   single optional Grill record. Never rebuild a discussion transaction, hidden
+   lifecycle, or skill-reference graph.
+6. Initialize a repository-local CodeGraph index only when the requested setup
+   includes it and the CLI is available. Otherwise report the exact gap; do not
+   install external tooling or change host configuration without separate
+   authority.
+7. Only after the audit identifies an authorized change, dispatch Worker with
+   exact project-local ownership. Worker applies the smallest complete mutation,
+   preserves recovery state for the whole operation, and fails closed on
+   ownership or migration conflicts. Root retains any privileged host action.
+8. Re-read every changed instruction surface and exercise the nearest real
+   project-local validation or command. If no real activation check is available,
+   state that limit instead of treating syntax or file presence as live proof.
 
-Before bootstrap or global install, run `./scripts/check-update.sh --readiness`
-(or cache-root `--plugin` readiness). Ordinary semantic edits need no global
-freshness pass unless install state affects the requested result.
-
-When `INSTALL_READY=no`, run `NEXT` only within authority; remaining gaps are
-reported gaps, not stop conditions. Native interaction tools are host capabilities, not Teamwork installation requirements. Do not change host config. Do not install external tooling without approval.
-
-For full bootstrap, refresh global Teamwork first. Project instructions, memory,
-and CodeGraph context can continue when the global install returns an actionable
-configuration failure. Never install or check project-local Teamwork copies. Cursor manual paste, unavailable CodeGraph CLI,
-Context7, or `codex-routing` are capability gaps. For notifications, inspect
-`/hooks` and trust only Teamwork `Stop` and `PermissionRequest`, never trust-all.
-Ask before credentials, protected server state, destructive effects, or similar
-protected actions.
-
-## Semantic Workflow
-
-1. Follow `project-init.md`: inspect instructions, canonical/human docs,
-   source/config/tests, commands, trackers/runbooks, and platform surfaces.
-2. When useful, form the smallest evidenced init-local project model as an
-   internal audit aid; never persist it or invent it. Give each rule/fact one
-   owner and link or delta elsewhere.
-3. Use `keep`, `merge`, `migrate`, `remove`, `create`, or `unresolved` as
-   optional internal classifications; use the root Ask Gate only for conflict.
-4. Apply cross-platform ownership and stable/volatile boundaries. Reuse existing
-   trackers; create conditional `project.md` only when its triggers and write
-   authority hold. This grants no Git or publication authority.
-5. Migrate through temporary copy, validation, then atomic replacement. Preserve
-   custom/legacy content when no safe migrator exists.
-6. Exercise the nearest real changed surface or report its exact activation limit;
-   do not add proxy validation. Confirm a rule's owner and user effect, then stop
-   unless a named boundary needs another check.
-An equivalent audit with no new evidence, classification, or mainline change
-writes nothing and reports `no-change`.
-
-Do not duplicate external workflow/MCP/project docs, replace canonical evidence,
-or alter protected systems without authority. Keep volatile progress in its
-canonical tracker/current artifact. Initialize repo-local CodeGraph only with
-bootstrap authority and an existing CLI; otherwise report the gap.
-
-Return the selected surface; separate bootstrap/semantic results, changed or
-proposed files, material decisions, verification strength, conflicts, and human
-decisions. Do not require a visible Project Model, classification, or Memory
-Delta in ordinary output. Include the `project-init.md` Capability Matrix only
-for requested full bootstrap.
+If the Explorer audit finds no decision-relevant change, dispatch no Worker and
+write nothing. Report the selected
+project surface, changed or proposed files, canonical ownership decisions,
+verification strength, conflicts, and any remaining human action. Never invoke a
+global update as part of project initialization.

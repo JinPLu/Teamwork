@@ -1,0 +1,45 @@
+{
+   "evidence" : "Static explicit-save persistence contract.",
+   "expected" : {
+      "capability" : "grill",
+      "language" : "en",
+      "requires" : [
+         "explicit-skill-and-save",
+         "managed-transaction-only",
+         "initialized-writable-project",
+         "no-files-overrides",
+         "transaction-owned-writer",
+         "no-implementation"
+      ],
+      "scenario" : "explicit-save"
+   },
+   "id" : "grill-save-en",
+   "must" : [
+      "only in an initialized writable project, persist through the managed inspect -> schema -> apply transaction; the transaction owns writes and maintains active discussion/current.md state while preserving authority"
+   ],
+   "must_not" : [
+      "directly write discussion Markdown, an index, or another file; implement or treat persistence as implementation authority; no files must override the save transaction"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/grill-me/SKILL.md"
+      },
+      {
+         "class" : "artifact-engine",
+         "source" : "scripts/discussion-transaction.py"
+      }
+   ],
+   "prompt" : "$grill-me and save this discussion so we can resume it later.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

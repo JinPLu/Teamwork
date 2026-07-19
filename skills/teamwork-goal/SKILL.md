@@ -1,57 +1,49 @@
 ---
 name: teamwork-goal
-description: Use when the user asks Codex to keep working until a verifiable result, fix until green, converge without stopping, or operate within an explicit budget.
+description: Use when the user explicitly asks Codex to keep working until a verifiable result, fix until green, converge without stopping, monitor through completion, or operate within a stated budget; do not use for ordinary one-shot work or infer persistence from task difficulty.
 ---
 
 # Teamwork Goal
 
-Read `skills/using-teamwork/references/workflow-contract.md` before proceeding.
+Apply persistence around the user's actual task. Goal is a modifier, not a
+separate research, design, planning, debugging, implementation, or review stage.
+It never broadens scope or effect authority.
 
-## Outcome
+## Establish State
 
-Iterate until a verifiable target passes, the authorized budget ends, or a hard
-stop is reached.
+Record the objective, direct success signal, scope, protected boundaries,
+invariants, supplied budget, and hard stops. Inspect discoverable state first;
+ask only for a missing user-owned value that prevents progress. Do not invent an
+iteration, time, or token budget.
 
-## Enter When
+Create durable Goal state at entry, before the first attempt, using the host's
+native goal mechanism or the project Goal artifact owner configured by the
+runtime. Record objective, direct success signal, invariants, scope, budget,
+hard stops, status, and attempt history. If durable state is unavailable, stop
+and report the continuity gap rather than claiming persistence. If the user
+supplied a token budget, preserve that exact budget; never invent one.
 
-Use for explicit persistence such as “keep going,” “until green,” or a stated
-budget. Ordinary one-shot work stays in its narrower stage. If objective,
-verification, scope, Goal Invariants, or stop rules are unclear, inspect
-discoverable evidence first. Propose and obtain approval only for remaining
-user-owned values before creating goal state.
+## Iterate
 
-## Do And Boundaries
+For each attempt, identify the single current unmet claim and use only the role
+whose method matches that blocker:
 
-Use Codex native goal state only when the user explicitly requests Goal mode or
-accepts a Goal Proposal. Otherwise keep state in the thread; create a rolling
-report only when cross-turn continuity actually needs it. Retain the target,
-protected boundaries, Goal Invariants, and any supplied budget. Do not invent a
-fixed iteration budget.
+1. Observe the current direct failure or unmet success signal.
+2. Preserve the accepted scope and invariants.
+3. Choose the smallest authorized next action supported by the evidence.
+4. Run the nearest real success path.
+5. Persist the attempt number, unmet claim, direct evidence, blocker, strategy
+   delta, and next strategy before continuing or yielding.
 
-Before retrying, identify the preserved scope/invariants, failed claim and
-stage, prior evidence, do-not-repeat constraints, and strategy change. Re-enter
-Plan only when accepted scope or criteria must change.
+Do not repeat an unchanged command, hypothesis, fix, or review loop. A new
+attempt needs a strategy delta grounded in new evidence or a relevant change.
+Use planning only when accepted scope or criteria genuinely change; use review
+only when the user or a named risk gate requires it.
 
-Route only the current blocker: broad gaps to research, unknown-cause failures
-to debug, and known fixes to execute. Review only when the user asks or a named
-high-risk governing gate requires it. Do not replay the workflow or repeat an
-unchanged strategy.
-
-## Done When
-
-Mark complete when the real success signal passes and no named protected boundary
-remains. Otherwise preserve the current failure and try only an evidence-backed
-different strategy, or stop for the specific blocker.
-
-## Escalate
-
-Stop on repeated no-progress without an evidence-backed strategy delta,
-destructive risk, auth/resource failure, protected-boundary conflict, or
-unresolved required input. A failure alone does not justify a question; apply
-the Ask Gate before asking.
-
-## Conditional Protocols
-
-Use `goal-iteration.md` for proposal, replay, attempt, and rolling-report
-formats; use each narrower stage protocol when that stage runs. Paths are under
-`skills/using-teamwork/references/`.
+Mark the durable goal complete only when the real success signal passes and every
+named protected boundary is satisfied. Continue after an ordinary failure while
+a safe, evidence-backed different action remains. Stop for missing authority or
+required input, destructive or security risk, exhausted user budget,
+protected-boundary conflict, unavailable resources, or genuine no-progress.
+Follow the host's status semantics when recording completion or blockage, and
+never report success from a proxy check.

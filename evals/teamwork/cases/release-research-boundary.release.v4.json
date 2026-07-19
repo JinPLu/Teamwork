@@ -1,0 +1,67 @@
+{
+   "evidence" : "Held-out static release boundary; not live-model evidence.",
+   "expected" : {
+      "capability" : "research",
+      "language" : "en",
+      "requires" : [
+         "external-positive",
+         "local-negative-control",
+         "citations",
+         "read-only"
+      ],
+      "scenario" : "external-boundary"
+   },
+   "id" : "release-research-boundary",
+   "must" : [
+      "use cited external sources for current provider limits and native inspection for the local parser"
+   ],
+   "must_not" : [
+      "route local code inspection through Research or edit the project"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-research/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-researcher.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/researcher.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/researcher.md"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-explore/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-explorer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/explorer.md"
+      }
+   ],
+   "prompt" : "Decide whether current public provider limits require external evidence, while a local parser lookup remains ordinary repository inspection.",
+   "source" : "release",
+   "split" : "release"
+}
