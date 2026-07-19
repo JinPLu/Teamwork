@@ -5,7 +5,7 @@ unknown-cause debugging, planning, review, and long-running convergence. Codex
 keeps local repository inspection and clear authorized implementation on its
 native path, so ordinary work does not need an Execute or router skill.
 
-## Quick start: Marketplace plugin
+## Quick start: default Marketplace plugin
 
 ```bash
 codex plugin marketplace add JinPLu/Teamwork
@@ -18,7 +18,8 @@ Open a new Codex task and run:
 $teamwork-update
 ```
 
-Skills load from the plugin cache. On first full enablement,
+This is the default Codex installation path. Skills load from the plugin cache.
+On first full enablement,
 `$teamwork-update` explains the agents, agent configuration,
 Teamwork-managed global policy, notification choice, and verified legacy cleanup
 it proposes, then waits for approval. It does not copy skills to
@@ -106,8 +107,8 @@ planning, and implementation loops moving; 5.6 handles trade-off selection and
 independent acceptance, where its more conservative reasoning is useful rather
 than routine-path overhead.
 
-Choose `cost-first` when lower-cost models should handle the roles where that
-profile permits it:
+For checkout-based installs, choose `cost-first` when lower-cost models should
+handle the roles where that profile permits it:
 
 ```bash
 ./install.sh codex --profile cost-first
@@ -150,8 +151,9 @@ after a routing change and repeat the manual `/hooks` review when requested.
 
 ## Checkout installation
 
-The repository installer remains useful for local development and for users who
-do not use the Marketplace:
+The Marketplace plugin is the default for Codex users. The repository installer
+remains useful for local development and for users who do not use the
+Marketplace:
 
 ```bash
 ./install.sh all

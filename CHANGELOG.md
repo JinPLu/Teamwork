@@ -11,6 +11,7 @@
 - 日常代码查证和已授权实现不再由 Teamwork 包一层通用 Router/Execute；需要专门方法时，10 个公开 Skills 分别处理 Research、Explore、Design、Debug、Plan、Review、Goal、Grill、Init 和 Update。
 - Explore 只做本地项目证据，Research 只做外部或时效性证据；Design 只在真实取舍会改变结果时展开，并在进入 Plan 前冻结一个可追溯方向。
 - Worker 先完成所属切片并自证真实路径；主任务集成候选后，只有用户要求或命名的风险门才运行一次独立 Review，修复后最多做一次聚焦复查。
+- Codex 默认使用 Marketplace 插件安装和更新；checkout 安装保留给 Cursor、Claude Code、本地开发或手动 Codex 配置。
 - Codex 的 `performance-first` profile 按角色重新分配模型：Researcher、Explorer、Debugger、Planner 和 Worker 使用 `gpt-5.5/high`，Designer 和 Plan Reviewer 使用 `gpt-5.6-sol/high`，Reviewer 使用 `gpt-5.6-sol/max`。
 - 普通 question-first 只保留在对话里；显式保存、继续或独立构成重大变更的讨论才写入唯一的 Grill 记录，并且只有实质决定、待决问题变化或关闭/取代时更新。
 

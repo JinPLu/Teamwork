@@ -11,6 +11,7 @@ This changelog records user-visible changes; implementation details belong in Gi
 - Routine code inspection and authorized implementation no longer go through a generic Teamwork Router or Execute wrapper; when a task needs a distinct method, the ten public skills cover Research, Explore, Design, Debug, Plan, Review, Goal, Grill, Init, and Update.
 - Explore handles local project evidence, while Research handles external or current evidence; Design expands only when a real tradeoff can change the result, then freezes a traceable direction before Plan.
 - Workers complete and verify their owned slice first; after the main task integrates a candidate, independent Review runs once only on user request or a named risk gate, with at most one focused recheck after fixes.
+- Codex uses the Marketplace plugin as the default installation and update path; checkout installation remains for Cursor, Claude Code, local development, or manual Codex setup.
 - Codex `performance-first` now assigns models by role: Researcher, Explorer, Debugger, Planner, and Worker use `gpt-5.5/high`; Designer and Plan Reviewer use `gpt-5.6-sol/high`; Reviewer uses `gpt-5.6-sol/max`.
 - Ordinary question-first discussion stays in conversation. Explicit save, resume, or independently major discussion uses the single Grill record, and it updates only for a real decision, open-question change, close, or replacement.
 

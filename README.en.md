@@ -43,7 +43,7 @@ Acknowledgment: v4 adopts Superpowers' hard gate, options, and specification sel
 
 ## Quick start
 
-### Codex Marketplace plugin (recommended)
+### Codex Marketplace plugin (default)
 
 ```bash
 codex plugin marketplace add JinPLu/Teamwork
@@ -56,9 +56,9 @@ Start a new Codex task, then run:
 $teamwork-update
 ```
 
-Skills load directly from the plugin cache. On first full enablement, `$teamwork-update` explains the Codex agents, routing, managed global policy, notification choice, and verified legacy cleanup it proposes, then waits for approval. It does not create `~/.agents/skills` copies or overwrite content whose ownership is uncertain.
+Codex uses the Marketplace plugin as the default installation path. Skills load directly from the plugin cache. On first full enablement, `$teamwork-update` explains the Codex agents, routing, managed global policy, notification choice, and verified legacy cleanup it proposes, then waits for approval. It does not create `~/.agents/skills` copies or overwrite content whose ownership is uncertain.
 
-### Cursor, Claude Code, or checkout-based installation
+### Cursor, Claude Code, or development checkout installation
 
 ```bash
 git clone https://github.com/JinPLu/Teamwork.git
@@ -107,7 +107,7 @@ codex plugin marketplace add JinPLu/Teamwork
 codex plugin add teamwork-skill@teamwork
 ```
 
-Start a new task and run `$teamwork-update`. For a checkout installation:
+Start a new task and run `$teamwork-update`. This is the default Codex update path. For a checkout installation:
 
 ```bash
 git pull --ff-only

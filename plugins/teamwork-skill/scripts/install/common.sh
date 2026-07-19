@@ -67,7 +67,9 @@ Usage:
     codex|cursor|claude|all|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
 
 Targets:
-  codex          Install skills, Codex agents, and Teamwork global policy (default target)
+  codex          Install checkout-based Codex skills, agents, and policy
+                 (script default target; Marketplace plugin is the default
+                 Codex user install path)
   cursor         Install skills, Cursor agents, and print cursor-policy guidance
   claude         Install skills, Claude agents, and Teamwork Claude global policy
   all            Install skills, all platform agents, and Codex + Claude global policy
@@ -91,8 +93,10 @@ Targets:
                  Copy the Teamwork Cursor global policy block to the clipboard
   claude-policy  Print the Teamwork Claude global policy block for manual review
 
-Default mode is --copy. Use --link for local development when installs should
-track this checkout.
+Default mode is --copy. For Codex users, install through the Marketplace plugin
+by default. Use this checkout installer for Cursor, Claude Code, local
+development, or manual Codex setups; use --link for local development when
+installs should track this checkout.
 `--project-root` is valid only with `init-project` or `plugin-init-project`.
 
 The `all` install enables ready/permission sounds for user-level Codex and
