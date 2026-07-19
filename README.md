@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/teamwork-workflow-gpt-image-2.png" alt="Teamwork 工作流：简单任务直接交付，复杂任务先找证据、行动、验证" width="760">
+  <img src="assets/teamwork-readme-teaser-v4.png" alt="Teamwork README teaser：简单任务直接交付，复杂任务先找证据、行动、验证" width="760">
 </p>
 
 <h1 align="center">Teamwork</h1>

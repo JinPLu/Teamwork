@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/teamwork-workflow-gpt-image-2.png" alt="Teamwork workflow: simple tasks go straight to the result; complex tasks find evidence, act, then verify" width="760">
+  <img src="assets/teamwork-readme-teaser-v4.png" alt="Teamwork README teaser: simple tasks go straight to the result; complex tasks find evidence, act, then verify" width="760">
 </p>
 
 <h1 align="center">Teamwork</h1>
