@@ -180,20 +180,28 @@ git_known_package_file "scripts/grill_contract.py" \
 [[ -f "$ROOT/scripts/test_codex_routing_config.py" ]] || fail "missing Codex routing config tests"
 [[ -x "$ROOT/scripts/codex_app_server_user_input.py" ]] || fail "missing Codex app-server user-input harness"
 [[ -f "$ROOT/scripts/test_codex_app_server_user_input.py" ]] || fail "missing Codex app-server user-input tests"
-python3 -m py_compile "$ROOT/scripts/grill_contract.py" "$ROOT/scripts/run-teamwork-live-eval.py" \
+compile_python_files "$ROOT/scripts/grill_contract.py" "$ROOT/scripts/run-teamwork-live-eval.py" \
   "$ROOT/scripts/run-installed-teamwork-live-eval.py" "$ROOT/scripts/test_live_eval_runner.py" \
   "$ROOT/scripts/test_eval_teamwork_mutations.py" "$ROOT/scripts/codex_routing_config.py" \
   "$ROOT/scripts/configure-codex-routing.py" "$ROOT/scripts/test_codex_routing_config.py" \
   "$ROOT/scripts/codex_app_server_user_input.py" "$ROOT/scripts/test_codex_app_server_user_input.py"
-PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_live_eval_runner.py" >/dev/null
-PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_eval_teamwork_mutations.py" >/dev/null
+if is_full_validation; then
+  PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_live_eval_runner.py" >/dev/null
+else
+  validation_note "live eval runner unit tests are release-only"
+fi
+if is_full_validation; then
+  PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_eval_teamwork_mutations.py" >/dev/null
+else
+  validation_note "eval mutation tests are release-only"
+fi
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_routing_config.py" >/dev/null
-PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_app_server_user_input.py" >/dev/null
-(
-  cd "$ROOT"
-  PYTHONPATH="$ROOT/scripts" PYTHONDONTWRITEBYTECODE=1 \
-    python3 -m unittest discover -s scripts/tests -p 'test_*.py' >/dev/null
-)
+if is_full_validation; then
+  PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_app_server_user_input.py" >/dev/null
+else
+  validation_note "Codex app-server user-input tests are release-only"
+fi
+run_python_unit_tests
 [[ ! -e "$ROOT/scripts/teamwork_contract.py" && ! -e "$ROOT/scripts/test_teamwork_contract.py" ]] \
   || fail "retired Task Contract validator must remain absent"
 [[ ! -e "$ROOT/scripts/teamwork_findings.py" && ! -e "$ROOT/scripts/test_teamwork_findings.py" ]] \
@@ -215,34 +223,35 @@ grep_absent 'parse_close_packet\|expected_question_ids\|expected_close\|blocked_
   "$ROOT/scripts/run-teamwork-live-eval.py" "$ROOT/scripts/codex_app_server_user_input.py"
 grep_required '"category": "grill"' "$ROOT/evals/teamwork/live-cases/grill-multiturn-pilot.json" \
   "live evals must include a grill category"
-live_eval_tmp="$(mktemp -d)"
-CLEANUP_PATHS+=("$live_eval_tmp")
-python3 "$ROOT/scripts/run-teamwork-live-eval.py" \
-  --arm validate-dry-run \
-  --model gpt-5.6-sol \
-  --effort max \
-  --workdir "$ROOT" \
-  --output "$live_eval_tmp/output.jsonl" \
-  --cases \
-    "$ROOT/evals/teamwork/live-cases/lightweight-pilot.json" \
-    "$ROOT/evals/teamwork/live-cases/grill-multiturn-pilot.json" \
-  --repeats 1 \
-  --timeout-seconds 60 \
-  --dry-run >/dev/null
-python3 "$ROOT/scripts/run-installed-teamwork-live-eval.py" run \
-  --model gpt-5.6-sol \
-  --effort max \
-  --profile performance-first \
-  --workdir "$ROOT" \
-  --cases \
-    "$ROOT/evals/teamwork/live-cases/lightweight-pilot.json" \
-    "$ROOT/evals/teamwork/live-cases/grill-multiturn-pilot.json" \
-  --repeats 1 \
-  --timeout-seconds 60 \
-  --max-trajectories 2 \
-  --review-dir "$live_eval_tmp/installed" \
-  --dry-run >/dev/null
-python3 - "$live_eval_tmp/installed/install-manifest.json" <<'PY'
+if is_full_validation; then
+  live_eval_tmp="$(mktemp -d)"
+  CLEANUP_PATHS+=("$live_eval_tmp")
+  python3 "$ROOT/scripts/run-teamwork-live-eval.py" \
+    --arm validate-dry-run \
+    --model gpt-5.6-sol \
+    --effort max \
+    --workdir "$ROOT" \
+    --output "$live_eval_tmp/output.jsonl" \
+    --cases \
+      "$ROOT/evals/teamwork/live-cases/lightweight-pilot.json" \
+      "$ROOT/evals/teamwork/live-cases/grill-multiturn-pilot.json" \
+    --repeats 1 \
+    --timeout-seconds 60 \
+    --dry-run >/dev/null
+  python3 "$ROOT/scripts/run-installed-teamwork-live-eval.py" run \
+    --model gpt-5.6-sol \
+    --effort max \
+    --profile performance-first \
+    --workdir "$ROOT" \
+    --cases \
+      "$ROOT/evals/teamwork/live-cases/lightweight-pilot.json" \
+      "$ROOT/evals/teamwork/live-cases/grill-multiturn-pilot.json" \
+    --repeats 1 \
+    --timeout-seconds 60 \
+    --max-trajectories 2 \
+    --review-dir "$live_eval_tmp/installed" \
+    --dry-run >/dev/null
+  python3 - "$live_eval_tmp/installed/install-manifest.json" <<'PY'
 import json
 import pathlib
 import sys
@@ -255,41 +264,48 @@ if manifest.get("dry_run") is not True or len(manifest.get("trajectories", [])) 
 if manifest.get("activation_evidence", {}).get("claim") != "AVAILABILITY_ONLY":
     raise SystemExit("FAIL: installed canary dry-run exceeded availability-only evidence")
 PY
+else
+  validation_note "live eval dry-runs are release-only"
+fi
 [[ -f "$ROOT/scripts/optimize-teamwork.py" ]] || fail "missing scripts/optimize-teamwork.py"
 git_known_package_file "scripts/optimize-teamwork.py" \
   || fail "scripts/optimize-teamwork.py is absent from the active validation index"
 python3 "$ROOT/scripts/optimize-teamwork.py" --help >/dev/null
-opt_tmp="$(mktemp -d)"
-CLEANUP_PATHS+=("$opt_tmp")
-printf '%s\n' \
-  '{"id":"case-failed","status":"failed","score":0,"input":"Fix typo","expected":"direct edit","output":"planned too much","fail_reason":"over-routing"}' \
-  '{"id":"case-passed","passed":true,"score":1,"input":"Review release","expected":"release eval","output":"asked for eval"}' \
-  > "$opt_tmp/results.jsonl"
-python3 "$ROOT/scripts/optimize-teamwork.py" init-workspace \
-  --workspace "$opt_tmp/workspace" --skill "$ROOT/skills/teamwork-design/SKILL.md" >/dev/null
-python3 "$ROOT/scripts/optimize-teamwork.py" export-samples \
-  --results "$opt_tmp/results.jsonl" --workspace "$opt_tmp/workspace" --env teamwork >/dev/null
-[[ -f "$opt_tmp/workspace/.skillopt/samples/failed/case-failed.md" ]] \
-  || fail "optimizer smoke did not write failed sample"
-python3 "$ROOT/scripts/optimize-teamwork.py" score-results \
-  --results "$opt_tmp/results.jsonl" \
-  | grep -q '"mean_score": 0.5' \
-  || fail "optimizer smoke score did not compute expected mean"
-python3 "$ROOT/scripts/optimize-teamwork.py" gate \
-  --candidate-score 0.92 --current-score 0.80 --best-score 0.90 --dead-band 0.01 \
-  | grep -q '"action": "accept_new_best"' \
-  || fail "optimizer smoke gate did not accept new best"
-opt_ledger_tmp="$(mktemp -d)"
-CLEANUP_PATHS+=("$opt_ledger_tmp")
-printf '%s\n' \
-  '{"date":"2026-07-08","candidate_id":"optimizer-smoke-valid","kind":"skillopt-lite","provider":"offline","model":"deterministic-smoke","model_config":"offline-smoke","prompt_or_template":"skills/teamwork-design/SKILL.md","owned_files":["skills/teamwork-review/SKILL.md"],"denylist":["evals/teamwork/cases/*.json"],"baseline":"evals/teamwork/README.md","treatment":"scripts/optimize-teamwork.py","gate_decision":"reject","rollback":"evals/teamwork/README.md","validation":["scripts/validate.sh"],"release_audit":"validate smoke only","reviewer":"validate.sh","decision":"rejected"}' \
-  > "$opt_ledger_tmp/valid.jsonl"
-python3 "$ROOT/scripts/eval-teamwork.py" --optimizer-ledger "$opt_ledger_tmp/valid.jsonl" >/dev/null
-printf '%s\n' \
-  '{"date":"2026-07-08","candidate_id":"optimizer-smoke-invalid","kind":"skillopt-lite","provider":"offline","model":"deterministic-smoke","model_config":"offline-smoke","prompt_or_template":"not_applicable","owned_files":["skills/teamwork-review/SKILL.md"],"denylist":["evals/teamwork/cases/*.json"],"baseline":"evals/teamwork/README.md","treatment":"scripts/optimize-teamwork.py","gate_decision":"reject","rollback":"evals/teamwork/README.md","validation":["scripts/validate.sh"],"release_audit":"validate smoke only","reviewer":"validate.sh","decision":"rejected"}' \
-  > "$opt_ledger_tmp/invalid.jsonl"
-if python3 "$ROOT/scripts/eval-teamwork.py" --optimizer-ledger "$opt_ledger_tmp/invalid.jsonl" >/dev/null 2>&1; then
-  fail "optimizer ledger smoke accepted placeholder evidence"
+if is_full_validation; then
+  opt_tmp="$(mktemp -d)"
+  CLEANUP_PATHS+=("$opt_tmp")
+  printf '%s\n' \
+    '{"id":"case-failed","status":"failed","score":0,"input":"Fix typo","expected":"direct edit","output":"planned too much","fail_reason":"over-routing"}' \
+    '{"id":"case-passed","passed":true,"score":1,"input":"Review release","expected":"release eval","output":"asked for eval"}' \
+    > "$opt_tmp/results.jsonl"
+  python3 "$ROOT/scripts/optimize-teamwork.py" init-workspace \
+    --workspace "$opt_tmp/workspace" --skill "$ROOT/skills/teamwork-design/SKILL.md" >/dev/null
+  python3 "$ROOT/scripts/optimize-teamwork.py" export-samples \
+    --results "$opt_tmp/results.jsonl" --workspace "$opt_tmp/workspace" --env teamwork >/dev/null
+  [[ -f "$opt_tmp/workspace/.skillopt/samples/failed/case-failed.md" ]] \
+    || fail "optimizer smoke did not write failed sample"
+  python3 "$ROOT/scripts/optimize-teamwork.py" score-results \
+    --results "$opt_tmp/results.jsonl" \
+    | grep -q '"mean_score": 0.5' \
+    || fail "optimizer smoke score did not compute expected mean"
+  python3 "$ROOT/scripts/optimize-teamwork.py" gate \
+    --candidate-score 0.92 --current-score 0.80 --best-score 0.90 --dead-band 0.01 \
+    | grep -q '"action": "accept_new_best"' \
+    || fail "optimizer smoke gate did not accept new best"
+  opt_ledger_tmp="$(mktemp -d)"
+  CLEANUP_PATHS+=("$opt_ledger_tmp")
+  printf '%s\n' \
+    '{"date":"2026-07-08","candidate_id":"optimizer-smoke-valid","kind":"skillopt-lite","provider":"offline","model":"deterministic-smoke","model_config":"offline-smoke","prompt_or_template":"skills/teamwork-design/SKILL.md","owned_files":["skills/teamwork-review/SKILL.md"],"denylist":["evals/teamwork/cases/*.json"],"baseline":"evals/teamwork/README.md","treatment":"scripts/optimize-teamwork.py","gate_decision":"reject","rollback":"evals/teamwork/README.md","validation":["scripts/validate.sh"],"release_audit":"validate smoke only","reviewer":"validate.sh","decision":"rejected"}' \
+    > "$opt_ledger_tmp/valid.jsonl"
+  python3 "$ROOT/scripts/eval-teamwork.py" --optimizer-ledger "$opt_ledger_tmp/valid.jsonl" >/dev/null
+  printf '%s\n' \
+    '{"date":"2026-07-08","candidate_id":"optimizer-smoke-invalid","kind":"skillopt-lite","provider":"offline","model":"deterministic-smoke","model_config":"offline-smoke","prompt_or_template":"not_applicable","owned_files":["skills/teamwork-review/SKILL.md"],"denylist":["evals/teamwork/cases/*.json"],"baseline":"evals/teamwork/README.md","treatment":"scripts/optimize-teamwork.py","gate_decision":"reject","rollback":"evals/teamwork/README.md","validation":["scripts/validate.sh"],"release_audit":"validate smoke only","reviewer":"validate.sh","decision":"rejected"}' \
+    > "$opt_ledger_tmp/invalid.jsonl"
+  if python3 "$ROOT/scripts/eval-teamwork.py" --optimizer-ledger "$opt_ledger_tmp/invalid.jsonl" >/dev/null 2>&1; then
+    fail "optimizer ledger smoke accepted placeholder evidence"
+  fi
+else
+  validation_note "optimizer workspace smoke is release-only"
 fi
 
 [[ -f "$ROOT/scripts/validate_teamwork_index.py" ]] || fail "missing scripts/validate_teamwork_index.py"
@@ -314,8 +330,10 @@ if python3 "$ROOT/scripts/validate_teamwork_index.py" \
   "$index_pointer_tmp/candidate-pointer.json" >/dev/null 2>&1; then
   fail "Teamwork index validator accepted a candidate entry as active truth"
 fi
-if [[ -f "$ROOT/docs/teamwork/index.json" ]]; then
+if [[ "${TEAMWORK_VALIDATE_LOCAL_MEMORY:-0}" == "1" && -f "$ROOT/docs/teamwork/index.json" ]]; then
   python3 "$ROOT/scripts/validate_teamwork_index.py" "$ROOT/docs/teamwork/index.json" >/dev/null
+elif [[ -f "$ROOT/docs/teamwork/index.json" ]]; then
+  validation_note "local Teamwork memory index validation is opt-in"
 fi
 
 # --- Plugin manifests ---
@@ -328,7 +346,7 @@ for plugin_file in scripts/build-codex-plugin.py scripts/plugin-activation.py .a
 done
 [[ -x "$ROOT/scripts/build-codex-plugin.py" ]] || fail "build-codex-plugin.py must be executable"
 [[ -x "$ROOT/scripts/plugin-activation.py" ]] || fail "plugin-activation.py must be executable"
-python3 -m py_compile "$ROOT/scripts/build-codex-plugin.py" "$ROOT/scripts/plugin-activation.py"
+compile_python_files "$ROOT/scripts/build-codex-plugin.py" "$ROOT/scripts/plugin-activation.py"
 python3 "$ROOT/scripts/build-codex-plugin.py" --check \
   || fail "tracked Codex Marketplace bundle must match canonical inputs"
 python3 -m json.tool "$ROOT/.codex-plugin/plugin.json" >/dev/null
@@ -493,7 +511,7 @@ for event, groups in hooks.items():
         raise SystemExit(f"FAIL: {event} hook must not control workflow")
 PY
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_notify_hook.py" >/dev/null
-python3 -m py_compile \
+compile_python_files \
   "$ROOT/hooks/notify.py" \
   "$ROOT/scripts/configure-notifications.py" \
   "$ROOT/scripts/audit-codex-sessions.py" \

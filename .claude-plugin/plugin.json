@@ -1,7 +1,7 @@
 {
   "name": "teamwork-skill",
   "version": "4.0.0",
-  "description": "Claude Code adapter skills for cited external research, decision design, debugging, review, project setup, and long-running goals; routine local work stays native.",
+  "description": "Claude Code adapter skills for research, local evidence, design, debugging, planning, review, setup, updates, and long-running goals; routine local work stays native.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"
@@ -24,8 +24,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Teamwork",
-    "shortDescription": "External research and decision design where native Claude Code benefits from stronger constraints.",
-    "longDescription": "Teamwork adds focused workflows for cited external research, decision design and brainstorming, failure diagnosis, adversarial review, explicit question-led discussion, project setup, and long-running convergence. Routine local inspection and authorized implementation stay with Claude Code's native workflow, while focused read-only local evidence questions use teamwork-explore; no router or execution skill is required. You choose the scope and authorize changes; Claude Code remains in control of tools and permissions.",
+    "shortDescription": "Ten focused collaboration skills for research, local evidence, design, debugging, review, setup, updates, and goals.",
+    "longDescription": "Teamwork adds ten focused collaboration skills for cited external research, read-only local evidence, decision design, unknown-cause debugging, executable planning, read-only review, explicit question-led challenge, project initialization, global refresh, and long-running convergence. Routine local inspection and authorized implementation stay with Claude Code's native workflow; no router or execution skill is required. You choose the scope and authorize changes; Claude Code remains in control of tools and permissions.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [

@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="assets/teamwork-readme-teaser-v4.png" alt="Teamwork README teaser：简单任务直接交付，复杂任务先找证据、行动、验证" width="760">
+  <img src="assets/teamwork-readme-teaser-v4.png" alt="Teamwork README teaser：普通工作走宿主原生路径，需要专门方法时调用 10 个 Teamwork skills 和 8 个可选 agent 角色" width="760">
 </p>
 
 <h1 align="center">Teamwork</h1>
 
 <p align="center">
-  <strong>复杂任务需要协作，但不需要流程表演。</strong><br>
-  Teamwork 给 Codex、Cursor 和 Claude Code 一组更稳的协作方法：该直接做就直接做；该调研、排错、设计、复查或持续推进时，再把正确的能力接上。
+  <strong>给 Codex、Cursor 和 Claude Code 的聚焦协作技能包。</strong><br>
+  Teamwork 不接管普通本地工作：清楚的查代码、改文件和验证继续走宿主原生路径。它在任务需要专门方法时接上 10 个可点名能力，处理外部调研、本地证据、方案设计、未知失败排查、计划、只读复查、持久目标、项目初始化和全局更新。
 </p>
 
 <p align="center">
@@ -25,9 +25,29 @@
 
 ---
 
-## ✨ 它帮你避免什么
+## ✨ 它到底做什么
 
-Teamwork 不是另一个总控 router，也不是“先写计划、再反复 review、再测到没完”的流程包。v4 已经移除了旧的 Router / Execute：清楚、已授权的本地实现继续走宿主原生路径；只有任务真的需要专门方法时，才点亮对应 Skill。
+Teamwork 是一套按需调用的协作方法，而不是一个接管宿主的总控层。v4 已经移除旧的 Router / Execute：清楚、已授权的本地实现继续由 Codex、Cursor 或 Claude Code 直接完成；只有任务真的需要更强约束时，才进入对应 Skill。
+
+| 层次 | 负责什么 |
+| --- | --- |
+| 宿主原生路径 | 读本地代码、配置、测试、日志和 artifact；完成清楚授权的修改；运行真实验证。 |
+| 10 个公开 Skills | 给调研、证据、设计、排错、计划、复查、持久目标、讨论挑战、项目初始化和全局更新提供明确方法。 |
+| 8 个可选 agent 角色 | 在 Codex、Cursor、Claude Code setup 中承担 Researcher、Explorer、Debugger、Designer、Planner、Worker、Plan Reviewer 和 Reviewer；主任务仍负责范围、集成和最终回复。 |
+
+| 你遇到的情况 | 推荐用法 |
+| --- | --- |
+| 本地改动已经清楚 | 直接描述目标，不需要点名 Teamwork。 |
+| 需要当前外部事实、官方资料、论文或引用 | 用 `$teamwork-research`。 |
+| 需要只读梳理本地代码、配置、日志、测试、历史或 artifact | 用 `$teamwork-explore`。 |
+| 产品、架构、流程或 API 方向还没选定 | 用 `$teamwork-design`；需要先被挑战关键决定时用 `$grill-me`。 |
+| 失败原因未知，不能安全下手修 | 用 `$teamwork-debug`。 |
+| 方向已定，需要拆成可执行步骤 | 用 `$teamwork-plan`。 |
+| 计划、diff、artifact 或完成声明需要独立验收 | 用 `$teamwork-review`。 |
+| 你明确要求持续修到通过、修到绿或预算化目标 | 用 `$teamwork-goal`。 |
+| 要初始化一个项目或刷新全局安装 | 分别用 `$teamwork-init` 和 `$teamwork-update`。 |
+
+## 🛡️ 它守住什么边界
 
 | 你不想要 | Teamwork 的做法 |
 | --- | --- |
@@ -146,6 +166,7 @@ git pull --ff-only
 ## 🛡️ 安全边界
 
 - 回答、调研、设计、计划、排错诊断和 review 默认只读；接受计划不等于授权执行。
+- 显式保存、继续或重大边界触发的 Grill 讨论只写入 `docs/teamwork/discussion/current.md` 这一个当前记录，不会复制到普通 memory。
 - 安装器只删除能证明由 Teamwork 生成的条目。不要整体删除 `.agents`、`.codex`、`.cursor` 或 `.claude`。
 - 启用 Codex 通知后，请重启 Codex，在 `/hooks` 中只信任 Teamwork 的 `Stop` 和 `PermissionRequest`，不要使用 trust-all。
 - `./scripts/check-update.sh --readiness` 只检查 Teamwork 受管文件和配置；它不能代替 Cursor User Rules、hook 信任等宿主手动步骤。

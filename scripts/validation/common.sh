@@ -36,6 +36,22 @@ fail() {
   exit 1
 }
 
+case "${TEAMWORK_VALIDATION_MODE:-fast}" in
+  fast|full)
+    ;;
+  *)
+    fail "TEAMWORK_VALIDATION_MODE must be fast or full"
+    ;;
+esac
+
+is_full_validation() {
+  [[ "${TEAMWORK_VALIDATION_MODE:-fast}" == "full" ]]
+}
+
+validation_note() {
+  printf 'SKIP: %s\n' "$*" >&2
+}
+
 grep_required() {
   local pattern="$1"
   local file="$2"
@@ -154,8 +170,62 @@ check_lean_policy() {
 
 git_known_package_file() {
   local path="$1"
+  if ! is_full_validation; then
+    [[ -e "$ROOT/$path" ]]
+    return
+  fi
   git -C "$ROOT" ls-files --error-unmatch "$path" >/dev/null 2>&1 && return 0
   return 1
+}
+
+run_python_unit_tests() {
+  local tests=()
+  local test_path module
+
+  if is_full_validation; then
+    while IFS= read -r test_path; do
+      tests+=("${test_path#"$ROOT"/}")
+    done < <(find "$ROOT/scripts/tests" -maxdepth 1 -type f -name 'test_*.py' | sort)
+  else
+    tests=(
+      scripts/tests/test_active_artifact_currentness.py
+      scripts/tests/test_discussion_index_safety.py
+      scripts/tests/test_evaluation_contract_v4.py
+      scripts/tests/test_instruction_footprint.py
+      scripts/tests/test_pairwise_comparison.py
+      scripts/tests/test_policy_contract_v4.py
+      scripts/tests/test_privacy_scan.py
+      scripts/tests/test_semantic_review.py
+      scripts/tests/test_skill_topology_v4.py
+    )
+  fi
+
+  for test_path in "${tests[@]}"; do
+    [[ -f "$ROOT/$test_path" ]] || fail "missing $test_path"
+    module="${test_path%.py}"
+    module="${module//\//.}"
+    PYTHONPATH="$ROOT/scripts" PYTHONDONTWRITEBYTECODE=1 \
+      python3 -m unittest "$module" >/dev/null
+  done
+}
+
+compile_python_files() {
+  local compile_tmp
+  compile_tmp="$(mktemp -d)"
+  CLEANUP_PATHS+=("$compile_tmp")
+  python3 - "$compile_tmp" "$@" <<'PY'
+import pathlib
+import py_compile
+import sys
+
+target_dir = pathlib.Path(sys.argv[1])
+for index, source in enumerate(sys.argv[2:]):
+    py_compile.compile(
+        source,
+        cfile=str(target_dir / f"{index}.pyc"),
+        doraise=True,
+    )
+PY
 }
 
 check_markdown_local_images() {

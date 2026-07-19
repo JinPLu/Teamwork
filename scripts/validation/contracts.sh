@@ -116,7 +116,7 @@ grep_absent 'default_mode_request_user_input\|codex-native-questions\|configure-
 # Codex routing profiles still need structural validation, including collision
 # rejection, but the skill package no longer depends on a role-playbook file.
 [[ -f "$ROOT/scripts/check-codex-routing.py" ]] || fail "missing scripts/check-codex-routing.py"
-python3 -m py_compile "$ROOT/scripts/check-codex-routing.py"
+compile_python_files "$ROOT/scripts/check-codex-routing.py"
 python3 "$ROOT/scripts/check-codex-routing.py" \
   --agents-dir "$ROOT/templates/codex-agents" --profiles-only >/dev/null
 

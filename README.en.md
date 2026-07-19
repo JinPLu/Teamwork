@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="assets/teamwork-readme-teaser-v4.png" alt="Teamwork README teaser: simple tasks go straight to the result; complex tasks find evidence, act, then verify" width="760">
+  <img src="assets/teamwork-readme-teaser-v4.png" alt="Teamwork README teaser: ordinary work stays on the native host path; method-heavy work uses 10 Teamwork skills and 8 optional agent roles" width="760">
 </p>
 
 <h1 align="center">Teamwork</h1>
 
 <p align="center">
-  <strong>Complex work needs collaboration, not process theater.</strong><br>
-  Teamwork gives Codex, Cursor, and Claude Code a focused set of methods: move directly when the task is clear; bring in research, debugging, design, review, or goal loops only when they help finish the work.
+  <strong>A focused collaboration skill package for Codex, Cursor, and Claude Code.</strong><br>
+  Teamwork does not take over ordinary local work: clear code inspection, file edits, and verification stay on the host's native path. It adds ten named methods when the task needs stronger constraints: external research, local evidence, decision design, unknown-cause debugging, planning, read-only review, long-running goals, project initialization, and global updates.
 </p>
 
 <p align="center">
@@ -25,9 +25,29 @@
 
 ---
 
-## ✨ What it prevents
+## ✨ What It Is
 
-Teamwork is not another master router, and it is not a loop of “plan, review, test, repeat” instead of delivery. v4 removed the old Router / Execute path: clear authorized local implementation stays native to the host; Teamwork skills activate only when the task benefits from a distinct method.
+Teamwork is a set of on-demand collaboration methods, not a control layer that takes over the host. v4 removed the old Router / Execute path: clear authorized local implementation stays with Codex, Cursor, or Claude Code; Teamwork skills activate only when the task benefits from a distinct method.
+
+| Layer | Responsibility |
+| --- | --- |
+| Native host path | Read local code, config, tests, logs, and artifacts; make clear authorized edits; run real verification. |
+| Ten public skills | Provide bounded methods for research, evidence, design, debugging, planning, review, long-running goals, challenge discussions, project initialization, and global updates. |
+| Eight optional agent roles | Researcher, Explorer, Debugger, Designer, Planner, Worker, Plan Reviewer, and Reviewer for Codex, Cursor, and Claude Code setups; the main task still owns scope, integration, and the final answer. |
+
+| Situation | Recommended use |
+| --- | --- |
+| The local change is already clear | Describe the outcome directly; no Teamwork skill is needed. |
+| You need current external facts, official docs, papers, or citations | Use `$teamwork-research`. |
+| You need read-only local evidence from code, config, logs, tests, history, or artifacts | Use `$teamwork-explore`. |
+| A product, architecture, workflow, or API direction is unsettled | Use `$teamwork-design`; use `$grill-me` when key decisions should be challenged first. |
+| A failure has an unknown cause and cannot be fixed safely yet | Use `$teamwork-debug`. |
+| The direction is selected and needs executable steps | Use `$teamwork-plan`. |
+| A plan, diff, artifact, or completion claim needs independent acceptance | Use `$teamwork-review`. |
+| You explicitly want work to continue until green, passing, or a budgeted target | Use `$teamwork-goal`. |
+| You need to initialize one project or refresh global installation | Use `$teamwork-init` and `$teamwork-update`, respectively. |
+
+## 🛡️ What It Keeps Out
 
 | What you do not want | What Teamwork does |
 | --- | --- |
@@ -146,6 +166,7 @@ For release reminders, open [JinPLu/Teamwork](https://github.com/JinPLu/Teamwork
 ## 🛡️ Safety boundaries
 
 - Answers, research, design, planning, diagnostic debugging, and review are read-only by default; accepting a plan does not authorize implementation.
+- Explicitly saved, resumed, or major-boundary Grill discussions use the single current record at `docs/teamwork/discussion/current.md`; they are not mirrored into ordinary memory.
 - The installer deletes only entries it can prove Teamwork generated. Never delete a whole `.agents`, `.codex`, `.cursor`, or `.claude` directory.
 - After enabling Codex notifications, restart Codex and trust only Teamwork's `Stop` and `PermissionRequest` handlers in `/hooks`. Do not use trust-all.
 - `./scripts/check-update.sh --readiness` checks Teamwork-managed files and configuration only; it cannot perform Cursor User Rules or hook-trust steps for the host.
