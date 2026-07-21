@@ -227,12 +227,25 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assertIn("only when an unresolved local constraint", text)
             self.assertIn("only for a named external or current claim", text)
             self.assertIn("Do not run both evidence tracks by default", text)
-            self.assertIn("Design-qualified explicit adversarial intent", text)
-            self.assertIn("`$teamwork-design adversarial`", text)
             self.assertIn(
-                "Bare brainstorming language, risk, complexity, or Root preference never activates adversarial search",
+                "After the initial evidence wave, select once before Designer critic/auditor dispatch",
                 text,
             )
+            self.assert_in_order(
+                text,
+                "## Establish The Decision",
+                "## Select The Search Strategy",
+                "## Resolve Trade-offs",
+            )
+            self.assertIn("`standard` keeps the default", text)
+            self.assertIn("`adversarial` forces", text)
+            self.assertIn("at least two viable directions", text)
+            self.assertIn("costly or irreversible error or conflicting evidence", text)
+            self.assertIn(
+                "Risk, complexity, or brainstorm labels alone do not qualify",
+                text,
+            )
+            self.assertIn("State the strategy and reason without confirmation", text)
             self.assertIn("load and follow `references/adversarial-search.md`", text)
             self.assertIn("exactly one challenge pass", text)
             self.assertIn(
@@ -365,8 +378,11 @@ class SkillTopologyV4Test(unittest.TestCase):
             )
             return
         if (skill, reference) == ("teamwork-design", "adversarial-search.md"):
-            self.assertIn("Accept `2 <= B <= 5`", text)
+            self.assertIn("selects it automatically or an explicit adversarial override", text)
+            self.assertIn("Accept a user override only when `2 <= B <= 5`", text)
+            self.assertIn("reject an out-of-range override", text)
             self.assertIn("`B = 3`", text)
+            self.assertIn("do not request confirmation", text)
             self.assertIn(
                 "maximum adversarial critic/auditor cost is `2B + 2` fresh dispatches",
                 text,
@@ -488,7 +504,15 @@ class SkillTopologyV4Test(unittest.TestCase):
                     "In every strategy, perform unlimited challenge passes",
                 ),
                 ("Ask one bounded independent batch", "Ask every open item together"),
-                ("Design-qualified explicit adversarial intent", "Root-inferred adversarial intent"),
+                ("at least two viable directions", "any single direction"),
+                (
+                    "After the initial evidence wave, select once before Designer critic/auditor dispatch",
+                    "Select before the initial evidence wave",
+                ),
+                (
+                    "State the strategy and reason without confirmation",
+                    "Ask for strategy confirmation",
+                ),
                 (
                     "A Plan-ready handoff request counts only when it explicitly accepts that direction and authorizes the save",
                     "A Plan-ready handoff request bypasses acceptance and save authority",
@@ -528,6 +552,12 @@ class SkillTopologyV4Test(unittest.TestCase):
             .split()
         )
         for before, after in (
+            (
+                "selects it automatically or an explicit adversarial override",
+                "runs only after explicit adversarial wording",
+            ),
+            ("reject an out-of-range override", "accept any override"),
+            ("do not request confirmation", "request confirmation"),
             ("exactly two fresh Designer critics", "one reused Designer critic"),
             (
                 "Exclude a material cell without a trial only when named direct evidence proves",

@@ -36,7 +36,7 @@ Ask for the outcome you want:
 - "Inspect this repository and implement the requested validation change."
 - "Research the current provider options from official sources and cite them."
 - "Design the public API boundary and recommend among the real alternatives."
-- "Use teamwork-design adversarial with budget=3 to stress-test the unsettled API direction; do not plan or implement it."
+- "This public API could be synchronous, queued, or hybrid; a wrong choice forces costly client migration and the evidence conflicts. Help me decide."
 - "Diagnose why this test started failing, then verify the fix on the same path."
 - "Turn the selected migration direction into a plan without changing files."
 - "Review this diff against the requirements and direct evidence."
@@ -59,14 +59,16 @@ durable Design artifact before Plan; independent Plan Review runs only on user
 request or a named material risk gate. It does not
 implement the result or enter Plan silently.
 
-`teamwork-design adversarial` is an explicit opt-in search strategy, not an
-automatic response to risk or complexity. Before dispatch, it freezes a trial
-budget (`3` by default when confirmed), taxonomy, fitness function, and maximum
-leaf cost. Every actual hypothesis receives two fresh isolated Designer critics;
-two new final auditors must both pass. Missing isolation, exhausted budget, or
-failed closure returns an incomplete result and creates no durable Design. A
-passing chat recommendation is still not Plan-ready until the user explicitly
-accepts and authorizes the controlled Design write.
+Design chooses its search strategy from the request and evidence. It selects
+adversarial only when at least two viable directions remain and costly or
+irreversible error or conflicting evidence makes one challenge inadequate;
+“high-risk” or “complex” alone is insufficient. `adversarial` forces the method
+and `standard` disables it. The model states its reason and uses default `B=3`
+without another confirmation. Every hypothesis then receives two fresh isolated
+Designer critics and two new final auditors must both pass. Missing isolation,
+exhausted budget, or failed closure returns an incomplete result and creates no
+durable Design. A passing chat recommendation is still not Plan-ready until the
+user explicitly accepts and authorizes the controlled Design write.
 
 Debug begins with the real failure and reproduction. Plan translates an already
 selected direction into owned executable steps; Review is read-only and returns

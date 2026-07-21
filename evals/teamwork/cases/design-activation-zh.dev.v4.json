@@ -5,10 +5,11 @@
       "language" : "zh",
       "requires" : [
          "local-constraints-first",
+         "evidence-before-strategy-freeze",
          "genuine-tradeoffs-only",
          "recommend-first",
          "default-one-challenge",
-         "no-auto-adversarial",
+         "auto-gate-negative-control",
          "bounded-independent-batch",
          "dependency-serialization",
          "question-criticality",
@@ -19,11 +20,11 @@
    },
    "id" : "design-activation-zh",
    "must" : [
-      "先检查本地约束，只为真实取舍提出方案，并先给推荐",
+      "先检查本地约束并完成有理由的初始证据波，再冻结搜索策略，只为真实取舍提出方案，并先给推荐",
       "提出有限独立批次的用户拥有实质决定，依赖决定必须串行，并说明关键性"
    ],
    "must_not" : [
-      "因风险或复杂度自动激活 adversarial 搜索、实施、修改文件或悄悄转成执行计划"
+      "仅因存在多个选项或出现风险、复杂度字样就自动激活 adversarial 搜索、实施、修改文件或悄悄转成执行计划"
    ],
    "platforms" : [
       "codex",

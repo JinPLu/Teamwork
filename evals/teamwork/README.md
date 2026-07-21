@@ -20,7 +20,7 @@ The cases are organized by capability metadata rather than hard-coded case IDs.
 The dev matrix keeps bilingual coverage for:
 
 - external Research and the local-evidence Native negative control;
-- default Design activation, explicit adversarial Design activation,
+- default Design activation, input-driven adversarial Design selection,
   selected-direction Plan, and their ownership boundaries;
 - ordinary natural question-first Grill with no file write, plus explicit
   `$grill-me` save persistence and independently-major automatic persistence
@@ -30,8 +30,8 @@ The dev matrix keeps bilingual coverage for:
 
 The release split is deliberately small but non-empty. It holds out four public
 boundaries: external Research versus local Native inspection, unresolved Design
-versus selected-direction Plan, explicit adversarial Design versus risk-only
-default Design and chat-only recommendations, and ordinary no-write Grill versus
+versus selected-direction Plan, automatic adversarial Design versus weak-cue or
+explicit-standard default Design and chat-only recommendations, and ordinary no-write Grill versus
 explicit persistence or independently-major automatic persistence through the
 managed transaction. Release cases are never
 optimizer inputs.

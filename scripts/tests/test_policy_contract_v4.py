@@ -38,8 +38,9 @@ REQUIRED_CLAUSES = {
         "Plan only translates an already selected direction",
         "Review user-requested/named-risk work",
         "Goal explicit persistence; Init project; Update global.",
-        "Design defaults to at most one evidence role.",
-        "Explicit adversarial Design launches fresh critics/auditors; missing isolation blocks.",
+        "Design: ≤1 evidence role;",
+        "auto-adversarial only for viable alternatives plus costly-error/conflicting-evidence;",
+        "`adversarial` forces, `standard` disables; B=3/no-confirmation; fresh-isolation required.",
     ),
     "automatic_grill": (
         "Root opens Grill for major public/installable, migration/release, permission, security, data, destructive, cross-platform, or finite Design-frontier changes.",

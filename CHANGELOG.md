@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 4.3.0 - 2026-07-21
+
+**现在只需描述设计问题；Teamwork Design 会自己判断是否需要对抗搜索。**
+
+- **从写命令变成看问题。** 以前只有明确写出 `$teamwork-design adversarial` 才会启动对抗搜索；现在只要真实设计取舍仍有至少两个可行方向，并且错误代价高、难以逆转或证据冲突让一次普通挑战不足，`teamwork-design` 就会自动升级。
+- **不再追问预算。** 模型会先说明选择理由和 envelope，然后直接使用默认 `B=3`；无需再写策略名、预算或“不要进入 Plan/实现”。需要精确控制时，`adversarial` 仍可强制开启，`standard` 可明确关闭。
+- **普通设计仍保持轻量。** 单纯出现“高风险”“复杂”或 `brainstorm` 字样不会触发额外 agent；没有满足自动门槛时仍只做一次 challenge。
+- **安全边界没有放松。** 自动选择只授权只读 Design 搜索；fresh 隔离、双批评者、双最终审计和 durable Design / Plan / implementation 边界保持不变。
+
+升级操作：Codex Marketplace 用户重新添加 `JinPLu/Teamwork`、安装 `teamwork-skill@teamwork`，并在新任务中运行 `$teamwork-update`。checkout 用户运行 `git pull --ff-only`、`./install.sh all` 和 `./scripts/check-update.sh --readiness`。
+
+重要限制：自动选择依赖宿主模型对输入和证据的语义判断，不保证不同模型逐字一致；需要确定行为时使用 `adversarial` 或 `standard` 覆盖。
+
 ## 4.2.0 - 2026-07-21
 
 **Teamwork Design 现在可以显式切换到预算化对抗搜索：普通设计仍保持轻量，需要更强压力测试时才使用多假设、独立双批评和双收敛审计。**

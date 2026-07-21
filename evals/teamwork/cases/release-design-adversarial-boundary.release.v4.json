@@ -1,11 +1,13 @@
 {
-  "evidence": "Held-out static boundary for explicit adversarial Design activation and durable Plan readiness.",
+  "evidence": "Held-out static boundary for automatic adversarial Design selection, explicit overrides, and durable Plan readiness.",
   "expected": {
     "capability": "design",
     "language": "en",
     "requires": [
-      "explicit-adversarial-positive",
-      "risk-complexity-negative-control",
+      "input-driven-auto-selection",
+      "evidence-before-strategy-freeze",
+      "weak-cue-negative-control",
+      "explicit-strategy-overrides",
       "default-design-stays-lightweight",
       "chat-not-plan-ready",
       "durable-design-transaction-required",
@@ -17,11 +19,11 @@
   },
   "id": "release-design-adversarial-boundary",
   "must": [
-    "distinguish an explicit $teamwork-design adversarial request from a merely risky or complex default Design and keep both under the same durable Design owner",
+    "complete the initial evidence wave before strategy freeze, auto-select adversarial for multiple viable directions plus costly error or conflicting evidence, keep weak risk or complexity labels on default Design, and honor adversarial and standard overrides under the same owner",
     "require successful dual closure, explicit user acceptance, and the controlled durable Design transaction before Plan can use the result"
   ],
   "must_not": [
-    "auto-activate adversarial search, silently downgrade failed isolation, treat a chat recommendation as Plan-ready, implement, or enter Plan"
+    "require special command words for eligible automatic selection, let weak labels override the gate, ignore standard, silently downgrade failed isolation, treat a chat recommendation as Plan-ready, implement, or enter Plan"
   ],
   "platforms": [
     "codex",
@@ -70,7 +72,7 @@
       "source": "templates/claude-agents/planner.md"
     }
   ],
-  "prompt": "One request explicitly says '$teamwork-design adversarial with budget=3'; another only says the design is high-risk and complex. Keep activation, cost, failure, and Plan-ready state unambiguous.",
+  "prompt": "One request has three viable public API directions, conflicting evidence, and a costly client migration if wrong; another only calls a one-path design high-risk and complex; a third says standard and a fourth says adversarial. Keep selection, cost, failure, and Plan-ready state unambiguous.",
   "source": "release",
   "split": "release"
 }

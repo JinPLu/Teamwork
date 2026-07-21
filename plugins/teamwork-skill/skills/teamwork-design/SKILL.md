@@ -1,35 +1,35 @@
 ---
 name: teamwork-design
-description: Use when the user asks to design, architect, choose an approach, resolve a material product, workflow, API, data-model, or system trade-off before implementation, or explicitly invokes Teamwork Design's adversarial strategy, and the direction is not yet settled; do not use for open-ended discussion-only brainstorming, external fact lookup alone, unknown-cause failures, an execution plan for an already chosen direction, clear implementation, or review.
+description: Use when the user asks to design, architect, choose an approach, or resolve a material product, workflow, API, or system trade-off before implementation and the direction is not yet settled; choose standard or adversarial search from the request and evidence; do not use for discussion-only brainstorming, external fact lookup alone, unknown-cause failures, a plan for an already chosen direction, clear implementation, or review.
 ---
 
 # Teamwork Design
 
-Settle one coherent direction before planning or implementation. Design is a
-hard gate only for creative work, an unsettled direction, or a material
-trade-off; it is one self-contained owner.
-
-## Select The Search Strategy
-
-Default Design uses the bounded comparison and exactly one challenge pass below.
-Only Design-qualified explicit adversarial intent, such as
-`$teamwork-design adversarial`, selects the stronger method. Bare brainstorming
-language, risk, complexity, or Root preference never activates adversarial search.
-When selected, load and follow `references/adversarial-search.md`; it replaces
-the default challenge, not Design ownership, user-decision, persistence, or Plan
-boundaries.
+Settle one direction. Design is a hard gate for an unsettled direction or
+material trade-off; it has one owner.
 
 ## Establish The Decision
 
-Start with local constraints and evidence before requesting anything new.
+Start with local constraints and evidence first.
 Dispatch Explorer only when an
 unresolved local constraint, owner, interface, test, or prior decision can change
-the choice and Root cannot answer it from evidence in hand. Dispatch Researcher
+the choice and Root lacks evidence. Dispatch Researcher
 only for a named external or current claim that can change the choice, using a
-sanitized public question. Do not run both evidence tracks by default, expose
+sanitized question. Do not run both evidence tracks by default, expose
 private material, ask the user to rediscover local facts, or investigate a claim
 that cannot change the decision. Each invoked track gets one initial evidence
 wave.
+
+## Select The Search Strategy
+
+After the initial evidence wave, select once before Designer critic/auditor
+dispatch. `standard` keeps the default; `adversarial` forces the stronger method.
+Otherwise use adversarial only when a Design-qualified choice has at least two
+viable directions and costly or irreversible error or conflicting evidence
+makes one challenge inadequate. Risk, complexity, or brainstorm labels alone do
+not qualify. State the strategy and reason without confirmation. If selected,
+load and follow `references/adversarial-search.md`; it replaces only the default
+challenge, not Design ownership or Plan boundaries.
 
 ## Resolve Trade-offs
 
@@ -38,7 +38,7 @@ alternatives. Otherwise:
 
 1. Generate two or three meaningful alternatives, including a viable
    status quo; compare the same factors: outcome, compatibility, complexity,
-   operability, reversibility, migration cost, and relevant risk.
+   operability, reversibility, migration cost, and risk.
 2. Give the recommendation before asking a question: lead with its strongest
    reason, then its largest downside.
 3. In the default strategy, after recommending, perform exactly one challenge pass:
@@ -47,8 +47,8 @@ alternatives. Otherwise:
    simpler existing pattern.
 4. Return `survives`, one revised recommendation, or a named evidence/user
    blocker. A direction-changing gap permits at most one targeted delta per
-   already-justified evidence track and one integration revision; never reopen
-   unrequested adversarial search.
+   already-justified evidence track and one integration revision; never change
+   the selected search strategy midstream.
 
 ## Finite Decision Frontier
 
@@ -83,7 +83,7 @@ counts only when it explicitly accepts that direction and authorizes the save.
 Its structured Design state records the outcome, rule, recommendation and
 downside, rejected alternatives, key shape, boundaries, migration, acceptance
 signals, challenge outcome, frontier delta, and uncertainty. For adversarial
-Design also record the confirmed envelope, trials, taxonomy/coverage limit,
+Design also record the selected envelope, trials, taxonomy/coverage limit,
 distinct critic and auditor identities, final verdicts, and rejected material
 hypotheses; never store raw agent transcripts.
 

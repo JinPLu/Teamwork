@@ -11,9 +11,10 @@ native. Delegate only independent bounded work when worthwhile. Explore local.
 External/current/multi-source/citation-backed work first dispatches Researcher;
 Root never researches it directly. Debug owns unknown causes; an unresolved material direction uses Design; Plan only
 translates an already selected direction; Review user-requested/named-risk work;
-Goal explicit persistence; Init project; Update global. Design defaults to at
-most one evidence role. Explicit adversarial
-Design launches fresh critics/auditors; missing isolation blocks.
+Goal explicit persistence; Init project; Update global. Design: ≤1 evidence role;
+auto-adversarial only for viable alternatives plus costly-error/conflicting-evidence;
+`adversarial` forces, `standard` disables; B=3/no-confirmation; fresh-isolation
+required.
 
 Root opens Grill for major public/installable, migration/release, permission,
 security, data, destructive, cross-platform, or finite Design-frontier changes.

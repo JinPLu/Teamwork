@@ -4,8 +4,10 @@
     "capability": "design",
     "language": "en",
     "requires": [
-      "design-qualified-explicit-activation",
-      "confirmed-trial-budget",
+      "input-driven-auto-selection",
+      "evidence-before-strategy-freeze",
+      "automatic-default-budget",
+      "visible-strategy-reason",
       "dynamic-taxonomy-ledger",
       "two-fresh-critics-per-hypothesis",
       "material-revision-new-trial",
@@ -20,11 +22,11 @@
   },
   "id": "design-adversarial-activation-en",
   "must": [
-    "activate adversarial search only from the explicit Teamwork Design request and confirm its bounded trial envelope before dispatch",
+    "complete the justified initial evidence wave, then auto-select adversarial search from the decision signals, state the reason and default B=3 envelope, and dispatch without a confirmation round",
     "give every actual hypothesis two fresh isolated critics, count a material revision as a new trial, and require two new final auditors to pass"
   ],
   "must_not": [
-    "auto-activate from risk or complexity, reuse a critic, exceed the budget, claim Plan readiness from chat, implement, or write a durable Design after incomplete closure"
+    "require command words or a supplied budget, activate from risk or complexity labels alone, reuse a critic, exceed the budget, claim Plan readiness from chat, implement, or write a durable Design after incomplete closure"
   ],
   "platforms": [
     "codex",
@@ -57,7 +59,7 @@
       "source": "templates/claude-agents/designer.md"
     }
   ],
-  "prompt": "Use $teamwork-design adversarial with budget=3 to settle whether this public API should be synchronous, queued, or hybrid. Keep the search read-only and do not enter Plan or implementation.",
+  "prompt": "This public API could be synchronous, queued, or hybrid. A wrong choice forces an expensive migration on every existing client, and the latency and reliability evidence conflicts. Help me settle the architecture before coding.",
   "source": "synthetic",
   "split": "dev"
 }

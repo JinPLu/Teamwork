@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 4.3.0 - 2026-07-21
+
+**Describe the design problem normally; Teamwork Design now decides whether adversarial search is warranted.**
+
+- **The problem selects the method.** Before, adversarial search required an explicit `$teamwork-design adversarial` command. After, `teamwork-design` upgrades automatically when at least two viable directions remain and costly or irreversible error or conflicting evidence makes one ordinary challenge inadequate.
+- **No budget confirmation round.** The model states its reason and envelope, then uses default `B=3`; users no longer need to spell out the strategy, budget, or “do not enter Plan or implementation.” For exact control, `adversarial` still forces the method and `standard` disables it.
+- **Ordinary Design stays lightweight.** Merely saying “high-risk,” “complex,” or `brainstorm` does not add agent work; requests below the automatic gate still receive one challenge pass.
+- **Safety boundaries are unchanged.** Automatic selection authorizes only read-only Design search. Fresh isolation, paired critics, dual final audit, and durable Design / Plan / implementation boundaries remain intact.
+
+Upgrade action: Codex Marketplace users re-add `JinPLu/Teamwork`, install `teamwork-skill@teamwork`, and run `$teamwork-update` in a new task. Checkout users run `git pull --ff-only`, `./install.sh all`, and `./scripts/check-update.sh --readiness`.
+
+Important limit: automatic selection depends on the host model's semantic judgment of the request and evidence, so models need not make byte-identical choices; use `adversarial` or `standard` when the strategy must be deterministic.
+
 ## 4.2.0 - 2026-07-21
 
 **Teamwork Design can now opt into budgeted adversarial search: ordinary design stays lightweight, while decisions that need stronger pressure-testing can use multiple hypotheses, paired independent critics, and dual closure audit.**

@@ -5,10 +5,11 @@
       "language" : "en",
       "requires" : [
          "local-constraints-first",
+         "evidence-before-strategy-freeze",
          "genuine-tradeoffs-only",
          "recommend-first",
          "default-one-challenge",
-         "no-auto-adversarial",
+         "auto-gate-negative-control",
          "bounded-independent-batch",
          "dependency-serialization",
          "question-criticality",
@@ -19,11 +20,11 @@
    },
    "id" : "design-activation-en",
    "must" : [
-      "inspect local constraints before exploring genuine tradeoffs",
+      "inspect local constraints and complete any justified initial evidence wave before freezing the search strategy or exploring genuine tradeoffs",
       "recommend a direction before asking a bounded independent batch of user-owned material decisions, serializing dependent decisions and stating criticality"
    ],
    "must_not" : [
-      "auto-activate adversarial search from risk or complexity, implement, edit files, or silently turn the result into an execution plan"
+      "auto-activate adversarial search merely because several options exist or risk or complexity is named, implement, edit files, or silently turn the result into an execution plan"
    ],
    "platforms" : [
       "codex",

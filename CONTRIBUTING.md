@@ -41,7 +41,8 @@ personal information.
    decision; do not run both by default. Genuine trade-offs receive 2–3
    alternatives, and a clear safe path receives evidence and exclusions.
    Preserve the default one-challenge path. Activate adversarial Design only from
-   Design-qualified explicit intent; freeze its trial budget before dispatch,
+   Design's automatic gate or an explicit override; after the initial evidence
+   wave, freeze its trial budget before dispatch,
    give every actual hypothesis two fresh isolated critics, require two new final
    auditors to pass, and fail closed when freshness or coverage is unproven.
    Preserve a finite decision frontier and the controlled durable Design artifact

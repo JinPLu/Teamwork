@@ -40,7 +40,7 @@ Teamwork is a set of on-demand collaboration methods, not a control layer that t
 | The local change is already clear | Describe the outcome directly; no Teamwork skill is needed. |
 | You need current external facts, official docs, papers, or citations | Use `$teamwork-research`. |
 | You need read-only local evidence from code, config, logs, tests, history, or artifacts | Use `$teamwork-explore`. |
-| A product, architecture, workflow, or API direction is unsettled | Use `$teamwork-design`; explicitly use `$teamwork-design adversarial` for multi-hypothesis search with paired independent critics and dual closure audit; use `$grill-me` when key decisions should be questioned first. |
+| A product, architecture, workflow, or API direction is unsettled | Describe the choice directly; Teamwork Design selects the ordinary challenge or adversarial search. Use `$grill-me` when key decisions should be questioned first. |
 | A failure has an unknown cause and cannot be fixed safely yet | Use `$teamwork-debug`. |
 | The direction is selected and needs executable steps | Use `$teamwork-plan`. |
 | A plan, diff, artifact, or completion claim needs independent acceptance | Use `$teamwork-review`. |
@@ -67,7 +67,7 @@ Most of the time, describe the outcome directly. Name a skill when you want exac
 | --- | --- |
 | 🔎 `$teamwork-research` | You need external facts, official docs, papers, market information, or cited sources. |
 | 🗂️ `$teamwork-explore` | You need read-only local evidence from code, config, logs, tests, history, or artifacts. |
-| 🧭 `$teamwork-design` | A product, architecture, workflow, or API choice still has a real tradeoff; append `adversarial` to opt into budgeted adversarial search. |
+| 🧭 `$teamwork-design` | A product, architecture, workflow, or API choice still has a real tradeoff; the model selects the ordinary challenge or budgeted adversarial search, with `adversarial` / `standard` as overrides. |
 | 🐞 `$teamwork-debug` | A failure has an unknown cause and needs reproduction before a safe fix. |
 | 📝 `$teamwork-plan` | The direction is selected and needs owned steps, dependencies, acceptance, and stop conditions. |
 | ✅ `$teamwork-review` | A plan, diff, artifact, or completion claim needs an independent check. |
@@ -80,7 +80,7 @@ Examples:
 
 ```text
 Use $teamwork-research to read official docs and key papers, then give a cited recommendation.
-Use $teamwork-design adversarial with the default three-hypothesis trial budget to stress-test this API direction; do not enter Plan or implementation.
+This public API could be synchronous, queued, or hybrid. A wrong choice forces an expensive migration on every client, and the latency and reliability evidence conflicts. Help me decide.
 Use $teamwork-debug to reproduce this CI failure, confirm the cause, and fix the same path.
 Implement this change directly; verify only the affected path and stop when it works.
 Use $teamwork-review to check this release for false success or stale wording.
@@ -167,7 +167,7 @@ For release reminders, open [JinPLu/Teamwork](https://github.com/JinPLu/Teamwork
 ## 🛡️ Safety boundaries
 
 - Answers, research, design, planning, diagnostic debugging, and review are read-only by default; accepting a plan does not authorize implementation.
-- `adversarial` activates only from an explicit Teamwork Design request; risk, complexity, or bare `brainstorm` language never turns it on. Each actual hypothesis receives two fresh critics and two new final auditors must both pass; unproven isolation or closure produces no durable Design.
+- Design auto-selects adversarial only when at least two viable directions remain and costly or irreversible error or conflicting evidence makes one ordinary challenge inadequate; merely saying “high-risk” or “complex” does not trigger it. The model states why and uses default `B=3` without another confirmation; `adversarial` / `standard` remain force and disable overrides. Every actual hypothesis receives two fresh critics and two new final auditors must both pass; unproven isolation or closure produces no durable Design.
 - Explicitly saved, resumed, or major-boundary Grill discussions use the single current record at `docs/teamwork/discussion/current.md`; new records use `frontier` / `current_batch` state and are not mirrored into ordinary memory.
 - The installer deletes only entries it can prove Teamwork generated. Never delete a whole `.agents`, `.codex`, `.cursor`, or `.claude` directory.
 - After enabling Codex notifications, restart Codex and trust only Teamwork's `Stop` and `PermissionRequest` handlers in `/hooks`. Do not use trust-all.

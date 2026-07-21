@@ -179,6 +179,14 @@ class EvaluationContractV4Tests(unittest.TestCase):
         case_path = ROOT / "evals/teamwork/cases/design-adversarial-activation-en.dev.v4.json"
         mutations = (
             (
+                "selects it automatically or an\nexplicit adversarial override",
+                "runs only after explicit adversarial wording",
+            ),
+            (
+                "do not\nrequest confirmation",
+                "request confirmation",
+            ),
+            (
                 "Every actual hypothesis gets exactly\n   two fresh Designer critics",
                 "Every actual hypothesis gets one reused Designer critic",
             ),

@@ -293,10 +293,11 @@ RELEASE_CAPABILITY_COVERAGE = {
 CAPABILITY_REQUIREMENTS = {
     ("design", "activation"): {
         "local-constraints-first",
+        "evidence-before-strategy-freeze",
         "genuine-tradeoffs-only",
         "recommend-first",
         "default-one-challenge",
-        "no-auto-adversarial",
+        "auto-gate-negative-control",
         "bounded-independent-batch",
         "dependency-serialization",
         "question-criticality",
@@ -304,8 +305,10 @@ CAPABILITY_REQUIREMENTS = {
         "no-implementation",
     },
     ("design", "adversarial-activation"): {
-        "design-qualified-explicit-activation",
-        "confirmed-trial-budget",
+        "input-driven-auto-selection",
+        "evidence-before-strategy-freeze",
+        "automatic-default-budget",
+        "visible-strategy-reason",
         "dynamic-taxonomy-ledger",
         "two-fresh-critics-per-hypothesis",
         "material-revision-new-trial",
@@ -474,8 +477,10 @@ CAPABILITY_REQUIREMENTS = {
         "no-implementation",
     },
     ("design", "adversarial-boundary"): {
-        "explicit-adversarial-positive",
-        "risk-complexity-negative-control",
+        "input-driven-auto-selection",
+        "evidence-before-strategy-freeze",
+        "weak-cue-negative-control",
+        "explicit-strategy-overrides",
         "default-design-stays-lightweight",
         "chat-not-plan-ready",
         "durable-design-transaction-required",

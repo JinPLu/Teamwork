@@ -4,8 +4,10 @@
     "capability": "design",
     "language": "zh",
     "requires": [
-      "design-qualified-explicit-activation",
-      "confirmed-trial-budget",
+      "input-driven-auto-selection",
+      "evidence-before-strategy-freeze",
+      "automatic-default-budget",
+      "visible-strategy-reason",
       "dynamic-taxonomy-ledger",
       "two-fresh-critics-per-hypothesis",
       "material-revision-new-trial",
@@ -20,11 +22,11 @@
   },
   "id": "design-adversarial-activation-zh",
   "must": [
-    "只由显式 Teamwork Design 请求激活 adversarial 搜索，并在派发前确认有界试验 envelope",
+    "先完成有理由的初始证据波，再根据决策信号自动选择 adversarial 搜索，说明理由和默认 B=3 envelope，并且不增加确认轮次就派发",
     "每个实际假设使用两名全新隔离批评者，实质修订计为新试验，并要求两名全新最终审计者同时通过"
   ],
   "must_not": [
-    "因风险或复杂度自动激活、复用批评者、超预算、把聊天结论当成 Plan-ready、实施，或在收敛不完整时写 durable Design"
+    "要求用户写命令词或提供预算、仅因风险或复杂度字样激活、复用批评者、超预算、把聊天结论当成 Plan-ready、实施，或在收敛不完整时写 durable Design"
   ],
   "platforms": [
     "codex",
@@ -57,7 +59,7 @@
       "source": "templates/claude-agents/designer.md"
     }
   ],
-  "prompt": "使用 $teamwork-design adversarial 和 budget=3，收敛这个公开 API 应该同步、排队还是混合。搜索保持只读，不要进入 Plan 或实现。",
+  "prompt": "这个公开 API 可以同步、排队或混合。选错会迫使所有现有客户端进行昂贵迁移，而且延迟与可靠性证据互相冲突。请在写代码前帮我收敛架构。",
   "source": "synthetic",
   "split": "dev"
 }

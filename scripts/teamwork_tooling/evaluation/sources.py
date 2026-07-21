@@ -19,7 +19,14 @@ from .contracts import (
 
 
 DESIGN_ADVERSARIAL_REFERENCE_CONCEPTS = (
-    ("bounded trial budget", (r"Accept `2 <= B <= 5`",)),
+    (
+        "automatic or explicit selection",
+        (r"selects it automatically or an\s+explicit adversarial override",),
+    ),
+    ("bounded trial budget", (r"Accept a user override\s+only when `2 <= B <= 5`",)),
+    ("invalid budget rejected", (r"reject an out-of-range override",)),
+    ("automatic default budget", (r"If omitted, set\s+`B = 3`",)),
+    ("no confirmation round", (r"do\s+not\s+request\s+confirmation",)),
     ("bounded dispatch cost", (r"`2B \+ 2` fresh dispatches",)),
     (
         "two fresh critics per hypothesis",
@@ -127,6 +134,10 @@ SKILL_CONCEPTS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
         ("bounded independent batch", (r"one bounded independent batch", r"one to three current choices", r"bounded.{0,80}independent.{0,80}batch")),
         ("dependency serialization", (r"dependent choices are serial", r"cannot change each other's.{0,120}(?:prompt|options|recommendation|closure signal)")),
         ("question criticality", (r"why the answer is critical", r"what it blocks", r"observable closing condition")),
+        ("evidence before strategy freeze", (r"After the initial evidence wave, select once before Designer critic/auditor\s+dispatch",)),
+        ("automatic adversarial gate", (r"at least two\s+viable directions.{0,160}(?:costly|irreversible).{0,80}conflicting evidence",)),
+        ("strategy overrides", (r"`standard` keeps the default.{0,100}`adversarial` forces",)),
+        ("visible selection without confirmation", (r"State the strategy and reason without\s+confirmation",)),
         ("read-only and no implementation", (r"Design does not implement", r"(?:不实施|不实现).{0,180}(?:仅|只).{0,30}(?:artifact|文件)")),
         ("managed Design transaction", (r"design-inspect.{0,500}design-schema.{0,500}design-apply", r"expected_revision.{0,500}design-apply")),
         ("Plan boundary", (r"(?:selected|settled|chosen) direction.{0,160}\bplan\b", r"(?:Design is frozen|Freeze one durable Design).{0,300}Planner", r"controlled route returns.{0,180}Planner.{0,120}\bPlan\b", r"clear enough.{0,100}(?:execution )?plan", r"(?:已选|已确定|已收敛).{0,80}(?:方向|方案).{0,80}(?:plan|计划)")),

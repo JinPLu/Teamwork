@@ -109,11 +109,13 @@ This keeps the main boundaries visible:
   they do not run together by default. Designer integrates the evidence actually
   needed. A real trade-off gets two or three alternatives; one safe path gets
   explicit evidence and exclusions. Default Design uses one challenge pass.
-  Only Design-qualified explicit adversarial intent replaces that pass with a
-  user-confirmed, budget-bounded hypothesis search: each actual hypothesis gets
-  two fresh isolated Designer critics, materially revised hypotheses consume a
-  new trial, and two new final auditors must both pass. Risk or complexity never
-  activates this strategy automatically, and missing isolation or closure fails
+  After that initial evidence wave, Design automatically replaces the pass with
+  a budget-bounded hypothesis search only when multiple viable directions plus costly error or conflicting
+  evidence make one challenge inadequate; `adversarial` forces the method and
+  `standard` disables it. The default budget is 3 without another confirmation.
+  Each actual hypothesis gets two fresh isolated Designer critics, materially
+  revised hypotheses consume a new trial, and two new final auditors must both
+  pass. Missing isolation or closure fails
   without a durable Design. Both strategies use the same finite user-decision
   frontier and controlled durable Design writer before Plan. The frontier shows
   a global map first, batches only independent material questions, and
@@ -147,7 +149,7 @@ or callable compatibility surface.
 
 Teamwork adopts Superpowers' hard gate, options, and specification self-check
 ideas. Its default one-pass challenge and finite decision frontier are locally
-tailored Teamwork convergence rules. The explicit adversarial Design strategy
+tailored Teamwork convergence rules. The adversarial Design strategy
 adopts a bounded hypothesis-taxonomy, fresh-critic, and dual-closure-audit method
 without copying a discussion-only terminal contract or claiming to reproduce
 another workflow wholesale.

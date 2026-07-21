@@ -1,21 +1,23 @@
 # Adversarial Search
 
-Use this advanced Design method only after Design-qualified explicit adversarial
-intent. Root owns orchestration, reflection, the live taxonomy/coverage ledger,
-and the final recommendation. Designer leaves receive only a frozen challenge or
-audit; they never choose the global result, ask the user, persist, plan, or
-implement.
+Use this advanced method when the owning Design selects it automatically or an
+explicit adversarial override forces it. Root owns orchestration, reflection,
+the live taxonomy/coverage ledger, and the final recommendation. Designer leaves
+receive only a frozen challenge or audit; they never choose the global result,
+ask the user, persist, plan, or implement.
 
 ## Freeze The Envelope
 
 Show the goal, hard requirements, weighted preferences, empirical gates, primary
-taxonomy axis, and maximum hypothesis-trial budget `B`. Accept `2 <= B <= 5` and
-recommend `B = 3` if omitted. The maximum adversarial critic/auditor cost is
-`2B + 2` fresh dispatches: two per actual trial plus two final auditors. Declare
-any separately justified evidence wave and add it to the total envelope. If the
-user omitted `B`, obtain one explicit confirmation before dispatch. Confirmation
-authorizes only read-only Design search, not persistence, planning,
-implementation, or release.
+taxonomy axis, and maximum hypothesis-trial budget `B`. Accept a user override
+only when `2 <= B <= 5`; reject an out-of-range override. If omitted, set
+`B = 3`. The maximum adversarial
+critic/auditor cost is `2B + 2` fresh dispatches: two per actual trial plus two
+final auditors. Declare
+any separately justified evidence wave and add it to the total envelope. State
+the selected strategy, reason, and envelope before critic dispatch, but do not
+request confirmation. Selection authorizes only read-only Design search, not
+persistence, planning, implementation, or release.
 
 ## Search And Reflect
 
