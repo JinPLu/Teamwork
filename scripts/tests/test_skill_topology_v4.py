@@ -24,6 +24,7 @@ EXPECTED_SKILLS = {
 EXPECTED_REFERENCES = {
     "teamwork-research": "deep-research.md",
     "teamwork-debug": "runtime-diagnosis.md",
+    "teamwork-design": "adversarial-search.md",
     "teamwork-review": "strict-review.md",
 }
 
@@ -226,15 +227,34 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assertIn("only when an unresolved local constraint", text)
             self.assertIn("only for a named external or current claim", text)
             self.assertIn("Do not run both evidence tracks by default", text)
+            self.assertIn("Design-qualified explicit adversarial intent", text)
+            self.assertIn("`$teamwork-design adversarial`", text)
+            self.assertIn(
+                "Bare brainstorming language, risk, complexity, or Root preference never activates adversarial search",
+                text,
+            )
+            self.assertIn("load and follow `references/adversarial-search.md`", text)
             self.assertIn("exactly one challenge pass", text)
+            self.assertIn(
+                "In the default strategy, after recommending, perform exactly one challenge pass",
+                text,
+            )
             self.assertIn("at most one targeted delta", text)
             self.assertIn("Publish the global map before details", text)
             self.assertIn("Ask one bounded independent batch", text)
             self.assertIn("Dependent choices are serial", text)
             self.assertIn("why the answer is critical", text)
             self.assertIn("two consecutive rounds", text)
+            self.assertIn("is not durable or Plan-ready", text)
+            self.assertIn("explicitly accepts the direction and authorizes saving it", text)
+            self.assertIn(
+                "A Plan-ready handoff request counts only when it explicitly accepts that direction and authorizes the save",
+                text,
+            )
             self.assertIn("Freeze one durable Design", text)
             self.assertIn("structured Design state", text)
+            self.assertIn("distinct critic and auditor identities", text)
+            self.assertIn("never store raw agent transcripts", text)
             durable_route = re.search(
                 r"The package-level Design transaction is the sole durable Design writer\."
                 r" Every durable Design lifecycle uses this public route, in order: "
@@ -273,6 +293,9 @@ class SkillTopologyV4Test(unittest.TestCase):
             return
         if skill == "teamwork-plan":
             self.assertIn("only when the user requests it or a named material risk gate requires it", text)
+            self.assertIn("require the controlled durable Design path and revision", text)
+            self.assertIn("A conversational Design recommendation", text)
+            self.assertIn("is not Plan-ready", text)
             self.assertIn("stable `PR-*`", text)
             self.assertIn("reviewed Plan cannot pass with placeholders", text)
             return
@@ -340,6 +363,46 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assert_in_order(
                 text, "Remove every temporary", "original failure path"
             )
+            return
+        if (skill, reference) == ("teamwork-design", "adversarial-search.md"):
+            self.assertIn("Accept `2 <= B <= 5`", text)
+            self.assertIn("`B = 3`", text)
+            self.assertIn(
+                "maximum adversarial critic/auditor cost is `2B + 2` fresh dispatches",
+                text,
+            )
+            self.assertIn("add it to the total envelope", text)
+            self.assertIn(
+                "Every actual hypothesis gets exactly two fresh Designer critics", text
+            )
+            self.assertIn(
+                "Exclude a material cell without a trial only when named direct evidence proves",
+                text,
+            )
+            self.assertIn("more non-excluded material cells than `B`", text)
+            self.assertIn("do not merge, demote, or silently skip cells", text)
+            self.assertIn("A materially revised hypothesis is a new trial", text)
+            self.assertIn("Launch exactly two final Designer auditors", text)
+            self.assertIn(
+                "Converge only when both final auditors return `PASS`", text
+            )
+            self.assertIn("final unit of `B` is valid closure", text)
+            self.assertIn(
+                "`budget-exhausted` applies only when another trial or audit repair is still required",
+                text,
+            )
+            self.assert_exact_pipe_contract(
+                text,
+                "Adversarial failure states",
+                {
+                    "budget-exhausted",
+                    "audit-failed",
+                    "freshness-unproven",
+                    "capability-blocked",
+                    "interrupted",
+                },
+            )
+            self.assertIn("never store raw agent transcripts", text)
             return
         if (skill, reference) == ("teamwork-review", "strict-review.md"):
             self.assert_in_order(text, "correctness first", "changed-scope cohesion")
@@ -420,14 +483,26 @@ class SkillTopologyV4Test(unittest.TestCase):
             ],
             "teamwork-debug": [("Never infer or upgrade authority", "May infer or upgrade authority")],
             "teamwork-design": [
-                ("exactly one challenge pass", "unlimited challenge passes"),
+                (
+                    "In the default strategy, after recommending, perform exactly one challenge pass",
+                    "In every strategy, perform unlimited challenge passes",
+                ),
                 ("Ask one bounded independent batch", "Ask every open item together"),
+                ("Design-qualified explicit adversarial intent", "Root-inferred adversarial intent"),
+                (
+                    "A Plan-ready handoff request counts only when it explicitly accepts that direction and authorizes the save",
+                    "A Plan-ready handoff request bypasses acceptance and save authority",
+                ),
             ],
             "teamwork-plan": [
                 (
                     "only when the user requests it or a named material risk gate requires it",
                     "for every Plan",
-                )
+                ),
+                (
+                    "A conversational Design recommendation",
+                    "Any conversational Design recommendation",
+                ),
             ],
             "teamwork-review": [("Check correctness first", "Check deslop first")],
             "teamwork-goal": [("durable Goal state at entry", "optional Goal state after attempts")],
@@ -443,6 +518,29 @@ class SkillTopologyV4Test(unittest.TestCase):
                     self.assertNotEqual(original, mutated, "mutation fixture must apply")
                     with self.assertRaises(AssertionError):
                         self.assert_skill_contract(skill, mutated)
+
+    def test_design_adversarial_reference_inversions_are_rejected(self) -> None:
+        skill = "teamwork-design"
+        reference = "adversarial-search.md"
+        original = " ".join(
+            (SKILLS / skill / "references" / reference)
+            .read_text(encoding="utf-8")
+            .split()
+        )
+        for before, after in (
+            ("exactly two fresh Designer critics", "one reused Designer critic"),
+            (
+                "Exclude a material cell without a trial only when named direct evidence proves",
+                "Exclude any material cell without a trial when Root prefers",
+            ),
+            ("both final auditors return `PASS`", "one final auditor returns `PASS`"),
+            ("final unit of `B` is valid closure", "final unit of `B` always fails"),
+        ):
+            with self.subTest(before=before):
+                mutated = original.replace(before, after, 1)
+                self.assertNotEqual(original, mutated, "mutation fixture must apply")
+                with self.assertRaises(AssertionError):
+                    self.assert_advanced_reference_contract(skill, reference, mutated)
 
     def test_grill_transaction_deletions_and_inversions_are_rejected(self) -> None:
         original = " ".join((SKILLS / "grill-me" / "SKILL.md").read_text(encoding="utf-8").split())
@@ -637,6 +735,7 @@ class SkillTopologyV4Test(unittest.TestCase):
         for skill, reference in (
             ("teamwork-research", "deep-research.md"),
             ("teamwork-debug", "runtime-diagnosis.md"),
+            ("teamwork-design", "adversarial-search.md"),
             ("teamwork-review", "strict-review.md"),
         ):
             text = (SKILLS / skill / "references" / reference).read_text(
@@ -649,6 +748,7 @@ class SkillTopologyV4Test(unittest.TestCase):
         contracts = {
             ("teamwork-research", "deep-research.md"): "claim ledger",
             ("teamwork-debug", "runtime-diagnosis.md"): "Remove every temporary",
+            ("teamwork-design", "adversarial-search.md"): "exactly two fresh Designer critics",
             ("teamwork-review", "strict-review.md"): "correctness first",
         }
         for (skill, reference), phrase in contracts.items():

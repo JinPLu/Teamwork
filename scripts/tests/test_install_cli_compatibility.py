@@ -238,6 +238,9 @@ class InstallCliCompatibilityTests(unittest.TestCase):
             (codex_skills / "teamwork-debug" / "references" / "runtime-diagnosis.md").is_file()
         )
         self.assertTrue(
+            (codex_skills / "teamwork-design" / "references" / "adversarial-search.md").is_file()
+        )
+        self.assertTrue(
             (codex_skills / "teamwork-research" / "references" / "deep-research.md").is_file()
         )
         self.assertTrue(

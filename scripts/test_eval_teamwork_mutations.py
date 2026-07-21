@@ -130,7 +130,7 @@ class TopologyMutationTests(unittest.TestCase):
             reference = root / "skills/teamwork-design/references/options.md"
             reference.parent.mkdir()
             reference.write_text("hidden behavior\n", encoding="utf-8")
-            with self.assertRaisesRegex(EvalError, "only the three named one-level advanced references are allowed"):
+            with self.assertRaisesRegex(EvalError, "only the four named one-level advanced references are allowed"):
                 validate_skill_topology(root)
 
     def test_skill_local_behavior_script_is_rejected(self) -> None:

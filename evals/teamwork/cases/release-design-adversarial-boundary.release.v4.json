@@ -1,0 +1,76 @@
+{
+  "evidence": "Held-out static boundary for explicit adversarial Design activation and durable Plan readiness.",
+  "expected": {
+    "capability": "design",
+    "language": "en",
+    "requires": [
+      "explicit-adversarial-positive",
+      "risk-complexity-negative-control",
+      "default-design-stays-lightweight",
+      "chat-not-plan-ready",
+      "durable-design-transaction-required",
+      "failure-closed",
+      "no-silent-transition",
+      "no-implementation"
+    ],
+    "scenario": "adversarial-boundary"
+  },
+  "id": "release-design-adversarial-boundary",
+  "must": [
+    "distinguish an explicit $teamwork-design adversarial request from a merely risky or complex default Design and keep both under the same durable Design owner",
+    "require successful dual closure, explicit user acceptance, and the controlled durable Design transaction before Plan can use the result"
+  ],
+  "must_not": [
+    "auto-activate adversarial search, silently downgrade failed isolation, treat a chat recommendation as Plan-ready, implement, or enter Plan"
+  ],
+  "platforms": [
+    "codex",
+    "cursor",
+    "claude"
+  ],
+  "producers": [
+    {
+      "class": "root-policy",
+      "source": "scripts/install/policy.sh"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-design/SKILL.md"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-design/references/adversarial-search.md"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-plan/SKILL.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/codex-agents/teamwork-designer.toml"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/cursor-agents/designer.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/claude-agents/designer.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/codex-agents/teamwork-planner.toml"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/cursor-agents/planner.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/claude-agents/planner.md"
+    }
+  ],
+  "prompt": "One request explicitly says '$teamwork-design adversarial with budget=3'; another only says the design is high-risk and complex. Keep activation, cost, failure, and Plan-ready state unambiguous.",
+  "source": "release",
+  "split": "release"
+}

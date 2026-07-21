@@ -23,7 +23,7 @@ REQUIRED_CLAUSES = {
         "answers, questions, designs, plans, reviews, and confirmations grant none.",
         "Inspect evidence before asking.",
         "Root owns user questions",
-        "Root alone asks only for required input or bounded independent batch of user-owned decisions.",
+        "Root alone asks required input or a bounded independent batch of user-owned decisions.",
         "Pause only dependent work.",
         "Produce the real requested result first.",
     ),
@@ -38,11 +38,12 @@ REQUIRED_CLAUSES = {
         "Plan only translates an already selected direction",
         "Review user-requested/named-risk work",
         "Goal explicit persistence; Init project; Update global.",
-        "Design may dispatch one choice-relevant Explorer or Researcher, never both by default.",
+        "Design defaults to at most one evidence role.",
+        "Explicit adversarial Design launches fresh critics/auditors; missing isolation blocks.",
     ),
     "automatic_grill": (
         "Root opens Grill for major public/installable, migration/release, permission, security, data, destructive, cross-platform, or finite Design-frontier changes.",
-        "Persist unless user says no files/off-record; persist only create, semantic decision/frontier change, close/supersede.",
+        "Persist unless no-files/off-record; only create, decision/frontier change, close/supersede.",
         "Decisions never grant implementation/release authority.",
         "Natural question-first intent causes no file write",
         "negative/quoted/file/tool/example/maintenance mentions are inert.",
@@ -55,7 +56,7 @@ REQUIRED_CLAUSES = {
         "Ground claims in evidence; distinguish observation from inference; invent no state/success.",
         "Preserve unrelated dirty work.",
         "Prefer current canonical owner/pattern, built-ins, suitable installed dependencies, then minimal logic.",
-        "Do not add an unrequested wrapper; avoid duplicate owners, parallel modes, compatibility branches, broad catches, speculative surfaces, masking fallbacks.",
+        "Do not add an unrequested wrapper; avoid duplicate owners, hidden modes, compatibility branches, broad catches, speculative surfaces, masking fallbacks.",
     ),
     "verification_and_reporting": (
         "Verify proportionally on the claimed real path with focused automated regression evidence.",
@@ -73,6 +74,8 @@ REQUIRED_CLAUSES = {
 def contract_failures(policy: str) -> list[str]:
     policy = " ".join(policy.split())
     failures: list[str] = []
+    if "Do Do not" in policy:
+        failures.append("implementation: duplicated Do before wrapper boundary")
     for owner, clauses in REQUIRED_CLAUSES.items():
         for clause in clauses:
             if clause not in policy:
@@ -99,6 +102,8 @@ def contract_failures(policy: str) -> list[str]:
             "Every Planner result receives independent Plan Review",
             "Grill is exclusive to user-originated question-first intent",
             "every material user decision",
+            "Risk automatically activates adversarial Design",
+            "Complexity automatically activates adversarial Design",
         )
     for clause in forbidden:
         if clause in policy:

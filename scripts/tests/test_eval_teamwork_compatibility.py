@@ -28,14 +28,21 @@ class EvalTeamworkCompatibilityTests(unittest.TestCase):
             check=False,
         )
 
-    def test_help_output_remains_byte_compatible(self) -> None:
+    def test_help_output_preserves_public_semantics_across_python_versions(self) -> None:
         result = self.run_eval("--help")
         self.assertEqual(0, result.returncode, result.stderr.decode())
         self.assertEqual(b"", result.stderr)
-        self.assertEqual(
-            "52028a236bba03efb6d76c86747c1f01dd74c17e26ae79b2731342a6b50bc953",
-            hashlib.sha256(result.stdout).hexdigest(),
-        )
+        normalized = " ".join(result.stdout.decode().split())
+        for fragment in (
+            "usage: eval-teamwork.py",
+            "--split {dev,release}",
+            "--all",
+            "--optimizer-ledger PATH",
+            "Validate Teamwork eval fixtures.",
+        ):
+            self.assertIn(fragment, normalized)
+        self.assertEqual(2, normalized.count("--split {dev,release}"))
+        self.assertEqual(2, normalized.count("--optimizer-ledger PATH"))
 
     def test_case_outputs_keep_the_public_shape_without_freezing_case_data(self) -> None:
         selections = {

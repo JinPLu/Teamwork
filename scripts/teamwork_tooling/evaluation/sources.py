@@ -10,10 +10,47 @@ from typing import Iterable, Mapping
 from .contracts import (
     CANONICAL_ROLES,
     CANONICAL_SKILL_COUNT,
+    DESIGN_ADVERSARIAL_REFERENCE_PATH,
     EvalError,
     RETIRED_SKILLS,
     ROLE_TEMPLATE_PATHS,
     ROOT,
+)
+
+
+DESIGN_ADVERSARIAL_REFERENCE_CONCEPTS = (
+    ("bounded trial budget", (r"Accept `2 <= B <= 5`",)),
+    ("bounded dispatch cost", (r"`2B \+ 2` fresh dispatches",)),
+    (
+        "two fresh critics per hypothesis",
+        (r"Every actual hypothesis gets exactly\s+two fresh Designer critics",),
+    ),
+    (
+        "material revision consumes a new trial",
+        (r"A materially revised hypothesis is a new trial",),
+    ),
+    (
+        "two fresh final auditors",
+        (r"Launch exactly two final Designer auditors",),
+    ),
+    (
+        "dual pass closure",
+        (r"Converge only when both final auditors return `PASS`",),
+    ),
+    (
+        "full-budget closure remains valid",
+        (r"final unit of `B` is valid closure",),
+    ),
+    (
+        "budget exhaustion needs unfinished work",
+        (r"`budget-exhausted` applies only when another trial\s+or audit repair is still required",),
+    ),
+    (
+        "failure-closed states",
+        (
+            r"budget-exhausted\s*\|\s*audit-failed\s*\|\s*freshness-unproven\s*\|\s*capability-blocked\s*\|\s*interrupted",
+        ),
+    ),
 )
 
 
@@ -171,6 +208,12 @@ def validate_skill_source_contract(skill: str, source_text: str) -> None:
         )
 
 
+def validate_design_adversarial_reference_contract(source_text: str) -> None:
+    path = DESIGN_ADVERSARIAL_REFERENCE_PATH
+    for label, patterns in DESIGN_ADVERSARIAL_REFERENCE_CONCEPTS:
+        _require_concept(path, source_text, label, patterns)
+
+
 def dependency_cycles(edges: Mapping[str, Iterable[str]]) -> list[list[str]]:
     """Return cycles in a small directed dependency graph."""
 
@@ -222,12 +265,13 @@ def validate_skill_topology(root: Path = ROOT) -> dict[str, object]:
     allowed_refs = {
         "skills/teamwork-research/references/deep-research.md",
         "skills/teamwork-debug/references/runtime-diagnosis.md",
+        "skills/teamwork-design/references/adversarial-search.md",
         "skills/teamwork-review/references/strict-review.md",
     }
     unexpected_refs = sorted(set(behavior_refs) - allowed_refs)
     if unexpected_refs:
         raise EvalError(
-            "skills/: only the three named one-level advanced references are allowed: "
+            "skills/: only the four named one-level advanced references are allowed: "
             + ", ".join(unexpected_refs)
         )
     skill_scripts = sorted(

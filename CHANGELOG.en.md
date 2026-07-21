@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 4.2.0 - 2026-07-21
+
+**Teamwork Design can now opt into budgeted adversarial search: ordinary design stays lightweight, while decisions that need stronger pressure-testing can use multiple hypotheses, paired independent critics, and dual closure audit.**
+
+- **You choose the design intensity.** Before, `$teamwork-design` always used one challenge pass. After, that default remains unchanged and only an explicit `$teamwork-design adversarial` request starts adversarial search. Risk, complexity, or bare `brainstorm` language never adds the cost automatically.
+- **The search has a visible ceiling.** Teamwork shows the goal, fitness function, taxonomy, and hypothesis-trial budget before dispatch; it recommends `budget=3` when none is supplied. Every actual hypothesis receives two fresh independent critics, a material revision consumes a new trial, and two new final auditors must both pass.
+- **Failure cannot masquerade as a Design.** Unproven isolation, exhausted budget, audit disagreement, or interruption returns an explicit incomplete result instead of silently downgrading, extending the budget, or producing a durable Design.
+- **Design, Grill, and Plan ownership stays intact.** Adversarial search remains inside `teamwork-design`, with no eleventh skill or new role. A passing chat conclusion is still not Plan-ready; a durable Design appears only after explicit user acceptance and an authorized controlled write.
+
+Upgrade action: Codex Marketplace users re-add `JinPLu/Teamwork`, install `teamwork-skill@teamwork`, and run `$teamwork-update` in a new task. Checkout users run `git pull --ff-only`, `./install.sh all`, and `./scripts/check-update.sh --readiness`.
+
+Important limit: this release fails closed on hosts that cannot prove fresh isolation. Static validation or one-host forward testing does not establish identical live behavior across Codex, Cursor, and Claude Code.
+
 ## 4.1.0 - 2026-07-20
 
 **Teamwork 4.1.0 restores mandatory formal role-dispatch configuration and stable Codex `multi_agent` routing; Grill and Design can still batch independent key questions and keep dependent choices serial. Live cross-host dispatch verification is deferred pending Codex quota, so this release does not claim runtime-proven dispatch.**

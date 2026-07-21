@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 4.2.0 - 2026-07-21
+
+**Teamwork Design 现在可以显式切换到预算化对抗搜索：普通设计仍保持轻量，需要更强压力测试时才使用多假设、独立双批评和双收敛审计。**
+
+- **设计强度由你决定。** 以前 `$teamwork-design` 固定使用一次 challenge；现在默认行为不变，只有明确调用 `$teamwork-design adversarial` 才会进入对抗搜索。高风险、复杂度或裸 `brainstorm` 不会自动增加成本。
+- **对抗搜索有可见上限。** 开始前会展示 goal、fitness、taxonomy 和假设试验预算；未指定时推荐 `budget=3`。每个实际假设交给两名全新独立批评者，实质修订消耗新的试验名额，最后两名全新审计者必须同时通过。
+- **失败不会被包装成 Design。** 隔离不可证明、预算耗尽、审计分歧或中断都会明确返回 incomplete，不会静默降级、追加预算或生成 durable Design。
+- **Design、Grill 和 Plan 的所有权不变。** 对抗搜索仍属于 `teamwork-design`，不新增第 11 个 skill 或新角色；聊天中的通过结论仍不是 Plan-ready，只有用户明确接受并授权受控保存后才产生 durable Design。
+
+升级操作：Codex Marketplace 用户重新添加 `JinPLu/Teamwork`、安装 `teamwork-skill@teamwork`，然后在新任务运行 `$teamwork-update`；checkout 用户运行 `git pull --ff-only`、`./install.sh all` 和 `./scripts/check-update.sh --readiness`。
+
+重要限制：本版会对无法证明 fresh 隔离的宿主失败关闭；静态验证或单宿主前向测试不等于 Codex、Cursor、Claude Code 的 live 行为完全等价。
+
 ## 4.1.0 - 2026-07-20
 
 **Teamwork 4.1.0 恢复正式角色的强制派发配置与稳定的 Codex `multi_agent` 路由；Grill 和 Design 仍可批量处理独立关键问题，并把依赖问题保持串行。跨宿主正式派发的 live 验证因 Codex 配额限制暂缓，本版不宣称运行时派发已被证实。**

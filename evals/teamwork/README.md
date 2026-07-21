@@ -20,18 +20,20 @@ The cases are organized by capability metadata rather than hard-coded case IDs.
 The dev matrix keeps bilingual coverage for:
 
 - external Research and the local-evidence Native negative control;
-- Design activation, selected-direction Plan, and their ownership boundary;
+- default Design activation, explicit adversarial Design activation,
+  selected-direction Plan, and their ownership boundaries;
 - ordinary natural question-first Grill with no file write, plus explicit
   `$grill-me` save persistence and independently-major automatic persistence
   through the managed `inspect -> schema -> apply` transaction;
 - Debug, Goal, Review, Init, Update, Ask Gate, minimal native change,
   monotonic verification, permission/privacy, and cross-platform host ownership.
 
-The release split is deliberately small but non-empty. It holds out three public
+The release split is deliberately small but non-empty. It holds out four public
 boundaries: external Research versus local Native inspection, unresolved Design
-versus selected-direction Plan, and ordinary no-write Grill versus explicit
-persistence or independently-major automatic persistence through the managed
-transaction. Release cases are never
+versus selected-direction Plan, explicit adversarial Design versus risk-only
+default Design and chat-only recommendations, and ordinary no-write Grill versus
+explicit persistence or independently-major automatic persistence through the
+managed transaction. Release cases are never
 optimizer inputs.
 
 The deterministic runner does not execute Codex, Cursor, or Claude Code and does

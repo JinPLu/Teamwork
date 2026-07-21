@@ -106,12 +106,13 @@ done
 # --- Skill topology and package runtime ---
 expected_reference_inventory="$(printf '%s\n' \
   'skills/teamwork-debug/references/runtime-diagnosis.md' \
+  'skills/teamwork-design/references/adversarial-search.md' \
   'skills/teamwork-research/references/deep-research.md' \
   'skills/teamwork-review/references/strict-review.md' | sort)"
 actual_reference_inventory="$(find "$ROOT/skills" -type f -path '*/references/*' \
   | sed "s#^$ROOT/##" | sort)"
 [[ "$actual_reference_inventory" == "$expected_reference_inventory" ]] \
-  || fail "skills must contain exactly the three public reference files"
+  || fail "skills must contain exactly the four public reference files"
 if find "$ROOT/skills" -mindepth 2 -type d -name scripts \
   -exec sh -c 'find "$1" -type f -print -quit' _ {} \; | grep -q .; then
   fail "skills must not contain skill-local scripts"
@@ -400,6 +401,7 @@ if actual_skills != expected_skills:
     raise SystemExit("FAIL: Marketplace bundle skill inventory must match canonical source")
 expected_references = {
     "teamwork-debug/references/runtime-diagnosis.md",
+    "teamwork-design/references/adversarial-search.md",
     "teamwork-research/references/deep-research.md",
     "teamwork-review/references/strict-review.md",
 }
@@ -414,7 +416,7 @@ bundle_references = {
     if path.is_file() and path.parent.name == "references"
 }
 if source_references != expected_references or bundle_references != expected_references:
-    raise SystemExit("FAIL: source and Marketplace bundle must contain exactly three public references")
+    raise SystemExit("FAIL: source and Marketplace bundle must contain exactly four public references")
 expected_roles = {
     "codex-agents": {
         "teamwork-debugger.toml", "teamwork-designer.toml", "teamwork-explorer.toml",

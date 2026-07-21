@@ -1,0 +1,63 @@
+{
+  "evidence": "Static contract fixture; live activation, fresh isolation, and answer quality require separate evidence.",
+  "expected": {
+    "capability": "design",
+    "language": "en",
+    "requires": [
+      "design-qualified-explicit-activation",
+      "confirmed-trial-budget",
+      "dynamic-taxonomy-ledger",
+      "two-fresh-critics-per-hypothesis",
+      "material-revision-new-trial",
+      "two-fresh-final-auditors",
+      "dual-pass-required",
+      "failure-closed",
+      "chat-not-plan-ready",
+      "read-only",
+      "no-implementation"
+    ],
+    "scenario": "adversarial-activation"
+  },
+  "id": "design-adversarial-activation-en",
+  "must": [
+    "activate adversarial search only from the explicit Teamwork Design request and confirm its bounded trial envelope before dispatch",
+    "give every actual hypothesis two fresh isolated critics, count a material revision as a new trial, and require two new final auditors to pass"
+  ],
+  "must_not": [
+    "auto-activate from risk or complexity, reuse a critic, exceed the budget, claim Plan readiness from chat, implement, or write a durable Design after incomplete closure"
+  ],
+  "platforms": [
+    "codex",
+    "cursor",
+    "claude"
+  ],
+  "producers": [
+    {
+      "class": "root-policy",
+      "source": "scripts/install/policy.sh"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-design/SKILL.md"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-design/references/adversarial-search.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/codex-agents/teamwork-designer.toml"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/cursor-agents/designer.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/claude-agents/designer.md"
+    }
+  ],
+  "prompt": "Use $teamwork-design adversarial with budget=3 to settle whether this public API should be synchronous, queued, or hybrid. Keep the search read-only and do not enter Plan or implementation.",
+  "source": "synthetic",
+  "split": "dev"
+}

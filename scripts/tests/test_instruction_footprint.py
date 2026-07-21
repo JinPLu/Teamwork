@@ -45,7 +45,7 @@ class InstructionFootprintTests(unittest.TestCase):
             {
                 "surfaces": 10,
                 "max_skill_words": 1,
-                "behavior_references": 3,
+                "behavior_references": 4,
                 "cross_skill_loads": 0,
                 "dependency_cycles": 0,
             }
@@ -67,7 +67,7 @@ class InstructionFootprintTests(unittest.TestCase):
             compactness_failures(result),
             [
                 "canonical skill inventory must contain 10 skills: 9",
-                "canonical reference inventory must contain 3 references: 0",
+                "canonical reference inventory must contain 4 references: 0",
             ],
         )
 

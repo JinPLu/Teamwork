@@ -171,7 +171,13 @@ class RoleProfilesV4Test(unittest.TestCase):
 
     def test_proportional_routing_boundaries_are_consistent_across_hosts(self) -> None:
         role_clauses = {
-            "designer": ("only the evidence tracks that Root conditionally supplies",),
+            "designer": (
+                "only the evidence tracks that Root conditionally supplies",
+                "challenge one frozen adversarial hypothesis",
+                "audit one frozen adversarial search closure",
+                "distinct host task identity",
+                "unless the audit assignment explicitly includes the final ledger",
+            ),
             "planner": ("execution-ready", "user request or named material risk gate"),
             "worker": ("self-verifies its slice", "does not trigger Review itself"),
             "plan-reviewer": ("user request or named material risk gate", "at most one bounded delta recheck"),

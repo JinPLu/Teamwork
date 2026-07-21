@@ -61,16 +61,22 @@ class V410TeamworkLedgerTests(unittest.TestCase):
     def setUp(self) -> None:
         self.allowlist = read_json(ALLOWLIST)
         self.ownership = read_json(OWNERSHIP)
-        self.accepted_review = read_json(ACCEPTED_REVIEW)
+
+    def accepted_review_or_skip(self) -> dict:
+        if not PLAN.is_file() or not ACCEPTED_REVIEW.is_file():
+            self.skipTest("v4.1.0 transient release review artifacts are unavailable")
+        return read_json(ACCEPTED_REVIEW)
 
     def test_w0_currentness_bindings_match_plan_and_accepted_review(self) -> None:
+        accepted_review = self.accepted_review_or_skip()
         self.assertEqual(sha256_file(PLAN), PLAN_SHA256)
         self.assertEqual(sha256_file(ACCEPTED_REVIEW), ACCEPTED_REVIEW_SHA256)
-        self.assertEqual(self.accepted_review["verdict"], "ACCEPT")
-        self.assertEqual(self.accepted_review["candidate_id"], CANDIDATE_ID)
-        validate_w0_bindings(self.allowlist, self.accepted_review, ACCEPTED_REVIEW_SHA256)
+        self.assertEqual(accepted_review["verdict"], "ACCEPT")
+        self.assertEqual(accepted_review["candidate_id"], CANDIDATE_ID)
+        validate_w0_bindings(self.allowlist, accepted_review, ACCEPTED_REVIEW_SHA256)
 
     def test_w0_bindings_fail_closed_on_plan_or_review_hash_drift(self) -> None:
+        accepted_review = self.accepted_review_or_skip()
         cases = (
             ("reviewed_plan_sha256", "allowlist", "reviewed_plan_sha256"),
             ("accepted plan_sha256", "accepted", "plan_sha256"),
@@ -80,7 +86,7 @@ class V410TeamworkLedgerTests(unittest.TestCase):
         for label, target, field in cases:
             with self.subTest(label=label):
                 allowlist = json.loads(json.dumps(self.allowlist))
-                accepted = json.loads(json.dumps(self.accepted_review))
+                accepted = json.loads(json.dumps(accepted_review))
                 if target == "accepted":
                     accepted[field] = "0" * 64
                 else:

@@ -16,6 +16,7 @@ OWNERSHIP_PATH = FIXTURES / "v4.1.0-teamwork-c5-path-ownership.json"
 
 BASE_COMMIT = "39de72f326ca68bc3a84a957794adfa76913b674"
 CANDIDATE_ID = "teamwork-4.1.0-c5"
+HISTORICAL_VERSION = "4.1.0"
 PLAN_SHA256 = "79dfe3db4141df6fb460d9d1ad4a5604f68470ddf599de0caab40d3eb5b48dfc"
 ACCEPTED_PLAN_REVIEW_SHA256 = "607d167a2ac6e94f3b2b206c7af0d3affdf84bfaf7a47e45c99956144672e857"
 ACCEPTED_PLAN_REVIEW_PAYLOAD_SHA256 = "b745716604ecff603a5565cdc5a49baa590ccb93c60d35ec157ce8db7bf2717e"
@@ -92,6 +93,9 @@ class C5PathOwnershipTests(unittest.TestCase):
         cls.ownership = read_json(OWNERSHIP_PATH)
 
     def test_allowlist_is_current_dirty_delta_plus_guaranteed_c5_paths(self) -> None:
+        current_version = (REPO_ROOT / "VERSION").read_text(encoding="utf-8").strip()
+        if current_version != HISTORICAL_VERSION:
+            self.skipTest("the c5 dirty-delta snapshot only applies to Teamwork 4.1.0")
         expected = sorted(set(dirty_paths()) | set(GUARANTEED_DELTA_PATHS), key=lambda value: value.encode("utf-8"))
         self.assertEqual(self.allowlist["allowed_paths"], expected)
         self.assertEqual(self.allowlist["guaranteed_delta_paths"], GUARANTEED_DELTA_PATHS)

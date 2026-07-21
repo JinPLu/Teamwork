@@ -98,6 +98,12 @@ def role_sources(role: str) -> set[tuple[str, str]]:
 
 
 ROOT_POLICY_SOURCE = {("root-policy", "scripts/install/policy.sh")}
+DESIGN_ADVERSARIAL_REFERENCE_PATH = (
+    "skills/teamwork-design/references/adversarial-search.md"
+)
+DESIGN_ADVERSARIAL_REFERENCE_SOURCE = {
+    ("skill", DESIGN_ADVERSARIAL_REFERENCE_PATH)
+}
 DISCUSSION_TRANSACTION_SOURCE = {("artifact-engine", "scripts/discussion-transaction.py")}
 INIT_ENGINE_SOURCE = {("artifact-engine", "scripts/init-project-files.py")}
 UPDATE_INSTALLER_SOURCE = {("installer", "scripts/check-update.sh")}
@@ -109,6 +115,12 @@ CASE_PRODUCER_REQUIREMENTS = {
         ("skill", "skills/teamwork-design/SKILL.md"),
         *role_sources("explorer"),
         *role_sources("researcher"),
+        *role_sources("designer"),
+    },
+    ("design", "adversarial-activation"): {
+        *ROOT_POLICY_SOURCE,
+        ("skill", "skills/teamwork-design/SKILL.md"),
+        *DESIGN_ADVERSARIAL_REFERENCE_SOURCE,
         *role_sources("designer"),
     },
     ("research", "external"): {
@@ -210,6 +222,14 @@ CASE_PRODUCER_REQUIREMENTS = {
         *role_sources("planner"),
         *role_sources("plan-reviewer"),
     },
+    ("design", "adversarial-boundary"): {
+        *ROOT_POLICY_SOURCE,
+        ("skill", "skills/teamwork-design/SKILL.md"),
+        *DESIGN_ADVERSARIAL_REFERENCE_SOURCE,
+        ("skill", "skills/teamwork-plan/SKILL.md"),
+        *role_sources("designer"),
+        *role_sources("planner"),
+    },
     ("grill", "persistence-boundary"): {
         *ROOT_POLICY_SOURCE,
         ("skill", "skills/grill-me/SKILL.md"),
@@ -222,6 +242,8 @@ CASE_PRODUCER_REQUIREMENTS = {
 DEV_CAPABILITY_COVERAGE = {
     ("design", "activation", "en"),
     ("design", "activation", "zh"),
+    ("design", "adversarial-activation", "en"),
+    ("design", "adversarial-activation", "zh"),
     ("research", "external", "en"),
     ("research", "external", "zh"),
     ("native", "local-evidence", "en"),
@@ -264,6 +286,7 @@ DEV_CAPABILITY_COVERAGE = {
 RELEASE_CAPABILITY_COVERAGE = {
     ("research", "external-boundary", "en"),
     ("design", "design-vs-plan", "en"),
+    ("design", "adversarial-boundary", "en"),
     ("grill", "persistence-boundary", "en"),
 }
 
@@ -272,9 +295,24 @@ CAPABILITY_REQUIREMENTS = {
         "local-constraints-first",
         "genuine-tradeoffs-only",
         "recommend-first",
+        "default-one-challenge",
+        "no-auto-adversarial",
         "bounded-independent-batch",
         "dependency-serialization",
         "question-criticality",
+        "read-only",
+        "no-implementation",
+    },
+    ("design", "adversarial-activation"): {
+        "design-qualified-explicit-activation",
+        "confirmed-trial-budget",
+        "dynamic-taxonomy-ledger",
+        "two-fresh-critics-per-hypothesis",
+        "material-revision-new-trial",
+        "two-fresh-final-auditors",
+        "dual-pass-required",
+        "failure-closed",
+        "chat-not-plan-ready",
         "read-only",
         "no-implementation",
     },
@@ -432,6 +470,16 @@ CAPABILITY_REQUIREMENTS = {
     ("design", "design-vs-plan"): {
         "unresolved-options-use-design",
         "selected-direction-uses-plan",
+        "no-silent-transition",
+        "no-implementation",
+    },
+    ("design", "adversarial-boundary"): {
+        "explicit-adversarial-positive",
+        "risk-complexity-negative-control",
+        "default-design-stays-lightweight",
+        "chat-not-plan-ready",
+        "durable-design-transaction-required",
+        "failure-closed",
         "no-silent-transition",
         "no-implementation",
     },

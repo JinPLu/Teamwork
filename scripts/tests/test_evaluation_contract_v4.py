@@ -18,7 +18,12 @@ sys.path.insert(0, str(SCRIPTS))
 
 from teamwork_tooling.evaluation import cases as case_module
 from teamwork_tooling.evaluation.cases import selected_cases, validate_bound_producer_sources, validate_case
-from teamwork_tooling.evaluation.contracts import CANONICAL_ROLES, EvalError, ROLE_TEMPLATE_PATHS
+from teamwork_tooling.evaluation.contracts import (
+    CANONICAL_ROLES,
+    DESIGN_ADVERSARIAL_REFERENCE_PATH,
+    EvalError,
+    ROLE_TEMPLATE_PATHS,
+)
 from teamwork_tooling.evaluation.host_matrix import (
     HostMatrixError,
     _direct_scenario_evidence,
@@ -131,7 +136,13 @@ class EvaluationContractV4Tests(unittest.TestCase):
         for source_path, owner in owners.items():
             source = (ROOT / source_path).read_text(encoding="utf-8")
             producer_class = owner["class"]
-            if producer_class == "root-policy":
+            if source_path == DESIGN_ADVERSARIAL_REFERENCE_PATH:
+                mutated = source.replace(
+                    "Every actual hypothesis gets exactly\n   two fresh Designer critics",
+                    "Every actual hypothesis gets one reused Designer critic",
+                    1,
+                )
+            elif producer_class == "root-policy":
                 mutated = source.replace("Root alone asks", "Root never asks", 1)
             elif producer_class == "skill":
                 mutated = source.replace("Use when", "Apply when", 1)
@@ -148,6 +159,47 @@ class EvaluationContractV4Tests(unittest.TestCase):
             self.assertNotEqual(source, mutated, source_path)
             with self.subTest(source=source_path), self.assertRaises(EvalError):
                 validate_bound_producer_sources(owner["case"], owner["path"], {source_path: mutated})
+
+    def test_adversarial_cases_bind_the_reference_and_reject_core_inversions(self) -> None:
+        case_ids = {
+            "design-adversarial-activation-en",
+            "design-adversarial-activation-zh",
+            "release-design-adversarial-boundary",
+        }
+        cases = {case["id"]: case for case in selected_cases("all") if case["id"] in case_ids}
+        self.assertEqual(case_ids, set(cases))
+        for case in cases.values():
+            self.assertIn(
+                DESIGN_ADVERSARIAL_REFERENCE_PATH,
+                {producer["source"] for producer in case["producers"]},
+            )
+
+        source = (ROOT / DESIGN_ADVERSARIAL_REFERENCE_PATH).read_text(encoding="utf-8")
+        case = cases["design-adversarial-activation-en"]
+        case_path = ROOT / "evals/teamwork/cases/design-adversarial-activation-en.dev.v4.json"
+        mutations = (
+            (
+                "Every actual hypothesis gets exactly\n   two fresh Designer critics",
+                "Every actual hypothesis gets one reused Designer critic",
+            ),
+            (
+                "Converge only when both final auditors return `PASS`",
+                "Converge when either final auditor returns `PASS`",
+            ),
+            (
+                "Using the final unit of `B` is valid closure",
+                "Using the final unit of `B` is budget exhaustion",
+            ),
+        )
+        for before, after in mutations:
+            mutated = source.replace(before, after, 1)
+            self.assertNotEqual(source, mutated, before)
+            with self.subTest(before=before), self.assertRaises(EvalError):
+                validate_bound_producer_sources(
+                    case,
+                    case_path,
+                    {DESIGN_ADVERSARIAL_REFERENCE_PATH: mutated},
+                )
 
     def test_universal_fallback_inversion_fails_paired_case(self) -> None:
         case = next(case for case in selected_cases("dev") if case["id"] == "native-quality-accepted-fallback")

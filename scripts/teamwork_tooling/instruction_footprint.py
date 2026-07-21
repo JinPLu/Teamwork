@@ -25,7 +25,7 @@ COMPACTNESS_LIMITS = {
 }
 MAX_SKILL_WORDS = 900
 CANONICAL_SKILL_COUNT = 10
-CANONICAL_REFERENCE_COUNT = 3
+CANONICAL_REFERENCE_COUNT = 4
 
 sys.path.insert(0, str(ROOT / "scripts"))
 from teamwork_tooling.evaluation.sources import validate_skill_topology  # noqa: E402

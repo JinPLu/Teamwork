@@ -40,10 +40,13 @@ personal information.
    Research only for a named sanitized external/current claim that can change the
    decision; do not run both by default. Genuine trade-offs receive 2–3
    alternatives, and a clear safe path receives evidence and exclusions.
-   Preserve one challenge pass, a finite decision frontier, and the controlled
-   durable Design artifact before Plan. The frontier shows a global map first,
-   batches only independent material questions, and serializes dependent
-   questions. Independent Plan Review runs only on
+   Preserve the default one-challenge path. Activate adversarial Design only from
+   Design-qualified explicit intent; freeze its trial budget before dispatch,
+   give every actual hypothesis two fresh isolated critics, require two new final
+   auditors to pass, and fail closed when freshness or coverage is unproven.
+   Preserve a finite decision frontier and the controlled durable Design artifact
+   before Plan. The frontier shows a global map first, batches only independent
+   material questions, and serializes dependent questions. Independent Plan Review runs only on
    user request or a named material risk gate.
 5. Preserve result-first code work: change the canonical owner, reuse existing
    patterns/built-ins/suitable dependencies, add the smallest complete logic,

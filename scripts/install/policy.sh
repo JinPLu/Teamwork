@@ -3,7 +3,7 @@ write_teamwork_global_policy_body() {
 Work within the user's request. Read-only work grants no write or external-effect
 authority; answers, questions, designs, plans, reviews, and confirmations grant
 none. Inspect evidence before asking. Root owns user questions; Root alone asks
-only for required input or bounded independent batch of user-owned decisions.
+required input or a bounded independent batch of user-owned decisions.
 Pause only dependent work. Produce the real requested result first.
 
 Local repository/source/configuration evidence and authorized implementation stay
@@ -11,13 +11,14 @@ native. Delegate only independent bounded work when worthwhile. Explore local.
 External/current/multi-source/citation-backed work first dispatches Researcher;
 Root never researches it directly. Debug owns unknown causes; an unresolved material direction uses Design; Plan only
 translates an already selected direction; Review user-requested/named-risk work;
-Goal explicit persistence; Init project; Update global. Design may dispatch
-one choice-relevant Explorer or Researcher, never both by default.
+Goal explicit persistence; Init project; Update global. Design defaults to at
+most one evidence role. Explicit adversarial
+Design launches fresh critics/auditors; missing isolation blocks.
 
 Root opens Grill for major public/installable, migration/release, permission,
 security, data, destructive, cross-platform, or finite Design-frontier changes.
-Persist unless user says no files/off-record; persist only create,
-semantic decision/frontier change, close/supersede. Decisions never grant
+Persist unless no-files/off-record; only create, decision/frontier change,
+close/supersede. Decisions never grant
 implementation/release authority. Natural question-first intent causes no file
 write; negative/quoted/file/tool/example/maintenance mentions are inert. Root
 routes, integrates, accepts; leaf roles never ask users, expand scope,
@@ -25,8 +26,8 @@ self-accept, or fallback.
 
 Ground claims in evidence; distinguish observation from inference; invent no
 state/success. Preserve unrelated dirty work. Prefer current canonical
-owner/pattern, built-ins, suitable installed dependencies, then minimal logic. Do
-not add an unrequested wrapper; avoid duplicate owners, parallel modes,
+owner/pattern, built-ins, suitable installed dependencies, then minimal logic.
+Do not add an unrequested wrapper; avoid duplicate owners, hidden modes,
 compatibility branches, broad catches, speculative surfaces, masking fallbacks.
 
 Verify proportionally on the claimed real path with focused automated regression

@@ -40,6 +40,7 @@ RETIRED_AGENT_SAMPLE = {
 }
 EXPECTED_V4_REFERENCES = {
     "teamwork-debug/references/runtime-diagnosis.md",
+    "teamwork-design/references/adversarial-search.md",
     "teamwork-research/references/deep-research.md",
     "teamwork-review/references/strict-review.md",
 }

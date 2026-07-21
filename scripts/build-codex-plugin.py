@@ -68,6 +68,7 @@ EXPECTED_SKILLS = (
 )
 EXPECTED_REFERENCES = (
     "skills/teamwork-debug/references/runtime-diagnosis.md",
+    "skills/teamwork-design/references/adversarial-search.md",
     "skills/teamwork-research/references/deep-research.md",
     "skills/teamwork-review/references/strict-review.md",
 )
@@ -213,7 +214,7 @@ def validate_bundle(bundle: Path, root: Path) -> None:
         )
     )
     if actual_references != EXPECTED_REFERENCES:
-        raise SystemExit("bundle must contain exactly the three public Teamwork references")
+        raise SystemExit("bundle must contain exactly the four public Teamwork references")
     for directory, expected_files in EXPECTED_ROLE_TEMPLATES.items():
         actual_files = tuple(
             sorted(path.name for path in (bundle / "templates" / directory).iterdir() if path.is_file())

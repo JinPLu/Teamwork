@@ -1,7 +1,7 @@
 {
   "name": "teamwork-skill",
-  "version": "4.1.0",
-  "description": "Claude Code adapter skills for research, local evidence, design, debugging, planning, review, setup, updates, and long-running goals; routine local work stays native.",
+  "version": "4.2.0",
+  "description": "Claude Code adapter skills for research, local evidence, bounded and adversarial design, debugging, planning, review, setup, updates, and long-running goals; routine local work stays native.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"
@@ -17,6 +17,7 @@
     "agents",
     "planning",
     "design",
+    "adversarial",
     "research",
     "grill-me",
     "review"
@@ -25,7 +26,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Ten focused collaboration skills for research, local evidence, design, debugging, review, setup, updates, and goals.",
-    "longDescription": "Teamwork adds ten focused collaboration skills for cited external research, read-only local evidence, decision design, unknown-cause debugging, executable planning, read-only review, explicit question-led challenge, project initialization, global refresh, and long-running convergence. Routine local inspection and authorized implementation stay with Claude Code's native workflow; no router or execution skill is required. You choose the scope and authorize changes; Claude Code remains in control of tools and permissions.",
+    "longDescription": "Teamwork adds ten focused collaboration skills for cited external research, read-only local evidence, decision design with an explicit budgeted adversarial strategy, unknown-cause debugging, executable planning, read-only review, explicit question-led challenge, project initialization, global refresh, and long-running convergence. Routine local inspection and authorized implementation stay with Claude Code's native workflow; no router or execution skill is required. You choose the scope and authorize changes; Claude Code remains in control of tools and permissions.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -35,7 +36,7 @@
     "websiteURL": "https://github.com/JinPLu/Teamwork",
     "defaultPrompt": [
       "Use $teamwork-research to investigate this current external question from primary sources with linked citations.",
-      "Use $teamwork-design to inspect context, explore options, ask bounded decision batches, and produce a decision-ready design.",
+      "Use $teamwork-design for bounded design; append adversarial with budget=3 for paired fresh critics and dual closure audit.",
       "Implement this scoped change with native Claude Code behavior and verify the changed path."
     ],
     "brandColor": "#2563EB"

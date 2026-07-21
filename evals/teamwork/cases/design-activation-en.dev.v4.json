@@ -7,6 +7,8 @@
          "local-constraints-first",
          "genuine-tradeoffs-only",
          "recommend-first",
+         "default-one-challenge",
+         "no-auto-adversarial",
          "bounded-independent-batch",
          "dependency-serialization",
          "question-criticality",
@@ -21,7 +23,7 @@
       "recommend a direction before asking a bounded independent batch of user-owned material decisions, serializing dependent decisions and stating criticality"
    ],
    "must_not" : [
-      "implement, edit files, or silently turn the result into an execution plan"
+      "auto-activate adversarial search from risk or complexity, implement, edit files, or silently turn the result into an execution plan"
    ],
    "platforms" : [
       "codex",

@@ -45,14 +45,16 @@ CONTRIBUTING.md                  contributor entrypoint
 The public capability inventory is exactly ten: `grill-me`, `teamwork-debug`,
 `teamwork-design`, `teamwork-explore`, `teamwork-goal`, `teamwork-init`,
 `teamwork-plan`, `teamwork-research`, `teamwork-review`, and
-`teamwork-update`. There are exactly three advanced references:
-Debug's runtime-diagnosis reference, Research's deep-research reference, and
-Review's strict-review reference. They are methods of those skills, not shared
-workflow stages.
+`teamwork-update`. There are exactly four advanced references: Debug's
+runtime-diagnosis, Design's adversarial-search, Research's deep-research, and
+Review's strict-review. They are methods of those skills, not shared workflow
+stages.
 
 Host adapters have exactly eight roles—Researcher, Explorer, Debugger, Designer,
 Planner, Worker, Plan Reviewer, and Reviewer—under each of the Codex, Cursor,
-and Claude Code template directories.
+and Claude Code template directories. Designer remains read-only and may receive
+one direction-selection, frozen-hypothesis challenge, or search-closure audit
+assignment; Root retains orchestration and final acceptance.
 
 The following are sinks, not package sources:
 
@@ -105,11 +107,17 @@ This keeps the main boundaries visible:
   for an unresolved local constraint, and Research only for a named sanitized
   external/current claim that can change the decision; neither is mandatory and
   they do not run together by default. Designer integrates the evidence actually
-  needed. A real trade-off gets two or
-  three alternatives; one safe path gets explicit evidence and exclusions. One
-  challenge pass and a finite user-decision frontier converge into a durable
-  Design artifact before Plan. The frontier shows a global map first, batches
-  only independent material questions, and serializes dependent questions;
+  needed. A real trade-off gets two or three alternatives; one safe path gets
+  explicit evidence and exclusions. Default Design uses one challenge pass.
+  Only Design-qualified explicit adversarial intent replaces that pass with a
+  user-confirmed, budget-bounded hypothesis search: each actual hypothesis gets
+  two fresh isolated Designer critics, materially revised hypotheses consume a
+  new trial, and two new final auditors must both pass. Risk or complexity never
+  activates this strategy automatically, and missing isolation or closure fails
+  without a durable Design. Both strategies use the same finite user-decision
+  frontier and controlled durable Design writer before Plan. The frontier shows
+  a global map first, batches only independent material questions, and
+  serializes dependent questions;
 - Plan turns an already selected direction into executable steps; independent
   Plan Review runs only on user request or a named material risk gate. Each
   Worker self-verifies its slice. After integration, a sealed candidate receives
@@ -138,9 +146,11 @@ or callable compatibility surface.
 ## Method attribution
 
 Teamwork adopts Superpowers' hard gate, options, and specification self-check
-ideas. Its one-pass challenge and finite decision frontier are locally tailored
-Teamwork convergence rules, rather than a claim to reproduce a Superpowers
-workflow wholesale.
+ideas. Its default one-pass challenge and finite decision frontier are locally
+tailored Teamwork convergence rules. The explicit adversarial Design strategy
+adopts a bounded hypothesis-taxonomy, fresh-critic, and dual-closure-audit method
+without copying a discussion-only terminal contract or claiming to reproduce
+another workflow wholesale.
 
 ## Templates are install-time adapters
 

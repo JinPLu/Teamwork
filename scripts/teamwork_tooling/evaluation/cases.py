@@ -11,7 +11,11 @@ import tempfile
 from typing import Any
 
 from .contracts import *  # noqa: F403
-from .sources import validate_semantic_sources, validate_skill_source_contract
+from .sources import (
+    validate_design_adversarial_reference_contract,
+    validate_semantic_sources,
+    validate_skill_source_contract,
+)
 from ..semantic_review import SemanticReviewError, validate_accepted_ledger_v2
 
 
@@ -262,7 +266,10 @@ def validate_bound_producer_sources(
         except OSError as exc:
             raise EvalError(f"{display_path(path)}: cannot read bound producer {source_path}: {exc}") from exc  # noqa: F405
         if producer["class"] == "skill":
-            validate_skill_source_contract(Path(source_path).parent.name, source)
+            if source_path == DESIGN_ADVERSARIAL_REFERENCE_PATH:  # noqa: F405
+                validate_design_adversarial_reference_contract(source)
+            else:
+                validate_skill_source_contract(Path(source_path).parent.name, source)
         elif producer["class"] == "root-policy":
             _require_source_phrases(source, path, source_path, [
                 ("root alone asks",),

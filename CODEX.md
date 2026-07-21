@@ -38,6 +38,7 @@ Describe the outcome directly:
 Inspect this repository and implement the requested validation change.
 Research the current provider options from official sources and cite the recommendation.
 Design the authentication boundary; explore only alternatives with real tradeoffs.
+Use $teamwork-design adversarial with budget=3 to stress-test the unsettled API direction; do not plan or implement it.
 Find the cause of this CI failure, fix it, and rerun the same failing path.
 Turn the selected migration direction into an executable plan without changing files.
 Review this diff against the requirements and direct evidence.
@@ -64,6 +65,15 @@ implements. `$teamwork-debug` begins with a real failure and reproduction;
 `$teamwork-review` is read-only and returns `ACCEPT`, `REVISE`, or `BLOCKED`;
 `$teamwork-goal` persists an explicit objective, success signal, scope, budget,
 and attempts before it iterates.
+
+`$teamwork-design adversarial` is an explicit opt-in search strategy, not an
+automatic response to risk or complexity. Before dispatch, it freezes a trial
+budget (`3` by default when confirmed), taxonomy, fitness function, and maximum
+leaf cost. Every actual hypothesis receives two fresh isolated Designer critics;
+two new final auditors must both pass. Missing isolation, exhausted budget, or
+failed closure returns an incomplete result and creates no durable Design. A
+passing chat recommendation is still not Plan-ready until the user explicitly
+accepts and authorizes the controlled Design write.
 
 For a clear authorized code change, work result-first: modify the canonical
 owner, reuse existing patterns/built-ins/suitable dependencies, add the smallest

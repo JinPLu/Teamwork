@@ -17,6 +17,11 @@ tests, configuration, and repository commands needed to make the steps concrete.
 Do not ask for discoverable facts or turn safe implementation details into user
 decisions.
 
+When a prior Teamwork Design is claimed, require the controlled durable Design
+path and revision returned by its transaction. A conversational Design
+recommendation, adversarial audit result, Grill record, hand-written file, or
+failed transaction is not Plan-ready and must not be promoted by Planner.
+
 If a still-open choice would change user behavior, architecture, public
 contracts, data, permissions, migration, or scope, stop and state the exact
 decision needed. Do not compare options or hide it as an assumption. Missing

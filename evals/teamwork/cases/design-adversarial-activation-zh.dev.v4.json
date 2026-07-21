@@ -1,0 +1,63 @@
+{
+  "evidence": "静态契约样例；真实激活、fresh 隔离和回答质量需要独立证据。",
+  "expected": {
+    "capability": "design",
+    "language": "zh",
+    "requires": [
+      "design-qualified-explicit-activation",
+      "confirmed-trial-budget",
+      "dynamic-taxonomy-ledger",
+      "two-fresh-critics-per-hypothesis",
+      "material-revision-new-trial",
+      "two-fresh-final-auditors",
+      "dual-pass-required",
+      "failure-closed",
+      "chat-not-plan-ready",
+      "read-only",
+      "no-implementation"
+    ],
+    "scenario": "adversarial-activation"
+  },
+  "id": "design-adversarial-activation-zh",
+  "must": [
+    "只由显式 Teamwork Design 请求激活 adversarial 搜索，并在派发前确认有界试验 envelope",
+    "每个实际假设使用两名全新隔离批评者，实质修订计为新试验，并要求两名全新最终审计者同时通过"
+  ],
+  "must_not": [
+    "因风险或复杂度自动激活、复用批评者、超预算、把聊天结论当成 Plan-ready、实施，或在收敛不完整时写 durable Design"
+  ],
+  "platforms": [
+    "codex",
+    "cursor",
+    "claude"
+  ],
+  "producers": [
+    {
+      "class": "root-policy",
+      "source": "scripts/install/policy.sh"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-design/SKILL.md"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-design/references/adversarial-search.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/codex-agents/teamwork-designer.toml"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/cursor-agents/designer.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/claude-agents/designer.md"
+    }
+  ],
+  "prompt": "使用 $teamwork-design adversarial 和 budget=3，收敛这个公开 API 应该同步、排队还是混合。搜索保持只读，不要进入 Plan 或实现。",
+  "source": "synthetic",
+  "split": "dev"
+}
