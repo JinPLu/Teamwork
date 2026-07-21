@@ -7,7 +7,9 @@
          "local-constraints-first",
          "genuine-tradeoffs-only",
          "recommend-first",
-         "one-user-owned-decision",
+         "bounded-independent-batch",
+         "dependency-serialization",
+         "question-criticality",
          "read-only",
          "no-implementation"
       ],
@@ -16,7 +18,7 @@
    "id" : "design-activation-en",
    "must" : [
       "inspect local constraints before exploring genuine tradeoffs",
-      "recommend a direction before asking one user-owned material decision"
+      "recommend a direction before asking a bounded independent batch of user-owned material decisions, serializing dependent decisions and stating criticality"
    ],
    "must_not" : [
       "implement, edit files, or silently turn the result into an execution plan"

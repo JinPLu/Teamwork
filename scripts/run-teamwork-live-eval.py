@@ -324,8 +324,8 @@ def assess_structure(
                 violations.append(
                     f"turn {index} exposes the superseded grill packet/state protocol"
                 )
-            if question_count(output) > 1:
-                violations.append(f"turn {index} asks more than one textual question")
+            if question_count(output) > 3:
+                violations.append(f"turn {index} asks more than three textual questions")
         for violation in readonly_event_violations(raw_events):
             violations.append(f"turn {index} {violation}")
         if category == "lightweight":

@@ -49,6 +49,11 @@ VALUE_ALLOWLISTS = (
         re.compile(r"^(?:192\.0\.2\.|198\.51\.100\.|203\.0\.113\.)\d+$"),
         "RFC 5737 documentation networks are explicitly synthetic fixtures.",
     ),
+    ValueAllowlist(
+        "private-or-link-local-ip",
+        re.compile(r"^127\.0\.0\.1$"),
+        "127.0.0.1 is the canonical local GPU Broker MCP endpoint.",
+    ),
 )
 
 NAMED_HOME_RE = re.compile(

@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "Codex-first collaboration skills, with Cursor and Claude Code adapters, for research, local evidence, design, debugging, planning, review, setup, updates, and long-running goals; routine local work stays native.",
   "author": {
     "name": "JinPLu",
@@ -36,7 +36,7 @@
     "defaultPrompt": [
       "Use $teamwork-update to enable full Teamwork for this Codex plugin.",
       "Use $teamwork-research to investigate this current external question from primary sources with linked citations.",
-      "Use $teamwork-design to inspect context, explore viable options, ask material questions, and produce a decision-ready design."
+      "Use $teamwork-design to inspect context, explore options, ask bounded decision batches, and produce a decision-ready design."
     ],
     "brandColor": "#2563EB"
   }

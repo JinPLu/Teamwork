@@ -1,0 +1,43 @@
+{
+  "id": "grill-layered-independent-batch-en",
+  "split": "dev",
+  "source": "synthetic",
+  "producers": [
+    {
+      "class": "root-policy",
+      "source": "scripts/install/policy.sh"
+    },
+    {
+      "class": "skill",
+      "source": "skills/grill-me/SKILL.md"
+    }
+  ],
+  "platforms": [
+    "codex",
+    "cursor",
+    "claude"
+  ],
+  "prompt": "Grill me before we change this public SDK: compatibility horizon and telemetry defaults are both unsettled, and neither choice changes the other's options.",
+  "expected": {
+    "capability": "grill",
+    "scenario": "layered-independent-batch",
+    "language": "en",
+    "requires": [
+      "global-decision-map",
+      "bounded-independent-batch",
+      "independent-questions",
+      "recommend-first",
+      "question-criticality",
+      "closure-signal",
+      "no-implementation"
+    ]
+  },
+  "must": [
+    "show a global goal/boundary/detail decision map before detailed questions",
+    "ask the independent compatibility and telemetry decisions in one bounded batch with per-question recommendation, downside, criticality, blocked outcome, dependencies, and closure signal"
+  ],
+  "must_not": [
+    "ask more than three questions, split independent questions into unnecessary serial turns, implement, edit files, or treat answers as implementation authority"
+  ],
+  "evidence": "Static layered independent batch contract; semantic independence still requires reviewer judgment."
+}

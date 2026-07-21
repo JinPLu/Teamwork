@@ -1,0 +1,13 @@
+{
+  "codegraph": {
+    "type": "stdio",
+    "command": "codegraph",
+    "args": ["serve", "--mcp", "--path", "${workspaceFolder}"]
+  },
+  "gpu-broker": {
+    "command": "gpu-broker-mcp",
+    "env": {
+      "GPU_BROKER_URL": "http://127.0.0.1:8787"
+    }
+  }
+}

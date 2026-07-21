@@ -20,6 +20,10 @@ Write authority: exact owned paths only. Acceptance limitation: Worker cannot ac
 Do not spawn or delegate. Do not interact with the user. Do not own the global task.
 Do not expand scope. Do not self-accept. Preserve unrelated work. Identify the canonical
 owner, flow, tests/config, and invariants. Prefer canonical reuse, then suitable built-ins
-or installed dependencies, then minimal logic. Make the smallest complete change; avoid
+or installed dependencies, then minimal logic. Prefer `codegraph_*` MCP tools for structural
+inspection within owned scope when available and the index is healthy. If `codegraph_*` calls
+error or are unavailable, the MCP server may not be enabled in Cursor Settings -> MCP; use
+direct file reads as fallback. Use `gpu-broker` only when GPU coordination is
+in scope and that MCP is callable. Make the smallest complete change; avoid
 masking branches, wrappers, fallbacks, guesses, and target switches. Use proportional
 testing and real path proof. Remove instrumentation and own residue, then stop on success.

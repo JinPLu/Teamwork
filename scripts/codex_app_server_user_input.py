@@ -50,6 +50,33 @@ SCENARIOS = {
             "现有脚本继续工作。"
         ),
     },
+    "explicit-grill-independent-batch": {
+        "expected_requests": 1,
+        "max_questions_per_request": 3,
+        "forbid_text_question": True,
+        "prompt": (
+            "Grill me before changing this public SDK. Compatibility horizon, "
+            "telemetry default, and deprecation messaging are all material and "
+            "independent: no answer changes another question's options. Ask them "
+            "as one bounded native batch with stable ids."
+        ),
+    },
+    "explicit-grill-dependent-sequence": {
+        "expected_requests": 2,
+        "max_questions_per_request": 1,
+        "forbid_text_question": True,
+        "prompts": [
+            (
+                "Grill me before changing this public SDK. First decide whether "
+                "compatibility is required; only that answer determines the valid "
+                "rollout-window options. Ask only the prerequisite decision now."
+            ),
+            (
+                "The compatibility answer is now resolved. Continue the same "
+                "thread and ask the dependent rollout-window decision only."
+            ),
+        ],
+    },
     "explicit-grill-zero": {
         "expected_requests": 0,
         "prompt": (
@@ -169,6 +196,8 @@ class AppServerProbe:
     events: list[str] = field(default_factory=list)
     observed_item_ids: list[str] = field(default_factory=list)
     observed_question_keys: list[str] = field(default_factory=list)
+    observed_turn_ids: list[str] = field(default_factory=list)
+    returned_answer_keys: list[str] = field(default_factory=list)
     native_question_sha256: list[str] = field(default_factory=list)
     rejected_native_question_sha256: list[str] = field(default_factory=list)
     agent_message_sha256: list[str] = field(default_factory=list)
@@ -281,10 +310,13 @@ class AppServerProbe:
         assert isinstance(params, dict) and isinstance(questions, list)
         self._server_request_ids.add(request_id)
         self.observed_item_ids.append(params["itemId"])
+        self.observed_turn_ids.append(params["turnId"])
         self.observed_question_keys.extend(question["id"] for question in questions)
         self.native_question_sha256.append(digest)
         self._write_review("native request_user_input", questions)
-        self._send({"id": request_id, "result": response_for_request(params)})
+        response = response_for_request(params)
+        self.returned_answer_keys.extend(response["answers"])
+        self._send({"id": request_id, "result": response})
         self.events.append("item/tool/requestUserInput")
         return True
 
@@ -298,6 +330,8 @@ class AppServerProbe:
             "events": self.events,
             "observed_item_ids": self.observed_item_ids,
             "observed_question_keys": self.observed_question_keys,
+            "observed_turn_ids": self.observed_turn_ids,
+            "returned_answer_keys": self.returned_answer_keys,
             "resolved_request_count": resolved_request_count,
             "native_question_sha256": self.native_question_sha256,
             "rejected_native_question_sha256": self.rejected_native_question_sha256,
@@ -313,6 +347,9 @@ class AppServerProbe:
     def run_once(self) -> dict[str, Any]:
         spec = SCENARIOS[self.scenario]
         expected_count = int(spec["expected_requests"])
+        prompts = spec.get("prompts") or [spec["prompt"]]
+        if not isinstance(prompts, list) or not prompts:
+            raise ProtocolError("scenario prompts must be a non-empty list")
         self._start()
         resolved_ids: set[str | int] = set()
         try:
@@ -340,87 +377,98 @@ class AppServerProbe:
             )
             thread_id = self._id(thread, "thread")
             self.events.append("thread/start")
-            turn = self._request(
-                "turn/start",
-                {
-                    "threadId": thread_id,
-                    "effort": self.effort,
-                    "input": [{"type": "text", "text": str(spec["prompt"])}],
-                },
-            )
-            turn_id = self._id(turn, "turn")
-            self.events.append("turn/start")
+            for prompt in prompts:
+                turn = self._request(
+                    "turn/start",
+                    {
+                        "threadId": thread_id,
+                        "effort": self.effort,
+                        "input": [{"type": "text", "text": str(prompt)}],
+                    },
+                )
+                turn_id = self._id(turn, "turn")
+                self.events.append("turn/start")
 
-            completed = False
-            deadline = time.monotonic() + self.timeout_seconds
-            while time.monotonic() < deadline and not completed:
-                try:
-                    message = self._next_message(max(0.01, deadline - time.monotonic()))
-                except ProtocolError as exc:
-                    if "timed out" in str(exc):
-                        break
-                    raise
-                if self._handle_user_input(
-                    message,
-                    thread_id=thread_id,
-                    turn_id=turn_id,
-                    expected_count=expected_count,
-                    max_questions_per_request=int(
-                        spec.get("max_questions_per_request", 3)
-                    ),
-                    allow_auto_resolution=bool(spec.get("allow_auto_resolution")),
-                ):
-                    continue
-                if message.get("method") == "serverRequest/resolved":
-                    params = message.get("params")
-                    if (
-                        not isinstance(params, dict)
-                        or params.get("threadId") != thread_id
-                        or params.get("requestId") not in self._server_request_ids
-                        or params["requestId"] in resolved_ids
+                completed = False
+                deadline = time.monotonic() + self.timeout_seconds
+                while time.monotonic() < deadline and not completed:
+                    try:
+                        message = self._next_message(max(0.01, deadline - time.monotonic()))
+                    except ProtocolError as exc:
+                        if "timed out" in str(exc):
+                            break
+                        raise
+                    if self._handle_user_input(
+                        message,
+                        thread_id=thread_id,
+                        turn_id=turn_id,
+                        expected_count=expected_count,
+                        max_questions_per_request=int(
+                            spec.get("max_questions_per_request", 3)
+                        ),
+                        allow_auto_resolution=bool(spec.get("allow_auto_resolution")),
                     ):
-                        raise ProtocolError("serverRequest/resolved does not match one native request")
-                    resolved_ids.add(params["requestId"])
-                    self.events.append("serverRequest/resolved")
-                    continue
-                if message.get("method") == "item/completed":
-                    params = message.get("params")
-                    item = params.get("item") if isinstance(params, dict) else None
-                    if (
-                        isinstance(params, dict)
-                        and params.get("threadId") == thread_id
-                        and params.get("turnId") == turn_id
-                        and isinstance(item, dict)
-                        and item.get("type") == "agentMessage"
-                        and isinstance(item.get("text"), str)
-                    ):
-                        text = item["text"]
-                        self.agent_message_count += 1
-                        self.agent_message_sha256.append(hashlib.sha256(text.encode()).hexdigest())
-                        self._write_review("assistant item", text)
-                        if "?" in text or "？" in text:
-                            self.text_question_observed = True
-                    continue
-                if message.get("method") == "turn/completed":
-                    params = message.get("params")
-                    done = params.get("turn") if isinstance(params, dict) else None
-                    if (
-                        not isinstance(params, dict)
-                        or params.get("threadId") != thread_id
-                        or not isinstance(done, dict)
-                        or done.get("id") != turn_id
-                        or done.get("status") != "completed"
-                    ):
-                        raise ProtocolError("turn/completed does not match the active completed turn")
-                    completed = True
-                    self.events.append("turn/completed")
+                        continue
+                    if message.get("method") == "serverRequest/resolved":
+                        params = message.get("params")
+                        if (
+                            not isinstance(params, dict)
+                            or params.get("threadId") != thread_id
+                            or params.get("requestId") not in self._server_request_ids
+                            or params["requestId"] in resolved_ids
+                        ):
+                            raise ProtocolError("serverRequest/resolved does not match one native request")
+                        resolved_ids.add(params["requestId"])
+                        self.events.append("serverRequest/resolved")
+                        continue
+                    if message.get("method") == "item/completed":
+                        params = message.get("params")
+                        item = params.get("item") if isinstance(params, dict) else None
+                        if (
+                            isinstance(params, dict)
+                            and params.get("threadId") == thread_id
+                            and params.get("turnId") == turn_id
+                            and isinstance(item, dict)
+                            and item.get("type") == "agentMessage"
+                            and isinstance(item.get("text"), str)
+                        ):
+                            text = item["text"]
+                            self.agent_message_count += 1
+                            self.agent_message_sha256.append(hashlib.sha256(text.encode()).hexdigest())
+                            self._write_review("assistant item", text)
+                            if "?" in text or "？" in text:
+                                self.text_question_observed = True
+                        continue
+                    if message.get("method") == "turn/completed":
+                        params = message.get("params")
+                        done = params.get("turn") if isinstance(params, dict) else None
+                        if (
+                            not isinstance(params, dict)
+                            or params.get("threadId") != thread_id
+                            or not isinstance(done, dict)
+                            or done.get("id") != turn_id
+                        ):
+                            self.events.append("turn/completed")
+                            raise ProtocolError("turn/completed does not match the active turn")
+                        self.events.append("turn/completed")
+                        status = done.get("status")
+                        if status != "completed":
+                            error = done.get("error")
+                            detail = ""
+                            if isinstance(error, dict) and isinstance(error.get("message"), str):
+                                detail = f": {error['message']}"
+                            raise ProtocolError(f"turn completed with status {status!r}{detail}")
+                        completed = True
+
+                if not completed:
+                    raise ProtocolError("turn did not complete")
 
             if len(self._server_request_ids) != expected_count:
                 raise ProtocolError(f"expected exactly {expected_count} request_user_input events")
             if len(resolved_ids) != expected_count:
                 raise ProtocolError("not every request_user_input was resolved")
-            if not completed:
-                raise ProtocolError("turn did not complete")
+            if self.returned_answer_keys != self.observed_question_keys:
+                raise ProtocolError("answer keys do not match observed question ids in order")
             if spec.get("forbid_text_question") and self.text_question_observed:
                 raise ProtocolError("assistant duplicated the native prompt as a text question")
             return self.snapshot(

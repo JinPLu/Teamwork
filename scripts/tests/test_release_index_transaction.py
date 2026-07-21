@@ -80,6 +80,10 @@ class RepositoryFixture:
         metadata = {
             "schema_version": 1, "record_type": "metadata", "base_commit": self.base,
             "frozen_candidate_paths": [path for path, _ in paths],
+            "official_doc_urls": list(TX.OFFICIAL_DOC_URLS),
+            "official_doc_urls_sha256": TX.sha256_bytes(TX.canonical_json_bytes(list(TX.OFFICIAL_DOC_URLS))),
+            "runtime_probe_source": TX.RUNTIME_PROBE_SOURCE,
+            "runtime_probe_source_sha256": TX.sha256_bytes(TX.canonical_json_bytes(TX.RUNTIME_PROBE_SOURCE)),
         }
         rows = [metadata]
         for index, (path, status) in enumerate(paths, 1):
@@ -187,6 +191,16 @@ class ReleaseIndexTransactionTests(unittest.TestCase):
         self.assertEqual("7" * 64, manifest["scope_revision"])
         self.assertEqual("C0", manifest["candidate_id"])
         self.assertEqual(0, manifest["repair_generation"])
+        self.assertEqual(list(TX.OFFICIAL_DOC_URLS), manifest["official_doc_urls"])
+        self.assertEqual(
+            TX.sha256_bytes(TX.canonical_json_bytes(list(TX.OFFICIAL_DOC_URLS))),
+            manifest["official_doc_urls_sha256"],
+        )
+        self.assertEqual(TX.RUNTIME_PROBE_SOURCE, manifest["runtime_probe_source"])
+        self.assertEqual(
+            TX.sha256_bytes(TX.canonical_json_bytes(TX.RUNTIME_PROBE_SOURCE)),
+            manifest["runtime_probe_source_sha256"],
+        )
         self.assertIsNone(manifest["sealed_manifest_sha256"])
         self.assertIsNone(manifest["review_artifact_sha256"])
         self.assertEqual(digest(self.fixture.paths), manifest["paths_manifest_sha256"])
@@ -196,6 +210,23 @@ class ReleaseIndexTransactionTests(unittest.TestCase):
         self.assertEqual([("ita.txt", "100644", 0, "20004000")], [(e["path"], e["mode"], e["stage"], e["flags"]) for e in ita])
         self.assertEqual(40, len(ita[0]["blob_oid"]))
         self.fixture.assert_index_preserved(self)
+
+    def test_prepare_rejects_tampered_release_evidence_bindings(self) -> None:
+        mutations = (
+            ("official_doc_urls", list(reversed(TX.OFFICIAL_DOC_URLS)), "accepted ordered HTTPS set"),
+            ("official_doc_urls_sha256", "0" * 64, "URL binding hash mismatch"),
+            ("runtime_probe_source", "unreviewed_probe", "not the accepted root-supplied conclusion"),
+            ("runtime_probe_source_sha256", "0" * 64, "probe source binding hash mismatch"),
+        )
+        for field, replacement, failure in mutations:
+            with self.subTest(field=field):
+                self.fixture._write_contract()
+                rows = [json.loads(line) for line in self.fixture.ledger.read_text(encoding="utf-8").splitlines()]
+                rows[0][field] = replacement
+                self.fixture.ledger.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+                with self.assertRaisesRegex(TX.TransactionError, failure):
+                    TX.prepare(self.fixture.args())
+                self.fixture.assert_index_preserved(self)
 
     def test_prepare_does_not_refresh_real_index_stat_cache(self) -> None:
         """An atomic source replacement must not make our probes write .git/index."""
@@ -453,6 +484,218 @@ class ReleaseIndexTransactionTests(unittest.TestCase):
         self.fixture.assert_index_preserved(self)
         snapshot = TX.snapshot_index(self.root)
         self.assertEqual([("ita.txt", "100644", 0, "20004000")], [(e["path"], e["mode"], e["stage"], e["flags"]) for e in snapshot["intent_to_add"]])
+
+    def test_c5_release_transaction_parser_exposes_canonical_subcommands(self) -> None:
+        self.assertEqual(
+            {
+                "evals/teamwork/ledgers/v4.1.0-teamwork-c5.jsonl",
+                "evals/teamwork/manifests/v4.1.0-teamwork-c5-paths.json",
+                "evals/teamwork/validation/v4.1.0-teamwork-c5.json",
+                "evals/teamwork/reviews/v4.1.0-teamwork-c5.json",
+            },
+            TX.C5_FUTURE_TRANSACTION_OUTPUTS,
+        )
+        parser = TX.parser()
+        subcommands_action = next(
+            action for action in parser._actions if isinstance(action, argparse._SubParsersAction)
+        )
+        expected = {
+            "freeze-ledger",
+            "prepare",
+            "seal",
+            "run",
+            "record-validation",
+            "validate",
+            "check-candidate-cleanliness",
+            "hash-installed-profiles",
+            "write-review-capture-request",
+            "capture-review",
+            "record-review",
+            "review",
+            "commit",
+        }
+        self.assertTrue(expected <= set(subcommands_action.choices))
+        freeze_help = subcommands_action.choices["freeze-ledger"].format_help()
+        for option in (
+            "--scope-allowlist",
+            "--delta-manifest",
+            "--plan-sha256",
+            "--accepted-plan-review",
+            "--accepted-plan-review-sha256",
+            "--design1-sha256",
+            "--design2-pre-semantic-sha256",
+            "--plan2-sha256",
+            "--official-doc-url",
+            "--runtime-probe-source",
+        ):
+            self.assertIn(option, freeze_help)
+        freeze_actions = {action.dest: action for action in subcommands_action.choices["freeze-ledger"]._actions}
+        self.assertTrue(freeze_actions["official_doc_url"].required)
+        self.assertEqual("append", freeze_actions["official_doc_url"].__class__.__name__.removeprefix("_").removesuffix("Action").lower())
+        self.assertEqual((TX.RUNTIME_PROBE_SOURCE,), freeze_actions["runtime_probe_source"].choices)
+        self.assertTrue(freeze_actions["runtime_probe_source"].required)
+
+    def test_c5_freeze_uses_git_sha1_base_commit_not_sha256(self) -> None:
+        self.assertEqual(self.fixture.base, TX.require_git_sha1(self.fixture.base, "base commit"))
+        for invalid in ("a" * 64, "g" * 40, "short"):
+            with self.subTest(invalid=invalid):
+                with self.assertRaisesRegex(TX.TransactionError, "40-hex Git SHA-1"):
+                    TX.require_git_sha1(invalid, "base commit")
+
+        wrong_base = "0" * 40 if self.fixture.base != "0" * 40 else "1" * 40
+        with self.assertRaisesRegex(TX.TransactionError, "freeze base commit does not match"):
+            TX.freeze_ledger(argparse.Namespace(project_root=str(self.root), base_commit=wrong_base))
+
+    def write_c5_freeze_inputs(
+        self,
+        *,
+        guaranteed: list[str] | None = None,
+        allowed_extra: list[str] | None = None,
+    ) -> argparse.Namespace:
+        plan_sha = "7" * 64
+        payload_sha = "8" * 64
+        accepted_review = self.fixture.runtime / "accepted-plan-review.json"
+        accepted_review.write_text(json.dumps({
+            "schema_version": 1,
+            "candidate_id": "C0",
+            "reviewer_role": "teamwork_plan_reviewer",
+            "verdict": "ACCEPT",
+            "plan_path": "plan.md",
+            "plan_sha256": plan_sha,
+            "findings": [],
+            "review_payload_sha256": payload_sha,
+            "created_at": "2026-07-20T00:00:00Z",
+        }), encoding="utf-8")
+        accepted_review_sha = digest(accepted_review)
+        ordinary = ["added.txt", "delete.txt", "ita.txt", "modify.txt"]
+        future = sorted(TX.C5_FUTURE_TRANSACTION_OUTPUTS)
+        guaranteed_paths = guaranteed if guaranteed is not None else ordinary + future
+        allowed_paths = sorted(set(ordinary + future + (allowed_extra or []) + guaranteed_paths))
+        owners = {path: "TEST" for path in ordinary}
+        owners.update({path: "W-runtime-release" for path in future})
+        for path in allowed_extra or []:
+            owners.setdefault(path, "W-runtime-release")
+        scope_allowlist = self.fixture.runtime / "scope-allowlist.json"
+        scope_allowlist.write_text(json.dumps({
+            "schema_version": 1,
+            "base_commit": self.fixture.base,
+            "candidate_id": "C0",
+            "reviewed_plan_sha256": plan_sha,
+            "accepted_plan_review_sha256": accepted_review_sha,
+            "accepted_plan_review_payload_sha256": payload_sha,
+            "design_bindings": {},
+            "plan_bindings": {},
+            "guaranteed_delta_paths": guaranteed_paths,
+            "allowed_paths": allowed_paths,
+            "owners": owners,
+        }), encoding="utf-8")
+        ownership = self.fixture.runtime / "c5-ownership.json"
+        ownership.write_text(json.dumps({
+            "schema_version": 1,
+            "base_commit": self.fixture.base,
+            "default_owner": "FORBIDDEN",
+            "forbidden_prefixes": ["forbidden/"],
+            "owners": owners,
+        }), encoding="utf-8")
+        case_contract = self.fixture.runtime / "cases.json"
+        case_contract.write_text("{}\n", encoding="utf-8")
+        delta_manifest = self.root / TX.C5_FINAL_DELTA_MANIFEST_PATH
+        ledger = self.root / TX.C5_LEDGER_PATH
+
+        return argparse.Namespace(
+            project_root=str(self.root),
+            base_commit=self.fixture.base,
+            scope_allowlist=str(scope_allowlist),
+            ownership=str(ownership),
+            delta_manifest=str(delta_manifest),
+            case_contract=str(case_contract),
+            ledger=str(ledger),
+            candidate_id="C0",
+            repair_generation=0,
+            plan_sha256=plan_sha,
+            accepted_plan_review=str(accepted_review),
+            accepted_plan_review_sha256=accepted_review_sha,
+            design1_sha256="1" * 64,
+            design2_pre_semantic_sha256="2" * 64,
+            plan2_sha256="3" * 64,
+            design2_migration=str(self.fixture.runtime / "design2-migration.json"),
+            official_doc_url=list(TX.OFFICIAL_DOC_URLS),
+            runtime_probe_source=TX.RUNTIME_PROBE_SOURCE,
+            user_owned_dirty=[],
+            user_owned_dirty_metadata_sha256=None,
+            user_owned_dirty_content_sha256=None,
+        )
+
+    def test_c5_freeze_accepts_bound_sha1_base_and_writes_ledger_inputs(self) -> None:
+        args = self.write_c5_freeze_inputs()
+
+        TX.freeze_ledger(args)
+
+        delta_manifest = self.root / TX.C5_FINAL_DELTA_MANIFEST_PATH
+        ledger = self.root / TX.C5_LEDGER_PATH
+        self.assertTrue(delta_manifest.is_file())
+        self.assertTrue(ledger.is_file())
+        delta_paths = {
+            entry["path"]
+            for entry in json.loads(delta_manifest.read_text(encoding="utf-8"))["entries"]
+        }
+        self.assertTrue(set(json.loads(pathlib.Path(args.scope_allowlist).read_text())["guaranteed_delta_paths"]) <= delta_paths)
+        rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(self.fixture.base, rows[0]["base_commit"])
+        self.assertEqual(list(TX.OFFICIAL_DOC_URLS), rows[0]["official_doc_urls"])
+        self.assertEqual(
+            TX.sha256_bytes(TX.canonical_json_bytes(list(TX.OFFICIAL_DOC_URLS))),
+            rows[0]["official_doc_urls_sha256"],
+        )
+        self.assertEqual(TX.RUNTIME_PROBE_SOURCE, rows[0]["runtime_probe_source"])
+        self.assertEqual(
+            TX.sha256_bytes(TX.canonical_json_bytes(TX.RUNTIME_PROBE_SOURCE)),
+            rows[0]["runtime_probe_source_sha256"],
+        )
+        self.assertEqual(
+            ["added.txt", "delete.txt", "evals/teamwork/ledgers/v4.1.0-teamwork-c5.jsonl", "evals/teamwork/manifests/v4.1.0-teamwork-c5-paths.json", "ita.txt", "modify.txt"],
+            rows[0]["frozen_candidate_paths"],
+        )
+
+    def test_c5_freeze_rejects_noncanonical_official_docs_and_probe_source(self) -> None:
+        invalid_url_sets = (
+            (None, "list of strings"),
+            (list(TX.OFFICIAL_DOC_URLS[:2]), "accepted ordered HTTPS set"),
+            ([TX.OFFICIAL_DOC_URLS[0], TX.OFFICIAL_DOC_URLS[0], TX.OFFICIAL_DOC_URLS[2]], "must be unique"),
+            (list(reversed(TX.OFFICIAL_DOC_URLS)), "accepted ordered HTTPS set"),
+            ([*TX.OFFICIAL_DOC_URLS, "https://learn.chatgpt.com/docs/extra"], "accepted ordered HTTPS set"),
+            ([*TX.OFFICIAL_DOC_URLS[:2], "https://example.com/docs/subagents"], "accepted ordered HTTPS set"),
+        )
+        for urls, failure in invalid_url_sets:
+            with self.subTest(urls=urls):
+                args = self.write_c5_freeze_inputs()
+                args.official_doc_url = urls
+                with self.assertRaisesRegex(TX.TransactionError, failure):
+                    TX.freeze_ledger(args)
+
+        args = self.write_c5_freeze_inputs()
+        args.runtime_probe_source = "codex_runtime_pass"
+        with self.assertRaisesRegex(TX.TransactionError, "not the accepted root-supplied conclusion"):
+            TX.freeze_ledger(args)
+
+    def test_c5_freeze_fails_when_non_future_guaranteed_delta_is_missing(self) -> None:
+        args = self.write_c5_freeze_inputs(
+            guaranteed=["added.txt", "delete.txt", "ita.txt", "missing-guaranteed.txt", "modify.txt"],
+            allowed_extra=["missing-guaranteed.txt"],
+        )
+
+        with self.assertRaisesRegex(TX.TransactionError, "guaranteed deltas missing: missing-guaranteed.txt"):
+            TX.freeze_ledger(args)
+
+    def test_c5_freeze_fails_for_extra_future_output_path(self) -> None:
+        extra = "evals/teamwork/validation/not-declared-by-c5.json"
+        args = self.write_c5_freeze_inputs(
+            guaranteed=["added.txt", "delete.txt", "ita.txt", "modify.txt", extra],
+            allowed_extra=[extra],
+        )
+
+        with self.assertRaisesRegex(TX.TransactionError, "guaranteed deltas missing: evals/teamwork/validation/not-declared-by-c5.json"):
+            TX.freeze_ledger(args)
 
 
 if __name__ == "__main__":

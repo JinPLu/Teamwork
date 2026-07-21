@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read and migrate the Teamwork-owned Codex subagent routing contract."""
+"""Read and migrate the Teamwork-owned Codex subagent feature flag."""
 
 from __future__ import annotations
 
@@ -20,15 +20,13 @@ except ModuleNotFoundError:  # pragma: no cover - depends on the host Python.
         tomllib = None  # type: ignore[assignment]
 
 
-ROUTING_NAMESPACE = "teamwork"
-ROUTING_TABLE = "features.multi_agent_v2"
-TOTAL_THREAD_LIMIT = 9
-DESIRED_VALUES: dict[str, Any] = {
-    "enabled": True,
-    "hide_spawn_agent_metadata": False,
-    "tool_namespace": ROUTING_NAMESPACE,
-    "max_concurrent_threads_per_session": TOTAL_THREAD_LIMIT,
-}
+ROUTING_TABLE = "features"
+ROUTING_KEY = "multi_agent"
+ROUTING_NAME = f"{ROUTING_TABLE}.{ROUTING_KEY}"
+LEGACY_ROUTING_TABLE = "features.multi_agent_v2"
+LEGACY_ROUTING_KEY = "multi_agent_v2"
+LEGACY_ROUTING_NAME = f"{ROUTING_TABLE}.{LEGACY_ROUTING_KEY}"
+DESIRED_VALUE = True
 
 TABLE_RE = re.compile(r"^\s*\[([^\[\]]+)\]\s*(?:#.*)?(?:\r?\n)?$")
 KEY_RE = re.compile(r"^(?P<indent>\s*)(?P<key>[A-Za-z0-9_.-]+)\s*=.*$")
@@ -88,19 +86,15 @@ def _routing_issues(data: dict[str, Any]) -> list[str]:
     features = data.get("features", {})
     if not isinstance(features, dict):
         return ["features must be a TOML table"]
-    routing = features.get("multi_agent_v2")
-    if not isinstance(routing, dict):
-        issues.append("features.multi_agent_v2 must be a table")
-    else:
-        for key, expected in DESIRED_VALUES.items():
-            if routing.get(key) != expected:
-                issues.append(f"{ROUTING_TABLE}.{key} must be {expected!r}")
+    routing = features.get(ROUTING_KEY, DESIRED_VALUE)
+    if routing is not DESIRED_VALUE:
+        issues.append(f"{ROUTING_NAME} must be true or omitted")
+    if LEGACY_ROUTING_KEY in features:
+        issues.append(f"{LEGACY_ROUTING_NAME} must be removed")
 
     agents = data.get("agents", {})
     if agents is not None and not isinstance(agents, dict):
         issues.append("agents must be a TOML table")
-    elif isinstance(agents, dict) and "max_threads" in agents:
-        issues.append("agents.max_threads conflicts with multi_agent_v2")
     return issues
 
 
@@ -176,35 +170,21 @@ def _validate_supported_layout(
     data: dict[str, Any], lines: list[str], path: pathlib.Path
 ) -> None:
     sections = _section_names(lines)
-    if any(name.startswith(f"{ROUTING_TABLE}.") for name in sections) and ROUTING_TABLE not in sections:
+    if any(name.startswith(f"{LEGACY_ROUTING_TABLE}.") for name in sections):
         raise RoutingConfigError(
-            f"cannot safely add [{ROUTING_TABLE}] after an existing child table in {path}"
+            f"cannot safely remove [{LEGACY_ROUTING_TABLE}] with existing child tables in {path}"
         )
 
     features = data.get("features", {})
     if not isinstance(features, dict):
         raise RoutingConfigError(f"[features] is not a table in {path}")
-    routing = features.get("multi_agent_v2")
-    if isinstance(routing, dict) and ROUTING_TABLE not in sections:
-        raise RoutingConfigError(
-            f"{ROUTING_TABLE} uses an inline or dotted layout that Teamwork will not rewrite"
-        )
-    if routing is not None and not isinstance(routing, (bool, dict)):
-        raise RoutingConfigError(
-            f"features.multi_agent_v2 must be a boolean or table in {path}"
-        )
+    routing = features.get(ROUTING_KEY)
+    if routing is not None and not isinstance(routing, bool):
+        raise RoutingConfigError(f"{ROUTING_NAME} must be a boolean in {path}")
 
     agents = data.get("agents", {})
     if agents is not None and not isinstance(agents, dict):
         raise RoutingConfigError(f"[agents] is not a table in {path}")
-    if isinstance(agents, dict) and "max_threads" in agents:
-        value = agents["max_threads"]
-        if not isinstance(value, int) or isinstance(value, bool) or value < 1:
-            raise RoutingConfigError("agents.max_threads must be a positive integer")
-        if "agents" not in sections:
-            raise RoutingConfigError(
-                "agents.max_threads uses a dotted or inline layout that Teamwork will not rewrite"
-            )
 
 
 def migrate_text(text: str, path: pathlib.Path) -> tuple[str, list[str]]:
@@ -214,66 +194,64 @@ def migrate_text(text: str, path: pathlib.Path) -> tuple[str, list[str]]:
     newline = _newline_for(text)
     changes: list[str] = []
 
-    features = data.get("features", {})
-    routing = features.get("multi_agent_v2") if isinstance(features, dict) else None
-    desired = dict(DESIRED_VALUES)
-
     section = ""
-    table_found = False
-    seen_desired: set[str] = set()
+    features_table_found = False
+    seen_desired = False
     transformed: list[str] = []
     for line in lines:
         table_match = TABLE_RE.match(line)
         if table_match:
             section = table_match.group(1).strip()
-            table_found = table_found or section == ROUTING_TABLE
+            features_table_found = features_table_found or section == ROUTING_TABLE
+            if section == LEGACY_ROUTING_TABLE:
+                changes.append(f"remove [{LEGACY_ROUTING_TABLE}] routing table")
+                continue
             transformed.append(line)
+            continue
+        if section == LEGACY_ROUTING_TABLE:
             continue
 
         key = _line_key(line)
-        if section == "features" and key == "multi_agent_v2":
-            if not isinstance(routing, bool):
-                raise RoutingConfigError(
-                    "features.multi_agent_v2 assignment is not a scalar boolean"
-                )
-            changes.append("replace scalar features.multi_agent_v2 with a table")
+        if section == ROUTING_TABLE and key == LEGACY_ROUTING_KEY:
+            changes.append(f"remove legacy {LEGACY_ROUTING_NAME}")
             continue
-        if section == "" and key == "features.multi_agent_v2":
-            if not isinstance(routing, bool):
-                raise RoutingConfigError(
-                    "features.multi_agent_v2 dotted assignment is not a scalar boolean"
-                )
-            changes.append("replace dotted features.multi_agent_v2 with a table")
+        if section == "" and key is not None and (
+            key == LEGACY_ROUTING_NAME or key.startswith(f"{LEGACY_ROUTING_NAME}.")
+        ):
+            changes.append(f"remove legacy {LEGACY_ROUTING_NAME}")
             continue
-        if section == "agents" and key == "max_threads":
-            changes.append("remove incompatible agents.max_threads")
-            continue
-        if section == ROUTING_TABLE and key in desired:
-            seen_desired.add(key)
-            replacement = _replace_assignment(line, key, desired[key], newline)
+        if section == ROUTING_TABLE and key == ROUTING_KEY:
+            seen_desired = True
+            replacement = _replace_assignment(line, ROUTING_KEY, DESIRED_VALUE, newline)
             if replacement != line:
-                changes.append(f"set {ROUTING_TABLE}.{key}")
+                changes.append(f"set {ROUTING_NAME}")
+            transformed.append(replacement)
+            continue
+        if section == "" and key == ROUTING_NAME:
+            seen_desired = True
+            replacement = _replace_assignment(line, ROUTING_NAME, DESIRED_VALUE, newline)
+            if replacement != line:
+                changes.append(f"set {ROUTING_NAME}")
             transformed.append(replacement)
             continue
         transformed.append(line)
 
-    if table_found:
-        missing = [key for key in desired if key not in seen_desired]
-        if missing:
-            section_start = next(
-                index
-                for index, line in enumerate(transformed)
-                if (match := TABLE_RE.match(line))
-                and match.group(1).strip() == ROUTING_TABLE
-            )
-            insert_at = len(transformed)
-            for index in range(section_start + 1, len(transformed)):
-                if TABLE_RE.match(transformed[index]):
-                    insert_at = index
-                    break
-            additions = [f"{key} = {_toml_literal(desired[key])}{newline}" for key in missing]
-            transformed[insert_at:insert_at] = additions
-            changes.extend(f"add {ROUTING_TABLE}.{key}" for key in missing)
+    if seen_desired:
+        pass
+    elif features_table_found:
+        section_start = next(
+            index
+            for index, line in enumerate(transformed)
+            if (match := TABLE_RE.match(line))
+            and match.group(1).strip() == ROUTING_TABLE
+        )
+        insert_at = len(transformed)
+        for index in range(section_start + 1, len(transformed)):
+            if TABLE_RE.match(transformed[index]):
+                insert_at = index
+                break
+        transformed.insert(insert_at, f"{ROUTING_KEY} = {_toml_literal(DESIRED_VALUE)}{newline}")
+        changes.append(f"add {ROUTING_NAME}")
     else:
         if transformed and transformed[-1] and not transformed[-1].endswith(("\n", "\r")):
             transformed[-1] += newline
@@ -281,9 +259,8 @@ def migrate_text(text: str, path: pathlib.Path) -> tuple[str, list[str]]:
             if transformed[-1].strip():
                 transformed.append(newline)
         transformed.append(f"[{ROUTING_TABLE}]{newline}")
-        for key, value in desired.items():
-            transformed.append(f"{key} = {_toml_literal(value)}{newline}")
-        changes.append(f"add [{ROUTING_TABLE}] routing table")
+        transformed.append(f"{ROUTING_KEY} = {_toml_literal(DESIRED_VALUE)}{newline}")
+        changes.append(f"add {ROUTING_NAME}")
 
     candidate = "".join(transformed)
     candidate_data = _parse_toml(candidate, path)

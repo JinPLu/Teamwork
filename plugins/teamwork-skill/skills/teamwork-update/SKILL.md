@@ -14,8 +14,11 @@ Do not assume the current working directory is a Teamwork checkout. From a loade
 Marketplace package, resolve its package root with the package-owned
 `scripts/plugin-runtime-root.py`, located two levels above this skill directory,
 then use that root's `scripts/check-update.sh` and `install.sh`. From a checkout,
-use the verified repository root. If neither package root can be resolved, report
-the missing source instead of searching or modifying arbitrary user directories.
+use the verified repository root. If `plugin-runtime-root.py` is not at the expected
+relative path, also check `$TEAMWORK_ROOT` or `~/.cursor/.teamwork-mcp.json` for
+the package root before reporting missing source. If neither package root can be
+resolved, report the missing source instead of searching or modifying arbitrary user
+directories.
 
 ## Check Or Refresh
 

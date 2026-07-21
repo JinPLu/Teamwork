@@ -49,6 +49,7 @@ COPY_ITEMS = (
     ),
     ("templates/codex-agents", "templates/codex-agents"),
     ("templates/cursor-agents", "templates/cursor-agents"),
+    ("templates/cursor-mcp", "templates/cursor-mcp"),
     ("templates/claude-agents", "templates/claude-agents"),
     ("templates/teamwork-memory", "templates/teamwork-memory"),
     ("hooks/notify.py", "hooks/notify.py"),

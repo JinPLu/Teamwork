@@ -36,13 +36,13 @@ class CodexRoutingConfigTests(unittest.TestCase):
         self.assertEqual(report.status, "updated")
         self.assertTrue(report.restart_required)
         self.assertTrue(inspect_config(self.config).ready)
-        self.assertIn('[features.multi_agent_v2]\n', self.read())
-        self.assertIn('tool_namespace = "teamwork"\n', self.read())
-        self.assertIn('max_concurrent_threads_per_session = 9\n', self.read())
+        self.assertIn('[features]\n', self.read())
+        self.assertIn('multi_agent = true\n', self.read())
+        self.assertNotIn('multi_agent_v2', self.read())
         mode = stat.S_IMODE(self.config.stat().st_mode)
         self.assertEqual(mode, 0o600)
 
-    def test_scalar_v2_and_legacy_limit_are_migrated_without_losing_other_keys(self) -> None:
+    def test_scalar_v2_is_migrated_without_losing_other_keys(self) -> None:
         self.write(
             '# keep top comment\n'
             '[agents]\n'
@@ -55,16 +55,19 @@ class CodexRoutingConfigTests(unittest.TestCase):
         apply_config(self.config)
         text = self.read()
         self.assertIn('# keep top comment', text)
+        self.assertIn('max_threads = 4 # child capacity', text)
         self.assertIn('max_depth = 2', text)
-        self.assertNotIn('max_threads', text)
         self.assertNotIn('multi_agent_v2 = false', text)
-        self.assertIn('max_concurrent_threads_per_session = 9', text)
+        self.assertIn('multi_agent = true', text)
         self.assertTrue(inspect_config(self.config).ready)
 
-    def test_existing_v2_table_is_updated_and_preserves_extensions(self) -> None:
+    def test_existing_v2_table_is_removed_and_stable_feature_is_set(self) -> None:
         self.write(
+            '[features]\n'
+            'js_repl = false\n'
+            'multi_agent = false\n\n'
             '[features.multi_agent_v2]\n'
-            'enabled = false # Teamwork owns this value\n'
+            'enabled = false\n'
             'hide_spawn_agent_metadata = true\n'
             'tool_namespace = "collaboration"\n'
             'max_concurrent_threads_per_session = 12\n'
@@ -72,13 +75,12 @@ class CodexRoutingConfigTests(unittest.TestCase):
         )
         apply_config(self.config)
         text = self.read()
-        self.assertIn('enabled = true # Teamwork owns this value', text)
-        self.assertIn('hide_spawn_agent_metadata = false', text)
-        self.assertIn('tool_namespace = "teamwork"', text)
-        self.assertIn('max_concurrent_threads_per_session = 9', text)
-        self.assertIn('usage_hint_text = "keep me"', text)
+        self.assertIn('js_repl = false', text)
+        self.assertIn('multi_agent = true', text)
+        self.assertNotIn('multi_agent_v2', text)
+        self.assertNotIn('usage_hint_text', text)
 
-    def test_teamwork_limit_replaces_legacy_and_stale_v2_limits(self) -> None:
+    def test_stable_feature_preserves_agent_limits_and_removes_stale_v2_limits(self) -> None:
         self.write(
             '[agents]\n'
             'max_threads = 9\n\n'
@@ -90,8 +92,9 @@ class CodexRoutingConfigTests(unittest.TestCase):
         )
         apply_config(self.config)
         text = self.read()
-        self.assertNotIn('max_threads', text)
-        self.assertIn('max_concurrent_threads_per_session = 9', text)
+        self.assertIn('max_threads = 9', text)
+        self.assertIn('multi_agent = true', text)
+        self.assertNotIn('max_concurrent_threads_per_session', text)
 
     def test_apply_is_byte_idempotent(self) -> None:
         self.write('[features]\njs_repl = false\n')
@@ -119,18 +122,18 @@ class CodexRoutingConfigTests(unittest.TestCase):
             apply_config(self.config)
         self.assertEqual(self.read(), original)
 
-    def test_inline_v2_table_is_rejected_without_mutation(self) -> None:
+    def test_inline_v2_table_is_removed(self) -> None:
         original = (
             '[features]\n'
             'multi_agent_v2 = { enabled = false, tool_namespace = "other" }\n'
         )
         self.write(original)
-        with self.assertRaises(RoutingConfigError):
-            apply_config(self.config)
-        self.assertEqual(self.read(), original)
+        apply_config(self.config)
+        self.assertIn('multi_agent = true', self.read())
+        self.assertNotIn('multi_agent_v2', self.read())
 
-    def test_dotted_legacy_agent_limit_is_rejected_without_mutation(self) -> None:
-        original = 'agents.max_threads = 4\n'
+    def test_invalid_stable_feature_is_rejected_without_mutation(self) -> None:
+        original = '[features]\nmulti_agent = "yes"\n'
         self.write(original)
         with self.assertRaises(RoutingConfigError):
             apply_config(self.config)
@@ -145,7 +148,7 @@ class CodexRoutingConfigTests(unittest.TestCase):
         apply_config(self.config)
         self.assertTrue(self.config.is_symlink())
         self.assertTrue(inspect_config(self.config).ready)
-        self.assertIn('tool_namespace = "teamwork"', target.read_text(encoding="utf-8"))
+        self.assertIn('multi_agent = true', target.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

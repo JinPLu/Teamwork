@@ -1,0 +1,541 @@
+{
+  "schema_version": 4,
+  "candidate_id": "teamwork-4.1.0-c5",
+  "source_case_manifest": "evals/teamwork/live-cases/v4-release-matrix.json",
+  "expected_records_per_output": 13,
+  "expected_total_records": 104,
+  "codex_arms": [
+    "performance-first-root-gpt55-low",
+    "performance-first-root-gpt55-high",
+    "cost-first-root-gpt55-low",
+    "cost-first-root-gpt55-high"
+  ],
+  "required_roles_per_slice": [
+    "researcher",
+    "explorer",
+    "debugger",
+    "designer",
+    "planner",
+    "worker",
+    "plan-reviewer",
+    "reviewer"
+  ],
+  "role_expectations": {
+    "codex": {
+      "performance-first": {
+        "researcher": {
+          "model": "gpt-5.5",
+          "effort": "high"
+        },
+        "explorer": {
+          "model": "gpt-5.5",
+          "effort": "high"
+        },
+        "debugger": {
+          "model": "gpt-5.5",
+          "effort": "high"
+        },
+        "designer": {
+          "model": "gpt-5.6-sol",
+          "effort": "high"
+        },
+        "planner": {
+          "model": "gpt-5.5",
+          "effort": "high"
+        },
+        "worker": {
+          "model": "gpt-5.5",
+          "effort": "high"
+        },
+        "plan-reviewer": {
+          "model": "gpt-5.6-sol",
+          "effort": "high"
+        },
+        "reviewer": {
+          "model": "gpt-5.6-sol",
+          "effort": "max"
+        }
+      },
+      "cost-first": {
+        "researcher": {
+          "model": "gpt-5.5",
+          "effort": "medium"
+        },
+        "explorer": {
+          "model": "gpt-5.5",
+          "effort": "medium"
+        },
+        "debugger": {
+          "model": "gpt-5.5",
+          "effort": "medium"
+        },
+        "designer": {
+          "model": "gpt-5.6-sol",
+          "effort": "medium"
+        },
+        "planner": {
+          "model": "gpt-5.5",
+          "effort": "medium"
+        },
+        "worker": {
+          "model": "gpt-5.5",
+          "effort": "medium"
+        },
+        "plan-reviewer": {
+          "model": "gpt-5.6-sol",
+          "effort": "high"
+        },
+        "reviewer": {
+          "model": "gpt-5.6-sol",
+          "effort": "high"
+        }
+      }
+    },
+    "cursor": {
+      "performance-first": {
+        "researcher": {
+          "model": "gpt-5.6-terra-medium",
+          "effort": "cursor-managed"
+        },
+        "explorer": {
+          "model": "gemini-3.5-flash",
+          "effort": "cursor-managed"
+        },
+        "debugger": {
+          "model": "claude-opus-4-8-thinking-high",
+          "effort": "cursor-managed"
+        },
+        "designer": {
+          "model": "gpt-5.6-sol-medium",
+          "effort": "cursor-managed"
+        },
+        "planner": {
+          "model": "gpt-5.6-terra-medium",
+          "effort": "cursor-managed"
+        },
+        "worker": {
+          "model": "composer-2.5-fast",
+          "effort": "cursor-managed"
+        },
+        "plan-reviewer": {
+          "model": "claude-opus-4-8-thinking-high",
+          "effort": "cursor-managed"
+        },
+        "reviewer": {
+          "model": "claude-fable-5-thinking-high",
+          "effort": "cursor-managed"
+        }
+      },
+      "cost-first": {
+        "researcher": {
+          "model": "gemini-3.5-flash",
+          "effort": "cursor-managed"
+        },
+        "explorer": {
+          "model": "gemini-3.5-flash",
+          "effort": "cursor-managed"
+        },
+        "debugger": {
+          "model": "gpt-5.6-terra-medium",
+          "effort": "cursor-managed"
+        },
+        "designer": {
+          "model": "gpt-5.6-terra-medium",
+          "effort": "cursor-managed"
+        },
+        "planner": {
+          "model": "gpt-5.6-luna-medium",
+          "effort": "cursor-managed"
+        },
+        "worker": {
+          "model": "composer-2.5-fast",
+          "effort": "cursor-managed"
+        },
+        "plan-reviewer": {
+          "model": "gpt-5.6-terra-medium",
+          "effort": "cursor-managed"
+        },
+        "reviewer": {
+          "model": "claude-opus-4-8-thinking-high",
+          "effort": "cursor-managed"
+        }
+      }
+    },
+    "claude": {
+      "performance-first": {
+        "researcher": {
+          "model": "sonnet",
+          "effort": "medium"
+        },
+        "explorer": {
+          "model": "sonnet",
+          "effort": "medium"
+        },
+        "debugger": {
+          "model": "opus",
+          "effort": "high"
+        },
+        "designer": {
+          "model": "opus",
+          "effort": "high"
+        },
+        "planner": {
+          "model": "opus",
+          "effort": "high"
+        },
+        "worker": {
+          "model": "sonnet",
+          "effort": "medium"
+        },
+        "plan-reviewer": {
+          "model": "opus",
+          "effort": "max"
+        },
+        "reviewer": {
+          "model": "opus",
+          "effort": "max"
+        }
+      },
+      "cost-first": {
+        "researcher": {
+          "model": "haiku",
+          "effort": "medium"
+        },
+        "explorer": {
+          "model": "haiku",
+          "effort": "medium"
+        },
+        "debugger": {
+          "model": "opus",
+          "effort": "high"
+        },
+        "designer": {
+          "model": "opus",
+          "effort": "high"
+        },
+        "planner": {
+          "model": "opus",
+          "effort": "high"
+        },
+        "worker": {
+          "model": "haiku",
+          "effort": "medium"
+        },
+        "plan-reviewer": {
+          "model": "opus",
+          "effort": "max"
+        },
+        "reviewer": {
+          "model": "opus",
+          "effort": "max"
+        }
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "external-research-depth-privacy",
+      "selected_skill": "teamwork-research",
+      "required_role": "researcher",
+      "expected_roles": [
+        "researcher"
+      ],
+      "authority": "read-only",
+      "required_tools": [
+        "web_search"
+      ],
+      "scenario": "evals/teamwork/live-scenarios/v4/external-research-depth-privacy.json",
+      "evidence": {
+        "kind": "trace",
+        "artifact_path": "scenario/research-probe.txt",
+        "markers": [
+          "EVIDENCE_RESEARCH_DEPTH_V4"
+        ]
+      },
+      "private_markers": [
+        "TEAMWORK_PRIVATE_CANARY_V4_DO_NOT_DISCLOSE"
+      ],
+      "prompt": "Use the installed Research path on the sanitized question in scenario/research-probe.txt. Use a primary public source and preserve the private local boundary; return only evidence obtained through the host."
+    },
+    {
+      "id": "explore-research-isolation",
+      "selected_skill": "teamwork-explore",
+      "required_role": "explorer",
+      "expected_roles": [
+        "explorer",
+        "researcher"
+      ],
+      "authority": "read-only",
+      "required_tools": [
+        "command_execution"
+      ],
+      "scenario": "evals/teamwork/live-scenarios/v4/explore-research-isolation.json",
+      "evidence": {
+        "kind": "trace",
+        "artifact_path": "scenario/dispatch-probe.txt",
+        "markers": [
+          "EVIDENCE_EXPLORE_RESEARCH_ISOLATION_V4"
+        ]
+      },
+      "private_markers": [],
+      "prompt": "Inspect scenario/dispatch-probe.txt through the installed local Explorer path and keep local and external evidence routes distinct."
+    },
+    {
+      "id": "design-challenge-bounded-convergence",
+      "selected_skill": "teamwork-design",
+      "required_role": "designer",
+      "expected_roles": [
+        "explorer",
+        "researcher",
+        "designer",
+        "planner",
+        "plan-reviewer"
+      ],
+      "authority": "read-only",
+      "required_tools": [
+        "command_execution"
+      ],
+      "scenario": "evals/teamwork/live-scenarios/v4/design-challenge-bounded-convergence.json",
+      "evidence": {
+        "kind": "trace",
+        "artifact_path": "scenario/design-probe.txt",
+        "markers": [
+          "EVIDENCE_DESIGN_CONVERGENCE_V4"
+        ]
+      },
+      "private_markers": [],
+      "prompt": "Inspect scenario/design-probe.txt and exercise the installed Design boundary: evidence, real alternatives, bounded frontier batching with dependent decisions serialized, then the revision-checked design-inspect -> design-schema -> design-apply route and a separately reviewed Plan path."
+    },
+    {
+      "id": "debug-fixed-authority-human-resume",
+      "selected_skill": "teamwork-debug",
+      "required_role": "debugger",
+      "expected_roles": [
+        "debugger"
+      ],
+      "authority": "workspace-write",
+      "required_tools": [
+        "command_execution"
+      ],
+      "scenario": "evals/teamwork/live-scenarios/v4/debug-fixed-authority-human-resume.json",
+      "evidence": {
+        "kind": "workspace",
+        "artifact_path": "scenario/debug-result.txt",
+        "markers": [
+          "EVIDENCE_DEBUG_SAME_PATH_V4"
+        ]
+      },
+      "private_markers": [],
+      "prompt": "Use the installed Debugger path on scenario/debug-input.txt. Reproduce the bounded failure, apply only the authorized fix, rerun the same path, and write the direct result to scenario/debug-result.txt."
+    },
+    {
+      "id": "native-result-minimality",
+      "selected_skill": "native",
+      "required_role": "worker",
+      "expected_roles": [
+        "worker",
+        "reviewer"
+      ],
+      "authority": "workspace-write",
+      "required_tools": [
+        "command_execution"
+      ],
+      "scenario": "evals/teamwork/live-scenarios/v4/native-result-minimality.json",
+      "evidence": {
+        "kind": "workspace",
+        "artifact_path": "scenario/native-result.txt",
+        "markers": [
+          "EVIDENCE_NATIVE_RESULT_V4"
+        ]
+      },
+      "private_markers": [],
+      "prompt": "Make only the bounded requested change described in scenario/native-input.txt, prove it through the real path, and write the result to scenario/native-result.txt."
+    },
+    {
+      "id": "native-no-child-control",
+      "selected_skill": "native",
+      "required_role": "worker",
+      "expected_roles": [
+        "worker"
+      ],
+      "authority": "workspace-write",
+      "required_tools": [
+        "command_execution"
+      ],
+      "scenario": "evals/teamwork/live-scenarios/v4/native-no-child-control.json",
+      "evidence": {
+        "kind": "workspace",
+        "artifact_path": "scenario/native-no-child-result.txt",
+        "markers": [
+          "EVIDENCE_NATIVE_NO_CHILD_V4"
+        ]
+      },
+      "private_markers": [],
+      "prompt": "Make the clear local result described in scenario/native-no-child.txt on the native path, avoid unnecessary child-role routing, and write the scenario's required evidence marker to scenario/native-no-child-result.txt."
+    },
+    {
+      "id": "review-correctness-deslop",
+      "selected_skill": "teamwork-review",
+      "required_role": "reviewer",
+      "expected_roles": [
+        "reviewer"
+      ],
+      "authority": "read-only",
+      "required_tools": [
+        "command_execution"
+      ],
+      "scenario": "evals/teamwork/live-scenarios/v4/review-correctness-deslop.json",
+      "evidence": {
+        "kind": "trace",
+        "artifact_path": "scenario/review-probe.txt",
+        "markers": [
+          "EVIDENCE_REVIEW_FINDING_V4"
+        ]
+      },
+      "private_markers": [],
+      "prompt": "Read scenario/review-probe.txt and perform the installed read-only Review path. Report evidence-backed finding(s) without changing the scenario."
+    },
+    {
+      "id": "plan-independent-review",
+      "selected_skill": "teamwork-plan",
+      "required_role": "planner",
+      "expected_roles": [
+        "planner",
+        "plan-reviewer"
+      ],
+      "authority": "read-only",
+      "required_tools": [
+        "command_execution"
+      ],
+      "scenario": "evals/teamwork/live-scenarios/v4/plan-independent-review.json",
+      "evidence": {
+        "kind": "trace",
+        "artifact_path": "scenario/plan-probe.txt",
+        "markers": [
+          "EVIDENCE_PLAN_REVIEW_V4"
+        ]
+      },
+      "private_markers": [],
+      "prompt": "Read scenario/plan-probe.txt. Use the installed Plan path only from the selected direction and route the plan through the distinct Plan Reviewer boundary."
+    },
+    {
+      "id": "goal-wait-compaction-resume",
+      "selected_skill": "teamwork-goal",
+      "required_role": "worker",
+      "expected_roles": [
+        "worker"
+      ],
+      "authority": "workspace-write",
+      "required_tools": [
+        "command_execution"
+      ],
+      "scenario": "evals/teamwork/live-scenarios/v4/goal-wait-compaction-resume.json",
+      "evidence": {
+        "kind": "workspace",
+        "artifact_path": "scenario/goal-result.txt",
+        "markers": [
+          "EVIDENCE_GOAL_SUCCESS_V4"
+        ]
+      },
+      "private_markers": [],
+      "prompt": "Use the explicit installed Goal path from scenario/goal-input.txt, preserve scope across a strategy change, and write the verified completion artifact to scenario/goal-result.txt."
+    },
+    {
+      "id": "discussion-opening-map-transaction",
+      "selected_skill": "grill-me",
+      "required_role": "worker",
+      "expected_roles": [
+        "worker"
+      ],
+      "authority": "workspace-write",
+      "required_tools": [
+        "command_execution"
+      ],
+      "scenario": "evals/teamwork/live-scenarios/v4/discussion-opening-map-transaction.json",
+      "evidence": {
+        "kind": "workspace",
+        "artifact_path": "scenario/discussion-result.txt",
+        "markers": [
+          "EVIDENCE_DISCUSSION_TRANSACTION_V4"
+        ]
+      },
+      "private_markers": [],
+      "prompt": "In the disposable project, exercise the authorized Grill discussion transaction from scenario/discussion-input.txt. Use the package inspect, schema, and apply flow; write the direct transaction result to scenario/discussion-result.txt."
+    },
+    {
+      "id": "init-recovery-promotion",
+      "selected_skill": "teamwork-init",
+      "required_role": "explorer",
+      "expected_roles": [
+        "explorer",
+        "worker"
+      ],
+      "authority": "workspace-write",
+      "required_tools": [
+        "command_execution"
+      ],
+      "scenario": "evals/teamwork/live-scenarios/v4/init-recovery-promotion.json",
+      "evidence": {
+        "kind": "workspace",
+        "artifact_path": "scenario/init-result.txt",
+        "markers": [
+          "EVIDENCE_INIT_RECOVERY_V4"
+        ]
+      },
+      "private_markers": [],
+      "prompt": "Exercise the installed project-only Init path in scenario/init-input.txt, preserving audit-only and recovery boundaries, then write direct result evidence to scenario/init-result.txt."
+    },
+    {
+      "id": "update-prepost-privileged",
+      "selected_skill": "teamwork-update",
+      "required_role": "explorer",
+      "expected_roles": [
+        "explorer",
+        "worker"
+      ],
+      "authority": "read-only",
+      "required_tools": [
+        "command_execution"
+      ],
+      "scenario": "evals/teamwork/live-scenarios/v4/update-prepost-privileged.json",
+      "evidence": {
+        "kind": "trace",
+        "artifact_path": "scenario/update-probe.txt",
+        "markers": [
+          "EVIDENCE_UPDATE_READINESS_V4"
+        ]
+      },
+      "private_markers": [],
+      "prompt": "Read scenario/update-probe.txt through the installed global Update boundary. Show pre/post readiness without project initialization or unsupported privileged claims."
+    },
+    {
+      "id": "cross-platform-role-proof",
+      "selected_skill": "public-contract",
+      "required_role": "plan-reviewer",
+      "expected_roles": [
+        "researcher",
+        "explorer",
+        "debugger",
+        "designer",
+        "planner",
+        "worker",
+        "plan-reviewer",
+        "reviewer"
+      ],
+      "authority": "read-only",
+      "required_tools": [
+        "command_execution"
+      ],
+      "scenario": "evals/teamwork/live-scenarios/v4/cross-platform-role-proof.json",
+      "evidence": {
+        "kind": "trace",
+        "artifact_path": "scenario/roles-probe.txt",
+        "markers": [
+          "EVIDENCE_ALL_ROLES_V4"
+        ]
+      },
+      "private_markers": [],
+      "prompt": "Read scenario/roles-probe.txt and invoke every formal installed role through its host-native boundary. Emit only host trace evidence for actual role, model, effort, tool, and authority observations."
+    }
+  ]
+}

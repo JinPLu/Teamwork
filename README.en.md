@@ -54,7 +54,7 @@ Teamwork is a set of on-demand collaboration methods, not a control layer that t
 | 🔁 Endless testing and review without delivery | Get the real result first; tests and review serve the changed path or a named risk gate. |
 | 🧱 Workflow overhead for small work | Simple answers, small edits, and clear implementation requests stay on the fast host path. |
 | 🕳️ Invented paths, ports, models, or state | Check project files, logs, config, official sources, and actual output. |
-| ❓ Broad questions before inspection | Ask only about decisions that change result, scope, acceptance, or authority. |
+| ❓ Broad questions before inspection | Show the global decision map first; batch only independent key decisions, and ask dependent decisions in later turns. |
 | 🧑‍⚖️ Review replacing execution | Review is read-only by default and returns evidence-backed `ACCEPT`, `REVISE`, or `BLOCKED`. |
 
 ---
@@ -166,7 +166,7 @@ For release reminders, open [JinPLu/Teamwork](https://github.com/JinPLu/Teamwork
 ## 🛡️ Safety boundaries
 
 - Answers, research, design, planning, diagnostic debugging, and review are read-only by default; accepting a plan does not authorize implementation.
-- Explicitly saved, resumed, or major-boundary Grill discussions use the single current record at `docs/teamwork/discussion/current.md`; they are not mirrored into ordinary memory.
+- Explicitly saved, resumed, or major-boundary Grill discussions use the single current record at `docs/teamwork/discussion/current.md`; new records use `frontier` / `current_batch` state and are not mirrored into ordinary memory.
 - The installer deletes only entries it can prove Teamwork generated. Never delete a whole `.agents`, `.codex`, `.cursor`, or `.claude` directory.
 - After enabling Codex notifications, restart Codex and trust only Teamwork's `Stop` and `PermissionRequest` handlers in `/hooks`. Do not use trust-all.
 - `./scripts/check-update.sh --readiness` checks Teamwork-managed files and configuration only; it cannot perform Cursor User Rules or hook-trust steps for the host.

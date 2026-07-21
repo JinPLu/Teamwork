@@ -5,18 +5,20 @@ TEAMWORK_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT_ROOT_INPUT="$PWD"
 PROJECT_ROOT=""
 RUN_CODEGRAPH="${TEAMWORK_INIT_CODEGRAPH:-0}"
+RUN_CURSOR_MCP="${TEAMWORK_INIT_CURSOR_MCP:-0}"
 FULL_BOOTSTRAP=0
 
 usage() {
   cat <<'USAGE'
 Usage:
-  ./scripts/init-project.sh [--project-root PATH] [--codegraph|--no-codegraph] [--full-bootstrap]
+  ./scripts/init-project.sh [--project-root PATH] [--codegraph|--no-codegraph] [--cursor-mcp|--no-cursor-mcp] [--full-bootstrap]
 
 Initialize only project-local Teamwork context:
   - the managed Teamwork block in AGENTS.md
   - ordinary durable memory under docs/teamwork/
   - local Teamwork ignore rules
   - a CodeGraph index only after explicit --codegraph consent
+  - Cursor MCP rules and optional project .cursor/mcp.json after explicit --cursor-mcp consent
 
 This command does not install or refresh global skills, agents, policies,
 notifications, or clipboard content. The legacy --copy, --link, --profile,
@@ -38,6 +40,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --codegraph)
       RUN_CODEGRAPH=1
+      shift
+      ;;
+    --no-cursor-mcp)
+      RUN_CURSOR_MCP=0
+      shift
+      ;;
+    --cursor-mcp)
+      RUN_CURSOR_MCP=1
       shift
       ;;
     --full-bootstrap)
@@ -88,11 +98,21 @@ else
   echo "CodeGraph: init failed; continuing with project files in place" >&2
 fi
 
-if (( FULL_BOOTSTRAP == 1 )); then
-  project_files write-context --full-bootstrap
+cursor_mcp_args=()
+if (( RUN_CURSOR_MCP == 1 )); then
+  cursor_mcp_args=(--cursor-mcp)
 else
-  project_files write-context
+  echo "Cursor MCP: skipped (explicit consent not given)"
 fi
+
+write_args=(write-context)
+if (( FULL_BOOTSTRAP == 1 )); then
+  write_args+=(--full-bootstrap)
+fi
+if (( ${#cursor_mcp_args[@]} > 0 )); then
+  write_args+=("${cursor_mcp_args[@]}")
+fi
+project_files "${write_args[@]}"
 project_files validate
 
 echo "Teamwork project init complete: $PROJECT_ROOT"

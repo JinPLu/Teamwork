@@ -45,6 +45,7 @@ class GrillContractTests(unittest.TestCase):
     def test_question_count_is_transport_neutral(self) -> None:
         self.assertEqual(question_count("Keep compatibility?"), 1)
         self.assertEqual(question_count("保留兼容性？"), 1)
+        self.assertEqual(question_count("A? B? C?"), 3)
         self.assertEqual(question_count("No user decision remains."), 0)
 
     def test_legacy_packet_fields_are_rejected_without_banning_plain_questions(self) -> None:
@@ -123,6 +124,18 @@ class GrillContractTests(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertTrue(readonly_event_violations([command_event(command)]))
 
+    def test_grill_structure_allows_bounded_batch_but_rejects_four_questions(self) -> None:
+        two_question_turn = [{"final_output": "Compatibility? Telemetry?", "raw_events": []}]
+        self.assertEqual(
+            RUNNER.assess_structure(two_question_turn, category="grill", dry_run=False),
+            ("passed", []),
+        )
+        four_question_turn = [{"final_output": "A? B? C? D?", "raw_events": []}]
+        status, violations = RUNNER.assess_structure(
+            four_question_turn, category="grill", dry_run=False
+        )
+        self.assertEqual(status, "failed")
+        self.assertEqual(violations, ["turn 1 asks more than three textual questions"])
 
 class LiveRecorderTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -148,7 +161,7 @@ class LiveRecorderTests(unittest.TestCase):
                 "forbidden": ["workspace mutation"],
             },
         }
-        values = prompts or ["Ask one material question before acting."]
+        values = prompts or ["Ask the bounded material question batch before acting."]
         if len(values) == 1:
             case["prompt"] = values[0]
         else:
@@ -275,6 +288,16 @@ class LiveRecorderTests(unittest.TestCase):
         self.assertEqual(record["question_counts"], [1, 0])
         self.assertEqual(record["structural_status"], "passed")
         self.assertEqual(record["session_id"], "thread-1")
+
+    def test_dependent_sequence_records_one_question_per_turn(self) -> None:
+        first = "Must compatibility be preserved?"
+        second = "Which rollout window follows that answer?"
+        case = self.write_case(prompts=[first, second])
+        codex = self.write_fake_codex(first_text=first, resumed_text=second)
+        result = self.run_cli(case, codex=codex)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        record = self.read_record()
+        self.assertEqual(record["question_counts"], [1, 1])
 
     def test_missing_session_stops_before_resume(self) -> None:
         case = self.write_case(prompts=["First", "Second"])

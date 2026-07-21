@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 from typing import Sequence
 
-from .host_matrix import run_host_matrix
+from .host_matrix import CODEX_ROOT_ARMS, run_host_matrix
 
 
 def parser_for(host: str) -> argparse.ArgumentParser:
@@ -24,11 +24,11 @@ def parser_for(host: str) -> argparse.ArgumentParser:
     run.add_argument("--timeout-seconds", required=True, type=int)
     run.add_argument("--only-cases", nargs="+")
     if host == "codex":
-        run.add_argument("--arm", required=True)
-        # The candidate's profile-rendered role map, not a caller-selected
-        # fallback, determines each trajectory's model and effort.
-        run.add_argument("--model")
-        run.add_argument("--effort")
+        run.add_argument("--arm", required=True, choices=tuple(CODEX_ROOT_ARMS))
+        # Root model/effort select only the parent Codex invocation. Child role
+        # evidence still has to bind to the candidate's profile-rendered map.
+        run.add_argument("--model", required=True)
+        run.add_argument("--effort", required=True)
         run.add_argument("--max-trajectories", required=True, type=int)
     return parser
 
@@ -45,4 +45,7 @@ def main(host: str, argv: Sequence[str] | None = None) -> int:
         repeats=args.repeats, timeout_seconds=args.timeout_seconds, extra={},
         only_cases=set(args.only_cases) if args.only_cases else None,
         max_trajectories=getattr(args, "max_trajectories", None),
+        arm=getattr(args, "arm", None),
+        parent_model=getattr(args, "model", None),
+        parent_effort=getattr(args, "effort", None),
     )

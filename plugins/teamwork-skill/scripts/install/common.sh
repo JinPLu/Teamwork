@@ -2,6 +2,7 @@ INSTALL_MODE="${TEAMWORK_INSTALL_MODE:-copy}"
 CODEX_PROFILE="${TEAMWORK_CODEX_PROFILE:-performance-first}"
 NOTIFICATIONS_ACTION="${TEAMWORK_NOTIFICATIONS_ACTION:-preserve}"
 CODEX_ROUTING_ACTION="${TEAMWORK_CODEX_ROUTING:-configure}"
+CURSOR_MCP_ACTION="${TEAMWORK_CURSOR_MCP_ACTION:-apply}"
 CODEX_USER_SKILLS_ROOT="$HOME/.agents/skills"
 PKG_VERSION="unknown"
 if [[ -f "$ROOT/VERSION" ]]; then
@@ -62,15 +63,15 @@ CODEX_AGENTS=(
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] [--notifications|--no-notifications] [--codex-routing|--no-codex-routing] [--profile performance-first|cost-first] \
+  ./install.sh [--copy|--link] [--notifications|--no-notifications] [--codex-routing|--no-codex-routing] [--no-mcp] [--profile performance-first|cost-first] \
     [--project-root PATH] \
-    codex|cursor|claude|all|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
+    codex|cursor|claude|all|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy|cursor-mcp
 
 Targets:
   codex          Install checkout-based Codex skills, agents, and policy
                  (script default target; Marketplace plugin is the default
                  Codex user install path)
-  cursor         Install skills, Cursor agents, and print cursor-policy guidance
+  cursor         Install skills, Cursor agents, register MCP servers, and print cursor-policy guidance
   claude         Install skills, Claude agents, and Teamwork Claude global policy
   all            Install skills, all platform agents, and Codex + Claude global policy
   init-project   Initialize AGENTS.md, docs/teamwork/, ignore rules, and
@@ -86,6 +87,7 @@ Targets:
   codex-agents   Install Teamwork Codex custom agents to ~/.codex/agents
                  and configure their user-level routing unless opted out
   cursor-agents  Install Teamwork Cursor subagents to ~/.cursor/agents
+  cursor-mcp     Register Teamwork MCP servers in ~/.cursor/mcp.json
   claude-agents  Install Teamwork Claude subagents to ~/.claude/agents
   codex-policy   Print the Teamwork Codex global policy block for App Personalization
   cursor-policy  Print the Teamwork Cursor global policy block for User Rules paste
@@ -105,15 +107,18 @@ unless --notifications or --no-notifications is used. Marketplace bootstrap
 installs Codex notifications by default; use --no-notifications to opt out.
 Project init targets never change notifications; notification flags remain
 accepted there as compatibility no-ops.
+Cursor installs register codegraph and gpu-broker in ~/.cursor/mcp.json by
+default. Use --no-mcp to skip MCP registration; enable new servers in Cursor
+Settings -> MCP when prompted.
 --no-notifications removes only Teamwork-owned handlers. Cursor notification
 installs are intentionally unsupported until their local hook contracts are
 live-verified.
 
-User-level Codex installs configure ~/.codex/config.toml so the runtime can
-select installed Teamwork agent roles and run one main thread plus up to eight
-subagents. Use --no-codex-routing only when another owner manages that routing
-contract. Project init never changes user-level routing; run a Codex global
-install or codex-agents separately when that surface needs refresh.
+User-level Codex installs configure ~/.codex/config.toml with the stable
+multi_agent feature enabled so the runtime can select installed Teamwork agent
+roles. Use --no-codex-routing only when another owner manages that feature.
+Project init never changes user-level routing; run a Codex global install or
+codex-agents separately when that surface needs refresh.
 
 Profile defaults to performance-first on all platforms. On Codex, performance-first
 uses GPT-5.5/high for Researcher, Explorer, Debugger, Planner, and Worker;

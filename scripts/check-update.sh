@@ -835,6 +835,7 @@ print_readiness() {
   echo "MISSING=$(IFS=,; echo "${missing[*]-}")"
   echo "HOST_ACTIVATION=manual-action-required"
   echo "MANUAL_ACTIONS=$(IFS=,; echo "${manual_actions[*]}")"
+  echo "CURSOR_POLICY_MANUAL=run ./install.sh cursor-policy-copy, then paste into Cursor Settings -> Rules -> User Rules"
   echo "NEXT=cd \"$ROOT\" && ./install.sh all --profile $profile"
   echo "CURSOR_POLICY=./install.sh cursor-policy-copy"
   [[ "$ready" == "yes" ]]
@@ -953,8 +954,8 @@ print_report() {
   echo "Cursor explorer model: $(cursor_model_sample)"
   echo "Expected performance-first Codex: Researcher/Explorer/Debugger/Planner/Worker=GPT-5.5/high, Designer/Plan Reviewer=Sol/high, Reviewer=Sol/max"
   echo "Expected cost-first Codex: Researcher/Explorer/Debugger/Planner/Worker=GPT-5.5/medium, Designer=Sol/medium, Plan Reviewer/Reviewer=Sol/high"
-  echo "Expected cost-first Cursor: Researcher/Explorer/Worker=composer-2.5"
-  echo "Expected performance-first Cursor Explorer: claude-sonnet-4-6"
+  echo "Expected cost-first Cursor: Researcher/Explorer=gemini-3.5-flash, Debugger/Designer/Plan Reviewer=gpt-5.6-terra-medium, Planner=gpt-5.6-luna-medium, Worker=composer-2.5-fast, Reviewer=claude-opus-4-8-thinking-high"
+  echo "Expected performance-first Cursor: Researcher=gpt-5.6-terra-medium, Explorer=gemini-3.5-flash, Debugger/Plan Reviewer=claude-opus-4-8-thinking-high, Designer=gpt-5.6-sol-medium, Planner=gpt-5.6-terra-medium, Worker=composer-2.5-fast, Reviewer=claude-fable-5-thinking-high"
   echo
 
   echo "--- Optional substrates ---"

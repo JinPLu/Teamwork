@@ -26,6 +26,11 @@ commands, or turn an investigation into implementation.
    identified. Do not create an Explore report; evidence belongs in the workflow
    or artifact that owns the decision.
 
+Use Explore when the evidence question is structurally complex (multiple files,
+callers, definitions, or history), separable from the current task, or benefits
+from CodeGraph-first inspection. Ordinary single-file reads, configuration lookups,
+and reads that enable an already-scoped authorized change stay native.
+
 Ordinary focused reads performed to complete an already authorized change do not
 activate Explore. If the remaining question is external/current, unknown-cause
 runtime diagnosis, an unsettled design choice, or a requested mutation, report

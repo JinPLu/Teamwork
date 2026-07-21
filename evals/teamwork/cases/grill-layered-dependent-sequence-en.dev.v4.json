@@ -1,0 +1,43 @@
+{
+  "id": "grill-layered-dependent-sequence-en",
+  "split": "dev",
+  "source": "synthetic",
+  "producers": [
+    {
+      "class": "root-policy",
+      "source": "scripts/install/policy.sh"
+    },
+    {
+      "class": "skill",
+      "source": "skills/grill-me/SKILL.md"
+    }
+  ],
+  "platforms": [
+    "codex",
+    "cursor",
+    "claude"
+  ],
+  "prompt": "Grill me on a public migration: first decide whether compatibility is required; only that answer determines which rollout-window options are valid.",
+  "expected": {
+    "capability": "grill",
+    "scenario": "layered-dependent-sequence",
+    "language": "en",
+    "requires": [
+      "global-decision-map",
+      "dependency-serialization",
+      "one-batch-per-turn",
+      "recommend-first",
+      "question-criticality",
+      "closure-signal",
+      "no-implementation"
+    ]
+  },
+  "must": [
+    "show the global decision map and mark the rollout-window item as dependent on the compatibility answer",
+    "ask only the compatibility decision in the first batch, then ask the rollout-window decision only after that dependency closes"
+  ],
+  "must_not": [
+    "batch the dependent rollout-window question with its prerequisite, ask a questionnaire, implement, edit files, or treat answers as implementation authority"
+  ],
+  "evidence": "Static layered dependent-sequence contract; reviewer still judges whether the dependency is real."
+}

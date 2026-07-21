@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import hashlib
+import io
 import json
 import re
 import subprocess
@@ -29,6 +30,51 @@ from teamwork_tooling.evaluation.host_matrix import (
     validate_trajectory,
 )
 from teamwork_tooling.evaluation.sources import validate_role_template_sources
+
+
+def dispatch_for(host: str, role: str, invocation_id: str, model: str, effort: str) -> dict[str, object]:
+    base = {
+        "host": host,
+        "role": role,
+        "dispatch_id": f"{invocation_id}-{role}",
+        "parent_invocation_id": invocation_id,
+        "actual_model": model,
+        "actual_effort": effort,
+        "requested_model": None,
+        "requested_effort": None,
+    }
+    if host == "codex":
+        return {
+            **base,
+            "selector_kind": "agent_type",
+            "agent_type": f"teamwork_{role.replace('-', '_')}",
+            "subagent_identity": None,
+            "fork_turns": "none",
+            "model_override_present": False,
+            "effort_override_present": False,
+            "observation_source": "codex-product-coordination",
+        }
+    if host == "claude":
+        return {
+            **base,
+            "selector_kind": "subagent_identity",
+            "agent_type": None,
+            "subagent_identity": role,
+            "fork_turns": None,
+            "model_override_present": None,
+            "effort_override_present": None,
+            "observation_source": "claude-hooks-transcript",
+        }
+    return {
+        **base,
+        "selector_kind": "cursor-agent-role",
+        "agent_type": None,
+        "subagent_identity": role,
+        "fork_turns": None,
+        "model_override_present": None,
+        "effort_override_present": None,
+        "observation_source": "cursor-stream-json",
+    }
 
 
 class EvaluationContractV4Tests(unittest.TestCase):
@@ -127,8 +173,32 @@ class EvaluationContractV4Tests(unittest.TestCase):
     def test_release_manifest_is_exact_and_maps_all_roles(self) -> None:
         manifest = ROOT / "evals/teamwork/live-cases/v4-release-matrix.json"
         cases = load_case_manifest(manifest)
-        self.assertEqual(12, len(cases))
+        self.assertEqual(13, len(cases))
         self.assertEqual(CANONICAL_ROLES, {role for case in cases for role in case["expected_roles"]})
+
+    def test_c5_case_contract_freezes_the_exact_104_record_matrix(self) -> None:
+        contract_path = ROOT / "evals/teamwork/manifests/v4.1.0-teamwork-c5-cases.json"
+        contract = json.loads(contract_path.read_text(encoding="utf-8"))
+        contract_cases = load_case_manifest(contract_path)
+        release_cases = load_case_manifest(
+            ROOT / "evals/teamwork/live-cases/v4-release-matrix.json"
+        )
+        self.assertEqual("teamwork-4.1.0-c5", contract["candidate_id"])
+        self.assertEqual(13, contract["expected_records_per_output"])
+        self.assertEqual(104, contract["expected_total_records"])
+        self.assertEqual(
+            [
+                "performance-first-root-gpt55-low",
+                "performance-first-root-gpt55-high",
+                "cost-first-root-gpt55-low",
+                "cost-first-root-gpt55-high",
+            ],
+            contract["codex_arms"],
+        )
+        self.assertEqual(
+            [case["id"] for case in release_cases],
+            [case["id"] for case in contract_cases],
+        )
 
     def test_codex_live_matrix_uses_the_role_optimized_profile_expectations(self) -> None:
         cases = load_case_manifest(ROOT / "evals/teamwork/live-cases/v4-release-matrix.json")
@@ -197,8 +267,9 @@ class EvaluationContractV4Tests(unittest.TestCase):
     def test_unsupported_trajectory_never_validates_as_pass(self) -> None:
         record = {
             "schema_version":4,"record_type":"teamwork_host_trajectory_v4","host":"cursor","host_version":"x",
-            "invocation_id":"i","started_at":"s","finished_at":"f","case_id":"c","profile":"cost-first",
-            "selected_skill":"UNSUPPORTED","role_identity":"UNSUPPORTED","roles_observed":[],
+            "invocation_id":"i","arm":"a","started_at":"s","finished_at":"f","case_id":"c","profile":"cost-first",
+            "parent_model":"parent","parent_effort":"parent-effort",
+            "selected_skill":"UNSUPPORTED","role_identity":"UNSUPPORTED","dispatches":[],
             "actual_model":"UNSUPPORTED","actual_effort":"UNSUPPORTED","tool_observations":[],
             "authority_observation":"UNSUPPORTED","sanitized_input_sha256":"a"*64,
             "artifact":{"path":None,"sha256":None},"result":{"path":None,"sha256":None,"direct_success":False},
@@ -283,57 +354,115 @@ class EvaluationContractV4Tests(unittest.TestCase):
             self.assertFalse(passed)
             self.assertEqual("scenario-verifier-modified", failure)
 
-    def test_matrix_verifier_requires_twelve_and_all_roles_in_each_slice(self) -> None:
-        cases = load_case_manifest(ROOT / "evals/teamwork/live-cases/v4-release-matrix.json")
+    def test_matrix_verifier_requires_thirteen_and_all_roles_in_each_slice(self) -> None:
+        cases = load_case_manifest(
+            ROOT / "evals/teamwork/manifests/v4.1.0-teamwork-c5-cases.json"
+        )
         with tempfile.TemporaryDirectory() as temporary:
             output_root = Path(temporary) / "evals/teamwork/outputs/installed-v4"
-            for host in ("codex", "cursor", "claude"):
-                for profile in ("performance-first", "cost-first"):
-                    path = output_root / host / f"{profile}.jsonl"
-                    path.parent.mkdir(parents=True, exist_ok=True)
-                    records = []
-                    for index, case in enumerate(cases):
-                        roles = case["expected_roles"]
-                        evidence_dir = path.parent / "artifacts" / f"{host}-{profile}-{index}"
-                        evidence_dir.mkdir(parents=True, exist_ok=True)
-                        artifact_path = evidence_dir / "trace.jsonl"
-                        result_path = evidence_dir / "result.txt"
-                        artifact_path.write_text("actual host tool trace\n", encoding="utf-8")
-                        result_path.write_text(
-                            "\n".join(case["evidence"]["markers"]) + "\n", encoding="utf-8"
+            spec = importlib.util.spec_from_file_location(
+                "teamwork_release_matrix_test",
+                SCRIPTS / "run-teamwork-release-matrix.py",
+            )
+            assert spec and spec.loader
+            release_matrix = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(release_matrix)
+            slices = [
+                ("codex", "performance-first", "performance-first-root-gpt55-low"),
+                ("codex", "performance-first", "performance-first-root-gpt55-high"),
+                ("codex", "cost-first", "cost-first-root-gpt55-low"),
+                ("codex", "cost-first", "cost-first-root-gpt55-high"),
+                ("cursor", "performance-first", "performance-first"),
+                ("cursor", "cost-first", "cost-first"),
+                ("claude", "performance-first", "performance-first"),
+                ("claude", "cost-first", "cost-first"),
+            ]
+            for host, profile, arm in slices:
+                path = output_root / host / f"{arm}.jsonl"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                records = []
+                for index, case in enumerate(cases):
+                    roles = case["expected_roles"]
+                    evidence_dir = path.parent / "artifacts" / f"{host}-{arm}-{index}"
+                    evidence_dir.mkdir(parents=True, exist_ok=True)
+                    artifact_path = evidence_dir / "trace.jsonl"
+                    result_path = evidence_dir / "result.txt"
+                    artifact_path.write_text("actual host tool trace\n", encoding="utf-8")
+                    result_path.write_text(
+                        "\n".join(case["evidence"]["markers"]) + "\n", encoding="utf-8"
+                    )
+                    expected = case["role_expectations"][host][profile][case["required_role"]]
+                    invocation_id = f"{host}-{arm}-{index}"
+                    dispatches = [
+                        dispatch_for(
+                            host,
+                            role,
+                            invocation_id,
+                            case["role_expectations"][host][profile][role]["model"],
+                            case["role_expectations"][host][profile][role]["effort"],
                         )
-                        expected = case["role_expectations"][host][profile][case["required_role"]]
-                        record = {
-                            "schema_version":4,"record_type":"teamwork_host_trajectory_v4","host":host,"host_version":"test",
-                            "invocation_id":f"{host}-{profile}-{index}","started_at":"s","finished_at":"f","case_id":case["id"],"profile":profile,
-                            "selected_skill":case["selected_skill"],"role_identity":case["required_role"],"roles_observed":roles,
-                            "actual_model":expected["model"],"actual_effort":expected["effort"],"tool_observations":case["required_tools"],
-                            "authority_observation":case["authority"],"sanitized_input_sha256":hashlib.sha256(case["prompt"].encode()).hexdigest(),
-                            "artifact":{"path":artifact_path.relative_to(path.parent).as_posix(),"sha256":hashlib.sha256(artifact_path.read_bytes()).hexdigest()},
-                            "result":{"path":result_path.relative_to(path.parent).as_posix(),"sha256":hashlib.sha256(result_path.read_bytes()).hexdigest(),"direct_success":True},
-                            "exit_status":0,"status":"PASS","privacy_scan":"PASS","failure_classification":None,
-                        }
-                        records.append(record)
-                    path.write_text("".join(json.dumps(record) + "\n" for record in records), encoding="utf-8")
+                        for role in roles
+                    ]
+                    record = {
+                        "schema_version":4,"record_type":"teamwork_host_trajectory_v4","host":host,"host_version":"test",
+                        "invocation_id":invocation_id,"arm":arm,"started_at":"s","finished_at":"f","case_id":case["id"],"profile":profile,
+                        "parent_model":"parent-model","parent_effort":"parent-effort",
+                        "selected_skill":case["selected_skill"],"role_identity":case["required_role"],"dispatches":dispatches,
+                        "actual_model":expected["model"],"actual_effort":expected["effort"],"tool_observations":case["required_tools"],
+                        "authority_observation":case["authority"],"sanitized_input_sha256":hashlib.sha256(case["prompt"].encode()).hexdigest(),
+                        "artifact":{"path":artifact_path.relative_to(path.parent).as_posix(),"sha256":hashlib.sha256(artifact_path.read_bytes()).hexdigest()},
+                        "result":{"path":result_path.relative_to(path.parent).as_posix(),"sha256":hashlib.sha256(result_path.read_bytes()).hexdigest(),"direct_success":True},
+                        "exit_status":0,"status":"PASS","privacy_scan":"PASS","failure_classification":None,
+                    }
+                    records.append(record)
+                path.write_text("".join(json.dumps(record) + "\n" for record in records), encoding="utf-8")
             command = [
                 sys.executable, str(SCRIPTS / "run-teamwork-release-matrix.py"), "verify",
-                "--manifest", str(ROOT / "evals/teamwork/live-cases/v4-release-matrix.json"),
+                "--manifest", str(ROOT / "evals/teamwork/manifests/v4.1.0-teamwork-c5-cases.json"),
                 "--output-root", str(output_root),
                 "--schema", str(ROOT / "evals/teamwork/schemas/host-trajectory-v4.schema.json"),
                 "--hosts", "codex", "cursor", "claude",
                 "--profiles", "performance-first", "cost-first",
-                "--expected-records-per-slice", "12",
+                "--codex-arms",
+                "performance-first-root-gpt55-low",
+                "performance-first-root-gpt55-high",
+                "cost-first-root-gpt55-low",
+                "cost-first-root-gpt55-high",
+                "--expected-records-per-output", "13",
+                "--expected-total-records", "104",
                 "--required-roles-per-slice", *sorted(CANONICAL_ROLES),
                 "--summary", str(output_root / "matrix-summary.json"),
             ]
-            passed = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+
+            def run_verify() -> subprocess.CompletedProcess[str]:
+                Path(command[-1]).unlink(missing_ok=True)
+                stdout = io.StringIO()
+                stderr = io.StringIO()
+                with (
+                    mock.patch.object(sys, "argv", command[1:]),
+                    mock.patch.object(sys, "stdout", stdout),
+                    mock.patch.object(sys, "stderr", stderr),
+                    mock.patch.object(
+                        release_matrix,
+                        "C5_TEMP_ROOT",
+                        output_root.parents[1],
+                    ),
+                ):
+                    returncode = release_matrix.main()
+                return subprocess.CompletedProcess(
+                    command,
+                    returncode,
+                    stdout.getvalue(),
+                    stderr.getvalue(),
+                )
+
+            passed = run_verify()
             self.assertEqual(0, passed.returncode, passed.stderr)
-            generic_path = output_root / "codex/performance-first.jsonl"
+            generic_path = output_root / "codex/performance-first-root-gpt55-low.jsonl"
             generic = [json.loads(line) for line in generic_path.read_text(encoding="utf-8").splitlines()]
             generic[0]["actual_model"] = "observed-model"
             generic_path.write_text("".join(json.dumps(record) + "\n" for record in generic), encoding="utf-8")
-            command[-1] = str(output_root / "generic-summary.json")
-            generic_failed = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+            generic_failed = run_verify()
             self.assertEqual(1, generic_failed.returncode)
             self.assertIn("non-generic actual_model", generic_failed.stderr)
             expected_codex_performance = cases[0]["role_expectations"]["codex"]["performance-first"][cases[0]["required_role"]]
@@ -348,8 +477,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
             generic[0]["actual_model"] = expected_cursor_performance["model"]
             generic[0]["actual_effort"] = expected_cursor_performance["effort"]
             generic_path.write_text("".join(json.dumps(record) + "\n" for record in generic), encoding="utf-8")
-            command[-1] = str(output_root / "cross-host-summary.json")
-            cross_host = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+            cross_host = run_verify()
             self.assertEqual(1, cross_host.returncode)
             self.assertIn("record host/profile does not match containing output slice codex/performance-first", cross_host.stderr)
 
@@ -359,8 +487,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
             generic[0]["actual_model"] = expected_codex_cost["model"]
             generic[0]["actual_effort"] = expected_codex_cost["effort"]
             generic_path.write_text("".join(json.dumps(record) + "\n" for record in generic), encoding="utf-8")
-            command[-1] = str(output_root / "cross-profile-summary.json")
-            cross_profile = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+            cross_profile = run_verify()
             self.assertEqual(1, cross_profile.returncode)
             self.assertIn("record host/profile does not match containing output slice codex/performance-first", cross_profile.stderr)
 
@@ -370,18 +497,13 @@ class EvaluationContractV4Tests(unittest.TestCase):
             generic_path.write_text("".join(json.dumps(record) + "\n" for record in generic), encoding="utf-8")
             blocked_path = output_root / "cursor/cost-first.jsonl"
             blocked = [json.loads(line) for line in blocked_path.read_text(encoding="utf-8").splitlines()]
-            blocked[0]["status"] = "UNSUPPORTED"
-            blocked[0]["role_identity"] = "UNSUPPORTED"
-            blocked[0]["roles_observed"] = []
-            blocked[0]["actual_model"] = "UNSUPPORTED"
-            blocked[0]["actual_effort"] = "UNSUPPORTED"
-            blocked[0]["authority_observation"] = "UNSUPPORTED"
-            blocked[0]["privacy_scan"] = "NOT_RUN"
-            blocked[0]["result"]["direct_success"] = False
-            blocked[0]["failure_classification"] = "host-unsupported"
+            multi_role_index = next(
+                index for index, record in enumerate(blocked)
+                if len(record["dispatches"]) > 1
+            )
+            blocked[multi_role_index]["dispatches"] = blocked[multi_role_index]["dispatches"][:-1]
             blocked_path.write_text("".join(json.dumps(record) + "\n" for record in blocked), encoding="utf-8")
-            command[-1] = str(output_root / "blocked-summary.json")
-            failed = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+            failed = run_verify()
             self.assertEqual(1, failed.returncode)
             self.assertIn("role identity/coverage", failed.stderr)
 

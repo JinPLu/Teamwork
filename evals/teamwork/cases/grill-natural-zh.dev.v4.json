@@ -8,7 +8,9 @@
          "ordinary-no-write",
          "major-change-auto-transaction",
          "recommend-first",
-         "one-material-question",
+         "global-decision-map",
+         "bounded-independent-batch",
+         "question-criticality",
          "transaction-owned-writer",
          "no-files-overrides",
          "no-implementation"
@@ -17,7 +19,7 @@
    },
    "id" : "grill-natural-zh",
    "must" : [
-      "普通先问请求保持对话不落盘；只有独立构成重大变更时，才经受管 inspect -> schema -> apply 事务自动记录状态，并先给推荐再问一个实质问题，同时保留权限边界"
+      "普通先问请求保持对话不落盘；只有独立构成重大变更时，才经受管 inspect -> schema -> apply 事务自动记录状态，并先展示全局决策地图，再给推荐并提出有限独立批次的关键实质问题，同时保留权限边界"
    ],
    "must_not" : [
       "普通请求直接写讨论 Markdown、索引或其他文件；实施、修改，或把回答当成实施授权；no files 必须覆盖任何事务"

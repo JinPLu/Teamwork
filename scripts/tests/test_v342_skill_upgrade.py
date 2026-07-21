@@ -445,7 +445,7 @@ install_plugin_codex_bootstrap
         report = self.run_check_update(home, readiness=False)
         output = report.stdout
         self.assertIn("Installed profile markers (derived): performance-first", output)
-        self.assertIn("Cursor explorer model: claude-sonnet-4-6", output)
+        self.assertIn("Cursor explorer model: gemini-3.5-flash", output)
         self.assertIn("Designer/Plan Reviewer=Sol/high, Reviewer=Sol/max", output)
         for retired_or_alias in (
             "explore.md",

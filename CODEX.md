@@ -56,7 +56,8 @@ for an unresolved local constraint and sanitized external Research only for a
 named external/current claim that can change the choice; it never runs both by
 default. It compares 2–3 real
 alternatives or records safe-path evidence, runs one challenge pass, and keeps
-the user-decision frontier finite. Its controlled transaction creates the
+the user-decision frontier finite: it shows the global map first, batches only
+independent material decisions, and asks dependent decisions in later turns. Its controlled transaction creates the
 durable Design artifact before Plan; independent Plan Review runs only on user
 request or a named material risk gate. Design never
 implements. `$teamwork-debug` begins with a real failure and reproduction;
@@ -81,8 +82,8 @@ the transaction to update only `docs/teamwork/discussion/current.md`; an
 independently major public/installable, migration/release, permission, security,
 data, destructive, or cross-platform boundary opens that record automatically.
 Within one scope, only creation, semantic decision/frontier change, and
-close/supersede persist; unchanged state is a no-op. "No files" or off-the-record
-wins.
+close/supersede persist; unchanged state is a no-op. New records use schema v2
+`frontier` / `current_batch` state. "No files" or off-the-record wins.
 
 ## Agents and profiles
 
@@ -106,6 +107,11 @@ The split follows role behavior: 5.5 keeps high-frequency evidence, diagnosis,
 planning, and implementation loops moving; 5.6 handles trade-off selection and
 independent acceptance, where its more conservative reasoning is useful rather
 than routine-path overhead.
+
+On Codex 0.144, formal `spawn_agent` dispatch is only observed for `gpt-5.5`.
+Designer, Plan Reviewer, and Reviewer on `gpt-5.6-sol` may execute without
+formal agent isolation on 0.144; verify dispatch fidelity via live eval when
+Codex advances.
 
 For checkout-based installs, choose `cost-first` when lower-cost models should
 handle the roles where that profile permits it:

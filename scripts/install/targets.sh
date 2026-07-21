@@ -119,7 +119,7 @@ preflight_codex_routing() {
   config="$(codex_home_path)/config.toml"
   if [[ "$CODEX_ROUTING_ACTION" == "preserve" ]]; then
     if ! python3 "$ROOT/scripts/configure-codex-routing.py" --check --config "$config" >/dev/null 2>&1; then
-      echo "Codex routing is not ready; plugin activation cannot preserve a missing or drifting routing contract." >&2
+      echo "Codex routing is not ready; plugin activation cannot preserve a missing or disabled multi_agent feature." >&2
       return 1
     fi
     return 0
@@ -261,6 +261,20 @@ install_plugin_codex_bootstrap() {
   echo "Teamwork full Codex setup is ready. Restart Codex; if notifications are enabled, run /hooks and trust only Teamwork Stop and PermissionRequest."
 }
 
+configure_cursor_mcp_install() {
+  if [[ "$CURSOR_MCP_ACTION" == "skip" ]]; then
+    echo "Cursor MCP: skipped (--no-mcp)"
+    return 0
+  fi
+  python3 "$ROOT/scripts/install/configure_cursor_mcp.py" --apply
+  echo "Cursor MCP: registered codegraph and gpu-broker in ~/.cursor/mcp.json"
+  echo "Enable them in Cursor Settings -> MCP if prompted."
+}
+
+install_cursor_mcp_home() {
+  configure_cursor_mcp_install
+}
+
 install_cursor() {
   local skill_root="$HOME/.cursor/skills"
   local agent_root="$HOME/.cursor/agents"
@@ -270,6 +284,7 @@ install_cursor() {
   remove_v342_agent_set cursor "$agent_root" "$skill_root"
   install_skill_set "$skill_root" "Cursor"
   install_cursor_agent_set "$agent_root" "user Cursor"
+  configure_cursor_mcp_install
   echo "Cursor User Rules: run ./install.sh cursor-policy-copy (or cursor-policy) and paste into Cursor Settings -> Rules -> User Rules."
 }
 
@@ -336,6 +351,7 @@ install_all() {
   configure_user_notifications codex
   install_skill_set "$cursor_skill_root" "Cursor"
   install_cursor_agent_set "$cursor_agent_root" "user Cursor"
+  configure_cursor_mcp_install
   echo "Cursor User Rules: run ./install.sh cursor-policy-copy (or cursor-policy) and paste into Cursor Settings -> Rules -> User Rules."
   install_skill_set "$claude_skill_root" "Claude Code"
   install_claude_agent_set "$claude_agent_root" "user Claude Code"
@@ -347,6 +363,7 @@ init_project() {
   local base="${PROJECT_ROOT:-$PWD}"
   TEAMWORK_CODEX_ROUTING="$CODEX_ROUTING_ACTION" \
   TEAMWORK_NOTIFICATIONS_ACTION="$NOTIFICATIONS_ACTION" \
+  TEAMWORK_INIT_CURSOR_MCP="${TEAMWORK_INIT_CURSOR_MCP:-0}" \
   "$ROOT/scripts/init-project.sh" \
     "--$INSTALL_MODE" \
     --profile "$CODEX_PROFILE" \

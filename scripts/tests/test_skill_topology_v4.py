@@ -153,6 +153,11 @@ class SkillTopologyV4Test(unittest.TestCase):
         text = " ".join(text.split())
         if skill == "grill-me":
             self.assertIn("one finite frontier for the scope", text)
+            self.assertIn("Publish the global decision map before details", text)
+            self.assertIn("Ask one bounded independent batch at a time", text)
+            self.assertIn("Dependent questions are serial", text)
+            self.assertIn("why it is critical", text)
+            self.assertIn("observable condition that closes it", text)
             self.assertIn("semantic decision or frontier change", text)
             self.assertIn("An unchanged state is a no-op", text)
             self.assertIn(
@@ -200,6 +205,14 @@ class SkillTopologyV4Test(unittest.TestCase):
             return
         if skill == "teamwork-research":
             self.assertIn("external-only", text)
+            self.assertIn("Before any Research method step", text)
+            self.assertIn("Root's first role action", text)
+            self.assertIn('`agent_type="teamwork_researcher"`', text)
+            self.assertIn("Root MUST NOT browse", text)
+            self.assertIn("MUST NOT call `wait_agent`", text)
+            self.assertIn("non-empty live agent id", text)
+            self.assertIn("wait without a live agent is STOP", text)
+            self.assertIn("After the primary Researcher handoff", text)
             self.assert_in_order(text, "`lookup`", "`research`", "`deep`")
             self.assertIn("Source count is not claim coverage", text)
             self.assertIn("only for `deep`", text)
@@ -215,6 +228,10 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assertIn("Do not run both evidence tracks by default", text)
             self.assertIn("exactly one challenge pass", text)
             self.assertIn("at most one targeted delta", text)
+            self.assertIn("Publish the global map before details", text)
+            self.assertIn("Ask one bounded independent batch", text)
+            self.assertIn("Dependent choices are serial", text)
+            self.assertIn("why the answer is critical", text)
             self.assertIn("two consecutive rounds", text)
             self.assertIn("Freeze one durable Design", text)
             self.assertIn("structured Design state", text)
@@ -395,9 +412,17 @@ class SkillTopologyV4Test(unittest.TestCase):
         """Guard the owner contracts against a plausible weakening, not just absence."""
         mutations = {
             "teamwork-explore": [("local-only and read-only", "local or external and writable")],
-            "teamwork-research": [("external-only", "local-only")],
+            "teamwork-research": [
+                ("external-only", "local-only"),
+                ("Root's first role action", "Root may answer directly"),
+                ("Root MUST NOT browse", "Root may browse"),
+                ("MUST NOT call `wait_agent`", "may call `wait_agent`"),
+            ],
             "teamwork-debug": [("Never infer or upgrade authority", "May infer or upgrade authority")],
-            "teamwork-design": [("exactly one challenge pass", "unlimited challenge passes")],
+            "teamwork-design": [
+                ("exactly one challenge pass", "unlimited challenge passes"),
+                ("Ask one bounded independent batch", "Ask every open item together"),
+            ],
             "teamwork-plan": [
                 (
                     "only when the user requests it or a named material risk gate requires it",

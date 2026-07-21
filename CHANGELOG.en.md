@@ -4,6 +4,21 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 4.1.0 - 2026-07-20
+
+**Teamwork 4.1.0 restores mandatory formal role-dispatch configuration and stable Codex `multi_agent` routing; Grill and Design can still batch independent key questions and keep dependent choices serial. Live cross-host dispatch verification is deferred pending Codex quota, so this release does not claim runtime-proven dispatch.**
+
+- Formal Research, Explore, Debug, Design, Plan, Worker, and Review policy again routes through host-native roles in skill instructions and host templates; clear local work remains on the native path.
+- Grill now starts with a global decision map, then asks at most three independent questions; each question carries its recommendation, downside, criticality, blocked outcome, dependencies, and closure signal.
+- Design uses the same finite frontier rule: independent decisions can be answered together, while one answer that changes another question's options forces a later turn.
+- Discussion persistence uses schema v2 `frontier` and `current_batch` state; one answered batch produces one atomic semantic update, while existing v1 archives remain readable.
+- Codex activation uses the stable `[features] multi_agent = true` setting and preserves existing `[agents] max_threads` limits; deterministic tests and full package validation cover these configuration changes, while the 104-record live cross-host matrix stays deferred until Codex quota allows rerunning it.
+- Cursor installs now register `codegraph` and `gpu-broker` in `~/.cursor/mcp.json` by default; use `--no-mcp` to opt out and enable servers in Cursor Settings -> MCP.
+- Project init can write `.cursor/rules/` and project `.cursor/mcp.json` with explicit `--cursor-mcp` consent.
+- Convergence diagrams stay short: they show route, status, and dependencies, while full reasons and evidence appear once in readable text.
+- Cursor `performance-first` and `cost-first` profiles now rebalance models per role: Researcher uses terra/flash, Explorer uses flash, and Debugger/Designer/Planner/Plan Reviewer/Reviewer switch among opus, sol, terra, luna, and fable by role while Worker stays on composer-2.5-fast.
+- `--readiness` now surfaces the exact Cursor User Rules paste steps; Research, Explore, Goal, Update, and Design/Grill transaction-path skill boundaries are clearer; CodeGraph MCP failures fall back to direct file reads; and `gpu-broker` rules load only on likely GPU projects.
+
 ## 4.0.0 - 2026-07-20
 
 **Teamwork is now a smaller set of focused capabilities, while clear local work stays with the host.**

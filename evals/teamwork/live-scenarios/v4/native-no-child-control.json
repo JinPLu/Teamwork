@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "case_id": "native-no-child-control",
+  "private_paths": [],
+  "files": [
+    {
+      "path": "scenario/native-no-child.txt",
+      "content": "Probe marker: EVIDENCE_NATIVE_NO_CHILD_V4\nClear local implementation should stay on the host native path. Do not route it to a child role unless independent bounded work is worthwhile.\n"
+    },
+    {
+      "path": "scenario/native-no-child-result.txt",
+      "content": "PENDING\n"
+    },
+    {
+      "path": "scenario/verify-native-no-child.py",
+      "content": "from pathlib import Path\nassert 'EVIDENCE_NATIVE_NO_CHILD_V4' in Path('scenario/native-no-child-result.txt').read_text()\n"
+    }
+  ],
+  "verification": {
+    "argv": [
+      "python3",
+      "scenario/verify-native-no-child.py"
+    ],
+    "immutable_paths": [
+      "scenario/native-no-child.txt",
+      "scenario/verify-native-no-child.py"
+    ]
+  }
+}

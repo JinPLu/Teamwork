@@ -8,7 +8,7 @@
     },
     {
       "name": "design_quality",
-      "description": "Design inspects local constraints first, explores two or three alternatives only for genuine tradeoffs, recommends a direction before asking one user-owned material decision at a time, and does not silently plan or implement."
+      "description": "Design inspects local constraints first, explores two or three alternatives only for genuine tradeoffs, recommends a direction before asking a bounded independent batch of user-owned material decisions, serializes dependent decisions, states criticality and closure signals, and does not silently plan or implement."
     },
     {
       "name": "research_quality",
@@ -16,7 +16,7 @@
     },
     {
       "name": "grill_authority_and_persistence",
-      "description": "Ordinary natural question-first intent is conversation-only and writes nothing. An explicit $grill-me save, resume, or record request may persist only through the managed inspect -> schema -> apply transaction; an independently-major Grill automatically records its state through that same route. Authorized persistence requires a named, initialized writable project; no-files intent overrides it, and neither discussion nor persistence grants implementation authority."
+      "description": "Ordinary natural question-first intent is conversation-only and writes nothing. Grill shows the global decision map before details, asks one to three independent material questions per batch, serializes dependent questions, and records criticality, blocked outcome, dependencies, recommendation, downside, and closure signal. An explicit $grill-me save, resume, or record request may persist only through the managed inspect -> schema -> apply transaction; an independently-major Grill automatically records its state through that same route. Authorized persistence requires a named, initialized writable project; no-files intent overrides it, and neither discussion nor persistence grants implementation authority."
     },
     {
       "name": "plan_readiness",
@@ -32,7 +32,7 @@
     },
     {
       "name": "release_governance",
-      "description": "Release claims require a non-empty held-out split covering the external Research boundary, Design versus Plan, and Grill persistence authority. Installed host parity additionally requires twelve records and all eight observed formal roles inside every host/profile slice; typed FAIL and UNSUPPORTED records remain blockers."
+      "description": "Release claims require a non-empty held-out split covering the external Research boundary, Design versus Plan, and Grill persistence authority. Installed host parity additionally requires thirteen records and all eight observed formal roles inside every host/profile slice; typed FAIL and UNSUPPORTED records remain blockers."
     },
     {
       "name": "producer_binding",

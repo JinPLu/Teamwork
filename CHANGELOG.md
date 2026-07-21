@@ -4,6 +4,21 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 4.1.0 - 2026-07-20
+
+**Teamwork 4.1.0 恢复正式角色的强制派发配置与稳定的 Codex `multi_agent` 路由；Grill 和 Design 仍可批量处理独立关键问题，并把依赖问题保持串行。跨宿主正式派发的 live 验证因 Codex 配额限制暂缓，本版不宣称运行时派发已被证实。**
+
+- Research、Explore、Debug、Design、Plan、Worker 和 Review 等正式路径在 skill 说明与宿主模板中再次通过宿主原生角色路由；清楚的本地工作仍走原生路径。
+- Grill 会先给全局决策地图，再提出最多三个彼此独立的问题；每个问题带推荐、最大代价、关键性、阻塞对象、依赖和关闭信号。
+- Design 使用同一套有限前沿规则：独立决定可以同批回答，一个答案会改变另一个问题选项时必须分轮处理。
+- 讨论持久化使用 schema v2 的 `frontier` 和 `current_batch` 状态；回答一个批次只产生一次原子语义更新，旧 v1 归档仍可读取。
+- Codex 激活改用稳定的 `[features] multi_agent = true` 配置，并保留已有的 `[agents] max_threads` 限制；确定性测试与完整包验证覆盖这些配置变更，104 条记录的跨宿主 live 矩阵仍待 Codex 配额恢复后再跑。
+- Cursor 安装默认把 `codegraph` 和 `gpu-broker` 写入 `~/.cursor/mcp.json`；可用 `--no-mcp` 跳过，还须在 Cursor 设置里启用 MCP。
+- 项目 init 在显式 `--cursor-mcp` 同意下可写入 `.cursor/rules/` 和项目级 `.cursor/mcp.json`。
+- 收敛图保持简短，只显示路线、状态和依赖；完整理由和证据在图外正文出现一次。
+- Cursor 的 `performance-first` 与 `cost-first` profile 按角色重新分配模型；Researcher 用 terra/flash，Explorer 用 flash，Debugger/Designer/Planner/Plan Reviewer/Reviewer 按角色在 opus、sol、terra、luna 与 fable 之间切换，Worker 保持 composer-2.5-fast。
+- `--readiness` 现在会明确提示 Cursor User Rules 的手动粘贴步骤；Research、Explore、Goal、Update 和 Design/Grill 事务路径的 skill 边界也更清楚；CodeGraph MCP 不可用时会回退到直接读文件；`gpu-broker` 规则只在可能涉及 GPU 的项目里加载。
+
 ## 4.0.0 - 2026-07-20
 
 **Teamwork 变成一组更聚焦的能力，清楚的本地工作直接回到宿主执行。**

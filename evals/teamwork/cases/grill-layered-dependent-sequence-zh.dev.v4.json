@@ -1,0 +1,43 @@
+{
+  "id": "grill-layered-dependent-sequence-zh",
+  "split": "dev",
+  "source": "synthetic",
+  "producers": [
+    {
+      "class": "root-policy",
+      "source": "scripts/install/policy.sh"
+    },
+    {
+      "class": "skill",
+      "source": "skills/grill-me/SKILL.md"
+    }
+  ],
+  "platforms": [
+    "codex",
+    "cursor",
+    "claude"
+  ],
+  "prompt": "对公开迁移先 grill 我：先决定是否必须兼容；只有这个答案会决定 rollout 窗口有哪些有效选项。",
+  "expected": {
+    "capability": "grill",
+    "scenario": "layered-dependent-sequence",
+    "language": "zh",
+    "requires": [
+      "global-decision-map",
+      "dependency-serialization",
+      "one-batch-per-turn",
+      "recommend-first",
+      "question-criticality",
+      "closure-signal",
+      "no-implementation"
+    ]
+  },
+  "must": [
+    "展示全局决策地图，并标明 rollout 窗口问题依赖兼容性答案",
+    "第一批只问兼容性决定，等依赖关闭后再问 rollout 窗口决定"
+  ],
+  "must_not": [
+    "把有依赖的 rollout 窗口问题和前置问题同批提出，发问卷，实施、修改文件，或把回答当成实施授权"
+  ],
+  "evidence": "静态分层依赖串行契约；依赖是否真实仍由 reviewer 判断。"
+}

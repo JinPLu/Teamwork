@@ -21,6 +21,12 @@ For Cursor only:
 ./install.sh cursor-policy-copy
 ```
 
+Teamwork registers `codegraph` and `gpu-broker` in `~/.cursor/mcp.json` during
+`cursor` and `all` installs. Use `./install.sh --no-mcp cursor` to skip MCP
+registration, or `./install.sh cursor-mcp` to refresh MCP entries alone. Enable
+new servers in **Cursor Settings → MCP** when prompted; writing `mcp.json` does
+not auto-activate them.
+
 Paste the copied policy into **Cursor Settings → Rules → User Rules**.
 If clipboard copying is unavailable, run `./install.sh cursor-policy` and copy
 the printed block. The installer cannot complete or verify this Cursor-owned
@@ -58,7 +64,8 @@ for an unresolved local constraint and sanitized Research only for a named
 external/current claim that can change the choice; it never runs both by default.
 It compares 2–3 real
 alternatives or records safe-path evidence, makes one challenge pass, and keeps
-the decision frontier finite. Its controlled transaction produces the durable
+the decision frontier finite: it shows the global map first, batches only
+independent material decisions, and asks dependent decisions in later turns. Its controlled transaction produces the durable
 Design artifact before Plan; independent Plan Review runs only on user request
 or a named material risk gate. It never silently
 authorizes implementation.
@@ -84,20 +91,24 @@ request uses the transaction to update only `docs/teamwork/discussion/current.md
 An independently major public/installable, migration/release, permission,
 security, data, destructive, or cross-platform boundary opens the record
 automatically. Within one scope, only creation, semantic decision/frontier
-change, and close/supersede persist; unchanged state is a no-op. "No files" or
-off-the-record keeps it in the conversation.
+change, and close/supersede persist; unchanged state is a no-op. New records use
+schema v2 `frontier` / `current_batch` state. "No files" or off-the-record keeps
+it in the conversation.
 
 ## Initialize a project
 
 ```bash
 ./install.sh --project-root /path/to/project init-project
+./install.sh --project-root /path/to/project --cursor-mcp init-project
 ```
 
 Initialization changes only that repository. It establishes Teamwork-managed
 project instructions, memory entry points, ignore rules, and CodeGraph context
-when available. It does not refresh global skills, agents, policy, routing, or
-notifications, and it does not copy Teamwork skills or agents into the project.
-Use `teamwork-update` or `./install.sh all` separately for a global refresh.
+when available. With `--cursor-mcp`, it also writes project `.cursor/rules/` for
+CodeGraph and GPU Broker plus optional project `.cursor/mcp.json`. It does not
+refresh global skills, agents, policy, routing, or notifications, and it does
+not copy Teamwork skills or agents into the project. Use `teamwork-update` or
+`./install.sh all` separately for a global refresh.
 
 ## Agents
 

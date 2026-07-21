@@ -457,18 +457,12 @@ done
 [[ ! -e "$tmp/home-codex-agents/.codex/AGENTS.md" ]] \
   || fail "codex-agents target must not write global AGENTS policy"
 codex_routing_config="$tmp/home-codex-agents/.codex/config.toml"
-grep_required '^\[features.multi_agent_v2\]$' "$codex_routing_config" \
-  "codex-agents must configure the Teamwork v2 routing table"
-grep_required '^enabled = true$' "$codex_routing_config" \
-  "Codex routing must enable multi_agent_v2"
-grep_required '^hide_spawn_agent_metadata = false$' "$codex_routing_config" \
-  "Codex routing must expose custom-agent metadata"
-grep_required '^tool_namespace = "teamwork"$' "$codex_routing_config" \
-  "Codex routing must avoid the reserved collaboration namespace"
-grep_required '^max_concurrent_threads_per_session = 9$' "$codex_routing_config" \
-  "Codex routing must configure eight subagent slots plus the root thread"
-grep_absent '^multi_agent = true$' \
-  "unverified stable routing must not replace the working multi_agent_v2 contract" \
+grep_required '^\[features\]$' "$codex_routing_config" \
+  "codex-agents must configure the stable Codex feature table"
+grep_required '^multi_agent = true$' "$codex_routing_config" \
+  "Codex routing must enable the stable multi_agent feature"
+grep_absent 'multi_agent_v2' \
+  "Codex routing must remove the legacy multi_agent_v2 contract" \
   "$codex_routing_config"
 python3 "$ROOT/scripts/configure-codex-routing.py" --check --config "$codex_routing_config" >/dev/null
 cp "$codex_routing_config" "$tmp/codex-routing-first.toml"
@@ -491,9 +485,11 @@ printf '%s\n' \
 HOME="$legacy_routing_home" "$ROOT/install.sh" codex-agents >/dev/null
 grep_required '^max_depth = 2$' "$legacy_routing_home/.codex/config.toml" \
   "routing migration must preserve unrelated agents settings"
-grep_required '^max_concurrent_threads_per_session = 9$' "$legacy_routing_home/.codex/config.toml" \
-  "routing migration must configure eight subagent slots plus the root thread"
-grep_absent '^max_threads[[:space:]]*=' "routing migration must remove incompatible agents.max_threads" \
+grep_required '^max_threads = 4$' "$legacy_routing_home/.codex/config.toml" \
+  "routing migration must preserve stable Codex agents.max_threads"
+grep_required '^multi_agent = true$' "$legacy_routing_home/.codex/config.toml" \
+  "routing migration must configure the stable multi_agent feature"
+grep_absent 'multi_agent_v2' "routing migration must remove legacy multi_agent_v2" \
   "$legacy_routing_home/.codex/config.toml"
 grep_required '^# preserve me$' "$legacy_routing_home/.codex/config.toml" \
   "routing migration must preserve unrelated comments"
@@ -576,7 +572,7 @@ grep_required '^Remote tag status: stale (0\.0\.1 -> ' "$tmp/release-state.out" 
 grep_required '^GitHub Release VERSION: unavailable$' "$tmp/release-state.out" \
   "check-update must keep non-GitHub release state best-effort"
 
-sed 's/tool_namespace = "teamwork"/tool_namespace = "collaboration"/' \
+sed 's/multi_agent = true/multi_agent = false/' \
   "$routing_update_config" > "$tmp/stale-routing.toml"
 mv "$tmp/stale-routing.toml" "$routing_update_config"
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-routing-stale.out" || true
@@ -681,16 +677,63 @@ for agent in "${CURSOR_AGENTS[@]}"; do
   [[ ! -L "$tmp/home-cursor/.cursor/agents/$agent.md" ]] \
     || fail "default Cursor install must copy Cursor agent $agent"
 done
-for agent in researcher explorer; do
-  grep_required '^model: claude-sonnet-4-6$' "$tmp/home-cursor/.cursor/agents/$agent.md" \
-    "Cursor install must render sonnet 4.6 model for $agent"
-done
+grep_required '^model: gpt-5.6-terra-medium$' "$tmp/home-cursor/.cursor/agents/researcher.md" \
+  "Cursor install must render terra medium model for researcher"
+grep_required '^model: gemini-3.5-flash$' "$tmp/home-cursor/.cursor/agents/explorer.md" \
+  "Cursor install must render gemini flash model for explorer"
 grep_required '^model: composer-2.5-fast$' "$tmp/home-cursor/.cursor/agents/worker.md" \
   "Cursor install must render composer 2.5 model for worker"
-for agent in debugger designer planner plan-reviewer reviewer; do
-  grep_required '^model: claude-opus-4-8-thinking-high$' "$tmp/home-cursor/.cursor/agents/$agent.md" \
-    "Cursor install must render opus 4.8 model for $agent"
-done
+grep_required '^model: claude-opus-4-8-thinking-high$' "$tmp/home-cursor/.cursor/agents/debugger.md" \
+  "Cursor install must render opus 4.8 model for debugger"
+grep_required '^model: gpt-5.6-sol-medium$' "$tmp/home-cursor/.cursor/agents/designer.md" \
+  "Cursor install must render sol medium model for designer"
+grep_required '^model: gpt-5.6-terra-medium$' "$tmp/home-cursor/.cursor/agents/planner.md" \
+  "Cursor install must render terra medium model for planner"
+grep_required '^model: claude-opus-4-8-thinking-high$' "$tmp/home-cursor/.cursor/agents/plan-reviewer.md" \
+  "Cursor install must render opus 4.8 model for plan-reviewer"
+grep_required '^model: claude-fable-5-thinking-high$' "$tmp/home-cursor/.cursor/agents/reviewer.md" \
+  "Cursor install must render fable 5 model for reviewer"
+[[ -f "$tmp/home-cursor/.cursor/mcp.json" ]] \
+  || fail "Cursor install must write ~/.cursor/mcp.json"
+[[ -f "$tmp/home-cursor/.cursor/.teamwork-mcp.json" ]] \
+  || fail "Cursor install must write Teamwork MCP ownership sidecar"
+python3 - "$tmp/home-cursor/.cursor/mcp.json" <<'PY'
+import json
+import pathlib
+import sys
+
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+servers = payload.get("mcpServers", {})
+for name in ("codegraph", "gpu-broker"):
+    if name not in servers:
+        raise SystemExit(f"missing Teamwork MCP server: {name}")
+if servers["codegraph"].get("command") != "codegraph":
+    raise SystemExit("codegraph MCP command mismatch")
+if servers["gpu-broker"].get("command") != "gpu-broker-mcp":
+    raise SystemExit("gpu-broker MCP command mismatch")
+PY
+
+HOME="$tmp/home-cursor-no-mcp" "$ROOT/install.sh" --no-mcp cursor >/dev/null
+[[ ! -e "$tmp/home-cursor-no-mcp/.cursor/mcp.json" ]] \
+  || fail "--no-mcp cursor install must not write mcp.json"
+
+mkdir -p "$tmp/home-cursor-preserve/.cursor"
+printf '%s\n' '{"mcpServers":{"custom-server":{"command":"keep-me"}}}' \
+  > "$tmp/home-cursor-preserve/.cursor/mcp.json"
+HOME="$tmp/home-cursor-preserve" "$ROOT/install.sh" cursor-mcp >/dev/null
+python3 - "$tmp/home-cursor-preserve/.cursor/mcp.json" <<'PY'
+import json
+import pathlib
+import sys
+
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+servers = payload.get("mcpServers", {})
+if "custom-server" not in servers:
+    raise SystemExit("cursor-mcp must preserve unrelated MCP servers")
+for name in ("codegraph", "gpu-broker"):
+    if name not in servers:
+        raise SystemExit(f"missing Teamwork MCP server after preserve merge: {name}")
+PY
 
 HOME="$tmp/home-cursor-agents" "$ROOT/install.sh" cursor-agents >/dev/null
 for agent in "${CURSOR_AGENTS[@]}"; do
@@ -701,14 +744,22 @@ done
   || fail "cursor-agents target must not write Cursor skills"
 
 HOME="$tmp/home-cursor-cost" "$ROOT/install.sh" --profile cost-first cursor-agents >/dev/null
-for agent in researcher explorer worker; do
-  grep_required '^model: composer-2.5$' "$tmp/home-cursor-cost/.cursor/agents/$agent.md" \
+for agent in researcher explorer; do
+  grep_required '^model: gemini-3.5-flash$' "$tmp/home-cursor-cost/.cursor/agents/$agent.md" \
     "cost-first Cursor agent install must downshift $agent"
 done
-for agent in debugger designer planner plan-reviewer reviewer; do
-  grep_required '^model: claude-opus-4-8-thinking-high$' "$tmp/home-cursor-cost/.cursor/agents/$agent.md" \
-    "cost-first Cursor agent install must keep opus 4.8 model for $agent"
-done
+grep_required '^model: composer-2.5-fast$' "$tmp/home-cursor-cost/.cursor/agents/worker.md" \
+  "cost-first Cursor agent install must keep composer 2.5 model for worker"
+grep_required '^model: gpt-5.6-terra-medium$' "$tmp/home-cursor-cost/.cursor/agents/debugger.md" \
+  "cost-first Cursor agent install must downshift debugger"
+grep_required '^model: gpt-5.6-terra-medium$' "$tmp/home-cursor-cost/.cursor/agents/designer.md" \
+  "cost-first Cursor agent install must downshift designer"
+grep_required '^model: gpt-5.6-luna-medium$' "$tmp/home-cursor-cost/.cursor/agents/planner.md" \
+  "cost-first Cursor agent install must downshift planner"
+grep_required '^model: gpt-5.6-terra-medium$' "$tmp/home-cursor-cost/.cursor/agents/plan-reviewer.md" \
+  "cost-first Cursor agent install must downshift plan-reviewer"
+grep_required '^model: claude-opus-4-8-thinking-high$' "$tmp/home-cursor-cost/.cursor/agents/reviewer.md" \
+  "cost-first Cursor agent install must downshift reviewer"
 
 cursor_policy_out="$tmp/cursor-policy.out"
 HOME="$tmp/home-cursor-policy" "$ROOT/install.sh" cursor-policy > "$cursor_policy_out"
@@ -854,6 +905,8 @@ done
 for agent in "${CURSOR_AGENTS[@]}"; do
   [[ -L "$tmp/home-all/.cursor/agents/$agent.md" ]] || fail "all install must link Cursor agent $agent"
 done
+[[ -f "$tmp/home-all/.cursor/mcp.json" ]] \
+  || fail "all install must write Cursor MCP config"
 [[ ! -e "$tmp/home-all/.claude/skills/teamwork" ]] || fail "all install must remove retired teamwork skill"
 grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$tmp/home-all/.claude/CLAUDE.md" \
   "all install must write Claude global policy"
@@ -877,6 +930,8 @@ grep_required '^docs/teamwork/discussion/$' "$init_root/.gitignore" \
   "init-project must ignore local discussion artifacts"
 grep_required '^docs/teamwork/design/$' "$init_root/.gitignore" \
   "init-project must ignore local design artifacts"
+[[ ! -e "$init_root/.cursor" ]] \
+  || fail "default init-project must not create project .cursor surfaces"
 for removed_ignore in '^\.agents/$' '^\.codex/$' '^\.cursor/$' '^\.claude/$'; do
   ! grep -Eq "$removed_ignore" "$init_root/.gitignore" \
     || fail "init-project must not add a project-local Teamwork package ignore: $removed_ignore"
@@ -916,6 +971,29 @@ for removed_local_surface in \
   [[ ! -e "$removed_local_surface" ]] \
     || fail "init-project must not create project-local Teamwork package surface $removed_local_surface"
 done
+init_mcp_root="$tmp/init-project-cursor-mcp"
+mkdir -p "$init_mcp_root"
+printf '# Init MCP Smoke\n' > "$init_mcp_root/README.md"
+HOME="$tmp/home-init-project-cursor-mcp" \
+  TEAMWORK_INIT_CODEGRAPH=0 \
+  "$ROOT/install.sh" --copy --project-root "$init_mcp_root" --cursor-mcp init-project >/dev/null
+[[ -f "$init_mcp_root/.cursor/rules/codegraph.mdc" ]] \
+  || fail "init-project --cursor-mcp must write codegraph Cursor rule"
+[[ -f "$init_mcp_root/.cursor/rules/gpu-broker.mdc" ]] \
+  || fail "init-project --cursor-mcp must write gpu-broker Cursor rule"
+[[ -f "$init_mcp_root/.cursor/mcp.json" ]] \
+  || fail "init-project --cursor-mcp must write project .cursor/mcp.json"
+python3 - "$init_mcp_root/.cursor/mcp.json" <<'PY'
+import json
+import pathlib
+import sys
+
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+servers = payload.get("mcpServers", {})
+for name in ("codegraph", "gpu-broker"):
+    if name not in servers:
+        raise SystemExit(f"project init MCP config missing {name}")
+PY
 HOME="$tmp/home-init-project" \
   TEAMWORK_INIT_CODEGRAPH=0 \
   "$ROOT/install.sh" --project-root "$init_root" init-project >/dev/null

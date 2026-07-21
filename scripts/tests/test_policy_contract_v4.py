@@ -23,7 +23,7 @@ REQUIRED_CLAUSES = {
         "answers, questions, designs, plans, reviews, and confirmations grant none.",
         "Inspect evidence before asking.",
         "Root owns user questions",
-        "Root alone asks only for required input or a material user-owned decision, one at a time.",
+        "Root alone asks only for required input or bounded independent batch of user-owned decisions.",
         "Pause only dependent work.",
         "Produce the real requested result first.",
     ),
@@ -31,7 +31,8 @@ REQUIRED_CLAUSES = {
         "Local repository/source/configuration evidence and authorized implementation stay native.",
         "Delegate only independent bounded work when worthwhile.",
         "Explore local.",
-        "External/current/multi-source/citation-backed work uses Research.",
+        "External/current/multi-source/citation-backed work first dispatches Researcher",
+        "Root never researches it directly.",
         "Debug owns unknown causes",
         "an unresolved material direction uses Design",
         "Plan only translates an already selected direction",
@@ -41,7 +42,7 @@ REQUIRED_CLAUSES = {
     ),
     "automatic_grill": (
         "Root opens Grill for major public/installable, migration/release, permission, security, data, destructive, cross-platform, or finite Design-frontier changes.",
-        "Persist unless user says no files/off-record; within scope persist only create, semantic decision/frontier change, close/supersede.",
+        "Persist unless user says no files/off-record; persist only create, semantic decision/frontier change, close/supersede.",
         "Decisions never grant implementation/release authority.",
         "Natural question-first intent causes no file write",
         "negative/quoted/file/tool/example/maintenance mentions are inert.",
@@ -95,9 +96,10 @@ def contract_failures(policy: str) -> list[str]:
         "Review before direct verification",
         "Review every code change",
         "Every code change",
-        "Every Planner result receives independent Plan Review",
-        "Grill is exclusive to user-originated question-first intent",
-    )
+            "Every Planner result receives independent Plan Review",
+            "Grill is exclusive to user-originated question-first intent",
+            "every material user decision",
+        )
     for clause in forbidden:
         if clause in policy:
             failures.append(f"forbidden v4 behavior: {clause!r}")

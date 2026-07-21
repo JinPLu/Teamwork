@@ -40,6 +40,18 @@ while [[ $# -gt 0 ]]; do
       CODEX_ROUTING_ACTION="preserve"
       shift
       ;;
+    --no-mcp)
+      CURSOR_MCP_ACTION="skip"
+      shift
+      ;;
+    --cursor-mcp)
+      TEAMWORK_INIT_CURSOR_MCP=1
+      shift
+      ;;
+    --no-cursor-mcp)
+      TEAMWORK_INIT_CURSOR_MCP=0
+      shift
+      ;;
     --project-root)
       [[ $# -ge 2 ]] || { echo "--project-root requires a path." >&2; usage; exit 2; }
       PROJECT_ROOT="$(cd "$2" && pwd)"
@@ -63,7 +75,7 @@ while [[ $# -gt 0 ]]; do
       usage
       exit 2
       ;;
-    codex|cursor|claude|all|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy)
+    codex|cursor|claude|all|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy|cursor-mcp)
       if [[ -n "$TARGET" ]]; then
         echo "Specify only one install target." >&2
         usage
@@ -181,6 +193,9 @@ case "${TARGET:-codex}" in
     ;;
   claude-policy)
     write_teamwork_claude_global_policy
+    ;;
+  cursor-mcp)
+    install_cursor_mcp_home
     ;;
   *)
     usage

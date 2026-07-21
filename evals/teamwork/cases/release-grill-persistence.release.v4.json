@@ -17,7 +17,7 @@
    },
    "id" : "release-grill-persistence",
    "must" : [
-      "keep ordinary question-first requests conversation-only; independently major Grill and explicit save use only the managed inspect -> schema -> apply transaction in an initialized writable project, with active discussion/current.md state under transaction-owned authority"
+      "keep ordinary question-first requests conversation-only; independently major Grill and explicit save use only the managed inspect -> schema -> apply transaction in an initialized writable project, with new records written as schema v2 frontier/current_batch state, one atomic answered-batch update, and v1 archives still readable under transaction-owned authority"
    ],
    "must_not" : [
       "write when no files is present, directly write discussion Markdown or an index, implement, or infer implementation authority"

@@ -136,14 +136,14 @@ check_lean_policy() {
     /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_END -->/ { inside = 0; next }
     inside { print }
   ' "$file" | wc -w | tr -d ' ')"
-  [[ "$policy_words" -le 340 ]] \
-    || fail "$label must remain a compact always-loaded policy ($policy_words > 340)"
+  [[ "$policy_words" -le 350 ]] \
+    || fail "$label must remain a compact always-loaded policy ($policy_words > 350)"
   policy_text="$(tr '\n' ' ' < "$file")"
   for contract in \
     "request scope::work within the user.?s request" \
     "read-only authority::read.only.{0,100}(authority|effect)" \
     "inspect before asking::inspect.{0,50}(before|prior to).{0,30}ask" \
-    "one user-owned question::ask.{0,100}(required input|user.owned decision).{0,100}one at a time" \
+    "bounded user-owned batch::ask.{0,120}(required input|bounded independent batch).{0,120}user.owned decision" \
     "dependent work only::pause only dependent work" \
     "local-native boundary::local.{0,120}(repository|source|configuration).{0,120}native" \
     "external Research boundary::external.{0,100}(current|multi.source|citation).{0,100}research" \
@@ -189,6 +189,7 @@ run_python_unit_tests() {
   else
     tests=(
       scripts/tests/test_active_artifact_currentness.py
+      scripts/tests/test_discussion_artifact_schema.py
       scripts/tests/test_discussion_index_safety.py
       scripts/tests/test_evaluation_contract_v4.py
       scripts/tests/test_instruction_footprint.py

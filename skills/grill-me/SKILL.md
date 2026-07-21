@@ -1,36 +1,43 @@
 ---
 name: grill-me
-description: Use when a proposed change has major external impact or the user explicitly asks to be challenged, grilled, stress-tested through questions, questioned before action, or to save or resume a Grill discussion; do not use for ordinary clarification, settled trade-offs, mechanical details, negative intent, quoted/file/tool examples, or maintenance of this skill.
+description: Use when a proposed change has major external impact or the user explicitly asks to be grilled, stress-tested, questioned before action, or to save or resume a Grill discussion; do not use for ordinary clarification, settled trade-offs, mechanical details, negative intent, quoted examples, or maintenance.
 ---
 
 # Grill Me
 
 Challenge only the decisions that can materially change the requested outcome.
-Question-first interaction does not authorize implementation or other effects.
+Questions do not authorize implementation or other effects.
 
 ## Interaction
 
 1. Freeze one finite frontier for the scope containing only user-owned choices that can
-   change the outcome, normally no more than three. A larger frontier means the
-   decision should be split rather than extended indefinitely.
-2. Inspect discoverable evidence before asking. Do not ask the user for facts the
+   change the outcome, normally no more than three active unresolved items per
+   level. Split a larger frontier instead of extending it indefinitely.
+2. Inspect evidence before asking. Do not ask the user for facts the
    project or supplied material already answers.
 3. Separate user-owned choices from safe implementation details. Own reversible,
-   implementation-level choices yourself.
-4. Before every question, give a grounded recommendation and its main trade-off.
-   Give the recommendation before asking one question. Ask exactly one material
-   question at a time. In Codex, use
-   `request_user_input` when it is callable; otherwise use the host's native
-   question surface or one concise text question.
-5. Carry answered decisions forward without repeating them. An answer closes
-   only that decision and grants no implementation or release authority. Add a
-   frontier item only when new direct evidence changes the direction; record it
-   as a frontier delta.
-6. If two consecutive rounds close no decision, add no discriminating evidence,
+   implementation choices yourself.
+4. Publish the global decision map before details. Order the map by `goal`,
+   `boundary`, then `detail`, show the current critical path, and mark each
+   item as open, current, closed, or rejected.
+5. Ask one bounded independent batch at a time. A batch has one to three current
+   material questions; put two questions in the same batch only when neither
+   answer can change the other's prompt, options, recommendation, or closure
+   signal. Dependent questions are serial.
+6. Before every question, give a recommendation and largest downside.
+   Each question states why it is critical, what it blocks, its dependencies,
+   and the observable condition that closes it. In Codex, use
+   `request_user_input` when it is callable for the whole batch; otherwise use
+   the host's native question surface or a concise numbered batch.
+7. Carry answered decisions forward without repeating them. An answer batch
+   closes only its current decisions and grants no implementation or release
+   authority. Add a frontier item only when new direct evidence changes the
+   direction; record it as a frontier delta.
+8. If two rounds close no decision, add no discriminating evidence,
    and do not change the recommendation, stop with a no-progress blocker.
-7. Stop when no material user-owned decision remains. Do not invent another
-   branch to prolong the discussion, turn settled consequences into new
-   preferences, produce an implementation plan, or start implementation.
+9. Stop when no material user-owned decision remains. Do not invent another
+   branch, convert settled consequences into preferences, produce a plan, or
+   start implementation.
 
 If a request is already fully determined, say that there is no material decision
 to grill and stop. Ordinary required clarification remains ordinary clarification;
@@ -57,9 +64,9 @@ authority; if it forbids file access, do not read an existing record either.
 
 Record authority and project readiness are separate. Saving requires a named,
 initialized, writable project; Grill must not initialize it, create ordinary
-memory entry points, or alter ignore rules. Resolve the checkout's canonical
-`scripts/discussion-transaction.py`, or an installed package's runtime root and
-that same package-owned script.
+memory entry points, or alter ignore rules. From a checkout use
+`<repo-root>/scripts/discussion-transaction.py`; from Marketplace resolve the
+package root with `scripts/plugin-runtime-root.py` (two levels up) first.
 
 Every persisted create, update, close, replace, or supersede mutation uses this
 public transaction route, in order:

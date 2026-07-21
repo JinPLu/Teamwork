@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "Claude Code adapter skills for research, local evidence, design, debugging, planning, review, setup, updates, and long-running goals; routine local work stays native.",
   "author": {
     "name": "JinPLu",
@@ -35,7 +35,7 @@
     "websiteURL": "https://github.com/JinPLu/Teamwork",
     "defaultPrompt": [
       "Use $teamwork-research to investigate this current external question from primary sources with linked citations.",
-      "Use $teamwork-design to inspect context, explore viable options, ask material questions, and produce a decision-ready design.",
+      "Use $teamwork-design to inspect context, explore options, ask bounded decision batches, and produce a decision-ready design.",
       "Implement this scoped change with native Claude Code behavior and verify the changed path."
     ],
     "brandColor": "#2563EB"

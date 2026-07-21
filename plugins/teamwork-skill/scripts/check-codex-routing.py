@@ -310,7 +310,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "Codex custom-agent routing is not ready: " + "; ".join(routing.issues)
         )
     report["spawn_selector"] = (
-        "config ready; a fresh callable-schema or live spawn probe remains the behavioral proof"
+        "stable multi_agent feature ready; a fresh live spawn probe remains the behavioral proof"
     )
     report["mutations"] = "none"
     report["model_calls"] = "none"
@@ -340,7 +340,7 @@ def print_text_report(report: dict[str, Any]) -> None:
         print(f"PROMPT_PROJECT_INSTRUCTIONS={prompt['project_instructions']}")
     routing = report["routing"]
     print(f"ROUTING_CONFIG={routing['status']}")
-    print(f"ROUTING_NAMESPACE=teamwork")
+    print("ROUTING_FEATURE=features.multi_agent")
     print(f"SPAWN_SELECTOR={report['spawn_selector']}")
     print("MUTATIONS=none")
     print("MODEL_CALLS=none")

@@ -46,6 +46,50 @@ VALID_PARAMS = {
     ],
 }
 
+THREE_QUESTION_PARAMS = {
+    **VALID_PARAMS,
+    "questions": [
+        {
+            **VALID_PARAMS["questions"][0],
+            "id": "compatibility",
+            "header": "Compat",
+            "question": "How long should compatibility be preserved?",
+        },
+        {
+            **VALID_PARAMS["questions"][0],
+            "id": "telemetry",
+            "header": "Telemetry",
+            "question": "Should telemetry default on?",
+            "options": [
+                {
+                    "label": "Opt in",
+                    "description": "Conservative privacy default.",
+                },
+                {
+                    "label": "Default on",
+                    "description": "Improves diagnostics at launch.",
+                },
+            ],
+        },
+        {
+            **VALID_PARAMS["questions"][0],
+            "id": "messaging",
+            "header": "Message",
+            "question": "Which deprecation message should lead?",
+            "options": [
+                {
+                    "label": "Migration",
+                    "description": "Lead with upgrade steps.",
+                },
+                {
+                    "label": "Risk",
+                    "description": "Lead with compatibility risk.",
+                },
+            ],
+        },
+    ],
+}
+
 
 def fake_server_source(params: dict[str, object] = VALID_PARAMS) -> str:
     return f'''\
@@ -53,6 +97,7 @@ import json, sys
 params = {params!r}
 mode = sys.argv[1]
 initialized = False
+turns = 0
 for line in sys.stdin:
     message = json.loads(line)
     method = message.get("method")
@@ -69,14 +114,22 @@ for line in sys.stdin:
         assert message["params"]["ephemeral"] is True
         print(json.dumps({{"id": message["id"], "result": {{"thread": {{"id": "thread-1"}}}}}}), flush=True)
     elif method == "turn/start":
+        turns += 1
         assert message["params"]["input"][0]["type"] == "text"
-        print(json.dumps({{"id": message["id"], "result": {{"turn": {{"id": "turn-1"}}}}}}), flush=True)
+        turn_id = f"turn-{{turns}}"
+        print(json.dumps({{"id": message["id"], "result": {{"turn": {{"id": turn_id}}}}}}), flush=True)
         if mode == "zero":
-            print(json.dumps({{"method": "item/completed", "params": {{"threadId": "thread-1", "turnId": "turn-1", "item": {{"type": "agentMessage", "text": "Four."}}}}}}), flush=True)
-            print(json.dumps({{"method": "turn/completed", "params": {{"threadId": "thread-1", "turn": {{"id": "turn-1", "status": "completed"}}}}}}), flush=True)
+            print(json.dumps({{"method": "item/completed", "params": {{"threadId": "thread-1", "turnId": turn_id, "item": {{"type": "agentMessage", "text": "Four."}}}}}}), flush=True)
+            print(json.dumps({{"method": "turn/completed", "params": {{"threadId": "thread-1", "turn": {{"id": turn_id, "status": "completed"}}}}}}), flush=True)
         else:
-            print(json.dumps({{"id": 99, "method": "item/tool/requestUserInput", "params": params}}), flush=True)
-    elif message.get("id") == 99:
+            active = json.loads(json.dumps(params))
+            active["turnId"] = turn_id
+            if mode == "dependent":
+                active["questions"] = [active["questions"][0]]
+                active["questions"][0]["id"] = "compatibility" if turns == 1 else "rollout_window"
+            print(json.dumps({{"id": 98 + turns, "method": "item/tool/requestUserInput", "params": active}}), flush=True)
+    elif message.get("id") in {{99, 100}}:
+        turn_id = f"turn-{{turns}}"
         if mode == "wrong-resolution":
             print(json.dumps({{"method": "serverRequest/resolved", "params": {{"requestId": 99, "threadId": "other-thread"}}}}), flush=True)
         elif mode == "duplicate":
@@ -84,11 +137,17 @@ for line in sys.stdin:
             duplicate = json.loads(json.dumps(params))
             duplicate["itemId"] = "item-2"
             print(json.dumps({{"id": 100, "method": "item/tool/requestUserInput", "params": duplicate}}), flush=True)
+        elif mode == "failed-turn":
+            print(json.dumps({{"method": "serverRequest/resolved", "params": {{"requestId": message["id"], "threadId": "thread-1"}}}}), flush=True)
+            print(json.dumps({{"method": "turn/completed", "params": {{"threadId": "thread-1", "turn": {{"id": turn_id, "status": "failed", "error": {{"message": "usage limit"}}}}}}}}), flush=True)
+        elif mode == "wrong-turn-completed":
+            print(json.dumps({{"method": "serverRequest/resolved", "params": {{"requestId": message["id"], "threadId": "thread-1"}}}}), flush=True)
+            print(json.dumps({{"method": "turn/completed", "params": {{"threadId": "thread-1", "turn": {{"id": "other-turn", "status": "completed"}}}}}}), flush=True)
         else:
-            print(json.dumps({{"method": "serverRequest/resolved", "params": {{"requestId": 99, "threadId": "thread-1"}}}}), flush=True)
+            print(json.dumps({{"method": "serverRequest/resolved", "params": {{"requestId": message["id"], "threadId": "thread-1"}}}}), flush=True)
             text = "Should I continue?" if mode == "text-question" else "Compatibility preference recorded."
-            print(json.dumps({{"method": "item/completed", "params": {{"threadId": "thread-1", "turnId": "turn-1", "item": {{"type": "agentMessage", "text": text}}}}}}), flush=True)
-            print(json.dumps({{"method": "turn/completed", "params": {{"threadId": "thread-1", "turn": {{"id": "turn-1", "status": "completed"}}}}}}), flush=True)
+            print(json.dumps({{"method": "item/completed", "params": {{"threadId": "thread-1", "turnId": turn_id, "item": {{"type": "agentMessage", "text": text}}}}}}), flush=True)
+            print(json.dumps({{"method": "turn/completed", "params": {{"threadId": "thread-1", "turn": {{"id": turn_id, "status": "completed"}}}}}}), flush=True)
 '''
 
 
@@ -145,6 +204,18 @@ class RequestValidationTests(unittest.TestCase):
         errors = validate_request_params(invalid, max_questions_per_request=1)
         self.assertEqual(errors, ["questions must contain one to 1 items"])
 
+    def test_bounded_batch_accepts_three_and_rejects_four_questions(self) -> None:
+        self.assertEqual(
+            validate_request_params(THREE_QUESTION_PARAMS, max_questions_per_request=3),
+            [],
+        )
+        invalid = json.loads(json.dumps(THREE_QUESTION_PARAMS))
+        fourth = json.loads(json.dumps(VALID_PARAMS["questions"][0]))
+        fourth["id"] = "extra"
+        invalid["questions"].append(fourth)
+        errors = validate_request_params(invalid, max_questions_per_request=3)
+        self.assertEqual(errors, ["questions must contain one to 3 items"])
+
 
 class OfflineLifecycleTests(unittest.TestCase):
     def run_probe(
@@ -196,6 +267,8 @@ class OfflineLifecycleTests(unittest.TestCase):
                 "ordinary-material",
                 "explicit-grill-material",
                 "explicit-grill-material-zh",
+                "explicit-grill-independent-batch",
+                "explicit-grill-dependent-sequence",
                 "explicit-grill-zero",
                 "simple-control",
             },
@@ -205,6 +278,12 @@ class OfflineLifecycleTests(unittest.TestCase):
         self.assertEqual(
             SCENARIOS["explicit-grill-material-zh"]["max_questions_per_request"], 1
         )
+        self.assertEqual(
+            SCENARIOS["explicit-grill-independent-batch"]["max_questions_per_request"],
+            3,
+        )
+        self.assertEqual(SCENARIOS["explicit-grill-dependent-sequence"]["expected_requests"], 2)
+        self.assertEqual(len(SCENARIOS["explicit-grill-dependent-sequence"]["prompts"]), 2)
         self.assertTrue(SCENARIOS["explicit-grill-material-zh"]["forbid_text_question"])
         self.assertIn("先问清楚", SCENARIOS["explicit-grill-material-zh"]["prompt"])
         self.assertEqual(SCENARIOS["simple-control"]["expected_requests"], 0)
@@ -231,6 +310,8 @@ class OfflineLifecycleTests(unittest.TestCase):
         self.assertEqual(observed["status"], "passed")
         self.assertEqual(observed["observed_item_ids"], ["item-1"])
         self.assertEqual(observed["observed_question_keys"], ["host-key-1"])
+        self.assertEqual(observed["returned_answer_keys"], ["host-key-1"])
+        self.assertEqual(observed["observed_turn_ids"], ["turn-1"])
         self.assertEqual(observed["resolved_request_count"], 1)
         self.assertEqual(observed["semantic_quality"], "not_evaluated")
         self.assertTrue(observed["native_question_sha256"])
@@ -264,6 +345,33 @@ class OfflineLifecycleTests(unittest.TestCase):
         self.assertIn("duplicated", blocked["blocker"])
         self.assertTrue(blocked["text_question_observed"])
 
+    def test_independent_grill_batch_accepts_three_native_questions(self) -> None:
+        result = self.run_probe(
+            scenario="explicit-grill-independent-batch",
+            params=THREE_QUESTION_PARAMS,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        observed = json.loads(result.stdout)["results"][0]
+        self.assertEqual(
+            observed["observed_question_keys"],
+            ["compatibility", "telemetry", "messaging"],
+        )
+        self.assertEqual(observed["returned_answer_keys"], observed["observed_question_keys"])
+        self.assertEqual(observed["resolved_request_count"], 1)
+
+    def test_dependent_grill_sequence_uses_two_turns_on_one_thread(self) -> None:
+        result = self.run_probe(
+            scenario="explicit-grill-dependent-sequence",
+            mode="dependent",
+            params=THREE_QUESTION_PARAMS,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        observed = json.loads(result.stdout)["results"][0]
+        self.assertEqual(observed["observed_question_keys"], ["compatibility", "rollout_window"])
+        self.assertEqual(observed["returned_answer_keys"], observed["observed_question_keys"])
+        self.assertEqual(observed["observed_turn_ids"], ["turn-1", "turn-2"])
+        self.assertEqual(observed["resolved_request_count"], 2)
+
     def test_second_native_request_exceeds_scenario_bound(self) -> None:
         result = self.run_probe(mode="duplicate")
         self.assertEqual(result.returncode, 2)
@@ -273,6 +381,21 @@ class OfflineLifecycleTests(unittest.TestCase):
         result = self.run_probe(mode="wrong-resolution")
         self.assertEqual(result.returncode, 2)
         self.assertIn("does not match one native request", result.stdout)
+
+    def test_failed_turn_status_is_reported_without_accepting_missing_questions(self) -> None:
+        result = self.run_probe(mode="failed-turn")
+        self.assertEqual(result.returncode, 2)
+        observed = json.loads(result.stdout)["results"][0]
+        self.assertIn("turn completed with status 'failed'", observed["blocker"])
+        self.assertIn("usage limit", observed["blocker"])
+        self.assertIn("turn/completed", observed["events"])
+
+    def test_mismatched_turn_completion_is_rejected_separately(self) -> None:
+        result = self.run_probe(mode="wrong-turn-completed")
+        self.assertEqual(result.returncode, 2)
+        observed = json.loads(result.stdout)["results"][0]
+        self.assertIn("turn/completed does not match the active turn", observed["blocker"])
+        self.assertIn("turn/completed", observed["events"])
 
     def test_invalid_payload_is_hashed_and_review_is_opt_in(self) -> None:
         invalid = json.loads(json.dumps(VALID_PARAMS))

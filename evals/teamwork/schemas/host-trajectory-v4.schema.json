@@ -4,21 +4,123 @@
   "title": "Teamwork installed host trajectory v4",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version","record_type","host","host_version","invocation_id","started_at","finished_at","case_id","profile","selected_skill","role_identity","roles_observed","actual_model","actual_effort","tool_observations","authority_observation","sanitized_input_sha256","artifact","result","exit_status","status","privacy_scan","failure_classification"],
+  "required": [
+    "schema_version",
+    "record_type",
+    "host",
+    "host_version",
+    "invocation_id",
+    "arm",
+    "started_at",
+    "finished_at",
+    "case_id",
+    "profile",
+    "parent_model",
+    "parent_effort",
+    "selected_skill",
+    "role_identity",
+    "actual_model",
+    "actual_effort",
+    "dispatches",
+    "tool_observations",
+    "authority_observation",
+    "sanitized_input_sha256",
+    "artifact",
+    "result",
+    "exit_status",
+    "status",
+    "privacy_scan",
+    "failure_classification"
+  ],
   "properties": {
-    "schema_version":{"const":4}, "record_type":{"const":"teamwork_host_trajectory_v4"},
-    "host":{"enum":["codex","cursor","claude"]}, "host_version":{"type":"string","minLength":1},
-    "invocation_id":{"type":"string","minLength":1}, "started_at":{"type":"string","minLength":1}, "finished_at":{"type":"string","minLength":1},
-    "case_id":{"type":"string","minLength":1}, "profile":{"enum":["performance-first","cost-first"]},
-    "selected_skill":{"type":"string","minLength":1},
-    "role_identity":{"type":"string","minLength":1},
-    "roles_observed":{"type":"array","uniqueItems":true,"items":{"enum":["researcher","explorer","debugger","designer","planner","worker","plan-reviewer","reviewer"]}},
-    "actual_model":{"type":"string","minLength":1}, "actual_effort":{"type":"string","minLength":1},
-    "tool_observations":{"type":"array","items":{"type":"string"}}, "authority_observation":{"type":"string","minLength":1},
-    "sanitized_input_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"},
-    "artifact":{"$ref":"#/$defs/evidence"}, "result":{"allOf":[{"$ref":"#/$defs/evidence"},{"type":"object","required":["direct_success"],"properties":{"direct_success":{"type":"boolean"}}}]},
-    "exit_status":{"type":["integer","null"]}, "status":{"enum":["PASS","FAIL","UNSUPPORTED"]},
-    "privacy_scan":{"enum":["PASS","FAIL","NOT_RUN","UNSUPPORTED"]}, "failure_classification":{"type":["string","null"]}
+    "schema_version": {"const": 4},
+    "record_type": {"const": "teamwork_host_trajectory_v4"},
+    "host": {"enum": ["codex", "cursor", "claude"]},
+    "host_version": {"type": "string", "minLength": 1},
+    "invocation_id": {"type": "string", "minLength": 1},
+    "arm": {"type": "string", "minLength": 1},
+    "started_at": {"type": "string", "minLength": 1},
+    "finished_at": {"type": "string", "minLength": 1},
+    "case_id": {"type": "string", "minLength": 1},
+    "profile": {"enum": ["performance-first", "cost-first"]},
+    "parent_model": {"type": "string", "minLength": 1},
+    "parent_effort": {"type": "string", "minLength": 1},
+    "selected_skill": {"type": "string", "minLength": 1},
+    "role_identity": {"type": "string", "minLength": 1},
+    "actual_model": {"type": "string", "minLength": 1},
+    "actual_effort": {"type": "string", "minLength": 1},
+    "dispatches": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/dispatch"}
+    },
+    "tool_observations": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "authority_observation": {"type": "string", "minLength": 1},
+    "sanitized_input_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifact": {"$ref": "#/$defs/evidence"},
+    "result": {
+      "allOf": [
+        {"$ref": "#/$defs/evidence"},
+        {
+          "type": "object",
+          "required": ["direct_success"],
+          "properties": {"direct_success": {"type": "boolean"}}
+        }
+      ]
+    },
+    "exit_status": {"type": ["integer", "null"]},
+    "status": {"enum": ["PASS", "FAIL", "UNSUPPORTED"]},
+    "privacy_scan": {"enum": ["PASS", "FAIL", "NOT_RUN", "UNSUPPORTED"]},
+    "failure_classification": {"type": ["string", "null"]}
   },
-  "$defs":{"evidence":{"type":"object","required":["path","sha256"],"properties":{"path":{"type":["string","null"]},"sha256":{"type":["string","null"],"pattern":"^[0-9a-f]{64}$"}}}}
+  "$defs": {
+    "dispatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host",
+        "role",
+        "dispatch_id",
+        "parent_invocation_id",
+        "actual_model",
+        "actual_effort",
+        "selector_kind",
+        "agent_type",
+        "subagent_identity",
+        "fork_turns",
+        "model_override_present",
+        "effort_override_present",
+        "requested_model",
+        "requested_effort",
+        "observation_source"
+      ],
+      "properties": {
+        "host": {"enum": ["codex", "cursor", "claude"]},
+        "role": {"enum": ["researcher", "explorer", "debugger", "designer", "planner", "worker", "plan-reviewer", "reviewer"]},
+        "dispatch_id": {"type": "string", "minLength": 1},
+        "parent_invocation_id": {"type": "string", "minLength": 1},
+        "actual_model": {"type": "string", "minLength": 1},
+        "actual_effort": {"type": "string", "minLength": 1},
+        "selector_kind": {"type": "string", "minLength": 1},
+        "agent_type": {"type": ["string", "null"]},
+        "subagent_identity": {"type": ["string", "null"]},
+        "fork_turns": {"type": ["string", "null"]},
+        "model_override_present": {"type": ["boolean", "null"]},
+        "effort_override_present": {"type": ["boolean", "null"]},
+        "requested_model": {"type": ["string", "null"]},
+        "requested_effort": {"type": ["string", "null"]},
+        "observation_source": {"type": "string", "minLength": 1}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": ["string", "null"]},
+        "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
 }

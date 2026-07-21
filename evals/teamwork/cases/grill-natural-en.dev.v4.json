@@ -8,7 +8,9 @@
          "ordinary-no-write",
          "major-change-auto-transaction",
          "recommend-first",
-         "one-material-question",
+         "global-decision-map",
+         "bounded-independent-batch",
+         "question-criticality",
          "transaction-owned-writer",
          "no-files-overrides",
          "no-implementation"
@@ -17,7 +19,7 @@
    },
    "id" : "grill-natural-en",
    "must" : [
-      "keep ordinary question-first requests conversation-only; when the request is independently major, record state only through the managed inspect -> schema -> apply transaction, then give a recommendation before one material question while preserving authority"
+      "keep ordinary question-first requests conversation-only; when the request is independently major, record state only through the managed inspect -> schema -> apply transaction, then show a global decision map and give a recommendation before a bounded independent batch of critical material questions while preserving authority"
    ],
    "must_not" : [
       "directly write discussion Markdown, an index, or another file for an ordinary request; implement, edit, or treat an answer as implementation authority; no files must override any transaction"

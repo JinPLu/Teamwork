@@ -47,24 +47,33 @@ For a genuine trade-off, generate two or three meaningful alternatives:
 ## Finite Decision Frontier
 
 Root converts only unresolved user-owned choices that can change the direction
-into a finite frontier, normally no more than three. Before each question, give
-the recommendation and largest downside, then ask exactly one choice. In Codex,
-use `request_user_input` when callable; otherwise use the host's native question
-surface or one concise text question. Answers close decisions; adjacent
-implementation preferences do not create new ones. A new item requires new direct
-evidence that changes the direction and must be recorded as a frontier delta.
+into a finite frontier, normally no more than three active unresolved items per
+level. Publish the global map before details, ordered by `goal`, `boundary`, and
+`detail`, and show the current critical path. Ask one bounded independent batch
+at a time: one to three current choices whose answers cannot change each other's
+prompt, options, recommendation, or closure signal. Dependent choices are
+serial. Before each question, give the recommendation and largest downside, and
+state why the answer is critical, what it blocks, its dependencies, and the
+observable closing condition. In Codex, use `request_user_input` when callable
+for the batch; otherwise use the host's native question surface or one concise
+numbered batch. Answers close decisions; adjacent implementation preferences do
+not create new ones. A new item requires new direct evidence that changes the
+direction and must be recorded as a frontier delta.
 
 Permit one integration revision after answers. If two consecutive rounds close
 no decision, add no discriminating evidence, and do not change the recommendation,
-stop with a no-progress blocker. Never batch a questionnaire or seek repeated
-section approvals.
+stop with a no-progress blocker. Never batch dependent questions, send a
+questionnaire, or seek repeated section approvals.
 
 ## Finish At The Design Boundary
 
+If the direction is a major change (public/installable, release, permission,
+security, data, destructive, cross-platform), also open the Grill record via
+inspect->schema->apply unless no-files/off-the-record.
+
 Freeze one durable Design before planning. Its structured Design state records the
-outcome, decision rule, recommendation and largest downside, rejected material
-alternatives and reasons, key component or interaction shape, boundaries and
-non-goals, compatibility or migration consequences, acceptance signals, challenge
+outcome, decision rule, recommendation and largest downside, rejected alternatives,
+key shape, boundaries, migration consequences, acceptance signals, challenge
 outcome, frontier delta, and residual uncertainty or dissent.
 
 The package-level Design transaction is the sole durable Design writer. Every
@@ -82,14 +91,18 @@ durable Design lifecycle uses this public route, in order:
    validates, and writes the artifact plus `active.design`, then returns its path,
    revision, and changed paths.
 
+From a checkout use `<repo-root>/scripts/discussion-transaction.py`; from
+Marketplace resolve the package root with `scripts/plugin-runtime-root.py` (two
+levels up) first, then use that script.
+
 `design-render` and `design-validate` are read-only helpers only; they never
 replace the transaction. Never hand-author, redirect renderer output into, or
 directly edit Design Markdown, its route map, or its text fallback. If the
 controlled route is unavailable or fails validation, stop without claiming a
 durable Design or substituting a hand-written artifact.
 
-Design does not implement, modify product configuration, or silently enter Plan.
-Only after the controlled route returns its path and revision may Planner produce
-a Plan. Independent Plan Review runs only when the user requests it or a named
-material risk gate requires it. Any Design or Plan approval still does not grant
-implementation or release authority unless the user explicitly does so.
+Design does not implement or silently enter Plan. Only after the controlled route returns
+its path and revision may Planner produce a Plan. Independent Plan Review
+runs only when the user requests it or a named material risk gate requires it.
+Any Design or Plan approval still does not grant implementation or release
+authority unless the user explicitly does so.

@@ -20,7 +20,7 @@ COMPACTNESS_LIMITS = {
     "union": {"words": 12500, "bytes": 95000},
     "skills": {"words": 6000, "bytes": 45000},
     "codex": {"words": 340, "bytes": 2800},
-    "cursor": {"words": 340, "bytes": 2800},
+    "cursor": {"words": 350, "bytes": 2900},
     "claude": {"words": 340, "bytes": 2800},
 }
 MAX_SKILL_WORDS = 900

@@ -64,16 +64,40 @@ claude_agent_profile_values() {
 cursor_agent_profile_values() {
   local agent="$1"
   case "$CODEX_PROFILE:$agent" in
-    cost-first:researcher|cost-first:explorer|cost-first:worker)
-      printf '%s\n' "composer-2.5"
+    performance-first:researcher)
+      printf '%s\n' "gpt-5.6-terra-medium"
+      ;;
+    performance-first:explorer)
+      printf '%s\n' "gemini-3.5-flash"
+      ;;
+    performance-first:debugger|performance-first:plan-reviewer)
+      printf '%s\n' "claude-opus-4-8-thinking-high"
+      ;;
+    performance-first:designer)
+      printf '%s\n' "gpt-5.6-sol-medium"
+      ;;
+    performance-first:planner)
+      printf '%s\n' "gpt-5.6-terra-medium"
       ;;
     performance-first:worker)
       printf '%s\n' "composer-2.5-fast"
       ;;
-    performance-first:researcher|performance-first:explorer)
-      printf '%s\n' "claude-sonnet-4-6"
+    performance-first:reviewer)
+      printf '%s\n' "claude-fable-5-thinking-high"
       ;;
-    performance-first:debugger|performance-first:designer|performance-first:planner|performance-first:plan-reviewer|performance-first:reviewer|cost-first:debugger|cost-first:designer|cost-first:planner|cost-first:plan-reviewer|cost-first:reviewer)
+    cost-first:researcher|cost-first:explorer)
+      printf '%s\n' "gemini-3.5-flash"
+      ;;
+    cost-first:debugger|cost-first:designer|cost-first:plan-reviewer)
+      printf '%s\n' "gpt-5.6-terra-medium"
+      ;;
+    cost-first:planner)
+      printf '%s\n' "gpt-5.6-luna-medium"
+      ;;
+    cost-first:worker)
+      printf '%s\n' "composer-2.5-fast"
+      ;;
+    cost-first:reviewer)
       printf '%s\n' "claude-opus-4-8-thinking-high"
       ;;
     *)

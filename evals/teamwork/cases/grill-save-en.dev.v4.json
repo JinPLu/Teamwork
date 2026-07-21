@@ -15,7 +15,7 @@
    },
    "id" : "grill-save-en",
    "must" : [
-      "only in an initialized writable project, persist through the managed inspect -> schema -> apply transaction; the transaction owns writes and maintains active discussion/current.md state while preserving authority"
+      "only in an initialized writable project, persist through the managed inspect -> schema -> apply transaction; new writes use schema v2 frontier/current_batch state and one atomic answered-batch update while preserving authority"
    ],
    "must_not" : [
       "directly write discussion Markdown, an index, or another file; implement or treat persistence as implementation authority; no files must override the save transaction"

@@ -50,8 +50,10 @@ is unsettled and `teamwork-plan` once the direction is selected. Design uses
 Explorer only for an unresolved local constraint and sanitized external Research
 only for a named external/current claim that can change the choice; it never runs
 both by default. It compares
-2–3 real alternatives or records safe-path evidence, makes one challenge pass,
-and keeps the decision frontier finite. Its controlled transaction creates the
+2-3 real alternatives or records safe-path evidence, makes one challenge pass,
+and keeps the decision frontier finite: it shows the global map first, batches
+only independent material decisions, and asks dependent decisions in later
+turns. Its controlled transaction creates the
 durable Design artifact before Plan; independent Plan Review runs only on user
 request or a named material risk gate. It does not
 implement the result or enter Plan silently.
@@ -80,8 +82,9 @@ request uses the transaction to update only `docs/teamwork/discussion/current.md
 An independently major public/installable, migration/release, permission,
 security, data, destructive, or cross-platform boundary opens the record
 automatically. Within one scope, only creation, semantic decision/frontier
-change, and close/supersede persist; unchanged state is a no-op. An explicit
-"no files" or off-the-record instruction wins.
+change, and close/supersede persist; unchanged state is a no-op. New records use
+schema v2 `frontier` / `current_batch` state. An explicit "no files" or
+off-the-record instruction wins.
 
 ## Initialize a project
 

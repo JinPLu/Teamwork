@@ -3,20 +3,20 @@ write_teamwork_global_policy_body() {
 Work within the user's request. Read-only work grants no write or external-effect
 authority; answers, questions, designs, plans, reviews, and confirmations grant
 none. Inspect evidence before asking. Root owns user questions; Root alone asks
-only for required input or a material user-owned decision, one at a time. Pause
-only dependent work. Produce the real requested result first.
+only for required input or bounded independent batch of user-owned decisions.
+Pause only dependent work. Produce the real requested result first.
 
 Local repository/source/configuration evidence and authorized implementation stay
 native. Delegate only independent bounded work when worthwhile. Explore local.
-External/current/multi-source/citation-backed work uses Research. Debug owns
-unknown causes; an unresolved material direction uses Design; Plan only
+External/current/multi-source/citation-backed work first dispatches Researcher;
+Root never researches it directly. Debug owns unknown causes; an unresolved material direction uses Design; Plan only
 translates an already selected direction; Review user-requested/named-risk work;
 Goal explicit persistence; Init project; Update global. Design may dispatch
 one choice-relevant Explorer or Researcher, never both by default.
 
 Root opens Grill for major public/installable, migration/release, permission,
 security, data, destructive, cross-platform, or finite Design-frontier changes.
-Persist unless user says no files/off-record; within scope persist only create,
+Persist unless user says no files/off-record; persist only create,
 semantic decision/frontier change, close/supersede. Decisions never grant
 implementation/release authority. Natural question-first intent causes no file
 write; negative/quoted/file/tool/example/maintenance mentions are inert. Root
@@ -72,6 +72,8 @@ write_teamwork_cursor_global_policy() {
 POLICY
   write_teamwork_global_policy_body
   cat <<'POLICY'
+
+Enable MCP in Cursor Settings. Prefer `codegraph_*`; `gpu-broker` for GPU.
 <!-- TEAMWORK_CURSOR_GLOBAL_END -->
 POLICY
 }

@@ -148,24 +148,55 @@ def _discussion_transaction_cli_probe(source: str) -> str | None:
             if not isinstance(skeleton, dict) or skeleton.get("operation") != "create" or "expected_revision" not in skeleton:
                 return "schema command did not return the create request skeleton"
 
-            request = {
-                "schema_version": 1,
-                "operation": "create",
-                "expected_revision": revision,
-                "record": {
+            request = skeleton
+            request["expected_revision"] = revision
+            record = request["record"]
+            record.update(
+                {
                     "slug": "probe-decision",
                     "title": "Probe transaction ownership",
                     "updated": "2026-07-19",
                     "goal": "Verify the public transaction route.",
                     "current_branch": "Run the owner CLI directly.",
-                    "settled": ["The parser route is executable."],
-                    "still_open": ["Does apply own the write?"],
                     "return_path": "Resume through inspect.",
                     "blockers": ["none"],
                     "convergence": "The owned current artifact exists.",
                     "key_evidence": ["CLI probe output."],
-                },
-            }
+                }
+            )
+            if record.get("schema_version") == 2:
+                record["frontier"] = [
+                    {
+                        "id": "Q1",
+                        "title": "Apply owner",
+                        "level": "goal",
+                        "status": "current",
+                        "prompt": "Should apply own the persisted write?",
+                        "options": [
+                            {
+                                "id": "managed",
+                                "label": "Managed route",
+                                "tradeoff": "Keeps transaction ownership explicit.",
+                            },
+                            {
+                                "id": "direct",
+                                "label": "Direct route",
+                                "tradeoff": "Would bypass the owner and must be rejected.",
+                            },
+                        ],
+                        "recommendation": "managed",
+                        "largest_downside": "The probe is narrower than a full discussion lifecycle.",
+                        "why_critical": "The answer proves which path owns writes.",
+                        "blocks": ["transaction ownership"],
+                        "depends_on": [],
+                        "closure_signal": "The managed apply produces the active discussion.",
+                        "resolution": None,
+                    }
+                ]
+                record["current_batch"] = ["Q1"]
+            else:
+                record["settled"] = ["The parser route is executable."]
+                record["still_open"] = ["Does apply own the write?"]
             applied = invoke(
                 "apply", "--project-root", str(project), "--request-json", json.dumps(request),
             )

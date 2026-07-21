@@ -49,18 +49,76 @@ class DiscussionTransactionTests(unittest.TestCase):
 
     def record(self, *, title: str = "Choose the recovery route", updated: str = "2026-07-19") -> dict[str, object]:
         return {
+            "schema_version": 2,
+            "artifact_type": "discussion",
             "slug": "recovery-route",
             "title": title,
             "updated": updated,
             "goal": "Preserve one recoverable durable decision.",
             "current_branch": "Choose the artifact transition route.",
-            "settled": ["Ordinary memory is not a Grill mirror."],
-            "still_open": ["Does the transaction survive process loss?"],
             "return_path": "Resume at the recovery proof.",
             "blockers": ["The interruption proof is pending."],
             "convergence": "One exact recovery proof passes.",
             "key_evidence": ["The journal stores exact preimages."],
+            "frontier": [
+                {
+                    "id": "Q1",
+                    "title": "Recovery proof",
+                    "level": "goal",
+                    "status": "current",
+                    "prompt": "Should the transaction prove exact recovery before handoff?",
+                    "options": [
+                        {"id": "prove-first", "label": "Prove first", "tradeoff": "Blocks handoff until the real recovery path passes."},
+                        {"id": "defer-proof", "label": "Defer proof", "tradeoff": "Leaves the durable artifact boundary unverified."},
+                    ],
+                    "recommendation": "prove-first",
+                    "largest_downside": "The proof adds one focused test step.",
+                    "why_critical": "The answer changes whether the artifact can be trusted across process loss.",
+                    "blocks": ["handoff"],
+                    "depends_on": [],
+                    "closure_signal": "The selected route is recorded with direct recovery evidence.",
+                    "resolution": None,
+                }
+            ],
+            "current_batch": ["Q1"],
         }
+
+    def closed_record(self, *, updated: str = "2026-07-20") -> dict[str, object]:
+        record = self.record(updated=updated)
+        item = dict(record["frontier"][0])
+        item["status"] = "closed"
+        item["resolution"] = {"kind": "selected", "option_id": "prove-first"}
+        record["frontier"] = [item]
+        record["current_batch"] = []
+        record["status"] = "accepted"
+        return record
+
+    def answered_record(self, *, title: str = "Choose the verified recovery route", updated: str = "2026-07-20") -> dict[str, object]:
+        record = self.closed_record(updated=updated)
+        record["status"] = "active"
+        record["title"] = title
+        record["frontier"].append(
+            {
+                "id": "Q2",
+                "title": "Handoff route",
+                "level": "detail",
+                "status": "current",
+                "prompt": "Should handoff use the focused transaction proof?",
+                "options": [
+                    {"id": "use-proof", "label": "Use proof", "tradeoff": "Keeps the handoff tied to direct evidence."},
+                    {"id": "summarize-only", "label": "Summarize only", "tradeoff": "Drops the executable recovery signal."},
+                ],
+                "recommendation": "use-proof",
+                "largest_downside": "The handoff stays narrowly scoped.",
+                "why_critical": "The answer controls whether the next owner receives direct proof.",
+                "blocks": ["handoff"],
+                "depends_on": ["Q1"],
+                "closure_signal": "The handoff route is selected.",
+                "resolution": None,
+            }
+        )
+        record["current_batch"] = ["Q2"]
+        return record
 
     def apply(self, request: dict[str, object], *, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
         return self.cli(
@@ -74,7 +132,7 @@ class DiscussionTransactionTests(unittest.TestCase):
 
     def request(self, operation: str, *, record: dict[str, object] | None = None, **extra: object) -> dict[str, object]:
         result: dict[str, object] = {
-            "schema_version": 1,
+            "schema_version": 2,
             "operation": operation,
             "expected_revision": self.inspect()["revision"],
         }
@@ -112,6 +170,7 @@ class DiscussionTransactionTests(unittest.TestCase):
         self.assertEqual(created["path"], "docs/teamwork/discussion/current.md")
         self.assertTrue(current.is_file())
         state = CONTRACT["validate_discussion_artifact"](current.read_text(encoding="utf-8"))
+        self.assertEqual(state["schema_version"], 2)
         self.assertEqual(state["status"], "active")
         self.assertEqual(state["slug"], "recovery-route")
         self.assertEqual(
@@ -123,7 +182,7 @@ class DiscussionTransactionTests(unittest.TestCase):
 
     def test_update_close_and_replace_are_revision_checked_atomic_transitions(self) -> None:
         self.create()
-        updated = self.record(title="Choose the verified recovery route", updated="2026-07-20")
+        updated = self.answered_record(updated="2026-07-20")
         result = self.apply(self.request("update", record=updated))
         self.assertEqual(result.returncode, 0, result.stderr)
         stale = self.apply(
@@ -137,7 +196,13 @@ class DiscussionTransactionTests(unittest.TestCase):
         self.assertNotEqual(stale.returncode, 0)
         self.assertEqual(json.loads(stale.stderr)["category"], "PREWRITE_SAFE")
 
-        closed = self.apply(self.request("close", close_status="accepted"))
+        closed_record = self.closed_record(updated="2026-07-20")
+        closed_record["title"] = updated["title"]
+        q2 = dict(updated["frontier"][1])
+        q2["status"] = "closed"
+        q2["resolution"] = {"kind": "selected", "option_id": "use-proof"}
+        closed_record["frontier"].append(q2)
+        closed = self.apply(self.request("close", record=closed_record, close_status="accepted"))
         self.assertEqual(closed.returncode, 0, closed.stderr)
         archived = self.project / json.loads(closed.stdout)["path"]
         self.assertTrue(archived.is_file())
@@ -162,7 +227,7 @@ class DiscussionTransactionTests(unittest.TestCase):
     def test_hard_interruption_auto_recovers_exact_preimage_on_next_inspect(self) -> None:
         self.create()
         before = self.snapshot()
-        updated = self.record(title="Interrupted update", updated="2026-07-20")
+        updated = self.answered_record(title="Interrupted update", updated="2026-07-20")
         interrupted = self.apply(
             self.request("update", record=updated),
             env={"TEAMWORK_ARTIFACT_TRANSACTION_INTERRUPT_AFTER_BACKUP": "1"},
@@ -182,7 +247,7 @@ class DiscussionTransactionTests(unittest.TestCase):
         self.create()
         before = self.snapshot()
         failed = self.apply(
-            self.request("update", record=self.record(title="Will roll back", updated="2026-07-20")),
+            self.request("update", record=self.answered_record(title="Will roll back", updated="2026-07-20")),
             env={"TEAMWORK_ARTIFACT_TRANSACTION_FAIL_INSTALL_N": "1"},
         )
         self.assertNotEqual(failed.returncode, 0)

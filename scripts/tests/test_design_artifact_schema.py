@@ -21,7 +21,7 @@ CONTRACT = runpy.run_path(str(CLI), run_name="teamwork_design_contract")
 class DesignArtifactSchemaTests(unittest.TestCase):
     def state(self, **overrides: object) -> dict[str, object]:
         state: dict[str, object] = {
-            "schema_version": 1,
+            "schema_version": 2,
             "artifact_type": "design",
             "slug": "skill-architecture-v4",
             "title": "Skill architecture v4",
@@ -41,7 +41,7 @@ class DesignArtifactSchemaTests(unittest.TestCase):
             "recommendation": "Use focused self-contained Skills.",
             "largest_downside": "Migration changes existing invocation paths.",
             "rejected_alternatives": [
-                {"option": "Retain a Router hierarchy", "reason": "It preserves unnecessary recursive behavior."}
+                {"option": "Router hierarchy rejection", "reason": "It preserves unnecessary recursive behavior."}
             ],
             "residual_uncertainty": "Installed host wording remains a compatibility check.",
         }
@@ -91,9 +91,10 @@ class DesignArtifactSchemaTests(unittest.TestCase):
         self.assertNotIn("{{", rendered)
         self.assertEqual(CONTRACT["validate_design_artifact"](rendered), self.state())
 
-    def test_graph_fallback_and_structured_state_cover_all_design_semantics(self) -> None:
+    def test_v2_graph_is_concise_and_readable_state_covers_design_semantics_once(self) -> None:
         state = self.state()
         opening = self.render(state).split("## Design state", 1)[0]
+        mermaid = opening.split("```mermaid\n", 1)[1].split("\n```", 1)[0]
         required = [
             *state["evidence_waves"],
             *state["alternatives"],
@@ -110,9 +111,22 @@ class DesignArtifactSchemaTests(unittest.TestCase):
         ]
         for value in required:
             with self.subTest(value=value):
-                self.assertGreaterEqual(opening.count(str(value)), 2)
+                self.assertEqual(opening.count(str(value)), 1)
+                self.assertNotIn(str(value), mermaid)
+        for line in mermaid.splitlines():
+            if '["' in line:
+                label = line.split('["', 1)[1].split('"]', 1)[0]
+                self.assertLessEqual(len(label), 48)
         with self.assertRaises(CONTRACT["TransactionError"]):
             CONTRACT["validate_design_artifact"](self.render().replace("Decision rule:", "Wrong rule:", 1))
+
+    def test_v1_design_artifact_still_validates_through_frozen_renderer(self) -> None:
+        state = self.state(schema_version=1)
+        rendered = self.render(state)
+        validated = CONTRACT["validate_design_artifact"](rendered)
+        self.assertEqual(validated["schema_version"], 1)
+        self.assertIn("Decision rule:", rendered)
+        self.assertNotIn("## Readable design", rendered)
 
     def test_one_safe_path_is_valid_only_with_explicit_exclusion_and_rejection_reason(self) -> None:
         one_safe = self.state(

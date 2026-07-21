@@ -11,6 +11,8 @@ generic Execute skill, cross-skill behavior load, or shared behavior reference.
   current evidence, Debug for an unknown cause, Design for an unsettled choice,
   Plan for a selected direction, Review for independent acceptance, Goal for
   explicit persistence, Init for one project, and Update for global refreshes.
+- Grill and Design frontiers show the global map first, batch only independent
+  material questions, and keep dependent questions serial.
 - Change the owning `SKILL.md` before changing workflow behavior. Keep public
   docs outcome-focused and use direct evidence from code, logs, tests, diffs,
   and artifacts.

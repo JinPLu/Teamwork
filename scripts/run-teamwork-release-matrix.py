@@ -12,6 +12,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from teamwork_tooling.evaluation.host_matrix import (  # noqa: E402
+    C5_TEMP_ROOT,
+    CODEX_ROOT_ARMS,
     HostMatrixError,
     load_case_manifest,
     load_trajectory_schema,
@@ -56,14 +58,43 @@ def parse_args() -> argparse.Namespace:
     verify.add_argument("--schema", required=True, type=Path)
     verify.add_argument("--hosts", required=True, nargs="+")
     verify.add_argument("--profiles", required=True, nargs="+")
-    verify.add_argument("--expected-records-per-slice", required=True, type=int)
+    verify.add_argument("--codex-arms", nargs="+")
+    verify.add_argument("--expected-records-per-slice", type=int)
+    verify.add_argument("--expected-records-per-output", type=int)
+    verify.add_argument("--expected-total-records", type=int)
     verify.add_argument("--required-roles-per-slice", required=True, nargs="+")
     verify.add_argument("--summary", required=True, type=Path)
     return parser.parse_args()
 
 
+def output_slices(output_root: Path, hosts: list[str], profiles: list[str], codex_arms: list[str] | None) -> list[tuple[str, str, str, Path]]:
+    slices: list[tuple[str, str, str, Path]] = []
+    for host in hosts:
+        if host == "codex" and codex_arms:
+            for arm in codex_arms:
+                config = CODEX_ROOT_ARMS.get(arm)
+                if config is None:
+                    raise HostMatrixError(f"unsupported Codex Root arm: {arm}")
+                profile = config[0]
+                slices.append((host, profile, arm, output_root / host / f"{arm}.jsonl"))
+            continue
+        for profile in profiles:
+            slices.append((host, profile, profile, output_root / host / f"{profile}.jsonl"))
+    return slices
+
+
 def main() -> int:
     args = parse_args()
+    expected_output_root = C5_TEMP_ROOT / "outputs/installed-v4"
+    expected_summary = expected_output_root / "matrix-summary.json"
+    if args.output_root != expected_output_root or args.summary != expected_summary:
+        raise HostMatrixError(
+            "matrix output root and summary must use the exact /tmp/teamwork-4.1.0-c5/outputs/installed-v4 paths"
+        )
+    if "codex" in args.hosts and tuple(args.codex_arms or ()) != tuple(CODEX_ROOT_ARMS):
+        raise HostMatrixError("Codex matrix must use exactly the four declared gpt-5.5 Root arms")
+    if "codex" not in args.hosts and args.codex_arms:
+        raise HostMatrixError("Codex Root arms require the codex host")
     manifest_path = args.manifest.resolve()
     manifest_root = manifest_path.parents[3]
     manifest_cases = load_case_manifest(manifest_path, root=manifest_root)
@@ -73,40 +104,43 @@ def main() -> int:
     failures: list[str] = []
     slices: list[dict[str, object]] = []
     total = 0
-    for host in args.hosts:
-        for profile in args.profiles:
-            path = output_root / host / f"{profile}.jsonl"
-            try:
-                records = read_records(path, host=host, profile=profile, cases=cases, schema=schema)
-            except HostMatrixError as exc:
-                failures.append(f"{host}/{profile}: {exc}")
-                records = []
-            total += len(records)
-            case_ids = [record.get("case_id") for record in records]
-            roles = {
-                role
-                for record in records
-                for role in record.get("roles_observed", [])
-                if isinstance(role, str)
-            }
-            statuses = {str(record.get("status")) for record in records}
-            if len(records) != args.expected_records_per_slice:
-                failures.append(f"{host}/{profile}: expected {args.expected_records_per_slice} records, got {len(records)}")
-            if len(case_ids) != len(set(case_ids)) or set(case_ids) != set(cases):
-                failures.append(f"{host}/{profile}: case coverage is not the exact twelve-case manifest")
-            missing_roles = sorted(set(args.required_roles_per_slice) - roles)
-            if missing_roles:
-                failures.append(f"{host}/{profile}: missing observed roles {missing_roles}")
-            blockers = [record for record in records if record.get("status") != "PASS"]
-            if blockers:
-                failures.append(f"{host}/{profile}: contains {len(blockers)} FAIL/UNSUPPORTED blockers")
-            slices.append({
-                "host": host, "profile": profile, "records": len(records),
-                "roles_observed": sorted(roles), "statuses": sorted(statuses),
-                "passed": not blockers and not missing_roles and len(records) == args.expected_records_per_slice
-                and len(case_ids) == len(set(case_ids)) and set(case_ids) == set(cases),
-            })
-    expected_total = len(args.hosts) * len(args.profiles) * args.expected_records_per_slice
+    expected_per_output = args.expected_records_per_output or args.expected_records_per_slice
+    if expected_per_output is None:
+        raise HostMatrixError("expected record count is required")
+    for host, profile, arm, path in output_slices(output_root, args.hosts, args.profiles, args.codex_arms):
+        try:
+            records = read_records(path, host=host, profile=profile, cases=cases, schema=schema)
+        except HostMatrixError as exc:
+            failures.append(f"{host}/{arm}: {exc}")
+            records = []
+        total += len(records)
+        case_ids = [record.get("case_id") for record in records]
+        roles = {
+            dispatch.get("role")
+            for record in records
+            for dispatch in record.get("dispatches", [])
+            if isinstance(dispatch, dict) and isinstance(dispatch.get("role"), str)
+        }
+        statuses = {str(record.get("status")) for record in records}
+        if len(records) != expected_per_output:
+            failures.append(f"{host}/{arm}: expected {expected_per_output} records, got {len(records)}")
+        if len(case_ids) != len(set(case_ids)) or set(case_ids) != set(cases):
+            failures.append(f"{host}/{arm}: case coverage is not the exact thirteen-case manifest")
+        missing_roles = sorted(set(args.required_roles_per_slice) - roles)
+        if missing_roles:
+            failures.append(f"{host}/{arm}: missing observed roles {missing_roles}")
+        blockers = [record for record in records if record.get("status") != "PASS"]
+        if blockers:
+            failures.append(f"{host}/{arm}: contains {len(blockers)} FAIL/UNSUPPORTED blockers")
+        slices.append({
+            "host": host, "profile": profile, "arm": arm, "records": len(records),
+            "dispatch_roles": sorted(roles), "statuses": sorted(statuses),
+            "passed": not blockers and not missing_roles and len(records) == expected_per_output
+            and len(case_ids) == len(set(case_ids)) and set(case_ids) == set(cases),
+        })
+    expected_total = args.expected_total_records or (
+        len(output_slices(output_root, args.hosts, args.profiles, args.codex_arms)) * expected_per_output
+    )
     if total != expected_total:
         failures.append(f"matrix expected {expected_total} total records, got {total}")
     summary = {
@@ -116,8 +150,6 @@ def main() -> int:
     }
     if args.summary.exists():
         raise HostMatrixError(f"summary already exists: {args.summary}")
-    if "installed-v4" not in args.summary.parts:
-        raise HostMatrixError("summary must be under installed-v4")
     args.summary.parent.mkdir(parents=True, exist_ok=True)
     args.summary.write_text(json.dumps(summary, sort_keys=True, indent=2) + "\n", encoding="utf-8")
     if failures:

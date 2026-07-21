@@ -1,6 +1,6 @@
 ---
 name: teamwork-goal
-description: Use when the user explicitly asks Codex to keep working until a verifiable result, fix until green, converge without stopping, monitor through completion, or operate within a stated budget; do not use for ordinary one-shot work or infer persistence from task difficulty.
+description: Use when the user explicitly asks the host to keep working until a verifiable result, fix until green, converge without stopping, monitor through completion, or operate within a stated budget; do not use for ordinary one-shot work or infer persistence from task difficulty.
 ---
 
 # Teamwork Goal
@@ -17,10 +17,10 @@ ask only for a missing user-owned value that prevents progress. Do not invent an
 iteration, time, or token budget.
 
 Create durable Goal state at entry, before the first attempt, using the host's
-native goal mechanism or the project Goal artifact owner configured by the
-runtime. Record objective, direct success signal, invariants, scope, budget,
-hard stops, status, and attempt history. If durable state is unavailable, stop
-and report the continuity gap rather than claiming persistence. If the user
+native goal mechanism or, when the project is initialized, the Goal artifact at
+`docs/teamwork/goals/YYYY-MM-DD-<slug>.md`. Record objective, direct success signal,
+invariants, scope, budget, hard stops, status, and attempt history. If durable state
+is unavailable, stop and report the continuity gap rather than claiming persistence. If the user
 supplied a token budget, preserve that exact budget; never invent one.
 
 ## Iterate
@@ -46,4 +46,5 @@ a safe, evidence-backed different action remains. Stop for missing authority or
 required input, destructive or security risk, exhausted user budget,
 protected-boundary conflict, unavailable resources, or genuine no-progress.
 Follow the host's status semantics when recording completion or blockage, and
-never report success from a proxy check.
+never report success from a proxy check. Goal completion notifications are available
+only on Codex (hooks) and Claude Code; on Cursor the user polls manually.

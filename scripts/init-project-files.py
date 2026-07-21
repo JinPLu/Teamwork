@@ -30,6 +30,7 @@ import validate_teamwork_index as validator
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE_DIRECTORY = REPOSITORY_ROOT / "templates/teamwork-memory"
+CURSOR_MCP_TEMPLATE_DIR = REPOSITORY_ROOT / "templates/cursor-mcp"
 V342_OWNED_SURFACES = REPOSITORY_ROOT / "scripts/tests/fixtures/v3.4.2-owned-surfaces.json"
 V4_MIGRATION_LEDGER = REPOSITORY_ROOT / "evals/teamwork/ledgers/v4-capability-migration.jsonl"
 W4_DISCUSSION_API = REPOSITORY_ROOT / "scripts/discussion-transaction.py"
@@ -211,6 +212,8 @@ class InitTree:
         ("root", "docs", "docs"),
         ("docs", "teamwork", "teamwork"),
         ("teamwork", "discussion", "discussion"),
+        ("root", ".cursor", "cursor"),
+        ("cursor", "rules", "cursor_rules"),
     )
 
     def __init__(self, root: Path) -> None:
@@ -443,6 +446,7 @@ def _validate_journal_target(parent: str, name: str, logical: str) -> None:
         "teamwork": f"docs/teamwork/{name}",
         "discussion": f"docs/teamwork/discussion/{name}",
         "plans": f"docs/teamwork/plans/{name}",
+        "cursor_rules": f".cursor/rules/{name}",
     }.get(parent)
     if expected_logical != logical:
         fail("init journal target parent and logical path disagree")
@@ -456,6 +460,8 @@ def _validate_journal_target(parent: str, name: str, logical: str) -> None:
         fail("init journal has an unsupported W4 discussion target")
     if parent == "plans" and (not name.endswith(".md") or name == ".md"):
         fail("init journal has an unsupported active Plan guard")
+    if parent == "cursor_rules" and name not in {"codegraph.mdc", "gpu-broker.mdc"}:
+        fail("init journal has an unsupported Cursor MCP rule target")
 
 
 def _guard_record(snapshot: FdSnapshot) -> dict[str, object]:
@@ -867,10 +873,17 @@ def _unfinished_w4_discussion_transaction(tree: InitTree) -> bool:
     )
 
 
+def _cursor_mcp_template(name: str) -> bytes:
+    path = CURSOR_MCP_TEMPLATE_DIR / name
+    if not path.is_file() or path.is_symlink():
+        fail(f"missing Cursor MCP template: {name}")
+    return path.read_bytes()
+
+
 class InitTransaction:
     """A journaled project-only context update with exact preimage recovery."""
 
-    DIRECTORY_LAYOUT = (
+    BASE_DIRECTORY_LAYOUT = (
         ("root", "docs", "docs"),
         ("docs", "teamwork", "teamwork"),
         ("teamwork", "research", "research"),
@@ -883,6 +896,15 @@ class InitTransaction:
     def __init__(self, root: Path, args: argparse.Namespace) -> None:
         self.root = root
         self.args = args
+        layout = list(self.BASE_DIRECTORY_LAYOUT)
+        if getattr(args, "cursor_mcp", False):
+            layout.extend(
+                [
+                    ("root", ".cursor", "cursor"),
+                    ("cursor", "rules", "cursor_rules"),
+                ]
+            )
+        self.directory_layout = tuple(layout)
         self.tree = InitTree(root)
         self.journal: dict[str, object] | None = None
         self.guards: dict[tuple[str, str], FdSnapshot] = {}
@@ -904,7 +926,7 @@ class InitTransaction:
 
     def _open_existing_layout(self) -> list[dict[str, object]]:
         records: list[dict[str, object]] = []
-        for parent, name, key in self.DIRECTORY_LAYOUT:
+        for parent, name, key in self.directory_layout:
             if parent not in self.tree.fds:
                 records.append({"parent": parent, "name": name, "key": key, "before": {"exists": False}, "after": None})
                 continue
@@ -923,7 +945,7 @@ class InitTransaction:
             parent, name, key = record["parent"], record["name"], record["key"]
             if not all(isinstance(value, str) and value for value in (parent, name, key)):
                 fail("init journal directory record has invalid names")
-            if (parent, name, key) not in self.DIRECTORY_LAYOUT:
+            if (parent, name, key) not in self.directory_layout:
                 fail("init journal directory record is outside the owned layout")
             if parent not in self.tree.fds:
                 if recovery and _directory_matches(None, record["before"]):
@@ -1195,6 +1217,17 @@ class InitTransaction:
             known_heading="Teamwork local runtime state",
         ).encode("utf-8")
         candidates.append(("root", ".gitignore", ".gitignore", ignored_after))
+
+        if getattr(self.args, "cursor_mcp", False):
+            for rule_name in ("codegraph.mdc", "gpu-broker.mdc"):
+                candidates.append(
+                    (
+                        "cursor_rules",
+                        rule_name,
+                        f".cursor/rules/{rule_name}",
+                        _cursor_mcp_template(rule_name),
+                    )
+                )
 
         files: list[dict[str, object]] = []
         seen_targets: set[tuple[str, str]] = set()
@@ -1723,6 +1756,12 @@ def _recover_init_transaction(root: Path) -> None:
         files = journal["files"]
         guards = journal["guards"]
         assert isinstance(directories, list) and isinstance(files, list) and isinstance(guards, list)
+        txn.directory_layout = tuple(
+            (str(record["parent"]), str(record["name"]), str(record["key"]))
+            for record in directories
+            if isinstance(record, dict)
+        )
+        txn.guards = {}
         txn._provision_directories(directories, recovery=True)
         if "teamwork" in tree.fds:
             mirror = _read_marker_at(tree, "teamwork")
@@ -1867,6 +1906,21 @@ def command_write_context(root: Path, args: argparse.Namespace) -> None:
         transaction.run()
     finally:
         transaction.close()
+    if getattr(args, "cursor_mcp", False):
+        configure_script = REPOSITORY_ROOT / "scripts/install/configure_cursor_mcp.py"
+        mcp_config = root / ".cursor" / "mcp.json"
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(configure_script),
+                "--apply",
+                "--config",
+                str(mcp_config),
+            ],
+            check=False,
+        )
+        if result.returncode != 0:
+            fail("Cursor MCP project configuration failed")
     if args.full_bootstrap:
         print(json.dumps(_capability_matrix(), ensure_ascii=False, sort_keys=True))
 
@@ -1925,6 +1979,7 @@ def parser() -> argparse.ArgumentParser:
     write.add_argument("--today", default=date.today().isoformat())
     write.add_argument("--project-label")
     write.add_argument("--full-bootstrap", action="store_true")
+    write.add_argument("--cursor-mcp", action="store_true")
     write.add_argument("--candidate-memory")
     write.add_argument("--candidate-docs-graph")
     write.add_argument("--promote-candidates", action="store_true")

@@ -41,7 +41,9 @@ personal information.
    decision; do not run both by default. Genuine trade-offs receive 2–3
    alternatives, and a clear safe path receives evidence and exclusions.
    Preserve one challenge pass, a finite decision frontier, and the controlled
-   durable Design artifact before Plan. Independent Plan Review runs only on
+   durable Design artifact before Plan. The frontier shows a global map first,
+   batches only independent material questions, and serializes dependent
+   questions. Independent Plan Review runs only on
    user request or a named material risk gate.
 5. Preserve result-first code work: change the canonical owner, reuse existing
    patterns/built-ins/suitable dependencies, add the smallest complete logic,
@@ -67,10 +69,10 @@ The public release inventory is ten skills, three skill-owned advanced
 references, and eight host roles. A v3.4.2 cleanup can recognize only files the
 installer proves it owns; it does not preserve Router, Execute, or legacy roles
 as v4 aliases. An ordinary question-first Grill stays conversation-only;
-  explicit persistence and independently major boundaries use its sole durable
-  transaction record. Within one scope, persistence is limited to create,
-  semantic decision/frontier change, and close/supersede; unchanged state is a
-  no-op.
+explicit persistence and independently major boundaries use its sole durable
+transaction record. Within one scope, persistence is limited to create,
+semantic decision/frontier change, and close/supersede; unchanged state is a
+no-op. New discussion records use `frontier` / `current_batch` state.
 
 ## Verification
 

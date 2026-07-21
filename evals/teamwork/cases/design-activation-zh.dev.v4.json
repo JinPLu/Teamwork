@@ -7,7 +7,9 @@
          "local-constraints-first",
          "genuine-tradeoffs-only",
          "recommend-first",
-         "one-user-owned-decision",
+         "bounded-independent-batch",
+         "dependency-serialization",
+         "question-criticality",
          "read-only",
          "no-implementation"
       ],
@@ -16,7 +18,7 @@
    "id" : "design-activation-zh",
    "must" : [
       "先检查本地约束，只为真实取舍提出方案，并先给推荐",
-      "一次只问一个由用户决定的实质问题"
+      "提出有限独立批次的用户拥有实质决定，依赖决定必须串行，并说明关键性"
    ],
    "must_not" : [
       "实施、修改文件或悄悄转成执行计划"

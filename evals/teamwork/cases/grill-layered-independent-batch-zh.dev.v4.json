@@ -1,0 +1,43 @@
+{
+  "id": "grill-layered-independent-batch-zh",
+  "split": "dev",
+  "source": "synthetic",
+  "producers": [
+    {
+      "class": "root-policy",
+      "source": "scripts/install/policy.sh"
+    },
+    {
+      "class": "skill",
+      "source": "skills/grill-me/SKILL.md"
+    }
+  ],
+  "platforms": [
+    "codex",
+    "cursor",
+    "claude"
+  ],
+  "prompt": "上线这个公开 SDK 前先 grill 我：兼容周期和遥测默认值都没定，而且两个选择互不改变对方选项。",
+  "expected": {
+    "capability": "grill",
+    "scenario": "layered-independent-batch",
+    "language": "zh",
+    "requires": [
+      "global-decision-map",
+      "bounded-independent-batch",
+      "independent-questions",
+      "recommend-first",
+      "question-criticality",
+      "closure-signal",
+      "no-implementation"
+    ]
+  },
+  "must": [
+    "先展示 goal/boundary/detail 全局决策地图，再进入详细问题",
+    "把兼容周期和遥测默认值这两个独立决定放在一个有限批次中，并逐题给出推荐、最大代价、关键性、阻塞对象、依赖和关闭信号"
+  ],
+  "must_not": [
+    "超过三个问题，把独立问题无故拆成串行轮次，实施、修改文件，或把回答当成实施授权"
+  ],
+  "evidence": "静态分层独立批次契约；语义独立性仍需 reviewer 判断。"
+}

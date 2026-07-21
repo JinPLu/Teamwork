@@ -205,7 +205,9 @@ class SemanticSourceMutationTests(unittest.TestCase):
         self.assert_concept_removal_rejected("teamwork-design", "genuine alternatives only")
 
     def test_design_question_and_plan_boundaries_are_protected(self) -> None:
-        self.assert_concept_removal_rejected("teamwork-design", "recommendation before question")
+        self.assert_concept_removal_rejected("teamwork-design", "bounded independent batch")
+        self.assert_concept_removal_rejected("teamwork-design", "dependency serialization")
+        self.assert_concept_removal_rejected("teamwork-design", "question criticality")
         self.assert_concept_removal_rejected("teamwork-design", "managed Design transaction")
         self.assert_concept_removal_rejected("teamwork-design", "Plan boundary")
 
@@ -226,6 +228,10 @@ class SemanticSourceMutationTests(unittest.TestCase):
         self.assert_concept_removal_rejected("grill-me", "transaction-owned writer")
         self.assert_concept_removal_rejected("grill-me", "initialized writable prerequisite")
         self.assert_concept_removal_rejected("grill-me", "no-files override")
+        self.assert_concept_removal_rejected("grill-me", "global decision map")
+        self.assert_concept_removal_rejected("grill-me", "bounded independent batch")
+        self.assert_concept_removal_rejected("grill-me", "dependency serialization")
+        self.assert_concept_removal_rejected("grill-me", "question criticality")
 
     def test_nonimplementation_boundary_is_protected_across_cognitive_skills(self) -> None:
         for skill, label in (

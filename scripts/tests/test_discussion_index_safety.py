@@ -116,6 +116,31 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
             )
         )
 
+    def enrichment(self) -> list[dict[str, object]]:
+        return [
+            {
+                "still_open_index": 0,
+                "frontier_item": {
+                    "id": "Q1",
+                    "title": "Legacy choice",
+                    "level": "goal",
+                    "status": "current",
+                    "prompt": "Which source-backed legacy choice remains open?",
+                    "options": [
+                        {"id": "preserve", "label": "Preserve", "tradeoff": "Keeps the source-backed migration explicit."},
+                        {"id": "reject", "label": "Reject", "tradeoff": "Stops the old open item from driving the new state."},
+                    ],
+                    "recommendation": "preserve",
+                    "largest_downside": "The migration must carry explicit enrichment.",
+                    "why_critical": "The answer changes the active discussion frontier.",
+                    "blocks": ["active discussion migration"],
+                    "depends_on": [],
+                    "closure_signal": "The enriched legacy item is answered.",
+                    "resolution": None,
+                },
+            }
+        ]
+
     def test_pure_v2_migration_maps_one_active_record_and_keeps_closed_archives(self) -> None:
         active = "docs/teamwork/discussion/2026-07-19-live-route.md"
         closed = "docs/teamwork/discussion/2026-07-18-closed-route.md"
@@ -132,6 +157,7 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
                 active: self.legacy_artifact(title="Live route", status="active", updated="2026-07-19"),
                 closed: self.legacy_artifact(title="Closed route", status="accepted", updated="2026-07-18"),
             },
+            self.enrichment(),
         )
         self.assertEqual(plan["schema_version"], 2)
         self.assertEqual(plan["active_path"], "docs/teamwork/discussion/current.md")
@@ -140,6 +166,44 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
         state = CONTRACT["validate_discussion_artifact"](plan["writes"]["docs/teamwork/discussion/current.md"])
         self.assertEqual(state["migration_source"]["path"], active)
         self.assertIn("Artifact Type: discussion", state["migration_source"]["source_text"])
+
+    def test_no_enrichment_plan_preserves_provenance_without_guessing_v2_frontier(self) -> None:
+        active = "docs/teamwork/discussion/2026-07-15-output-wording.md"
+        legacy = self.legacy_artifact(title="Output wording", status="active", updated="2026-07-15")
+        index = {
+            "entries": [
+                {"kind": "discussion", "path": active, "title": "Output wording", "status": "active", "currentness": "current"},
+            ],
+            "active": {"discussion": active},
+        }
+
+        plan = CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {active: legacy})
+
+        self.assertEqual(plan["active_path"], "docs/teamwork/discussion/current.md")
+        self.assertEqual(plan["deletes"], [active])
+        migrated = CONTRACT["validate_discussion_artifact"](plan["writes"]["docs/teamwork/discussion/current.md"])
+        self.assertEqual(migrated["schema_version"], 1)
+        self.assertEqual(migrated["migration_source"]["path"], active)
+        self.assertNotIn("frontier", migrated)
+
+    def test_explicit_raw_relocation_is_reserved_for_init_recovery_only(self) -> None:
+        active = "docs/teamwork/discussion/2026-07-15-output-wording.md"
+        legacy = self.legacy_artifact(title="Output wording", status="active", updated="2026-07-15")
+        index = {
+            "entries": [
+                {"kind": "discussion", "path": active, "title": "Output wording", "status": "active", "currentness": "current"},
+            ],
+            "active": {"discussion": active},
+        }
+
+        plan = CONTRACT["plan_v342_discussion_migration"](
+            json.dumps(index),
+            {active: legacy},
+            raw_legacy_relocation=True,
+        )
+
+        self.assertEqual(plan["writes"], {"docs/teamwork/discussion/current.md": legacy})
+        self.assertEqual(plan["deletes"], [active])
 
     def test_v342_migration_encodes_multiline_legacy_scalars_injectively_and_preserves_raw_source(self) -> None:
         path = "docs/teamwork/discussion/2026-07-19-live-route.md"
@@ -157,7 +221,7 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
             .replace("A verified decision.", "A verified decision.\nThe acceptance signal must be direct.")
         )
 
-        plan = CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: legacy})
+        plan = CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: legacy}, self.enrichment())
         state = CONTRACT["validate_discussion_artifact"](plan["writes"]["docs/teamwork/discussion/current.md"])
 
         self.assertEqual(state["goal"], r"Preserve the decision.\nKeep the recovery meaning visible.")
@@ -175,7 +239,7 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
             "Preserve the decision. / Keep the recovery meaning visible.",
         )
         delimiter_state = CONTRACT["validate_discussion_artifact"](
-            CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: literal_delimiter})["writes"]["docs/teamwork/discussion/current.md"]
+            CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: literal_delimiter}, self.enrichment())["writes"]["docs/teamwork/discussion/current.md"]
         )
         self.assertEqual(delimiter_state["goal"], "Preserve the decision. / Keep the recovery meaning visible.")
         self.assertNotEqual(delimiter_state["goal"], state["goal"])
@@ -185,7 +249,7 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
             r"A literal \n marker remains content.",
         )
         escaped_state = CONTRACT["validate_discussion_artifact"](
-            CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: literal_escape})["writes"]["docs/teamwork/discussion/current.md"]
+            CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: literal_escape}, self.enrichment())["writes"]["docs/teamwork/discussion/current.md"]
         )
         self.assertEqual(escaped_state["goal"], r"A literal \\n marker remains content.")
         self.assertEqual(CONTRACT["_decode_legacy_scalar"](escaped_state["goal"]), [r"A literal \n marker remains content."])
@@ -196,7 +260,7 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
                     "Preserve the decision.\nKeep the recovery meaning visible.", unsafe
                 )
                 with self.assertRaises(CONTRACT["TransactionError"]):
-                    CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: unsafe_legacy})
+                    CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: unsafe_legacy}, self.enrichment())
 
     def test_v342_migration_rejects_unsafe_controls_in_heading_title_and_date_before_matching(self) -> None:
         path = "docs/teamwork/discussion/2026-07-19-control-route.md"
@@ -215,7 +279,7 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
         for label, unsafe_legacy in variants.items():
             with self.subTest(label=label):
                 with self.assertRaises(CONTRACT["TransactionError"]):
-                    CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: unsafe_legacy})
+                    CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: unsafe_legacy}, self.enrichment())
 
     def test_v342_migration_reads_crlf_scalars_and_continue_here_without_fallback(self) -> None:
         path = "docs/teamwork/discussion/2026-07-19-crlf-route.md"
@@ -235,7 +299,7 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
         )
 
         state = CONTRACT["validate_discussion_artifact"](
-            CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: legacy})["writes"]["docs/teamwork/discussion/current.md"]
+            CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: legacy}, self.enrichment())["writes"]["docs/teamwork/discussion/current.md"]
         )
         self.assertEqual(state["goal"], r"Goal line one. keeps tab formatting.\nGoal line two.")
         self.assertEqual(state["current_branch"], r"Branch line one.\nBranch line two.")
@@ -258,7 +322,7 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
             "## Continue here\n\nContinue line one.\nContinue line two.\n\n",
         ).replace("\n", "\r\n")
         continue_state = CONTRACT["validate_discussion_artifact"](
-            CONTRACT["plan_v342_discussion_migration"](json.dumps(continue_index), {continue_path: continue_legacy})["writes"]["docs/teamwork/discussion/current.md"]
+            CONTRACT["plan_v342_discussion_migration"](json.dumps(continue_index), {continue_path: continue_legacy}, self.enrichment())["writes"]["docs/teamwork/discussion/current.md"]
         )
         self.assertEqual(continue_state["return_path"], r"Continue line one.\nContinue line two.")
         self.assertNotEqual(continue_state["return_path"], "none recorded")
@@ -296,7 +360,7 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
                 )
 
                 state = CONTRACT["validate_discussion_artifact"](
-                    CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: legacy})["writes"]["docs/teamwork/discussion/current.md"]
+                    CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: legacy}, self.enrichment())["writes"]["docs/teamwork/discussion/current.md"]
                 )
                 self.assertEqual(state["title"], "Tabbed legacy title")
                 self.assertEqual(state["updated"], "2026-07-20")
@@ -329,7 +393,7 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
                 ).replace("\n", newline)
 
                 state = CONTRACT["validate_discussion_artifact"](
-                    CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: legacy})["writes"]["docs/teamwork/discussion/current.md"]
+                    CONTRACT["plan_v342_discussion_migration"](json.dumps(index), {path: legacy}, self.enrichment())["writes"]["docs/teamwork/discussion/current.md"]
                 )
                 self.assertEqual(state["return_path"], "Continue follows its heading immediately.")
                 self.assertNotEqual(state["return_path"], "none recorded")

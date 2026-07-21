@@ -57,9 +57,11 @@ and Claude Code template directories.
 The following are sinks, not package sources:
 
 - `.agents/` except `.agents/plugins/marketplace.json`, `.codex/`, `.cursor/`,
-  and `.claude/` may contain generated or legacy local installations. Project
-  initialization does not create or refresh them. Edit `skills/`, `templates/`,
-  or the owning producer instead of an installed copy.
+  and `.claude/` may contain generated or legacy local installations. Global Cursor
+  installs may write `~/.cursor/mcp.json` and a Teamwork ownership sidecar; project
+  init writes `.cursor/rules/` and optional project `.cursor/mcp.json` only with
+  explicit `--cursor-mcp` consent. Edit `skills/`, `templates/`, or the owning
+  producer instead of an installed copy.
 - `docs/teamwork/` is local Teamwork runtime memory. Grill has one
   transaction-owned record, `docs/teamwork/discussion/current.md`, and it is not
   indexed into a second memory file. Natural question-first requests remain
@@ -106,7 +108,8 @@ This keeps the main boundaries visible:
   needed. A real trade-off gets two or
   three alternatives; one safe path gets explicit evidence and exclusions. One
   challenge pass and a finite user-decision frontier converge into a durable
-  Design artifact before Plan;
+  Design artifact before Plan. The frontier shows a global map first, batches
+  only independent material questions, and serializes dependent questions;
 - Plan turns an already selected direction into executable steps; independent
   Plan Review runs only on user request or a named material risk gate. Each
   Worker self-verifies its slice. After integration, a sealed candidate receives
@@ -120,7 +123,8 @@ This keeps the main boundaries visible:
   security, data, destructive, or cross-platform boundary use the one durable
   discussion transaction unless the user says no files/off-the-record. Within
   one scope, only create, semantic decision/frontier change, and close/supersede
-  write a revision; unchanged state is a no-op;
+  write a revision; unchanged state is a no-op. New records use
+  `frontier` / `current_batch` state;
 - Goal adds explicit durable objective, success signal, scope, protected
   boundaries, budget, and attempt state; Init changes one project's context
   only, while Update changes global Teamwork-managed installation state only.
@@ -156,7 +160,10 @@ Reviewer; and `gpt-5.6-sol`/`max` for Reviewer. cost-first uses
 `gpt-5.5`/`medium` for Researcher, Explorer, Debugger, Planner, and Worker;
 `gpt-5.6-sol`/`medium` for Designer; and `gpt-5.6-sol`/`high` for Plan Reviewer
 and Reviewer. Cursor and Claude Code templates remain host-native adapters; this
-does not promise the Codex reasoning-effort mapping on those hosts.
+does not promise the Codex reasoning-effort mapping on those hosts. On Codex 0.144,
+formal `spawn_agent` dispatch is only observed for `gpt-5.5`; Designer, Plan
+Reviewer, and Reviewer on `gpt-5.6-sol` may execute without formal agent isolation
+on 0.144—verify dispatch fidelity via live eval when Codex advances.
 
 ## Dependency direction
 
@@ -184,8 +191,12 @@ the activation marker; it does not copy plugin skills into a user skill root.
 
 Project initialization is intentionally separate. Checkout and plugin init
 paths write only the selected project's managed instructions, memory entry
-points, ignore rules, and available CodeGraph context. They never refresh global
-skills, agents, policy, routing, notifications, or Cursor clipboard state.
+points, ignore rules, and available CodeGraph context. With explicit
+`--cursor-mcp` consent they may also write project `.cursor/rules/*.mdc` and
+merge Teamwork MCP entries into project `.cursor/mcp.json`. They never refresh
+global skills, agents, policy, routing, notifications, or Cursor clipboard
+state. Global Cursor installs register `codegraph` and `gpu-broker` in
+`~/.cursor/mcp.json` by default; use `--no-mcp` to opt out.
 
 ## Stable commands
 

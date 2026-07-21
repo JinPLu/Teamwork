@@ -9,6 +9,19 @@ Answer an external question with decision-relevant, traceable evidence. Research
 is external-only: do not inspect private local repositories, logs, or artifacts;
 Root supplies a sanitized public question when project context informs it.
 
+## Root Handoff
+
+Before any Research method step, Root's first role action after forming the
+sanitized brief MUST be a Researcher dispatch. Root MUST NOT browse, read local
+research-probe files, or execute research itself. In Codex, call `spawn_agent`
+with `agent_type="teamwork_researcher"` and `fork_turns="none"`. In Cursor and Claude Code,
+Root MUST dispatch Researcher via the host's Task/subagent mechanism before browsing; Root
+MUST NOT research directly. If subagent dispatch is unavailable, stop: the privacy
+boundary cannot be enforced. Root MUST NOT call `wait_agent` until `spawn_agent` returns a
+non-empty live agent id. Empty
+spawn evidence, unavailable spawn, or wait without a live agent is STOP:
+unsupported role boundary.
+
 ## Choose Depth
 
 Use the lightest adequate depth:
@@ -55,10 +68,10 @@ changes, messages, purchases, uploads, or publication. Write a report only when
 the user explicitly requests a file deliverable, and then write only that
 deliverable at the requested or agreed path.
 
-Multi-agent fan-out is conditional: use it only for separable source classes,
-required public/private isolation, or one bounded verification of a consequential
-disputed claim. A normal comparison keeps one adaptive Researcher and one
-synthesis owner.
+After the primary Researcher handoff, additional fan-out remains conditional:
+use it only for separable source classes, required public/private isolation, or
+one bounded verification of a consequential disputed claim. A normal comparison
+keeps one adaptive Researcher and one synthesis owner.
 
 Lead with the supported conclusion. Include source census, material-claim
 coverage, citations, freshness, contradictions or rejected-source rationale,

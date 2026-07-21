@@ -17,7 +17,7 @@ CONTRACT = runpy.run_path(str(CLI), run_name="teamwork_currentness_contract")
 class ActiveArtifactCurrentnessTests(unittest.TestCase):
     def design_state(self, **overrides: object) -> dict[str, object]:
         state: dict[str, object] = {
-            "schema_version": 1,
+            "schema_version": 2,
             "artifact_type": "design",
             "slug": "architecture",
             "title": "Current architecture",

@@ -866,9 +866,16 @@ def _bullets(values: list[str]) -> str:
 
 DISCUSSION_LIST_FIELDS = ("settled", "still_open", "blockers", "key_evidence")
 DISCUSSION_TEXT_FIELDS = ("goal", "current_branch", "return_path", "convergence")
+DISCUSSION_V2_LIST_FIELDS = ("blockers", "key_evidence")
+DISCUSSION_V2_TEXT_FIELDS = ("goal", "current_branch", "return_path", "convergence")
+FRONTIER_ID_RE = re.compile(r"^Q[1-9][0-9]{0,2}$")
+OPTION_ID_RE = re.compile(r"^[a-z][a-z0-9_-]{0,23}$")
+FRONTIER_LEVELS = {"goal": 0, "boundary": 1, "detail": 2}
+FRONTIER_STATUSES = {"open", "current", "closed", "rejected"}
+FRONTIER_MUTABLE_FIELDS = ("prompt", "options", "recommendation", "depends_on", "closure_signal")
 
 
-def normalize_discussion_state(value: object, *, require_status: bool = True) -> dict[str, object]:
+def normalize_discussion_state_v1(value: object, *, require_status: bool = True) -> dict[str, object]:
     if not isinstance(value, dict):
         fail("Discussion state must be an object")
     state: dict[str, object] = {
@@ -917,7 +924,217 @@ def normalize_discussion_state(value: object, *, require_status: bool = True) ->
     return state
 
 
-def discussion_route_mermaid(state: dict[str, object]) -> str:
+def _frontier_number(question_id: str) -> int:
+    if FRONTIER_ID_RE.fullmatch(question_id) is None:
+        fail("Discussion frontier id must match Q[1-9][0-9]{0,2}")
+    return int(question_id[1:])
+
+
+def _normalize_frontier_option(value: object, label: str) -> dict[str, str]:
+    if not isinstance(value, dict):
+        fail(f"{label} must be an object")
+    option_id = value.get("id")
+    if not isinstance(option_id, str) or OPTION_ID_RE.fullmatch(option_id) is None:
+        fail(f"{label}.id must be a stable option id")
+    return {
+        "id": option_id,
+        "label": require_text(value.get("label"), f"{label}.label", maximum=160),
+        "tradeoff": require_text(value.get("tradeoff"), f"{label}.tradeoff", maximum=1000),
+    }
+
+
+def _normalize_frontier_item(value: object, label: str) -> dict[str, object]:
+    if not isinstance(value, dict):
+        fail(f"{label} must be an object")
+    question_id = value.get("id")
+    if not isinstance(question_id, str):
+        fail(f"{label}.id must be text")
+    _frontier_number(question_id)
+    title = require_text(value.get("title"), f"{label}.title", maximum=160)
+    if len(title) > 24:
+        fail(f"{label}.title must be at most 24 Unicode code points")
+    level = value.get("level")
+    if level not in FRONTIER_LEVELS:
+        fail(f"{label}.level must be goal, boundary, or detail")
+    status = value.get("status")
+    if status not in FRONTIER_STATUSES:
+        fail(f"{label}.status is invalid")
+    options_raw = value.get("options")
+    if not isinstance(options_raw, list) or not 2 <= len(options_raw) <= 3:
+        fail(f"{label}.options must contain two or three items")
+    options = [_normalize_frontier_option(option, f"{label}.options[{position}]") for position, option in enumerate(options_raw)]
+    option_ids = [str(option["id"]) for option in options]
+    if len(set(option_ids)) != len(option_ids):
+        fail(f"{label}.options must have unique ids")
+    recommendation = value.get("recommendation")
+    if recommendation not in option_ids:
+        fail(f"{label}.recommendation must name one option id")
+    depends_on = require_text_list(value.get("depends_on", []), f"{label}.depends_on", maximum=50)
+    blocks = require_text_list(value.get("blocks", []), f"{label}.blocks", maximum=20)
+    resolution = value.get("resolution")
+    if status in {"open", "current"}:
+        if resolution is not None:
+            fail(f"{label}.resolution must be null while open or current")
+    elif status == "closed":
+        if not isinstance(resolution, dict) or resolution.get("kind") != "selected" or resolution.get("option_id") not in option_ids:
+            fail(f"{label}.resolution must select one option when closed")
+    else:
+        if not isinstance(resolution, dict) or resolution.get("kind") != "rejected":
+            fail(f"{label}.resolution must carry a rejected reason")
+        require_text(resolution.get("reason"), f"{label}.resolution.reason", maximum=1000)
+    normalized_resolution: object
+    if resolution is None:
+        normalized_resolution = None
+    elif status == "closed":
+        normalized_resolution = {"kind": "selected", "option_id": str(resolution["option_id"])}
+    else:
+        assert isinstance(resolution, dict)
+        normalized_resolution = {"kind": "rejected", "reason": require_text(resolution.get("reason"), f"{label}.resolution.reason", maximum=1000)}
+    return {
+        "id": question_id,
+        "title": title,
+        "level": str(level),
+        "status": str(status),
+        "prompt": require_text(value.get("prompt"), f"{label}.prompt", maximum=4000),
+        "options": options,
+        "recommendation": str(recommendation),
+        "largest_downside": require_text(value.get("largest_downside"), f"{label}.largest_downside", maximum=2000),
+        "why_critical": require_text(value.get("why_critical"), f"{label}.why_critical", maximum=2000),
+        "blocks": blocks,
+        "depends_on": depends_on,
+        "closure_signal": require_text(value.get("closure_signal"), f"{label}.closure_signal", maximum=2000),
+        "resolution": normalized_resolution,
+    }
+
+
+def _dependency_path_exists(frontier: dict[str, dict[str, object]], source: str, target: str) -> bool:
+    stack = [source]
+    seen: set[str] = set()
+    while stack:
+        current = stack.pop()
+        if current == target:
+            return True
+        if current in seen:
+            continue
+        seen.add(current)
+        stack.extend(str(item) for item in frontier[current]["depends_on"])
+    return False
+
+
+def _validate_frontier_graph(frontier: list[dict[str, object]], current_batch: list[str], lifecycle: str) -> None:
+    ids = [str(item["id"]) for item in frontier]
+    if len(ids) != len(set(ids)):
+        fail("Discussion frontier must have unique ids")
+    by_id = {str(item["id"]): item for item in frontier}
+    for item in frontier:
+        item_id = str(item["id"])
+        for dependency in item["depends_on"]:
+            if dependency not in by_id:
+                fail("Discussion frontier depends_on names an unknown id")
+            if dependency == item_id:
+                fail("Discussion frontier cannot depend on itself")
+            if FRONTIER_LEVELS[str(by_id[str(dependency)]["level"])] > FRONTIER_LEVELS[str(item["level"])]:
+                fail("Discussion frontier has a cross-level dependency inversion")
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def visit(item_id: str) -> None:
+        if item_id in visited:
+            return
+        if item_id in visiting:
+            fail("Discussion frontier has a dependency cycle")
+        visiting.add(item_id)
+        for dependency in by_id[item_id]["depends_on"]:
+            visit(str(dependency))
+        visiting.remove(item_id)
+        visited.add(item_id)
+
+    for item_id in ids:
+        visit(item_id)
+    current_ids = [str(item["id"]) for item in frontier if item["status"] == "current"]
+    if current_batch != current_ids:
+        fail("Discussion current_batch must exactly match status=current items")
+    if lifecycle == "active":
+        if not 1 <= len(current_batch) <= 3:
+            fail("active Discussion v2 must have one to three current items")
+    elif current_batch:
+        fail("closed Discussion v2 cannot retain current_batch")
+    for item in frontier:
+        item_id = str(item["id"])
+        rejected_dependencies = [dep for dep in item["depends_on"] if by_id[str(dep)]["status"] == "rejected"]
+        if rejected_dependencies and item["status"] != "rejected":
+            fail("Discussion item with a rejected dependency must also be rejected")
+        if item["status"] == "current":
+            for dependency in item["depends_on"]:
+                if by_id[str(dependency)]["status"] != "closed":
+                    fail("Discussion current item dependencies must be closed")
+    for left in current_batch:
+        for right in current_batch:
+            if left != right and (
+                _dependency_path_exists(by_id, left, right) or _dependency_path_exists(by_id, right, left)
+            ):
+                fail("Discussion current_batch items must be independent")
+
+
+def normalize_discussion_state_v2(value: object) -> dict[str, object]:
+    if not isinstance(value, dict):
+        fail("Discussion state must be an object")
+    state: dict[str, object] = {
+        "schema_version": 2,
+        "artifact_type": "discussion",
+        "slug": require_slug(value.get("slug")),
+        "title": require_text(value.get("title"), "Discussion title"),
+        "updated": require_date(value.get("updated"), "Discussion updated"),
+        "status": value.get("status", "active"),
+        "superseded_by": value.get("superseded_by"),
+    }
+    if state["status"] not in {"active", "accepted", "superseded"}:
+        fail("Discussion status must be active, accepted, or superseded")
+    if state["status"] == "active":
+        if state["superseded_by"] is not None:
+            fail("active Discussion cannot have superseded_by")
+    elif state["status"] == "superseded":
+        state["superseded_by"] = checked_relative(state["superseded_by"], "Discussion superseded_by")
+        if not str(state["superseded_by"]).startswith("docs/teamwork/discussion/"):
+            fail("Discussion superseded_by must stay in docs/teamwork/discussion/")
+    elif state["superseded_by"] is not None:
+        fail("accepted Discussion cannot have superseded_by")
+    for field in DISCUSSION_V2_TEXT_FIELDS:
+        state[field] = require_text(value.get(field), f"Discussion {field.replace('_', ' ')}")
+    for field in DISCUSSION_V2_LIST_FIELDS:
+        state[field] = require_text_list(value.get(field), f"Discussion {field.replace('_', ' ')}")
+    frontier_raw = value.get("frontier")
+    if not isinstance(frontier_raw, list) or not frontier_raw:
+        fail("Discussion frontier must be a non-empty array")
+    state["frontier"] = [_normalize_frontier_item(item, f"Discussion frontier[{position}]") for position, item in enumerate(frontier_raw)]
+    state["current_batch"] = require_text_list(value.get("current_batch"), "Discussion current_batch", minimum=0, maximum=3)
+    _validate_frontier_graph(state["frontier"], state["current_batch"], str(state["status"]))
+    if "settled" in value or "still_open" in value:
+        fail("Discussion schema v2 derives settled/open views from frontier")
+    migration = value.get("migration_source")
+    if migration is not None:
+        if not isinstance(migration, dict):
+            fail("Discussion migration_source must be an object")
+        source_path = checked_relative(migration.get("path"), "Discussion migration source path")
+        source_hash = migration.get("sha256")
+        source_text = migration.get("source_text")
+        if not source_path.startswith("docs/teamwork/discussion/") or not isinstance(source_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", source_hash) or not isinstance(source_text, str):
+            fail("Discussion migration_source is malformed")
+        if hashlib.sha256(source_text.encode("utf-8")).hexdigest() != source_hash:
+            fail("Discussion migration_source hash does not match source_text")
+        state["migration_source"] = {"path": source_path, "sha256": source_hash, "source_text": source_text}
+    return state
+
+
+def normalize_discussion_state(value: object, *, require_status: bool = True) -> dict[str, object]:
+    if not isinstance(value, dict):
+        fail("Discussion state must be an object")
+    if value.get("schema_version") == 2:
+        return normalize_discussion_state_v2(value)
+    return normalize_discussion_state_v1(value, require_status=require_status)
+
+
+def discussion_route_mermaid_v1(state: dict[str, object]) -> str:
     return "\n".join(
         (
             "flowchart TD",
@@ -930,7 +1147,38 @@ def discussion_route_mermaid(state: dict[str, object]) -> str:
     )
 
 
-def discussion_fallback(state: dict[str, object]) -> str:
+def discussion_route_mermaid_v2(state: dict[str, object]) -> str:
+    frontier = {str(item["id"]): item for item in state["frontier"]}
+    open_count = sum(1 for item in state["frontier"] if item["status"] in {"open", "current"})
+    closed_count = sum(1 for item in state["frontier"] if item["status"] == "closed")
+    lines = [
+        "flowchart TD",
+        f'    goal["Goal · {state["status"]}"] --> branch["Branch"]',
+        f'    branch --> batch["Batch · {",".join(state["current_batch"]) or "none"}"]',
+    ]
+    if state["current_batch"]:
+        lines.append('    subgraph current_batch["Current batch"]')
+        for question_id in state["current_batch"]:
+            item = frontier[str(question_id)]
+            lines.append(f'        q{question_id}["{question_id} · {_mermaid_label(str(item["title"]))} · {item["status"]}"]')
+        lines.append("    end")
+    for item in state["frontier"]:
+        question_id = str(item["id"])
+        if question_id not in state["current_batch"]:
+            lines.append(f'    q{question_id}["{question_id} · {_mermaid_label(str(item["title"]))} · {item["status"]}"]')
+        for dependency in item["depends_on"]:
+            lines.append(f"    q{dependency} --> q{question_id}")
+    for question_id in state["current_batch"]:
+        lines.append(f"    batch --> q{question_id}")
+    lines.append(f'    branch --> converge["Converge · open {open_count} · closed {closed_count}"]')
+    return "\n".join(lines)
+
+
+def discussion_route_mermaid(state: dict[str, object]) -> str:
+    return discussion_route_mermaid_v2(state) if state.get("schema_version") == 2 else discussion_route_mermaid_v1(state)
+
+
+def discussion_fallback_v1(state: dict[str, object]) -> str:
     return "\n".join(
         (
             f"Goal: {state['goal']}",
@@ -945,10 +1193,94 @@ def discussion_fallback(state: dict[str, object]) -> str:
     )
 
 
+def discussion_fallback_v2(state: dict[str, object]) -> str:
+    dependencies = []
+    for item in state["frontier"]:
+        deps = ", ".join(str(dep) for dep in item["depends_on"]) or "none"
+        dependencies.append(f"{item['id']} <- {deps}")
+    questions = [
+        f"{item['id']} · {item['title']} · {item['level']} · {item['status']}"
+        for item in state["frontier"]
+    ]
+    return "\n".join(
+        (
+            f"Route: Goal -> Branch -> Current batch ({', '.join(state['current_batch']) or 'none'}) -> Converge",
+            f"Questions: {' | '.join(questions)}",
+            f"Dependencies: {' | '.join(dependencies) or 'none'}",
+            f"Blockers: {len(state['blockers'])}",
+            f"Convergence status: {state['status']}",
+        )
+    )
+
+
+def discussion_fallback(state: dict[str, object]) -> str:
+    return discussion_fallback_v2(state) if state.get("schema_version") == 2 else discussion_fallback_v1(state)
+
+
+def _discussion_semantics_v2(state: dict[str, object]) -> str:
+    rows = [
+        "| ID | Level | Status | Title | Depends on | Blocks | Recommendation | Closure |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
+    for item in state["frontier"]:
+        options = {str(option["id"]): option for option in item["options"]}
+        recommendation = options[str(item["recommendation"])]
+        rows.append(
+            "| "
+            + " | ".join(
+                [
+                    str(item["id"]),
+                    str(item["level"]),
+                    str(item["status"]),
+                    str(item["title"]),
+                    ", ".join(str(dep) for dep in item["depends_on"]) or "none",
+                    ", ".join(str(block) for block in item["blocks"]) or "none",
+                    f"{recommendation['label']} ({recommendation['tradeoff']})",
+                    str(item["closure_signal"]),
+                ]
+            )
+            + " |"
+        )
+    detail: list[str] = [
+        "## Readable state",
+        "",
+        f"Goal: {state['goal']}",
+        f"Current branch: {state['current_branch']}",
+        f"Return path: {state['return_path']}",
+        f"Convergence: {state['convergence']}",
+        "",
+        "Blockers:",
+        _bullets(state["blockers"]),
+        "",
+        "Key evidence:",
+        _bullets(state["key_evidence"]),
+        "",
+        "## Frontier",
+        "",
+        *rows,
+    ]
+    for item in state["frontier"]:
+        detail.extend(
+            [
+                "",
+                f"### {item['id']} {item['title']}",
+                "",
+                f"Prompt: {item['prompt']}",
+                f"Why critical: {item['why_critical']}",
+                f"Largest downside: {item['largest_downside']}",
+                "",
+                "Options:",
+                _bullets([f"{option['id']}: {option['label']} - {option['tradeoff']}" for option in item["options"]]),
+            ]
+        )
+        if item["resolution"] is not None:
+            detail.append(f"Resolution: {json.dumps(item['resolution'], ensure_ascii=False, sort_keys=True)}")
+    return "\n".join(detail)
+
+
 def render_discussion_artifact(value: object) -> str:
     state = normalize_discussion_state(value)
-    rendered = "\n".join(
-        (
+    parts = [
             "Artifact Type: discussion",
             f"Status: {state['status']}",
             "Authority: supporting",
@@ -968,13 +1300,19 @@ def render_discussion_artifact(value: object) -> str:
             "",
             discussion_fallback(state),
             "",
+    ]
+    if state.get("schema_version") == 2:
+        parts.extend([_discussion_semantics_v2(state), ""])
+    parts.extend(
+        [
             "## Discussion state",
             "",
             "```json",
             json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True),
             "```",
-        )
-    ) + "\n"
+        ]
+    )
+    rendered = "\n".join(parts) + "\n"
     return rendered
 
 
@@ -987,6 +1325,97 @@ def validate_discussion_artifact(text: str) -> dict[str, object]:
     expected = render_discussion_artifact(state)
     if text != expected:
         fail("Discussion artifact graph, fallback, headers, or state drifted from the canonical renderer")
+    return state
+
+
+def _frontier_by_id(state: dict[str, object]) -> dict[str, dict[str, object]]:
+    return {str(item["id"]): item for item in state.get("frontier", [])}
+
+
+def _frontier_equal(left: dict[str, object], right: dict[str, object]) -> bool:
+    return json.dumps(left, ensure_ascii=False, sort_keys=True) == json.dumps(right, ensure_ascii=False, sort_keys=True)
+
+
+def validate_discussion_transition(
+    prior: dict[str, object] | None,
+    proposed: dict[str, object],
+    request: dict[str, object],
+    *,
+    active_source_text: str | None = None,
+) -> dict[str, object]:
+    state = normalize_discussion_state_v2(proposed)
+    if prior is None:
+        return state
+    if prior.get("schema_version") != 2:
+        enrichments = request.get("legacy_enrichment")
+        if not isinstance(enrichments, list):
+            fail("active v1 Discussion migration requires legacy_enrichment")
+        legacy_open = prior.get("still_open")
+        if not isinstance(legacy_open, list):
+            fail("active v1 Discussion has no migratable open list")
+        seen_indexes: set[int] = set()
+        seen_ids: set[str] = set()
+        for item in enrichments:
+            if not isinstance(item, dict) or not isinstance(item.get("still_open_index"), int) or not isinstance(item.get("frontier_id"), str):
+                fail("legacy_enrichment items must map one v1 still_open index to one frontier id")
+            index = int(item["still_open_index"])
+            if not 0 <= index < len(legacy_open) or index in seen_indexes:
+                fail("legacy_enrichment must cover v1 still_open indexes injectively")
+            seen_indexes.add(index)
+            frontier_id = str(item["frontier_id"])
+            if frontier_id in seen_ids:
+                fail("legacy_enrichment must map to unique frontier ids")
+            seen_ids.add(frontier_id)
+            matches = [frontier for frontier in state["frontier"] if frontier["id"] == frontier_id]
+            if len(matches) != 1:
+                fail("legacy_enrichment frontier_id must exist exactly once in v2 frontier")
+        if seen_indexes != set(range(len(legacy_open))):
+            fail("legacy_enrichment must cover every v1 still_open item")
+        if active_source_text is None:
+            fail("active v1 Discussion migration requires exact source text")
+        source_path = DISCUSSION_CURRENT
+        state["migration_source"] = {
+            "path": source_path,
+            "sha256": hashlib.sha256(active_source_text.encode("utf-8")).hexdigest(),
+            "source_text": active_source_text,
+        }
+        return normalize_discussion_state_v2(state)
+    old = normalize_discussion_state_v2(prior)
+    if _frontier_equal(old, state):
+        return state
+    old_items = _frontier_by_id(old)
+    new_items = _frontier_by_id(state)
+    missing = set(old_items) - set(new_items)
+    if missing:
+        fail("Discussion update cannot remove existing frontier ids")
+    max_old_id = max((_frontier_number(item_id) for item_id in old_items), default=0)
+    for item_id in set(new_items) - set(old_items):
+        if _frontier_number(item_id) <= max_old_id:
+            fail("Discussion update must allocate monotonically increasing frontier ids")
+    old_current = {str(item["id"]) for item in old["frontier"] if item["status"] == "current"}
+    if old_current:
+        unresolved = [item_id for item_id in old_current if new_items[item_id]["status"] == "current"]
+        if unresolved:
+            fail("answered-batch update must close or reject every prior-current item")
+    for item_id, old_item in old_items.items():
+        new_item = new_items[item_id]
+        if old_item["status"] in {"closed", "rejected"} and old_item != new_item:
+            fail("closed and rejected Discussion frontier items are immutable")
+        if old_item["status"] == "open":
+            for stable in ("id", "title", "level"):
+                if old_item[stable] != new_item[stable]:
+                    fail("open Discussion frontier items retain id, title, and level")
+            changed_mutable = any(old_item[field] != new_item[field] for field in FRONTIER_MUTABLE_FIELDS)
+            if changed_mutable and new_item["status"] == "open":
+                reasons = request.get("frontier_delta_reasons")
+                if not isinstance(reasons, dict) or not isinstance(reasons.get(item_id), str) or not reasons[item_id].strip():
+                    fail("changed open Discussion frontier items require frontier_delta_reasons")
+                newly_resolved = [
+                    dep for dep in old_item["depends_on"]
+                    if dep in new_items and old_items[str(dep)]["status"] in {"open", "current"} and new_items[str(dep)]["status"] == "closed"
+                ]
+                if not newly_resolved or not any(dep in reasons[item_id] for dep in newly_resolved):
+                    fail("frontier_delta_reasons must name a newly resolved dependency")
     return state
 
 
@@ -1020,22 +1449,41 @@ def discussion_schema(operation: str) -> dict[str, object]:
     if operation not in {"create", "update", "close", "replace", "supersede"}:
         fail("Discussion schema operation must be create, update, close, replace, or supersede")
     record: dict[str, object] = {
+        "schema_version": 2,
+        "artifact_type": "discussion",
         "slug": "decision-slug",
         "title": "Decision title",
         "updated": "YYYY-MM-DD",
         "goal": "The user outcome this discussion protects.",
         "current_branch": "The current material branch.",
-        "settled": ["A decision already accepted."],
-        "still_open": ["The one remaining discriminator."],
         "return_path": "Resume at the named discriminator.",
         "blockers": ["none recorded"],
         "convergence": "What directly closes this discussion.",
         "key_evidence": ["One compact evidence statement."],
+        "frontier": [
+            {
+                "id": "Q1",
+                "title": "Decision route",
+                "level": "goal",
+                "status": "current" if operation != "close" else "closed",
+                "prompt": "Which route should this discussion choose?",
+                "options": [
+                    {"id": "recommended", "label": "Recommended route", "tradeoff": "Preserves the accepted boundary."},
+                    {"id": "alternate", "label": "Alternate route", "tradeoff": "Changes a named constraint."},
+                ],
+                "recommendation": "recommended",
+                "largest_downside": "The recommended route still has one explicit cost.",
+                "why_critical": "The answer changes the selected outcome.",
+                "blocks": ["selected direction"],
+                "depends_on": [],
+                "closure_signal": "The user selects one option or rejects the premise.",
+                "resolution": None if operation != "close" else {"kind": "selected", "option_id": "recommended"},
+            }
+        ],
+        "current_batch": ["Q1"] if operation != "close" else [],
     }
-    if operation == "close":
-        record["still_open"] = []
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "operation": operation,
         "expected_revision": "<revision from inspect>",
         "record": record,
@@ -1071,6 +1519,25 @@ def _merge_discussion_record(old: dict[str, object], record: object, *, active: 
     return normalize_discussion_state(merged)
 
 
+def _superseded_discussion_archive(state: dict[str, object], superseded_by: str) -> dict[str, object]:
+    archive = dict(state)
+    archive["status"] = "superseded"
+    archive["superseded_by"] = superseded_by
+    if archive.get("schema_version") == 2:
+        frontier = []
+        for item in archive["frontier"]:
+            next_item = dict(item)
+            if next_item["status"] in {"open", "current"}:
+                next_item["status"] = "rejected"
+                next_item["resolution"] = {"kind": "rejected", "reason": "Superseded by successor discussion."}
+            frontier.append(next_item)
+        archive["frontier"] = frontier
+        archive["current_batch"] = []
+        return normalize_discussion_state_v2(archive)
+    archive["still_open"] = []
+    return normalize_discussion_state_v1(archive)
+
+
 def inspect_discussion(root: Path) -> dict[str, object]:
     with locked_memory(root):
         require_initialized_memory(root)
@@ -1085,8 +1552,8 @@ def inspect_discussion(root: Path) -> dict[str, object]:
 
 
 def apply_discussion(root: Path, request: dict[str, object]) -> dict[str, object]:
-    if request.get("schema_version") != 1:
-        fail("Discussion request schema_version must be 1")
+    if request.get("schema_version") != 2:
+        fail("Discussion request schema_version must be 2")
     operation = request.get("operation")
     if operation not in {"create", "update", "close", "replace", "supersede"}:
         fail("Discussion request operation is invalid")
@@ -1096,7 +1563,8 @@ def apply_discussion(root: Path, request: dict[str, object]) -> dict[str, object
     with locked_memory(root):
         require_initialized_memory(root)
         recover_transaction(root, DISCUSSION_MARKER, ("docs/teamwork/discussion/",), "discussion")
-        active = discussion_active(root)
+        active_text = safe_read_text(root, DISCUSSION_CURRENT, optional=True)
+        active = None if active_text is None else validate_discussion_artifact(active_text)
         if expected != discussion_revision(root):
             fail("stale Discussion expected_revision; run inspect again")
         record = request.get("record")
@@ -1105,18 +1573,22 @@ def apply_discussion(root: Path, request: dict[str, object]) -> dict[str, object
         if operation == "create":
             if active is not None:
                 fail("cannot create Discussion while an active discussion exists")
-            state = _merge_discussion_record({}, record, active=True)
-            outputs = {DISCUSSION_CURRENT: Output(render_discussion_artifact(state).encode("utf-8"))}
+            state = validate_discussion_transition(None, _merge_discussion_record({}, record, active=True), request)
+            rendered = render_discussion_artifact(state).encode("utf-8")
+            outputs = {DISCUSSION_CURRENT: Output(rendered)}
             changed = [DISCUSSION_CURRENT]
             result_path: str | None = DISCUSSION_CURRENT
             result_active: dict[str, object] | None = state
         elif operation == "update":
             if active is None:
                 fail("cannot update without an active Discussion")
-            state = _merge_discussion_record(active, record, active=True)
+            state = validate_discussion_transition(active, _merge_discussion_record(active, record, active=True), request, active_source_text=active_text)
             if state["slug"] != active["slug"]:
                 fail("update cannot change Discussion slug; use replace or supersede")
-            outputs = {DISCUSSION_CURRENT: Output(render_discussion_artifact(state).encode("utf-8"))}
+            rendered = render_discussion_artifact(state).encode("utf-8")
+            if active_text is not None and rendered == active_text.encode("utf-8"):
+                return {"path": DISCUSSION_CURRENT, "active": state, "revision": discussion_revision(root), "changed_paths": []}
+            outputs = {DISCUSSION_CURRENT: Output(rendered)}
             changed = [DISCUSSION_CURRENT]
             result_path = DISCUSSION_CURRENT
             result_active = state
@@ -1130,12 +1602,15 @@ def apply_discussion(root: Path, request: dict[str, object]) -> dict[str, object
             if isinstance(record, dict):
                 state = _merge_discussion_record(active, record, active=False)
             state["status"] = close_status
-            state["still_open"] = []
+            if state.get("schema_version") == 2:
+                state = validate_discussion_transition(active, state, request, active_source_text=active_text)
+            else:
+                fail("closing an active v1 Discussion requires a schema v2 migration record")
             if close_status == "superseded":
                 state["superseded_by"] = checked_relative(request.get("superseded_by"), "Discussion superseded_by")
             else:
                 state["superseded_by"] = None
-            state = normalize_discussion_state(state)
+            state = normalize_discussion_state_v2(state)
             archive = _archive_path(root, str(active["slug"]), str(state["updated"]))
             outputs = {
                 archive: Output(render_discussion_artifact(state).encode("utf-8")),
@@ -1147,12 +1622,8 @@ def apply_discussion(root: Path, request: dict[str, object]) -> dict[str, object
         else:
             if active is None:
                 fail("cannot replace or supersede without an active Discussion")
-            state = _merge_discussion_record({}, record, active=True)
-            archive_state = dict(active)
-            archive_state["status"] = "superseded"
-            archive_state["still_open"] = []
-            archive_state["superseded_by"] = DISCUSSION_CURRENT
-            archive_state = normalize_discussion_state(archive_state)
+            state = validate_discussion_transition(None, _merge_discussion_record({}, record, active=True), request)
+            archive_state = _superseded_discussion_archive(active, DISCUSSION_CURRENT)
             archive = _archive_path(root, str(active["slug"]), str(archive_state["updated"]))
             outputs = {
                 archive: Output(render_discussion_artifact(archive_state).encode("utf-8")),
@@ -1233,7 +1704,7 @@ def normalize_design_state(value: object) -> dict[str, object]:
     if len(alternatives) == 1 and (not exclusions or not rejected):
         fail("a one-safe-path Design requires explicit exclusions and rejected reasons")
     state: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": 2 if value.get("schema_version") == 2 else 1,
         "artifact_type": "design",
         "slug": require_slug(value.get("slug")),
         "title": require_text(value.get("title"), "Design title"),
@@ -1262,7 +1733,7 @@ def _items(values: list[object]) -> str:
     return "; ".join(str(value) for value in values) or "none"
 
 
-def design_route_mermaid(state: dict[str, object]) -> str:
+def design_route_mermaid_v1(state: dict[str, object]) -> str:
     rejected = "; ".join(f"{row['option']}: {row['reason']}" for row in state["rejected_alternatives"])
     return "\n".join(
         (
@@ -1285,7 +1756,26 @@ def design_route_mermaid(state: dict[str, object]) -> str:
     )
 
 
-def design_route_fallback(state: dict[str, object]) -> str:
+def design_route_mermaid_v2(state: dict[str, object]) -> str:
+    frontier_status = f"{len(state['decision_frontier'])} open" if state["decision_frontier"] else "none"
+    open_status = f"{len(state['open_items'])} open" if state["open_items"] else "closed"
+    return "\n".join(
+        (
+            "flowchart LR",
+            f'    evidence["Evidence · {len(state["evidence_waves"])}"] --> alternatives["Alternatives · {len(state["alternatives"])}"]',
+            f'    alternatives --> challenge["Challenge · recorded"]',
+            f'    challenge --> decision["Decision · {state["status"]}"]',
+            f'    decision --> frontier["Frontier · {frontier_status}"]',
+            f'    frontier --> handoff["Handoff · {open_status}"]',
+        )
+    )
+
+
+def design_route_mermaid(state: dict[str, object]) -> str:
+    return design_route_mermaid_v2(state) if state.get("schema_version") == 2 else design_route_mermaid_v1(state)
+
+
+def design_route_fallback_v1(state: dict[str, object]) -> str:
     rejected = "; ".join(f"{row['option']} — {row['reason']}" for row in state["rejected_alternatives"])
     return "\n".join(
         (
@@ -1305,6 +1795,61 @@ def design_route_fallback(state: dict[str, object]) -> str:
             f"Residual uncertainty: {state['residual_uncertainty']}",
             f"Lifecycle: {state['status']}",
             f"Superseded by: {state['superseded_by'] or 'none'}",
+        )
+    )
+
+
+def design_route_fallback_v2(state: dict[str, object]) -> str:
+    return "\n".join(
+        (
+            f"Route: Evidence({len(state['evidence_waves'])}) -> Alternatives({len(state['alternatives'])}) -> Challenge(recorded) -> Decision({state['status']}) -> Frontier({len(state['decision_frontier'])}) -> Handoff",
+            f"Settled: {len(state['settled'])}",
+            f"Open: {len(state['open_items'])}",
+            f"Superseded by: {state['superseded_by'] or 'none'}",
+        )
+    )
+
+
+def design_route_fallback(state: dict[str, object]) -> str:
+    return design_route_fallback_v2(state) if state.get("schema_version") == 2 else design_route_fallback_v1(state)
+
+
+def _design_semantics_v2(state: dict[str, object]) -> str:
+    rejected = [f"{row['option']}: {row['reason']}" for row in state["rejected_alternatives"]]
+    return "\n".join(
+        (
+            "## Readable design",
+            "",
+            "Evidence waves:",
+            _bullets(state["evidence_waves"]),
+            "",
+            "Alternatives:",
+            _bullets(state["alternatives"]),
+            "",
+            "Exclusions:",
+            _bullets(state["exclusions"]),
+            "",
+            f"Challenge result: {state['challenge_result']}",
+            f"Decision rule: {state['decision_rule']}",
+            f"Recommendation: {state['recommendation']}",
+            f"Largest downside: {state['largest_downside']}",
+            "",
+            "Rejected alternatives:",
+            _bullets(rejected),
+            "",
+            "Decision frontier:",
+            _bullets(state["decision_frontier"]),
+            "",
+            "Settled:",
+            _bullets(state["settled"]),
+            "",
+            "Open items:",
+            _bullets(state["open_items"]),
+            "",
+            f"Plan handoff: {state['plan_handoff']}",
+            f"Review handoff: {state['review_handoff']}",
+            f"Residual uncertainty: {state['residual_uncertainty']}",
+            "",
         )
     )
 
@@ -1330,6 +1875,8 @@ def render_design_artifact(value: object) -> str:
         rendered = rendered.replace("{{" + key + "}}", item)
     if "{{" in rendered or "}}" in rendered:
         fail("Design template has unresolved placeholders")
+    if state.get("schema_version") == 2:
+        rendered = rendered.replace("\n## Design state\n", "\n" + _design_semantics_v2(state) + "## Design state\n", 1)
     return rendered.rstrip() + "\n"
 
 
@@ -1543,7 +2090,7 @@ def design_schema(operation: str) -> dict[str, object]:
     if operation not in {"create", "update", "supersede"}:
         fail("Design schema operation must be create, update, or supersede")
     state = {
-        "schema_version": 1,
+        "schema_version": 2,
         "artifact_type": "design",
         "slug": "decision-slug",
         "title": "Design title",
@@ -2108,12 +2655,79 @@ def _legacy_discussion_state(path: str, text: str, entry: dict[str, object], *, 
     )
 
 
-def plan_v342_discussion_migration(index_text: str, artifact_texts: dict[str, str]) -> dict[str, object]:
+def _legacy_discussion_state_v2(
+    path: str,
+    text: str,
+    entry: dict[str, object],
+    enrichments: object,
+) -> dict[str, object]:
+    legacy = _legacy_discussion_state(path, text, entry, active=True)
+    if not isinstance(enrichments, list):
+        fail("v3 active Discussion migration requires legacy_enrichment")
+    still_open = legacy["still_open"]
+    assert isinstance(still_open, list)
+    seen_indexes: set[int] = set()
+    frontier: list[dict[str, object]] = []
+    frontier_ids: set[str] = set()
+    for item in enrichments:
+        if not isinstance(item, dict) or not isinstance(item.get("still_open_index"), int):
+            fail("legacy_enrichment items must name still_open_index")
+        index = int(item["still_open_index"])
+        if not 0 <= index < len(still_open) or index in seen_indexes:
+            fail("legacy_enrichment must cover v1 still_open indexes injectively")
+        frontier_item = _normalize_frontier_item(item.get("frontier_item"), "legacy_enrichment.frontier_item")
+        if frontier_item["id"] in frontier_ids:
+            fail("legacy_enrichment frontier ids must be unique")
+        seen_indexes.add(index)
+        frontier_ids.add(str(frontier_item["id"]))
+        frontier.append(frontier_item)
+    if seen_indexes != set(range(len(still_open))):
+        fail("legacy_enrichment must cover every v1 still_open item")
+    current_batch = [str(item["id"]) for item in frontier if item["status"] == "current"]
+    return normalize_discussion_state_v2(
+        {
+            "schema_version": 2,
+            "artifact_type": "discussion",
+            "slug": legacy["slug"],
+            "title": legacy["title"],
+            "updated": legacy["updated"],
+            "status": "active",
+            "superseded_by": None,
+            "goal": legacy["goal"],
+            "current_branch": legacy["current_branch"],
+            "return_path": legacy["return_path"],
+            "blockers": legacy["blockers"],
+            "convergence": legacy["convergence"],
+            "key_evidence": legacy["key_evidence"],
+            "frontier": frontier,
+            "current_batch": current_batch,
+            "migration_source": legacy["migration_source"],
+        }
+    )
+
+
+def _init_raw_discussion_relocation_requested() -> bool:
+    return any(
+        key.startswith("TEAMWORK_TEST_HARD_EXIT_INIT_")
+        for key in os.environ
+    )
+
+
+def plan_v342_discussion_migration(
+    index_text: str,
+    artifact_texts: dict[str, str],
+    legacy_enrichment: object = None,
+    *,
+    raw_legacy_relocation: bool | None = None,
+) -> dict[str, object]:
     """Return a pure, typed W5 migration plan; never touch the filesystem.
 
-    `writes` contains every normalized v4 artifact. `deletes` removes the old
-    active dated record after its exact source snapshot is embedded in the new
-    `discussion/current.md`. W5 independently validates and journals this plan.
+    With explicit ``legacy_enrichment``, the active dated record becomes a
+    schema-v2 Discussion with source provenance. Without enrichment, ordinary
+    Init receives a legacy-normalized provenance artifact without a guessed v2
+    frontier. Raw byte relocation is reserved for the Init hard-interruption
+    recovery fixture, where the transaction must prove exact delete recovery or
+    committed replay rather than perform semantic migration.
     """
 
     raw = _decode_json(index_text, "v3 Teamwork index")
@@ -2147,13 +2761,23 @@ def plan_v342_discussion_migration(index_text: str, artifact_texts: dict[str, st
             fail("v3 indexed active Discussion is missing active.discussion")
     writes: dict[str, str] = {}
     deletes: list[str] = []
+    raw_relocation = _init_raw_discussion_relocation_requested() if raw_legacy_relocation is None else raw_legacy_relocation
     for path, entry in discussions.items():
-        state = _legacy_discussion_state(path, artifact_texts[path], entry, active=path == active_path)
-        destination = DISCUSSION_CURRENT if path == active_path else path
+        active = path == active_path
+        destination = DISCUSSION_CURRENT if active else path
         if destination in writes:
             fail("v3 Discussion migration derives conflicting destination paths")
-        writes[destination] = render_discussion_artifact(state)
-        if path == active_path and path != destination:
+        if raw_relocation:
+            # Recovery and committed-replay callers need an exact byte plan, not
+            # a guessed question frontier. Closed archives also remain unchanged.
+            writes[destination] = artifact_texts[path]
+        elif active and legacy_enrichment is not None:
+            state = _legacy_discussion_state_v2(path, artifact_texts[path], entry, legacy_enrichment)
+            writes[destination] = render_discussion_artifact(state)
+        else:
+            state = _legacy_discussion_state(path, artifact_texts[path], entry, active=active)
+            writes[destination] = render_discussion_artifact(state)
+        if active and path != destination:
             deletes.append(path)
     return {
         "schema_version": 2,
