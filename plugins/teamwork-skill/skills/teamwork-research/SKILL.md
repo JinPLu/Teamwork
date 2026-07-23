@@ -11,16 +11,14 @@ Root supplies a sanitized public question when project context informs it.
 
 ## Root Handoff
 
-Before any Research method step, Root's first role action after forming the
-sanitized brief MUST be a Researcher dispatch. Root MUST NOT browse, read local
-research-probe files, or execute research itself. In Codex, call `spawn_agent`
-with `agent_type="teamwork_researcher"` and `fork_turns="none"`. In Cursor and Claude Code,
-Root MUST dispatch Researcher via the host's Task/subagent mechanism before browsing; Root
-MUST NOT research directly. If subagent dispatch is unavailable, stop: the privacy
-boundary cannot be enforced. Root MUST NOT call `wait_agent` until `spawn_agent` returns a
-non-empty live agent id. Empty
-spawn evidence, unavailable spawn, or wait without a live agent is STOP:
-unsupported role boundary.
+Before any Research method step, Root's first role action after the sanitized
+brief MUST be Researcher dispatch. Root MUST NOT browse, read research-probe
+files, or execute research. In Codex, call `spawn_agent` with
+`agent_type="teamwork_researcher"` and `fork_turns="none"`. In Cursor and Claude
+Code, dispatch Researcher via the host mechanism before browsing. If dispatch is
+unavailable, stop. Root MUST NOT call `wait_agent` until `spawn_agent` returns a
+non-empty live agent id. Empty spawn evidence, unavailable spawn, or wait without
+a live agent is STOP: unsupported role boundary.
 
 ## Choose Depth
 
@@ -40,33 +38,41 @@ advanced method for this Skill, not another workflow stage.
 ## Method
 
 1. State the decision question, freshness cutoff, source policy, privacy
-   exclusions, and material claims. Treat a supplied URL, paper, dataset,
-   repository, or report as seed evidence rather than the whole boundary.
+   exclusions, and material claims. Treat supplied URLs, papers, datasets,
+   repositories, or reports as seed evidence, not the whole boundary.
 2. Search by evidence gap. Prefer primary sources: official documentation and
    changelogs, standards, original papers, first-party data, regulators, and
    authoritative repositories. Use secondary sources for independent context.
-3. Record for each material claim the source, date or version, direct support,
+3. Record each material claim's source, date/version, direct support,
    counterevidence, inference, confidence, and citation. For consequential or
    disputed claims, seek an independent source class or explain why one
-   authoritative source is sufficient.
+   authoritative source is enough.
 4. Follow decision-changing contradictions and rejected-source reasons instead
    of averaging them away. Distinguish source statements, direct observations,
    and inference. Never invent missing measurements, dates, or consensus.
 5. Cite the direct supporting page near each important claim and record explicit
    not-found gaps. Source count is not claim coverage.
-6. Stop when every material claim has direct support or an explicit gap and more
-   searching would not change the decision. If evidence is insufficient, return
-   only the next decision-relevant discriminator.
+6. Stop when every material claim has support or an explicit gap and more search
+   would not change the decision. If evidence is insufficient, return only the
+   next decision-relevant discriminator.
 
 Browse whenever freshness, precise attribution, or a referenced external source
 matters. Do not browse merely to re-check stable common knowledge unless the user
 asks for sources. Never send private source code, logs, credentials, personal
 data, or proprietary artifacts to a public service.
 
-Research is read-only by default. It does not authorize local edits, account
-changes, messages, purchases, uploads, or publication. Write a report only when
-the user explicitly requests a file deliverable, and then write only that
-deliverable at the requested or agreed path.
+Research does not authorize account changes, messages, purchases, uploads, or
+publication. In an initialized writable project, each terminal cited answer
+defaults to a research artifact unless the user says `no files`, `off-record`,
+`read-only`, `no writes`, or equivalent. Researcher returns a bounded packet:
+purpose/audience, facts/sources, citations, frozen decision/status,
+style/structure, artifact kind/consumer, and preserve/forbid. Writer must use
+`discussion-transaction.py artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`;
+the transaction derives the destination and registers the ordinary index. Writer
+may rewrite expression but must not research, invent, or alter facts, citations,
+authority, status, decisions, or acceptance. Missing project memory, Writer,
+brief, authority, consumer, or transaction blocks only persistence: deliver the
+answer and report it unsaved/blocked. No Researcher, Root, or Worker fallback writes it.
 
 After the primary Researcher handoff, additional fan-out remains conditional:
 use it only for separable source classes, required public/private isolation, or

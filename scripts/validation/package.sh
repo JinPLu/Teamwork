@@ -37,7 +37,7 @@ if ! PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/teamwork_tooling/privacy_s
   fail "tracked privacy scan found blocked values"
 fi
 if ! PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/teamwork_tooling/instruction_footprint.py"; then
-  fail "always-loaded policy and union runtime instruction footprint exceed compactness limits"
+  fail "real loaded instruction surfaces exceed compactness limits"
 fi
 
 actual_skill_dirs="$(find "$ROOT/skills" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)"
@@ -421,22 +421,22 @@ expected_roles = {
     "codex-agents": {
         "teamwork-debugger.toml", "teamwork-designer.toml", "teamwork-explorer.toml",
         "teamwork-plan-reviewer.toml", "teamwork-planner.toml", "teamwork-researcher.toml",
-        "teamwork-reviewer.toml", "teamwork-worker.toml",
+        "teamwork-reviewer.toml", "teamwork-worker.toml", "teamwork-writer.toml",
     },
     "cursor-agents": {
         "debugger.md", "designer.md", "explorer.md", "plan-reviewer.md", "planner.md",
-        "researcher.md", "reviewer.md", "worker.md",
+        "researcher.md", "reviewer.md", "worker.md", "writer.md",
     },
     "claude-agents": {
         "debugger.md", "designer.md", "explorer.md", "plan-reviewer.md", "planner.md",
-        "researcher.md", "reviewer.md", "worker.md",
+        "researcher.md", "reviewer.md", "worker.md", "writer.md",
     },
 }
 for directory, expected in expected_roles.items():
     source_roles = {path.name for path in (root / "templates" / directory).iterdir() if path.is_file()}
     bundle_roles = {path.name for path in (bundle / "templates" / directory).iterdir() if path.is_file()}
     if source_roles != expected or bundle_roles != expected:
-        raise SystemExit(f"FAIL: source and Marketplace bundle must contain exactly eight {directory} roles")
+        raise SystemExit(f"FAIL: source and Marketplace bundle must contain exactly nine {directory} roles")
 required_runtime = {
     "install.sh",
     "scripts/check-update.sh",

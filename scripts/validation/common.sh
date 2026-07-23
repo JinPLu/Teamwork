@@ -84,24 +84,6 @@ grep_absent() {
   fi
 }
 
-line_count_max() {
-  local file="$1"
-  local max="$2"
-  local message="$3"
-  local count
-  count="$(wc -l < "$file" | tr -d ' ')"
-  [[ "$count" -le "$max" ]] || fail "$message ($count > $max)"
-}
-
-word_count_max() {
-  local file="$1"
-  local max="$2"
-  local message="$3"
-  local count
-  count="$(wc -w < "$file" | tr -d ' ')"
-  [[ "$count" -le "$max" ]] || fail "$message ($count > $max)"
-}
-
 fenced_block_line_count_max() {
   local file="$1"
   local max="$2"
@@ -130,14 +112,7 @@ check_lean_policy() {
   local file="$1"
   local _profile="$2"
   local label="$3"
-  local policy_words policy_text
-  policy_words="$(awk '
-    /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_START -->/ { inside = 1; next }
-    /<!-- TEAMWORK_(CODEX|CURSOR|CLAUDE)_GLOBAL_END -->/ { inside = 0; next }
-    inside { print }
-  ' "$file" | wc -w | tr -d ' ')"
-  [[ "$policy_words" -le 350 ]] \
-    || fail "$label must remain a compact always-loaded policy ($policy_words > 350)"
+  local policy_text
   policy_text="$(tr '\n' ' ' < "$file")"
   for contract in \
     "request scope::work within the user.?s request" \

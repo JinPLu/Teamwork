@@ -48,6 +48,12 @@ INIT_PROMOTION_GATES = {
     "privacy/protected-data review",
     "Root authority",
 }
+NEGATIVE_ARTIFACT_OVERRIDES = {
+    "`no files`",
+    "`off-record`",
+    "`read-only`",
+    "`no writes`",
+}
 
 DIRECT_WRITE_PERMISSION = re.compile(
     r"(?:\bGrill\b[^.]*\b(?:may|can|allowed|permission|exception|fallback)\b"
@@ -149,6 +155,20 @@ class SkillTopologyV4Test(unittest.TestCase):
                 continue
             self.fail(f"{boundary} has an additive permission or waiver: {sentence!r}")
 
+    def assert_generic_artifact_contract(self, text: str, fallback: str) -> None:
+        self.assertIn("initialized writable project", text)
+        self.assertRegex(
+            text,
+            r"artifact-inspect -> artifact-schema <create\|update\|supersede> -> artifact-apply",
+        )
+        self.assertIn("transaction derives the destination", text)
+        self.assertIn("registers the ordinary index", text)
+        self.assertIn("artifact kind/consumer", text)
+        self.assertIn("unsaved/blocked", text)
+        self.assertIn(fallback, text)
+        for override in NEGATIVE_ARTIFACT_OVERRIDES:
+            self.assertIn(override, text)
+
     def assert_skill_contract(self, skill: str, text: str) -> None:
         """Assert behavior relationships, not merely skill-file vocabulary."""
         text = " ".join(text.split())
@@ -187,6 +207,21 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assertIn("CAS rejection of stale state", text)
             self.assertIn("atomic", text)
             self.assertIn("Mermaid route plus plain-text fallback", text)
+            self.assertIn("Every actual Grill invocation", text)
+            self.assertIn("ordinary clarification that does not activate Grill stays chat-only", text)
+            self.assertIn("persisted Grill state or a standalone summary", text)
+            self.assertIn("Root freezes the packet and dispatches Writer", text)
+            self.assertIn("The brief includes purpose/audience", text)
+            self.assertIn("purpose/audience", text)
+            self.assertIn("facts/sources", text)
+            self.assertIn("frozen decision/status", text)
+            self.assertIn("transaction route/consumer", text)
+            self.assertIn("Writer may organize, summarize, translate, or polish expression", text)
+            self.assertIn("must not research, invent, change facts", text)
+            self.assertIn("Missing Writer, brief, authority, path, consumer, or registration blocks", text)
+            self.assertIn("no Root, Worker, or Grill fallback writes it", text)
+            for override in NEGATIVE_ARTIFACT_OVERRIDES:
+                self.assertIn(override, text)
             self.assertIn("`INDETERMINATE` result pauses", text)
             self.assertNotIn("```markdown", text)
             self.assertNotRegex(text, DIRECT_WRITE_PERMISSION)
@@ -203,6 +238,8 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assertIn("healthy CodeGraph first", text)
             self.assertIn("Separate observation from inference", text)
             self.assertIn("does not browse the web", text)
+            self.assertIn("workflow writing brief, packet, or artifact that owns the decision", text)
+            self.assertIn("Writer never creates an independent Explore artifact", text)
             return
         if skill == "teamwork-research":
             self.assertIn("external-only", text)
@@ -217,11 +254,32 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assert_in_order(text, "`lookup`", "`research`", "`deep`")
             self.assertIn("Source count is not claim coverage", text)
             self.assertIn("only for `deep`", text)
+            self.assertIn("terminal cited answer defaults to a research artifact", text)
+            self.assertIn("bounded packet", text)
+            self.assertIn("purpose/audience", text)
+            self.assertIn("facts/sources", text)
+            self.assertIn("frozen decision/status", text)
+            self.assertIn("Writer may rewrite expression", text)
+            self.assertIn("must not research, invent, or alter facts, citations", text)
+            self.assert_generic_artifact_contract(
+                text, "No Researcher, Root, or Worker fallback writes it"
+            )
+            self.assertIn("No Researcher, Root, or Worker fallback writes it", text)
             return
         if skill == "teamwork-debug":
             self.assert_in_order(text, "`observe`", "`instrument`", "`fix`")
             self.assertIn("immutable authority", text)
             self.assertIn("Never infer or upgrade authority", text)
+            self.assertIn("terminal cause, blocked diagnosis, or cross-session handoff defaults", text)
+            self.assertIn("not a turn log", text)
+            self.assertIn("Debugger returns a bounded packet", text)
+            self.assertIn("purpose/audience", text)
+            self.assertIn("facts/sources", text)
+            self.assertIn("frozen decision/status", text)
+            self.assert_generic_artifact_contract(
+                text, "No Debugger, Root, or Worker fallback writes it"
+            )
+            self.assertIn("No Debugger, Root, or Worker fallback writes it", text)
             return
         if skill == "teamwork-design":
             self.assertIn("only when an unresolved local constraint", text)
@@ -258,16 +316,21 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assertIn("Dependent choices are serial", text)
             self.assertIn("why the answer is critical", text)
             self.assertIn("two consecutive rounds", text)
-            self.assertIn("is not durable or Plan-ready", text)
-            self.assertIn("explicitly accepts the direction and authorizes saving it", text)
-            self.assertIn(
-                "A Plan-ready handoff request counts only when it explicitly accepts that direction and authorizes the save",
-                text,
-            )
-            self.assertIn("Freeze one durable Design", text)
+            self.assertIn("Design-boundary state defaults to the Design transaction", text)
+            self.assertIn("`acceptance: pending|accepted|blocked`", text)
+            self.assertIn("Persistence may happen before user acceptance and does not imply acceptance", text)
+            self.assertIn("pending and blocked Design records are durable but not Plan-ready", text)
+            self.assertIn("`active.acceptance == accepted`", text)
             self.assertIn("structured Design state", text)
-            self.assertIn("distinct critic and auditor identities", text)
-            self.assertIn("never store raw agent transcripts", text)
+            self.assertIn("Root freezes a bounded structured Design state plus brief", text)
+            self.assertIn("purpose/audience", text)
+            self.assertIn("facts/sources", text)
+            self.assertIn("frozen decision/status", text)
+            self.assertIn("transaction route/consumer", text)
+            self.assertIn("preserve/forbid", text)
+            self.assertIn("then dispatches Writer to call the transaction", text)
+            self.assertIn("critic/auditor identities", text)
+            self.assertIn("never store raw transcripts", text)
             durable_route = re.search(
                 r"The package-level Design transaction is the sole durable Design writer\."
                 r" Every durable Design lifecycle uses this public route, in order: "
@@ -289,6 +352,14 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assertIn("artifact plus `active.design`", durable_route.group("apply"))
             self.assertIn("path, revision, and changed paths", durable_route.group("apply"))
             self.assertIn("Never hand-author, redirect renderer output into, or directly edit", text)
+            self.assertIn("Writer is only the caller", text)
+            self.assertIn("the transaction remains the sole filesystem writer", text)
+            self.assertIn("standalone summaries, guides, or architecture docs", text)
+            self.assertIn("may draft, rewrite, summarize, translate, or polish expression", text)
+            self.assertIn("must not research, invent, or change facts", text)
+            self.assertIn("no Root, Designer, Worker, or reviewer fallback writes it", text)
+            for override in NEGATIVE_ARTIFACT_OVERRIDES:
+                self.assertIn(override, text)
             self.assertNotRegex(text, HAND_AUTHORED_DESIGN_PERMISSION)
             self.assert_no_protected_waiver(
                 text,
@@ -307,8 +378,24 @@ class SkillTopologyV4Test(unittest.TestCase):
         if skill == "teamwork-plan":
             self.assertIn("only when the user requests it or a named material risk gate requires it", text)
             self.assertIn("require the controlled durable Design path and revision", text)
+            self.assertIn("`discussion-transaction.py design-inspect --project-root <project>`", text)
+            self.assertIn("active path/revision match the claim", text)
+            self.assertIn("`active.acceptance == accepted`", text)
+            self.assertIn("Pending or blocked Design records are durable but never Plan-ready", text)
+            self.assertIn("Older v1/v2 controlled Design records count as accepted only when `design-inspect` reports accepted", text)
             self.assertIn("A conversational Design recommendation", text)
             self.assertIn("is not Plan-ready", text)
+            self.assertIn("Every Plan invocation defaults to a durable Plan", text)
+            self.assertIn("Planner produces an execution-ready Plan packet only", text)
+            self.assertIn("Writer saves or rewrites it", text)
+            self.assertIn("purpose/audience", text)
+            self.assertIn("facts/sources", text)
+            self.assertIn("frozen decision/status", text)
+            self.assertIn("may polish expression but not research, invent, or alter facts", text)
+            self.assert_generic_artifact_contract(
+                text, "No Planner, Root, or Worker fallback writes it"
+            )
+            self.assertIn("No Planner, Root, or Worker fallback writes it", text)
             self.assertIn("stable `PR-*`", text)
             self.assertIn("reviewed Plan cannot pass with placeholders", text)
             return
@@ -321,11 +408,38 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assert_in_order(text, "Check correctness first", "Then inspect only the changed scope")
             self.assertIn("stable `R-*`", text)
             self.assertIn("purely pre-existing debt", text)
+            self.assertIn("Reviewer always stays read-only", text)
+            self.assertIn("every verdict defaults to a review/conclusion artifact", text)
+            self.assertIn("Root freezes the verdict", text)
+            self.assertIn("returns a bounded packet", text)
+            self.assertIn("purpose/audience", text)
+            self.assertIn("facts/sources", text)
+            self.assertIn("frozen decision/status", text)
+            self.assert_generic_artifact_contract(
+                text, "No Reviewer, Root, or Worker fallback writes it"
+            )
+            self.assertIn("No Reviewer, Root, or Worker fallback writes it", text)
+            self.assertIn("Persistence does not imply Root/user acceptance", text)
             return
         if skill == "teamwork-goal":
             self.assertIn("durable Goal state at entry", text)
             self.assertIn("single current unmet claim", text)
             self.assertIn("strategy delta", text)
+            self.assertIn("Writer calling the Goal artifact transaction", text)
+            self.assert_in_order(text, "goal-inspect", "goal-schema", "goal-apply")
+            self.assertIn("Goal fails closed before promising persistence", text)
+            self.assertIn("`docs/teamwork/reports/YYYY-MM-DD-<slug>-goal.md`", text)
+            self.assertNotIn("docs/teamwork/goals/", text)
+            self.assertIn("transaction is the sole filesystem writer", text)
+            self.assertIn("Every durable Goal entry, attempt, or standalone report", text)
+            self.assertIn("uses a bounded brief/packet", text)
+            self.assertIn("purpose/audience", text)
+            self.assertIn("facts/sources", text)
+            self.assertIn("frozen decision/status", text)
+            self.assertIn("Writer handles standalone prose", text)
+            self.assertIn("no Root, Worker, or other role fallback writes it", text)
+            for override in NEGATIVE_ARTIFACT_OVERRIDES:
+                self.assertIn(override, text)
             return
         if skill == "teamwork-init":
             self.assertIn("only for an explicit full bootstrap", text)
@@ -341,6 +455,16 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assertIn(
                 "A logged, partial, or permissive gate result is not promotion", text
             )
+            self.assertIn("audit/check-only Init remains read-only and conversational", text)
+            self.assertIn("After a mutating Init", text)
+            self.assertIn("Init returns a bounded receipt packet", text)
+            self.assertIn("purpose/audience", text)
+            self.assertIn("facts/sources", text)
+            self.assertIn("frozen decision/status", text)
+            self.assert_generic_artifact_contract(
+                text, "No Root or Worker fallback writes it"
+            )
+            self.assertIn("No Root or Worker fallback writes it", text)
             self.assertNotRegex(text, PERMISSIVE_PROMOTION)
             self.assert_no_protected_waiver(
                 text, INIT_PROMOTION_GATES, "candidate-promotion gates"
@@ -351,6 +475,16 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assertIn("Dispatch Explorer", text)
             self.assertIn("Dispatch Worker", text)
             self.assertIn("privileged surfaces remain with Root", text)
+            self.assertIn("check-only Update remains read-only and conversational", text)
+            self.assertIn("After a mutating Update", text)
+            self.assertIn("Update returns a bounded receipt packet", text)
+            self.assertIn("purpose/audience", text)
+            self.assertIn("facts/sources", text)
+            self.assertIn("frozen decision/status", text)
+            self.assert_generic_artifact_contract(
+                text, "No Root or Worker fallback writes it"
+            )
+            self.assertIn("No Root or Worker fallback writes it", text)
             return
         self.fail(f"missing contract validator for {skill}")
 
@@ -514,8 +648,8 @@ class SkillTopologyV4Test(unittest.TestCase):
                     "Ask for strategy confirmation",
                 ),
                 (
-                    "A Plan-ready handoff request counts only when it explicitly accepts that direction and authorizes the save",
-                    "A Plan-ready handoff request bypasses acceptance and save authority",
+                    "`active.acceptance == accepted`",
+                    "`active.acceptance != blocked`",
                 ),
             ],
             "teamwork-plan": [
@@ -527,6 +661,11 @@ class SkillTopologyV4Test(unittest.TestCase):
                     "A conversational Design recommendation",
                     "Any conversational Design recommendation",
                 ),
+                (
+                    "Pending or blocked Design records are durable but never Plan-ready",
+                    "Pending or blocked Design records may be Plan-ready",
+                ),
+                ("Every Plan invocation defaults to a durable Plan", "A Plan may stay ephemeral"),
             ],
             "teamwork-review": [("Check correctness first", "Check deslop first")],
             "teamwork-goal": [("durable Goal state at entry", "optional Goal state after attempts")],
@@ -627,6 +766,46 @@ class SkillTopologyV4Test(unittest.TestCase):
                 self.assertNotEqual(original, mutated, "mutation fixture must apply")
                 with self.assertRaises(AssertionError):
                     self.assert_skill_contract("grill-me", mutated)
+
+    def test_generic_artifact_defaults_overrides_and_route_are_rejected(self) -> None:
+        generic_skills = (
+            "teamwork-research",
+            "teamwork-debug",
+            "teamwork-plan",
+            "teamwork-review",
+            "teamwork-init",
+            "teamwork-update",
+        )
+        fragments = (
+            "initialized writable project",
+            "artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply",
+            "transaction derives the destination",
+            "registers the ordinary index",
+            "unsaved/blocked",
+        )
+        for skill in generic_skills:
+            original = " ".join((SKILLS / skill / "SKILL.md").read_text(encoding="utf-8").split())
+            for fragment in fragments:
+                with self.subTest(skill=skill, deleted=fragment):
+                    mutated = original.replace(fragment, "", 1)
+                    self.assertNotEqual(original, mutated, "mutation fixture must apply")
+                    with self.assertRaises(AssertionError):
+                        self.assert_skill_contract(skill, mutated)
+            for override in NEGATIVE_ARTIFACT_OVERRIDES:
+                with self.subTest(skill=skill, deleted_override=override):
+                    mutated = original.replace(override, "", 1)
+                    self.assertNotEqual(original, mutated, "mutation fixture must apply")
+                    with self.assertRaises(AssertionError):
+                        self.assert_skill_contract(skill, mutated)
+            with self.subTest(skill=skill, inverted_route="direct_path"):
+                mutated = original.replace(
+                    "the transaction derives the destination",
+                    "the caller chooses the destination",
+                    1,
+                )
+                self.assertNotEqual(original, mutated, "mutation fixture must apply")
+                with self.assertRaises(AssertionError):
+                    self.assert_skill_contract(skill, mutated)
 
     def test_init_promotion_gate_deletions_and_inversions_are_rejected(self) -> None:
         original = " ".join((SKILLS / "teamwork-init" / "SKILL.md").read_text(encoding="utf-8").split())

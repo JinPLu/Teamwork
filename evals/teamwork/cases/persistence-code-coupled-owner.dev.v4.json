@@ -1,0 +1,60 @@
+{
+   "evidence" : "Static code-coupled text ownership control.",
+   "expected" : {
+      "capability" : "persistence",
+      "language" : "en",
+      "requires" : [
+         "code-coupled-implementer-owned",
+         "writer-forbids-code-comments",
+         "writer-forbids-docstrings-tests-schemas",
+         "worker-owns-implementation-text",
+         "no-writer-fallback"
+      ],
+      "scenario" : "code-coupled-owner"
+   },
+   "id" : "persistence-code-coupled-owner",
+   "must" : [
+      "keep comments, docstrings, tests, schemas, manifests, config, and config notes with the authorized implementation owner"
+   ],
+   "must_not" : [
+      "route code-coupled wording to Writer, use Writer fallback, create standalone docs for implementation text, or implement outside owned paths"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-worker.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/worker.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/worker.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-writer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/writer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/writer.md"
+      }
+   ],
+   "prompt" : "Update the code comments and schema descriptions coupled to the authorized implementation change.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

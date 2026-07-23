@@ -71,6 +71,7 @@ CANONICAL_ROLES = {
     "designer",
     "planner",
     "worker",
+    "writer",
     "plan-reviewer",
     "reviewer",
 }
@@ -235,6 +236,37 @@ CASE_PRODUCER_REQUIREMENTS = {
         ("skill", "skills/grill-me/SKILL.md"),
         *DISCUSSION_TRANSACTION_SOURCE,
     },
+    ("persistence", "normal-doc-writer"): {
+        *role_sources("writer"),
+    },
+    ("persistence", "generic-artifact-writer"): {
+        *ROOT_POLICY_SOURCE,
+        ("skill", "skills/teamwork-plan/SKILL.md"),
+        *role_sources("writer"),
+        *DISCUSSION_TRANSACTION_SOURCE,
+    },
+    ("persistence", "specialized-artifact-writer"): {
+        *ROOT_POLICY_SOURCE,
+        ("skill", "skills/grill-me/SKILL.md"),
+        *role_sources("writer"),
+        *DISCUSSION_TRANSACTION_SOURCE,
+    },
+    ("persistence", "negative-overrides"): {
+        *ROOT_POLICY_SOURCE,
+        ("skill", "skills/teamwork-research/SKILL.md"),
+        ("skill", "skills/teamwork-plan/SKILL.md"),
+        *role_sources("writer"),
+    },
+    ("persistence", "explore-no-artifact"): {
+        *ROOT_POLICY_SOURCE,
+        ("skill", "skills/teamwork-explore/SKILL.md"),
+        *role_sources("explorer"),
+    },
+    ("persistence", "code-coupled-owner"): {
+        *ROOT_POLICY_SOURCE,
+        *role_sources("worker"),
+        *role_sources("writer"),
+    },
 }
 
 # Coverage is capability based, not case-id based. A case can be renamed or
@@ -281,6 +313,12 @@ DEV_CAPABILITY_COVERAGE = {
     ("verification", "monotonic-evidence", "zh"),
     ("platform", "host-boundary", "en"),
     ("platform", "host-boundary", "zh"),
+    ("persistence", "normal-doc-writer", "en"),
+    ("persistence", "generic-artifact-writer", "en"),
+    ("persistence", "specialized-artifact-writer", "en"),
+    ("persistence", "negative-overrides", "en"),
+    ("persistence", "explore-no-artifact", "en"),
+    ("persistence", "code-coupled-owner", "en"),
 }
 
 RELEASE_CAPABILITY_COVERAGE = {
@@ -497,6 +535,53 @@ CAPABILITY_REQUIREMENTS = {
         "no-files-overrides",
         "transaction-owned-writer",
         "no-implementation",
+    },
+    ("persistence", "normal-doc-writer"): {
+        "standalone-doc",
+        "bounded-writing-brief",
+        "unmanaged-exact-path",
+        "no-transaction-required",
+        "writer-only",
+        "no-research",
+        "no-code-coupled-text",
+    },
+    ("persistence", "generic-artifact-writer"): {
+        "default-terminal-workflow-artifacts",
+        "generic-artifact-transaction",
+        "transaction-derived-destination",
+        "ordinary-index-registration",
+        "required-transaction-gate",
+        "writer-only",
+        "no-implementation-authority",
+    },
+    ("persistence", "specialized-artifact-writer"): {
+        "specialized-grill-design-goal-route",
+        "inspect-schema-apply",
+        "transaction-owned-writer",
+        "required-transaction-gate",
+        "writer-only",
+        "no-implementation-authority",
+    },
+    ("persistence", "negative-overrides"): {
+        "no-files-overrides",
+        "off-record-overrides",
+        "read-only-overrides",
+        "no-writes-overrides",
+        "deliver-unsaved-result",
+        "no-fallback-writer",
+    },
+    ("persistence", "explore-no-artifact"): {
+        "explore-read-only",
+        "explore-no-independent-artifact",
+        "evidence-belongs-to-consuming-brief",
+        "writer-no-independent-explore",
+    },
+    ("persistence", "code-coupled-owner"): {
+        "code-coupled-implementer-owned",
+        "writer-forbids-code-comments",
+        "writer-forbids-docstrings-tests-schemas",
+        "worker-owns-implementation-text",
+        "no-writer-fallback",
     },
 }
 

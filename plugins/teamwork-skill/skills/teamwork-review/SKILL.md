@@ -10,24 +10,23 @@ read-only: do not edit the candidate, apply fixes, publish, or perform external
 effects even when a fix seems obvious.
 
 Each Worker self-verifies its owned slice. Do not review each Worker slice or
-each code delta independently. Root first integrates the authorized changes and
-seals one stable candidate with its scope and direct evidence. Run one independent
-initial pass on that sealed integrated candidate only when the user requests
-review or a named material risk gate requires it. A named risk gate may instead
-review its exact protected boundary before integration when delay would make the
-proof unsafe or invalid.
+code delta independently. Root integrates authorized changes and seals one stable
+candidate with scope and direct evidence. Run one independent initial pass on
+that sealed integrated candidate only for user-requested review or a named
+material risk gate. A named risk gate may review its exact protected boundary
+before integration when delay would invalidate proof.
 
 ## Method
 
-1. Establish the candidate, scope, acceptance criteria, protected boundaries,
-   and evidence needed for the verdict. User-requested review takes precedence
-   over inferred criteria; do not invent new requirements.
+1. Establish candidate, scope, acceptance criteria, protected boundaries, and
+   evidence needed for the verdict. User-requested review takes precedence over
+   inferred criteria; do not invent requirements.
 2. Inspect primary evidence directly: source and diff, tests and configuration,
    runtime output, rendered artifacts, or authoritative external sources as the
    candidate requires. A summary or claimed test result is input, not proof.
-3. Check correctness first: acceptance criteria, security and permission
-   boundaries, data behavior, regressions, error paths, compatibility, and direct
-   real-path evidence. Do not let style or cleanup substitute for this pass.
+3. Check correctness first: acceptance criteria, security/permission boundaries,
+   data behavior, regressions, error paths, compatibility, and direct real-path
+   evidence. Do not let style or cleanup substitute for this pass.
 4. Then inspect only the changed scope for cohesion and deslop: wrong-layer or
    duplicate owners, thin wrappers, dead code, speculative or single-consumer
    abstractions, unnecessary compatibility or parallel modes, broad catches,
@@ -48,11 +47,22 @@ Load `references/strict-review.md` only for a named strict release, security,
 permission, data, destructive-risk, or public-contract gate.
 
 Failed, blocked, partial, and unverified findings change only with new direct
-evidence. Combine all findings from the initial pass into one repair batch. The
-same Reviewer may perform at most one bounded delta recheck per candidate, limited
-to the stable findings and fix-introduced regressions. Any source change after
-that recheck creates a new candidate; materially expanded scope requires a fresh
-review decision. The root owner retains final acceptance.
+evidence. Combine initial findings into one repair batch. The same Reviewer may
+perform at most one bounded delta recheck per candidate, limited to stable
+findings and fix-introduced regressions. Any source change after that creates a
+new candidate; expanded scope requires a fresh review decision. Root retains final acceptance.
+
+Reviewer always stays read-only. In an initialized writable project, every verdict
+defaults to a review/conclusion artifact unless the user says `no files`,
+`off-record`, `read-only`, `no writes`, or equivalent. Root freezes the verdict
+and Reviewer returns a bounded packet: purpose/audience, facts/sources, frozen
+decision/status, style/structure, artifact kind/consumer, preserve/forbid,
+findings, evidence, verdict, and residual risk. Writer uses
+`artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`;
+the transaction derives the destination and registers the ordinary index. Missing
+project memory, Writer, brief, authority, consumer, or transaction blocks only
+persistence: deliver the verdict and report it unsaved/blocked. No Reviewer,
+Root, or Worker fallback writes it. Persistence does not imply Root/user acceptance.
 
 Lead with blockers ordered by severity and include precise file/line or artifact
 locations when available. If there are no findings, say so explicitly. `ACCEPT`

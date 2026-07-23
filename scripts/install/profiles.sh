@@ -4,6 +4,9 @@ codex_agent_performance_values() {
     teamwork-researcher|teamwork-explorer|teamwork-debugger|teamwork-planner|teamwork-worker)
       printf '%s %s\n' "gpt-5.5" "high"
       ;;
+    teamwork-writer)
+      printf '%s %s\n' "gpt-5.5" "low"
+      ;;
     teamwork-designer|teamwork-plan-reviewer)
       printf '%s %s\n' "gpt-5.6-sol" "high"
       ;;
@@ -26,6 +29,9 @@ codex_agent_profile_values() {
     cost-first:teamwork-researcher|cost-first:teamwork-explorer|cost-first:teamwork-debugger|cost-first:teamwork-planner|cost-first:teamwork-worker)
       printf '%s %s\n' "gpt-5.5" "medium"
       ;;
+    cost-first:teamwork-writer)
+      printf '%s %s\n' "gpt-5.5" "low"
+      ;;
     cost-first:teamwork-designer)
       printf '%s %s\n' "gpt-5.6-sol" "medium"
       ;;
@@ -44,6 +50,9 @@ claude_agent_profile_values() {
   case "$CODEX_PROFILE:$agent" in
     performance-first:researcher|performance-first:explorer|performance-first:worker)
       printf '%s %s\n' "sonnet" "medium"
+      ;;
+    performance-first:writer|cost-first:writer)
+      printf '%s %s\n' "haiku" "medium"
       ;;
     cost-first:researcher|cost-first:explorer|cost-first:worker)
       printf '%s %s\n' "haiku" "medium"
@@ -79,7 +88,7 @@ cursor_agent_profile_values() {
     performance-first:planner)
       printf '%s\n' "gpt-5.6-terra-medium"
       ;;
-    performance-first:worker)
+    performance-first:worker|performance-first:writer)
       printf '%s\n' "composer-2.5-fast"
       ;;
     performance-first:reviewer)
@@ -94,7 +103,7 @@ cursor_agent_profile_values() {
     cost-first:planner)
       printf '%s\n' "gpt-5.6-luna-medium"
       ;;
-    cost-first:worker)
+    cost-first:worker|cost-first:writer)
       printf '%s\n' "composer-2.5-fast"
       ;;
     cost-first:reviewer)
@@ -131,7 +140,7 @@ install_codex_agent_file() {
   expected_name="${agent//-/_}"
   require_single_profile_field "$source" '^name = "teamwork_[a-z_]+"$' "Codex name"
   require_single_profile_field "$source" '^model = "[^"]+"$' "Codex model"
-  require_single_profile_field "$source" '^model_reasoning_effort = "(medium|high|max)"$' "Codex effort"
+  require_single_profile_field "$source" '^model_reasoning_effort = "(low|medium|high|max)"$' "Codex effort"
   require_single_profile_field "$source" '^sandbox_mode = "(read-only|workspace-write)"$' "Codex sandbox"
   grep -Fqx "name = \"$expected_name\"" "$source" || {
     echo "Codex profile identity does not match $agent: $source" >&2

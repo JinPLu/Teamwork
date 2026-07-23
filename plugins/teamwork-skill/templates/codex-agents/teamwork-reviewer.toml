@@ -18,9 +18,11 @@ changed-scope maintainability/deslop, owner, flow, tests/config, invariants,
 cleanup, and absence of masking branches, wrappers, or fallbacks.
 Stop: after one initial verdict; combine findings into one repair batch, then allow at most one bounded delta recheck per candidate.
 Tool boundary: local read-only review tools.
-Write authority: none. Acceptance limitation: verdict covers only this delegated change.
+Write authority: none. Standalone docs/artifacts require a bounded writing brief to Writer.
+Acceptance limitation: verdict covers only this delegated change.
 
 Do not spawn or delegate. Do not interact with the user. Do not own the global
-task. Do not expand scope. Do not self-accept. Do not implement fixes or author
-plans. Treat summaries as claims and keep failed or unverified evidence monotonic.
+task. Do not expand scope. Do not self-accept. Do not write runtime artifacts.
+Do not implement fixes or author plans. Treat summaries as claims and keep failed
+or unverified evidence monotonic. Return the compact packet to Root/Writer.
 """

@@ -27,6 +27,19 @@ from typing import Any, Iterator, Sequence
 from .contracts import CANONICAL_ROLES
 
 SCHEMA_VERSION = 4
+LEGACY_V4_C5_ROLES = frozenset(
+    {
+        "researcher",
+        "explorer",
+        "debugger",
+        "designer",
+        "planner",
+        "worker",
+        "plan-reviewer",
+        "reviewer",
+    }
+)
+STRICT_MANIFEST_ROLE_SETS = {frozenset(CANONICAL_ROLES), LEGACY_V4_C5_ROLES}
 STATUSES = {"PASS", "FAIL", "UNSUPPORTED"}
 PROFILES = {"performance-first", "cost-first"}
 HOSTS = {"codex", "cursor", "claude"}
@@ -1098,15 +1111,20 @@ def load_case_manifest(path: Path, only_cases: set[str] | None = None, *, root: 
     if value.get("schema_version") != SCHEMA_VERSION:
         raise HostMatrixError("case manifest must use schema_version 4")
     required_roles = value.get("required_roles_per_slice")
-    if not isinstance(required_roles, list) or set(required_roles) != CANONICAL_ROLES:
-        raise HostMatrixError("case manifest must require every canonical role per slice")
+    if not isinstance(required_roles, list) or any(not isinstance(role, str) for role in required_roles):
+        raise HostMatrixError("case manifest must declare required roles per slice")
+    manifest_roles = frozenset(required_roles)
+    if manifest_roles not in STRICT_MANIFEST_ROLE_SETS:
+        raise HostMatrixError("case manifest must require either current nine roles or legacy v4.1.0 eight roles")
+    if len(required_roles) != len(manifest_roles):
+        raise HostMatrixError("case manifest role set must be exact and duplicate-free")
     role_expectations = value.get("role_expectations")
     if not isinstance(role_expectations, dict):
         raise HostMatrixError("case manifest must bind every host/profile/role expectation")
     expectation_probe = {"role_expectations": role_expectations, "required_role": "worker", "id": "matrix"}
     for host in HOSTS:
         for profile in PROFILES:
-            for role in CANONICAL_ROLES:
+            for role in manifest_roles:
                 expectation_probe["required_role"] = role
                 _case_profile_expectation(expectation_probe, host, profile)
     cases = value.get("cases")
@@ -1132,9 +1150,9 @@ def load_case_manifest(path: Path, only_cases: set[str] | None = None, *, root: 
             raise HostMatrixError(f"case {case_id} needs a non-empty prompt")
         if not isinstance(case.get("selected_skill"), str) or not case["selected_skill"]:
             raise HostMatrixError(f"case {case_id} needs a selected_skill")
-        if case.get("required_role") not in CANONICAL_ROLES:
+        if case.get("required_role") not in manifest_roles:
             raise HostMatrixError(f"case {case_id} has invalid required_role")
-        if not isinstance(roles, list) or not roles or not set(roles) <= CANONICAL_ROLES or case["required_role"] not in roles:
+        if not isinstance(roles, list) or not roles or not set(roles) <= manifest_roles or case["required_role"] not in roles:
             raise HostMatrixError(f"case {case_id} has invalid expected_roles")
         if case.get("authority") not in {"read-only", "workspace-write"}:
             raise HostMatrixError(f"case {case_id} has invalid authority")

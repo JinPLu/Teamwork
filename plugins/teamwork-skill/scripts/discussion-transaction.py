@@ -41,12 +41,32 @@ DESIGN_PATH_RE = re.compile(
 GOAL_PATH_RE = re.compile(
     r"^docs/teamwork/reports/(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)-goal\.md$"
 )
+WORKFLOW_ARTIFACT_PATH_RE = re.compile(
+    r"^docs/teamwork/(?:research|plans|workflows/(?:debug|review|conclusion|init|update))/(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$"
+)
 DISCUSSION_CURRENT = "docs/teamwork/discussion/current.md"
 INDEX_PATH = "docs/teamwork/index.json"
 DISCUSSION_MARKER = "docs/teamwork/discussion/.discussion-transaction.json"
 DESIGN_MARKER = "docs/teamwork/.design-transaction.json"
 GOAL_MARKER = "docs/teamwork/.goal-transaction.json"
+WORKFLOW_ARTIFACT_MARKER = "docs/teamwork/.workflow-artifact-transaction.json"
 CANONICAL_CURRENT = "docs/teamwork/current.md"
+WORKFLOW_ARTIFACT_KIND = "workflow-artifact"
+WORKFLOW_ARTIFACT_PREFIXES = (
+    "docs/teamwork/plans/",
+    "docs/teamwork/research/",
+    "docs/teamwork/workflows/",
+    INDEX_PATH,
+)
+WORKFLOW_CONFIG: dict[str, dict[str, str]] = {
+    "research": {"kind": "research", "active": "results", "directory": "docs/teamwork/research"},
+    "plan": {"kind": "plan", "active": "plan", "directory": "docs/teamwork/plans"},
+    "debug": {"kind": "report", "active": "report", "directory": "docs/teamwork/workflows/debug"},
+    "review": {"kind": "report", "active": "report", "directory": "docs/teamwork/workflows/review"},
+    "conclusion": {"kind": "result", "active": "results", "directory": "docs/teamwork/workflows/conclusion"},
+    "init": {"kind": "report", "active": "report", "directory": "docs/teamwork/workflows/init"},
+    "update": {"kind": "report", "active": "report", "directory": "docs/teamwork/workflows/update"},
+}
 
 
 class TransactionError(Exception):
@@ -106,6 +126,23 @@ def require_text_list(value: object, label: str, *, minimum: int = 0, maximum: i
     if len(set(result)) != len(result):
         fail(f"{label} must not contain duplicates")
     return result
+
+
+def require_path_list(value: object, label: str, *, maximum: int = 50) -> list[str]:
+    if not isinstance(value, list) or len(value) > maximum:
+        fail(f"{label} must contain at most {maximum} items")
+    result = [checked_relative(item, f"{label} item") for item in value]
+    if len(set(result)) != len(result):
+        fail(f"{label} must not contain duplicates")
+    return result
+
+
+def require_markdown_body(value: object, label: str, *, maximum_bytes: int = 128 * 1024) -> str:
+    if not isinstance(value, str) or not value.strip():
+        fail(f"{label} must be non-empty Markdown text")
+    if len(value.encode("utf-8")) > maximum_bytes or LEGACY_UNSAFE_CONTROL_RE.search(value) is not None:
+        fail(f"{label} exceeds size limits or contains unsafe control characters")
+    return value.rstrip() + "\n"
 
 
 def checked_relative(value: object, label: str) -> str:
@@ -1675,6 +1712,22 @@ def _read_design_template() -> str:
 def normalize_design_state(value: object) -> dict[str, object]:
     if not isinstance(value, dict):
         fail("Design state must be an object")
+    schema_version = value.get("schema_version")
+    if schema_version not in {1, 2, 3}:
+        fail("Design schema_version must be 1, 2, or 3")
+    acceptance = "accepted"
+    blockers: list[str] = []
+    if schema_version == 3:
+        acceptance = value.get("acceptance")
+        if acceptance not in {"pending", "accepted", "blocked"}:
+            fail("Design acceptance must be pending, accepted, or blocked")
+        blockers = require_text_list(value.get("blockers"), "Design blockers")
+        if acceptance == "blocked" and not blockers:
+            fail("blocked Design must record at least one blocker")
+        if acceptance != "blocked" and blockers:
+            fail("only a blocked Design may record blockers")
+    elif "acceptance" in value or "blockers" in value:
+        fail("Design acceptance and blockers require schema_version 3")
     status = value.get("status")
     if status not in {"current", "superseded"}:
         fail("Design status must be current or superseded")
@@ -1704,7 +1757,7 @@ def normalize_design_state(value: object) -> dict[str, object]:
     if len(alternatives) == 1 and (not exclusions or not rejected):
         fail("a one-safe-path Design requires explicit exclusions and rejected reasons")
     state: dict[str, object] = {
-        "schema_version": 2 if value.get("schema_version") == 2 else 1,
+        "schema_version": schema_version,
         "artifact_type": "design",
         "slug": require_slug(value.get("slug")),
         "title": require_text(value.get("title"), "Design title"),
@@ -1726,7 +1779,26 @@ def normalize_design_state(value: object) -> dict[str, object]:
         "rejected_alternatives": rejected,
         "residual_uncertainty": require_text(value.get("residual_uncertainty"), "Design residual_uncertainty"),
     }
+    if schema_version == 3:
+        state["acceptance"] = acceptance
+        state["blockers"] = blockers
     return state
+
+
+def design_acceptance(state: dict[str, object]) -> str:
+    """Legacy v1/v2 Design artifacts are accepted without changing their bytes."""
+
+    return str(state["acceptance"]) if state["schema_version"] == 3 else "accepted"
+
+
+def _design_index_metadata(acceptance: str) -> tuple[str, str, str]:
+    if acceptance == "accepted":
+        return "accepted", "current", "canonical"
+    if acceptance == "pending":
+        return "candidate", "candidate", "candidate"
+    if acceptance == "blocked":
+        return "blocked", "candidate", "candidate"
+    fail("Design acceptance is invalid")
 
 
 def _items(values: list[object]) -> str:
@@ -1759,12 +1831,13 @@ def design_route_mermaid_v1(state: dict[str, object]) -> str:
 def design_route_mermaid_v2(state: dict[str, object]) -> str:
     frontier_status = f"{len(state['decision_frontier'])} open" if state["decision_frontier"] else "none"
     open_status = f"{len(state['open_items'])} open" if state["open_items"] else "closed"
+    decision_status = design_acceptance(state) if state["schema_version"] == 3 else state["status"]
     return "\n".join(
         (
             "flowchart LR",
             f'    evidence["Evidence · {len(state["evidence_waves"])}"] --> alternatives["Alternatives · {len(state["alternatives"])}"]',
             f'    alternatives --> challenge["Challenge · recorded"]',
-            f'    challenge --> decision["Decision · {state["status"]}"]',
+            f'    challenge --> decision["Decision · {decision_status}"]',
             f'    decision --> frontier["Frontier · {frontier_status}"]',
             f'    frontier --> handoff["Handoff · {open_status}"]',
         )
@@ -1772,7 +1845,7 @@ def design_route_mermaid_v2(state: dict[str, object]) -> str:
 
 
 def design_route_mermaid(state: dict[str, object]) -> str:
-    return design_route_mermaid_v2(state) if state.get("schema_version") == 2 else design_route_mermaid_v1(state)
+    return design_route_mermaid_v2(state) if state.get("schema_version") in {2, 3} else design_route_mermaid_v1(state)
 
 
 def design_route_fallback_v1(state: dict[str, object]) -> str:
@@ -1800,9 +1873,10 @@ def design_route_fallback_v1(state: dict[str, object]) -> str:
 
 
 def design_route_fallback_v2(state: dict[str, object]) -> str:
+    decision_status = design_acceptance(state) if state["schema_version"] == 3 else state["status"]
     return "\n".join(
         (
-            f"Route: Evidence({len(state['evidence_waves'])}) -> Alternatives({len(state['alternatives'])}) -> Challenge(recorded) -> Decision({state['status']}) -> Frontier({len(state['decision_frontier'])}) -> Handoff",
+            f"Route: Evidence({len(state['evidence_waves'])}) -> Alternatives({len(state['alternatives'])}) -> Challenge(recorded) -> Decision({decision_status}) -> Frontier({len(state['decision_frontier'])}) -> Handoff",
             f"Settled: {len(state['settled'])}",
             f"Open: {len(state['open_items'])}",
             f"Superseded by: {state['superseded_by'] or 'none'}",
@@ -1811,26 +1885,35 @@ def design_route_fallback_v2(state: dict[str, object]) -> str:
 
 
 def design_route_fallback(state: dict[str, object]) -> str:
-    return design_route_fallback_v2(state) if state.get("schema_version") == 2 else design_route_fallback_v1(state)
+    return design_route_fallback_v2(state) if state.get("schema_version") in {2, 3} else design_route_fallback_v1(state)
 
 
 def _design_semantics_v2(state: dict[str, object]) -> str:
     rejected = [f"{row['option']}: {row['reason']}" for row in state["rejected_alternatives"]]
-    return "\n".join(
+    lines = [
+        "## Readable design",
+        "",
+        "Evidence waves:",
+        _bullets(state["evidence_waves"]),
+        "",
+        "Alternatives:",
+        _bullets(state["alternatives"]),
+        "",
+        "Exclusions:",
+        _bullets(state["exclusions"]),
+        "",
+        f"Challenge result: {state['challenge_result']}",
+        f"Decision rule: {state['decision_rule']}",
+    ]
+    if state["schema_version"] == 3:
+        lines.extend(
+            (
+                f"Acceptance: {design_acceptance(state)}",
+                f"Blockers: {_items(state['blockers'])}",
+            )
+        )
+    lines.extend(
         (
-            "## Readable design",
-            "",
-            "Evidence waves:",
-            _bullets(state["evidence_waves"]),
-            "",
-            "Alternatives:",
-            _bullets(state["alternatives"]),
-            "",
-            "Exclusions:",
-            _bullets(state["exclusions"]),
-            "",
-            f"Challenge result: {state['challenge_result']}",
-            f"Decision rule: {state['decision_rule']}",
             f"Recommendation: {state['recommendation']}",
             f"Largest downside: {state['largest_downside']}",
             "",
@@ -1852,6 +1935,7 @@ def _design_semantics_v2(state: dict[str, object]) -> str:
             "",
         )
     )
+    return "\n".join(lines)
 
 
 def render_design_artifact(value: object) -> str:
@@ -1875,7 +1959,7 @@ def render_design_artifact(value: object) -> str:
         rendered = rendered.replace("{{" + key + "}}", item)
     if "{{" in rendered or "}}" in rendered:
         fail("Design template has unresolved placeholders")
-    if state.get("schema_version") == 2:
+    if state.get("schema_version") in {2, 3}:
         rendered = rendered.replace("\n## Design state\n", "\n" + _design_semantics_v2(state) + "## Design state\n", 1)
     return rendered.rstrip() + "\n"
 
@@ -1896,13 +1980,19 @@ def design_path(state: dict[str, object]) -> str:
 
 
 def _index_entry(kind: str, path: str, state: dict[str, object], *, active: bool) -> dict[str, object]:
+    if active and kind == "design":
+        entry_status, currentness, authority = _design_index_metadata(design_acceptance(state))
+    else:
+        entry_status = "accepted" if active else "superseded"
+        currentness = "current" if active else "historical"
+        authority = "canonical" if active else "superseded"
     return {
         "topic": str(state["slug"]),
         "kind": kind,
         "title": str(state["title"]),
-        "status": "accepted" if active else "superseded",
-        "currentness": "current" if active else "historical",
-        "authority": "canonical" if active else "superseded",
+        "status": entry_status,
+        "currentness": currentness,
+        "authority": authority,
         "path": path,
         "linked": [],
         "evidence_paths": [path],
@@ -1992,6 +2082,19 @@ def _eligible(entry: dict[str, object]) -> bool:
     )
 
 
+def _pointer_eligible(pointer: str, entry: dict[str, object]) -> bool:
+    if pointer != "design":
+        return _eligible(entry)
+    if entry.get("kind") != "design":
+        return False
+    metadata = (entry.get("status"), entry.get("currentness"), entry.get("authority"))
+    return metadata in {
+        _design_index_metadata("accepted"),
+        _design_index_metadata("pending"),
+        _design_index_metadata("blocked"),
+    }
+
+
 def _pointer_shape(pointer: str, path: str, entry: dict[str, object]) -> bool:
     if pointer == "design":
         return entry["kind"] == "design" and DESIGN_PATH_RE.fullmatch(path) is not None
@@ -1999,6 +2102,8 @@ def _pointer_shape(pointer: str, path: str, entry: dict[str, object]) -> bool:
         return entry["kind"] == "plan" and path.startswith("docs/teamwork/plans/") and path.endswith(".md")
     if pointer == "progress":
         return entry["kind"] == "progress" and GOAL_PATH_RE.fullmatch(path) is not None
+    if pointer == "report":
+        return entry["kind"] == "report"
     return True
 
 
@@ -2010,13 +2115,26 @@ def _validate_pointer_metadata(index: dict[str, object]) -> None:
     used: set[str] = set()
     for pointer in ("design", "plan", "progress"):
         raw = active.get(pointer)
-        current_entries = [entry for entry in entries if isinstance(entry, dict) and entry.get("kind") == ("progress" if pointer == "progress" else pointer) and _eligible(entry)]
+        current_entries = [
+            entry
+            for entry in entries
+            if isinstance(entry, dict)
+            and entry.get("kind") == ("progress" if pointer == "progress" else pointer)
+            and _pointer_eligible(pointer, entry)
+        ]
         if raw is None:
             if current_entries:
                 fail(f"active.{pointer} is null while a current eligible artifact exists")
             continue
         assert isinstance(raw, str)
-        matching = [entry for entry in entries if isinstance(entry, dict) and entry.get("path") == raw and _eligible(entry) and _pointer_shape(pointer, raw, entry)]
+        matching = [
+            entry
+            for entry in entries
+            if isinstance(entry, dict)
+            and entry.get("path") == raw
+            and _pointer_eligible(pointer, entry)
+            and _pointer_shape(pointer, raw, entry)
+        ]
         if not matching:
             fail(f"active.{pointer} has no eligible matching entry")
         if len(matching) != 1 or len(current_entries) != 1:
@@ -2024,6 +2142,74 @@ def _validate_pointer_metadata(index: dict[str, object]) -> None:
         if raw in used:
             fail("one artifact path cannot own more than one active pointer")
         used.add(raw)
+    _validate_workflow_pointer_metadata(index, used)
+
+
+def _workflow_artifact_path(workflow: str, updated: str, slug: str) -> str:
+    config = WORKFLOW_CONFIG[workflow]
+    return f"{config['directory']}/{updated}-{slug}.md"
+
+
+def _workflow_artifact_slot(workflow: str) -> str:
+    return WORKFLOW_CONFIG[workflow]["active"]
+
+
+def _workflow_artifact_kind(workflow: str) -> str:
+    return WORKFLOW_CONFIG[workflow]["kind"]
+
+
+def _is_workflow_entry(entry: dict[str, object]) -> bool:
+    return entry.get("artifact_type") == WORKFLOW_ARTIFACT_KIND
+
+
+def _workflow_entry_path(entry: dict[str, object]) -> str:
+    workflow = entry.get("workflow")
+    if workflow not in WORKFLOW_CONFIG:
+        fail("workflow-artifact index entry has an unsupported workflow")
+    slug = require_slug(entry.get("topic"), "workflow-artifact entry topic")
+    updated = require_date(entry.get("updated"), "workflow-artifact entry updated")
+    assert isinstance(workflow, str)
+    return _workflow_artifact_path(workflow, updated, slug)
+
+
+def _active_path_contains(active: dict[str, object], slot: str, path: str) -> bool:
+    if slot == "results":
+        results = active.get("results")
+        return isinstance(results, list) and path in results
+    return active.get(slot) == path
+
+
+def _validate_workflow_pointer_metadata(index: dict[str, object], used: set[str]) -> None:
+    active = index["active"]
+    assert isinstance(active, dict)
+    entries = index["entries"]
+    assert isinstance(entries, list)
+    current_by_slot: dict[str, list[str]] = {"plan": [], "report": [], "results": []}
+    for entry in entries:
+        if not isinstance(entry, dict) or not _is_workflow_entry(entry) or not _eligible(entry):
+            continue
+        expected = _workflow_entry_path(entry)
+        path = str(entry["path"])
+        if path != expected:
+            fail("workflow-artifact index entry path does not match its derived destination")
+        workflow = str(entry["workflow"])
+        if entry["kind"] != _workflow_artifact_kind(workflow):
+            fail("workflow-artifact index entry kind does not match its workflow")
+        slot = _workflow_artifact_slot(workflow)
+        current_by_slot[slot].append(path)
+        if not _active_path_contains(active, slot, path):
+            fail(f"active.{slot} is missing a current workflow-artifact entry")
+    for slot in ("plan", "report"):
+        paths = current_by_slot[slot]
+        if len(paths) > 1:
+            fail(f"active.{slot} is ambiguous")
+        if paths:
+            raw = active.get(slot)
+            if raw != paths[0]:
+                fail(f"active.{slot} does not match its current workflow-artifact entry")
+            if slot != "plan" and paths[0] in used:
+                fail("one artifact path cannot own more than one active pointer")
+            used.add(paths[0])
 
 
 def _read_index(root: Path) -> tuple[str, dict[str, object]]:
@@ -2043,6 +2229,20 @@ def _find_entry(index: dict[str, object], path: str) -> tuple[int, dict[str, obj
     return matches[0]
 
 
+def _generic_active_entry(index: dict[str, object], path: str) -> dict[str, object] | None:
+    matches = [
+        entry
+        for entry in index["entries"]
+        if isinstance(entry, dict)
+        and entry.get("path") == path
+        and _is_workflow_entry(entry)
+        and _eligible(entry)
+    ]
+    if len(matches) > 1:
+        fail("active workflow artifact is ambiguous")
+    return None if not matches else matches[0]
+
+
 def _validate_plan_artifact(text: str) -> tuple[str, str]:
     header = re.search(r"(?m)^Artifact Type: plan$", text)
     updated = re.search(r"(?m)^Last Updated: (\d{4}-\d{2}-\d{2})$", text)
@@ -2050,6 +2250,50 @@ def _validate_plan_artifact(text: str) -> tuple[str, str]:
     if header is None or updated is None or title is None or not valid_date(updated.group(1)):
         fail("active Plan artifact does not have parseable canonical headers")
     return title.group(1), updated.group(1)
+
+
+def _workflow_header(text: str, name: str) -> str:
+    match = re.search(rf"(?m)^{re.escape(name)}: (.+)$", text)
+    if match is None:
+        fail(f"workflow artifact is missing {name}")
+    return match.group(1)
+
+
+def parse_workflow_artifact_headers(text: str) -> dict[str, str]:
+    title = re.search(r"(?m)^# (.+)$", text)
+    if title is None:
+        fail("workflow artifact is missing its H1 title")
+    updated = _workflow_header(text, "Last Updated")
+    if not valid_date(updated):
+        fail("workflow artifact Last Updated must be a valid YYYY-MM-DD date")
+    return {
+        "artifact_kind": _workflow_header(text, "Artifact Kind"),
+        "artifact_type": _workflow_header(text, "Artifact Type"),
+        "workflow": _workflow_header(text, "Workflow"),
+        "updated": updated,
+        "consumer": _workflow_header(text, "Consumer"),
+        "source_revision": _workflow_header(text, "Source Revision"),
+        "title": title.group(1),
+    }
+
+
+def validate_workflow_artifact_entry(text: str, entry: dict[str, object]) -> None:
+    headers = parse_workflow_artifact_headers(text)
+    workflow = entry.get("workflow")
+    if workflow not in WORKFLOW_CONFIG:
+        fail("workflow-artifact entry has an unsupported workflow")
+    assert isinstance(workflow, str)
+    expected = {
+        "artifact_kind": _workflow_artifact_kind(workflow),
+        "artifact_type": WORKFLOW_ARTIFACT_KIND,
+        "workflow": workflow,
+        "updated": str(entry["updated"]),
+        "consumer": str(entry["consumer"]),
+        "source_revision": str(entry["source_revision"]),
+        "title": str(entry["title"]),
+    }
+    if headers != expected:
+        fail("workflow artifact headers do not agree with its index entry")
 
 
 def validate_currentness(root: Path, index: dict[str, object]) -> None:
@@ -2068,16 +2312,365 @@ def validate_currentness(root: Path, index: dict[str, object]) -> None:
         _, entry = _find_entry(index, path)
         if pointer == "design":
             state = validate_design_artifact(text)
-            if state["status"] != "current" or state["title"] != entry["title"] or state["updated"] != entry["updated"] or design_path(state) != path:
+            expected_metadata = _design_index_metadata(design_acceptance(state))
+            actual_metadata = (entry["status"], entry["currentness"], entry["authority"])
+            if (
+                state["status"] != "current"
+                or state["title"] != entry["title"]
+                or state["updated"] != entry["updated"]
+                or design_path(state) != path
+                or actual_metadata != expected_metadata
+            ):
                 fail("active.design artifact does not agree with its index entry")
         elif pointer == "plan":
-            title, updated = _validate_plan_artifact(text)
-            if title != entry["title"] or updated != entry["updated"]:
-                fail("active.plan artifact does not agree with its index entry")
+            if _is_workflow_entry(entry):
+                validate_workflow_artifact_entry(text, entry)
+            else:
+                title, updated = _validate_plan_artifact(text)
+                if title != entry["title"] or updated != entry["updated"]:
+                    fail("active.plan artifact does not agree with its index entry")
         else:
             state = validate_goal_artifact(text)
             if state["status"] != "active" or state["title"] != entry["title"] or state["updated"] != entry["updated"] or goal_path(state) != path:
                 fail("active.progress artifact does not agree with its index entry")
+    report_path = active.get("report")
+    if isinstance(report_path, str):
+        entry = _generic_active_entry(index, report_path)
+        if entry is not None:
+            text = safe_read_text(root, report_path)
+            assert text is not None
+            validate_workflow_artifact_entry(text, entry)
+    for result_path in active["results"]:
+        assert isinstance(result_path, str)
+        entry = _generic_active_entry(index, result_path)
+        if entry is not None:
+            text = safe_read_text(root, result_path)
+            assert text is not None
+            validate_workflow_artifact_entry(text, entry)
+
+
+def normalize_workflow_request(value: object) -> dict[str, object]:
+    if not isinstance(value, dict):
+        fail("workflow artifact request must be an object")
+    operation = value.get("operation")
+    allowed_keys = {
+        "schema_version",
+        "operation",
+        "expected_revision",
+        "previous_path",
+        "artifact_type",
+        "workflow",
+        "slug",
+        "title",
+        "summary",
+        "consumer",
+        "source_revision",
+        "updated",
+        "body",
+        "linked",
+        "evidence_paths",
+        "search_keys",
+    }
+    unknown = set(value) - allowed_keys
+    if unknown:
+        fail(f"workflow artifact request has unsupported keys: {', '.join(sorted(unknown))}")
+    if value.get("schema_version") != 1 or operation not in {"create", "update", "supersede"}:
+        fail("workflow artifact request has an unsupported schema or operation")
+    if value.get("artifact_type") != WORKFLOW_ARTIFACT_KIND:
+        fail("artifact_type must be workflow-artifact")
+    expected = value.get("expected_revision")
+    if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
+        fail("workflow artifact expected_revision must come from artifact-inspect")
+    workflow = value.get("workflow")
+    if workflow in {"discussion", "design", "goal"}:
+        fail("Discussion, Design, and Goal artifacts are managed by their specialized commands")
+    if workflow not in WORKFLOW_CONFIG:
+        fail("workflow must be one of: " + ", ".join(sorted(WORKFLOW_CONFIG)))
+    assert isinstance(workflow, str)
+    state: dict[str, object] = {
+        "schema_version": 1,
+        "operation": str(operation),
+        "expected_revision": expected,
+        "previous_path": None,
+        "artifact_type": WORKFLOW_ARTIFACT_KIND,
+        "workflow": workflow,
+        "slug": require_slug(value.get("slug")),
+        "title": require_text(value.get("title"), "workflow artifact title", maximum=200),
+        "summary": require_text(value.get("summary"), "workflow artifact summary", maximum=2000),
+        "consumer": require_text(value.get("consumer"), "workflow artifact consumer", maximum=200),
+        "source_revision": require_text(value.get("source_revision"), "workflow artifact source_revision", maximum=200),
+        "updated": require_date(value.get("updated"), "workflow artifact updated"),
+        "body": require_markdown_body(value.get("body"), "workflow artifact body"),
+        "linked": require_path_list(value.get("linked", []), "workflow artifact linked"),
+        "evidence_paths": require_path_list(value.get("evidence_paths", []), "workflow artifact evidence_paths"),
+        "search_keys": require_text_list(value.get("search_keys", []), "workflow artifact search_keys"),
+    }
+    previous = value.get("previous_path")
+    if operation == "create":
+        if previous is not None:
+            fail("create does not accept previous_path")
+    else:
+        state["previous_path"] = checked_relative(previous, "workflow artifact previous_path")
+        if not WORKFLOW_ARTIFACT_PATH_RE.fullmatch(str(state["previous_path"])):
+            fail("previous_path must come from artifact-inspect")
+    return state
+
+
+def render_workflow_artifact(value: dict[str, object]) -> str:
+    workflow = str(value["workflow"])
+    return "\n".join(
+        (
+            f"Artifact Kind: {_workflow_artifact_kind(workflow)}",
+            f"Artifact Type: {WORKFLOW_ARTIFACT_KIND}",
+            f"Workflow: {workflow}",
+            f"Last Updated: {value['updated']}",
+            f"Consumer: {value['consumer']}",
+            f"Source Revision: {value['source_revision']}",
+            "",
+            f"# {value['title']}",
+            "",
+            str(value["body"]).rstrip(),
+            "",
+        )
+    )
+
+
+def _workflow_index_entry(state: dict[str, object], path: str, *, active: bool, supersedes: list[str] | None = None) -> dict[str, object]:
+    workflow = str(state["workflow"])
+    evidence = list(state["evidence_paths"])
+    assert isinstance(evidence, list)
+    if path not in evidence:
+        evidence = [path, *[str(item) for item in evidence]]
+    return {
+        "topic": str(state["slug"]),
+        "kind": _workflow_artifact_kind(workflow),
+        "title": str(state["title"]),
+        "status": "active" if active else "superseded",
+        "currentness": "current" if active else "historical",
+        "authority": "canonical" if active else "superseded",
+        "path": path,
+        "artifact_type": WORKFLOW_ARTIFACT_KIND,
+        "workflow": workflow,
+        "consumer": str(state["consumer"]),
+        "applies_to": [str(state["consumer"])],
+        "source_revision": str(state["source_revision"]),
+        "linked": list(state["linked"]),
+        "evidence_paths": evidence,
+        "supersedes": list(supersedes or []),
+        "search_keys": list(state["search_keys"]),
+        "updated": str(state["updated"]),
+        "summary": str(state["summary"]),
+    }
+
+
+def _workflow_active_entry_map(index: dict[str, object]) -> dict[str, dict[str, object]]:
+    entries = index["entries"]
+    assert isinstance(entries, list)
+    active = index["active"]
+    assert isinstance(active, dict)
+    active_paths: set[str] = set()
+    for pointer in ("plan", "report"):
+        value = active.get(pointer)
+        if isinstance(value, str):
+            active_paths.add(value)
+    active_paths.update(str(item) for item in active["results"])
+    result: dict[str, dict[str, object]] = {}
+    for entry in entries:
+        if (
+            isinstance(entry, dict)
+            and entry.get("path") in active_paths
+            and _is_workflow_entry(entry)
+            and _eligible(entry)
+        ):
+            result[str(entry["path"])] = entry
+    return result
+
+
+def workflow_revision(root: Path, index_text: str, index: dict[str, object]) -> str:
+    parts = [b"workflow-artifact-v1", index_text.encode("utf-8")]
+    for path in sorted(_workflow_active_entry_map(index)):
+        data = safe_read_bytes(root, path)
+        assert data is not None
+        parts.append(path.encode("utf-8"))
+        parts.append(data)
+    return _hash(*parts)
+
+
+def workflow_schema(operation: str) -> dict[str, object]:
+    if operation not in {"create", "update", "supersede"}:
+        fail("workflow artifact schema operation must be create, update, or supersede")
+    request: dict[str, object] = {
+        "schema_version": 1,
+        "operation": operation,
+        "expected_revision": "<revision from artifact-inspect>",
+        "artifact_type": WORKFLOW_ARTIFACT_KIND,
+        "workflow": "research",
+        "slug": "workflow-slug",
+        "title": "Workflow artifact title",
+        "summary": "One-sentence registration summary.",
+        "consumer": "Writer",
+        "source_revision": "<source revision or inspected artifact revision>",
+        "updated": "YYYY-MM-DD",
+        "body": "Writer-owned Markdown body.",
+        "linked": [],
+        "evidence_paths": [],
+        "search_keys": ["workflow-slug"],
+    }
+    if operation != "create":
+        request["previous_path"] = "<path from artifact-inspect>"
+    return request
+
+
+def inspect_workflow_artifacts(root: Path) -> dict[str, object]:
+    with locked_memory(root):
+        recovered = recover_transaction(root, WORKFLOW_ARTIFACT_MARKER, WORKFLOW_ARTIFACT_PREFIXES, WORKFLOW_ARTIFACT_KIND)
+        require_initialized_memory(root)
+        index_text, index = _read_index(root)
+        validate_currentness(root, index)
+        registrations = []
+        for path, entry in sorted(_workflow_active_entry_map(index).items()):
+            registrations.append(
+                {
+                    "path": path,
+                    "workflow": entry["workflow"],
+                    "kind": entry["kind"],
+                    "title": entry["title"],
+                    "slug": entry["topic"],
+                    "updated": entry["updated"],
+                    "active": _workflow_artifact_slot(str(entry["workflow"])),
+                    "consumer": entry.get("consumer"),
+                    "source_revision": entry.get("source_revision"),
+                    "summary": entry["summary"],
+                }
+            )
+        return {
+            "initialized": True,
+            "recovered": recovered,
+            "revision": workflow_revision(root, index_text, index),
+            "active": {
+                "plan": index["active"].get("plan"),
+                "report": index["active"].get("report"),
+                "results": list(index["active"]["results"]),
+                "registrations": registrations,
+            },
+        }
+
+
+def _find_workflow_entry(index: dict[str, object], path: str) -> tuple[int, dict[str, object]]:
+    position, entry = _find_entry(index, path)
+    if not _is_workflow_entry(entry) or not _eligible(entry):
+        fail("previous_path is not a current generic workflow artifact from artifact-inspect")
+    return position, entry
+
+
+def _conflicting_workflow_slug(index: dict[str, object], workflow: str, slug: str, *, except_path: str | None = None) -> bool:
+    for entry in index["entries"]:
+        if not isinstance(entry, dict) or not _is_workflow_entry(entry) or not _eligible(entry):
+            continue
+        if entry["path"] == except_path:
+            continue
+        if entry.get("workflow") == workflow and entry.get("topic") == slug:
+            return True
+    return False
+
+
+def _set_workflow_active(active: dict[str, object], slot: str, old_path: str | None, new_path: str) -> None:
+    if slot == "results":
+        results = list(active["results"])
+        if old_path is None:
+            if new_path not in results:
+                results.append(new_path)
+        else:
+            if old_path not in results:
+                fail("previous workflow artifact is not registered in active.results")
+            results = [new_path if item == old_path else item for item in results if item != new_path]
+        active["results"] = results
+    else:
+        if old_path is not None and active.get(slot) != old_path:
+            fail(f"previous workflow artifact is not registered in active.{slot}")
+        active[slot] = new_path
+
+
+def apply_workflow_artifact(root: Path, request: dict[str, object]) -> dict[str, object]:
+    state = normalize_workflow_request(request)
+    operation = str(state["operation"])
+    workflow = str(state["workflow"])
+    slot = _workflow_artifact_slot(workflow)
+    target = _workflow_artifact_path(workflow, str(state["updated"]), str(state["slug"]))
+    with locked_memory(root):
+        recover_transaction(root, WORKFLOW_ARTIFACT_MARKER, WORKFLOW_ARTIFACT_PREFIXES, WORKFLOW_ARTIFACT_KIND)
+        require_initialized_memory(root)
+        index_text, index = _read_index(root)
+        validate_currentness(root, index)
+        if state["expected_revision"] != workflow_revision(root, index_text, index):
+            fail("stale workflow artifact expected_revision; run artifact-inspect again")
+        if _conflicting_workflow_slug(index, workflow, str(state["slug"]), except_path=str(state["previous_path"])):
+            fail("a current workflow artifact already owns this workflow and slug")
+        active = index["active"]
+        assert isinstance(active, dict)
+        old_path: str | None = None
+        supersedes: list[str] = []
+        outputs: dict[str, Output]
+        if operation == "create":
+            if slot != "results" and active.get(slot) is not None:
+                fail(f"cannot create while active.{slot} already exists")
+            if safe_read_bytes(root, target, optional=True) is not None:
+                fail("derived workflow artifact destination already exists")
+            index["entries"].append(_workflow_index_entry(state, target, active=True))
+            _set_workflow_active(active, slot, None, target)
+            outputs = {target: Output(render_workflow_artifact(state).encode("utf-8"))}
+        else:
+            old_path = str(state["previous_path"])
+            _, old_entry = _find_workflow_entry(index, old_path)
+            if operation == "update":
+                if old_entry.get("workflow") != workflow:
+                    fail("update cannot change workflow; use supersede")
+                if target != old_path:
+                    fail("update cannot change the derived workflow artifact destination; use supersede")
+                _replace_index_entry(index, old_path, _workflow_index_entry(state, target, active=True, supersedes=list(old_entry.get("supersedes", []))))
+                outputs = {target: Output(render_workflow_artifact(state).encode("utf-8"))}
+            else:
+                old_slot = _workflow_artifact_slot(str(old_entry["workflow"]))
+                if old_slot != slot:
+                    fail("supersede cannot move a workflow artifact between active registration classes")
+                if target == old_path or safe_read_bytes(root, target, optional=True) is not None:
+                    fail("supersede must derive an unused workflow artifact destination")
+                old_historical = dict(old_entry)
+                old_historical["status"] = "superseded"
+                old_historical["currentness"] = "historical"
+                old_historical["authority"] = "superseded"
+                old_historical["superseded_by"] = target
+                _replace_index_entry(index, old_path, old_historical)
+                supersedes = [old_path]
+                index["entries"].append(_workflow_index_entry(state, target, active=True, supersedes=supersedes))
+                _set_workflow_active(active, slot, old_path, target)
+                old_bytes = safe_read_bytes(root, old_path)
+                assert old_bytes is not None
+                outputs = {
+                    old_path: Output(old_bytes, _mode_of(root, old_path) or 0o600),
+                    target: Output(render_workflow_artifact(state).encode("utf-8")),
+                }
+        index["last_updated"] = str(state["updated"])
+        _validate_pointer_metadata(index)
+        outputs[INDEX_PATH] = Output(_serialize_index(index).encode("utf-8"))
+        created_directories: list[str] = []
+        ensure_directory(root, PurePosixPath(target).parent.as_posix(), created=created_directories)
+        apply_transaction(
+            root,
+            kind=WORKFLOW_ARTIFACT_KIND,
+            marker=WORKFLOW_ARTIFACT_MARKER,
+            prefixes=WORKFLOW_ARTIFACT_PREFIXES,
+            outputs=outputs,
+            created_directories=created_directories,
+        )
+        final_text, final_index = _read_index(root)
+        validate_currentness(root, final_index)
+        return {
+            "path": target,
+            "revision": workflow_revision(root, final_text, final_index),
+            "changed_paths": list(outputs),
+            "active": final_index["active"].get(slot) if slot != "results" else list(final_index["active"]["results"]),
+        }
 
 
 def design_revision(root: Path, index_text: str, index: dict[str, object]) -> str:
@@ -2090,13 +2683,15 @@ def design_schema(operation: str) -> dict[str, object]:
     if operation not in {"create", "update", "supersede"}:
         fail("Design schema operation must be create, update, or supersede")
     state = {
-        "schema_version": 2,
+        "schema_version": 3,
         "artifact_type": "design",
         "slug": "decision-slug",
         "title": "Design title",
         "updated": "YYYY-MM-DD",
         "status": "current",
         "superseded_by": None,
+        "acceptance": "pending",
+        "blockers": [],
         "evidence_waves": ["Local evidence", "External evidence or bounded none"],
         "alternatives": ["Recommended route", "Material alternative"],
         "exclusions": ["Out-of-scope route"],
@@ -2126,7 +2721,8 @@ def inspect_design(root: Path) -> dict[str, object]:
         if isinstance(path, str):
             text = safe_read_text(root, path)
             assert text is not None
-            active = {"path": path, "state": validate_design_artifact(text)}
+            state = validate_design_artifact(text)
+            active = {"path": path, "acceptance": design_acceptance(state), "state": state}
         return {"initialized": True, "recovered": recovered, "revision": design_revision(root, index_text, index), "active": active}
 
 
@@ -2167,6 +2763,11 @@ def apply_design(root: Path, request: dict[str, object]) -> dict[str, object]:
                 fail("cannot update without active.design")
             if target != current_path:
                 fail("update cannot change the controlled Design destination; use supersede")
+            old_text = safe_read_text(root, current_path)
+            assert old_text is not None
+            old = validate_design_artifact(old_text)
+            if design_acceptance(old) == "accepted" and design_acceptance(state) != "accepted":
+                fail("update cannot downgrade an accepted Design; use supersede")
             _replace_index_entry(index, current_path, _index_entry("design", target, state, active=True))
         else:
             if not isinstance(current_path, str):
@@ -2791,6 +3392,7 @@ def artifact_index_validate(root: Path) -> dict[str, object]:
     with locked_memory(root):
         recover_transaction(root, DESIGN_MARKER, ("docs/teamwork/design/", INDEX_PATH), "design")
         recover_transaction(root, GOAL_MARKER, ("docs/teamwork/reports/", INDEX_PATH), "goal")
+        recover_transaction(root, WORKFLOW_ARTIFACT_MARKER, WORKFLOW_ARTIFACT_PREFIXES, WORKFLOW_ARTIFACT_KIND)
         recover_transaction(root, DISCUSSION_MARKER, ("docs/teamwork/discussion/",), "discussion")
         require_initialized_memory(root)
         _, index = _read_index(root)
@@ -2805,15 +3407,15 @@ def _print(value: object) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("inspect", "design-inspect", "goal-inspect", "artifact-index-validate"):
+    for name in ("inspect", "design-inspect", "goal-inspect", "artifact-inspect", "artifact-index-validate"):
         child = sub.add_parser(name)
         child.add_argument("--project-root", required=True)
     child = sub.add_parser("schema")
     child.add_argument("operation")
-    for name in ("design-schema", "goal-schema"):
+    for name in ("design-schema", "goal-schema", "artifact-schema"):
         child = sub.add_parser(name)
         child.add_argument("operation")
-    for name in ("apply", "design-apply", "goal-apply"):
+    for name in ("apply", "design-apply", "goal-apply", "artifact-apply"):
         child = sub.add_parser(name)
         child.add_argument("--project-root", required=True)
         group = child.add_mutually_exclusive_group(required=True)
@@ -2836,6 +3438,8 @@ def main(argv: list[str] | None = None) -> int:
             _print(design_schema(arguments.operation))
         elif command == "goal-schema":
             _print(goal_schema(arguments.operation))
+        elif command == "artifact-schema":
+            _print(workflow_schema(arguments.operation))
         elif command == "design-render":
             print(render_design_artifact(_decode_json(arguments.state_json, "Design state")), end="")
         elif command == "design-validate":
@@ -2856,6 +3460,8 @@ def main(argv: list[str] | None = None) -> int:
                 _print(inspect_design(root))
             elif command == "goal-inspect":
                 _print(inspect_goal(root))
+            elif command == "artifact-inspect":
+                _print(inspect_workflow_artifacts(root))
             elif command == "artifact-index-validate":
                 _print(artifact_index_validate(root))
             else:
@@ -2864,8 +3470,10 @@ def main(argv: list[str] | None = None) -> int:
                     _print(apply_discussion(root, request))
                 elif command == "design-apply":
                     _print(apply_design(root, request))
-                else:
+                elif command == "goal-apply":
                     _print(apply_goal(root, request))
+                else:
+                    _print(apply_workflow_artifact(root, request))
     except TransactionError as exc:
         print(json.dumps({"ok": False, "category": exc.category, "message": str(exc)}, ensure_ascii=False), file=sys.stderr)
         return 2

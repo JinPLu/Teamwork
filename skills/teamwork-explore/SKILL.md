@@ -24,7 +24,8 @@ commands, or turn an investigation into implementation.
    evidence that changes it, and at most one material gap or next discriminator.
 5. Stop when the local question is answered or the missing evidence is precisely
    identified. Do not create an Explore report; evidence belongs in the workflow
-   or artifact that owns the decision.
+   writing brief, packet, or artifact that owns the decision. Writer never
+   creates an independent Explore artifact.
 
 Use Explore when the evidence question is structurally complex (multiple files,
 callers, definitions, or history), separable from the current task, or benefits

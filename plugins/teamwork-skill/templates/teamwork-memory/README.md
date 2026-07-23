@@ -16,10 +16,20 @@ state machine and does not replace direct inspection of the current project.
 - Active Plan route: none
 - Active Goal progress: none
 
-Design, Plan, Goal progress, Research, and the ordinary current digest keep
-separate paths and index ownership. `active.progress` is the sole current
-pointer for durable Goal attempts. Grill discussions are intentionally absent
-from this ordinary-memory index.
+Named workflows in initialized writable projects persist by default; `no files`,
+off-record, read-only, or no-write overrides that. Ordinary clarification or
+chat, one-off native work, and clear code implementation requests do not force an
+extra workflow artifact. Writer turns frozen bounded briefs into indexed
+artifacts without researching, inventing, or changing facts, citations,
+decisions, status, authority, or acceptance.
+
+Grill, Design, and Goal use specialized transactions. Design v3 records
+`acceptance: pending`, `accepted`, or `blocked`; persistence is not acceptance,
+and only `accepted` is Plan-ready. Legacy v1/v2 is read as `accepted`. Research,
+Debug, Plan, Review, and mutating
+Init/Update use the generic artifact transaction. `active.progress` is the sole
+current pointer for durable Goal attempts. Explore creates no standalone report;
+its evidence is folded into the consuming artifact.
 
 ## Update rules
 

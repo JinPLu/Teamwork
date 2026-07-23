@@ -53,15 +53,15 @@ PLATFORM_AGENT_ROOTS = {
     "codex": (pathlib.Path(".codex/agents"), "toml", {
         "teamwork-researcher", "teamwork-explorer", "teamwork-debugger",
         "teamwork-designer", "teamwork-planner", "teamwork-worker",
-        "teamwork-plan-reviewer", "teamwork-reviewer",
+        "teamwork-writer", "teamwork-plan-reviewer", "teamwork-reviewer",
     }),
     "cursor": (pathlib.Path(".cursor/agents"), "md", {
         "researcher", "explorer", "debugger", "designer", "planner",
-        "worker", "plan-reviewer", "reviewer",
+        "worker", "writer", "plan-reviewer", "reviewer",
     }),
     "claude": (pathlib.Path(".claude/agents"), "md", {
         "researcher", "explorer", "debugger", "designer", "planner",
-        "worker", "plan-reviewer", "reviewer",
+        "worker", "writer", "plan-reviewer", "reviewer",
     }),
 }
 CODEX_PROFILE_MATRICES = {
@@ -72,6 +72,7 @@ CODEX_PROFILE_MATRICES = {
         "teamwork-designer": ("gpt-5.6-sol", "high"),
         "teamwork-planner": ("gpt-5.5", "high"),
         "teamwork-worker": ("gpt-5.5", "high"),
+        "teamwork-writer": ("gpt-5.5", "low"),
         "teamwork-plan-reviewer": ("gpt-5.6-sol", "high"),
         "teamwork-reviewer": ("gpt-5.6-sol", "max"),
     },
@@ -82,6 +83,7 @@ CODEX_PROFILE_MATRICES = {
         "teamwork-designer": ("gpt-5.6-sol", "medium"),
         "teamwork-planner": ("gpt-5.5", "medium"),
         "teamwork-worker": ("gpt-5.5", "medium"),
+        "teamwork-writer": ("gpt-5.5", "low"),
         "teamwork-plan-reviewer": ("gpt-5.6-sol", "high"),
         "teamwork-reviewer": ("gpt-5.6-sol", "high"),
     },

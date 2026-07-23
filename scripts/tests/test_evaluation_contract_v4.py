@@ -26,6 +26,7 @@ from teamwork_tooling.evaluation.contracts import (
 )
 from teamwork_tooling.evaluation.host_matrix import (
     HostMatrixError,
+    LEGACY_V4_C5_ROLES,
     _direct_scenario_evidence,
     _immutable_scenario_hashes,
     _run_scenario_verifier,
@@ -34,7 +35,7 @@ from teamwork_tooling.evaluation.host_matrix import (
     sha256_file,
     validate_trajectory,
 )
-from teamwork_tooling.evaluation.sources import validate_role_template_sources
+from teamwork_tooling.evaluation.sources import validate_role_template_sources, validate_skill_source_contract
 
 
 def dispatch_for(host: str, role: str, invocation_id: str, model: str, effort: str) -> dict[str, object]:
@@ -230,11 +231,12 @@ class EvaluationContractV4Tests(unittest.TestCase):
             dimensions,
         )
 
-    def test_release_manifest_is_exact_and_maps_all_roles(self) -> None:
+    def test_legacy_release_manifest_is_exact_and_maps_legacy_roles(self) -> None:
         manifest = ROOT / "evals/teamwork/live-cases/v4-release-matrix.json"
         cases = load_case_manifest(manifest)
         self.assertEqual(13, len(cases))
-        self.assertEqual(CANONICAL_ROLES, {role for case in cases for role in case["expected_roles"]})
+        self.assertEqual(set(LEGACY_V4_C5_ROLES), {role for case in cases for role in case["expected_roles"]})
+        self.assertNotIn("writer", {role for case in cases for role in case["expected_roles"]})
 
     def test_c5_case_contract_freezes_the_exact_104_record_matrix(self) -> None:
         contract_path = ROOT / "evals/teamwork/manifests/v4.1.0-teamwork-c5-cases.json"
@@ -306,10 +308,90 @@ class EvaluationContractV4Tests(unittest.TestCase):
             self.assertIn("inspect -> schema -> apply", text)
             self.assertNotIn("only an explicit", text)
 
-    def test_each_host_has_exact_eight_role_target_semantics(self) -> None:
+    def test_plan_option_discovery_regex_normalizes_whitespace(self) -> None:
+        source = (ROOT / "skills/teamwork-plan/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Do\nnot compare options or hide it as an assumption.", source)
+        validate_skill_source_contract("teamwork-plan", source)
+
+        mutated = source + "\nPlanner may compare options and alternatives.\n"
+        with self.assertRaisesRegex(EvalError, "Plan owns option discovery"):
+            validate_skill_source_contract("teamwork-plan", mutated)
+
+    def test_default_persistence_cases_cover_writer_routes_and_negative_boundaries(self) -> None:
+        cases = {case["id"]: case for case in selected_cases("dev")}
+        expected = {
+            "persistence-normal-doc-writer",
+            "persistence-generic-artifact-writer",
+            "persistence-specialized-artifact-writer",
+            "persistence-negative-overrides",
+            "persistence-explore-no-artifact",
+            "persistence-code-coupled-owner",
+        }
+        self.assertTrue(expected <= set(cases))
+        self.assertNotIn("writer", {role for case in load_case_manifest(
+            ROOT / "evals/teamwork/live-cases/v4-release-matrix.json"
+        ) for role in case["expected_roles"]})
+
+        self.assertEqual(
+            {
+                "templates/codex-agents/teamwork-writer.toml",
+                "templates/cursor-agents/writer.md",
+                "templates/claude-agents/writer.md",
+            },
+            {item["source"] for item in cases["persistence-normal-doc-writer"]["producers"]},
+        )
+        self.assertIn(
+            "scripts/discussion-transaction.py",
+            {item["source"] for item in cases["persistence-generic-artifact-writer"]["producers"]},
+        )
+        self.assertIn(
+            "scripts/discussion-transaction.py",
+            {item["source"] for item in cases["persistence-specialized-artifact-writer"]["producers"]},
+        )
+        self.assertIn(
+            "skills/teamwork-explore/SKILL.md",
+            {item["source"] for item in cases["persistence-explore-no-artifact"]["producers"]},
+        )
+
+    def test_generic_persistence_case_requires_working_artifact_transaction_cli(self) -> None:
+        case = next(case for case in selected_cases("dev") if case["id"] == "persistence-generic-artifact-writer")
+        source_path = "scripts/discussion-transaction.py"
+        source = (ROOT / source_path).read_text(encoding="utf-8")
+        mutated = source.replace(
+            'for name in ("inspect", "design-inspect", "goal-inspect", "artifact-inspect", "artifact-index-validate"):',
+            'for name in ("inspect", "design-inspect", "goal-inspect", "artifact-index-validate"):',
+            1,
+        )
+        self.assertNotEqual(source, mutated)
+        with self.assertRaisesRegex(EvalError, "artifact-inspect/artifact-schema/artifact-apply"):
+            validate_bound_producer_sources(
+                case,
+                ROOT / "evals/teamwork/cases/persistence-generic-artifact-writer.dev.v4.json",
+                {source_path: mutated},
+            )
+
+    def test_specialized_persistence_case_requires_working_discussion_transaction_cli(self) -> None:
+        case = next(case for case in selected_cases("dev") if case["id"] == "persistence-specialized-artifact-writer")
+        source_path = "scripts/discussion-transaction.py"
+        source = (ROOT / source_path).read_text(encoding="utf-8")
+        mutated = source.replace("def inspect_discussion(", "def removed_inspect_discussion(", 1)
+        self.assertNotEqual(source, mutated)
+        with self.assertRaisesRegex(EvalError, "inspect/schema/apply"):
+            validate_bound_producer_sources(
+                case,
+                ROOT / "evals/teamwork/cases/persistence-specialized-artifact-writer.dev.v4.json",
+                {source_path: mutated},
+            )
+
+    def test_each_host_has_exact_nine_role_target_semantics(self) -> None:
         validate_role_template_sources(ROOT)
         for host, mapping in ROLE_TEMPLATE_PATHS.items():
             self.assertEqual(CANONICAL_ROLES, set(mapping))
+
+    def test_bound_producer_rules_cover_every_current_role(self) -> None:
+        self.assertEqual(CANONICAL_ROLES, set(case_module.ROLE_SOURCE_RULES))
+        self.assertIn(("bounded writing brief",), case_module.ROLE_SOURCE_RULES["writer"])
+        self.assertIn(("execution-ready plan packet",), case_module.ROLE_SOURCE_RULES["planner"])
 
     def test_every_published_v342_case_has_one_active_replacement_disposition(self) -> None:
         mapping = json.loads((ROOT / "evals/teamwork/migrations/v3-case-replacements.json").read_text(encoding="utf-8"))
@@ -490,7 +572,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
                 "cost-first-root-gpt55-high",
                 "--expected-records-per-output", "13",
                 "--expected-total-records", "104",
-                "--required-roles-per-slice", *sorted(CANONICAL_ROLES),
+                "--required-roles-per-slice", *sorted(LEGACY_V4_C5_ROLES),
                 "--summary", str(output_root / "matrix-summary.json"),
             ]
 

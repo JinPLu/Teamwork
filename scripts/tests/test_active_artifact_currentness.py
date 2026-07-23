@@ -40,6 +40,12 @@ class ActiveArtifactCurrentnessTests(unittest.TestCase):
             "residual_uncertainty": "No material dissent remains.",
         }
         state.update(overrides)
+        if state["schema_version"] == 3:
+            state.setdefault("acceptance", "accepted")
+            state.setdefault("blockers", [])
+        else:
+            state.pop("acceptance", None)
+            state.pop("blockers", None)
         return state
 
     def goal_state(self) -> dict[str, object]:
@@ -147,6 +153,45 @@ class ActiveArtifactCurrentnessTests(unittest.TestCase):
             target.write_text(CONTRACT["render_design_artifact"](state), encoding="utf-8")
             with self.assertRaisesRegex(CONTRACT["TransactionError"], "active.design artifact"):
                 CONTRACT["validate_currentness"](project, CONTRACT["parse_index"](json.dumps(broken)))
+        finally:
+            temporary.cleanup()
+
+    def test_pending_and_blocked_designs_require_exact_design_only_pointer_metadata(self) -> None:
+        cases = (
+            ("pending", [], ("candidate", "candidate", "candidate")),
+            ("blocked", ["Security approval remains open."], ("blocked", "candidate", "candidate")),
+        )
+        for acceptance, blockers, metadata in cases:
+            with self.subTest(acceptance=acceptance):
+                temporary, project, index = self.valid_index_and_targets()
+                try:
+                    state = self.design_state(schema_version=3, acceptance=acceptance, blockers=blockers)
+                    path = index["active"]["design"]
+                    (project / path).write_text(CONTRACT["render_design_artifact"](state), encoding="utf-8")
+                    entry = next(item for item in index["entries"] if item["path"] == path)
+                    entry["status"], entry["currentness"], entry["authority"] = metadata
+                    CONTRACT["validate_currentness"](project, CONTRACT["parse_index"](json.dumps(index)))
+
+                    drifted = copy.deepcopy(index)
+                    drifted_entry = next(item for item in drifted["entries"] if item["path"] == path)
+                    drifted_entry["status"], drifted_entry["currentness"], drifted_entry["authority"] = (
+                        "accepted",
+                        "current",
+                        "canonical",
+                    )
+                    with self.assertRaisesRegex(CONTRACT["TransactionError"], "active.design artifact"):
+                        CONTRACT["validate_currentness"](project, CONTRACT["parse_index"](json.dumps(drifted)))
+                finally:
+                    temporary.cleanup()
+
+    def test_candidate_metadata_is_not_eligible_for_plan_pointer(self) -> None:
+        temporary, _project, index = self.valid_index_and_targets()
+        try:
+            path = index["active"]["plan"]
+            entry = next(item for item in index["entries"] if item["path"] == path)
+            entry["status"], entry["currentness"], entry["authority"] = ("candidate", "candidate", "candidate")
+            with self.assertRaisesRegex(CONTRACT["TransactionError"], "active.plan has no eligible matching entry"):
+                CONTRACT["parse_index"](json.dumps(index))
         finally:
             temporary.cleanup()
 

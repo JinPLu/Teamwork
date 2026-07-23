@@ -11,6 +11,7 @@ CODEX_AGENTS=(
   teamwork-designer
   teamwork-planner
   teamwork-worker
+  teamwork-writer
   teamwork-plan-reviewer
   teamwork-reviewer
 )
@@ -21,6 +22,7 @@ CURSOR_AGENTS=(
   designer
   planner
   worker
+  writer
   plan-reviewer
   reviewer
 )
@@ -31,6 +33,7 @@ CLAUDE_AGENTS=(
   designer
   planner
   worker
+  writer
   plan-reviewer
   reviewer
 )
@@ -53,7 +56,6 @@ git_known_package_file "$V342_SKILL_INVENTORY_FIXTURE" \
 while IFS= read -r template; do
   ! grep -q 'grill/question-first' "$template" \
     || fail "agent template must not duplicate the grill procedure: ${template#"$ROOT/"}"
-  word_count_max "$template" 260 "agent template should remain lean: ${template#"$ROOT/"}"
 done < <(find "$ROOT/templates/codex-agents" "$ROOT/templates/cursor-agents" "$ROOT/templates/claude-agents" -type f | sort)
 grep_absent 'Shared Understanding Packet\|Native Fields\|Option Matrix\|Worker Completion Packet\|Question Candidate' \
   "agent templates must not restore fixed packet ceremony" \
@@ -92,6 +94,11 @@ roles = {
         root / "templates/cursor-agents/worker.md",
         root / "templates/claude-agents/worker.md",
     ],
+    "writer": [
+        root / "templates/codex-agents/teamwork-writer.toml",
+        root / "templates/cursor-agents/writer.md",
+        root / "templates/claude-agents/writer.md",
+    ],
     "planner": [
         root / "templates/codex-agents/teamwork-planner.toml",
         root / "templates/cursor-agents/planner.md",
@@ -114,7 +121,18 @@ required = {
     "debugger": ("unknown failure", "immutable"),
     "designer": ("genuine alternatives", "strictly read-only"),
     "worker": ("exact writable paths", "proportional"),
-    "planner": ("selected direction", "executable plan"),
+    "writer": (
+        "standalone document",
+        "bounded writing brief",
+        "facts/sources/citations/decisions/authority/status/acceptance",
+        "default terminal workflow artifacts",
+        "artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply",
+        "transaction-derived destination",
+        "required transaction gate",
+        "registration",
+        "blocked without writing",
+    ),
+    "planner": ("selected direction", "execution-ready plan"),
     "plan-reviewer": ("accept", "revise", "blocked"),
     "reviewer": ("accept", "revise", "blocked"),
 }
@@ -132,9 +150,9 @@ for role, paths in roles.items():
                     f"FAIL: {role} parity missing one of {alternatives!r}: {path}"
                 )
 if set(roles) != {
-    "researcher", "explorer", "debugger", "designer", "planner", "worker", "plan-reviewer", "reviewer"
+    "researcher", "explorer", "debugger", "designer", "planner", "worker", "writer", "plan-reviewer", "reviewer"
 }:
-    raise SystemExit("FAIL: role validation must name exactly the eight v4 roles")
+    raise SystemExit("FAIL: role validation must name exactly the nine v4 roles")
 PY
 grep_absent 'done_with_concerns\|needs_context' \
   "agent templates must not restore retired lifecycle verdicts" \
@@ -373,6 +391,8 @@ for agent in teamwork-researcher teamwork-explorer teamwork-debugger teamwork-de
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home/.codex/agents/$agent.toml" \
     "Codex install must render high reasoning for $agent"
 done
+grep_required '^model_reasoning_effort = "low"$' "$tmp/home/.codex/agents/teamwork-writer.toml" \
+  "Codex install must render low reasoning for teamwork-writer"
 for agent in teamwork-reviewer; do
   grep_required '^model_reasoning_effort = "max"$' "$tmp/home/.codex/agents/$agent.toml" \
     "Codex install must render max reasoning for $agent"
@@ -442,6 +462,10 @@ for agent in teamwork-researcher teamwork-explorer teamwork-debugger teamwork-pl
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
     "default Codex execution-path agent must use high reasoning for $agent"
 done
+grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents/.codex/agents/teamwork-writer.toml" \
+  "default Codex writer install must use gpt-5.5"
+grep_required '^model_reasoning_effort = "low"$' "$tmp/home-codex-agents/.codex/agents/teamwork-writer.toml" \
+  "default Codex writer install must use low reasoning"
 for agent in teamwork-designer teamwork-plan-reviewer; do
   grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
     "default Codex agent install must render gpt-5.6-sol for $agent"
@@ -505,6 +529,10 @@ for agent in teamwork-researcher teamwork-explorer teamwork-debugger teamwork-pl
   grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
     "cost-first Codex agent install must use medium reasoning for $agent"
 done
+grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-writer.toml" \
+  "cost-first Codex writer install must use gpt-5.5"
+grep_required '^model_reasoning_effort = "low"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-writer.toml" \
+  "cost-first Codex writer install must use low reasoning"
 for agent in teamwork-designer; do
   grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
     "cost-first Codex agent install must use Sol for $agent"
@@ -683,6 +711,8 @@ grep_required '^model: gemini-3.5-flash$' "$tmp/home-cursor/.cursor/agents/explo
   "Cursor install must render gemini flash model for explorer"
 grep_required '^model: composer-2.5-fast$' "$tmp/home-cursor/.cursor/agents/worker.md" \
   "Cursor install must render composer 2.5 model for worker"
+grep_required '^model: composer-2.5-fast$' "$tmp/home-cursor/.cursor/agents/writer.md" \
+  "Cursor install must render composer 2.5 model for writer"
 grep_required '^model: claude-opus-4-8-thinking-high$' "$tmp/home-cursor/.cursor/agents/debugger.md" \
   "Cursor install must render opus 4.8 model for debugger"
 grep_required '^model: gpt-5.6-sol-medium$' "$tmp/home-cursor/.cursor/agents/designer.md" \
@@ -750,6 +780,8 @@ for agent in researcher explorer; do
 done
 grep_required '^model: composer-2.5-fast$' "$tmp/home-cursor-cost/.cursor/agents/worker.md" \
   "cost-first Cursor agent install must keep composer 2.5 model for worker"
+grep_required '^model: composer-2.5-fast$' "$tmp/home-cursor-cost/.cursor/agents/writer.md" \
+  "cost-first Cursor agent install must keep composer 2.5 model for writer"
 grep_required '^model: gpt-5.6-terra-medium$' "$tmp/home-cursor-cost/.cursor/agents/debugger.md" \
   "cost-first Cursor agent install must downshift debugger"
 grep_required '^model: gpt-5.6-terra-medium$' "$tmp/home-cursor-cost/.cursor/agents/designer.md" \
@@ -807,6 +839,10 @@ for agent in researcher explorer worker; do
   grep_required '^effort: medium$' "$tmp/home-claude/.claude/agents/$agent.md" \
     "Claude install must render medium effort for $agent"
 done
+grep_required '^model: haiku$' "$tmp/home-claude/.claude/agents/writer.md" \
+  "Claude install must render haiku model for writer"
+grep_required '^effort: medium$' "$tmp/home-claude/.claude/agents/writer.md" \
+  "Claude install must render medium effort for writer"
 for agent in debugger designer planner; do
   grep_required '^model: opus$' "$tmp/home-claude/.claude/agents/$agent.md" \
     "Claude install must render opus model for $agent"
@@ -838,6 +874,10 @@ for agent in researcher explorer worker; do
   grep_required '^effort: medium$' "$tmp/home-claude-cost/.claude/agents/$agent.md" \
     "cost-first Claude agent install must retain medium effort for $agent"
 done
+grep_required '^model: haiku$' "$tmp/home-claude-cost/.claude/agents/writer.md" \
+  "cost-first Claude writer install must use haiku"
+grep_required '^effort: medium$' "$tmp/home-claude-cost/.claude/agents/writer.md" \
+  "cost-first Claude writer install must use medium effort"
 for agent in debugger designer planner; do
   grep_required '^model: opus$' "$tmp/home-claude-cost/.claude/agents/$agent.md" \
     "cost-first Claude agent install must keep opus model for $agent"

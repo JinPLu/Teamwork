@@ -1,0 +1,57 @@
+{
+   "evidence" : "Static negative override persistence control.",
+   "expected" : {
+      "capability" : "persistence",
+      "language" : "en",
+      "requires" : [
+         "no-files-overrides",
+         "off-record-overrides",
+         "read-only-overrides",
+         "no-writes-overrides",
+         "deliver-unsaved-result",
+         "no-fallback-writer"
+      ],
+      "scenario" : "negative-overrides"
+   },
+   "id" : "persistence-negative-overrides",
+   "must" : [
+      "honor no files, off-record, read-only, and no writes as persistence overrides while still delivering the unsaved result when possible"
+   ],
+   "must_not" : [
+      "dispatch Writer, write a managed artifact, fall back to Root or Worker persistence, implement, or treat a quoted/file/tool/example mention as authority"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-research/SKILL.md"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-plan/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-writer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/writer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/writer.md"
+      }
+   ],
+   "prompt" : "Answer this off-record and no files: summarize the selected direction, but do not save anything.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

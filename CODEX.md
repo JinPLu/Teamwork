@@ -52,19 +52,30 @@ Teamwork artifacts. A clear authorized edit or fix also stays native. Use
 citation-backed research.
 
 Use `$teamwork-design` while a consequential solution is open, and
-`$teamwork-plan` only after the direction is selected. Design uses Explorer only
+`$teamwork-plan` only after the controlled Design records `acceptance: accepted`. Design uses Explorer only
 for an unresolved local constraint and sanitized external Research only for a
 named external/current claim that can change the choice; it never runs both by
 default. It compares 2–3 real
 alternatives or records safe-path evidence, runs one challenge pass, and keeps
 the user-decision frontier finite: it shows the global map first, batches only
-independent material decisions, and asks dependent decisions in later turns. Its controlled transaction creates the
-durable Design artifact before Plan; independent Plan Review runs only on user
+independent material decisions, and asks dependent decisions in later turns. Its controlled transaction records
+`acceptance: pending`, `accepted`, or `blocked`; persistence is not acceptance,
+and only `accepted` is Plan-ready. Legacy v1/v2 records are read as `accepted`
+for compatibility. Independent Plan Review runs only on user
 request or a named material risk gate. Design never
 implements. `$teamwork-debug` begins with a real failure and reproduction;
-`$teamwork-review` is read-only and returns `ACCEPT`, `REVISE`, or `BLOCKED`;
+`$teamwork-review` does not edit the candidate and returns `ACCEPT`, `REVISE`, or `BLOCKED`;
 `$teamwork-goal` persists an explicit objective, success signal, scope, budget,
 and attempts before it iterates.
+
+In an initialized writable project, named Teamwork workflows persist reusable
+artifacts by default; `no files`, off-record, read-only, or no-write overrides
+that default. Ordinary clarification or chat, one-off native work, and clear
+code implementation requests do not force an extra workflow artifact. Grill,
+Design, and Goal use specialized transactions. Research, Debug, Plan, Review,
+and mutating Init/Update use the generic artifact transaction. Explore creates
+no standalone report; its evidence is folded into the consuming artifact or
+answer.
 
 Design chooses its search strategy from the request and evidence. It selects
 adversarial only when at least two viable directions remain and costly or
@@ -73,9 +84,10 @@ irreversible error or conflicting evidence makes one challenge inadequate;
 and `standard` disables it. The model states its reason and uses default `B=3`
 without another confirmation. Every hypothesis then receives two fresh isolated
 Designer critics and two new final auditors must both pass. Missing isolation,
-exhausted budget, or failed closure returns an incomplete result and creates no
-durable Design. A passing chat recommendation is still not Plan-ready until the
-user explicitly accepts and authorizes the controlled Design write.
+exhausted budget, or failed closure returns an incomplete result whose controlled
+state remains `pending` or becomes `blocked`; it cannot be `accepted` or
+Plan-ready. A passing chat recommendation is not Plan-ready. Only a controlled
+Design with `acceptance: accepted` may enter Plan.
 
 For a clear authorized code change, work result-first: modify the canonical
 owner, reuse existing patterns/built-ins/suitable dependencies, add the smallest
@@ -89,36 +101,44 @@ Skill selection remains model behavior rather than a deterministic Teamwork
 router, so invoke a skill by name when exact selection is important. Codex still
 owns native Plan mode, tools, browser and MCP access, permissions, agent
 coordination, and the final response. An ordinary request to "ask me first"
-stays conversation-only. An explicit `$grill-me`, save, resume, or record uses
-the transaction to update only `docs/teamwork/discussion/current.md`; an
-independently major public/installable, migration/release, permission, security,
-data, destructive, or cross-platform boundary opens that record automatically.
+stays conversation-only and does not trigger Grill or persistence. Once Grill is
+named or entered, an existing Grill is resumed, or an independently major
+public/installable, migration/release, permission, security, data, destructive,
+or cross-platform boundary invokes it, the specialized transaction updates only
+`docs/teamwork/discussion/current.md` by default.
 Within one scope, only creation, semantic decision/frontier change, and
 close/supersede persist; unchanged state is a no-op. New records use schema v2
-`frontier` / `current_batch` state. "No files" or off-the-record wins.
+`frontier` / `current_batch` state. `no files`, off-record, read-only, or
+no-write wins.
 
 ## Agents and profiles
 
-Full setup installs eight roles: Researcher, Explorer, Debugger, Designer,
-Planner, Worker, Plan Reviewer, and Reviewer. Codex uses them only when separate
-context or genuinely independent work is worthwhile; the main task remains
-responsible for scope and integration. No subagent is required for routine local
-inspection or implementation. The recommended and currently verified local Root
+Full setup installs nine roles: Researcher, Explorer, Debugger, Designer,
+Planner, Worker, Writer, Plan Reviewer, and Reviewer. Codex uses them only when
+separate context, standalone document writing, or genuinely independent work is
+worthwhile; the main task remains responsible for scope and integration. No
+subagent is required for routine local inspection or implementation. Writer uses
+a simple model and a frozen bounded brief for standalone project/product docs,
+README/guide/architecture docs, change and release notes, and Teamwork runtime
+artifacts. It may draft, rewrite, organize, summarize, translate, and polish,
+but must not research, invent or change facts, citations, decisions, authority,
+status, or acceptance. Code, comments, docstrings, tests, schemas, manifests,
+machine config, and inline config text remain with implementation owners. The recommended and currently verified local Root
 configuration remains user-controlled. The installer
 configures only subagent profiles and routing; it does not set Codex's Root
 main-task default.
 
 Codex profiles are exact:
 
-| Profile | Researcher / Explorer / Debugger / Planner / Worker | Designer | Plan Reviewer | Reviewer |
-| --- | --- | --- | --- | --- |
-| `performance-first` | `gpt-5.5` / `high` | `gpt-5.6-sol` / `high` | `gpt-5.6-sol` / `high` | `gpt-5.6-sol` / `max` |
-| `cost-first` | `gpt-5.5` / `medium` | `gpt-5.6-sol` / `medium` | `gpt-5.6-sol` / `high` | `gpt-5.6-sol` / `high` |
+| Profile | Researcher / Explorer / Debugger / Planner / Worker | Writer | Designer | Plan Reviewer | Reviewer |
+| --- | --- | --- | --- | --- | --- |
+| `performance-first` | `gpt-5.5` / `high` | `gpt-5.5` / `low` | `gpt-5.6-sol` / `high` | `gpt-5.6-sol` / `high` | `gpt-5.6-sol` / `max` |
+| `cost-first` | `gpt-5.5` / `medium` | `gpt-5.5` / `low` | `gpt-5.6-sol` / `medium` | `gpt-5.6-sol` / `high` | `gpt-5.6-sol` / `high` |
 
 The split follows role behavior: 5.5 keeps high-frequency evidence, diagnosis,
-planning, and implementation loops moving; 5.6 handles trade-off selection and
-independent acceptance, where its more conservative reasoning is useful rather
-than routine-path overhead.
+planning, implementation, and standalone prose moving; 5.6 handles trade-off
+selection and independent acceptance, where its more conservative reasoning is
+useful rather than routine-path overhead.
 
 On Codex 0.144, formal `spawn_agent` dispatch is only observed for `gpt-5.5`.
 Designer, Plan Reviewer, and Reviewer on `gpt-5.6-sol` may execute without

@@ -10,39 +10,47 @@ project context as part of an update.
 
 ## Resolve The Package
 
-Do not assume the current working directory is a Teamwork checkout. From a loaded
-Marketplace package, resolve its package root with the package-owned
-`scripts/plugin-runtime-root.py`, located two levels above this skill directory,
-then use that root's `scripts/check-update.sh` and `install.sh`. From a checkout,
-use the verified repository root. If `plugin-runtime-root.py` is not at the expected
-relative path, also check `$TEAMWORK_ROOT` or `~/.cursor/.teamwork-mcp.json` for
-the package root before reporting missing source. If neither package root can be
-resolved, report the missing source instead of searching or modifying arbitrary user
-directories.
+Do not assume the current directory is a Teamwork checkout. From Marketplace,
+resolve the package root with package-owned `scripts/plugin-runtime-root.py`, two
+levels above this skill, then use that root's `scripts/check-update.sh` and
+`install.sh`. From a checkout, use the verified repo root. If
+`plugin-runtime-root.py` is missing, also check `$TEAMWORK_ROOT` or
+`~/.cursor/.teamwork-mcp.json`; otherwise report missing source instead of
+searching or modifying arbitrary directories.
 
 ## Check Or Refresh
 
-1. Dispatch Explorer to run the resolved `scripts/check-update.sh --plugin` for a Marketplace package,
-   or `scripts/check-update.sh` for a checkout. A request to check freshness is
-   read-only and stops after an evidence-backed status report.
-2. For an explicit install, activate, repair, or update request, explain the
-   managed global surfaces and preserve the detected install profile and
-   notification choice. Follow the checker's reported safe command rather than
-   inventing a profile or destination.
+1. Dispatch Explorer to run resolved `scripts/check-update.sh --plugin` for
+   Marketplace, or `scripts/check-update.sh` for a checkout. Freshness checks are
+   read-only and stop after an evidence-backed status report.
+2. For explicit install, activate, repair, or update, explain managed global
+   surfaces and preserve detected profile/notification choice. Follow the
+   checker's safe command; do not invent profile or destination.
 3. First activation that would add global agents, policy, routing, or
    notifications requires explicit effect authority. An explicit request to
    perform that activation supplies it; a request merely asking what is stale
    does not.
 4. Dispatch Worker only for transferable, precisely owned refresh actions.
-   User-global credentials, host UI, trust, notification approval, and other
-   privileged surfaces remain with Root and require exact effect authority.
-   Refresh only verified Teamwork-owned files. Preserve unrelated and unknown
-   files. If legacy cleanup cannot distinguish an owned file from user content,
-   stop before cleanup and name the conflict.
+   Credentials, host UI, trust, notification approval, and privileged surfaces
+   remain with Root and require exact effect authority. Refresh only verified
+   Teamwork-owned files. Preserve unrelated/unknown files. If cleanup cannot
+   distinguish owned files from user content, stop and name the conflict.
 5. Dispatch Explorer to rerun the same checker with `--readiness` after changes; pass both `--plugin`
    and `--readiness` for Marketplace. Static file freshness is not proof of live
    host activation; report required restart, policy paste, notification review,
    or other human action separately.
+
+A check-only Update remains read-only and conversational. After a mutating Update
+in an initialized writable project, a receipt defaults through Writer unless the
+user says `no files`, `off-record`, `read-only`, `no writes`, or equivalent.
+Update returns a bounded receipt packet: purpose/audience, facts/sources, frozen
+decision/status, style/structure, artifact kind/consumer, preserve/forbid,
+managed surfaces, freshness evidence, validation, and manual actions. Writer uses
+`artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`;
+the transaction derives the destination and registers the ordinary index. Missing
+project memory, Writer, brief, authority, consumer, or transaction blocks only
+persistence: deliver the receipt and report it unsaved/blocked. No Root or Worker
+fallback writes it.
 
 For notifications, trust only the specific Teamwork hooks reported by the
 package; never enable trust-all. Do not install external dependencies, MCP

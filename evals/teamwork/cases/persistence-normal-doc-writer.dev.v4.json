@@ -1,0 +1,46 @@
+{
+   "evidence" : "Static Writer standalone document persistence control.",
+   "expected" : {
+      "capability" : "persistence",
+      "language" : "en",
+      "requires" : [
+         "standalone-doc",
+         "bounded-writing-brief",
+         "unmanaged-exact-path",
+         "no-transaction-required",
+         "writer-only",
+         "no-research",
+         "no-code-coupled-text"
+      ],
+      "scenario" : "normal-doc-writer"
+   },
+   "id" : "persistence-normal-doc-writer",
+   "must" : [
+      "route an authorized standalone document draft to Writer using a bounded brief and exact unmanaged path"
+   ],
+   "must_not" : [
+      "invoke a workflow transaction, research new facts, write code-coupled text, implement, or self-accept content"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-writer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/writer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/writer.md"
+      }
+   ],
+   "prompt" : "Draft the approved team note at docs/teamwork/notes/2026-07-22-summary.md from this bounded brief without adding new facts.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

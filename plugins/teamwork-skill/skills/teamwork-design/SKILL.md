@@ -10,25 +10,23 @@ material trade-off; it has one owner.
 
 ## Establish The Decision
 
-Start with local constraints and evidence first.
-Dispatch Explorer only when an
+Start with local constraints and evidence first. Dispatch Explorer only when an
 unresolved local constraint, owner, interface, test, or prior decision can change
-the choice and Root lacks evidence. Dispatch Researcher
-only for a named external or current claim that can change the choice, using a
-sanitized question. Do not run both evidence tracks by default, expose
-private material, ask the user to rediscover local facts, or investigate a claim
-that cannot change the decision. Each invoked track gets one initial evidence
-wave.
+the choice and Root lacks evidence. Dispatch Researcher only for a named external
+or current claim that can change the choice, using a sanitized question. Do not
+run both evidence tracks by default, expose private material, ask the user to
+rediscover local facts, or inspect irrelevant claims. Each invoked track gets one
+initial evidence wave.
 
 ## Select The Search Strategy
 
 After the initial evidence wave, select once before Designer critic/auditor
 dispatch. `standard` keeps the default; `adversarial` forces the stronger method.
 Otherwise use adversarial only when a Design-qualified choice has at least two
-viable directions and costly or irreversible error or conflicting evidence
-makes one challenge inadequate. Risk, complexity, or brainstorm labels alone do
-not qualify. State the strategy and reason without confirmation. If selected,
-load and follow `references/adversarial-search.md`; it replaces only the default
+viable directions and costly or irreversible error or conflicting evidence makes
+one challenge inadequate. Risk, complexity, or brainstorm labels alone do not
+qualify. State the strategy and reason without confirmation. If selected, load
+and follow `references/adversarial-search.md`; it replaces only the default
 challenge, not Design ownership or Plan boundaries.
 
 ## Resolve Trade-offs
@@ -36,9 +34,9 @@ challenge, not Design ownership or Plan boundaries.
 If constraints identify one clear direction, recommend it without manufacturing
 alternatives. Otherwise:
 
-1. Generate two or three meaningful alternatives, including a viable
-   status quo; compare the same factors: outcome, compatibility, complexity,
-   operability, reversibility, migration cost, and risk.
+1. Generate two or three meaningful alternatives, including a viable status quo;
+   compare outcome, compatibility, complexity, operability, reversibility,
+   migration cost, and risk.
 2. Give the recommendation before asking a question: lead with its strongest
    reason, then its largest downside.
 3. In the default strategy, after recommending, perform exactly one challenge pass:
@@ -48,19 +46,19 @@ alternatives. Otherwise:
 4. Return `survives`, one revised recommendation, or a named evidence/user
    blocker. A direction-changing gap permits at most one targeted delta per
    already-justified evidence track and one integration revision; never change
-   the selected search strategy midstream.
+   strategy midstream.
 
 ## Finite Decision Frontier
 
-Root converts only unresolved user-owned choices that can change the direction
-into a finite frontier, normally at most three active items per level. Publish
-the global map before details, ordered by `goal`, `boundary`, then `detail`, and
-show the critical path. Ask one bounded independent batch at a time: one to three
+Root converts only unresolved user-owned choices that can change direction into a
+finite frontier, normally at most three active items per level. Publish the
+global map before details, ordered by `goal`, `boundary`, then `detail`, and show
+the critical path. Ask one bounded independent batch at a time: one to three
 choices whose answers cannot change each other's prompt, options,
 recommendation, or closure signal. Dependent choices are serial. Before each
 question, recommend an answer, give its largest downside, and state why the
-answer is critical, what it blocks, its dependencies, and its observable closing
-condition. Use `request_user_input` when callable; otherwise use the host's native
+answer is critical, what it blocks, dependencies, and its observable closing
+condition. Use `request_user_input` when callable; otherwise use the host
 question surface or one concise numbered batch.
 
 Answers close decisions; adjacent implementation preferences do not create new
@@ -73,19 +71,22 @@ section approvals.
 ## Finish At The Design Boundary
 
 For a major public/installable, release, permission, security, data, destructive,
-or cross-platform direction, also open the Grill record through
-inspect->schema->apply unless the user requested no files/off-record.
+or cross-platform direction, also open Grill through inspect->schema->apply
+unless the user requested `no files`, `off-record`, `read-only`, or `no writes`.
 
-A conversational recommendation, including adversarial dual `PASS`, is not
-durable or Plan-ready. Freeze one durable Design only after the user explicitly
-accepts the direction and authorizes saving it. A Plan-ready handoff request
-counts only when it explicitly accepts that direction and authorizes the save.
-Its structured Design state records the outcome, rule, recommendation and
-downside, rejected alternatives, key shape, boundaries, migration, acceptance
-signals, challenge outcome, frontier delta, and uncertainty. For adversarial
-Design also record the selected envelope, trials, taxonomy/coverage limit,
-distinct critic and auditor identities, final verdicts, and rejected material
-hypotheses; never store raw agent transcripts.
+In an initialized writable project, Design-boundary state defaults to the Design
+transaction unless a negative file override is present. Schema v3 records carry
+`acceptance: pending|accepted|blocked`. Persistence may happen before user
+acceptance and does not imply acceptance; pending and blocked Design records are
+durable but not Plan-ready. Plan-ready still requires the controlled route and
+`active.acceptance == accepted` for that direction. Root freezes a bounded
+structured Design state plus brief: purpose/audience, facts/sources, frozen decision/status,
+style/structure, transaction route/consumer, and preserve/forbid, then dispatches
+Writer to call the transaction. The state also contains outcome, rule,
+recommendation/downside, rejected alternatives, shape, boundaries, migration,
+acceptance signals, challenge outcome, frontier delta, and uncertainty. For
+adversarial Design also record envelope, trials, coverage limit, critic/auditor
+identities, final verdicts, and rejected hypotheses; never store raw transcripts.
 
 The package-level Design transaction is the sole durable Design writer. Every
 durable Design lifecycle uses this public route, in order:
@@ -108,7 +109,13 @@ levels up), then use that script.
 `design-render` and `design-validate` are read-only helpers only; they never
 replace the transaction. Never hand-author, redirect renderer output into, or
 directly edit Design Markdown, its route map, or text fallback. If the controlled
-route is unavailable or invalid, stop without claiming durable Design.
+route is unavailable or invalid, stop without claiming durable Design. Writer is
+only the caller; the transaction remains the sole filesystem writer. For
+standalone summaries, guides, or architecture docs, Writer may draft, rewrite,
+summarize, translate, or polish expression but must not research, invent, or
+change facts, citations, authority, status, decisions, or acceptance. Missing
+Writer, brief, authority, consumer, or transaction blocks; no Root,
+Designer, Worker, or reviewer fallback writes it.
 
 Design does not implement or silently enter Plan. Only after the controlled route returns
 its path and revision may Planner produce a Plan. Independent Plan

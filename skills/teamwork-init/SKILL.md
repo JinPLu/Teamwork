@@ -16,16 +16,15 @@ not authorize edits under user-global config directories, host settings,
 credentials, plugin catalogs, global skills or agents, dependency installation,
 remote services, Git publication, or release work.
 
-Resolve the exact project root before writing. Preserve unrelated user content
-and existing managed-block boundaries. If ownership of an existing file is
-unclear and safe merging is impossible, stop with the concrete conflict instead
-of overwriting it.
+Resolve the exact project root before writing. Preserve unrelated content and
+managed-block boundaries. If ownership is unclear and safe merging is impossible,
+stop with the concrete conflict instead of overwriting.
 
 ## Full Bootstrap And Candidate Inputs
 
-Emit the complete Capability Matrix only for an explicit full bootstrap. An
-audit, repair, migration, or slimming request must not manufacture that broad
-matrix merely because it inspects some platform surfaces.
+Emit the complete Capability Matrix only for an explicit full bootstrap. Audit,
+repair, migration, or slimming must not manufacture that broad matrix merely from
+some platform inspection.
 
 Treat external-memory or docs-graph output as candidate-only context, never as
 project or Teamwork truth. Candidate-promotion gates (all must pass): currentness
@@ -38,22 +37,19 @@ promotes candidate material.
 
 ## Project Workflow
 
-1. Dispatch Explorer for the read-only audit of the instruction hierarchy,
-   applicable platform surfaces, canonical human docs, source/configuration,
-   test commands, runbooks, and
-   existing `docs/teamwork/` context. Ground every durable rule in project
-   evidence; do not invent commands, paths, architecture, model mappings, or
-   capabilities.
-2. Keep only stable facts that change agent behavior: project purpose, canonical
-   owners, required commands, boundaries, source-of-truth paths, and local tool
-   policy. Leave volatile progress, experiment output, and temporary failures in
-   their actual tracker or artifact.
+1. Dispatch Explorer for the read-only audit of instruction hierarchy,
+   platform surfaces, human docs, source/configuration, test commands, runbooks,
+   and `docs/teamwork/` context. Ground every durable rule in project evidence;
+   do not invent commands, paths, architecture, model mappings, or capabilities.
+2. Keep only stable behavior-changing facts: project purpose, canonical owners,
+   required commands, boundaries, source-of-truth paths, and local tool policy.
+   Leave volatile progress, experiments, and temporary failures in their tracker.
 3. Give each fact one canonical owner. Merge duplicates and use short pointers or
-   platform-specific deltas elsewhere. Do not copy external documentation,
-   schemas, or large workflow manuals into project instructions.
+   platform deltas elsewhere. Do not copy external docs, schemas, or manuals into
+   project instructions.
 4. Keep local inspection and clear authorized implementation native. Describe
-   special tools such as CodeGraph only when configured or requested, including
-   when they should be preferred and what to do when unavailable.
+   special tools such as CodeGraph only when configured or requested, with use and
+   unavailable behavior.
 5. For Teamwork memory, preserve ordinary retrieval metadata separately from the
    single optional Grill record. Never rebuild a discussion transaction, hidden
    lifecycle, or skill-reference graph.
@@ -68,6 +64,18 @@ promotes candidate material.
 8. Re-read every changed instruction surface and exercise the nearest real
    project-local validation or command. If no real activation check is available,
    state that limit instead of treating syntax or file presence as live proof.
+
+An audit/check-only Init remains read-only and conversational. After a mutating
+Init in an initialized writable project, a receipt defaults through Writer unless
+the user says `no files`, `off-record`, `read-only`, `no writes`, or equivalent.
+Init returns a bounded receipt packet: purpose/audience, facts/sources, frozen
+decision/status, style/structure, artifact kind/consumer, preserve/forbid,
+changed surfaces, evidence, validation, and human action. Writer uses
+`artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`;
+the transaction derives the destination and registers the ordinary index. Missing
+project memory, Writer, brief, authority, consumer, or transaction blocks only
+persistence: deliver the receipt and report it unsaved/blocked. No Root or Worker
+fallback writes it.
 
 If the Explorer audit finds no decision-relevant change, dispatch no Worker and
 write nothing. Report the selected

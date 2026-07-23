@@ -33,6 +33,7 @@ EXPECTED_CODEX_AGENTS = {
     "teamwork-designer.toml",
     "teamwork-planner.toml",
     "teamwork-worker.toml",
+    "teamwork-writer.toml",
     "teamwork-plan-reviewer.toml",
     "teamwork-reviewer.toml",
 }
@@ -44,6 +45,7 @@ CODEX_PROFILE_MATRICES = {
         "teamwork-designer": ("gpt-5.6-sol", "high"),
         "teamwork-planner": ("gpt-5.5", "high"),
         "teamwork-worker": ("gpt-5.5", "high"),
+        "teamwork-writer": ("gpt-5.5", "low"),
         "teamwork-plan-reviewer": ("gpt-5.6-sol", "high"),
         "teamwork-reviewer": ("gpt-5.6-sol", "max"),
     },
@@ -54,6 +56,7 @@ CODEX_PROFILE_MATRICES = {
         "teamwork-designer": ("gpt-5.6-sol", "medium"),
         "teamwork-planner": ("gpt-5.5", "medium"),
         "teamwork-worker": ("gpt-5.5", "medium"),
+        "teamwork-writer": ("gpt-5.5", "low"),
         "teamwork-plan-reviewer": ("gpt-5.6-sol", "high"),
         "teamwork-reviewer": ("gpt-5.6-sol", "high"),
     },
@@ -152,8 +155,9 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         self.assertNotIn("init-project refreshes the user-level routing", output)
         self.assertIn("Project init never changes user-level routing", output)
         self.assertIn("cost-first uses GPT-5.5/medium", output)
-        self.assertIn("Worker; Sol/medium for Designer;", output)
+        self.assertIn("Worker; GPT-5.5/low for Writer; Sol/medium for Designer;", output)
         self.assertIn("Sol/high for Plan Reviewer and Reviewer.", output)
+        self.assertIn("Writer is fixed to the simplest model in both profiles.", output)
         self.assertIn("Cursor and Claude Code keep their existing profile mappings.", output)
         self.assertNotIn("cost-first lowers only", output)
 

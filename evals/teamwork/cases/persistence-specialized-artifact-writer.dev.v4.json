@@ -1,0 +1,57 @@
+{
+   "evidence" : "Static and executable specialized Grill transaction control.",
+   "expected" : {
+      "capability" : "persistence",
+      "language" : "en",
+      "requires" : [
+         "specialized-grill-design-goal-route",
+         "inspect-schema-apply",
+         "transaction-owned-writer",
+         "required-transaction-gate",
+         "writer-only",
+         "no-implementation-authority"
+      ],
+      "scenario" : "specialized-artifact-writer"
+   },
+   "id" : "persistence-specialized-artifact-writer",
+   "must" : [
+      "persist specialized Grill, Design, or Goal artifacts through their managed inspect -> schema -> apply route with Writer as caller and the transaction as filesystem writer"
+   ],
+   "must_not" : [
+      "save specialized artifacts through generic workflow artifacts, hand-author Markdown or indexes, implement, or infer release authority"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/grill-me/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-writer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/writer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/writer.md"
+      },
+      {
+         "class" : "artifact-engine",
+         "source" : "scripts/discussion-transaction.py"
+      }
+   ],
+   "prompt" : "$grill-me Save the major release-direction discussion in the initialized project.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

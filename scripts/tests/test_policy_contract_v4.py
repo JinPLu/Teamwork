@@ -10,9 +10,9 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 POLICY_SOURCE = ROOT / "scripts" / "install" / "policy.sh"
 FULL_RENDER_LIMITS = {
-    "codex": {"words": 370, "bytes": 3000},
-    "cursor": {"words": 370, "bytes": 3000},
-    "claude": {"words": 370, "bytes": 3000},
+    "codex": {"words": 430, "bytes": 3800},
+    "cursor": {"words": 430, "bytes": 3800},
+    "claude": {"words": 430, "bytes": 3800},
 }
 
 
@@ -23,7 +23,7 @@ REQUIRED_CLAUSES = {
         "answers, questions, designs, plans, reviews, and confirmations grant none.",
         "Inspect evidence before asking.",
         "Root owns user questions",
-        "Root alone asks required input or a bounded independent batch of user-owned decisions.",
+        "Root alone asks required input or one bounded independent batch of user-owned decisions.",
         "Pause only dependent work.",
         "Produce the real requested result first.",
     ),
@@ -32,26 +32,33 @@ REQUIRED_CLAUSES = {
         "Delegate only independent bounded work when worthwhile.",
         "Explore local.",
         "External/current/multi-source/citation-backed work first dispatches Researcher",
-        "Root never researches it directly.",
+        "Root never researches directly.",
         "Debug owns unknown causes",
         "an unresolved material direction uses Design",
         "Plan only translates an already selected direction",
         "Review user-requested/named-risk work",
-        "Goal explicit persistence; Init project; Update global.",
+        "Goal persists explicitly; Init project; Update global.",
         "Design: ≤1 evidence role;",
         "auto-adversarial only for viable alternatives plus costly-error/conflicting-evidence;",
-        "`adversarial` forces, `standard` disables; B=3/no-confirmation; fresh-isolation required.",
+        "`adversarial` forces, `standard` disables; B=3/no-confirmation; fresh isolation.",
     ),
-    "automatic_grill": (
-        "Root opens Grill for major public/installable, migration/release, permission, security, data, destructive, cross-platform, or finite Design-frontier changes.",
-        "Persist unless no-files/off-record; only create, decision/frontier change, close/supersede.",
-        "Decisions never grant implementation/release authority.",
-        "Natural question-first intent causes no file write",
-        "negative/quoted/file/tool/example/maintenance mentions are inert.",
+    "default_persistence": (
+        "Root opens Grill for major public/installable, release/migration, permission/security/data/destructive/platform, or finite Design frontier.",
+        "Initialized writable named workflows default-save reusable artifacts via low-cost Writer+transactions",
+        "Grill/Design/Goal specialized",
+        "Research/Debug/Plan/Review/Init/Update artifact-inspect→artifact-schema→artifact-apply.",
+        "Artifact-only grant, never implementation/release authority.",
+        "No-files/off-record/read-only/no-writes override",
+        "chat/native one-shots/Explore write no standalone artifact.",
+        "Natural question-first intent causes no file write.",
+        "Memory, Writer, authority, consumer, or route missing: deliver result, report unsaved/blocked",
+        "no Root/Worker/strong-role fallback.",
+        "Negative/quoted/file/tool/example/maintenance inert.",
     ),
     "roles_and_boundaries": (
         "Root routes, integrates, accepts",
         "leaf roles never ask users, expand scope, self-accept, or fallback.",
+        "Code-coupled text implementer-owned.",
     ),
     "evidence_and_implementation": (
         "Ground claims in evidence; distinguish observation from inference; invent no state/success.",
@@ -64,8 +71,8 @@ REQUIRED_CLAUSES = {
         "For low-risk mechanical work observe the result; full suite only for a named repository/release gate.",
         "Tests and validation support delivery and never replace an available real run.",
         "Workers self-verify.",
-        "One independent max Reviewer checks one sealed candidate or named risk once; combine findings into one repair batch and allow at most one delta recheck.",
-        "Only named owners write durable artifacts; only Planner writes an authorized Plan; Reviewers stay read-only.",
+        "Single Reviewer checks one sealed candidate or named risk once; combine findings into one repair batch and allow one delta recheck.",
+        "Only named owners write: Planner returns packets; Writer writes artifacts/docs; transactions write managed artifacts; Reviewers stay read-only.",
         "Stop when the requested result and named boundaries are observed.",
         "Lead with the conclusion; keep only detail that changes understanding, decision, action, or risk.",
     ),
@@ -191,7 +198,7 @@ class PolicyContractV4Tests(unittest.TestCase):
                     )
 
     def test_preference_order_inversion_is_detected(self) -> None:
-        canonical = "Prefer canonical owner/pattern"
+        canonical = "Prefer current canonical owner/pattern"
         minimal = "minimal logic"
         mutated = self.policy.replace(canonical, "ORDER_SENTINEL", 1)
         mutated = mutated.replace(minimal, canonical, 1)

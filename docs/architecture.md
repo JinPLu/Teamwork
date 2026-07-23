@@ -13,7 +13,7 @@ skills/
   <capability>/SKILL.md          self-contained user-facing capability
   <capability>/references/       only the owning skill's advanced method
   <capability>/agents/openai.yaml optional host interface metadata
-templates/                       eight-role install-time host-agent adapters
+templates/                       nine-role install-time host-agent adapters
 hooks/                           authored notification runtime and hook manifest
 evals/teamwork/
   cases/                         deterministic behavior cases
@@ -50,11 +50,17 @@ runtime-diagnosis, Design's adversarial-search, Research's deep-research, and
 Review's strict-review. They are methods of those skills, not shared workflow
 stages.
 
-Host adapters have exactly eight roles—Researcher, Explorer, Debugger, Designer,
-Planner, Worker, Plan Reviewer, and Reviewer—under each of the Codex, Cursor,
-and Claude Code template directories. Designer remains read-only and may receive
-one direction-selection, frozen-hypothesis challenge, or search-closure audit
-assignment; Root retains orchestration and final acceptance.
+Host adapters have exactly nine roles—Researcher, Explorer, Debugger, Designer,
+Planner, Worker, Writer, Plan Reviewer, and Reviewer—under each of the Codex,
+Cursor, and Claude Code template directories. Writer uses the simplest model
+profile and a frozen bounded brief for standalone document drafting, rewriting,
+organizing, summarizing, translation, polishing, and Teamwork runtime artifacts.
+It must not research, invent or change facts, citations, decisions, authority,
+status, or acceptance. Code, code comments, docstrings, tests, schemas,
+manifests, machine config, and inline config text remain with implementation
+owners. Designer remains read-only
+and may receive one direction-selection, frozen-hypothesis challenge, or
+search-closure audit assignment; Root retains orchestration and final acceptance.
 
 The following are sinks, not package sources:
 
@@ -64,16 +70,40 @@ The following are sinks, not package sources:
   init writes `.cursor/rules/` and optional project `.cursor/mcp.json` only with
   explicit `--cursor-mcp` consent. Edit `skills/`, `templates/`, or the owning
   producer instead of an installed copy.
-- `docs/teamwork/` is local Teamwork runtime memory. Grill has one
-  transaction-owned record, `docs/teamwork/discussion/current.md`, and it is not
-  indexed into a second memory file. Natural question-first requests remain
-  conversation-only; explicit persistence and independently major boundaries
-  use that transaction. A material Design freezes through its controlled
-  transaction into one durable Design artifact before Plan. Plan has its own
-  single durable artifact; Review is read-only. Research and report artifacts
-  remain local unless a maintainer intentionally promotes one.
+- `docs/teamwork/` is local Teamwork runtime memory. In an initialized writable
+  project, named Teamwork workflows persist reusable artifacts by default unless
+  the user says `no files`, off-record, read-only, or no-write. Ordinary chat and
+  clarification, one-off native work outside a Teamwork workflow, and clear code
+  implementation requests do not force an extra workflow artifact. Writer
+  authors ordinary artifacts from frozen bounded briefs and registers them in
+  `docs/teamwork/index.json` without changing facts, citations, decisions,
+  authority, status, or acceptance. Grill, Design, and Goal use their specialized
+  transactions. Research, Debug, Plan, Review, and mutating Init/Update use the
+  generic artifact transaction. Explore does not create a standalone report; its
+  evidence is folded into the consuming artifact or answer.
 - Temporary live outputs, homes, caches, logs, and build results are evidence or
   scratch state. They must not become package inputs.
+
+| Workflow | Runtime artifact |
+| --- | --- |
+| Grill | controlled discussion |
+| Research | research |
+| Design | controlled design state with `acceptance: pending`, `accepted`, or `blocked`; persistence is not acceptance and only `accepted` is Plan-ready |
+| Plan | canonical plan |
+| Debug | diagnosis/report |
+| Review | verdict/conclusion; persistence is not acceptance |
+| Goal | existing entry/attempt/status |
+| Mutating Init / Update | receipt |
+| Explore | no standalone report; evidence is folded into its consumer |
+
+Design schema v3 writes the three explicit acceptance states above. Legacy v1/v2
+records remain readable and are interpreted as `accepted` for compatibility.
+
+Persistence behavior is checked on real command paths: the generic probe runs
+`artifact-inspect` → `artifact-schema` → `artifact-apply` → `artifact-inspect`,
+while the specialized probe runs discussion `inspect` → `schema` → `apply` →
+`inspect`. Six positive and negative persistence development cases cover the
+default and its overrides.
 
 `evals/teamwork/outputs/` is the exception: its compact tracked JSONL files are
 authored static fixtures. `evals/teamwork/outputs/installed-v4/**` is ignored
@@ -115,12 +145,14 @@ This keeps the main boundaries visible:
   `standard` disables it. The default budget is 3 without another confirmation.
   Each actual hypothesis gets two fresh isolated Designer critics, materially
   revised hypotheses consume a new trial, and two new final auditors must both
-  pass. Missing isolation or closure fails
-  without a durable Design. Both strategies use the same finite user-decision
-  frontier and controlled durable Design writer before Plan. The frontier shows
+  pass. Missing isolation or closure leaves the controlled Design state
+  `pending` or `blocked`; it never produces an `accepted`, Plan-ready result.
+  Both strategies use the same finite user-decision frontier and controlled v3
+  Design transaction. Persistence is not acceptance, and only `accepted` may
+  enter Plan. The frontier shows
   a global map first, batches only independent material questions, and
   serializes dependent questions;
-- Plan turns an already selected direction into executable steps; independent
+- Plan turns an `accepted` Design into executable steps; independent
   Plan Review runs only on user request or a named material risk gate. Each
   Worker self-verifies its slice. After integration, a sealed candidate receives
   one independent max `ACCEPT`, `REVISE`, or `BLOCKED` Review only on user request
@@ -128,10 +160,12 @@ This keeps the main boundaries visible:
   candidate gets at most one delta recheck;
 - Debug constrains unknown-cause failure work to real failure, reproduction,
   discriminating evidence, the authorized narrow fix, and the same-path rerun;
-- Grill owns user question-first discussion. Explicit persistence and an
-  independently major public/installable, migration/release, permission,
-  security, data, destructive, or cross-platform boundary use the one durable
-  discussion transaction unless the user says no files/off-the-record. Within
+- Ordinary clarification does not trigger Grill or persistence. Once Grill is
+  named or entered, an existing Grill is resumed, or an independently major
+  public/installable, migration/release, permission, security, data, destructive,
+  or cross-platform boundary invokes it, the one specialized discussion
+  transaction persists by default unless the user says `no files`, off-record,
+  read-only, or no-write. Within
   one scope, only create, semantic decision/frontier change, and close/supersede
   write a revision; unchanged state is a no-op. New records use
   `frontier` / `current_batch` state;
@@ -165,11 +199,12 @@ lives in its own `SKILL.md`.
 
 The recommended local Codex Root configuration remains user-controlled. The
 installer configures only subagent profiles and routing; it does not set the
-Root main-task default. Codex renders the eight roles with exact profile
+Root main-task default. Codex renders the nine roles with exact profile
 mapping: performance-first uses `gpt-5.5`/`high` for Researcher, Explorer,
-Debugger, Planner, and Worker; `gpt-5.6-sol`/`high` for Designer and Plan
-Reviewer; and `gpt-5.6-sol`/`max` for Reviewer. cost-first uses
-`gpt-5.5`/`medium` for Researcher, Explorer, Debugger, Planner, and Worker;
+Debugger, Planner, and Worker; `gpt-5.5`/`low` for Writer;
+`gpt-5.6-sol`/`high` for Designer and Plan Reviewer; and `gpt-5.6-sol`/`max`
+for Reviewer. cost-first uses `gpt-5.5`/`medium` for Researcher, Explorer,
+Debugger, Planner, and Worker; `gpt-5.5`/`low` for Writer;
 `gpt-5.6-sol`/`medium` for Designer; and `gpt-5.6-sol`/`high` for Plan Reviewer
 and Reviewer. Cursor and Claude Code templates remain host-native adapters; this
 does not promise the Codex reasoning-effort mapping on those hosts. On Codex 0.144,
@@ -209,6 +244,35 @@ merge Teamwork MCP entries into project `.cursor/mcp.json`. They never refresh
 global skills, agents, policy, routing, notifications, or Cursor clipboard
 state. Global Cursor installs register `codegraph` and `gpu-broker` in
 `~/.cursor/mcp.json` by default; use `--no-mcp` to opt out.
+
+## Instruction footprint
+
+Release-blocking runtime volume budgets apply to surfaces that a host can
+actually load together. `scripts/teamwork_tooling/instruction_footprint.py` is
+their sole authority; validation must not recreate the removed policy 365,
+Skill 975, role 260, or AGENTS/Skill line-count shadow thresholds. The fenced
+host-template checks remain structural gates, not a second volume budget.
+The current `instruction_footprint.py --json` result reports:
+
+| Real loading surface | Current words | Word limit |
+| --- | ---: | ---: |
+| Resident host policy | Codex 362; Cursor 365; Claude 357 | 430 each |
+| One Skill | 976 | 1,150 |
+| One Skill plus its own on-demand reference | 1,569 | 1,850 |
+| One role template | 257 | 330 |
+| Skill discovery catalog | 490 | 650 |
+| Project instruction block | 46 | 220 |
+| Repository instructions | 610 | 750 |
+| Runtime memory README | 272 | 320 |
+| Runtime memory index | 145 | 200 |
+| Worst initialized Root path | 2,887 | 3,300 |
+| Worst leaf path | 2,727 | 3,200 |
+| Worst repository Root path | 3,451 | 3,900 |
+
+The three-host, 49-surface union (14,103 words) and the ten-Skill aggregate
+(6,366 words) are telemetry, not release-blocking proxies for a context that no
+host co-loads. The same authority still enforces the exact ten-Skill inventory
+and rejects cross-Skill instruction loads or dependency cycles.
 
 ## Stable commands
 

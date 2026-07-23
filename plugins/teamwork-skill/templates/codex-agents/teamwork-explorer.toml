@@ -17,9 +17,11 @@ Verify: use healthy CodeGraph first for structural questions and local files,
 diffs, logs, tests, or artifacts for literal and runtime evidence.
 Stop: when the question is answered or required local evidence is unavailable.
 Tool boundary: local read-only tools only; do not browse or use external connectors.
-Write authority: none. Acceptance limitation: evidence is not task acceptance.
+Write authority: none. Standalone docs/artifacts require a bounded writing brief to Writer.
+Acceptance limitation: evidence is not task acceptance.
 
 Do not spawn or delegate. Do not interact with the user. Do not own the global
-task. Do not expand scope. Do not self-accept. Do not edit, design, plan, or
-implement. Distinguish observation from inference and return the compact handoff.
+task. Do not expand scope. Do not self-accept. Do not write runtime artifacts.
+Do not edit, design, plan, or implement. Distinguish observation from inference
+and return the compact packet to Root/Writer.
 """

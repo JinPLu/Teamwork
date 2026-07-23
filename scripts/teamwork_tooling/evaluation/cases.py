@@ -5,6 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -230,6 +231,109 @@ def _require_discussion_transaction_cli(source: str, path: Path, source_path: st
         )
 
 
+@lru_cache(maxsize=16)
+def _workflow_artifact_transaction_cli_probe(source: str) -> str | None:
+    """Exercise the generic workflow artifact transaction route end to end."""
+
+    with tempfile.TemporaryDirectory(prefix="teamwork-artifact-probe-") as temporary:
+        root = Path(temporary)
+        script = root / "discussion-transaction.py"
+        script.write_text(source, encoding="utf-8")
+        project = root / "project"
+        memory = project / "docs/teamwork"
+        memory.mkdir(parents=True)
+        for name in ("index.json", "current.md", "README.md"):
+            template = ROOT / "templates/teamwork-memory" / name  # noqa: F405
+            try:
+                (memory / name).write_bytes(template.read_bytes())
+            except OSError as exc:
+                return f"cannot prepare workflow artifact probe: {exc}"
+
+        def invoke(*arguments: str) -> subprocess.CompletedProcess[str]:
+            return subprocess.run(
+                [sys.executable, str(script), *arguments],
+                cwd=root,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+                timeout=10,
+            )
+
+        try:
+            inspected = invoke("artifact-inspect", "--project-root", str(project))
+            if inspected.returncode != 0:
+                return f"artifact-inspect command failed: {inspected.stderr.strip()}"
+            inspection = json.loads(inspected.stdout)
+            revision = inspection.get("revision") if isinstance(inspection, dict) else None
+            if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{64}", revision):
+                return "artifact-inspect command did not return an opaque revision"
+
+            schema = invoke("artifact-schema", "create")
+            if schema.returncode != 0:
+                return f"artifact-schema command failed: {schema.stderr.strip()}"
+            request = json.loads(schema.stdout)
+            if not isinstance(request, dict) or request.get("operation") != "create":
+                return "artifact-schema command did not return the create request skeleton"
+            if request.get("artifact_type") != "workflow-artifact" or "expected_revision" not in request:
+                return "artifact-schema command did not return a workflow-artifact skeleton"
+
+            request.update(
+                {
+                    "expected_revision": revision,
+                    "workflow": "research",
+                    "slug": "probe-note",
+                    "title": "Probe note",
+                    "summary": "Probe workflow artifact transaction.",
+                    "consumer": "Writer",
+                    "source_revision": revision,
+                    "updated": "2026-07-22",
+                    "body": "## Evidence\n\n- Direct transaction CLI probe.",
+                    "linked": ["docs/teamwork/current.md"],
+                    "evidence_paths": ["docs/teamwork/current.md"],
+                    "search_keys": ["probe-note"],
+                }
+            )
+            applied = invoke(
+                "artifact-apply",
+                "--project-root",
+                str(project),
+                "--request-json",
+                json.dumps(request),
+            )
+            if applied.returncode != 0:
+                return f"artifact-apply command failed: {applied.stderr.strip()}"
+            result = json.loads(applied.stdout)
+            expected_path = "docs/teamwork/research/2026-07-22-probe-note.md"
+            if not isinstance(result, dict) or result.get("path") != expected_path:
+                return "artifact-apply did not produce the derived workflow artifact path"
+
+            checked = invoke("artifact-inspect", "--project-root", str(project))
+            if checked.returncode != 0:
+                return f"post-apply artifact-inspect failed: {checked.stderr.strip()}"
+            final = json.loads(checked.stdout)
+            active = final.get("active") if isinstance(final, dict) else None
+            registrations = active.get("registrations") if isinstance(active, dict) else None
+            if not isinstance(registrations, list) or not any(
+                isinstance(item, dict)
+                and item.get("path") == expected_path
+                and item.get("consumer") == "Writer"
+                for item in registrations
+            ):
+                return "artifact-inspect did not recover the transaction-owned workflow registration"
+        except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:
+            return f"workflow artifact transaction owner CLI probe failed: {exc}"
+    return None
+
+
+def _require_workflow_artifact_transaction_cli(source: str, path: Path, source_path: str) -> None:
+    failure = _workflow_artifact_transaction_cli_probe(source)
+    if failure is not None:
+        raise EvalError(  # noqa: F405
+            f"{display_path(path)}: bound producer {source_path} lacks a working artifact-inspect/artifact-schema/artifact-apply transaction route: {failure}"
+        )
+
+
 def _role_from_source(source_path: str) -> str | None:
     for mapping in ROLE_TEMPLATE_PATHS.values():  # noqa: F405
         for role, candidate in mapping.items():
@@ -242,9 +346,22 @@ ROLE_SOURCE_RULES: dict[str, list[tuple[str, ...]]] = {
     "researcher": [("sanitized",), ("private",), ("read-only",)],
     "explorer": [("local",), ("do not browse", "never browse"), ("read-only",)],
     "debugger": [("immutable",), ("same path",), ("authority",)],
-    "designer": [("genuine alternatives",), ("read-only",), ("decision",)],
-    "planner": [("selected direction",), ("single exact plan path", "one single exact plan path"), ("do not implement",)],
-    "worker": [("canonical",), ("proportional",), ("residue",)],
+    "designer": [
+        ("genuine alternatives",),
+        ("governing criteria",),
+        ("direct evidence",),
+        ("assumption/disconfirming-evidence challenge",),
+        ("read-only",),
+        ("decision",),
+    ],
+    "planner": [("selected direction",), ("execution-ready plan packet",), ("write authority: none",), ("do not implement",)],
+    "worker": [("canonical",), ("suitable installed dependencies", "installed dependencies"), ("proportional",), ("residue",)],
+    "writer": [
+        ("standalone document", "independent document"),
+        ("bounded writing brief",),
+        ("do not research",),
+        ("code-coupled",),
+    ],
     "plan-reviewer": [("independently",), ("direct proof", "evidence", "proof"), ("read-only",)],
     "reviewer": [("correctness",), ("read-only",), ("direct evidence", "direct proof")],
 }
@@ -287,7 +404,10 @@ def validate_bound_producer_sources(
                 *ROLE_SOURCE_RULES[role],
             ])
         elif source_path == "scripts/discussion-transaction.py":
-            _require_discussion_transaction_cli(source, path, source_path)
+            if (capability, scenario) == ("persistence", "generic-artifact-writer"):
+                _require_workflow_artifact_transaction_cli(source, path, source_path)
+            else:
+                _require_discussion_transaction_cli(source, path, source_path)
         elif source_path == "scripts/init-project-files.py":
             _require_source_phrases(source, path, source_path, [
                 ("-recover-init-transaction",), ("journal",), ("project-local",),
@@ -319,6 +439,116 @@ def validate_bound_producer_sources(
                 ])
         if (capability, scenario) == ("verification", "monotonic-evidence") and producer["class"] == "role-template":
             _require_source_phrases(source, path, source_path, [("read-only",), ("evidence",), ("accept",)])
+        if capability == "persistence":
+            if scenario == "normal-doc-writer" and producer["class"] == "role-template":
+                _require_source_phrases(source, path, source_path, [
+                    ("standalone document",),
+                    ("bounded writing brief",),
+                    ("unmanaged exact path",),
+                    ("do not research",),
+                    ("code-coupled",),
+                ])
+            elif scenario == "generic-artifact-writer":
+                if producer["class"] == "root-policy":
+                    _require_source_phrases(source, path, source_path, [
+                        ("default-save reusable artifacts",),
+                        ("research/debug/plan/review/init/update artifact-inspect",),
+                        ("no-files/off-record/read-only/no-writes override",),
+                        ("no root/worker/strong-role fallback",),
+                    ])
+                elif producer["class"] == "skill":
+                    _require_source_phrases(source, path, source_path, [
+                        ("artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply",),
+                        ("transaction derives the destination",),
+                        ("registers the ordinary index",),
+                        ("no planner, root, or worker fallback writes it",),
+                    ])
+                elif producer["class"] == "role-template":
+                    _require_source_phrases(source, path, source_path, [
+                        ("default terminal workflow artifacts",),
+                        ("artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply",),
+                        ("transaction-derived destination",),
+                        ("required transaction gate",),
+                    ])
+            elif scenario == "specialized-artifact-writer":
+                if producer["class"] == "root-policy":
+                    _require_source_phrases(source, path, source_path, [
+                        ("grill/design/goal specialized",),
+                        ("artifact-only grant",),
+                        ("never implementation/release authority",),
+                    ])
+                elif producer["class"] == "skill":
+                    _require_source_phrases(source, path, source_path, [
+                        ("discussion-transaction.py inspect",),
+                        ("discussion-transaction.py schema",),
+                        ("discussion-transaction.py apply",),
+                        ("controlled record",),
+                        ("dispatches writer",),
+                        ("sole discussion writer",),
+                    ])
+                elif producer["class"] == "role-template":
+                    _require_source_phrases(source, path, source_path, [
+                        ("design/goal/grill specialized",),
+                        ("required transaction gate",),
+                        ("accept transaction-derived destination",),
+                    ])
+            elif scenario == "negative-overrides":
+                if producer["class"] == "root-policy":
+                    _require_source_phrases(source, path, source_path, [
+                        ("no-files/off-record/read-only/no-writes override",),
+                        ("deliver result, report unsaved/blocked",),
+                        ("no root/worker/strong-role fallback",),
+                    ])
+                elif producer["class"] == "skill":
+                    _require_source_phrases(source, path, source_path, [
+                        ("no files",),
+                        ("off-record",),
+                        ("read-only",),
+                        ("no writes",),
+                        ("unsaved/blocked",),
+                    ])
+                elif producer["class"] == "role-template":
+                    _require_source_phrases(source, path, source_path, [
+                        ("blocked without writing",),
+                        ("required transaction gate",),
+                    ])
+            elif scenario == "explore-no-artifact":
+                if producer["class"] == "root-policy":
+                    _require_source_phrases(source, path, source_path, [
+                        ("explore write no standalone artifact",),
+                    ])
+                elif producer["class"] == "skill":
+                    _require_source_phrases(source, path, source_path, [
+                        ("do not create an explore report",),
+                        ("evidence belongs in the workflow writing brief",),
+                        ("writer never creates an independent explore artifact",),
+                    ])
+                elif producer["class"] == "role-template":
+                    _require_source_phrases(source, path, source_path, [
+                        ("read-only",),
+                        ("write authority: none",),
+                        ("standalone docs/artifacts require a bounded writing brief",),
+                    ])
+            elif scenario == "code-coupled-owner":
+                if producer["class"] == "root-policy":
+                    _require_source_phrases(source, path, source_path, [
+                        ("code-coupled text implementer-owned",),
+                    ])
+                elif producer["class"] == "role-template" and _role_from_source(source_path) == "worker":
+                    _require_source_phrases(source, path, source_path, [
+                        ("owned scope",),
+                        ("canonical reuse", "canonical owner"),
+                        ("residue",),
+                    ])
+                elif producer["class"] == "role-template":
+                    _require_source_phrases(source, path, source_path, [
+                        ("do not write code, comments",),
+                        ("docstrings",),
+                        ("tests",),
+                        ("schemas",),
+                        ("manifests",),
+                        ("config",),
+                    ])
 
 
 def normalize_contract_key(value: str) -> str:

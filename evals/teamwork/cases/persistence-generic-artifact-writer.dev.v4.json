@@ -1,0 +1,58 @@
+{
+   "evidence" : "Static and executable generic workflow artifact transaction control.",
+   "expected" : {
+      "capability" : "persistence",
+      "language" : "en",
+      "requires" : [
+         "default-terminal-workflow-artifacts",
+         "generic-artifact-transaction",
+         "transaction-derived-destination",
+         "ordinary-index-registration",
+         "required-transaction-gate",
+         "writer-only",
+         "no-implementation-authority"
+      ],
+      "scenario" : "generic-artifact-writer"
+   },
+   "id" : "persistence-generic-artifact-writer",
+   "must" : [
+      "persist terminal Research, Debug, Plan, Review, Init, or Update artifacts only through artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply with Writer and transaction-derived destination registration"
+   ],
+   "must_not" : [
+      "hand-author artifact paths, bypass the ordinary index registration, fall back to Root or Worker writes, implement, or infer release authority"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-plan/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-writer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/writer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/writer.md"
+      },
+      {
+         "class" : "artifact-engine",
+         "source" : "scripts/discussion-transaction.py"
+      }
+   ],
+   "prompt" : "Save the completed Plan packet as a Teamwork workflow artifact in this initialized project.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

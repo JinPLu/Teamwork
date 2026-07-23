@@ -121,6 +121,7 @@ SKILL_CONCEPTS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
     "teamwork-research": (
         ("external lookup trigger", (r"\bexternal\b", r"\bweb\b", r"外部(?:调研|资料|来源)")),
         ("current or multi-source evidence", (r"current.{0,80}(?:source|fact)", r"multi[- ]source", r"(?:时效|当前).{0,40}(?:来源|事实)", r"多来源")),
+        ("direct support", (r"direct support", r"直接支持")),
         ("citations", (r"\bcitations?\b", r"\bcite\b", r"引用|链接")),
         ("local evidence stays native", (r"do not use for local repository/source/config/test/log/runtime/artifact inspection", r"external[- ]only.{0,100}do not inspect private local", r"(?:本地|代码库).{0,100}(?:原生|无需.*research|不.*research)")),
         ("read-only boundary", (r"read[- ]only", r"does not authorize.{0,80}(?:edit|write)", r"只读|不授权.{0,40}(?:修改|写入)")),
@@ -140,20 +141,22 @@ SKILL_CONCEPTS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
         ("visible selection without confirmation", (r"State the strategy and reason without\s+confirmation",)),
         ("read-only and no implementation", (r"Design does not implement", r"(?:不实施|不实现).{0,180}(?:仅|只).{0,30}(?:artifact|文件)")),
         ("managed Design transaction", (r"design-inspect.{0,500}design-schema.{0,500}design-apply", r"expected_revision.{0,500}design-apply")),
+        ("Design acceptance state", (r"acceptance:\s+pending\|accepted\|blocked", r"active\.acceptance\s+==\s+accepted")),
         ("Plan boundary", (r"(?:selected|settled|chosen) direction.{0,160}\bplan\b", r"(?:Design is frozen|Freeze one durable Design).{0,300}Planner", r"controlled route returns.{0,180}Planner.{0,120}\bPlan\b", r"clear enough.{0,100}(?:execution )?plan", r"(?:已选|已确定|已收敛).{0,80}(?:方向|方案).{0,80}(?:plan|计划)")),
     ),
     "teamwork-plan": (
         ("selected direction prerequisite", (r"(?:selected|settled|chosen) direction", r"(?:已选|已确定|已收敛).{0,50}(?:方向|方案)")),
         ("owned ordered actions", (r"owned.{0,40}(?:ordered|sequence).{0,40}actions", r"ordered work units.{0,160}(?:owner|target surface)", r"(?:负责人|归属).{0,50}(?:顺序|有序).{0,40}(?:行动|步骤)")),
         ("dependencies and direct proof", (r"dependenc.{0,100}(?:direct|real).{0,40}(?:proof|verification|check)", r"依赖.{0,100}(?:直接|真实).{0,30}(?:证明|验证)")),
+        ("accepted Design transaction gate", (r"design-inspect.{0,180}active\.acceptance\s+==\s+accepted", r"pending or blocked.{0,80}never Plan-ready")),
         ("stop or replan conditions", (r"(?:stop|replan).{0,40}conditions?", r"(?:停止|重新规划|重做计划).{0,40}条件")),
-        ("no redesign or implementation", (r"Do not redesign or implement", r"(?:do not|never|no).{0,40}(?:compare options|redesign).{0,100}(?:do not|never|no).{0,30}implement", r"不.{0,30}(?:比较方案|重新设计).{0,100}不.{0,20}(?:实施|实现)")),
+        ("no redesign or implementation", (r"Do not redesign or\s+implement", r"(?:do not|never|no).{0,40}(?:compare options|redesign).{0,120}(?:do not|never|no).{0,30}implement", r"不.{0,30}(?:比较方案|重新设计).{0,100}不.{0,20}(?:实施|实现)")),
     ),
     "grill-me": (
         ("natural question-first trigger", (r"ask me first", r"questioned before action", r"先问我|先问清楚")),
-        ("ordinary activation is no-write", (r"Natural\s+question-first\s+requests\s+remain\s+conversation-only\s+unless\s+they\s+are\s+independently\s+major", r"自然语言.{0,100}(?:不写|不授权.{0,30}写)")),
-        ("major change auto-transaction", (r"Major-change Grill automatically records its state", r"major.{0,120}automatic.{0,120}(?:record|transaction)")),
-        ("explicit save persistence", (r"Explicit \$grill-me, save, record, or resume requests also authorize the record", r"\$grill-me.{0,120}(?:save|resume|record)")),
+        ("ordinary clarification is chat-only", (r"ordinary clarification.{0,120}chat-only", r"自然语言.{0,100}(?:不写|不授权.{0,30}写)")),
+        ("actual Grill auto-record", (r"Every actual Grill invocation.{0,120}controlled record", r"major.{0,120}automatic.{0,120}(?:record|transaction)")),
+        ("explicit save persistence", (r"explicit `?\$grill-me`?.{0,80}(?:save|record|resume)", r"\$grill-me.{0,120}(?:save|resume|record)")),
         ("transaction-owned writer", (r"discussion-transaction\.py\s+inspect.{0,500}\bschema\b.{0,500}\bapply\b", r"apply is the sole discussion writer")),
         ("initialized writable prerequisite", (r"(?:initialized|initialised).{0,80}writable", r"已初始化.{0,60}可写")),
         ("no-files override", (r"no files.{0,180}(?:overrides?|wins|no write)", r"(?:不要文件|不落盘|no files).{0,120}(?:优先|不写|覆盖)")),
@@ -211,11 +214,15 @@ def validate_skill_source_contract(skill: str, source_text: str) -> None:
             (r"(?:enter|activate|use).{0,50}research.{0,100}(?:local|repository|code|log|config|test)",),
         )
     elif skill == "teamwork-plan":
+        normalized_source = " ".join(source_text.split())
         _forbid_concept(
             path,
-            source_text,
+            normalized_source,
             "Plan owns option discovery",
-            (r"(?<!do not )(?<!never )\b(?:generate|brainstorm|compare).{0,60}(?:alternatives|options)",),
+            (
+                r"(?<!do not )(?<!never )(?<!do not compare options or )"
+                r"\b(?:generate|brainstorm|compare).{0,60}(?:alternatives|options)",
+            ),
         )
 
 
@@ -329,7 +336,7 @@ def validate_skill_topology(root: Path = ROOT) -> dict[str, object]:
 
 
 def validate_role_template_sources(root: Path = ROOT) -> None:
-    """Validate exact eight-role target semantics on every rendered host."""
+    """Validate exact nine-role target semantics on every rendered host."""
 
     for host, mapping in ROLE_TEMPLATE_PATHS.items():
         expected = set(mapping.values())
@@ -341,7 +348,7 @@ def validate_role_template_sources(root: Path = ROOT) -> None:
         }
         if observed != expected:
             raise EvalError(
-                f"templates/{host}-agents/: expected exact eight-role inventory; "
+                f"templates/{host}-agents/: expected exact nine-role inventory; "
                 f"missing={sorted(expected - observed)}, extra={sorted(observed - expected)}"
             )
         for role in CANONICAL_ROLES:
@@ -362,8 +369,35 @@ def validate_role_template_sources(root: Path = ROOT) -> None:
                     raise EvalError(f"{source_path}: missing leaf-role boundary {prohibition}")
             if role in {"designer", "plan-reviewer", "reviewer"} and "write authority: none" not in normalized:
                 raise EvalError(f"{source_path}: {role} must be strictly read-only")
-            if role == "planner" and "single" not in normalized:
-                raise EvalError(f"{source_path}: Planner lacks single-Plan-path authority")
+            if role == "planner" and "execution-ready plan packet" not in normalized:
+                raise EvalError(f"{source_path}: Planner lacks packet-only Plan authority")
+            if role == "designer":
+                for term in (
+                    "governing criteria",
+                    "direct evidence",
+                    "assumption/disconfirming-evidence challenge",
+                ):
+                    if term not in normalized:
+                        raise EvalError(f"{source_path}: Designer lacks {term} boundary")
+            if role != "writer" and "bounded writing brief" not in normalized:
+                raise EvalError(f"{source_path}: missing Writer handoff boundary")
+            if role == "writer":
+                for term in (
+                    "standalone document",
+                    "bounded writing brief",
+                    "facts/sources/citations/decisions/authority/status/acceptance",
+                    "default terminal workflow artifacts",
+                    "artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply",
+                    "transaction-derived destination",
+                    "required transaction gate",
+                    "registration",
+                    "blocked without writing",
+                    "do not research",
+                    "do not fallback",
+                    "code-coupled",
+                ):
+                    if term not in normalized:
+                        raise EvalError(f"{source_path}: Writer lacks {term} boundary")
             if role == "debugger" and "immutable" not in normalized:
                 raise EvalError(f"{source_path}: Debugger lacks immutable dispatch authority")
             if role == "researcher" and not all(term in normalized for term in ("sanitized", "private", "read-only")):

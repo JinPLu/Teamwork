@@ -10,34 +10,30 @@ Questions do not authorize implementation or other effects.
 
 ## Interaction
 
-1. Freeze one finite frontier for the scope containing only user-owned choices that can
-   change the outcome, normally no more than three active unresolved items per
-   level. Split a larger frontier instead of extending it indefinitely.
-2. Inspect evidence before asking. Do not ask the user for facts the
-   project or supplied material already answers.
-3. Separate user-owned choices from safe implementation details. Own reversible,
+1. Freeze one finite frontier for the scope with only outcome-changing
+   user-owned choices, normally no more than three active unresolved items per
+   level. Split larger frontiers.
+2. Inspect evidence before asking; do not ask for facts already in the project or
+   supplied material.
+3. Separate user-owned choices from safe implementation details; own reversible
    implementation choices yourself.
-4. Publish the global decision map before details. Order the map by `goal`,
-   `boundary`, then `detail`, show the current critical path, and mark each
-   item as open, current, closed, or rejected.
-5. Ask one bounded independent batch at a time. A batch has one to three current
-   material questions; put two questions in the same batch only when neither
-   answer can change the other's prompt, options, recommendation, or closure
-   signal. Dependent questions are serial.
-6. Before every question, give a recommendation and largest downside.
-   Each question states why it is critical, what it blocks, its dependencies,
-   and the observable condition that closes it. In Codex, use
-   `request_user_input` when it is callable for the whole batch; otherwise use
-   the host's native question surface or a concise numbered batch.
-7. Carry answered decisions forward without repeating them. An answer batch
-   closes only its current decisions and grants no implementation or release
-   authority. Add a frontier item only when new direct evidence changes the
-   direction; record it as a frontier delta.
-8. If two rounds close no decision, add no discriminating evidence,
-   and do not change the recommendation, stop with a no-progress blocker.
-9. Stop when no material user-owned decision remains. Do not invent another
-   branch, convert settled consequences into preferences, produce a plan, or
-   start implementation.
+4. Publish the global decision map before details. Order by `goal`, `boundary`,
+   then `detail`, show the current critical path, and mark each item open,
+   current, closed, or rejected.
+5. Ask one bounded independent batch at a time: one to three current material
+   questions where neither answer can change the other's prompt, options,
+   recommendation, or closure signal. Dependent questions are serial.
+6. Before every question, give a recommendation and largest downside, and state
+   why it is critical, what it blocks, dependencies, and the observable condition
+   that closes it. In Codex, use `request_user_input` when callable for the
+   batch; otherwise use the host question surface or a concise numbered batch.
+7. Carry decisions forward. An answer batch closes only current decisions and
+   grants no implementation or release authority. Add a frontier item only when
+   new direct evidence changes direction; record it as a frontier delta.
+8. If two rounds close no decision, add no discriminating evidence, and do not
+   change the recommendation, stop with a no-progress blocker.
+9. Stop when no material user-owned decision remains. Do not invent branches,
+   turn consequences into preferences, produce a plan, or start implementation.
 
 If a request is already fully determined, say that there is no material decision
 to grill and stop. Ordinary required clarification remains ordinary clarification;
@@ -53,14 +49,24 @@ security, data, destructive, or cross-platform boundaries, or rollback requiring
 consumer action. A settled trade-off or behavior-equivalent internal refactor is
 not major merely because the diff is large.
 
-Major-change Grill automatically opens its record. Explicit `$grill-me`, save,
-record, or resume requests also authorize the record. Within one scope, persist
-only record creation, a semantic decision or frontier change, and close or
-supersede. An unchanged state is a no-op: do not call `apply`, create another
-revision, or rewrite the artifact merely for a status update. Natural question-first
-requests remain conversation-only unless they are independently major. A
-`no files`, private/off-the-record, or equivalent instruction overrides record
-authority; if it forbids file access, do not read an existing record either.
+Every actual Grill invocation in an initialized writable project defaults to its
+controlled record. Major-change and explicit `$grill-me`, save, record, or resume
+requests trigger Grill; ordinary clarification that does not activate Grill stays
+chat-only. Within one scope, persist only record creation, a semantic decision or
+frontier change, and close or supersede. An unchanged state is a no-op: do not
+call `apply`, create another revision, or rewrite merely for a status update. A
+`no files`, `off-record`, `read-only`, `no writes`, private, or equivalent
+instruction overrides record authority; if it forbids file access, do not read an
+existing record either.
+
+For persisted Grill state or a standalone summary, Root freezes the packet and
+dispatches Writer. The brief includes purpose/audience, facts/sources, frozen
+decision/status, style/structure, transaction route/consumer, and
+preserve/forbid.
+Writer may organize, summarize, translate, or polish expression, but must not
+research, invent, change facts, citations, authority, status, decisions, or
+acceptance. Missing Writer, brief, authority, path, consumer, or registration
+blocks the document; no Root, Worker, or Grill fallback writes it.
 
 Record authority and project readiness are separate. Saving requires a named,
 initialized, writable project; Grill must not initialize it, create ordinary
@@ -74,7 +80,7 @@ public transaction route, in order:
 1. Run `discussion-transaction.py inspect --project-root <project>` and use its
    returned active state and opaque revision; never infer a revision from files.
 2. Run `discussion-transaction.py schema <create|update|close|replace|supersede>`
-   to obtain the exact structured request skeleton for that lifecycle. Copy the returned
+   to obtain the structured request skeleton for that lifecycle. Copy the returned
    revision into its `expected_revision` field, then fill only the current
    decision state required by that skeleton; do not invent, parse, or render its
    artifact format.

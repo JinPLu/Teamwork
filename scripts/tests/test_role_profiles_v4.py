@@ -1,4 +1,4 @@
-"""Focused contracts for the v4 eight-role templates and profile adapters."""
+"""Focused contracts for the v4 nine-role templates and profile adapters."""
 
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ ROLE_SLUGS = (
     "designer",
     "planner",
     "worker",
+    "writer",
     "plan-reviewer",
     "reviewer",
 )
@@ -35,6 +36,7 @@ PERFORMANCE = {
         "designer": ("gpt-5.6-sol", "high"),
         "planner": ("gpt-5.5", "high"),
         "worker": ("gpt-5.5", "high"),
+        "writer": ("gpt-5.5", "low"),
         "plan-reviewer": ("gpt-5.6-sol", "high"),
         "reviewer": ("gpt-5.6-sol", "max"),
     },
@@ -45,6 +47,7 @@ PERFORMANCE = {
         "designer": ("opus", "high"),
         "planner": ("opus", "high"),
         "worker": ("sonnet", "medium"),
+        "writer": ("haiku", "medium"),
         "plan-reviewer": ("opus", "max"),
         "reviewer": ("opus", "max"),
     },
@@ -55,6 +58,7 @@ PERFORMANCE = {
         "designer": ("gpt-5.6-sol-medium",),
         "planner": ("gpt-5.6-terra-medium",),
         "worker": ("composer-2.5-fast",),
+        "writer": ("composer-2.5-fast",),
         "plan-reviewer": ("claude-opus-4-8-thinking-high",),
         "reviewer": ("claude-fable-5-thinking-high",),
     },
@@ -69,6 +73,7 @@ COST = {
         "debugger": ("gpt-5.5", "medium"),
         "designer": ("gpt-5.6-sol", "medium"),
         "planner": ("gpt-5.5", "medium"),
+        "writer": ("gpt-5.5", "low"),
         "plan-reviewer": ("gpt-5.6-sol", "high"),
         "reviewer": ("gpt-5.6-sol", "high"),
     },
@@ -77,6 +82,7 @@ COST = {
         "researcher": ("haiku", "medium"),
         "explorer": ("haiku", "medium"),
         "worker": ("haiku", "medium"),
+        "writer": ("haiku", "medium"),
     },
     "cursor": {
         **PERFORMANCE["cursor"],
@@ -85,6 +91,7 @@ COST = {
         "debugger": ("gpt-5.6-terra-medium",),
         "designer": ("gpt-5.6-terra-medium",),
         "planner": ("gpt-5.6-luna-medium",),
+        "writer": ("composer-2.5-fast",),
         "plan-reviewer": ("gpt-5.6-terra-medium",),
         "reviewer": ("claude-opus-4-8-thinking-high",),
     },
@@ -117,7 +124,7 @@ def frontmatter(path: pathlib.Path) -> dict[str, str]:
 
 
 class RoleProfilesV4Test(unittest.TestCase):
-    def test_exact_eight_role_inventory_and_host_schema(self) -> None:
+    def test_exact_nine_role_inventory_and_host_schema(self) -> None:
         expected = {
             "codex-agents": {f"teamwork-{role}.toml" for role in ROLE_SLUGS},
             "cursor-agents": {f"{role}.md" for role in ROLE_SLUGS},
@@ -151,7 +158,7 @@ class RoleProfilesV4Test(unittest.TestCase):
                 ):
                     self.assertIn(phrase, normalized, f"{path}: {phrase}")
 
-        for role in ("designer", "plan-reviewer", "reviewer"):
+        for role in ("designer", "planner", "plan-reviewer", "reviewer"):
             codex = tomllib.loads(
                 (ROOT / "templates/codex-agents" / f"teamwork-{role}.toml").read_text(encoding="utf-8")
             )
@@ -161,18 +168,54 @@ class RoleProfilesV4Test(unittest.TestCase):
                 self.assertIn("strictly read-only", text)
 
         planner_text = "\n".join(
-            (ROOT / "templates" / host / "planner.md").read_text(encoding="utf-8")
-            for host in ("cursor-agents", "claude-agents")
+            (ROOT / "templates" / host / name).read_text(encoding="utf-8")
+            for host, name in (
+                ("codex-agents", "teamwork-planner.toml"),
+                ("cursor-agents", "planner.md"),
+                ("claude-agents", "planner.md"),
+            )
         )
-        self.assertIn("single exact Plan path", planner_text)
+        self.assertIn("execution-ready Plan packet", planner_text)
+        self.assertIn("no single exact Plan path write authority", planner_text)
         worker_text = (ROOT / "templates/codex-agents/teamwork-worker.toml").read_text(encoding="utf-8")
         for phrase in ("canonical owner", "smallest complete", "proportional", "real path", "residue"):
             self.assertIn(phrase, worker_text)
+        for host, name in (
+            ("codex-agents", "teamwork-writer.toml"),
+            ("cursor-agents", "writer.md"),
+            ("claude-agents", "writer.md"),
+        ):
+            writer_text = " ".join(
+                (ROOT / "templates" / host / name).read_text(encoding="utf-8").split()
+            )
+            for phrase in (
+                "standalone document",
+                "bounded writing brief",
+                "facts/sources/citations/decisions/authority/status/acceptance",
+                "default terminal workflow artifacts",
+                "artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply",
+                "transaction-derived destination",
+                "required transaction gate",
+                "registration",
+                "blocked without writing",
+                "Do not research",
+                "Do not fallback",
+                "code-coupled",
+                "schemas, manifests, config",
+            ):
+                self.assertIn(phrase, writer_text, f"{host}/{name}: {phrase}")
+        for directory in ("codex-agents", "cursor-agents", "claude-agents"):
+            for path in (ROOT / "templates" / directory).iterdir():
+                if "writer" not in path.name:
+                    self.assertIn("bounded writing brief", path.read_text(encoding="utf-8"))
 
     def test_proportional_routing_boundaries_are_consistent_across_hosts(self) -> None:
         role_clauses = {
             "designer": (
                 "only the evidence tracks that Root conditionally supplies",
+                "governing criteria",
+                "direct evidence",
+                "assumption/disconfirming-evidence challenge",
                 "challenge one frozen adversarial hypothesis",
                 "audit one frozen adversarial search closure",
                 "distinct host task identity",
@@ -180,6 +223,7 @@ class RoleProfilesV4Test(unittest.TestCase):
             ),
             "planner": ("execution-ready", "user request or named material risk gate"),
             "worker": ("self-verifies its slice", "does not trigger Review itself"),
+            "writer": ("standalone document", "bounded writing brief", "Do not fallback"),
             "plan-reviewer": ("user request or named material risk gate", "at most one bounded delta recheck"),
             "reviewer": ("sealed integrated candidate", "one repair batch", "at most one bounded delta recheck per candidate"),
         }

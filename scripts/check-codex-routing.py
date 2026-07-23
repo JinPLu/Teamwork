@@ -27,9 +27,10 @@ EXPECTED_PROFILES = {
     "teamwork-worker.toml": ("teamwork_worker", "workspace-write"),
     "teamwork-debugger.toml": ("teamwork_debugger", "workspace-write"),
     "teamwork-designer.toml": ("teamwork_designer", "read-only"),
-    "teamwork-planner.toml": ("teamwork_planner", "workspace-write"),
+    "teamwork-planner.toml": ("teamwork_planner", "read-only"),
     "teamwork-plan-reviewer.toml": ("teamwork_plan_reviewer", "read-only"),
     "teamwork-reviewer.toml": ("teamwork_reviewer", "read-only"),
+    "teamwork-writer.toml": ("teamwork_writer", "workspace-write"),
 }
 REQUIRED_FIELDS = {
     "name",

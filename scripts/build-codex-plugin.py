@@ -82,6 +82,7 @@ EXPECTED_ROLE_TEMPLATES = {
         "teamwork-researcher.toml",
         "teamwork-reviewer.toml",
         "teamwork-worker.toml",
+        "teamwork-writer.toml",
     ),
     "cursor-agents": (
         "debugger.md",
@@ -92,6 +93,7 @@ EXPECTED_ROLE_TEMPLATES = {
         "researcher.md",
         "reviewer.md",
         "worker.md",
+        "writer.md",
     ),
     "claude-agents": (
         "debugger.md",
@@ -102,6 +104,7 @@ EXPECTED_ROLE_TEMPLATES = {
         "researcher.md",
         "reviewer.md",
         "worker.md",
+        "writer.md",
     ),
 }
 TRANSIENT_NAMES = {"__pycache__"}
@@ -221,7 +224,7 @@ def validate_bundle(bundle: Path, root: Path) -> None:
         )
         if actual_files != expected_files:
             raise SystemExit(
-                f"bundle templates/{directory} must contain exactly the eight Teamwork role templates"
+                f"bundle templates/{directory} must contain exactly the nine Teamwork role templates"
             )
     if (bundle / "hooks/hooks.json").exists():
         raise SystemExit("bundle must not carry plugin-bundled hooks/hooks.json")

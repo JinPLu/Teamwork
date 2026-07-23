@@ -47,15 +47,18 @@ runtime, and artifact inspection. Clear authorized implementation also stays
 native. Use `teamwork-explore` for a distinct read-only local evidence question,
 and `teamwork-research` only for external, current, multi-source, or
 citation-backed research. Use `teamwork-design` while a consequential solution
-is unsettled and `teamwork-plan` once the direction is selected. Design uses
+is unsettled and `teamwork-plan` only after the controlled Design records
+`acceptance: accepted`. Design uses
 Explorer only for an unresolved local constraint and sanitized external Research
 only for a named external/current claim that can change the choice; it never runs
 both by default. It compares
 2-3 real alternatives or records safe-path evidence, makes one challenge pass,
 and keeps the decision frontier finite: it shows the global map first, batches
 only independent material decisions, and asks dependent decisions in later
-turns. Its controlled transaction creates the
-durable Design artifact before Plan; independent Plan Review runs only on user
+turns. Its controlled transaction records `acceptance: pending`, `accepted`, or
+`blocked`; persistence is not acceptance, and only `accepted` is Plan-ready.
+Legacy v1/v2 records are read as `accepted` for compatibility. Independent Plan
+Review runs only on user
 request or a named material risk gate. It does not
 implement the result or enter Plan silently.
 
@@ -66,12 +69,13 @@ irreversible error or conflicting evidence makes one challenge inadequate;
 and `standard` disables it. The model states its reason and uses default `B=3`
 without another confirmation. Every hypothesis then receives two fresh isolated
 Designer critics and two new final auditors must both pass. Missing isolation,
-exhausted budget, or failed closure returns an incomplete result and creates no
-durable Design. A passing chat recommendation is still not Plan-ready until the
-user explicitly accepts and authorizes the controlled Design write.
+exhausted budget, or failed closure returns an incomplete result whose controlled
+state remains `pending` or becomes `blocked`; it cannot be `accepted` or
+Plan-ready. A passing chat recommendation is not Plan-ready. Only a controlled
+Design with `acceptance: accepted` may enter Plan.
 
-Debug begins with the real failure and reproduction. Plan translates an already
-selected direction into owned executable steps; Review is read-only and returns
+Debug begins with the real failure and reproduction. Plan translates an
+accepted Design into owned executable steps; Review does not edit the candidate and returns
 `ACCEPT`, `REVISE`, or `BLOCKED`; Goal persists an explicit objective, success
 signal, scope, budget, and attempts before it iterates. Clear authorized code
 work remains result-first: change the canonical owner, reuse existing
@@ -82,21 +86,31 @@ once only on user request or a named material risk gate; findings form one repai
 batch with at most one delta recheck per candidate.
 
 Skill selection remains model behavior rather than deterministic routing. Name
-a skill when its exact method matters. Research, design, planning, and review
-remain read-only by default. Debug makes no change when diagnosis alone was
-requested; an original request that already authorizes a fix allows the
-evidenced narrow change. Approving a design or plan does not authorize
-implementation.
+a skill when its exact method matters. Research, Design, Plan, and Review do not
+authorize candidate edits or external effects; their reusable artifacts still
+persist by default under the named-workflow contract. Debug makes no change when
+diagnosis alone was requested; an original request that already authorizes a fix
+allows the evidenced narrow change. Approving a design or plan does not
+authorize implementation.
 
-An ordinary "ask me first" request asks questions without writing files. In an
-initialized writable project, an explicit `grill-me`, save, resume, or record
-request uses the transaction to update only `docs/teamwork/discussion/current.md`.
-An independently major public/installable, migration/release, permission,
-security, data, destructive, or cross-platform boundary opens the record
-automatically. Within one scope, only creation, semantic decision/frontier
+In an initialized writable project, named Teamwork workflows persist reusable
+artifacts by default; `no files`, off-record, read-only, or no-write overrides
+that default. Ordinary clarification or chat, one-off native work, and clear
+code implementation requests do not force an extra workflow artifact. Grill,
+Design, and Goal use specialized transactions. Research, Debug, Plan, Review,
+and mutating Init/Update use the generic artifact transaction. Explore creates
+no standalone report; its evidence is folded into the consuming artifact or
+answer.
+
+An ordinary "ask me first" request stays in the conversation and does not
+trigger Grill or persistence. Once Grill is named or entered, an existing Grill
+is resumed, or an independently major public/installable, migration/release,
+permission, security, data, destructive, or cross-platform boundary invokes it,
+the specialized transaction updates only `docs/teamwork/discussion/current.md`
+by default. Within one scope, only creation, semantic decision/frontier
 change, and close/supersede persist; unchanged state is a no-op. New records use
-schema v2 `frontier` / `current_batch` state. An explicit "no files" or
-off-the-record instruction wins.
+schema v2 `frontier` / `current_batch` state. `no files`, off-record, read-only,
+or no-write wins.
 
 ## Initialize a project
 
@@ -113,10 +127,16 @@ for global setup.
 
 ## Agents and profiles
 
-Teamwork may use eight Claude Code roles—Researcher, Explorer, Debugger,
-Designer, Planner, Worker, Plan Reviewer, and Reviewer—when separate context is
-worth the coordination cost. The main turn owns scope, integration, and the
-final answer. Routine local work does not require an agent handoff.
+Teamwork may use nine Claude Code roles—Researcher, Explorer, Debugger,
+Designer, Planner, Worker, Writer, Plan Reviewer, and Reviewer—when separate
+context, standalone document writing, or independent acceptance is worth the
+coordination cost. Writer uses a simple `haiku`/`medium` profile and a frozen
+bounded brief for standalone docs and runtime artifacts. It may draft, rewrite,
+organize, summarize, translate, and polish, but must not research, invent or
+change facts, citations, decisions, authority, status, or acceptance. Code
+comments, docstrings, tests, schemas, manifests, machine config, inline config
+text, and other code-coupled wording stay with implementation owners. The main turn owns scope,
+integration, and the final answer. Routine local work does not require an agent handoff.
 `performance-first` and `cost-first` select Claude Code-native host templates;
 they do not promise the Codex model or reasoning-effort mapping on Claude Code.
 

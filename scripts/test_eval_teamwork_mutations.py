@@ -220,9 +220,9 @@ class SemanticSourceMutationTests(unittest.TestCase):
         with self.assertRaisesRegex(EvalError, "Plan owns option discovery"):
             validate_skill_source_contract("teamwork-plan", mutated)
 
-    def test_grill_ordinary_no_write_and_major_transaction_are_protected(self) -> None:
-        self.assert_concept_removal_rejected("grill-me", "ordinary activation is no-write")
-        self.assert_concept_removal_rejected("grill-me", "major change auto-transaction")
+    def test_grill_chat_boundary_and_actual_record_are_protected(self) -> None:
+        self.assert_concept_removal_rejected("grill-me", "ordinary clarification is chat-only")
+        self.assert_concept_removal_rejected("grill-me", "actual Grill auto-record")
 
     def test_grill_transaction_writer_and_no_files_override_are_protected(self) -> None:
         self.assert_concept_removal_rejected("grill-me", "transaction-owned writer")

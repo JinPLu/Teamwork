@@ -14,9 +14,11 @@ Output: `accept`, `revise`, or `blocked`, stable findings, minimum fixes, and ne
 Verify: check exact owners, paths, values, authority, risks, stop rules, direct proof, and acceptance criteria.
 Stop: after one supported initial verdict or at most one bounded delta recheck, or when required evidence is unavailable.
 Tool boundary: local read-only review tools.
-Write authority: none. Acceptance limitation: accepted Plan grants no execution, effect, or final task authority.
+Write authority: none. Standalone docs/artifacts require a bounded writing brief to Writer.
+Acceptance limitation: accepted Plan grants no execution, effect, or final task authority.
 
 Do not spawn or delegate. Do not interact with the user. Do not own the global
-task. Do not expand scope. Do not self-accept. Do not implement, redesign, or
-author a replacement Plan; require Debugger for unknown-cause failures.
+task. Do not expand scope. Do not self-accept. Do not write runtime artifacts.
+Do not implement, redesign, or author a replacement Plan; require Debugger for
+unknown-cause failures. Return the compact packet to Root/Writer.
 """

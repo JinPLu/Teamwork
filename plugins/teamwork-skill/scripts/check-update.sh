@@ -37,6 +37,7 @@ CODEX_AGENTS=(
   teamwork-designer
   teamwork-planner
   teamwork-worker
+  teamwork-writer
   teamwork-plan-reviewer
   teamwork-reviewer
 )
@@ -47,6 +48,7 @@ CURSOR_AGENTS=(
   designer
   planner
   worker
+  writer
   plan-reviewer
   reviewer
 )
@@ -57,6 +59,7 @@ CLAUDE_AGENTS=(
   designer
   planner
   worker
+  writer
   plan-reviewer
   reviewer
 )
@@ -952,10 +955,10 @@ print_report() {
 
   echo "--- Model mapping (best-effort) ---"
   echo "Cursor explorer model: $(cursor_model_sample)"
-  echo "Expected performance-first Codex: Researcher/Explorer/Debugger/Planner/Worker=GPT-5.5/high, Designer/Plan Reviewer=Sol/high, Reviewer=Sol/max"
-  echo "Expected cost-first Codex: Researcher/Explorer/Debugger/Planner/Worker=GPT-5.5/medium, Designer=Sol/medium, Plan Reviewer/Reviewer=Sol/high"
-  echo "Expected cost-first Cursor: Researcher/Explorer=gemini-3.5-flash, Debugger/Designer/Plan Reviewer=gpt-5.6-terra-medium, Planner=gpt-5.6-luna-medium, Worker=composer-2.5-fast, Reviewer=claude-opus-4-8-thinking-high"
-  echo "Expected performance-first Cursor: Researcher=gpt-5.6-terra-medium, Explorer=gemini-3.5-flash, Debugger/Plan Reviewer=claude-opus-4-8-thinking-high, Designer=gpt-5.6-sol-medium, Planner=gpt-5.6-terra-medium, Worker=composer-2.5-fast, Reviewer=claude-fable-5-thinking-high"
+  echo "Expected performance-first Codex: Researcher/Explorer/Debugger/Planner/Worker=GPT-5.5/high, Writer=GPT-5.5/low, Designer/Plan Reviewer=Sol/high, Reviewer=Sol/max"
+  echo "Expected cost-first Codex: Researcher/Explorer/Debugger/Planner/Worker=GPT-5.5/medium, Writer=GPT-5.5/low, Designer=Sol/medium, Plan Reviewer/Reviewer=Sol/high"
+  echo "Expected cost-first Cursor: Researcher/Explorer=gemini-3.5-flash, Debugger/Designer/Plan Reviewer=gpt-5.6-terra-medium, Planner=gpt-5.6-luna-medium, Worker/Writer=composer-2.5-fast, Reviewer=claude-opus-4-8-thinking-high"
+  echo "Expected performance-first Cursor: Researcher=gpt-5.6-terra-medium, Explorer=gemini-3.5-flash, Debugger/Plan Reviewer=claude-opus-4-8-thinking-high, Designer=gpt-5.6-sol-medium, Planner=gpt-5.6-terra-medium, Worker/Writer=composer-2.5-fast, Reviewer=claude-fable-5-thinking-high"
   echo
 
   echo "--- Optional substrates ---"

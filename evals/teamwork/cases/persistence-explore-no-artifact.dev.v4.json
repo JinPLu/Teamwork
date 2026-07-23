@@ -1,0 +1,51 @@
+{
+   "evidence" : "Static Explore no-independent-artifact persistence control.",
+   "expected" : {
+      "capability" : "persistence",
+      "language" : "en",
+      "requires" : [
+         "explore-read-only",
+         "explore-no-independent-artifact",
+         "evidence-belongs-to-consuming-brief",
+         "writer-no-independent-explore"
+      ],
+      "scenario" : "explore-no-artifact"
+   },
+   "id" : "persistence-explore-no-artifact",
+   "must" : [
+      "return Explore evidence as a read-only packet for the consuming workflow brief"
+   ],
+   "must_not" : [
+      "create an Explore report, dispatch Writer for an independent Explore artifact, edit files, or implement"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      },
+      {
+         "class" : "skill",
+         "source" : "skills/teamwork-explore/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-explorer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/explorer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/explorer.md"
+      }
+   ],
+   "prompt" : "Inspect the local owner for this contract and return evidence only.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

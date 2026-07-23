@@ -36,6 +36,7 @@ CLAUDE_AGENTS=(
   designer
   planner
   worker
+  writer
   plan-reviewer
   reviewer
 )
@@ -46,6 +47,7 @@ CURSOR_AGENTS=(
   designer
   planner
   worker
+  writer
   plan-reviewer
   reviewer
 )
@@ -56,6 +58,7 @@ CODEX_AGENTS=(
   teamwork-designer
   teamwork-planner
   teamwork-worker
+  teamwork-writer
   teamwork-plan-reviewer
   teamwork-reviewer
 )
@@ -122,10 +125,11 @@ codex-agents separately when that surface needs refresh.
 
 Profile defaults to performance-first on all platforms. On Codex, performance-first
 uses GPT-5.5/high for Researcher, Explorer, Debugger, Planner, and Worker;
-Sol/high for Designer and Plan Reviewer; and Sol/max for Reviewer. On Codex,
+GPT-5.5/low for Writer; Sol/high for Designer and Plan Reviewer; and Sol/max for Reviewer. On Codex,
 cost-first uses GPT-5.5/medium for Researcher, Explorer, Debugger, Planner, and
-Worker; Sol/medium for Designer; and Sol/high for Plan Reviewer and Reviewer.
-Cursor and Claude Code keep their existing profile mappings.
+Worker; GPT-5.5/low for Writer; Sol/medium for Designer;
+and Sol/high for Plan Reviewer and Reviewer. Cursor and Claude Code keep their existing profile mappings.
+Writer is fixed to the simplest model in both profiles.
 USAGE
 }
 
