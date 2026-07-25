@@ -75,11 +75,14 @@ The following are sinks, not package sources:
   the user says `no files`, off-record, read-only, or no-write. Ordinary chat and
   clarification, one-off native work outside a Teamwork workflow, and clear code
   implementation requests do not force an extra workflow artifact. Writer
-  authors ordinary artifacts from frozen bounded briefs and registers them in
-  `docs/teamwork/index.json` without changing facts, citations, decisions,
-  authority, status, or acceptance. Grill, Design, and Goal use their specialized
-  transactions. Research, Debug, Plan, Review, and mutating Init/Update use the
-  generic artifact transaction. Explore does not create a standalone report; its
+  authors ordinary artifacts from frozen bounded briefs without changing facts,
+  citations, decisions, authority, status, or acceptance; durable workflow
+  artifacts are registered only through the exact specialized or generic
+  transaction route. Grill, Design, and Goal use their specialized transactions.
+  Research, Debug, Plan, Review, and mutating Init/Update use the generic
+  artifact transaction. Ordinary completion report workflows share
+  `active.results` so their companions can coexist; `active.report` remains for
+  non-workflow report pointers. Explore does not create a standalone report; its
   evidence is folded into the consuming artifact or answer.
 - Temporary live outputs, homes, caches, logs, and build results are evidence or
   scratch state. They must not become package inputs.
@@ -95,6 +98,27 @@ The following are sinks, not package sources:
 | Goal | existing entry/attempt/status |
 | Mutating Init / Update | receipt |
 | Explore | no standalone report; evidence is folded into its consumer |
+
+## Dialogue and persistence
+
+Root owns live dialogue, dispatch timing, user-facing claims, decisions,
+authority, and acceptance. Leaf roles return bounded packets; Writer is a
+low-cost disposable leaf that receives a frozen brief and never becomes
+continuity state. The durable source of truth is the transaction record
+inspect/CAS/journal/atomic apply/readback plus the workflow artifact, not the
+identity of the Writer that drafted it.
+
+| Persistence disposition | User-visible outcome | Ordering rule |
+| --- | --- | --- |
+| Checkpoint | A reusable intermediate artifact that later workflow steps may consume | Dependent work waits until transaction readback succeeds |
+| Completion companion | A durable companion to an already determined result packet | Root freezes the result before dispatch, may overlap only answer-invariant delivery work, and joins before claiming saved/durable |
+| None | Native dialogue answer or local work without a standalone durable artifact | No Writer transaction and no saved/durable claim |
+
+Feedback loops stay reference-local: specialized Grill, Design, and Goal loops
+use their own transactions; Research, Debug, Plan, Review, and mutating
+Init/Update use the generic artifact transaction only through the exact route
+selected by Root. Before generic `artifact-apply`, inspection/schema work is
+preparatory only; interruption before apply/readback provides no durable claim.
 
 Design schema v3 writes the three explicit acceptance states above. Legacy v1/v2
 records remain readable and are interpreted as `accepted` for compatibility.

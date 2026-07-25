@@ -7,7 +7,10 @@ description: Use when the requested result is direct evidence about local code, 
 
 Answer one local evidence question without changing the project. Explore is
 local-only and read-only; it does not browse the web, edit files, run destructive
-commands, or turn an investigation into implementation.
+commands, create a standalone artifact, ask users directly, or turn an
+investigation into implementation. Ordinary natural discussion, brainstorming,
+and focused reads needed for already authorized implementation do not activate
+Explore.
 
 ## Method
 
@@ -23,9 +26,10 @@ commands, or turn an investigation into implementation.
 4. Separate observation from inference. Give one supported conclusion, the
    evidence that changes it, and at most one material gap or next discriminator.
 5. Stop when the local question is answered or the missing evidence is precisely
-   identified. Do not create an Explore report; evidence belongs in the workflow
-   writing brief, packet, or artifact that owns the decision. Writer never
-   creates an independent Explore artifact.
+   identified. Return any missing discriminator precisely to the owning Root or
+   workflow; leaf Explore roles never ask the user. Do not create an Explore
+   report; evidence belongs in the workflow writing brief, packet, or artifact
+   that owns the decision. Writer never creates an independent Explore artifact.
 
 Use Explore when the evidence question is structurally complex (multiple files,
 callers, definitions, or history), separable from the current task, or benefits

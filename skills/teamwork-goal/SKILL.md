@@ -7,14 +7,17 @@ description: Use when the user explicitly asks the host to keep working until a 
 
 Apply persistence around the user's actual task. Goal is a modifier, not a
 separate research, design, planning, debugging, implementation, or review stage.
-It never broadens scope or effect authority.
+It never broadens scope or effect authority. Ordinary natural discussion or
+brainstorming does not activate Goal unless the user asks for persistence.
 
 ## Establish State
 
 Record objective, direct success signal, scope, protected boundaries, invariants,
 supplied budget, and hard stops. Inspect discoverable state first; ask only for a
-missing user-owned value that prevents progress. Do not invent iteration, time,
-or token budget.
+missing user-owned objective, success, scope, or authority value that prevents
+safe progress. Root alone asks users through the current host's native surface;
+leaf roles return proposed questions or blockers to Root. Answers do not expand
+authority. Do not invent iteration, time, or token budget.
 If the user says `no files`, `off-record`, `read-only`, `no writes`, or equivalent
 and no host-native durable state satisfies it, Goal fails closed before promising
 persistence; deliver no continuity claim.
@@ -26,10 +29,13 @@ transaction. Writer runs `discussion-transaction.py goal-inspect --project-root
 <start|attempt|close>`, then runs `discussion-transaction.py goal-apply
 --project-root <project> --request <file>` with that revision and reads back. The transaction derives
 `docs/teamwork/reports/YYYY-MM-DD-<slug>-goal.md`; never invent or hand-author it.
-Writer is only the caller, and the transaction is the sole filesystem writer.
-Record objective, success signal, invariants, scope, budget, hard stops, status,
-and attempts. If state is unavailable, stop and report the continuity gap.
-Preserve an exact user-supplied token budget; never invent one.
+Writer is disposable compute and only the caller; the transaction is the sole
+filesystem writer and owns destination, compare-and-swap, journal recovery,
+atomic apply, and readback. Record objective, success signal, invariants, scope,
+budget, hard stops, status, and attempts. If interrupted before apply begins or
+state is otherwise unavailable, stop and report the continuity gap without a
+durable claim. Recover only from surviving workflow evidence. Preserve an exact
+user-supplied token budget; never invent one.
 
 ## Iterate
 

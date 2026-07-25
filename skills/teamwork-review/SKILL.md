@@ -54,13 +54,17 @@ new candidate; expanded scope requires a fresh review decision. Root retains fin
 
 Reviewer always stays read-only. In an initialized writable project, every verdict
 defaults to a review/conclusion artifact unless the user says `no files`,
-`off-record`, `read-only`, `no writes`, or equivalent. Root freezes the verdict
-and Reviewer returns a bounded packet: purpose/audience, facts/sources, frozen
-decision/status, style/structure, artifact kind/consumer, preserve/forbid,
-findings, evidence, verdict, and residual risk. Writer uses
+`off-record`, `read-only`, `no writes`, or equivalent. Freeze the terminal
+verdict before persistence. Root freezes the verdict and Reviewer returns a
+bounded packet: purpose/audience, facts/sources, frozen decision/status,
+style/structure, artifact kind/consumer, preserve/forbid, findings, evidence,
+verdict, and residual risk. Writer uses
 `artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`;
-the transaction derives the destination and registers the ordinary index. Missing
-project memory, Writer, brief, authority, consumer, or transaction blocks only
+the transaction derives the destination and registers the ordinary index. Writer
+is disposable; Root may continue only answer-invariant delivery work and must
+join before claiming saved or durable. Interruption before `artifact-apply` means
+unsaved unless surviving evidence permits a new frozen packet. Missing project
+memory, Writer, brief, authority, consumer, or transaction blocks only
 persistence: deliver the verdict and report it unsaved/blocked. No Reviewer,
 Root, or Worker fallback writes it. Persistence does not imply Root/user acceptance.
 
@@ -68,5 +72,6 @@ Lead with blockers ordered by severity and include precise file/line or artifact
 locations when available. If there are no findings, say so explicitly. `ACCEPT`
 requires direct support for every material criterion and no open blocker;
 `REVISE` means correctable blockers remain; `BLOCKED` means required evidence or
-access is unavailable. Ask for missing user-providable evidence before declaring
-`BLOCKED`, but make no change.
+access is unavailable. Reviewer never asks the user; propose missing
+user-providable evidence to Root before declaring `BLOCKED`, but make no change.
+Candidate changes invalidate the old review and require a new sealed candidate.

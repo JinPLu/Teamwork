@@ -5,6 +5,11 @@ description: Use when a proposed change has major external impact or the user ex
 
 # Grill Me
 
+Grill is not generic Ask. Use it only for major external-impact choices or an
+explicit sustained grilling, stress-test, question-before-action, save, or resume
+request. Ordinary discussion, clarification, and non-major Design frontiers stay
+with their current owner.
+
 Challenge only the decisions that can materially change the requested outcome.
 Questions do not authorize implementation or other effects.
 
@@ -52,12 +57,12 @@ not major merely because the diff is large.
 Every actual Grill invocation in an initialized writable project defaults to its
 controlled record. Major-change and explicit `$grill-me`, save, record, or resume
 requests trigger Grill; ordinary clarification that does not activate Grill stays
-chat-only. Within one scope, persist only record creation, a semantic decision or
-frontier change, and close or supersede. An unchanged state is a no-op: do not
-call `apply`, create another revision, or rewrite merely for a status update. A
-`no files`, `off-record`, `read-only`, `no writes`, private, or equivalent
-instruction overrides record authority; if it forbids file access, do not read an
-existing record either.
+chat-only. Within one scope, persist only lifecycle checkpoints: record creation,
+a semantic decision or frontier change, and close or supersede. An unchanged
+state is a no-op: do not call `apply`, create another revision, or rewrite merely
+for a status update. A `no files`, `off-record`, `read-only`, `no writes`,
+private, or equivalent instruction overrides record authority; if it forbids file
+access, do not read an existing record either.
 
 For persisted Grill state or a standalone summary, Root freezes the packet and
 dispatches Writer. The brief includes purpose/audience, facts/sources, frozen
@@ -98,11 +103,12 @@ No direct-write permission, exception, fallback, or emergency route exists. Ever
 `apply` request carries the revision returned by its immediately preceding
 inspect; no exception, fallback, or emergency path relaxes that requirement.
 
-Only report a record as saved after successful transaction output. A safe failure
-does not authorize a direct retry by file editing; an `INDETERMINATE` result pauses
-for recovery. If the project is not initialized or writable, keep a compact
-conversation fallback: request, settled decisions, open discriminator, and next
-question. State once that it was not saved and may be lost across sessions.
+Only report a record as saved or durable after successful transaction output and
+readback. A safe failure does not authorize a direct retry by file editing; an
+`INDETERMINATE` result pauses for recovery. If the project is not initialized or
+writable, keep a compact conversation fallback: request, settled decisions, open
+discriminator, and next question. State once that it was not saved and may be
+lost across sessions.
 
 Answers and confirmations settle discussion state only. They do not grant file
 authority beyond this record or authorize code changes, external effects,

@@ -9,7 +9,9 @@ Translate an already selected direction into work that can be executed without
 redesign. Every Plan invocation defaults to a durable Plan in an initialized
 writable project unless the user says `no files`, `off-record`, `read-only`, `no
 writes`, or equivalent. Planner produces an execution-ready Plan packet only;
-Writer saves or rewrites it. Do not redesign or implement.
+Writer saves or rewrites it. Do not redesign or implement. Ordinary natural
+discussion or brainstorming does not activate Plan unless the existing outcome
+trigger applies.
 
 ## Readiness
 
@@ -17,6 +19,9 @@ Confirm outcome, chosen direction, scope, protected boundaries, and acceptance
 signals are settled. Inspect local owners, flow, interfaces, tests,
 configuration, and commands needed for concrete steps. Do not ask for
 discoverable facts or turn safe implementation details into user decisions.
+Root alone asks users through the current host's native surface; Planner and
+other leaf roles return proposed questions or blockers to Root. Answers do not
+expand authority.
 
 When a prior Teamwork Design is claimed, require the controlled durable Design
 path and revision returned by its transaction. Run
@@ -30,8 +35,10 @@ must not be promoted by Planner.
 
 If an open choice would change behavior, architecture, public contracts, data,
 permissions, migration, or scope, stop and state the exact decision needed. Do
-not compare options or hide it as an assumption. Missing implementation details
-may remain prerequisites that block only dependent steps.
+not compare options or hide it as an assumption. Return unresolved material
+direction to Design. If a genuinely user-owned plan boundary remains after
+evidence, propose it to Root. Missing implementation details may remain
+prerequisites that block only dependent steps.
 
 ## Plan Shape
 
@@ -66,13 +73,20 @@ values, unresolved alternatives, `or its replacement`, vague “handle edge case
 work, or redesign disguised as a step. An unreviewed Plan must not be described
 as independently accepted.
 
-Return a bounded Plan packet: purpose/audience, facts/sources, frozen
-decision/status, style/structure, artifact kind/consumer, preserve/forbid,
-direction, scope, steps, dependencies, proof, and stops. Writer uses
-`artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`;
-the transaction derives the destination and registers the ordinary index. Writer
-may polish expression but not research, invent, or alter facts, authority, status,
-proof, decisions, or acceptance. Missing project memory, Writer, brief,
-authority, consumer, or transaction blocks only persistence: return the Plan and
-report it unsaved/blocked. No Planner, Root, or Worker fallback writes it. Plan
-approval does not authorize implementation, release, external effects, or destructive action.
+Every Plan is a completion artifact. Freeze a bounded Plan packet:
+purpose/audience, facts/sources, frozen decision/status, style/structure,
+artifact kind/consumer, preserve/forbid, direction, scope, steps, dependencies,
+proof, and stops. Dispatch one low-cost Writer; Root may do only
+answer-invariant handoff work while Writer runs and must join and read back
+before claiming the Plan is saved or durable. Writer uses `artifact-inspect ->
+artifact-schema <create|update|supersede> -> artifact-apply`; the transaction
+derives the destination and registers the ordinary index. Writer is disposable
+compute and the transaction owns destination, compare-and-swap, journal recovery,
+atomic apply, and readback. If interrupted before generic artifact apply begins,
+there is no durable claim; recover only from surviving workflow evidence or
+report unsaved. Writer may polish expression but not research, invent, or alter
+facts, authority, status, proof, decisions, or acceptance. Missing project
+memory, Writer, brief, authority, consumer, or transaction blocks only
+persistence: return the Plan and report it unsaved/blocked. No Planner, Root, or
+Worker fallback writes it. Plan approval does not authorize implementation,
+release, external effects, or destructive action.

@@ -5,6 +5,7 @@
       "language" : "en",
       "requires" : [
          "specialized-grill-design-goal-route",
+         "lifecycle-checkpoint-readback",
          "inspect-schema-apply",
          "transaction-owned-writer",
          "required-transaction-gate",
@@ -15,7 +16,7 @@
    },
    "id" : "persistence-specialized-artifact-writer",
    "must" : [
-      "persist specialized Grill, Design, or Goal artifacts through their managed inspect -> schema -> apply route with Writer as caller and the transaction as filesystem writer"
+      "persist specialized Grill, Design, or Goal lifecycle checkpoints through their managed inspect -> schema -> apply route with Writer as caller, transaction as filesystem writer, and readback before any durable claim"
    ],
    "must_not" : [
       "save specialized artifacts through generic workflow artifacts, hand-author Markdown or indexes, implement, or infer release authority"

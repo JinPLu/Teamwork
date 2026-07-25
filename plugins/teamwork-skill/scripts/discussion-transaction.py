@@ -61,11 +61,11 @@ WORKFLOW_ARTIFACT_PREFIXES = (
 WORKFLOW_CONFIG: dict[str, dict[str, str]] = {
     "research": {"kind": "research", "active": "results", "directory": "docs/teamwork/research"},
     "plan": {"kind": "plan", "active": "plan", "directory": "docs/teamwork/plans"},
-    "debug": {"kind": "report", "active": "report", "directory": "docs/teamwork/workflows/debug"},
-    "review": {"kind": "report", "active": "report", "directory": "docs/teamwork/workflows/review"},
+    "debug": {"kind": "report", "active": "results", "directory": "docs/teamwork/workflows/debug"},
+    "review": {"kind": "report", "active": "results", "directory": "docs/teamwork/workflows/review"},
     "conclusion": {"kind": "result", "active": "results", "directory": "docs/teamwork/workflows/conclusion"},
-    "init": {"kind": "report", "active": "report", "directory": "docs/teamwork/workflows/init"},
-    "update": {"kind": "report", "active": "report", "directory": "docs/teamwork/workflows/update"},
+    "init": {"kind": "report", "active": "results", "directory": "docs/teamwork/workflows/init"},
+    "update": {"kind": "report", "active": "results", "directory": "docs/teamwork/workflows/update"},
 }
 
 
@@ -2070,6 +2070,7 @@ def parse_index(text: str) -> dict[str, object]:
     index = dict(index)
     index["active"] = active
     index["entries"] = entries
+    _normalize_legacy_workflow_report_slot(index)
     _validate_pointer_metadata(index)
     return index
 
@@ -2160,6 +2161,60 @@ def _workflow_artifact_kind(workflow: str) -> str:
 
 def _is_workflow_entry(entry: dict[str, object]) -> bool:
     return entry.get("artifact_type") == WORKFLOW_ARTIFACT_KIND
+
+
+def _normalize_legacy_workflow_report_slot(index: dict[str, object]) -> None:
+    """Interpret the old workflow report singleton as a results entry.
+
+    This is intentionally narrow: only a current workflow-artifact report that
+    now belongs to active.results is moved. Ordinary active.report pointers keep
+    their existing meaning, and malformed workflow pointers fail before callers
+    can inspect or persist over them.
+    """
+
+    active = index["active"]
+    assert isinstance(active, dict)
+    report_path = active.get("report")
+    if not isinstance(report_path, str):
+        return
+    entries = index["entries"]
+    assert isinstance(entries, list)
+    workflow_matches = [
+        entry
+        for entry in entries
+        if isinstance(entry, dict)
+        and entry.get("path") == report_path
+        and _is_workflow_entry(entry)
+    ]
+    if not workflow_matches:
+        return
+    if len(workflow_matches) != 1:
+        fail("active.report legacy workflow artifact is ambiguous")
+    entry = workflow_matches[0]
+    if not _eligible(entry):
+        fail("active.report cannot point at a stale workflow artifact")
+    eligible_matches = [
+        item
+        for item in entries
+        if isinstance(item, dict)
+        and item.get("path") == report_path
+        and _eligible(item)
+    ]
+    if len(eligible_matches) != 1:
+        fail("active.report legacy workflow artifact conflicts with another current entry")
+    workflow = entry.get("workflow")
+    if workflow not in WORKFLOW_CONFIG:
+        fail("active.report legacy workflow artifact has an unsupported workflow")
+    assert isinstance(workflow, str)
+    if entry.get("kind") != "report" or _workflow_artifact_slot(workflow) != "results":
+        fail("active.report contains a workflow artifact outside the legacy report slot")
+    if str(entry["path"]) != _workflow_entry_path(entry):
+        fail("active.report legacy workflow artifact path does not match its derived destination")
+    results = list(active["results"])
+    if report_path not in results:
+        results.append(report_path)
+    active["results"] = results
+    active["report"] = None
 
 
 def _workflow_entry_path(entry: dict[str, object]) -> str:

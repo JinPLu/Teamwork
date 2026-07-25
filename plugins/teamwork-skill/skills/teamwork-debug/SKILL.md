@@ -47,20 +47,25 @@ narrow. Never expose private project evidence in public search.
 In an initialized writable project, terminal cause, blocked diagnosis, or
 cross-session handoff defaults to a debug artifact unless the user says `no
 files`, `off-record`, `read-only`, `no writes`, or equivalent; it is not a turn
-log. Debugger returns a bounded packet: purpose/audience, facts/sources, frozen
+log. Freeze the bounded terminal or blocked packet before persistence. Debugger
+returns a bounded packet: purpose/audience, facts/sources, frozen
 decision/status, style/structure, artifact kind/consumer, preserve/forbid,
 failure, cause evidence, attempted fixes, blocker, and verification. Writer uses
 `artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`;
-the transaction derives the destination and registers the ordinary index. Missing
-project memory, Writer, brief, authority, consumer, or transaction blocks only
+the transaction derives the destination and registers the ordinary index. Writer
+is disposable; Root may continue only answer-invariant delivery work and must
+join before claiming saved or durable. Interruption before `artifact-apply` means
+unsaved unless surviving evidence permits a new frozen packet. Missing project
+memory, Writer, brief, authority, consumer, or transaction blocks only
 persistence: deliver the diagnosis and report it unsaved/blocked. No Debugger,
 Root, or Worker fallback writes it.
 
-Ask only for an unavailable runtime value, access grant, or human-only observation
-needed for the next discriminating check. Pause with the exact action and expected
-return value, then resume the same diagnosis. A question or diagnosis grants no
-new effect authority. If the safe fix would change accepted behavior, contracts,
-data, permissions, or scope, stop and name that decision.
+Ask only for the exact unavailable runtime value, access grant, or human-only
+observation needed for the next discriminating check. Debugger or another leaf
+proposes that blocker; Root presents it and the returned value resumes the same
+diagnosis. Pause with the exact action and expected return value. A question or
+diagnosis grants no new effect authority. If the safe fix would change accepted
+behavior, contracts, data, permissions, or scope, stop and name that decision.
 
 Finish with the cause and direct evidence, the exact fix if authorized, the real
 rerun result, and any specific remaining blocker. Stop as soon as the requested

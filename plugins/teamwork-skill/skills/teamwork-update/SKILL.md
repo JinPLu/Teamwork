@@ -6,7 +6,9 @@ description: Use when the user asks to check, install, activate, repair, or refr
 # Teamwork Update
 
 Check or refresh Teamwork-managed global installation surfaces only. Never rewrite
-project context as part of an update.
+project context as part of an update. Ordinary natural discussion or
+brainstorming does not activate Update unless the existing global-install
+outcome trigger applies.
 
 ## Resolve The Package
 
@@ -30,6 +32,9 @@ searching or modifying arbitrary directories.
    notifications requires explicit effect authority. An explicit request to
    perform that activation supplies it; a request merely asking what is stale
    does not.
+   Root alone asks users through the current host's native surface; leaf roles
+   return proposed questions or blockers to Root. Ask only for missing mutation
+   authority or unavoidable manual host action. Answers do not expand authority.
 4. Dispatch Worker only for transferable, precisely owned refresh actions.
    Credentials, host UI, trust, notification approval, and privileged surfaces
    remain with Root and require exact effect authority. Refresh only verified
@@ -41,16 +46,22 @@ searching or modifying arbitrary directories.
    or other human action separately.
 
 A check-only Update remains read-only and conversational. After a mutating Update
-in an initialized writable project, a receipt defaults through Writer unless the
-user says `no files`, `off-record`, `read-only`, `no writes`, or equivalent.
-Update returns a bounded receipt packet: purpose/audience, facts/sources, frozen
-decision/status, style/structure, artifact kind/consumer, preserve/forbid,
-managed surfaces, freshness evidence, validation, and manual actions. Writer uses
-`artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`;
-the transaction derives the destination and registers the ordinary index. Missing
-project memory, Writer, brief, authority, consumer, or transaction blocks only
-persistence: deliver the receipt and report it unsaved/blocked. No Root or Worker
-fallback writes it.
+in an initialized writable project, a receipt is a completion companion and
+defaults through Writer unless the user says `no files`, `off-record`,
+`read-only`, `no writes`, or equivalent. Freeze a bounded receipt packet:
+purpose/audience, facts/sources, frozen decision/status, style/structure,
+artifact kind/consumer, preserve/forbid, managed surfaces, freshness evidence,
+validation, and manual actions. Dispatch one low-cost Writer; Root may do only
+answer-invariant handoff work while Writer runs and must join and read back
+before claiming the receipt is saved or durable. Writer uses `artifact-inspect
+-> artifact-schema <create|update|supersede> -> artifact-apply`; the transaction
+derives the destination and registers the ordinary index. Writer is disposable
+compute and the transaction owns destination, compare-and-swap, journal recovery,
+atomic apply, and readback. If interrupted before generic artifact apply begins,
+there is no durable claim; recover only from surviving workflow evidence or
+report unsaved. Missing project memory, Writer, brief, authority, consumer, or
+transaction blocks only persistence: deliver the receipt and report it
+unsaved/blocked. No Root or Worker fallback writes it.
 
 For notifications, trust only the specific Teamwork hooks reported by the
 package; never enable trust-all. Do not install external dependencies, MCP

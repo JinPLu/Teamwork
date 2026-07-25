@@ -1,0 +1,37 @@
+{
+   "evidence" : "静态 dialogue-native Ask 夹具。",
+   "expected" : {
+      "capability" : "ask",
+      "language" : "zh",
+      "requires" : [
+         "contribution-first",
+         "one-high-information-question",
+         "open-or-bounded-native",
+         "no-grill",
+         "no-design-premature",
+         "no-artifact"
+      ],
+      "scenario" : "dialogue-native"
+   },
+   "id" : "ask-dialogue-native-zh",
+   "must" : [
+      "先给出有用的综合、张力或候选空间，再最多问一个高信息量的开放问题或真实有界的原生问题"
+   ],
+   "must_not" : [
+      "启动 Grill、过早派发 Design、创建 artifact、实施修改，或一次问多个问题"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      }
+   ],
+   "prompt" : "我们一起想想怎么让新贡献者的项目入门体验少一点脆弱感。",
+   "source" : "synthetic",
+   "split" : "dev"
+}

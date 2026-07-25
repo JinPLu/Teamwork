@@ -1,0 +1,37 @@
+{
+   "evidence" : "Static dialogue-native Ask fixture.",
+   "expected" : {
+      "capability" : "ask",
+      "language" : "en",
+      "requires" : [
+         "contribution-first",
+         "one-high-information-question",
+         "open-or-bounded-native",
+         "no-grill",
+         "no-design-premature",
+         "no-artifact"
+      ],
+      "scenario" : "dialogue-native"
+   },
+   "id" : "ask-dialogue-native-en",
+   "must" : [
+      "respond to the brainstorm with useful synthesis, tensions, or candidate space before asking at most one high-information open or truthfully bounded native question"
+   ],
+   "must_not" : [
+      "activate Grill, prematurely dispatch Design, create an artifact, implement, or ask multiple questions"
+   ],
+   "platforms" : [
+      "codex",
+      "cursor",
+      "claude"
+   ],
+   "producers" : [
+      {
+         "class" : "root-policy",
+         "source" : "scripts/install/policy.sh"
+      }
+   ],
+   "prompt" : "Let's brainstorm how to make the project onboarding feel less brittle for new contributors.",
+   "source" : "synthetic",
+   "split" : "dev"
+}

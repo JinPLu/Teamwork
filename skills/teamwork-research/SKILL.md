@@ -20,6 +20,11 @@ unavailable, stop. Root MUST NOT call `wait_agent` until `spawn_agent` returns a
 non-empty live agent id. Empty spawn evidence, unavailable spawn, or wait without
 a live agent is STOP: unsupported role boundary.
 
+Researcher never asks the user. Before dispatch, Root may seek brief steering
+only when cost, scope, or consequence materially benefits and the answer is not
+discoverable from supplied evidence. Open steering stays a natural host turn;
+bounded steering follows the host-native question surface.
+
 ## Choose Depth
 
 Use the lightest adequate depth:
@@ -64,15 +69,19 @@ data, or proprietary artifacts to a public service.
 Research does not authorize account changes, messages, purchases, uploads, or
 publication. In an initialized writable project, each terminal cited answer
 defaults to a research artifact unless the user says `no files`, `off-record`,
-`read-only`, `no writes`, or equivalent. Researcher returns a bounded packet:
-purpose/audience, facts/sources, citations, frozen decision/status,
-style/structure, artifact kind/consumer, and preserve/forbid. Writer must use
-`discussion-transaction.py artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`;
+`read-only`, `no writes`, or equivalent. Freeze the terminal cited answer before
+persistence. Researcher returns a bounded packet: purpose/audience,
+facts/sources, citations, frozen decision/status, style/structure, artifact
+kind/consumer, and preserve/forbid. Writer must use `discussion-transaction.py
+artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`;
 the transaction derives the destination and registers the ordinary index. Writer
 may rewrite expression but must not research, invent, or alter facts, citations,
-authority, status, decisions, or acceptance. Missing project memory, Writer,
-brief, authority, consumer, or transaction blocks only persistence: deliver the
-answer and report it unsaved/blocked. No Researcher, Root, or Worker fallback writes it.
+authority, status, decisions, or acceptance. Writer is disposable; Root may
+continue only answer-invariant delivery work and must join before claiming saved
+or durable. Interruption before `artifact-apply` means unsaved unless surviving
+evidence permits a new frozen packet. Missing project memory, Writer, brief,
+authority, consumer, or transaction blocks only persistence: deliver the answer
+and report it unsaved/blocked. No Researcher, Root, or Worker fallback writes it.
 
 After the primary Researcher handoff, additional fan-out remains conditional:
 use it only for separable source classes, required public/private isolation, or

@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 4.5.0 - 2026-07-25
+
+**Teamwork 现在会先参与讨论、再提出真正有价值的问题，并让各工作流的记录可靠共存。**
+
+- **讨论先贡献再提问。** 当用户说“讨论”、`brainstorm` 或类似表达时，Root 会先给出综合、张力或候选空间；只有反馈确实能改善下一步时，才提出一个高信息量的开放或有限问题，清楚的执行请求仍直接完成。
+- **Ask 成为原生交互能力。** 有限选择使用宿主的提问界面，开放讨论保持自然对话；Grill 专注重大影响或明确要求的持续盘问与压力测试，Design 处理非重大未决方向，各 Skill 只在自己的阶段请求必要反馈。
+- **持久化跟随工作流生命周期。** Grill、Design 和 Goal 使用依赖后续工作的 checkpoint；Research、Debug、Plan、Review 和会产生变更的 Init/Update 在结果确定后保存 completion companion；Writer 只有在结果冻结后才启动，事务 readback 成功前不会声称已保存。
+- **多份完成记录不再互相覆盖。** Debug、Review、Init 和 Update 的结果现在可以并存，已有记录会在下一次成功保存时安全兼容；普通 report 与 Plan 的原有所有权保持不变。
+
+升级操作：Codex Marketplace 用户重新添加 `JinPLu/Teamwork`、安装 `teamwork-skill@teamwork`，并在新任务中运行 `$teamwork-update`。checkout 用户运行 `git pull --ff-only`、`./install.sh all` 和 `./scripts/check-update.sh --readiness`。
+
+重要限制：讨论与 workflow 的语义选择仍由宿主模型判断，静态评测不能保证每次回答逐字一致；generic artifact 在成功开始 `artifact-apply` 前仍不具备持久化保证，中断时会明确报告未保存。
+
 ## 4.4.0 - 2026-07-23
 
 **命名 Teamwork workflow 现在默认留下可复用结果，独立文档、Design 状态和指令边界也更清楚。**

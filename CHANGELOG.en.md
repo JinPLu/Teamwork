@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 4.5.0 - 2026-07-25
+
+**Teamwork now contributes to the discussion before asking a genuinely useful question, while workflow records coexist reliably.**
+
+- **Discussion contributes before it asks.** When users say “discuss,” `brainstorm`, or similar, Root first offers a synthesis, tension, or candidate space. It asks one high-information open or bounded question only when feedback can improve the next step, while clear execution requests still proceed directly.
+- **Ask becomes a native interaction capability.** Bounded choices use the host question surface and open discussion stays conversational. Grill focuses on major impact or explicitly requested sustained questioning and stress-testing, Design owns non-major unsettled direction, and each Skill requests necessary feedback only at its own stage.
+- **Persistence follows workflow lifecycle.** Grill, Design, and Goal use checkpoints that later work may depend on. Research, Debug, Plan, Review, and mutating Init/Update save completion companions after the result is determined. Writer starts only after the result is frozen, and nothing is called saved before transaction readback succeeds.
+- **Completion records no longer overwrite one another.** Debug, Review, Init, and Update results can coexist, and existing records migrate safely on the next successful save. Ordinary report and Plan ownership remain unchanged.
+
+Upgrade action: Codex Marketplace users re-add `JinPLu/Teamwork`, install `teamwork-skill@teamwork`, and run `$teamwork-update` in a new task. Checkout users run `git pull --ff-only`, `./install.sh all`, and `./scripts/check-update.sh --readiness`.
+
+Important limit: Discussion and workflow selection still depend on host-model semantic judgment, so static evaluation cannot guarantee byte-identical responses. A generic artifact is still not durable before `artifact-apply` successfully begins; interruption is reported explicitly as unsaved.
+
 ## 4.4.0 - 2026-07-23
 
 **Named Teamwork workflows now persist reusable results by default, with clearer boundaries for standalone documents, Design states, and instructions.**

@@ -22,6 +22,8 @@ The dev matrix keeps bilingual coverage for:
 - external Research and the local-evidence Native negative control;
 - default Design activation, input-driven adversarial Design selection,
   selected-direction Plan, and their ownership boundaries;
+- ordinary dialogue-native brainstorming with contribution first and at most one
+  useful open or bounded question, with no Grill, premature Design, or artifact;
 - ordinary natural question-first Grill with no file write, plus explicit
   `$grill-me` save persistence and independently-major automatic persistence
   through the managed `inspect -> schema -> apply` transaction;
@@ -52,11 +54,14 @@ behavior scripts, cross-skill loading, dependency cycles, and retired skill
 names.
 
 Mechanical safety tests for ordinary memory/index handling remain separate from
-behavior activation. Grill persistence has one public contract: ordinary natural
-question-first language is conversation-only; explicit save/resume/record may
-persist only through the managed `inspect -> schema -> apply` transaction, while
-an independently-major Grill automatically records its state through that same
-route in a named, initialized writable project;
+behavior activation. Ordinary discussion and brainstorming stay native: answer
+with synthesis, tension, or candidate space first, then ask at most one useful
+open or bounded question when feedback would improve the next turn. Grill
+persistence has one public contract: ordinary natural question-first language is
+conversation-only; explicit save/resume/record may persist only through the
+managed `inspect -> schema -> apply` transaction, while an independently-major
+Grill automatically records its state through that same route in a named,
+initialized writable project;
 `no files` overrides it; no discussion action grants implementation authority.
 
 ## Evidence lanes

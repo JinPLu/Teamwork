@@ -92,6 +92,9 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
     def index(self) -> dict[str, object]:
         return json.loads((self.memory / "index.json").read_text(encoding="utf-8"))
 
+    def write_index(self, index: dict[str, object]) -> None:
+        (self.memory / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
     def snapshot(self) -> dict[str, tuple[object, ...]]:
         snapshot: dict[str, tuple[object, ...]] = {}
         for path in sorted((self.project, *self.project.rglob("*")), key=str):
@@ -135,11 +138,11 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
         expected = {
             "research": ("research", "results", "docs/teamwork/research/2026-07-22-research-note.md"),
             "plan": ("plan", "plan", "docs/teamwork/plans/2026-07-22-plan-note.md"),
-            "debug": ("report", "report", "docs/teamwork/workflows/debug/2026-07-22-debug-note.md"),
-            "review": ("report", "report", "docs/teamwork/workflows/review/2026-07-22-review-note.md"),
+            "debug": ("report", "results", "docs/teamwork/workflows/debug/2026-07-22-debug-note.md"),
+            "review": ("report", "results", "docs/teamwork/workflows/review/2026-07-22-review-note.md"),
             "conclusion": ("result", "results", "docs/teamwork/workflows/conclusion/2026-07-22-conclusion-note.md"),
-            "init": ("report", "report", "docs/teamwork/workflows/init/2026-07-22-init-note.md"),
-            "update": ("report", "report", "docs/teamwork/workflows/update/2026-07-22-update-note.md"),
+            "init": ("report", "results", "docs/teamwork/workflows/init/2026-07-22-init-note.md"),
+            "update": ("report", "results", "docs/teamwork/workflows/update/2026-07-22-update-note.md"),
         }
         for workflow, (kind, active_slot, path) in expected.items():
             with self.subTest(workflow=workflow):
@@ -208,7 +211,7 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
         )
         self.assert_error(bad, "destination")
 
-    def test_supersede_moves_results_and_report_singleton_atomically(self) -> None:
+    def test_supersede_moves_results_atomically_and_plan_remains_singleton(self) -> None:
         first = self.create(workflow="research", slug="first-result", title="First result")
         second = self.apply(
             self.request(
@@ -241,7 +244,11 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
             )
         )
         self.assertEqual(replaced.returncode, 0, replaced.stderr)
-        self.assertEqual(self.index()["active"]["report"], json.loads(replaced.stdout)["path"])
+        replaced_path = json.loads(replaced.stdout)["path"]
+        index = self.index()
+        self.assertIsNone(index["active"]["report"])
+        self.assertNotIn(report["path"], index["active"]["results"])
+        self.assertIn(replaced_path, index["active"]["results"])
         old_report = next(item for item in self.index()["entries"] if item["path"] == report["path"])
         self.assertEqual(old_report["authority"], "superseded")
 
@@ -311,20 +318,114 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
         self.assertFalse(marker.exists())
         self.assertEqual(self.snapshot(), before)
 
-    def test_active_results_can_hold_multiple_generic_current_entries_but_singletons_do_not(self) -> None:
+    def test_active_results_can_hold_multiple_generic_current_entries_but_plan_does_not(self) -> None:
         research = self.create(workflow="research", slug="research-result", title="Research result")
         conclusion = self.create(workflow="conclusion", slug="conclusion-result", title="Conclusion result")
+        update = self.create(workflow="update", slug="update-receipt", title="Update receipt")
+        review = self.create(workflow="review", slug="review-verdict", title="Review verdict")
         active = self.index()["active"]
         self.assertIn(research["path"], active["results"])
         self.assertIn(conclusion["path"], active["results"])
+        self.assertIn(update["path"], active["results"])
+        self.assertIn(review["path"], active["results"])
+        self.assertIsNone(active["report"])
 
         self.create(workflow="plan", slug="first-plan", title="First plan")
         blocked_plan = self.apply(self.request("create", workflow="plan", slug="second-plan", title="Second plan"))
         self.assert_error(blocked_plan, "active.plan")
 
-        self.create(workflow="debug", slug="first-report", title="First report")
-        blocked_report = self.apply(self.request("create", workflow="review", slug="second-report", title="Second report"))
-        self.assert_error(blocked_report, "active.report")
+    def test_legacy_workflow_report_slot_is_inspected_and_migrated_on_apply(self) -> None:
+        update = self.create(workflow="update", slug="update-receipt", title="Update receipt")
+        update_path = update["path"]
+        legacy = self.index()
+        legacy["active"]["results"].remove(update_path)
+        legacy["active"]["report"] = update_path
+        self.write_index(legacy)
+
+        inspected = self.inspect()
+        self.assertIsNone(inspected["active"]["report"])
+        self.assertIn(update_path, inspected["active"]["results"])
+        update_registration = next(item for item in inspected["active"]["registrations"] if item["path"] == update_path)
+        self.assertEqual(update_registration["active"], "results")
+
+        applied = self.apply(
+            self.request(
+                "create",
+                workflow="review",
+                slug="review-verdict",
+                title="Review verdict",
+                updated="2026-07-23",
+                expected_revision=str(inspected["revision"]),
+            )
+        )
+        self.assertEqual(applied.returncode, 0, applied.stderr)
+        payload = json.loads(applied.stdout)
+        review_path = payload["path"]
+        self.assertEqual(set(payload["changed_paths"]), {review_path, "docs/teamwork/index.json"})
+        index = self.index()
+        self.assertIsNone(index["active"]["report"])
+        self.assertIn(update_path, index["active"]["results"])
+        self.assertIn(review_path, index["active"]["results"])
+        update_entry = next(item for item in index["entries"] if item["path"] == update_path)
+        self.assertEqual(update_entry["status"], "active")
+        self.assertEqual(update_entry["currentness"], "current")
+        self.assertEqual(update_entry["authority"], "canonical")
+
+    def test_legacy_workflow_report_slot_still_enforces_revision_and_currentness(self) -> None:
+        update = self.create(workflow="update", slug="update-receipt", title="Update receipt")
+        update_path = update["path"]
+        legacy = self.index()
+        legacy["active"]["results"].remove(update_path)
+        legacy["active"]["report"] = update_path
+        self.write_index(legacy)
+
+        stale = self.apply(
+            self.request(
+                "create",
+                workflow="review",
+                slug="stale-review",
+                title="Stale review",
+                updated="2026-07-23",
+                expected_revision="0" * 64,
+            )
+        )
+        self.assert_error(stale, "stale|expected_revision")
+
+        artifact = self.project / update_path
+        artifact.write_text(artifact.read_text(encoding="utf-8").replace("# Update receipt", "# Tampered receipt", 1), encoding="utf-8")
+        inspected = self.cli("artifact-inspect", "--project-root", str(self.project))
+        self.assert_error(inspected, "do(?:es)? not agree")
+
+    def test_non_workflow_report_pointer_is_not_moved(self) -> None:
+        report_path = "docs/teamwork/reports/manual-report.md"
+        report = self.project / report_path
+        report.parent.mkdir(parents=True)
+        report.write_text("# Manual report\n", encoding="utf-8")
+        index = self.index()
+        index["active"]["report"] = report_path
+        index["entries"].append(
+            {
+                "topic": "manual-report",
+                "kind": "report",
+                "title": "Manual report",
+                "status": "active",
+                "currentness": "current",
+                "authority": "supporting",
+                "path": report_path,
+                "linked": [],
+                "evidence_paths": [report_path],
+                "supersedes": [],
+                "search_keys": ["manual-report"],
+                "updated": "2026-07-22",
+                "summary": "Manual report summary.",
+            }
+        )
+        self.write_index(index)
+
+        inspected = self.inspect()
+        self.assertEqual(inspected["active"]["report"], report_path)
+        self.assertEqual(inspected["active"]["results"], [])
+        self.assertEqual(inspected["active"]["registrations"], [])
 
     def test_request_is_not_an_arbitrary_index_patch_or_destination_selector(self) -> None:
         request = self.request("create")

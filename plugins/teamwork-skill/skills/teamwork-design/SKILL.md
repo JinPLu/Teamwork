@@ -7,6 +7,10 @@ description: Use when the user asks to design, architect, choose an approach, or
 
 Settle one direction. Design is a hard gate for an unsettled direction or
 material trade-off; it has one owner.
+Start ordinary discussion naturally: give the current synthesis, tension, and
+candidate space before converting direction-changing user choices into bounded
+questions. Brainstorm wording alone does not activate Design; use it only when a
+material direction is not settled.
 
 ## Establish The Decision
 
@@ -75,18 +79,20 @@ or cross-platform direction, also open Grill through inspect->schema->apply
 unless the user requested `no files`, `off-record`, `read-only`, or `no writes`.
 
 In an initialized writable project, Design-boundary state defaults to the Design
-transaction unless a negative file override is present. Schema v3 records carry
-`acceptance: pending|accepted|blocked`. Persistence may happen before user
+transaction unless a negative file override is present. Design persistence is a
+lifecycle checkpoint at direction creation/update/supersede. Schema v3 records
+carry `acceptance: pending|accepted|blocked`. Persistence may happen before user
 acceptance and does not imply acceptance; pending and blocked Design records are
 durable but not Plan-ready. Plan-ready still requires the controlled route and
 `active.acceptance == accepted` for that direction. Root freezes a bounded
-structured Design state plus brief: purpose/audience, facts/sources, frozen decision/status,
-style/structure, transaction route/consumer, and preserve/forbid, then dispatches
-Writer to call the transaction. The state also contains outcome, rule,
-recommendation/downside, rejected alternatives, shape, boundaries, migration,
-acceptance signals, challenge outcome, frontier delta, and uncertainty. For
-adversarial Design also record envelope, trials, coverage limit, critic/auditor
-identities, final verdicts, and rejected hypotheses; never store raw transcripts.
+structured Design state plus brief: purpose/audience, facts/sources, frozen
+decision/status, style/structure, transaction route/consumer, and
+preserve/forbid, then dispatches Writer to call the transaction. The state also
+contains outcome, rule, recommendation/downside, rejected alternatives, shape,
+boundaries, migration, acceptance signals, challenge outcome, frontier delta, and
+uncertainty. For adversarial Design also record envelope, trials, coverage limit,
+critic/auditor identities, final verdicts, and rejected hypotheses; never store
+raw transcripts.
 
 The package-level Design transaction is the sole durable Design writer. Every
 durable Design lifecycle uses this public route, in order:
@@ -109,8 +115,10 @@ levels up), then use that script.
 `design-render` and `design-validate` are read-only helpers only; they never
 replace the transaction. Never hand-author, redirect renderer output into, or
 directly edit Design Markdown, its route map, or text fallback. If the controlled
-route is unavailable or invalid, stop without claiming durable Design. Writer is
-only the caller; the transaction remains the sole filesystem writer. For
+route is unavailable or invalid, stop without claiming durable Design. Claim
+durable Design only after `design-apply` returns transaction readback with path,
+revision, and changed paths. Writer is only the caller; the transaction remains
+the sole filesystem writer. For
 standalone summaries, guides, or architecture docs, Writer may draft, rewrite,
 summarize, translate, or polish expression but must not research, invent, or
 change facts, citations, authority, status, decisions, or acceptance. Missing

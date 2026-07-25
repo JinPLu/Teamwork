@@ -394,6 +394,16 @@ def validate_bound_producer_sources(
                 ("ground claims",),
                 ("preserve unrelated",),
             ])
+            if (capability, scenario) == ("ask", "dialogue-native"):
+                _require_source_phrases(source, path, source_path, [
+                    ("synthesis/tension/options",),
+                    ("one high-information open or bounded question",),
+                    ("host-native questions",),
+                    ("ordinary discussion stays native",),
+                    ("root opens grill for major",),
+                    ("explicit sustained grilling",),
+                    ("natural question-first intent causes no file write",),
+                ])
         elif producer["class"] == "role-template":
             role = _role_from_source(source_path)
             if role is None:
@@ -452,7 +462,11 @@ def validate_bound_producer_sources(
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
                         ("default-save reusable artifacts",),
-                        ("research/debug/plan/review/init/update artifact-inspect",),
+                        ("research/debug/plan/review/mutating init/update completion artifacts",),
+                        ("frozen packet",),
+                        ("root overlaps only answer-invariant delivery",),
+                        ("join/readback before saved/durable claim",),
+                        ("generic persistence before artifact apply is unsaved",),
                         ("no-files/off-record/read-only/no-writes override",),
                         ("no root/worker/strong-role fallback",),
                     ])
@@ -461,33 +475,48 @@ def validate_bound_producer_sources(
                         ("artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply",),
                         ("transaction derives the destination",),
                         ("registers the ordinary index",),
+                        ("frozen",),
+                        ("answer-invariant",),
+                        ("join", "joins"),
+                        ("read back", "readback"),
+                        ("interrupted before generic artifact apply", "interruption before artifact-apply"),
                         ("no planner, root, or worker fallback writes it",),
                     ])
                 elif producer["class"] == "role-template":
                     _require_source_phrases(source, path, source_path, [
+                        ("frozen bounded writing brief",),
+                        ("completion companions",),
+                        ("joins before claiming saved/durable",),
+                        ("interruption before generic artifact-apply gives no durable claim",),
                         ("default terminal workflow artifacts",),
                         ("artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply",),
                         ("transaction-derived destination",),
+                        ("read back", "readback"),
                         ("required transaction gate",),
                     ])
             elif scenario == "specialized-artifact-writer":
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
-                        ("grill/design/goal specialized",),
+                        ("grill/design/goal specialized checkpoint transactions",),
+                        ("join/readback before saved/durable claim",),
                         ("artifact-only grant",),
                         ("never implementation/release authority",),
                     ])
                 elif producer["class"] == "skill":
                     _require_source_phrases(source, path, source_path, [
+                        ("lifecycle checkpoints",),
                         ("discussion-transaction.py inspect",),
                         ("discussion-transaction.py schema",),
                         ("discussion-transaction.py apply",),
                         ("controlled record",),
+                        ("readback",),
                         ("dispatches writer",),
                         ("sole discussion writer",),
                     ])
                 elif producer["class"] == "role-template":
                     _require_source_phrases(source, path, source_path, [
+                        ("checkpoint artifacts",),
+                        ("successful transaction readback",),
                         ("design/goal/grill specialized",),
                         ("required transaction gate",),
                         ("accept transaction-derived destination",),
@@ -515,7 +544,7 @@ def validate_bound_producer_sources(
             elif scenario == "explore-no-artifact":
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
-                        ("explore write no standalone artifact",),
+                        ("native/explore/check-only write no standalone artifact",),
                     ])
                 elif producer["class"] == "skill":
                     _require_source_phrases(source, path, source_path, [

@@ -5,9 +5,13 @@
       "language" : "en",
       "requires" : [
          "default-terminal-workflow-artifacts",
+         "terminal-packet-freeze",
          "generic-artifact-transaction",
          "transaction-derived-destination",
          "ordinary-index-registration",
+         "answer-invariant-overlap-only",
+         "writer-join-readback",
+         "pre-apply-unsaved-boundary",
          "required-transaction-gate",
          "writer-only",
          "no-implementation-authority"
@@ -16,10 +20,11 @@
    },
    "id" : "persistence-generic-artifact-writer",
    "must" : [
-      "persist terminal Research, Debug, Plan, Review, Init, or Update artifacts only through artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply with Writer and transaction-derived destination registration"
+      "freeze the terminal workflow packet, overlap only answer-invariant delivery while Writer runs, and claim saved or durable only after Writer joins and transaction readback completes",
+      "persist terminal Research, Debug, Plan, Review, mutating Init, or mutating Update artifacts only through artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply with Writer and transaction-derived destination registration"
    ],
    "must_not" : [
-      "hand-author artifact paths, bypass the ordinary index registration, fall back to Root or Worker writes, implement, or infer release authority"
+      "claim durability before generic artifact apply, hand-author artifact paths, bypass the ordinary index registration, fall back to Root or Worker writes, implement, or infer release authority"
    ],
    "platforms" : [
       "codex",

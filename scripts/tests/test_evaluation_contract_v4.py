@@ -111,6 +111,44 @@ class EvaluationContractV4Tests(unittest.TestCase):
         for case_id in ("native-minimal-en", "native-minimal-zh"):
             self.assertEqual(expected, {item["source"] for item in by_id[case_id]["producers"]})
 
+    def test_dialogue_native_cases_bind_only_root_policy_and_reject_grill_promotion(self) -> None:
+        by_id = {case["id"]: case for case in selected_cases("dev")}
+        expected_requirements = {
+            "contribution-first",
+            "one-high-information-question",
+            "open-or-bounded-native",
+            "no-grill",
+            "no-design-premature",
+            "no-artifact",
+        }
+        for case_id in ("ask-dialogue-native-en", "ask-dialogue-native-zh"):
+            case = by_id[case_id]
+            self.assertEqual(
+                {"scripts/install/policy.sh"},
+                {item["source"] for item in case["producers"]},
+            )
+            self.assertEqual("ask", case["expected"]["capability"])
+            self.assertEqual("dialogue-native", case["expected"]["scenario"])
+            self.assertEqual(expected_requirements, set(case["expected"]["requires"]))
+            combined = " ".join([case["prompt"], *case["must"], *case["must_not"]]).casefold()
+            self.assertIn("grill", combined)
+            self.assertNotIn("$grill-me", case["prompt"])
+
+        source_path = "scripts/install/policy.sh"
+        source = (ROOT / source_path).read_text(encoding="utf-8")
+        mutated = source.replace(
+            "Ordinary\ndiscussion stays Native unless a named method is needed.",
+            "Ordinary discussion immediately enters Grill.",
+            1,
+        )
+        self.assertNotEqual(source, mutated)
+        with self.assertRaisesRegex(EvalError, "ordinary discussion stays native"):
+            validate_bound_producer_sources(
+                by_id["ask-dialogue-native-en"],
+                ROOT / "evals/teamwork/cases/ask-dialogue-native-en.dev.v4.json",
+                {source_path: mutated},
+            )
+
     def test_mutating_each_rendered_native_owner_fails_the_bound_case(self) -> None:
         case = next(case for case in selected_cases("dev") if case["id"] == "native-quality-proportional-proof")
         case_path = ROOT / "evals/teamwork/cases/native-quality-proportional-proof.dev.v4.json"
@@ -351,6 +389,19 @@ class EvaluationContractV4Tests(unittest.TestCase):
         self.assertIn(
             "skills/teamwork-explore/SKILL.md",
             {item["source"] for item in cases["persistence-explore-no-artifact"]["producers"]},
+        )
+        self.assertTrue(
+            {
+                "terminal-packet-freeze",
+                "answer-invariant-overlap-only",
+                "writer-join-readback",
+                "pre-apply-unsaved-boundary",
+            }
+            <= set(cases["persistence-generic-artifact-writer"]["expected"]["requires"])
+        )
+        self.assertIn(
+            "lifecycle-checkpoint-readback",
+            cases["persistence-specialized-artifact-writer"]["expected"]["requires"],
         )
 
     def test_generic_persistence_case_requires_working_artifact_transaction_cli(self) -> None:

@@ -7,6 +7,8 @@ description: Use when the user asks to initialize, audit, repair, migrate, or sl
 
 Make project-local agent context accurate, small, and maintainable. This skill
 owns only the named project; it never refreshes global Teamwork installations.
+Ordinary natural discussion or brainstorming does not activate Init unless the
+existing project-local outcome trigger applies.
 
 ## Authority
 
@@ -15,6 +17,9 @@ request authorizes only the corresponding files inside the named project. It doe
 not authorize edits under user-global config directories, host settings,
 credentials, plugin catalogs, global skills or agents, dependency installation,
 remote services, Git publication, or release work.
+Root alone asks users through the current host's native surface; leaf roles
+return proposed questions or blockers to Root. Ask only for missing mutation
+authority or unavoidable manual host action. Answers do not expand authority.
 
 Resolve the exact project root before writing. Preserve unrelated content and
 managed-block boundaries. If ownership is unclear and safe merging is impossible,
@@ -66,16 +71,22 @@ promotes candidate material.
    state that limit instead of treating syntax or file presence as live proof.
 
 An audit/check-only Init remains read-only and conversational. After a mutating
-Init in an initialized writable project, a receipt defaults through Writer unless
-the user says `no files`, `off-record`, `read-only`, `no writes`, or equivalent.
-Init returns a bounded receipt packet: purpose/audience, facts/sources, frozen
-decision/status, style/structure, artifact kind/consumer, preserve/forbid,
-changed surfaces, evidence, validation, and human action. Writer uses
-`artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`;
-the transaction derives the destination and registers the ordinary index. Missing
-project memory, Writer, brief, authority, consumer, or transaction blocks only
-persistence: deliver the receipt and report it unsaved/blocked. No Root or Worker
-fallback writes it.
+Init in an initialized writable project, a receipt is a completion companion and
+defaults through Writer unless the user says `no files`, `off-record`,
+`read-only`, `no writes`, or equivalent. Freeze a bounded receipt packet:
+purpose/audience, facts/sources, frozen decision/status, style/structure,
+artifact kind/consumer, preserve/forbid, changed surfaces, evidence, validation,
+and human action. Dispatch one low-cost Writer; Root may do only
+answer-invariant handoff work while Writer runs and must join and read back
+before claiming the receipt is saved or durable. Writer uses `artifact-inspect
+-> artifact-schema <create|update|supersede> -> artifact-apply`; the transaction
+derives the destination and registers the ordinary index. Writer is disposable
+compute and the transaction owns destination, compare-and-swap, journal recovery,
+atomic apply, and readback. If interrupted before generic artifact apply begins,
+there is no durable claim; recover only from surviving workflow evidence or
+report unsaved. Missing project memory, Writer, brief, authority, consumer, or
+transaction blocks only persistence: deliver the receipt and report it
+unsaved/blocked. No Root or Worker fallback writes it.
 
 If the Explorer audit finds no decision-relevant change, dispatch no Worker and
 write nothing. Report the selected
