@@ -85,7 +85,7 @@ REQUIRED_CLAUSES = {
         "Single Reviewer checks one sealed candidate or named risk; combine findings into one repair batch and allow one delta recheck.",
         "Only named owners write: Planner returns packets; Writer writes artifacts/docs; transactions write managed artifacts; Reviewers stay read-only.",
         "Stop when the requested result and named boundaries are observed.",
-        "Lead with the conclusion; keep only detail that changes understanding, decision, action, or risk.",
+        "Conclusion first; follow reader needs, make logic explicit, use stable terms, omit irrelevant detail.",
     ),
 }
 

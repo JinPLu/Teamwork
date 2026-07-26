@@ -130,8 +130,11 @@ check_lean_policy() {
     "support checks not delivery::tests.{0,100}validation.{0,100}(never replace|support delivery)" \
     "economic delegation::delegate only independent.{0,40}worthwhile" \
     "root question ownership::root owns user questions" \
-    "conclusion-first replies::lead with the conclusion" \
-    "relevance gate::detail that changes understanding.{0,80}decision.{0,80}risk"; do
+    "conclusion-first replies::conclusion first" \
+    "reader-centered order::follow reader needs" \
+    "explicit logic::make logic explicit" \
+    "stable terminology::use stable terms" \
+    "relevance gate::omit irrelevant detail"; do
     contract_label="${contract%%::*}"
     pattern="${contract#*::}"
     printf '%s\n' "$policy_text" | grep -Eqi "$pattern" \

@@ -192,6 +192,7 @@ class RoleProfilesV4Test(unittest.TestCase):
                 "standalone document",
                 "low-cost bounded disposable leaf",
                 "bounded writing brief",
+                "Presentation only: reader-first, clear logic, stable terms; preserve meaning.",
                 "persistence disposition (checkpoint/completion/none)",
                 "facts/sources/citations/decisions/authority/status/acceptance",
                 "Root owns user interaction, research, decisions, authority, acceptance, dispatch/timing, and durable claims",

@@ -359,6 +359,8 @@ ROLE_SOURCE_RULES: dict[str, list[tuple[str, ...]]] = {
     "writer": [
         ("standalone document", "independent document"),
         ("bounded writing brief",),
+        ("reader-first",),
+        ("preserve meaning",),
         ("do not research",),
         ("code-coupled",),
     ],

@@ -125,6 +125,8 @@ required = {
         "standalone document",
         "low-cost bounded disposable leaf",
         "bounded writing brief",
+        "reader-first",
+        "preserve meaning",
         "persistence disposition (checkpoint/completion/none)",
         "facts/sources/citations/decisions/authority/status/acceptance",
         "root owns user interaction, research, decisions, authority, acceptance, dispatch/timing, and durable claims",

@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 4.6.0 - 2026-07-26
+
+**Teamwork now organizes replies and human-facing documents around what readers need to understand and decide, while preserving the original meaning.**
+
+- **Replies follow the reader's path.** Root leads with the conclusion, makes key logic explicit, keeps terms stable, and removes detail that does not aid understanding, so discussion becomes clearer rather than merely more fluent.
+- **Writer changes presentation only.** Writer may reorder, reword, connect, or deduplicate a standalone document for its readers, but it must preserve established facts, sources, citations, decisions, authority, status, and acceptance.
+- **No writing mode is required.** Reader-centered expression is a general constraint rather than a new writing Skill, mode, or quality stage, and ordinary conversation is not forced into an academic voice or fixed structure.
+- **All three hosts share the boundary.** Codex, Cursor, and Claude Code use the same global expression principle and Writer constraint, while code-coupled wording remains with the implementer.
+
+Upgrade action: Codex Marketplace users re-add `JinPLu/Teamwork`, install `teamwork-skill@teamwork`, and run `$teamwork-update` in a new task. Checkout users run `git pull --ff-only`, `./install.sh all`, and `./scripts/check-update.sh --readiness`.
+
+Important limit: these constraints improve information order, explicit logic, and terminology consistency, but they cannot make different models produce the same voice or repair missing or incorrect source facts. Writer must preserve or flag content gaps instead of filling them in.
+
 ## 4.5.0 - 2026-07-25
 
 **Teamwork now contributes to the discussion before asking a genuinely useful question, while workflow records coexist reliably.**
