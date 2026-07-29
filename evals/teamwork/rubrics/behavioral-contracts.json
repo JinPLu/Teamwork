@@ -4,7 +4,7 @@
   "dimensions": [
     {
       "name": "capability_precision",
-      "description": "External/current/multi-source research uses Research; local repository, source, configuration, test, log, runtime, and artifact inspection remains native. Ordinary discussion or brainstorming gets a contribution-first native dialogue turn with at most one useful open or bounded question. Unresolved material alternatives use Design, while Plan only translates an already selected direction."
+      "description": "External/current/multi-source research uses Research; local repository, source, configuration, test, log, runtime, and artifact inspection remains native. Natural collaboration, brainstorming, and question-first intent activate Collaborate, which contributes before asking and selects dialogue, brainstorm, or grill without asking the user to name a mode. Unresolved material alternatives use Design, while Plan only translates an already selected direction."
     },
     {
       "name": "design_quality",
@@ -15,8 +15,8 @@
       "description": "Research uses current authoritative or primary external sources, preserves source conflicts, provides useful citations, separates fact from inference, minimizes sensitive disclosure, and stays read-only."
     },
     {
-      "name": "grill_authority_and_persistence",
-      "description": "Ordinary discussion, brainstorming, and natural question-first intent are conversation-only and write nothing. Grill stays for explicit sustained grilling/stress-test/save/resume or independently-major public, installable, release, migration, permission, security, data, destructive, or cross-platform boundaries. Grill shows the global decision map before details, asks one to three independent material questions per batch, serializes dependent questions, and records criticality, blocked outcome, dependencies, recommendation, downside, and closure signal. An explicit $grill-me save, resume, or record request may persist only through the managed inspect -> schema -> apply transaction; an independently-major Grill automatically records its state through that same route. Authorized persistence requires a named, initialized writable project; no-files intent overrides it, and neither discussion nor persistence grants implementation authority."
+      "name": "collaborate_modes_and_persistence",
+      "description": "Collaborate selects dialogue, brainstorm, or grill from intent and risk, contributes synthesis, tension, candidate space, or a decision map before asking, and uses prose for open questions versus the host-native surface only for genuine two- or three-choice bounded decisions. In an initialized writable project, sustained collaboration intent plus substantive synthesis and an unresolved question defaults to one semantic Collaborate checkpoint through Writer and the managed collaborate-inspect -> collaborate-schema -> collaborate-apply transaction. New records use schema v1; v1 and v2 remain readable and migrate only on semantic mutation. collaboration never persists a transcript or substitutes a report or conclusion, no-files intent overrides persistence, and neither collaboration nor persistence grants implementation authority."
     },
     {
       "name": "plan_readiness",
@@ -24,7 +24,7 @@
     },
     {
       "name": "scope_privacy_and_authority",
-      "description": "The response stays inside requested scope, keeps sensitive local values out of external queries, and never treats an answer, recommendation, plan, or saved discussion as change or external-effect authority."
+      "description": "The response stays inside requested scope, keeps sensitive local values out of external queries, and never treats an answer, recommendation, plan, or saved collaboration as change or external-effect authority."
     },
     {
       "name": "compact_architecture",
@@ -32,7 +32,7 @@
     },
     {
       "name": "release_governance",
-      "description": "Release claims require a non-empty held-out split covering the external Research boundary, Design versus Plan, and Grill persistence authority. Installed host parity additionally requires thirteen records and all eight observed formal roles inside every host/profile slice; typed FAIL and UNSUPPORTED records remain blockers."
+      "description": "Release claims require a non-empty held-out split covering the external Research boundary, Design versus Plan, and Collaborate persistence authority. Installed host parity additionally requires thirteen records and all nine observed formal roles inside every host/profile slice; typed FAIL and UNSUPPORTED records remain blockers."
     },
     {
       "name": "producer_binding",

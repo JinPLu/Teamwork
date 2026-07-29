@@ -7,9 +7,12 @@ done < <(
   find "$ROOT/skills" -mindepth 2 -maxdepth 2 -type f -name SKILL.md \
     -exec dirname {} \; | xargs -n1 basename | sort
 )
-CANONICAL_SKILL_COUNT=10
+CANONICAL_SKILL_COUNT=9
 RETIRED_SKILLS=(
+  grill-me
   teamwork
+  teamwork-discuss
+  teamwork-design
   using-teamwork
   teamwork-execute
   run-analyze-optimize
@@ -122,14 +125,15 @@ check_lean_policy() {
     "dependent work only::pause only dependent work" \
     "local-native boundary::local.{0,120}(repository|source|configuration).{0,120}native" \
     "external Research boundary::external.{0,100}(current|multi.source|citation).{0,100}research" \
-    "Design ownership::unresolved material direction.{0,60}design" \
-    "Plan ownership::plan only translates an already selected direction" \
-    "natural Grill no-write::natural question.first intent.{0,80}no file write" \
-    "evidence discipline::distinguish observation from inference" \
+    "Collaborate ownership::collaborate.{0,140}(dialogue|brainstorm|grill|decision)" \
+    "Plan ownership::plan (only translates an already )?selected direction" \
+    "sustained Collaborate persistence::sustained.{0,120}Collaborate.{0,120}(checkpoint|default.save)" \
+    "negative persistence override::no.files/off.record/read.only/no.writes override" \
+    "evidence discipline::(separate observation/inference|distinguish observation from inference)" \
     "real-path verification::verify.{0,80}real path" \
-    "support checks not delivery::tests.{0,100}validation.{0,100}(never replace|support delivery)" \
-    "economic delegation::delegate only independent.{0,40}worthwhile" \
-    "root question ownership::root owns user questions" \
+    "support checks not delivery::tests.{0,100}(never replace|support delivery)" \
+    "economic delegation::delegate only.{0,40}(independent.{0,40}worthwhile|worthwhile.{0,40}independent)" \
+    "root question ownership::(root owns user questions|root alone asks)" \
     "conclusion-first replies::conclusion first" \
     "reader-centered order::follow reader needs" \
     "explicit logic::make logic explicit" \

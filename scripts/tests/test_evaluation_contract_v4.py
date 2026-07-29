@@ -111,38 +111,45 @@ class EvaluationContractV4Tests(unittest.TestCase):
         for case_id in ("native-minimal-en", "native-minimal-zh"):
             self.assertEqual(expected, {item["source"] for item in by_id[case_id]["producers"]})
 
-    def test_dialogue_native_cases_bind_only_root_policy_and_reject_grill_promotion(self) -> None:
+    def test_dialogue_native_cases_bind_Collaborate_writer_and_adaptive_question_policy(self) -> None:
         by_id = {case["id"]: case for case in selected_cases("dev")}
         expected_requirements = {
             "contribution-first",
             "one-high-information-question",
             "open-or-bounded-native",
-            "no-grill",
+            "collaborate-adaptive-mode",
             "no-design-premature",
-            "no-artifact",
+            "semantic-checkpoint",
+        }
+        expected_sources = {
+            "scripts/install/policy.sh",
+            "skills/teamwork-collaborate/SKILL.md",
+            "scripts/discussion-transaction.py",
+            *(ROLE_TEMPLATE_PATHS[host]["writer"] for host in ("codex", "cursor", "claude")),
         }
         for case_id in ("ask-dialogue-native-en", "ask-dialogue-native-zh"):
             case = by_id[case_id]
             self.assertEqual(
-                {"scripts/install/policy.sh"},
+                expected_sources,
                 {item["source"] for item in case["producers"]},
             )
             self.assertEqual("ask", case["expected"]["capability"])
             self.assertEqual("dialogue-native", case["expected"]["scenario"])
             self.assertEqual(expected_requirements, set(case["expected"]["requires"]))
             combined = " ".join([case["prompt"], *case["must"], *case["must_not"]]).casefold()
-            self.assertIn("grill", combined)
-            self.assertNotIn("$grill-me", case["prompt"])
+            self.assertIn("collaborate", combined)
+            self.assertIn("writer", combined)
+            self.assertNotIn("$teamwork-collaborate", case["prompt"])
 
         source_path = "scripts/install/policy.sh"
         source = (ROOT / source_path).read_text(encoding="utf-8")
         mutated = source.replace(
-            "Ordinary\ndiscussion stays Native unless a named method is needed.",
-            "Ordinary discussion immediately enters Grill.",
+            "open questions use prose;",
+            "all questions use prose;",
             1,
         )
         self.assertNotEqual(source, mutated)
-        with self.assertRaisesRegex(EvalError, "ordinary discussion stays native"):
+        with self.assertRaisesRegex(EvalError, r"open questions (?:stay|use) prose"):
             validate_bound_producer_sources(
                 by_id["ask-dialogue-native-en"],
                 ROOT / "evals/teamwork/cases/ask-dialogue-native-en.dev.v4.json",
@@ -156,7 +163,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
             source_path = producer["source"]
             source = (ROOT / source_path).read_text(encoding="utf-8")
             if producer["class"] == "root-policy":
-                mutated = re.sub(r"focused\s+automated\s+regression\s+evidence", "generic evidence", source, count=1)
+                mutated = re.sub(r"focused\s+evidence", "generic evidence", source, count=1)
             else:
                 mutated = source.replace("proportional", "uniform").replace("Proportional", "Uniform")
             self.assertNotEqual(source, mutated, source_path)
@@ -177,8 +184,8 @@ class EvaluationContractV4Tests(unittest.TestCase):
             producer_class = owner["class"]
             if source_path == DESIGN_ADVERSARIAL_REFERENCE_PATH:
                 mutated = source.replace(
-                    "Every actual hypothesis gets exactly\n   two fresh Designer critics",
-                    "Every actual hypothesis gets one reused Designer critic",
+                    "Every actual hypothesis gets exactly\n   two fresh internal Designer critics",
+                    "Every actual hypothesis gets one reused internal Designer critic",
                     1,
                 )
             elif producer_class == "root-policy":
@@ -188,7 +195,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
             elif producer_class == "role-template":
                 mutated = source.replace("Mission:", "Objective:", 1)
             elif source_path == "scripts/discussion-transaction.py":
-                mutated = source.replace("def inspect_discussion(", "def removed_inspect_discussion(", 1)
+                mutated = source.replace("def inspect_collaborate(", "def removed_inspect_collaborate(", 1)
             elif source_path == "scripts/init-project-files.py":
                 mutated = source.replace("_recover_init_transaction", "removed_recovery")
             elif source_path == "scripts/check-update.sh":
@@ -222,12 +229,12 @@ class EvaluationContractV4Tests(unittest.TestCase):
                 "runs only after explicit adversarial wording",
             ),
             (
-                "do not\nrequest confirmation",
+                "do not request\nconfirmation",
                 "request confirmation",
             ),
             (
-                "Every actual hypothesis gets exactly\n   two fresh Designer critics",
-                "Every actual hypothesis gets one reused Designer critic",
+                "Every actual hypothesis gets exactly\n   two fresh internal Designer critics",
+                "Every actual hypothesis gets one reused internal Designer critic",
             ),
             (
                 "Converge only when both final auditors return `PASS`",
@@ -252,7 +259,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
         case = next(case for case in selected_cases("dev") if case["id"] == "native-quality-accepted-fallback")
         source_path = "scripts/install/policy.sh"
         source = (ROOT / source_path).read_text(encoding="utf-8")
-        mutated = re.sub(r"Do\s+not\s+add\s+an\s+unrequested\s+wrapper", "Never add any fallback", source, count=1)
+        mutated = source.replace("avoid wrappers/", "allow universal wrappers/", 1)
         self.assertNotEqual(source, mutated)
         with self.assertRaisesRegex(EvalError, "conditional wrapper/fallback"):
             validate_bound_producer_sources(case, ROOT / "evals/teamwork/cases/native-quality-accepted-fallback.dev.v4.json", {source_path: mutated})
@@ -330,21 +337,24 @@ class EvaluationContractV4Tests(unittest.TestCase):
             matrix["cost-first"],
         )
 
-    def test_grill_public_eval_contract_allows_the_major_transaction_route(self) -> None:
+    def test_Collaborate_public_eval_contract_covers_modes_and_semantic_persistence(self) -> None:
         rubric = json.loads(
             (ROOT / "evals/teamwork/rubrics/behavioral-contracts.json").read_text(encoding="utf-8")
         )
         dimension = next(
-            item for item in rubric["dimensions"] if item["name"] == "grill_authority_and_persistence"
+            item
+            for item in rubric["dimensions"]
+            if item["name"] == "collaborate_modes_and_persistence"
         )
         description = dimension["description"].casefold()
         readme = (ROOT / "evals/teamwork/README.md").read_text(encoding="utf-8").casefold()
         for text in (description, readme):
-            self.assertIn("ordinary", text)
-            self.assertIn("independently-major", text)
-            self.assertIn("automatic", text)
-            self.assertIn("inspect -> schema -> apply", text)
-            self.assertNotIn("only an explicit", text)
+            self.assertIn("dialogue", text)
+            self.assertIn("brainstorm", text)
+            self.assertIn("grill", text)
+            self.assertIn("semantic", text)
+            self.assertIn("collaborate-inspect -> collaborate-schema -> collaborate-apply", text)
+            self.assertIn("schema v1", text)
 
     def test_plan_option_discovery_regex_normalizes_whitespace(self) -> None:
         source = (ROOT / "skills/teamwork-plan/SKILL.md").read_text(encoding="utf-8")
@@ -409,8 +419,8 @@ class EvaluationContractV4Tests(unittest.TestCase):
         source_path = "scripts/discussion-transaction.py"
         source = (ROOT / source_path).read_text(encoding="utf-8")
         mutated = source.replace(
-            'for name in ("inspect", "design-inspect", "goal-inspect", "artifact-inspect", "artifact-index-validate"):',
-            'for name in ("inspect", "design-inspect", "goal-inspect", "artifact-index-validate"):',
+            'for name in ("inspect", "design-inspect", "goal-inspect", "artifact-inspect", "collaborate-inspect", "artifact-index-validate"):',
+            'for name in ("inspect", "design-inspect", "goal-inspect", "collaborate-inspect", "artifact-index-validate"):',
             1,
         )
         self.assertNotEqual(source, mutated)
@@ -421,13 +431,13 @@ class EvaluationContractV4Tests(unittest.TestCase):
                 {source_path: mutated},
             )
 
-    def test_specialized_persistence_case_requires_working_discussion_transaction_cli(self) -> None:
+    def test_specialized_persistence_case_requires_working_collaboration_transaction_cli(self) -> None:
         case = next(case for case in selected_cases("dev") if case["id"] == "persistence-specialized-artifact-writer")
         source_path = "scripts/discussion-transaction.py"
         source = (ROOT / source_path).read_text(encoding="utf-8")
-        mutated = source.replace("def inspect_discussion(", "def removed_inspect_discussion(", 1)
+        mutated = source.replace("def inspect_collaborate(", "def removed_inspect_collaborate(", 1)
         self.assertNotEqual(source, mutated)
-        with self.assertRaisesRegex(EvalError, "inspect/schema/apply"):
+        with self.assertRaisesRegex(EvalError, "collaborate-inspect/collaborate-schema/collaborate-apply"):
             validate_bound_producer_sources(
                 case,
                 ROOT / "evals/teamwork/cases/persistence-specialized-artifact-writer.dev.v4.json",

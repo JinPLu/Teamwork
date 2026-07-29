@@ -114,10 +114,10 @@ def _require_source_phrases(source: str, path: Path, source_path: str, groups: l
 
 
 @lru_cache(maxsize=16)
-def _discussion_transaction_cli_probe(source: str) -> str | None:
-    """Exercise the owner CLI rather than freezing a parser implementation detail."""
+def _collaborate_transaction_cli_probe(source: str) -> str | None:
+    """Exercise the Collaborate owner CLI rather than freezing parser details."""
 
-    with tempfile.TemporaryDirectory(prefix="teamwork-discussion-probe-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="teamwork-collaborate-probe-") as temporary:
         root = Path(temporary)
         script = root / "discussion-transaction.py"
         script.write_text(source, encoding="utf-8")
@@ -138,96 +138,64 @@ def _discussion_transaction_cli_probe(source: str) -> str | None:
             )
 
         try:
-            inspected = invoke("inspect", "--project-root", str(project))
+            inspected = invoke("collaborate-inspect", "--project-root", str(project))
             if inspected.returncode != 0:
-                return f"inspect command failed: {inspected.stderr.strip()}"
+                return f"collaborate-inspect command failed: {inspected.stderr.strip()}"
             inspection = json.loads(inspected.stdout)
             revision = inspection.get("revision") if isinstance(inspection, dict) else None
             if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{64}", revision):
-                return "inspect command did not return an opaque revision"
+                return "collaborate-inspect command did not return an opaque revision"
 
-            schema = invoke("schema", "create")
+            schema = invoke("collaborate-schema", "create")
             if schema.returncode != 0:
-                return f"schema command failed: {schema.stderr.strip()}"
+                return f"collaborate-schema command failed: {schema.stderr.strip()}"
             skeleton = json.loads(schema.stdout)
             if not isinstance(skeleton, dict) or skeleton.get("operation") != "create" or "expected_revision" not in skeleton:
-                return "schema command did not return the create request skeleton"
+                return "collaborate-schema command did not return the create request skeleton"
 
             request = skeleton
             request["expected_revision"] = revision
-            record = request["record"]
-            record.update(
+            state = request["state"]
+            state.update(
                 {
                     "slug": "probe-decision",
                     "title": "Probe transaction ownership",
-                    "updated": "2026-07-19",
                     "goal": "Verify the public transaction route.",
-                    "current_branch": "Run the owner CLI directly.",
                     "return_path": "Resume through inspect.",
-                    "blockers": ["none"],
-                    "convergence": "The owned current artifact exists.",
+                    "synthesis": ["The Collaborate transaction owner route is executable."],
+                    "tensions": ["Direct writes would bypass compare-and-swap."],
+                    "settled": ["The transaction derives the destination."],
                     "key_evidence": ["CLI probe output."],
                 }
             )
-            if record.get("schema_version") == 2:
-                record["frontier"] = [
-                    {
-                        "id": "Q1",
-                        "title": "Apply owner",
-                        "level": "goal",
-                        "status": "current",
-                        "prompt": "Should apply own the persisted write?",
-                        "options": [
-                            {
-                                "id": "managed",
-                                "label": "Managed route",
-                                "tradeoff": "Keeps transaction ownership explicit.",
-                            },
-                            {
-                                "id": "direct",
-                                "label": "Direct route",
-                                "tradeoff": "Would bypass the owner and must be rejected.",
-                            },
-                        ],
-                        "recommendation": "managed",
-                        "largest_downside": "The probe is narrower than a full discussion lifecycle.",
-                        "why_critical": "The answer proves which path owns writes.",
-                        "blocks": ["transaction ownership"],
-                        "depends_on": [],
-                        "closure_signal": "The managed apply produces the active discussion.",
-                        "resolution": None,
-                    }
-                ]
-                record["current_batch"] = ["Q1"]
-            else:
-                record["settled"] = ["The parser route is executable."]
-                record["still_open"] = ["Does apply own the write?"]
+            request_path = root / "request.json"
+            request_path.write_text(json.dumps(request, ensure_ascii=False), encoding="utf-8")
             applied = invoke(
-                "apply", "--project-root", str(project), "--request-json", json.dumps(request),
+                "collaborate-apply", "--project-root", str(project), "--request", str(request_path),
             )
             if applied.returncode != 0:
-                return f"apply command failed: {applied.stderr.strip()}"
+                return f"collaborate-apply command failed: {applied.stderr.strip()}"
             result = json.loads(applied.stdout)
-            if not isinstance(result, dict) or result.get("path") != "docs/teamwork/discussion/current.md":
-                return "apply command did not produce the transaction-owned active discussion"
+            if not isinstance(result, dict) or result.get("path") != "docs/teamwork/collaborate/current.md":
+                return "collaborate-apply command did not produce the transaction-owned active Collaborate record"
 
-            checked = invoke("inspect", "--project-root", str(project))
+            checked = invoke("collaborate-inspect", "--project-root", str(project))
             if checked.returncode != 0:
-                return f"post-apply inspect failed: {checked.stderr.strip()}"
+                return f"post-apply collaborate-inspect failed: {checked.stderr.strip()}"
             final = json.loads(checked.stdout)
             active = final.get("active") if isinstance(final, dict) else None
-            if not isinstance(active, dict) or active.get("path") != "docs/teamwork/discussion/current.md":
-                return "inspect command did not recover the transaction-owned active discussion"
+            if not isinstance(active, dict) or active.get("path") != "docs/teamwork/collaborate/current.md":
+                return "collaborate-inspect did not recover the transaction-owned active Collaborate record"
         except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:
             return f"transaction owner CLI probe failed: {exc}"
     return None
 
 
-def _require_discussion_transaction_cli(source: str, path: Path, source_path: str) -> None:
-    failure = _discussion_transaction_cli_probe(source)
+def _require_collaborate_transaction_cli(source: str, path: Path, source_path: str) -> None:
+    failure = _collaborate_transaction_cli_probe(source)
     if failure is not None:
         raise EvalError(  # noqa: F405
-            f"{display_path(path)}: bound producer {source_path} lacks a working inspect/schema/apply transaction route: {failure}"
+            f"{display_path(path)}: bound producer {source_path} lacks a working collaborate-inspect/collaborate-schema/collaborate-apply transaction route: {failure}"
         )
 
 
@@ -392,34 +360,41 @@ def validate_bound_producer_sources(
         elif producer["class"] == "root-policy":
             _require_source_phrases(source, path, source_path, [
                 ("root alone asks",),
-                ("produce the real requested result first",),
+                ("produce the real requested result first", "result first"),
                 ("ground claims",),
-                ("preserve unrelated",),
+                ("preserve unrelated", "preserve dirty work"),
             ])
             if (capability, scenario) == ("ask", "dialogue-native"):
                 _require_source_phrases(source, path, source_path, [
-                    ("synthesis/tension/options",),
-                    ("one high-information open or bounded question",),
-                    ("host-native questions",),
-                    ("ordinary discussion stays native",),
-                    ("root opens grill for major",),
-                    ("explicit sustained grilling",),
-                    ("natural question-first intent causes no file write",),
+                    ("Collaborate/讨论/一起想/brainstorm/grill intent activates Collaborate", "Discuss/讨论/brainstorm/grill activates adaptive Collaborate"),
+                    ("contributes synthesis/tension/candidate space first", "contribute synthesis/tension/candidate-space/recommendation", "contribute synthesis/tension/options"),
+                    ("one high-information question", "one useful question", "Ask only if feedback helps"),
+                    ("open questions stay prose", "open questions use prose"),
+                    ("host-native bounded surface",),
+                    ("Collaborate uses grill mode for major", "major public/installable/release/migration"),
+                    ("explicit sustained grilling", "explicit sustained question-first"),
+                    ("sustained Collaborate and Goal checkpoints", "specialized Collaborate/design/goal checkpoints", "Discuss/Design/Goal checkpoints"),
                 ])
         elif producer["class"] == "role-template":
             role = _role_from_source(source_path)
             if role is None:
                 raise EvalError(f"{display_path(path)}: unrecognized role producer {source_path}")  # noqa: F405
-            _require_source_phrases(source, path, source_path, [
+            role_contract = [
                 ("mission:",), ("owned scope:",), ("verify:",),
                 ("do not expand scope",), ("do not self-accept",),
                 *ROLE_SOURCE_RULES[role],
-            ])
+            ]
+            if role == "writer":
+                role_contract.extend([
+                    ("low-cost bounded disposable leaf",),
+                    ("transaction inspect/cas/journal/atomic apply/readback",),
+                ])
+            _require_source_phrases(source, path, source_path, role_contract)
         elif source_path == "scripts/discussion-transaction.py":
             if (capability, scenario) == ("persistence", "generic-artifact-writer"):
                 _require_workflow_artifact_transaction_cli(source, path, source_path)
             else:
-                _require_discussion_transaction_cli(source, path, source_path)
+                _require_collaborate_transaction_cli(source, path, source_path)
         elif source_path == "scripts/init-project-files.py":
             _require_source_phrases(source, path, source_path, [
                 ("-recover-init-transaction",), ("journal",), ("project-local",),
@@ -431,14 +406,18 @@ def validate_bound_producer_sources(
         if (capability, scenario) in {("native", "minimal-change"), ("native", "engineering-quality")}:
             if producer["class"] == "root-policy":
                 _require_source_phrases(source, path, source_path, [
-                    ("produce the real requested result first",),
+                    ("produce the real requested result first", "result first"),
                     ("current canonical owner", "canonical owner"),
-                    ("focused automated regression evidence",),
-                    ("low-risk mechanical work", "low-risk docs"),
-                    ("preserve unrelated",),
-                    ("stop when the requested result",),
+                    ("focused automated regression evidence", "focused evidence"),
+                    ("low-risk mechanical work", "low-risk docs", "full suites run only"),
+                    ("preserve unrelated", "preserve dirty work"),
+                    ("stop when the requested result", "stop when the result", "stop when result"),
                 ])
-                if "do not add an unrequested wrapper" not in " ".join(source.casefold().split()):
+                normalized_source = " ".join(source.casefold().split())
+                if not any(
+                    phrase in normalized_source
+                    for phrase in ("do not add an unrequested wrapper", "avoid unrequested wrappers", "avoid wrappers/")
+                ):
                     raise EvalError(f"{display_path(path)}: Root producer lost the conditional wrapper/fallback rule")  # noqa: F405
             elif producer["class"] == "role-template":
                 _require_source_phrases(source, path, source_path, [
@@ -463,12 +442,13 @@ def validate_bound_producer_sources(
             elif scenario == "generic-artifact-writer":
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
-                        ("default-save reusable artifacts",),
-                        ("research/debug/plan/review/mutating init/update completion artifacts",),
-                        ("frozen packet",),
-                        ("root overlaps only answer-invariant delivery",),
-                        ("join/readback before saved/durable claim",),
-                        ("generic persistence before artifact apply is unsaved",),
+                        ("default-save reusable artifacts", "initialized writable projects default-save", "initialized writable named workflows default-save"),
+                        ("research/debug/plan/plan review",),
+                        ("one terminal execution handoff",),
+                        ("frozen packet", "frozen packets"),
+                        ("root overlaps only answer-invariant delivery", "checkpoint readback precedes dependent work"),
+                        ("join/readback before saved/durable claim", "completion companions join before saved/durable"),
+                        ("generic persistence before artifact apply is unsaved", "before generic artifact apply, persistence is unsaved"),
                         ("no-files/off-record/read-only/no-writes override",),
                         ("no root/worker/strong-role fallback",),
                     ])
@@ -490,36 +470,38 @@ def validate_bound_producer_sources(
                         ("completion companions",),
                         ("joins before claiming saved/durable",),
                         ("interruption before generic artifact-apply gives no durable claim",),
-                        ("default terminal workflow artifacts",),
+                        ("managed artifacts only through their exact specialized transaction",),
                         ("artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply",),
-                        ("transaction-derived destination",),
+                        ("accept transaction-derived destination",),
                         ("read back", "readback"),
                         ("required transaction gate",),
                     ])
             elif scenario == "specialized-artifact-writer":
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
-                        ("grill/design/goal specialized checkpoint transactions",),
-                        ("join/readback before saved/durable claim",),
-                        ("artifact-only grant",),
-                        ("never implementation/release authority",),
+                        ("sustained Collaborate and Goal checkpoints", "specialized Collaborate/design/goal checkpoints", "Discuss/Design/Goal checkpoints"),
+                        ("join/readback before saved/durable claim", "completion companions join before saved/durable"),
+                        ("artifact-only grant", "artifact authority"),
+                        ("never implementation/release authority", "grants no implementation/release"),
                     ])
                 elif producer["class"] == "skill":
                     _require_source_phrases(source, path, source_path, [
-                        ("lifecycle checkpoints",),
-                        ("discussion-transaction.py inspect",),
-                        ("discussion-transaction.py schema",),
-                        ("discussion-transaction.py apply",),
-                        ("controlled record",),
+                        ("maintain one Collaborate checkpoint", "canonical current path", "defaults to a managed Collaborate checkpoint"),
+                        ("discussion-transaction.py collaborate-inspect",),
+                        ("discussion-transaction.py collaborate-schema",),
+                        ("discussion-transaction.py collaborate-apply",),
+                        ("managed Collaborate checkpoint",),
                         ("readback",),
                         ("dispatches writer",),
-                        ("sole discussion writer",),
+                        ("sole filesystem writer", "sole caller of managed artifact transactions"),
                     ])
                 elif producer["class"] == "role-template":
                     _require_source_phrases(source, path, source_path, [
                         ("checkpoint artifacts",),
                         ("successful transaction readback",),
-                        ("design/goal/grill specialized",),
+                        ("collaborate-inspect -> collaborate-schema <operation> -> collaborate-apply -> collaborate-inspect/readback",),
+                        ("legacy Discussion/Design=read-only sources, no write route",),
+                        ("Goal=attempts/progress",),
                         ("required transaction gate",),
                         ("accept transaction-derived destination",),
                     ])
@@ -527,7 +509,7 @@ def validate_bound_producer_sources(
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
                         ("no-files/off-record/read-only/no-writes override",),
-                        ("deliver result, report unsaved/blocked",),
+                        ("deliver result, report unsaved/blocked", "deliver result and report unsaved/blocked"),
                         ("no root/worker/strong-role fallback",),
                     ])
                 elif producer["class"] == "skill":
@@ -546,7 +528,8 @@ def validate_bound_producer_sources(
             elif scenario == "explore-no-artifact":
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
-                        ("native/explore/check-only write no standalone artifact",),
+                        ("explore, check-only work, tiny one-shots", "explore/check-only/tiny one-shots"),
+                        ("create no standalone artifact", "ordinary explanations create none"),
                     ])
                 elif producer["class"] == "skill":
                     _require_source_phrases(source, path, source_path, [
@@ -563,7 +546,7 @@ def validate_bound_producer_sources(
             elif scenario == "code-coupled-owner":
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
-                        ("code-coupled text implementer-owned",),
+                        ("code-coupled text implementer-owned", "code-coupled text stays implementer-owned"),
                     ])
                 elif producer["class"] == "role-template" and _role_from_source(source_path) == "worker":
                     _require_source_phrases(source, path, source_path, [
@@ -573,7 +556,7 @@ def validate_bound_producer_sources(
                     ])
                 elif producer["class"] == "role-template":
                     _require_source_phrases(source, path, source_path, [
-                        ("do not write code, comments",),
+                        ("do not write code, comments", "no code/comments"),
                         ("docstrings",),
                         ("tests",),
                         ("schemas",),
@@ -675,10 +658,10 @@ def validate_case(path: Path, known_rubrics: set[str]) -> dict[str, Any]:
         term in combined_negative for term in ("secret", "credential", "sensitive", "秘密", "凭据", "敏感")
     ):
         raise EvalError(f"{display_path(path)}: privacy case needs a sensitive-data negative control")  # noqa: F405
-    if scenario == "explicit-save" and "$grill-me" not in prompt:
-        raise EvalError(f"{display_path(path)}: explicit-save prompt must explicitly invoke $grill-me")  # noqa: F405
-    if scenario == "natural-question-first" and "$grill-me" in prompt:
-        raise EvalError(f"{display_path(path)}: natural question-first control must not use $grill-me")  # noqa: F405
+    if scenario == "explicit-save" and "$teamwork-collaborate" not in prompt:
+        raise EvalError(f"{display_path(path)}: explicit-save prompt must explicitly invoke $teamwork-collaborate")  # noqa: F405
+    if scenario == "natural-question-first" and "$teamwork-collaborate" in prompt:
+        raise EvalError(f"{display_path(path)}: natural question-first control must not use $teamwork-collaborate")  # noqa: F405
 
     evidence = data["evidence"]
     if isinstance(evidence, str):

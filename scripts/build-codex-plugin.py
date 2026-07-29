@@ -44,6 +44,10 @@ COPY_ITEMS = (
         "scripts/tests/fixtures/v3.4.2-owned-surfaces.json",
     ),
     (
+        "scripts/tests/fixtures/retired-teamwork-skills-v5.json",
+        "scripts/tests/fixtures/retired-teamwork-skills-v5.json",
+    ),
+    (
         "evals/teamwork/ledgers/v4-capability-migration.jsonl",
         "evals/teamwork/ledgers/v4-capability-migration.jsonl",
     ),
@@ -55,9 +59,8 @@ COPY_ITEMS = (
     ("hooks/notify.py", "hooks/notify.py"),
 )
 EXPECTED_SKILLS = (
-    "grill-me",
+    "teamwork-collaborate",
     "teamwork-debug",
-    "teamwork-design",
     "teamwork-explore",
     "teamwork-init",
     "teamwork-goal",
@@ -68,7 +71,7 @@ EXPECTED_SKILLS = (
 )
 EXPECTED_REFERENCES = (
     "skills/teamwork-debug/references/runtime-diagnosis.md",
-    "skills/teamwork-design/references/adversarial-search.md",
+    "skills/teamwork-collaborate/references/adversarial-search.md",
     "skills/teamwork-research/references/deep-research.md",
     "skills/teamwork-review/references/strict-review.md",
 )
@@ -208,7 +211,7 @@ def validate_bundle(bundle: Path, root: Path) -> None:
         raise SystemExit("bundle manifest must not declare hooks")
     actual_skills = tuple(sorted(path.name for path in (bundle / "skills").iterdir() if path.is_dir()))
     if actual_skills != tuple(sorted(EXPECTED_SKILLS)):
-        raise SystemExit("bundle must contain exactly the ten public Teamwork skills")
+        raise SystemExit("bundle must contain exactly the nine public Teamwork skills")
     actual_references = tuple(
         sorted(
             path.relative_to(bundle).as_posix()
@@ -216,7 +219,7 @@ def validate_bundle(bundle: Path, root: Path) -> None:
             if path.is_file() and "references" in path.relative_to(bundle).parts
         )
     )
-    if actual_references != EXPECTED_REFERENCES:
+    if actual_references != tuple(sorted(EXPECTED_REFERENCES)):
         raise SystemExit("bundle must contain exactly the four public Teamwork references")
     for directory, expected_files in EXPECTED_ROLE_TEMPLATES.items():
         actual_files = tuple(

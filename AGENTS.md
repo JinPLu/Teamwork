@@ -7,19 +7,23 @@ generic Execute skill, cross-skill behavior load, or shared behavior reference.
 
 ## Working Conventions
 
-- Use Explore for a bounded local-evidence question, Research for external or
-  current evidence, Debug for an unknown cause, Design for an unsettled choice,
-  Plan for a selected direction, Review for independent acceptance, Goal for
-  explicit persistence, Init for one project, and Update for global refreshes.
-- Grill and Design frontiers show the global map first, batch only independent
-  material questions, and keep dependent questions serial.
+- Use Collaborate for natural dialogue, brainstorming, grill/stress-test, or an
+  unsettled consequential choice; Explore for bounded local evidence; Research
+  for external/current evidence; Debug for an unknown cause; Plan only after an
+  accepted Collaborate handoff; Review for independent acceptance; Goal for
+  explicit persistence; Init for one project; and Update for global refreshes.
+- Collaborate selects dialogue, brainstorm, or grill from the goal and evidence;
+  grill always proceeds global -> boundary -> detail, batches only independent
+  material questions, and keeps dependent questions serial.
 - Change the owning `SKILL.md` before changing workflow behavior. Keep public
   docs outcome-focused and use direct evidence from code, logs, tests, diffs,
   and artifacts.
-- Named Teamwork workflows default-persist reusable artifacts through Writer
-  from bounded briefs in initialized writable projects; `no files`, off-record,
-  read-only, or no-write requests override. Code-coupled wording stays with the
-  implementation owner.
+- Named Teamwork workflows default-persist reusable artifacts aggressively
+  through Writer from frozen bounded packets in initialized writable projects;
+  `no files`, off-record, read-only, or no-write requests override. Writer must
+  not paraphrase or fill gaps in frozen facts, decisions, authority, status, or
+  acceptance, and missing Writer/route/readback fails closed as unsaved.
+  Code-coupled wording stays with the implementation owner.
 - Change the canonical owner, reuse existing patterns, write the smallest
   complete logic, and verify the real changed path in proportion to risk.
   Each Worker self-verifies its slice. Independent Plan or code Review runs only
@@ -69,7 +73,7 @@ generic Execute skill, cross-skill behavior load, or shared behavior reference.
 ## Teamwork Project Instructions
 
 - Project label (local routing only): `Teamwork`.
-- For saved, resumed, or independently major Grill discussion, use only `docs/teamwork/discussion/current.md`; never mirror it into ordinary memory.
+- For Collaborate dialogue, brainstorm, grill, and accepted-decision checkpoints, use only `docs/teamwork/collaborate/current.md`; never mirror them into ordinary memory, legacy Discussion/Design, or a report.
 - For ordinary durable memory, read `docs/teamwork/index.json` first, then `docs/teamwork/README.md`; keep volatile progress in its actual artifact.
 - CodeGraph: this project has a local `.codegraph/` index.
 <!-- TEAMWORK_PROJECT_END -->

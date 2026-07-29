@@ -1,10 +1,10 @@
 # Teamwork Repository Architecture
 
 Teamwork is a Codex-first skill package with Cursor and Claude Code adapters.
-Version 4 keeps each skill self-contained and leaves ordinary local inspection
-and clear authorized implementation to the host. The repository separates
-authored capability sources from producer tooling and from generated or local
-install surfaces.
+Version 5 keeps each skill self-contained, makes Collaborate and durable workflow
+handoffs first-class, and leaves ordinary local inspection and clear authorized
+implementation to the host. The repository separates authored capability
+sources from producer tooling and from generated or local install surfaces.
 
 ## Canonical tree
 
@@ -42,13 +42,14 @@ docs/architecture.md             this architecture contract
 CONTRIBUTING.md                  contributor entrypoint
 ```
 
-The public capability inventory is exactly ten: `grill-me`, `teamwork-debug`,
-`teamwork-design`, `teamwork-explore`, `teamwork-goal`, `teamwork-init`,
+The public capability inventory is exactly nine: `teamwork-collaborate`,
+`teamwork-debug`, `teamwork-explore`, `teamwork-goal`, `teamwork-init`,
 `teamwork-plan`, `teamwork-research`, `teamwork-review`, and
-`teamwork-update`. There are exactly four advanced references: Debug's
-runtime-diagnosis, Design's adversarial-search, Research's deep-research, and
-Review's strict-review. They are methods of those skills, not shared workflow
-stages.
+`teamwork-update`. There are exactly four public skill-owned advanced
+references: Collaborate's adversarial-search, Debug's runtime-diagnosis,
+Research's deep-research, and Review's strict-review. Collaborate owns the
+former public Design method; the Designer role remains read-only and is not a
+public skill surface.
 
 Host adapters have exactly nine roles—Researcher, Explorer, Debugger, Designer,
 Planner, Worker, Writer, Plan Reviewer, and Reviewer—under each of the Codex,
@@ -71,16 +72,18 @@ The following are sinks, not package sources:
   explicit `--cursor-mcp` consent. Edit `skills/`, `templates/`, or the owning
   producer instead of an installed copy.
 - `docs/teamwork/` is local Teamwork runtime memory. In an initialized writable
-  project, named Teamwork workflows persist reusable artifacts by default unless
-  the user says `no files`, off-record, read-only, or no-write. Ordinary chat and
-  clarification, one-off native work outside a Teamwork workflow, and clear code
-  implementation requests do not force an extra workflow artifact. Writer
-  authors ordinary artifacts from frozen bounded briefs without changing facts,
-  citations, decisions, authority, status, or acceptance; durable workflow
+  project, named Teamwork workflows persist reusable checkpoints and completion
+  results by default unless the user says `no files`, off-record, read-only, or
+  no-write. One-shot explanations, casual fact questions, and tiny native work
+  do not force an extra workflow artifact. Writer authors ordinary artifacts
+  from frozen bounded packets without paraphrasing, filling gaps, or changing
+  frozen facts, citations, decisions, authority, status, or acceptance; durable workflow
   artifacts are registered only through the exact specialized or generic
-  transaction route. Grill, Design, and Goal use their specialized transactions.
-  Research, Debug, Plan, Review, and mutating Init/Update use the generic
-  artifact transaction. Ordinary completion report workflows share
+  transaction route. Collaborate and Goal use their specialized transactions.
+  Research, Debug, Plan, Plan Review, Review, mutating Init/Update,
+  and a qualifying terminal execution handoff use the generic artifact
+  transaction. Active Goal owns execution progress and forbids a duplicate
+  execution artifact. Ordinary completion workflows share
   `active.results` so their companions can coexist; `active.report` remains for
   non-workflow report pointers. Explore does not create a standalone report; its
   evidence is folded into the consuming artifact or answer.
@@ -89,13 +92,13 @@ The following are sinks, not package sources:
 
 | Workflow | Runtime artifact |
 | --- | --- |
-| Grill | controlled discussion |
+| Collaborate | controlled schema v1 Collaborate in `dialogue`, `brainstorm`, or `grill` mode; accepted Collaborate is the public Plan gate; legacy Discussion/Design remain read-only migration inputs |
 | Research | research |
-| Design | controlled design state with `acceptance: pending`, `accepted`, or `blocked`; persistence is not acceptance and only `accepted` is Plan-ready |
 | Plan | canonical plan |
 | Debug | diagnosis/report |
-| Review | verdict/conclusion; persistence is not acceptance |
+| Plan Review / Review | evidence review; persistence is not acceptance |
 | Goal | existing entry/attempt/status |
+| Native / Worker execution | terminal execution handoff only with an explicit real consumer and no active Goal |
 | Mutating Init / Update | receipt |
 | Explore | no standalone report; evidence is folded into its consumer |
 
@@ -114,20 +117,33 @@ identity of the Writer that drafted it.
 | Completion companion | A durable companion to an already determined result packet | Root freezes the result before dispatch, may overlap only answer-invariant delivery work, and joins before claiming saved/durable |
 | None | Native dialogue answer or local work without a standalone durable artifact | No Writer transaction and no saved/durable claim |
 
-Feedback loops stay reference-local: specialized Grill, Design, and Goal loops
-use their own transactions; Research, Debug, Plan, Review, and mutating
-Init/Update use the generic artifact transaction only through the exact route
-selected by Root. Before generic `artifact-apply`, inspection/schema work is
-preparatory only; interruption before apply/readback provides no durable claim.
+Feedback loops stay reference-local: specialized Collaborate and Goal loops use
+their own transactions; Research, Debug, Plan, Plan Review, Review, mutating
+Init/Update, and terminal execution handoffs use the generic artifact
+transaction only through the exact route selected by Root. Before generic
+`artifact-apply`, inspection/schema work is preparatory only; interruption
+before apply/readback provides no durable claim.
 
-Design schema v3 writes the three explicit acceptance states above. Legacy v1/v2
-records remain readable and are interpreted as `accepted` for compatibility.
+Collaborate schema v1 writes the three explicit acceptance states `pending`,
+`accepted`, and `blocked`; persistence is not acceptance and only `accepted` is
+Plan-ready. Frozen legacy Discussion and Design records stay readable as
+migration inputs and migrate through the transaction only on a real semantic
+mutation; archives are never rewritten merely to upgrade schema. Collaborate
+uses a common lifecycle plus a `dialogue|brainstorm|grill` discriminator and
+selects the mode from natural intent and evidence rather than asking for a mode
+name. Grill publishes and follows the strict global -> boundary -> detail
+decision map, limits each current batch to three mutually independent
+decisions, and keeps dependent decisions serial. One answered batch is one
+semantic transaction unit: all resolutions and the next valid frontier change
+are applied together before a dependent batch opens.
 
 Persistence behavior is checked on real command paths: the generic probe runs
 `artifact-inspect` → `artifact-schema` → `artifact-apply` → `artifact-inspect`,
-while the specialized probe runs discussion `inspect` → `schema` → `apply` →
-`inspect`. Six positive and negative persistence development cases cover the
-default and its overrides.
+while the specialized probe runs Collaborate `collaborate-inspect` →
+`collaborate-schema` → `collaborate-apply` → `collaborate-inspect`. Positive
+and negative persistence cases cover specialized routing, generic routing,
+semantic no-ops, legacy read-only migration inputs, Goal/execution
+deduplication, and write overrides.
 
 `evals/teamwork/outputs/` is the exception: its compact tracked JSONL files are
 authored static fixtures. `evals/teamwork/outputs/installed-v4/**` is ignored
@@ -157,26 +173,28 @@ This keeps the main boundaries visible:
   runtime state, and artifacts, and natively implements clear authorized work;
 - Explore answers a distinct local read-only evidence question; Research is only
   for external, current, multi-source, or citation-backed investigation;
-- Design owns an unsettled consequential solution. Explorer is dispatched only
-  for an unresolved local constraint, and Research only for a named sanitized
-  external/current claim that can change the decision; neither is mandatory and
-  they do not run together by default. Designer integrates the evidence actually
-  needed. A real trade-off gets two or three alternatives; one safe path gets
-  explicit evidence and exclusions. Default Design uses one challenge pass.
-  After that initial evidence wave, Design automatically replaces the pass with
-  a budget-bounded hypothesis search only when multiple viable directions plus costly error or conflicting
-  evidence make one challenge inadequate; `adversarial` forces the method and
-  `standard` disables it. The default budget is 3 without another confirmation.
-  Each actual hypothesis gets two fresh isolated Designer critics, materially
-  revised hypotheses consume a new trial, and two new final auditors must both
-  pass. Missing isolation or closure leaves the controlled Design state
-  `pending` or `blocked`; it never produces an `accepted`, Plan-ready result.
-  Both strategies use the same finite user-decision frontier and controlled v3
-  Design transaction. Persistence is not acceptance, and only `accepted` may
-  enter Plan. The frontier shows
-  a global map first, batches only independent material questions, and
-  serializes dependent questions;
-- Plan turns an `accepted` Design into executable steps; independent
+- Collaborate owns natural dialogue, brainstorming, sustained questioning,
+  stress-testing, question-before-action, and unsettled consequential solution
+  convergence. Explorer is dispatched only for an unresolved local constraint,
+  and Research only for a named sanitized external/current claim that can change
+  the decision; neither is mandatory and they do not run together by default.
+  Internal Designer integrates only the evidence actually needed. A real
+  trade-off gets two or three alternatives; one safe path gets explicit evidence
+  and exclusions. Default Collaborate uses one challenge pass for consequential
+  direction work. After that initial evidence wave, Collaborate automatically
+  replaces the pass with a budget-bounded hypothesis search only when multiple
+  viable directions plus costly error or conflicting evidence make one challenge
+  inadequate; `adversarial` forces the method and `standard` disables it. The
+  default budget is 3 without another confirmation. Each actual hypothesis gets
+  two fresh isolated Designer critics, materially revised hypotheses consume a
+  new trial, and two new final auditors must both pass. Missing isolation or
+  closure leaves the controlled Collaborate state `pending` or `blocked`; it
+  never produces an `accepted`, Plan-ready result. All strategies use the same
+  finite user-decision frontier and controlled v1 Collaborate transaction.
+  Persistence is not acceptance, and only `accepted` may enter Plan. Grill shows
+  a global map first, then boundary, then detail; batches only independent
+  material questions; and serializes dependent questions;
+- Plan turns an `accepted` Collaborate handoff into executable steps; independent
   Plan Review runs only on user request or a named material risk gate. Each
   Worker self-verifies its slice. After integration, a sealed candidate receives
   one independent max `ACCEPT`, `REVISE`, or `BLOCKED` Review only on user request
@@ -184,30 +202,23 @@ This keeps the main boundaries visible:
   candidate gets at most one delta recheck;
 - Debug constrains unknown-cause failure work to real failure, reproduction,
   discriminating evidence, the authorized narrow fix, and the same-path rerun;
-- Ordinary clarification does not trigger Grill or persistence. Once Grill is
-  named or entered, an existing Grill is resumed, or an independently major
-  public/installable, migration/release, permission, security, data, destructive,
-  or cross-platform boundary invokes it, the one specialized discussion
-  transaction persists by default unless the user says `no files`, off-record,
-  read-only, or no-write. Within
-  one scope, only create, semantic decision/frontier change, and close/supersede
-  write a revision; unchanged state is a no-op. New records use
-  `frontier` / `current_batch` state;
 - Goal adds explicit durable objective, success signal, scope, protected
   boundaries, budget, and attempt state; Init changes one project's context
   only, while Update changes global Teamwork-managed installation state only.
 
-There is no Teamwork router or generic execution capability. Host skill
-discovery chooses a capability directly; exact selection remains model behavior.
-The v3.4.2 migration recognizes only proven owned Router/Execute and legacy-role
-files so it can remove them safely. That migration recognition is not a v4 alias
-or callable compatibility surface.
+There is no Teamwork router or generic Execute skill. `execution` is only a
+terminal artifact kind with a named consumer, never a routing capability. Host
+skill discovery chooses a capability directly; exact selection remains model
+behavior. Migration recognizes only exact Teamwork-owned legacy Grill,
+Discuss/Design, Router/Execute, and legacy-role files so it can remove them
+safely. Modified or unmarked copies block replacement and remain untouched;
+recognition creates no alias or callable compatibility surface.
 
 ## Method attribution
 
 Teamwork adopts Superpowers' hard gate, options, and specification self-check
 ideas. Its default one-pass challenge and finite decision frontier are locally
-tailored Teamwork convergence rules. The adversarial Design strategy
+tailored Teamwork convergence rules. The adversarial Collaborate strategy
 adopts a bounded hypothesis-taxonomy, fresh-critic, and dual-closure-audit method
 without copying a discussion-only terminal contract or claiming to reproduce
 another workflow wholesale.
@@ -293,9 +304,9 @@ The current `instruction_footprint.py --json` result reports:
 | Worst leaf path | 2,727 | 3,200 |
 | Worst repository Root path | 3,451 | 3,900 |
 
-The three-host, 49-surface union (14,103 words) and the ten-Skill aggregate
+The three-host, 49-surface union (14,103 words) and the nine-Skill aggregate
 (6,366 words) are telemetry, not release-blocking proxies for a context that no
-host co-loads. The same authority still enforces the exact ten-Skill inventory
+host co-loads. The same authority still enforces the exact nine-Skill inventory
 and rejects cross-Skill instruction loads or dependency cycles.
 
 ## Stable commands
@@ -335,14 +346,14 @@ is orchestrated by Bash and standard-library Python helpers.
 | Package validation | `scripts/validate.sh` and validation modules | Focused harness tests including a representative failing mutation |
 | Deterministic or semantic evaluation | Evaluation producers and `evals/teamwork/` | Schema, rubric, and mutation-sensitive checks |
 | Live trajectory recording | Live-eval producers and fixtures | Isolated bounded runner checks; claims limited to the observed treatment |
-| Versioned public surface | `VERSION`, plugin manifests, changelogs, and public docs | Full validation and repository release policy |
+| Versioned public surface | `VERSION`, plugin manifests, changelogs, public docs, and root `.gitignore` runtime-memory entries | Focused consistency/JSON/diff checks plus release-policy validation when packaging |
 
 ## Anti-drift rules
 
 - Keep behavior in the owning skill. Reject cross-skill instruction loads,
   shared behavior references, and router-like orchestration.
 - Discover skill inventory from canonical directories in producers and tests.
-  Release-facing docs may name the current ten public skills and must be updated
+  Release-facing docs may name the current nine public skills and must be updated
   with an inventory change rather than becoming a second runtime source of truth.
 - Change canonical producers, never generated copies or local install roots.
   Regenerate the tracked Marketplace bundle rather than editing it by hand.

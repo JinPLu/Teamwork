@@ -41,7 +41,7 @@ def command_event(command: str, event_type: str = "item.completed") -> dict[str,
     }
 
 
-class GrillContractTests(unittest.TestCase):
+class CollaborateContractTests(unittest.TestCase):
     def test_question_count_is_transport_neutral(self) -> None:
         self.assertEqual(question_count("Keep compatibility?"), 1)
         self.assertEqual(question_count("保留兼容性？"), 1)
@@ -66,8 +66,8 @@ class GrillContractTests(unittest.TestCase):
     def test_allowlisted_commands_are_read_only_and_mutations_fail(self) -> None:
         safe = [
             command_event("rg -n request_user_input skills"),
-            command_event("sed -n '1,40p' skills/grill-me/SKILL.md"),
-            command_event("git diff -- skills/grill-me/SKILL.md"),
+            command_event("sed -n '1,40p' skills/teamwork-collaborate/SKILL.md"),
+            command_event("git diff -- skills/teamwork-collaborate/SKILL.md"),
         ]
         self.assertEqual(readonly_event_violations(safe), [])
         for command in (
@@ -127,12 +127,12 @@ class GrillContractTests(unittest.TestCase):
     def test_grill_structure_allows_bounded_batch_but_rejects_four_questions(self) -> None:
         two_question_turn = [{"final_output": "Compatibility? Telemetry?", "raw_events": []}]
         self.assertEqual(
-            RUNNER.assess_structure(two_question_turn, category="grill", dry_run=False),
+            RUNNER.assess_structure(two_question_turn, category="collaborate", dry_run=False),
             ("passed", []),
         )
         four_question_turn = [{"final_output": "A? B? C? D?", "raw_events": []}]
         status, violations = RUNNER.assess_structure(
-            four_question_turn, category="grill", dry_run=False
+            four_question_turn, category="collaborate", dry_run=False
         )
         self.assertEqual(status, "failed")
         self.assertEqual(violations, ["turn 1 asks more than three textual questions"])
@@ -149,7 +149,7 @@ class LiveRecorderTests(unittest.TestCase):
         self,
         *,
         prompts: list[str] | None = None,
-        category: str = "grill",
+        category: str = "collaborate",
         extra: dict[str, object] | None = None,
     ) -> Path:
         case: dict[str, object] = {

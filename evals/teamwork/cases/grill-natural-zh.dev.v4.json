@@ -5,11 +5,13 @@
       "language" : "zh",
       "requires" : [
          "natural-activation",
-         "ordinary-no-write",
-         "major-change-auto-transaction",
+         "sustained-checkpoint",
+         "major-change-grill-mode",
          "recommend-first",
          "global-decision-map",
+         "global-to-detail-order",
          "bounded-independent-batch",
+         "one-checkpoint-per-answered-batch",
          "question-criticality",
          "transaction-owned-writer",
          "no-files-overrides",
@@ -19,10 +21,10 @@
    },
    "id" : "grill-natural-zh",
    "must" : [
-      "普通先问请求保持对话不落盘；只有独立构成重大变更时，才经受管 inspect -> schema -> apply 事务自动记录状态，并先展示全局决策地图，再给推荐并提出有限独立批次的关键实质问题，同时保留权限边界"
+      "自然语言的持续先问请求应启动 Collaborate；重大 API 边界自动选择 grill 模式，并只通过 Writer 和受管 collaborate-inspect -> collaborate-schema -> collaborate-apply 事务记录状态；先展示 goal/boundary/detail 全局决策地图，再给推荐并提出有限独立批次的关键实质问题；一个回答批次只产生一次语义检查点更新，依赖问题随后再打开，同时保留权限边界"
    ],
    "must_not" : [
-      "普通请求直接写讨论 Markdown、索引或其他文件；实施、修改，或把回答当成实施授权；no files 必须覆盖任何事务"
+      "直接写讨论 Markdown、索引、报告或其他文件；保存逐字对话；实施、修改，或把回答当成实施授权；no files 必须覆盖任何事务"
    ],
    "platforms" : [
       "codex",
@@ -36,7 +38,23 @@
       },
       {
          "class" : "skill",
-         "source" : "skills/grill-me/SKILL.md"
+         "source" : "skills/teamwork-collaborate/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-writer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/writer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/writer.md"
+      },
+      {
+         "class" : "artifact-engine",
+         "source" : "scripts/discussion-transaction.py"
       }
    ],
    "prompt" : "先问我，并在行动前挑战我对 API 兼容性的假设。",

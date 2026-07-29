@@ -33,10 +33,10 @@ for readme in README.md README.en.md; do
     "$readme must name all supported hosts"
   semantic_doc_required '(external|outside|外部).{0,80}(research|调研)' "$ROOT/$readme" \
     "$readme must explain external Research"
-  semantic_doc_required '(Design.{0,120}Plan|设计.{0,120}计划)' "$ROOT/$readme" \
-    "$readme must distinguish Design from Plan"
-  semantic_doc_required 'docs/teamwork/discussion/current\.md' "$ROOT/$readme" \
-    "$readme must explain the one-file Grill record"
+  semantic_doc_required '(Collaborate.{0,120}Plan|协作.{0,120}计划)' "$ROOT/$readme" \
+    "$readme must distinguish Collaborate from Plan"
+  semantic_doc_required 'docs/teamwork/collaborate/current\.md' "$ROOT/$readme" \
+    "$readme must explain the one-file Collaborate record"
   semantic_doc_required '\./install\.sh all' "$ROOT/$readme" \
     "$readme must show the complete checkout refresh"
   semantic_doc_required 'check-update\.sh --readiness' "$ROOT/$readme" \
@@ -47,8 +47,8 @@ done
 for guide in CODEX.md CURSOR.md CLAUDE.md; do
   semantic_doc_required '(external|current).{0,80}(research|sources)' "$ROOT/$guide" \
     "$guide must explain external Research"
-  semantic_doc_required 'Design.{0,120}(selected|Plan)' "$ROOT/$guide" \
-    "$guide must explain the Design/Plan boundary"
+  semantic_doc_required 'Collaborate.{0,120}(accepted|selected|Plan)' "$ROOT/$guide" \
+    "$guide must explain the Collaborate/Plan boundary"
   semantic_doc_required '(local|repository).{0,100}(native|natively)' "$ROOT/$guide" \
     "$guide must keep local evidence native"
   semantic_doc_required '(permissions|permission)' "$ROOT/$guide" \
@@ -181,8 +181,8 @@ PY
 grep_absent 'skills/[a-z0-9-]\+/SKILL\.md' \
   "SKILL.md files must not load another Teamwork skill" \
   "$ROOT/skills"
-grep_absent 'using-teamwork\|teamwork-execute' \
-  "removed router and generic Execute skill must not remain in active skill sources" \
+grep_absent 'grill-me\|teamwork-discuss\|teamwork-design\|using-teamwork\|teamwork-execute' \
+  "retired public skill sources must not remain active" \
   "$ROOT/skills"
 
 # Host interaction features remain host-owned.

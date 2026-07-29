@@ -16,38 +16,38 @@ from typing import Any
 
 
 SCENARIOS = {
-    "protocol": {
+    "collaborate_bounded_native_request": {
         "expected_requests": 1,
-        "max_questions_per_request": 1,
-        "allow_auto_resolution": True,
-        "prompt": "Ask one short question about whether a public CLI rename should keep an alias.",
-    },
-    "ordinary-material": {
-        "expected_requests": 1,
-        "max_questions_per_request": 1,
+        "max_questions_per_request": 3,
         "forbid_text_question": True,
         "prompt": (
-            "Help me rename a public CLI command. Whether existing scripts must keep "
-            "working is undecided. Inspect what you can, then ask only that compatibility "
-            "question before changing anything. This is ordinary work, not a grill."
+            "Collaborate on this public CLI rename with me. Existing scripts either keep "
+            "working through an alias or break at the next major release; those are "
+            "the only genuine choices. Give the synthesis, tradeoff, and recommendation "
+            "first, then ask the bounded choice through the native question surface."
         ),
     },
-    "explicit-grill-material": {
-        "expected_requests": 1,
-        "max_questions_per_request": 1,
-        "forbid_text_question": True,
+    "open_brainstorm_prose_question": {
+        "expected_requests": 0,
+        "require_text_question": True,
         "prompt": (
-            "Grill me before acting: I want to rename a public CLI command, but have not "
-            "decided whether existing scripts must keep working."
+            "Brainstorm ways to make a developer tool feel easier to adopt. Widen the "
+            "candidate space, synthesize the main tension, recommend the next-best option, "
+            "then ask one genuinely open steering question in prose. Do not turn it into "
+            "invented finite choices."
         ),
     },
-    "explicit-grill-material-zh": {
-        "expected_requests": 1,
-        "max_questions_per_request": 1,
-        "forbid_text_question": True,
+    "collaborate_checkpoint_persistence": {
+        "expected_requests": 0,
+        "require_text_question": True,
+        "sandbox": "workspace-write",
+        "require_collaborate_checkpoint": True,
         "prompt": (
-            "行动前先问清楚：我想重命名一个公开 CLI 命令，但还没决定是否必须让"
-            "现有脚本继续工作。"
+            "Let's think this through together over several turns. We need to make a "
+            "public developer tool easier to adopt without increasing maintenance cost. "
+            "Build a substantive synthesis, central tension, and recommendation, persist "
+            "the Collaborate checkpoint through Writer plus transaction readback, then ask "
+            "one genuinely open steering question so we can continue."
         ),
     },
     "explicit-grill-independent-batch": {
@@ -55,39 +55,32 @@ SCENARIOS = {
         "max_questions_per_request": 3,
         "forbid_text_question": True,
         "prompt": (
-            "Grill me before changing this public SDK. Compatibility horizon, "
+            "Collaborate in grill mode before changing this public SDK. Compatibility horizon, "
             "telemetry default, and deprecation messaging are all material and "
             "independent: no answer changes another question's options. Ask them "
-            "as one bounded native batch with stable ids."
+            "as one global-only bounded native batch with stable ids, after a recommendation."
         ),
     },
     "explicit-grill-dependent-sequence": {
-        "expected_requests": 2,
+        "expected_requests": 3,
         "max_questions_per_request": 1,
         "forbid_text_question": True,
         "prompts": [
             (
-                "Grill me before changing this public SDK. First decide whether "
-                "compatibility is required; only that answer determines the valid "
-                "rollout-window options. Ask only the prerequisite decision now."
+                "Collaborate in grill mode before changing this public SDK. Start at the "
+                "global layer: first decide whether compatibility is required. Only that "
+                "answer determines valid boundary options, so ask only that prerequisite."
             ),
             (
-                "The compatibility answer is now resolved. Continue the same "
-                "thread and ask the dependent rollout-window decision only."
+                "The global compatibility answer is resolved and checkpointed. Continue at "
+                "the boundary layer and ask only the dependent rollout-window decision."
+            ),
+            (
+                "The boundary rollout-window answer is resolved and checkpointed. Continue "
+                "at the detail layer and ask only the now-valid messaging detail."
             ),
         ],
-    },
-    "explicit-grill-zero": {
-        "expected_requests": 0,
-        "prompt": (
-            "Grill me before acting: rename the private helper to match repository conventions "
-            "without changing public behavior. Choose the exact name and file split yourself. "
-            "Do not ask about reversible implementation details."
-        ),
-    },
-    "simple-control": {
-        "expected_requests": 0,
-        "prompt": "Answer in one sentence: what is two plus two? Do not ask a question.",
+        "expected_question_key_order": ["global_compatibility", "boundary_rollout", "detail_messaging"],
     },
 }
 
@@ -97,15 +90,63 @@ class ProtocolError(RuntimeError):
 
 
 def developer_instructions_for_scenario(scenario: str) -> str:
-    if scenario == "protocol":
+    if SCENARIOS[scenario].get("sandbox") == "workspace-write":
         return (
-            "This is a read-only host transport probe. Call request_user_input once "
-            "for the unresolved compatibility choice; do not edit files or perform "
-            "external actions."
+            "This is an isolated workspace behavior observation. Follow the user request "
+            "and installed project instructions. Do not change implementation files or "
+            "perform external actions."
         )
     return (
         "This is a read-only behavior observation. Follow the user request without "
         "editing files or performing external actions."
+    )
+
+
+def collaboration_mode_for_scenario(
+    scenario: str,
+    *,
+    model: str,
+    effort: str,
+) -> dict[str, Any]:
+    mode = "plan" if int(SCENARIOS[scenario]["expected_requests"]) else "default"
+    return {
+        "mode": mode,
+        "settings": {
+            "model": model,
+            "reasoning_effort": effort,
+            "developer_instructions": developer_instructions_for_scenario(scenario),
+        },
+    }
+
+
+def collaborate_checkpoint_digest(root: Path) -> str:
+    path = root / "docs" / "teamwork" / "collaborate" / "current.md"
+    try:
+        content = path.read_bytes()
+    except OSError as exc:
+        raise ProtocolError("managed Collaborate checkpoint was not created") from exc
+    required = (
+        b"Artifact Type: collaborate",
+        b"Schema Version: 1",
+        b'"schema_version": 1',
+    )
+    if not all(marker in content for marker in required):
+        raise ProtocolError("managed Collaborate checkpoint is not a canonical v1 record")
+    return hashlib.sha256(content).hexdigest()
+
+
+def forbidden_generic_collaborate_artifacts(root: Path) -> list[str]:
+    forbidden_roots = (
+        root / "docs" / "teamwork" / "workflows" / "conclusion",
+        root / "docs" / "teamwork" / "workflows" / "collaborate",
+        root / "docs" / "teamwork" / "workflows" / "execution",
+    )
+    return sorted(
+        path.relative_to(root).as_posix()
+        for directory in forbidden_roots
+        if directory.exists()
+        for path in directory.rglob("*")
+        if path.is_file()
     )
 
 
@@ -191,7 +232,7 @@ class AppServerProbe:
     model: str
     effort: str
     timeout_seconds: int
-    scenario: str = "protocol"
+    scenario: str = "collaborate_bounded_native_request"
     review_path: Path | None = None
     events: list[str] = field(default_factory=list)
     observed_item_ids: list[str] = field(default_factory=list)
@@ -203,6 +244,8 @@ class AppServerProbe:
     agent_message_sha256: list[str] = field(default_factory=list)
     agent_message_count: int = 0
     text_question_observed: bool = False
+    collaborate_checkpoint_sha256: str | None = None
+    generic_collaborate_artifacts: list[str] = field(default_factory=list)
     _process: subprocess.Popen[str] | None = field(default=None, init=False)
     _messages: queue.Queue[dict[str, Any]] = field(default_factory=queue.Queue, init=False)
     _next_id: int = field(default=1, init=False)
@@ -327,6 +370,11 @@ class AppServerProbe:
             "scenario": self.scenario,
             "model": self.model,
             "effort": self.effort,
+            "collaboration_mode": collaboration_mode_for_scenario(
+                self.scenario,
+                model=self.model,
+                effort=self.effort,
+            )["mode"],
             "events": self.events,
             "observed_item_ids": self.observed_item_ids,
             "observed_question_keys": self.observed_question_keys,
@@ -338,6 +386,8 @@ class AppServerProbe:
             "agent_message_sha256": self.agent_message_sha256,
             "agent_message_count": self.agent_message_count,
             "text_question_observed": self.text_question_observed,
+            "collaborate_checkpoint_sha256": self.collaborate_checkpoint_sha256,
+            "generic_collaborate_artifacts": self.generic_collaborate_artifacts,
             "semantic_quality": "not_evaluated",
         }
         if blocker is not None:
@@ -367,12 +417,9 @@ class AppServerProbe:
                     "cwd": str(self.cwd),
                     "model": self.model,
                     "approvalPolicy": "never",
-                    "sandbox": "read-only",
+                    "sandbox": str(spec.get("sandbox", "read-only")),
                     "ephemeral": True,
                     "serviceName": "teamwork_user_input_probe",
-                    "developerInstructions": developer_instructions_for_scenario(
-                        self.scenario
-                    ),
                 },
             )
             thread_id = self._id(thread, "thread")
@@ -383,6 +430,11 @@ class AppServerProbe:
                     {
                         "threadId": thread_id,
                         "effort": self.effort,
+                        "collaborationMode": collaboration_mode_for_scenario(
+                            self.scenario,
+                            model=self.model,
+                            effort=self.effort,
+                        ),
                         "input": [{"type": "text", "text": str(prompt)}],
                     },
                 )
@@ -463,6 +515,20 @@ class AppServerProbe:
                 if not completed:
                     raise ProtocolError("turn did not complete")
 
+            expected_keys = spec.get("expected_question_key_order")
+            if expected_keys is not None and self.observed_question_keys != expected_keys:
+                raise ProtocolError("native question keys do not match expected dependency order")
+            if spec.get("require_collaborate_checkpoint"):
+                self.collaborate_checkpoint_sha256 = collaborate_checkpoint_digest(
+                    self.cwd
+                )
+                self.generic_collaborate_artifacts = (
+                    forbidden_generic_collaborate_artifacts(self.cwd)
+                )
+                if self.generic_collaborate_artifacts:
+                    raise ProtocolError(
+                        "Collaborate was duplicated through a generic artifact route"
+                    )
             if len(self._server_request_ids) != expected_count:
                 raise ProtocolError(f"expected exactly {expected_count} request_user_input events")
             if len(resolved_ids) != expected_count:
@@ -471,6 +537,8 @@ class AppServerProbe:
                 raise ProtocolError("answer keys do not match observed question ids in order")
             if spec.get("forbid_text_question") and self.text_question_observed:
                 raise ProtocolError("assistant duplicated the native prompt as a text question")
+            if spec.get("require_text_question") and not self.text_question_observed:
+                raise ProtocolError("assistant omitted the required open prose question")
             return self.snapshot(
                 status="passed",
                 resolved_request_count=len(resolved_ids),
@@ -492,7 +560,11 @@ def main() -> int:
     parser.add_argument("--repeats", required=True, type=int)
     parser.add_argument("--timeout-seconds", required=True, type=int)
     parser.add_argument("--workdir", required=True, type=Path)
-    parser.add_argument("--scenario", choices=tuple(SCENARIOS), default="protocol")
+    parser.add_argument(
+        "--scenario",
+        choices=tuple(SCENARIOS),
+        default="collaborate_bounded_native_request",
+    )
     parser.add_argument(
         "--review-dir",
         type=Path,

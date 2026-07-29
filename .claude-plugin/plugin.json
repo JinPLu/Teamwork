@@ -1,7 +1,7 @@
 {
   "name": "teamwork-skill",
-  "version": "4.6.0",
-  "description": "Claude Code adapter skills for research, local evidence, bounded and adversarial design, debugging, planning, review, setup, updates, and long-running goals; routine local work stays native.",
+  "version": "5.0.0",
+  "description": "Claude Code adapter skills for Collaborate, durable workflow documents, research, local evidence, debugging, planning, review, setup, updates, and long-running goals.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"
@@ -16,17 +16,18 @@
     "workflow",
     "agents",
     "planning",
-    "design",
+    "collaborate",
     "adversarial",
     "research",
-    "grill-me",
+    "discussion",
+    "brainstorming",
     "review"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Teamwork",
-    "shortDescription": "Ten focused collaboration skills for research, local evidence, design, debugging, review, setup, updates, and goals.",
-    "longDescription": "Teamwork adds ten focused collaboration skills for cited external research, read-only local evidence, decision design that automatically chooses standard or budgeted adversarial search, unknown-cause debugging, executable planning, read-only review, explicit question-led challenge, project initialization, global refresh, and long-running convergence. Routine local inspection and authorized implementation stay with Claude Code's native workflow; no router or execution skill is required. You choose the scope and authorize changes; Claude Code remains in control of tools and permissions.",
+    "shortDescription": "Nine focused skills for Collaborate, durable results, research, debugging, review, setup, and goals.",
+    "longDescription": "Teamwork adds nine focused collaboration skills for one Collaborate workflow covering adaptive dialogue, brainstorming, pressure-testing, and accepted direction convergence; cited external research; read-only local evidence; unknown-cause debugging; executable planning; read-only review; project initialization; global refresh; and long-running convergence. A low-cost Writer turns frozen workflow state into reusable documents through controlled persistence routes and fails closed when route or readback is unavailable. Routine local inspection and authorized implementation stay with Claude Code's native workflow; no router, Execute skill, retired public Design/Discuss surface, or alias is required. You choose scope and authorize changes; Claude Code remains in control of tools and permissions.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -35,9 +36,9 @@
     ],
     "websiteURL": "https://github.com/JinPLu/Teamwork",
     "defaultPrompt": [
+      "Use $teamwork-collaborate to brainstorm this problem with me and ask the most useful next question.",
       "Use $teamwork-research to investigate this current external question from primary sources with linked citations.",
-      "Describe an unsettled design choice; Teamwork Design automatically chooses a standard challenge or bounded adversarial search.",
-      "Implement this scoped change with native Claude Code behavior and verify the changed path."
+      "Use $teamwork-collaborate for an unsettled design choice with a standard challenge or bounded adversarial search."
     ],
     "brandColor": "#2563EB"
   }

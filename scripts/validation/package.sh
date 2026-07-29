@@ -74,9 +74,35 @@ fi
 grep_required '^docs/teamwork/design/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork design artifacts"
 git -C "$ROOT" check-ignore -q docs/teamwork/design/validation-probe.md \
   || fail ".gitignore must match untracked Teamwork design artifacts"
-grep_required '^docs/teamwork/discussion/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork discussion artifacts"
+grep_required '^docs/teamwork/discussion/$' "$ROOT/.gitignore" ".gitignore must ignore historical Teamwork discussion artifacts"
 git -C "$ROOT" check-ignore -q docs/teamwork/discussion/validation-probe.md \
-  || fail ".gitignore must match untracked Teamwork discussion artifacts"
+  || fail ".gitignore must match historical Teamwork discussion artifacts"
+grep_required '^docs/teamwork/collaborate/$' "$ROOT/.gitignore" ".gitignore must ignore Teamwork Collaborate artifacts"
+git -C "$ROOT" check-ignore -q docs/teamwork/collaborate/validation-probe.md \
+  || fail ".gitignore must match untracked Teamwork Collaborate artifacts"
+python3 - "$ROOT/.gitignore" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+lines = path.read_text(encoding="utf-8").splitlines()
+needle = "docs/teamwork/collaborate/"
+try:
+    start = lines.index("# TEAMWORK_LOCAL_START")
+    end = lines.index("# TEAMWORK_LOCAL_END")
+except ValueError as exc:
+    raise SystemExit("FAIL: .gitignore must retain TEAMWORK_LOCAL markers") from exc
+if start >= end:
+    raise SystemExit("FAIL: .gitignore TEAMWORK_LOCAL markers are out of order")
+top_count = lines[:start].count(needle)
+managed_count = lines[start + 1 : end].count(needle)
+total_count = lines.count(needle)
+if top_count != 1 or managed_count != 1 or total_count != 2:
+    raise SystemExit(
+        "FAIL: .gitignore must list docs/teamwork/collaborate/ exactly once "
+        "before TEAMWORK_LOCAL and exactly once inside TEAMWORK_LOCAL"
+    )
+PY
 grep_required '^docs/teamwork/plans/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork plan artifacts"
 grep_required '^docs/teamwork/research/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork research artifacts"
 grep_required '^docs/teamwork/reports/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork report artifacts"
@@ -106,7 +132,7 @@ done
 # --- Skill topology and package runtime ---
 expected_reference_inventory="$(printf '%s\n' \
   'skills/teamwork-debug/references/runtime-diagnosis.md' \
-  'skills/teamwork-design/references/adversarial-search.md' \
+  'skills/teamwork-collaborate/references/adversarial-search.md' \
   'skills/teamwork-research/references/deep-research.md' \
   'skills/teamwork-review/references/strict-review.md' | sort)"
 actual_reference_inventory="$(find "$ROOT/skills" -type f -path '*/references/*' \
@@ -210,7 +236,7 @@ run_python_unit_tests
 [[ "$(find "$ROOT/evals/teamwork/cases" -maxdepth 1 -type f -name '*.dev.v4.json' | wc -l | tr -d ' ')" -ge 30 ]] \
   || fail "v4 dev eval must retain broad bilingual behavior coverage"
 [[ "$(find "$ROOT/evals/teamwork/cases" -maxdepth 1 -type f -name '*.release.v4.json' | wc -l | tr -d ' ')" -ge 3 ]] \
-  || fail "v4 release eval must cover Research, Design, and Grill boundaries"
+  || fail "v4 release eval must cover Research, Collaborate, and Review boundaries"
 while IFS= read -r active_source; do
   if grep -Eiq 'Task Contract|Contract version|Finding-state|Finding state|FINDING_STATUSES|base_review_id|corrective delta review|Replay Preflight|Stage Entry Card|truth identity|frozen card|scope delta gate' "$active_source"; then
     fail "retired workflow lifecycle term remains in ${active_source#"$ROOT"/}"
@@ -222,8 +248,8 @@ done < <(
 grep_absent 'parse_close_packet\|expected_question_ids\|expected_close\|blocked_route\|pilot_only\|activation_evidence' \
   "active grill eval code must not restore the retired lifecycle or native-promotion schema" \
   "$ROOT/scripts/run-teamwork-live-eval.py" "$ROOT/scripts/codex_app_server_user_input.py"
-grep_required '"category": "grill"' "$ROOT/evals/teamwork/live-cases/grill-multiturn-pilot.json" \
-  "live evals must include a grill category"
+grep_required '"category": "collaborate"' "$ROOT/evals/teamwork/live-cases/collaborate-multiturn-pilot.json" \
+  "live evals must include a Collaborate category"
 if is_full_validation; then
   live_eval_tmp="$(mktemp -d)"
   CLEANUP_PATHS+=("$live_eval_tmp")
@@ -235,7 +261,7 @@ if is_full_validation; then
     --output "$live_eval_tmp/output.jsonl" \
     --cases \
       "$ROOT/evals/teamwork/live-cases/lightweight-pilot.json" \
-      "$ROOT/evals/teamwork/live-cases/grill-multiturn-pilot.json" \
+      "$ROOT/evals/teamwork/live-cases/collaborate-multiturn-pilot.json" \
     --repeats 1 \
     --timeout-seconds 60 \
     --dry-run >/dev/null
@@ -246,7 +272,7 @@ if is_full_validation; then
     --workdir "$ROOT" \
     --cases \
       "$ROOT/evals/teamwork/live-cases/lightweight-pilot.json" \
-      "$ROOT/evals/teamwork/live-cases/grill-multiturn-pilot.json" \
+      "$ROOT/evals/teamwork/live-cases/collaborate-multiturn-pilot.json" \
     --repeats 1 \
     --timeout-seconds 60 \
     --max-trajectories 2 \
@@ -280,7 +306,7 @@ if is_full_validation; then
     '{"id":"case-passed","passed":true,"score":1,"input":"Review release","expected":"release eval","output":"asked for eval"}' \
     > "$opt_tmp/results.jsonl"
   python3 "$ROOT/scripts/optimize-teamwork.py" init-workspace \
-    --workspace "$opt_tmp/workspace" --skill "$ROOT/skills/teamwork-design/SKILL.md" >/dev/null
+    --workspace "$opt_tmp/workspace" --skill "$ROOT/skills/teamwork-collaborate/SKILL.md" >/dev/null
   python3 "$ROOT/scripts/optimize-teamwork.py" export-samples \
     --results "$opt_tmp/results.jsonl" --workspace "$opt_tmp/workspace" --env teamwork >/dev/null
   [[ -f "$opt_tmp/workspace/.skillopt/samples/failed/case-failed.md" ]] \
@@ -296,7 +322,7 @@ if is_full_validation; then
   opt_ledger_tmp="$(mktemp -d)"
   CLEANUP_PATHS+=("$opt_ledger_tmp")
   printf '%s\n' \
-    '{"date":"2026-07-08","candidate_id":"optimizer-smoke-valid","kind":"skillopt-lite","provider":"offline","model":"deterministic-smoke","model_config":"offline-smoke","prompt_or_template":"skills/teamwork-design/SKILL.md","owned_files":["skills/teamwork-review/SKILL.md"],"denylist":["evals/teamwork/cases/*.json"],"baseline":"evals/teamwork/README.md","treatment":"scripts/optimize-teamwork.py","gate_decision":"reject","rollback":"evals/teamwork/README.md","validation":["scripts/validate.sh"],"release_audit":"validate smoke only","reviewer":"validate.sh","decision":"rejected"}' \
+    '{"date":"2026-07-08","candidate_id":"optimizer-smoke-valid","kind":"skillopt-lite","provider":"offline","model":"deterministic-smoke","model_config":"offline-smoke","prompt_or_template":"skills/teamwork-collaborate/SKILL.md","owned_files":["skills/teamwork-review/SKILL.md"],"denylist":["evals/teamwork/cases/*.json"],"baseline":"evals/teamwork/README.md","treatment":"scripts/optimize-teamwork.py","gate_decision":"reject","rollback":"evals/teamwork/README.md","validation":["scripts/validate.sh"],"release_audit":"validate smoke only","reviewer":"validate.sh","decision":"rejected"}' \
     > "$opt_ledger_tmp/valid.jsonl"
   python3 "$ROOT/scripts/eval-teamwork.py" --optimizer-ledger "$opt_ledger_tmp/valid.jsonl" >/dev/null
   printf '%s\n' \
@@ -340,14 +366,14 @@ fi
 # --- Plugin manifests ---
 [[ -f "$ROOT/.codex-plugin/plugin.json" ]] || fail "missing Codex plugin manifest"
 [[ -f "$ROOT/.claude-plugin/plugin.json" ]] || fail "missing Claude Code plugin manifest"
-for plugin_file in scripts/build-codex-plugin.py scripts/plugin-activation.py .agents/plugins/marketplace.json; do
+for plugin_file in scripts/build-codex-plugin.py scripts/verify-no-hardlinked-git-objects.py scripts/plugin-activation.py .agents/plugins/marketplace.json; do
   [[ -f "$ROOT/$plugin_file" ]] || fail "missing $plugin_file"
   git_known_package_file "$plugin_file" \
     || fail "$plugin_file is absent from the active validation index"
 done
 [[ -x "$ROOT/scripts/build-codex-plugin.py" ]] || fail "build-codex-plugin.py must be executable"
 [[ -x "$ROOT/scripts/plugin-activation.py" ]] || fail "plugin-activation.py must be executable"
-compile_python_files "$ROOT/scripts/build-codex-plugin.py" "$ROOT/scripts/plugin-activation.py"
+compile_python_files "$ROOT/scripts/build-codex-plugin.py" "$ROOT/scripts/verify-no-hardlinked-git-objects.py" "$ROOT/scripts/plugin-activation.py"
 python3 "$ROOT/scripts/build-codex-plugin.py" --check \
   || fail "tracked Codex Marketplace bundle must match canonical inputs"
 python3 -m json.tool "$ROOT/.codex-plugin/plugin.json" >/dev/null
@@ -394,14 +420,14 @@ expected_skills = {
     path.name for path in (root / "skills").iterdir()
     if path.is_dir() and (path / "SKILL.md").is_file()
 }
-if len(expected_skills) != 10:
-    raise SystemExit("FAIL: canonical source inventory must discover exactly ten skills")
+if len(expected_skills) != 9:
+    raise SystemExit("FAIL: canonical source inventory must discover exactly nine skills")
 actual_skills = {path.name for path in (bundle / "skills").iterdir() if path.is_dir()}
 if actual_skills != expected_skills:
     raise SystemExit("FAIL: Marketplace bundle skill inventory must match canonical source")
 expected_references = {
     "teamwork-debug/references/runtime-diagnosis.md",
-    "teamwork-design/references/adversarial-search.md",
+    "teamwork-collaborate/references/adversarial-search.md",
     "teamwork-research/references/deep-research.md",
     "teamwork-review/references/strict-review.md",
 }
@@ -452,8 +478,9 @@ required_runtime = {
     "hooks/notify.py",
     "scripts/plugin-runtime-root.py",
     "scripts/tests/fixtures/v3.4.2-owned-surfaces.json",
+    "scripts/tests/fixtures/retired-teamwork-skills-v5.json",
     "templates/teamwork-memory/index.json",
-    "templates/teamwork-memory/teamwork-design-template.md",
+    "templates/teamwork-memory/teamwork-collaborate-template.md",
     "evals/teamwork/ledgers/v4-capability-migration.jsonl",
 }
 for rel in required_runtime:

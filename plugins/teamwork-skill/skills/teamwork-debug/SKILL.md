@@ -1,6 +1,6 @@
 ---
 name: teamwork-debug
-description: Use when a failure, crash, flake, regression, or unexpected result has an unknown cause that prevents a safe fix; do not use when the cause and narrow fix are already clear, for general fact finding or design, or when the user asks only for review.
+description: Use when a request or active workflow encounters a failure, crash, flake, regression, or unexpected result whose cause is still unknown and prevents a safe fix; do not use when the cause and narrow fix are already clear, for general fact finding or design, or when the user asks only for review.
 ---
 
 # Teamwork Debug

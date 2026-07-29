@@ -61,8 +61,14 @@ ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 # The filesystem is the canonical inventory. Validation discovers names from
 # skills/*/SKILL.md and protects only the intentionally small public count plus
 # named removals; it does not repeat an installer-owned list.
-CANONICAL_SKILL_COUNT = 10
-RETIRED_SKILLS = {"using-teamwork", "teamwork-execute"}
+CANONICAL_SKILL_COUNT = 9
+RETIRED_SKILLS = {
+    "grill-me",
+    "teamwork-discuss",
+    "teamwork-design",
+    "using-teamwork",
+    "teamwork-execute",
+}
 
 CANONICAL_ROLES = {
     "researcher",
@@ -100,12 +106,12 @@ def role_sources(role: str) -> set[tuple[str, str]]:
 
 ROOT_POLICY_SOURCE = {("root-policy", "scripts/install/policy.sh")}
 DESIGN_ADVERSARIAL_REFERENCE_PATH = (
-    "skills/teamwork-design/references/adversarial-search.md"
+    "skills/teamwork-collaborate/references/adversarial-search.md"
 )
 DESIGN_ADVERSARIAL_REFERENCE_SOURCE = {
     ("skill", DESIGN_ADVERSARIAL_REFERENCE_PATH)
 }
-DISCUSSION_TRANSACTION_SOURCE = {("artifact-engine", "scripts/discussion-transaction.py")}
+COLLABORATE_TRANSACTION_SOURCE = {("artifact-engine", "scripts/discussion-transaction.py")}
 INIT_ENGINE_SOURCE = {("artifact-engine", "scripts/init-project-files.py")}
 UPDATE_INSTALLER_SOURCE = {("installer", "scripts/check-update.sh")}
 
@@ -113,14 +119,14 @@ UPDATE_INSTALLER_SOURCE = {("installer", "scripts/check-update.sh")}
 CASE_PRODUCER_REQUIREMENTS = {
     ("design", "activation"): {
         *ROOT_POLICY_SOURCE,
-        ("skill", "skills/teamwork-design/SKILL.md"),
+        ("skill", "skills/teamwork-collaborate/SKILL.md"),
         *role_sources("explorer"),
         *role_sources("researcher"),
         *role_sources("designer"),
     },
     ("design", "adversarial-activation"): {
         *ROOT_POLICY_SOURCE,
-        ("skill", "skills/teamwork-design/SKILL.md"),
+        ("skill", "skills/teamwork-collaborate/SKILL.md"),
         *DESIGN_ADVERSARIAL_REFERENCE_SOURCE,
         *role_sources("designer"),
     },
@@ -142,20 +148,27 @@ CASE_PRODUCER_REQUIREMENTS = {
     },
     ("grill", "natural-question-first"): {
         *ROOT_POLICY_SOURCE,
-        ("skill", "skills/grill-me/SKILL.md"),
+        ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *role_sources("writer"),
+        *COLLABORATE_TRANSACTION_SOURCE,
     },
     ("grill", "layered-independent-batch"): {
         *ROOT_POLICY_SOURCE,
-        ("skill", "skills/grill-me/SKILL.md"),
+        ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *role_sources("writer"),
+        *COLLABORATE_TRANSACTION_SOURCE,
     },
     ("grill", "layered-dependent-sequence"): {
         *ROOT_POLICY_SOURCE,
-        ("skill", "skills/grill-me/SKILL.md"),
+        ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *role_sources("writer"),
+        *COLLABORATE_TRANSACTION_SOURCE,
     },
     ("grill", "explicit-save"): {
         *ROOT_POLICY_SOURCE,
-        ("skill", "skills/grill-me/SKILL.md"),
-        *DISCUSSION_TRANSACTION_SOURCE,
+        ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *role_sources("writer"),
+        *COLLABORATE_TRANSACTION_SOURCE,
     },
     ("authority", "permission-boundary"): ROOT_POLICY_SOURCE,
     ("research", "privacy-boundary"): {
@@ -172,7 +185,7 @@ CASE_PRODUCER_REQUIREMENTS = {
         *ROOT_POLICY_SOURCE,
         ("skill", "skills/teamwork-goal/SKILL.md"),
         *role_sources("worker"),
-        *DISCUSSION_TRANSACTION_SOURCE,
+        *COLLABORATE_TRANSACTION_SOURCE,
     },
     ("review", "evidence-verdict"): {
         *ROOT_POLICY_SOURCE,
@@ -195,7 +208,12 @@ CASE_PRODUCER_REQUIREMENTS = {
     },
     ("ask", "discoverable-native"): ROOT_POLICY_SOURCE,
     ("ask", "required-input"): ROOT_POLICY_SOURCE,
-    ("ask", "dialogue-native"): ROOT_POLICY_SOURCE,
+    ("ask", "dialogue-native"): {
+        *ROOT_POLICY_SOURCE,
+        ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *role_sources("writer"),
+        *COLLABORATE_TRANSACTION_SOURCE,
+    },
     ("native", "minimal-change"): {
         *ROOT_POLICY_SOURCE,
         *role_sources("worker"),
@@ -218,7 +236,7 @@ CASE_PRODUCER_REQUIREMENTS = {
     },
     ("design", "design-vs-plan"): {
         *ROOT_POLICY_SOURCE,
-        ("skill", "skills/teamwork-design/SKILL.md"),
+        ("skill", "skills/teamwork-collaborate/SKILL.md"),
         ("skill", "skills/teamwork-plan/SKILL.md"),
         *role_sources("designer"),
         *role_sources("planner"),
@@ -226,7 +244,7 @@ CASE_PRODUCER_REQUIREMENTS = {
     },
     ("design", "adversarial-boundary"): {
         *ROOT_POLICY_SOURCE,
-        ("skill", "skills/teamwork-design/SKILL.md"),
+        ("skill", "skills/teamwork-collaborate/SKILL.md"),
         *DESIGN_ADVERSARIAL_REFERENCE_SOURCE,
         ("skill", "skills/teamwork-plan/SKILL.md"),
         *role_sources("designer"),
@@ -234,8 +252,9 @@ CASE_PRODUCER_REQUIREMENTS = {
     },
     ("grill", "persistence-boundary"): {
         *ROOT_POLICY_SOURCE,
-        ("skill", "skills/grill-me/SKILL.md"),
-        *DISCUSSION_TRANSACTION_SOURCE,
+        ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *role_sources("writer"),
+        *COLLABORATE_TRANSACTION_SOURCE,
     },
     ("persistence", "normal-doc-writer"): {
         *role_sources("writer"),
@@ -244,13 +263,13 @@ CASE_PRODUCER_REQUIREMENTS = {
         *ROOT_POLICY_SOURCE,
         ("skill", "skills/teamwork-plan/SKILL.md"),
         *role_sources("writer"),
-        *DISCUSSION_TRANSACTION_SOURCE,
+        *COLLABORATE_TRANSACTION_SOURCE,
     },
     ("persistence", "specialized-artifact-writer"): {
         *ROOT_POLICY_SOURCE,
-        ("skill", "skills/grill-me/SKILL.md"),
+        ("skill", "skills/teamwork-collaborate/SKILL.md"),
         *role_sources("writer"),
-        *DISCUSSION_TRANSACTION_SOURCE,
+        *COLLABORATE_TRANSACTION_SOURCE,
     },
     ("persistence", "negative-overrides"): {
         *ROOT_POLICY_SOURCE,
@@ -382,11 +401,13 @@ CAPABILITY_REQUIREMENTS = {
     },
     ("grill", "natural-question-first"): {
         "natural-activation",
-        "ordinary-no-write",
-        "major-change-auto-transaction",
+        "sustained-checkpoint",
+        "major-change-grill-mode",
         "recommend-first",
         "global-decision-map",
+        "global-to-detail-order",
         "bounded-independent-batch",
+        "one-checkpoint-per-answered-batch",
         "question-criticality",
         "transaction-owned-writer",
         "no-files-overrides",
@@ -394,8 +415,11 @@ CAPABILITY_REQUIREMENTS = {
     },
     ("grill", "layered-independent-batch"): {
         "global-decision-map",
+        "global-to-detail-order",
         "bounded-independent-batch",
         "independent-questions",
+        "one-checkpoint-per-answered-batch",
+        "transaction-owned-writer",
         "recommend-first",
         "question-criticality",
         "closure-signal",
@@ -403,8 +427,11 @@ CAPABILITY_REQUIREMENTS = {
     },
     ("grill", "layered-dependent-sequence"): {
         "global-decision-map",
+        "global-to-detail-order",
         "dependency-serialization",
         "one-batch-per-turn",
+        "one-checkpoint-per-answered-batch",
+        "transaction-owned-writer",
         "recommend-first",
         "question-criticality",
         "closure-signal",
@@ -479,9 +506,9 @@ CAPABILITY_REQUIREMENTS = {
         "contribution-first",
         "one-high-information-question",
         "open-or-bounded-native",
-        "no-grill",
+        "collaborate-adaptive-mode",
         "no-design-premature",
-        "no-artifact",
+        "semantic-checkpoint",
     },
     ("native", "minimal-change"): {
         "canonical-owner",
@@ -538,8 +565,9 @@ CAPABILITY_REQUIREMENTS = {
         "no-implementation",
     },
     ("grill", "persistence-boundary"): {
-        "ordinary-no-write",
-        "major-change-auto-transaction",
+        "one-shot-no-write",
+        "sustained-checkpoint",
+        "major-change-grill-mode",
         "explicit-save-authorizes-transaction",
         "managed-transaction-only",
         "initialized-writable-project",
@@ -570,7 +598,7 @@ CAPABILITY_REQUIREMENTS = {
         "no-implementation-authority",
     },
     ("persistence", "specialized-artifact-writer"): {
-        "specialized-grill-design-goal-route",
+        "specialized-collaborate-design-goal-route",
         "lifecycle-checkpoint-readback",
         "inspect-schema-apply",
         "transaction-owned-writer",

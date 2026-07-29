@@ -9,26 +9,34 @@ if [[ -f "$ROOT/VERSION" ]]; then
   PKG_VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 fi
 SKILLS=(
-  grill-me
+  teamwork-collaborate
   teamwork-debug
-  teamwork-design
   teamwork-explore
-  teamwork-init
   teamwork-goal
-  teamwork-research
+  teamwork-init
   teamwork-plan
+  teamwork-research
   teamwork-review
   teamwork-update
 )
 RETIRED_SKILLS=(
+  grill-me
+  teamwork-design
+  teamwork-discuss
   using-teamwork
   teamwork-execute
+  teamwork
 )
 LEGACY_CODEX_ROUTER_SKILL="teamwork"
 MIGRATION_RETIRED_SKILLS=(
+  grill-me
+  teamwork-design
+  teamwork-discuss
   using-teamwork
   teamwork-execute
+  teamwork
 )
+RETIRED_SKILL_FIXTURE="$ROOT/scripts/tests/fixtures/retired-teamwork-skills-v5.json"
 CLAUDE_AGENTS=(
   researcher
   explorer
@@ -494,6 +502,10 @@ teamwork_skill_entry_has_known_inventory() {
   local source="$ROOT/skills/$skill"
   local item rel
 
+  if retired_skill_is_configured "$skill"; then
+    retired_skill_copy_is_owned "$skill" "$entry"
+    return
+  fi
   if [[ -L "$entry" ]]; then
     teamwork_skill_entry_is_named "$root" "$skill"
     return
@@ -506,17 +518,91 @@ teamwork_skill_entry_has_known_inventory() {
 }
 
 
-retired_copy_is_plugin_owned() {
+retired_skill_is_configured() {
+  local skill="$1"
+  local retired
+  for retired in "${RETIRED_SKILLS[@]}"; do
+    [[ "$skill" == "$retired" ]] && return 0
+  done
+  return 1
+}
+
+
+retired_skill_copy_is_owned() {
   local retired="$1"
-  local dest="$2"
-  local entry rel
+  local entry="$2"
+  python3 - "$RETIRED_SKILL_FIXTURE" "$retired" "$entry" <<'PY'
+import hashlib
+import json
+import pathlib
+import stat
+import sys
 
-  while IFS= read -r -d '' entry; do
-    rel="${entry#$dest/}"
-    [[ "$rel" == "SKILL.md" ]] || return 1
-  done < <(find "$dest" -mindepth 1 -print0)
+fixture_path = pathlib.Path(sys.argv[1])
+retired = sys.argv[2]
+entry = pathlib.Path(sys.argv[3])
+try:
+    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    print(f"Cannot load retired Skill identity fixture: {exc}", file=sys.stderr)
+    raise SystemExit(1)
+if fixture.get("schema_version") != 2:
+    print("Unsupported retired Skill identity fixture schema.", file=sys.stderr)
+    raise SystemExit(1)
+skills = fixture.get("skills")
+if not isinstance(skills, dict) or retired not in skills:
+    print(f"Retired Skill identity fixture has no key for {retired}.", file=sys.stderr)
+    raise SystemExit(1)
+manifests = skills[retired]
+if not isinstance(manifests, list) or not manifests:
+    print(f"No frozen Teamwork-owned manifest is allowed for {retired}.", file=sys.stderr)
+    raise SystemExit(1)
+try:
+    info = entry.lstat()
+except OSError:
+    raise SystemExit(1)
+if not stat.S_ISDIR(info.st_mode) or entry.is_symlink():
+    raise SystemExit(1)
 
-  return 0
+actual = {}
+for path in entry.rglob("*"):
+    rel = path.relative_to(entry).as_posix()
+    info = path.lstat()
+    if stat.S_ISDIR(info.st_mode) and not path.is_symlink():
+        continue
+    if not stat.S_ISREG(info.st_mode):
+        raise SystemExit(1)
+    actual[rel] = {
+        "file_type": "file",
+        "mode": f"{stat.S_IMODE(info.st_mode):04o}",
+        "path": rel,
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+    }
+
+def whole_tree(rows):
+    payload = "".join(
+        f"{row['path']}\0{row['file_type']}\0{row['mode']}\0{row['sha256']}\n"
+        for row in sorted(rows, key=lambda item: item["path"].encode("utf-8"))
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+for manifest in manifests:
+    files = manifest.get("files")
+    if not isinstance(files, list):
+        continue
+    expected = {row.get("path"): row for row in files if isinstance(row, dict)}
+    if set(actual) != set(expected):
+        continue
+    if all(
+        actual[rel].get("file_type") == expected[rel].get("file_type")
+        and actual[rel].get("mode") == expected[rel].get("mode")
+        and actual[rel].get("sha256") == expected[rel].get("sha256")
+        for rel in expected
+    ) and whole_tree(list(actual.values())) == manifest.get("whole_tree_sha256"):
+        raise SystemExit(0)
+
+raise SystemExit(1)
+PY
 }
 
 remove_retired_skill() {
@@ -555,7 +641,7 @@ remove_retired_skill() {
 
   [[ -f "$link" ]] || return 0
   grep -q "^name: $retired$" "$link" || return 0
-  if retired_copy_is_plugin_owned "$retired" "$dest"; then
+  if retired_skill_copy_is_owned "$retired" "$dest"; then
     rm -rf "$dest"
   fi
 }
@@ -754,6 +840,7 @@ teamwork_skill_entry_identity_is_safe() {
 preflight_teamwork_skill_root() {
   local root="$1"
   local label="$2"
+  local skip_legacy_router="${3:-0}"
   local marker="$root/.teamwork-version"
   local profile_marker="$root/.teamwork-profile"
   local skill version="unknown" found=0
@@ -768,6 +855,9 @@ preflight_teamwork_skill_root() {
   fi
 
   for skill in "${SKILLS[@]}" "${MIGRATION_RETIRED_SKILLS[@]}"; do
+    if [[ "$skip_legacy_router" == "1" && "$skill" == "$LEGACY_CODEX_ROUTER_SKILL" ]]; then
+      continue
+    fi
     if [[ -e "$root/$skill" || -L "$root/$skill" ]]; then
       found=1
       if [[ ! -f "$marker" || ! -f "$profile_marker" ]]; then
@@ -795,7 +885,7 @@ preflight_teamwork_skill_root() {
 
 preflight_legacy_codex_skills() {
   local legacy_root="$1"
-  preflight_teamwork_skill_root "$legacy_root" "Legacy Codex skills"
+  preflight_teamwork_skill_root "$legacy_root" "Legacy Codex skills" 1
 }
 
 legacy_codex_router_copy_is_owned() {

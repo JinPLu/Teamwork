@@ -17,7 +17,10 @@ from codex_app_server_user_input import (  # noqa: E402
     AppServerProbe,
     ProtocolError,
     SCENARIOS,
+    collaborate_checkpoint_digest,
+    collaboration_mode_for_scenario,
     developer_instructions_for_scenario,
+    forbidden_generic_collaborate_artifacts,
     response_for_request,
     validate_request_params,
 )
@@ -116,19 +119,26 @@ for line in sys.stdin:
     elif method == "turn/start":
         turns += 1
         assert message["params"]["input"][0]["type"] == "text"
+        collaboration = message["params"]["collaborationMode"]
+        assert collaboration["mode"] in {{"default", "plan"}}
+        assert collaboration["settings"]["model"] == "current-model"
+        assert collaboration["settings"]["reasoning_effort"] == "max"
+        assert isinstance(collaboration["settings"]["developer_instructions"], str)
+        assert collaboration["settings"]["developer_instructions"]
         turn_id = f"turn-{{turns}}"
         print(json.dumps({{"id": message["id"], "result": {{"turn": {{"id": turn_id}}}}}}), flush=True)
-        if mode == "zero":
-            print(json.dumps({{"method": "item/completed", "params": {{"threadId": "thread-1", "turnId": turn_id, "item": {{"type": "agentMessage", "text": "Four."}}}}}}), flush=True)
+        if mode in {{"zero", "prose-question"}}:
+            text = "What kind of adoption friction matters most to you?" if mode == "prose-question" else "Four."
+            print(json.dumps({{"method": "item/completed", "params": {{"threadId": "thread-1", "turnId": turn_id, "item": {{"type": "agentMessage", "text": text}}}}}}), flush=True)
             print(json.dumps({{"method": "turn/completed", "params": {{"threadId": "thread-1", "turn": {{"id": turn_id, "status": "completed"}}}}}}), flush=True)
         else:
             active = json.loads(json.dumps(params))
             active["turnId"] = turn_id
-            if mode == "dependent":
-                active["questions"] = [active["questions"][0]]
-                active["questions"][0]["id"] = "compatibility" if turns == 1 else "rollout_window"
-            print(json.dumps({{"id": 98 + turns, "method": "item/tool/requestUserInput", "params": active}}), flush=True)
-    elif message.get("id") in {{99, 100}}:
+        if mode == "dependent":
+            active["questions"] = [active["questions"][0]]
+            active["questions"][0]["id"] = ["global_compatibility", "boundary_rollout", "detail_messaging"][turns - 1]
+        print(json.dumps({{"id": 98 + turns, "method": "item/tool/requestUserInput", "params": active}}), flush=True)
+    elif message.get("id") in {{99, 100, 101}}:
         turn_id = f"turn-{{turns}}"
         if mode == "wrong-resolution":
             print(json.dumps({{"method": "serverRequest/resolved", "params": {{"requestId": 99, "threadId": "other-thread"}}}}), flush=True)
@@ -221,7 +231,7 @@ class OfflineLifecycleTests(unittest.TestCase):
     def run_probe(
         self,
         *,
-        scenario: str = "protocol",
+        scenario: str = "collaborate_bounded_native_request",
         mode: str = "native",
         params: dict[str, object] = VALID_PARAMS,
         repeats: int = 1,
@@ -263,51 +273,140 @@ class OfflineLifecycleTests(unittest.TestCase):
         self.assertEqual(
             set(SCENARIOS),
             {
-                "protocol",
-                "ordinary-material",
-                "explicit-grill-material",
-                "explicit-grill-material-zh",
+                "collaborate_bounded_native_request",
+                "open_brainstorm_prose_question",
+                "collaborate_checkpoint_persistence",
                 "explicit-grill-independent-batch",
                 "explicit-grill-dependent-sequence",
-                "explicit-grill-zero",
-                "simple-control",
             },
         )
-        self.assertEqual(SCENARIOS["ordinary-material"]["expected_requests"], 1)
-        self.assertEqual(SCENARIOS["explicit-grill-material-zh"]["expected_requests"], 1)
         self.assertEqual(
-            SCENARIOS["explicit-grill-material-zh"]["max_questions_per_request"], 1
+            SCENARIOS["collaborate_bounded_native_request"]["expected_requests"], 1
+        )
+        self.assertEqual(
+            SCENARIOS["open_brainstorm_prose_question"]["expected_requests"], 0
+        )
+        self.assertTrue(
+            SCENARIOS["open_brainstorm_prose_question"]["require_text_question"]
+        )
+        self.assertEqual(
+            SCENARIOS["collaborate_checkpoint_persistence"]["sandbox"],
+            "workspace-write",
+        )
+        self.assertTrue(
+            SCENARIOS["collaborate_checkpoint_persistence"][
+                "require_collaborate_checkpoint"
+            ]
         )
         self.assertEqual(
             SCENARIOS["explicit-grill-independent-batch"]["max_questions_per_request"],
             3,
         )
-        self.assertEqual(SCENARIOS["explicit-grill-dependent-sequence"]["expected_requests"], 2)
-        self.assertEqual(len(SCENARIOS["explicit-grill-dependent-sequence"]["prompts"]), 2)
-        self.assertTrue(SCENARIOS["explicit-grill-material-zh"]["forbid_text_question"])
-        self.assertIn("先问清楚", SCENARIOS["explicit-grill-material-zh"]["prompt"])
-        self.assertEqual(SCENARIOS["simple-control"]["expected_requests"], 0)
+        self.assertEqual(SCENARIOS["explicit-grill-dependent-sequence"]["expected_requests"], 3)
+        self.assertEqual(len(SCENARIOS["explicit-grill-dependent-sequence"]["prompts"]), 3)
         rendered = json.dumps(SCENARIOS)
         self.assertNotIn("mounted", rendered)
         self.assertNotIn("oracle", rendered)
         self.assertNotIn("version", rendered)
 
-    def test_only_raw_protocol_probe_cues_the_native_tool(self) -> None:
-        self.assertIn(
-            "request_user_input",
-            developer_instructions_for_scenario("protocol"),
-        )
-        for scenario in set(SCENARIOS) - {"protocol"}:
+    def test_scenarios_do_not_cue_the_native_tool_by_instruction(self) -> None:
+        for scenario in SCENARIOS:
             self.assertNotIn(
                 "request_user_input",
                 developer_instructions_for_scenario(scenario),
             )
 
+    def test_turns_select_an_explicit_collaboration_mode(self) -> None:
+        self.assertEqual(
+            collaboration_mode_for_scenario(
+                "collaborate_bounded_native_request",
+                model="current-model",
+                effort="max",
+            ),
+            {
+                "mode": "plan",
+                "settings": {
+                    "model": "current-model",
+                    "reasoning_effort": "max",
+                    "developer_instructions": (
+                        "This is a read-only behavior observation. Follow the user "
+                        "request without editing files or performing external actions."
+                    ),
+                },
+            },
+        )
+        self.assertEqual(
+            collaboration_mode_for_scenario(
+                "open_brainstorm_prose_question",
+                model="current-model",
+                effort="max",
+            )["mode"],
+            "default",
+        )
+
+    def test_persistence_probe_allows_only_isolated_workflow_writes(self) -> None:
+        instructions = developer_instructions_for_scenario(
+            "collaborate_checkpoint_persistence"
+        )
+        self.assertIn("isolated workspace", instructions)
+        self.assertNotIn("Collaborate checkpoint", instructions)
+        self.assertNotIn("request_user_input", instructions)
+
+    def test_checkpoint_probe_requires_canonical_v1_and_no_generic_duplicate(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            current = root / "docs" / "teamwork" / "collaborate" / "current.md"
+            current.parent.mkdir(parents=True)
+            current.write_text(
+                "Artifact Type: collaborate\n"
+                "Schema Version: 1\n"
+                '```json\n{"schema_version": 1}\n```\n',
+                encoding="utf-8",
+            )
+            self.assertEqual(len(collaborate_checkpoint_digest(root)), 64)
+            self.assertEqual(forbidden_generic_collaborate_artifacts(root), [])
+
+            duplicate = (
+                root
+                / "docs"
+                / "teamwork"
+                / "workflows"
+                / "conclusion"
+                / "results"
+                / "duplicate.md"
+            )
+            duplicate.parent.mkdir(parents=True)
+            duplicate.write_text("duplicate", encoding="utf-8")
+            self.assertEqual(
+                forbidden_generic_collaborate_artifacts(root),
+                [
+                    "docs/teamwork/workflows/conclusion/results/duplicate.md"
+                ],
+            )
+
+    def test_checkpoint_probe_rejects_missing_or_legacy_record(self) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            with self.assertRaisesRegex(ProtocolError, "was not created"):
+                collaborate_checkpoint_digest(root)
+            current = root / "docs" / "teamwork" / "collaborate" / "current.md"
+            current.parent.mkdir(parents=True)
+            current.write_text(
+                "Artifact Type: collaborate\n"
+                '```json\n{"schema_version": 2}\n```\n',
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ProtocolError, "canonical v1"):
+                collaborate_checkpoint_digest(root)
+
     def test_native_request_resolution_and_completion_pass(self) -> None:
-        result = self.run_probe()
+        result = self.run_probe(scenario="collaborate_bounded_native_request")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         observed = json.loads(result.stdout)["results"][0]
         self.assertEqual(observed["status"], "passed")
+        self.assertEqual(observed["collaboration_mode"], "plan")
         self.assertEqual(observed["observed_item_ids"], ["item-1"])
         self.assertEqual(observed["observed_question_keys"], ["host-key-1"])
         self.assertEqual(observed["returned_answer_keys"], ["host-key-1"])
@@ -317,33 +416,50 @@ class OfflineLifecycleTests(unittest.TestCase):
         self.assertTrue(observed["native_question_sha256"])
         self.assertNotIn("activation_evidence", observed)
 
-    def test_zero_question_control_passes_without_native_request(self) -> None:
-        result = self.run_probe(scenario="simple-control", mode="zero")
+    def test_open_prose_question_passes_without_native_request(self) -> None:
+        result = self.run_probe(
+            scenario="open_brainstorm_prose_question",
+            mode="prose-question",
+        )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         observed = json.loads(result.stdout)["results"][0]
-        self.assertEqual(observed["observed_item_ids"], [])
         self.assertEqual(observed["resolved_request_count"], 0)
+        self.assertEqual(observed["collaboration_mode"], "default")
 
-    def test_material_scenario_rejects_text_question_duplication(self) -> None:
-        result = self.run_probe(scenario="ordinary-material", mode="text-question")
+    def test_collaborate_bounded_choice_uses_native_surface_without_text_duplicate(self) -> None:
+        result = self.run_probe(scenario="collaborate_bounded_native_request")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        observed = json.loads(result.stdout)["results"][0]
+        self.assertEqual(observed["resolved_request_count"], 1)
+        self.assertFalse(observed["text_question_observed"])
+
+    def test_open_brainstorm_requires_one_prose_question_and_no_native_request(self) -> None:
+        passed = self.run_probe(
+            scenario="open_brainstorm_prose_question",
+            mode="prose-question",
+        )
+        self.assertEqual(passed.returncode, 0, passed.stdout + passed.stderr)
+        observed = json.loads(passed.stdout)["results"][0]
+        self.assertEqual(observed["resolved_request_count"], 0)
+        self.assertTrue(observed["text_question_observed"])
+
+        missing = self.run_probe(
+            scenario="open_brainstorm_prose_question",
+            mode="zero",
+        )
+        self.assertEqual(missing.returncode, 2)
+        blocker = json.loads(missing.stdout)["results"][0]["blocker"]
+        self.assertIn("required open prose question", blocker)
+
+    def test_bounded_collaborate_rejects_text_question_duplication(self) -> None:
+        result = self.run_probe(
+            scenario="collaborate_bounded_native_request",
+            mode="text-question",
+        )
         self.assertEqual(result.returncode, 2)
         observed = json.loads(result.stdout)["results"][0]
         self.assertIn("duplicated", observed["blocker"])
         self.assertTrue(observed["text_question_observed"])
-
-    def test_chinese_explicit_grill_requires_one_native_request_without_text_duplicate(self) -> None:
-        passed = self.run_probe(scenario="explicit-grill-material-zh")
-        self.assertEqual(passed.returncode, 0, passed.stdout + passed.stderr)
-        observed = json.loads(passed.stdout)["results"][0]
-        self.assertEqual(observed["resolved_request_count"], 1)
-
-        duplicated = self.run_probe(
-            scenario="explicit-grill-material-zh", mode="text-question"
-        )
-        self.assertEqual(duplicated.returncode, 2)
-        blocked = json.loads(duplicated.stdout)["results"][0]
-        self.assertIn("duplicated", blocked["blocker"])
-        self.assertTrue(blocked["text_question_observed"])
 
     def test_independent_grill_batch_accepts_three_native_questions(self) -> None:
         result = self.run_probe(
@@ -359,7 +475,7 @@ class OfflineLifecycleTests(unittest.TestCase):
         self.assertEqual(observed["returned_answer_keys"], observed["observed_question_keys"])
         self.assertEqual(observed["resolved_request_count"], 1)
 
-    def test_dependent_grill_sequence_uses_two_turns_on_one_thread(self) -> None:
+    def test_dependent_grill_sequence_uses_three_turns_on_one_thread(self) -> None:
         result = self.run_probe(
             scenario="explicit-grill-dependent-sequence",
             mode="dependent",
@@ -367,10 +483,13 @@ class OfflineLifecycleTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         observed = json.loads(result.stdout)["results"][0]
-        self.assertEqual(observed["observed_question_keys"], ["compatibility", "rollout_window"])
+        self.assertEqual(
+            observed["observed_question_keys"],
+            ["global_compatibility", "boundary_rollout", "detail_messaging"],
+        )
         self.assertEqual(observed["returned_answer_keys"], observed["observed_question_keys"])
-        self.assertEqual(observed["observed_turn_ids"], ["turn-1", "turn-2"])
-        self.assertEqual(observed["resolved_request_count"], 2)
+        self.assertEqual(observed["observed_turn_ids"], ["turn-1", "turn-2", "turn-3"])
+        self.assertEqual(observed["resolved_request_count"], 3)
 
     def test_second_native_request_exceeds_scenario_bound(self) -> None:
         result = self.run_probe(mode="duplicate")

@@ -14,10 +14,10 @@ import unittest
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 V342_SURFACES = REPO_ROOT / "scripts/tests/fixtures/v3.4.2-owned-surfaces.json"
+RETIRED_V5 = REPO_ROOT / "scripts/tests/fixtures/retired-teamwork-skills-v5.json"
 EXPECTED_SKILLS = {
-    "grill-me",
+    "teamwork-collaborate",
     "teamwork-debug",
-    "teamwork-design",
     "teamwork-explore",
     "teamwork-goal",
     "teamwork-init",
@@ -25,6 +25,11 @@ EXPECTED_SKILLS = {
     "teamwork-research",
     "teamwork-review",
     "teamwork-update",
+}
+PLATFORM_SKILL_ROOTS = {
+    "codex": pathlib.Path(".agents/skills"),
+    "cursor": pathlib.Path(".cursor/skills"),
+    "claude": pathlib.Path(".claude/skills"),
 }
 EXPECTED_CODEX_AGENTS = {
     "teamwork-researcher.toml",
@@ -83,6 +88,7 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         fixture_root = self.fixture / "scripts" / "tests" / "fixtures"
         fixture_root.mkdir(parents=True)
         shutil.copy2(V342_SURFACES, fixture_root / V342_SURFACES.name)
+        shutil.copy2(RETIRED_V5, fixture_root / RETIRED_V5.name)
         shutil.copytree(REPO_ROOT / "hooks", self.fixture / "hooks")
         os.symlink(REPO_ROOT / "skills", self.fixture / "skills")
         os.symlink(REPO_ROOT / "templates", self.fixture / "templates")
@@ -140,6 +146,89 @@ class InstallCliCompatibilityTests(unittest.TestCase):
             destination.write_bytes(content)
             destination.chmod(int(row["mode"], 8))
         return router
+
+    def install_exact_v46_grill(
+        self,
+        home: pathlib.Path,
+        platform: str,
+        *,
+        ownership_markers: bool = True,
+    ) -> pathlib.Path:
+        root = home / PLATFORM_SKILL_ROOTS[platform]
+        skill = root / "grill-me" / "SKILL.md"
+        skill.parent.mkdir(parents=True)
+        result = subprocess.run(
+            ["git", "show", "v4.6.0:skills/grill-me/SKILL.md"],
+            cwd=REPO_ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        skill.write_bytes(result.stdout)
+        if ownership_markers:
+            (root / ".teamwork-version").write_text("4.6.0\n", encoding="utf-8")
+            (root / ".teamwork-profile").write_text(
+                "performance-first\n", encoding="utf-8"
+            )
+        return skill
+
+    def install_retired_from_fixture(
+        self,
+        home: pathlib.Path,
+        platform: str,
+        retired: str,
+        manifest_index: int = 0,
+    ) -> pathlib.Path:
+        fixture = json.loads(RETIRED_V5.read_text(encoding="utf-8"))
+        manifest = fixture["skills"][retired][manifest_index]
+        root = home / PLATFORM_SKILL_ROOTS[platform]
+        skill_root = root / retired
+        for row in manifest["files"]:
+            source_path = f"{manifest['source_tree']}/{row['path']}"
+            result = subprocess.run(
+                ["git", "show", f"{manifest['source_commit']}:{source_path}"],
+                cwd=REPO_ROOT,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+            content = result.stdout
+            if manifest.get("projection") == "teamwork-router" and row["path"] == "SKILL.md":
+                content = content.replace(
+                    b"name: using-teamwork\n", b"name: teamwork\n", 1
+                )
+            destination = skill_root / row["path"]
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(content)
+            destination.chmod(int(row["mode"], 8))
+        (root / ".teamwork-version").write_text("4.6.0\n", encoding="utf-8")
+        (root / ".teamwork-profile").write_text(
+            "performance-first\n", encoding="utf-8"
+        )
+        return skill_root
+
+    def run_readiness(
+        self, home: pathlib.Path
+    ) -> subprocess.CompletedProcess[str]:
+        env = os.environ.copy()
+        env["HOME"] = str(home)
+        env["CODEX_HOME"] = str(home / ".codex")
+        return subprocess.run(
+            [
+                "bash",
+                str(REPO_ROOT / "scripts" / "check-update.sh"),
+                "--readiness",
+                "--no-fetch",
+            ],
+            cwd=REPO_ROOT,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            check=False,
+        )
 
     def test_help_exposes_global_routes_and_init_project_only(self) -> None:
         result = self.run_install("--help")
@@ -242,7 +331,7 @@ class InstallCliCompatibilityTests(unittest.TestCase):
             (codex_skills / "teamwork-debug" / "references" / "runtime-diagnosis.md").is_file()
         )
         self.assertTrue(
-            (codex_skills / "teamwork-design" / "references" / "adversarial-search.md").is_file()
+            (codex_skills / "teamwork-collaborate" / "SKILL.md").is_file()
         )
         self.assertTrue(
             (codex_skills / "teamwork-research" / "references" / "deep-research.md").is_file()
@@ -252,6 +341,9 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         )
         self.assertFalse((codex_skills / "using-teamwork").exists())
         self.assertFalse((codex_skills / "teamwork-execute").exists())
+        self.assertFalse((codex_skills / "teamwork-design").exists())
+        self.assertFalse((codex_skills / "teamwork-discuss").exists())
+        self.assertFalse((codex_skills / "grill-me").exists())
         self.assertFalse((home / ".codex" / "skills" / "teamwork-plan").exists())
         codex_agents = home / ".codex" / "agents"
         self.assertEqual(
@@ -284,7 +376,7 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         installed = self.run_install("--no-codex-routing", "codex", home=home)
         self.assertEqual(installed.returncode, 0, installed.stdout.decode())
 
-        skill = home / ".agents" / "skills" / "grill-me" / "SKILL.md"
+        skill = home / ".agents" / "skills" / "teamwork-collaborate" / "SKILL.md"
         skill.write_text(
             skill.read_text(encoding="utf-8") + "\n# stale fixture\n",
             encoding="utf-8",
@@ -308,7 +400,86 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         result = self.run_install("--no-codex-routing", "codex", home=home)
         self.assertEqual(result.returncode, 0, result.stdout.decode())
         self.assertTrue(notes.is_file())
-        self.assertTrue((home / ".agents" / "skills" / "grill-me" / "SKILL.md").is_file())
+        self.assertTrue(
+            (home / ".agents" / "skills" / "teamwork-collaborate" / "SKILL.md").is_file()
+        )
+
+    def test_exact_owned_v46_grill_is_retired_on_all_three_hosts(self) -> None:
+        for platform in ("codex", "cursor", "claude"):
+            with self.subTest(platform=platform):
+                home = self.base / f"exact-v46-grill-{platform}"
+                skill = self.install_exact_v46_grill(home, platform)
+                args = (
+                    ("--no-codex-routing", "codex")
+                    if platform == "codex"
+                    else (platform,)
+                )
+
+                result = self.run_install(*args, home=home)
+
+                self.assertEqual(result.returncode, 0, result.stdout.decode())
+                self.assertFalse(skill.parent.exists())
+                self.assertTrue(
+                    (
+                        home
+                        / PLATFORM_SKILL_ROOTS[platform]
+                        / "teamwork-collaborate"
+                        / "SKILL.md"
+                    ).is_file()
+                )
+
+    def test_modified_v46_grill_blocks_upgrade_and_is_preserved(self) -> None:
+        for platform in ("codex", "cursor", "claude"):
+            with self.subTest(platform=platform):
+                home = self.base / f"modified-v46-grill-{platform}"
+                skill = self.install_exact_v46_grill(home, platform)
+                skill.write_bytes(skill.read_bytes() + b"\nuser change\n")
+                before = skill.read_bytes()
+                args = (
+                    ("--no-codex-routing", "codex")
+                    if platform == "codex"
+                    else (platform,)
+                )
+
+                result = self.run_install(*args, home=home)
+
+                self.assertNotEqual(result.returncode, 0, result.stdout.decode())
+                self.assertIn("unknown files in grill-me", result.stdout.decode())
+                self.assertEqual(before, skill.read_bytes())
+                self.assertFalse(
+                    (
+                        home
+                        / PLATFORM_SKILL_ROOTS[platform]
+                        / "teamwork-collaborate"
+                    ).exists()
+                )
+
+                readiness = self.run_readiness(home)
+                self.assertNotEqual(readiness.returncode, 0, readiness.stdout)
+                self.assertIn("INSTALL_READY=no", readiness.stdout)
+                self.assertIn(f"{platform}-skill-content", readiness.stdout)
+
+    def test_unmarked_v46_grill_blocks_upgrade_and_is_preserved(self) -> None:
+        for platform in ("codex", "cursor", "claude"):
+            with self.subTest(platform=platform):
+                home = self.base / f"unmarked-v46-grill-{platform}"
+                skill = self.install_exact_v46_grill(
+                    home, platform, ownership_markers=False
+                )
+                before = skill.read_bytes()
+                args = (
+                    ("--no-codex-routing", "codex")
+                    if platform == "codex"
+                    else (platform,)
+                )
+
+                result = self.run_install(*args, home=home)
+
+                self.assertNotEqual(result.returncode, 0, result.stdout.decode())
+                self.assertIn(
+                    "without Teamwork ownership markers", result.stdout.decode()
+                )
+                self.assertEqual(before, skill.read_bytes())
 
     def test_exact_v342_generic_router_is_removed(self) -> None:
         home = self.base / "exact-legacy-router-home"
@@ -386,6 +557,88 @@ class InstallCliCompatibilityTests(unittest.TestCase):
             (legacy / "SKILL.md").read_text(encoding="utf-8"),
             "---\nname: teamwork-design\ndescription: Use when designing.\n---\n",
         )
+
+    def test_exact_owned_v5_retired_skills_are_removed(self) -> None:
+        for retired in ("grill-me", "teamwork-design", "using-teamwork", "teamwork-execute", "teamwork"):
+            with self.subTest(retired=retired):
+                home = self.base / f"exact-retired-{retired}"
+                skill_root = self.install_retired_from_fixture(home, "codex", retired)
+
+                result = self.run_install("--no-codex-routing", "codex", home=home)
+
+                self.assertEqual(result.returncode, 0, result.stdout.decode())
+                self.assertFalse(skill_root.exists())
+                self.assertTrue(
+                    (home / ".agents/skills/teamwork-collaborate/SKILL.md").is_file()
+                )
+
+    def test_teamwork_discuss_has_no_retired_deletion_authority(self) -> None:
+        home = self.base / "no-source-discuss"
+        skill = home / ".agents/skills/teamwork-discuss/SKILL.md"
+        skill.parent.mkdir(parents=True)
+        skill.write_text(
+            "---\nname: teamwork-discuss\ndescription: Use when discussing.\n---\n",
+            encoding="utf-8",
+        )
+        root = home / ".agents/skills"
+        (root / ".teamwork-version").write_text("4.6.0\n", encoding="utf-8")
+        (root / ".teamwork-profile").write_text("performance-first\n", encoding="utf-8")
+        before = skill.read_bytes()
+
+        result = self.run_install("--no-codex-routing", "codex", home=home)
+
+        self.assertNotEqual(result.returncode, 0, result.stdout.decode())
+        self.assertIn(
+            "No frozen Teamwork-owned manifest is allowed for teamwork-discuss",
+            result.stdout.decode(),
+        )
+        self.assertEqual(skill.read_bytes(), before)
+        self.assertFalse((root / "teamwork-collaborate").exists())
+
+    def test_tampered_retired_fixture_copy_blocks_and_preserves_tree(self) -> None:
+        cases = (
+            ("teamwork-design", "content"),
+            ("using-teamwork", "mode"),
+            ("teamwork", "extra"),
+        )
+        for retired, tamper in cases:
+            with self.subTest(retired=retired, tamper=tamper):
+                home = self.base / f"tampered-{retired}-{tamper}"
+                skill_root = self.install_retired_from_fixture(home, "codex", retired)
+                if tamper == "content":
+                    target = skill_root / "SKILL.md"
+                    target.write_bytes(target.read_bytes() + b"user change\n")
+                elif tamper == "mode":
+                    (skill_root / "SKILL.md").chmod(0o600)
+                else:
+                    (skill_root / "user-notes.md").write_text(
+                        "preserve\n", encoding="utf-8"
+                    )
+                before = {
+                    path.relative_to(home).as_posix(): (
+                        path.stat().st_mode & 0o777,
+                        path.read_bytes(),
+                    )
+                    for path in home.rglob("*")
+                    if path.is_file()
+                }
+
+                result = self.run_install("--no-codex-routing", "codex", home=home)
+
+                self.assertNotEqual(result.returncode, 0, result.stdout.decode())
+                self.assertIn(f"unknown files in {retired}", result.stdout.decode())
+                after = {
+                    path.relative_to(home).as_posix(): (
+                        path.stat().st_mode & 0o777,
+                        path.read_bytes(),
+                    )
+                    for path in home.rglob("*")
+                    if path.is_file()
+                }
+                self.assertEqual(after, before)
+                self.assertFalse(
+                    (home / ".agents/skills/teamwork-collaborate").exists()
+                )
 
 
 if __name__ == "__main__":

@@ -7,8 +7,9 @@ description: Use when the user asks to initialize, audit, repair, migrate, or sl
 
 Make project-local agent context accurate, small, and maintainable. This skill
 owns only the named project; it never refreshes global Teamwork installations.
-Ordinary natural discussion or brainstorming does not activate Init unless the
-existing project-local outcome trigger applies.
+Collaborate owns natural dialogue, brainstorming, grilling, and decision
+convergence; Init activates only when the requested outcome is an actual
+project-local context, memory, routing, or CodeGraph setup change.
 
 ## Authority
 
@@ -56,8 +57,8 @@ promotes candidate material.
    special tools such as CodeGraph only when configured or requested, with use and
    unavailable behavior.
 5. For Teamwork memory, preserve ordinary retrieval metadata separately from the
-   single optional Grill record. Never rebuild a discussion transaction, hidden
-   lifecycle, or skill-reference graph.
+   single managed Collaborate record. Never rebuild a collaborate transaction,
+   hidden lifecycle, or skill-reference graph.
 6. Initialize a repository-local CodeGraph index only when the requested setup
    includes it and the CLI is available. Otherwise report the exact gap; do not
    install external tooling or change host configuration without separate

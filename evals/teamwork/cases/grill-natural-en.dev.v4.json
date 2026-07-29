@@ -5,11 +5,13 @@
       "language" : "en",
       "requires" : [
          "natural-activation",
-         "ordinary-no-write",
-         "major-change-auto-transaction",
+         "sustained-checkpoint",
+         "major-change-grill-mode",
          "recommend-first",
          "global-decision-map",
+         "global-to-detail-order",
          "bounded-independent-batch",
+         "one-checkpoint-per-answered-batch",
          "question-criticality",
          "transaction-owned-writer",
          "no-files-overrides",
@@ -19,10 +21,10 @@
    },
    "id" : "grill-natural-en",
    "must" : [
-      "keep ordinary question-first requests conversation-only; when the request is independently major, record state only through the managed inspect -> schema -> apply transaction, then show a global decision map and give a recommendation before a bounded independent batch of critical material questions while preserving authority"
+      "activate Collaborate from the natural sustained question-first request, select grill mode for the major API boundary, record state only through Writer and the managed collaborate-inspect -> collaborate-schema -> collaborate-apply transaction, then show a global goal/boundary/detail decision map and give a recommendation before a bounded independent batch of critical material questions; one answered batch becomes one semantic checkpoint update before dependent questions open, while authority remains unchanged"
    ],
    "must_not" : [
-      "directly write discussion Markdown, an index, or another file for an ordinary request; implement, edit, or treat an answer as implementation authority; no files must override any transaction"
+      "directly write collaboration Markdown, an index, a report, or another file; persist a transcript; implement, edit, or treat an answer as implementation authority; no files must override any transaction"
    ],
    "platforms" : [
       "codex",
@@ -36,7 +38,23 @@
       },
       {
          "class" : "skill",
-         "source" : "skills/grill-me/SKILL.md"
+         "source" : "skills/teamwork-collaborate/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-writer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/writer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/writer.md"
+      },
+      {
+         "class" : "artifact-engine",
+         "source" : "scripts/discussion-transaction.py"
       }
    ],
    "prompt" : "Ask me first and challenge my API compatibility assumptions before we act.",

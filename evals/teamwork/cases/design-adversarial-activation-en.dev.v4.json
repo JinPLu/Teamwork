@@ -40,11 +40,11 @@
     },
     {
       "class": "skill",
-      "source": "skills/teamwork-design/SKILL.md"
+      "source": "skills/teamwork-collaborate/SKILL.md"
     },
     {
       "class": "skill",
-      "source": "skills/teamwork-design/references/adversarial-search.md"
+      "source": "skills/teamwork-collaborate/references/adversarial-search.md"
     },
     {
       "class": "role-template",

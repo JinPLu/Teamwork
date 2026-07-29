@@ -1,0 +1,170 @@
+{
+  "candidate_id": "unified-teamwork-collaborate-migration-r19",
+  "default_owner": "FORBIDDEN",
+  "forbidden_prefixes": [
+    ".claude/"
+  ],
+  "owners": [
+    {
+      "exclude": [],
+      "exclude_prefixes": [],
+      "owner": "Capability",
+      "paths": [
+        "skills/teamwork-debug/SKILL.md",
+        "skills/teamwork-explore/SKILL.md",
+        "skills/teamwork-goal/SKILL.md",
+        "skills/teamwork-init/SKILL.md",
+        "skills/teamwork-plan/SKILL.md",
+        "skills/teamwork-research/SKILL.md",
+        "skills/teamwork-review/SKILL.md",
+        "skills/teamwork-update/SKILL.md"
+      ],
+      "prefixes": [
+        "skills/grill-me/",
+        "skills/teamwork-collaborate/",
+        "skills/teamwork-design/",
+        "skills/teamwork-discuss/"
+      ]
+    },
+    {
+      "exclude": [],
+      "exclude_prefixes": [],
+      "owner": "Collaborate transaction",
+      "paths": [
+        "scripts/discussion-transaction.py",
+        "scripts/init-project-files.py",
+        "scripts/validate_teamwork_index.py",
+        "scripts/tests/test_design_artifact_schema.py",
+        "scripts/tests/test_discussion_artifact_schema.py",
+        "scripts/tests/test_discussion_transaction.py",
+        "scripts/tests/test_init_project_files.py",
+        "scripts/tests/test_workflow_artifact_transaction.py"
+      ],
+      "prefixes": [
+        "templates/teamwork-memory/"
+      ]
+    },
+    {
+      "exclude": [],
+      "exclude_prefixes": [],
+      "owner": "Policy",
+      "paths": [
+        "scripts/install/policy.sh",
+        "scripts/tests/test_policy_contract_v4.py"
+      ],
+      "prefixes": []
+    },
+    {
+      "exclude": [],
+      "exclude_prefixes": [],
+      "owner": "Installer",
+      "paths": [
+        "install.sh",
+        "scripts/check-update.sh",
+        "scripts/install/common.sh",
+        "scripts/install/profiles.sh",
+        "scripts/install/targets.sh",
+        "scripts/tests/fixtures/retired-teamwork-skills-v5.json",
+        "scripts/tests/test_install_cli_compatibility.py",
+        "scripts/tests/test_v342_skill_upgrade.py"
+      ],
+      "prefixes": []
+    },
+    {
+      "exclude": [],
+      "exclude_prefixes": [],
+      "owner": "Role templates",
+      "paths": [],
+      "prefixes": [
+        "templates/claude-agents/",
+        "templates/codex-agents/",
+        "templates/cursor-agents/"
+      ]
+    },
+    {
+      "exclude": [],
+      "exclude_prefixes": [],
+      "owner": "Validation/build",
+      "paths": [
+        "scripts/build-codex-plugin.py",
+        "scripts/teamwork_tooling/instruction_footprint.py",
+        "scripts/tests/test_skill_topology_v4.py",
+        "scripts/tests/test_verify_no_hardlinked_git_objects.py",
+        "scripts/validate.sh",
+        "scripts/verify-no-hardlinked-git-objects.py"
+      ],
+      "prefixes": [
+        "scripts/validation/"
+      ]
+    },
+    {
+      "exclude": [],
+      "exclude_prefixes": [],
+      "owner": "Eval/live",
+      "paths": [
+        "scripts/codex_app_server_user_input.py",
+        "scripts/run-installed-claude-teamwork-live-eval.py",
+        "scripts/run-installed-cursor-teamwork-live-eval.py",
+        "scripts/run-installed-teamwork-live-eval.py",
+        "scripts/run-teamwork-live-eval.py",
+        "scripts/test_codex_app_server_user_input.py",
+        "scripts/test_eval_teamwork_mutations.py",
+        "scripts/test_live_eval_runner.py",
+        "scripts/tests/test_evaluation_contract_v4.py",
+        "scripts/tests/test_live_canary.py",
+        "scripts/tests/test_role_profiles_v4.py"
+      ],
+      "prefixes": [
+        "evals/teamwork/",
+        "scripts/teamwork_tooling/evaluation/"
+      ]
+    },
+    {
+      "exclude": [],
+      "exclude_prefixes": [],
+      "owner": "Candidate preflight",
+      "paths": [
+        "scripts/build-candidate-snapshot.py",
+        "scripts/candidate-path-preflight.py",
+        "scripts/tests/fixtures/v5-unified-collaborate-path-ownership.json",
+        "scripts/tests/test_build_candidate_snapshot.py",
+        "scripts/tests/test_candidate_path_preflight.py"
+      ],
+      "prefixes": []
+    },
+    {
+      "exclude": [],
+      "exclude_prefixes": [],
+      "owner": "Public docs/version/metadata",
+      "paths": [
+        ".agents/plugins/marketplace.json",
+        ".claude-plugin/plugin.json",
+        ".codex-plugin/plugin.json",
+        ".gitignore",
+        "AGENTS.md",
+        "CHANGELOG.en.md",
+        "CHANGELOG.md",
+        "CLAUDE.md",
+        "CODEX.md",
+        "CONTRIBUTING.md",
+        "CURSOR.md",
+        "README.en.md",
+        "README.md",
+        "VERSION",
+        "docs/architecture.md"
+      ],
+      "prefixes": []
+    },
+    {
+      "exclude": [],
+      "exclude_prefixes": [],
+      "owner": "Generated bundle",
+      "paths": [],
+      "prefixes": [
+        "plugins/teamwork-skill/"
+      ]
+    }
+  ],
+  "precedence": "forbidden-prefixes-then-exact-owner-then-default-forbidden",
+  "schema_version": 1
+}

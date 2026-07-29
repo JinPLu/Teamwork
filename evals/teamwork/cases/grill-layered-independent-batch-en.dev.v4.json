@@ -9,7 +9,23 @@
     },
     {
       "class": "skill",
-      "source": "skills/grill-me/SKILL.md"
+      "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/codex-agents/teamwork-writer.toml"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/cursor-agents/writer.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/claude-agents/writer.md"
+    },
+    {
+      "class": "artifact-engine",
+      "source": "scripts/discussion-transaction.py"
     }
   ],
   "platforms": [
@@ -24,8 +40,11 @@
     "language": "en",
     "requires": [
       "global-decision-map",
+      "global-to-detail-order",
       "bounded-independent-batch",
       "independent-questions",
+      "one-checkpoint-per-answered-batch",
+      "transaction-owned-writer",
       "recommend-first",
       "question-criticality",
       "closure-signal",
@@ -34,7 +53,7 @@
   },
   "must": [
     "show a global goal/boundary/detail decision map before detailed questions",
-    "ask the independent compatibility and telemetry decisions in one bounded batch with per-question recommendation, downside, criticality, blocked outcome, dependencies, and closure signal"
+    "ask the independent compatibility and telemetry decisions in one bounded batch with per-question recommendation, downside, criticality, blocked outcome, dependencies, and closure signal; after the answers, Writer applies one semantic checkpoint update for the whole batch"
   ],
   "must_not": [
     "ask more than three questions, split independent questions into unnecessary serial turns, implement, edit files, or treat answers as implementation authority"

@@ -1,7 +1,8 @@
 # Teamwork for Cursor
 
-Teamwork gives Cursor focused methods for external research, consequential
-design, unknown-cause debugging, planning, review, and long-running convergence.
+Teamwork gives Cursor focused methods for collaborative convergence, external
+research, unknown-cause debugging, planning, review, and
+long-running convergence.
 Cursor keeps local code inspection and clear authorized implementation on its
 native path and still controls edits, shell commands, MCP and browser tools,
 permissions, and model behavior. There is no generic Execute or router skill.
@@ -48,7 +49,8 @@ Ask for the outcome in ordinary language:
 
 - "Inspect this repository and implement the requested validation change."
 - "Research the current provider options from official sources and cite them."
-- "Design the migration boundary and recommend among the real alternatives."
+- "Brainstorm a lower-maintenance onboarding flow with me, then ask the most useful next question."
+- "Decide the migration boundary and recommend among the real alternatives."
 - "This public API could be synchronous, queued, or hybrid; a wrong choice forces costly client migration and the evidence conflicts. Help me decide."
 - "Diagnose why this test started failing, then verify the fix on the same path."
 - "Turn the selected direction into an executable plan, but do not edit files."
@@ -59,34 +61,37 @@ Cursor natively handles local repository, configuration, test, log, runtime,
 and artifact inspection. Clear authorized implementation also stays native.
 Use `teamwork-explore` for a distinct read-only local evidence question and
 `teamwork-research` only for external, current, multi-source, or citation-backed
-research. Use `teamwork-design` while the solution is unsettled and
-`teamwork-plan` only after the controlled Design records `acceptance: accepted`. Design uses Explorer only
-for an unresolved local constraint and sanitized Research only for a named
-external/current claim that can change the choice; it never runs both by default.
-It compares 2–3 real
+research. Use `teamwork-collaborate` for natural discussion, brainstorming,
+grill, stress-testing, question-before-action, or an unsettled consequential
+solution, and use `teamwork-plan` only after controlled Collaborate records
+`acceptance: accepted`. Collaborate uses Explorer only for an unresolved local
+constraint and sanitized Research only for a named external/current claim that
+can change the choice; it never runs both by default. It compares 2–3 real
 alternatives or records safe-path evidence, makes one challenge pass, and keeps
-the decision frontier finite: it shows the global map first, batches only
-independent material decisions, and asks dependent decisions in later turns. Its controlled transaction records
-`acceptance: pending`, `accepted`, or `blocked`; persistence is not acceptance,
-and only `accepted` is Plan-ready. Legacy v1/v2 records are read as `accepted`
-for compatibility. Independent Plan Review runs only on user request
-or a named material risk gate. It never silently
-authorizes implementation.
+the decision frontier finite. It contributes synthesis, candidate space, a
+decision map, or provisional recommendation before asking. Its controlled
+transaction records `acceptance: pending`, `accepted`, or `blocked`;
+persistence is not acceptance, and only `accepted` is Plan-ready. Legacy
+Discussion/Design records are read-only migration inputs. Independent Plan
+Review runs only on user request or a named material risk gate. It never
+silently authorizes implementation.
 
-Design chooses its search strategy from the request and evidence. It selects
-adversarial only when at least two viable directions remain and costly or
-irreversible error or conflicting evidence makes one challenge inadequate;
-“high-risk” or “complex” alone is insufficient. `adversarial` forces the method
-and `standard` disables it. The model states its reason and uses default `B=3`
-without another confirmation. Every hypothesis then receives two fresh isolated
-Designer critics and two new final auditors must both pass. Missing isolation,
-exhausted budget, or failed closure returns an incomplete result whose controlled
-state remains `pending` or becomes `blocked`; it cannot be `accepted` or
-Plan-ready. A passing chat recommendation is not Plan-ready. Only a controlled
-Design with `acceptance: accepted` may enter Plan.
+Collaborate chooses its search strategy from the request and evidence. It uses
+the internal read-only Designer for direction selection, a frozen-hypothesis
+challenge, or a search-closure audit. It selects adversarial only when at least
+two viable directions remain and costly or irreversible error or conflicting
+evidence makes one challenge inadequate; “high-risk” or “complex” alone is
+insufficient. `adversarial` forces the method and `standard` disables it. The
+model states its reason and uses default `B=3` without another confirmation.
+Every hypothesis then receives two fresh isolated Designer critics and two new
+final auditors must both pass. Missing isolation, exhausted budget, or failed
+closure returns an incomplete result whose controlled state remains `pending` or
+becomes `blocked`; it cannot be `accepted` or Plan-ready. A passing chat
+recommendation is not Plan-ready. Only a controlled Collaborate state with
+`acceptance: accepted` may enter Plan.
 
 Debug starts from a real failure and reproduction. Plan turns an accepted
-Design into owned executable steps; Review does not edit the candidate and returns
+Collaborate handoff into owned executable steps; Review does not edit the candidate and returns
 `ACCEPT`, `REVISE`, or `BLOCKED`; Goal persists an explicit objective, success
 signal, scope, budget, and attempts before it iterates. Clear authorized code
 work remains result-first: change the canonical owner, reuse existing
@@ -100,24 +105,33 @@ Natural-language skill selection depends on Cursor and the active model. Name a
 skill when exact selection matters. Accepting a design or plan does not grant
 permission to edit files or change external state.
 
-In an initialized writable project, named Teamwork workflows persist reusable
-artifacts by default; `no files`, off-record, read-only, or no-write overrides
-that default. Ordinary clarification or chat, one-off native work, and clear
-code implementation requests do not force an extra workflow artifact. Grill,
-Design, and Goal use specialized transactions. Research, Debug, Plan, Review,
-and mutating Init/Update use the generic artifact transaction. Explore creates
-no standalone report; its evidence is folded into the consuming artifact or
-answer.
+Collaborate selects `dialogue`, `brainstorm`, or `grill`, contributes before
+asking, and never asks the user to name a mode. Open questions stay in prose; a
+host-native choice surface is appropriate only for a genuine finite decision
+with two or three mutually exclusive options. Grill strictly follows the
+complete global -> boundary -> detail map, batches at most three independent
+decisions, serializes dependent decisions, and applies one semantic Collaborate
+update per answered batch.
 
-An ordinary "ask me first" request stays in the conversation and does not
-trigger Grill or persistence. Once Grill is named or entered, an existing Grill
-is resumed, or an independently major public/installable, migration/release,
-permission, security, data, destructive, or cross-platform boundary invokes it,
-the specialized transaction updates only `docs/teamwork/discussion/current.md`
-by default. Within one scope, only creation, semantic decision/frontier
-change, and close/supersede persist; unchanged state is a no-op. New records use
-schema v2 `frontier` / `current_batch` state. `no files`, off-record, read-only,
-or no-write keeps it in the conversation.
+In an initialized writable project, named Teamwork workflows persist reusable
+checkpoints and results by default; `no files`, off-record, read-only, or
+no-write overrides that default. One-shot explanations, casual fact questions,
+and tiny native work create no standalone artifact. Collaborate and Goal use
+specialized transactions. Research, Debug, Plan, Plan Review, Review,
+mutating Init/Update, and a terminal execution handoff with an explicit consumer
+and no active Goal use the generic artifact transaction. An active Goal
+suppresses duplicate execution artifacts. Explore creates no standalone report;
+its evidence is folded into the consuming artifact or answer.
+
+Sustained Collaborate intent plus a substantive synthesis, candidate space, or
+decision map and an unresolved question or unaccepted direction defaults to one
+semantic checkpoint in `docs/teamwork/collaborate/current.md`. New records use
+Collaborate schema v1: dialogue records synthesis and tensions, brainstorm adds
+candidate space, and grill records the finite frontier/current_batch. Frozen
+legacy Discussion and Design records remain readable only as migration inputs
+and migrate only on semantic mutation. Unchanged state is a no-op. Collaborate
+never stores a transcript or substitutes a report/conclusion; `no files`,
+off-record, read-only, or no-write keeps it in the conversation.
 
 ## Initialize a project
 
@@ -140,9 +154,10 @@ The installer adds nine Cursor roles: Researcher, Explorer, Debugger, Designer,
 Planner, Worker, Writer, Plan Reviewer, and Reviewer. Teamwork may use them when
 work splits into genuinely independent scopes or standalone document writing.
 Writer uses Cursor's simple `composer-2.5-fast` profile and a frozen bounded
-brief for standalone docs and runtime artifacts. It may draft, rewrite,
-organize, summarize, translate, and polish, but must not research, invent or
-change facts, citations, decisions, authority, status, or acceptance. Code
+packet for standalone docs and runtime artifacts. It may draft, organize,
+summarize, translate, and polish, but must not research, invent, paraphrase, or
+change frozen facts, citations, decisions, authority, status, or acceptance;
+missing route/readback fails closed as unsaved. Code
 comments, docstrings, tests, schemas, manifests, machine config, inline config
 text, and other code-coupled wording stay with implementation owners. The main agent owns scope, integration,
 and the final result; routine work does not require delegation.

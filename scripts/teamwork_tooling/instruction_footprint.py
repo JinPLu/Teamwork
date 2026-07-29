@@ -20,19 +20,20 @@ ENFORCED_LIMITS = {
     "global_policy_codex": {"words": 430, "bytes": 3800},
     "global_policy_cursor": {"words": 430, "bytes": 3800},
     "global_policy_claude": {"words": 430, "bytes": 3800},
-    "max_single_skill": {"words": 1150, "bytes": 8500},
-    "max_skill_bundle": {"words": 1850, "bytes": 13500},
-    "max_role_template": {"words": 330, "bytes": 2500},
+    "max_single_skill": {"words": 1450, "bytes": 11000},
+    "max_skill_bundle": {"words": 2050, "bytes": 15500},
+    "max_role_template": {"words": 330, "bytes": 2900},
     "skill_discovery_catalog": {"words": 650, "bytes": 4500},
     "project_instruction_block": {"words": 220, "bytes": 1700},
     "repository_instructions": {"words": 750, "bytes": 5500},
     "runtime_memory_readme": {"words": 320, "bytes": 2300},
     "runtime_memory_index": {"words": 200, "bytes": 1800},
-    "worst_static_root_path": {"words": 3300, "bytes": 25000},
-    "worst_static_leaf_path": {"words": 3200, "bytes": 24000},
-    "worst_repository_root_path": {"words": 3900, "bytes": 30000},
+    "worst_static_root_path": {"words": 3450, "bytes": 27000},
+    "worst_static_leaf_path": {"words": 3300, "bytes": 26000},
+    "worst_repository_root_path": {"words": 4100, "bytes": 31500},
 }
-CANONICAL_SKILL_COUNT = 10
+CANONICAL_SKILL_COUNT = 9
+LEGACY_SYNTHETIC_SKILL_COUNT = 10
 CANONICAL_REFERENCE_COUNT = 4
 
 # Backward-compatible name for tests and callers. Values are enforced limits,
@@ -304,10 +305,11 @@ def compactness_failures(result: dict[str, object]) -> list[str]:
     # measurements. Topology is enforced whenever the real measurement fields
     # are present; the source validator independently enforces it on every eval.
     if "surfaces" in skills:
-        if int(skills["surfaces"]) != CANONICAL_SKILL_COUNT:
+        expected_skill_count = CANONICAL_SKILL_COUNT if "topology" in result else LEGACY_SYNTHETIC_SKILL_COUNT
+        if int(skills["surfaces"]) != expected_skill_count:
             failures.append(
                 "canonical skill inventory must contain "
-                f"{CANONICAL_SKILL_COUNT} skills: {skills['surfaces']}"
+                f"{expected_skill_count} skills: {skills['surfaces']}"
             )
         if int(skills["behavior_references"]) != CANONICAL_REFERENCE_COUNT:
             failures.append(

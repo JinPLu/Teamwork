@@ -202,6 +202,8 @@ class RoleProfilesV4Test(unittest.TestCase):
                 "current frozen brief through the exact route",
                 "workflow artifacts only via transactions",
                 "artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply",
+                "collaborate-inspect -> collaborate-schema <operation> -> collaborate-apply -> collaborate-inspect/readback",
+                "legacy Discussion/Design=read-only sources, no write route",
                 "transaction inspect/CAS/journal/atomic apply/readback and workflow artifact",
                 "transaction-derived destination",
                 "transaction gate",
@@ -509,7 +511,7 @@ class RoleProfilesV4Test(unittest.TestCase):
                 "type": "item.completed",
                 "item": {
                     "type": "command_execution",
-                    "command": "/bin/zsh -lc \"sed -n '1,240p' /tmp/home/.agents/skills/teamwork-design/SKILL.md\"",
+                    "command": "/bin/zsh -lc \"sed -n '1,240p' /tmp/home/.agents/skills/teamwork-collaborate/SKILL.md\"",
                 },
             },
             {
@@ -530,13 +532,13 @@ class RoleProfilesV4Test(unittest.TestCase):
         observations = host_matrix._trajectory_observations(
             host="codex",
             events=events,
-            case={"selected_skill": "teamwork-design", "authority": "read-only"},
+            case={"selected_skill": "teamwork-collaborate", "authority": "read-only"},
             parent_model="gpt-5.5",
             parent_effort="low",
         )
 
-        self.assertEqual(["teamwork-design", "teamwork-plan", "teamwork-review"], host_matrix.observed_skills(events))
-        self.assertEqual("teamwork-design", observations["selected_skill"])
+        self.assertEqual(["teamwork-collaborate", "teamwork-plan", "teamwork-review"], host_matrix.observed_skills(events))
+        self.assertEqual("teamwork-collaborate", observations["selected_skill"])
         self.assertEqual("gpt-5.5", observations["actual_model"])
         self.assertEqual("low", observations["actual_effort"])
         self.assertEqual("read-only", observations["authority"])

@@ -176,7 +176,10 @@ grep_absent 'teamwork-minimality\|minimality-mode\|minimality_mode' \
   "$ROOT/skills" "$ROOT/templates" "$ROOT/install.sh" "$ROOT/scripts/install"
 grep_absent 'teamwork-quality' "Teamwork must not add a separate quality stage" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/install.sh" "$ROOT/scripts/install"
 grep_absent 'teamwork-deslop' "Teamwork must not add a separate deslop stage" "$ROOT/skills" "$ROOT/CODEX.md" "$ROOT/CURSOR.md" "$ROOT/CLAUDE.md" "$ROOT/install.sh" "$ROOT/scripts/install"
-[[ -f "$ROOT/skills/grill-me/SKILL.md" ]] || fail "question-first override must have one public grill-me skill"
+[[ -f "$ROOT/skills/teamwork-collaborate/SKILL.md" ]] || fail "Collaborate must have one public teamwork-collaborate skill"
+[[ ! -e "$ROOT/skills/teamwork-discuss" ]] || fail "retired teamwork-discuss must not remain in the public skill inventory"
+[[ ! -e "$ROOT/skills/teamwork-design" ]] || fail "retired teamwork-design must not remain in the public skill inventory"
+[[ ! -e "$ROOT/skills/grill-me" ]] || fail "retired grill-me must not remain in the public skill inventory"
 [[ ! -e "$ROOT/skills/teamwork-grill" ]] || fail "question-first override must not become a peer teamwork-grill skill"
 grep_absent 'teamwork-grill)' "install skill list must not add a peer teamwork-grill skill" "$ROOT/install.sh" "$ROOT/scripts/install"
 
@@ -327,7 +330,8 @@ done
 readonly_legacy_home="$tmp/home-codex-readonly-legacy"
 readonly_legacy_root="$readonly_legacy_home/.codex/skills"
 mkdir -p "$readonly_legacy_root"
-cp -R "$ROOT/skills/grill-me" "$readonly_legacy_root/grill-me"
+mkdir -p "$readonly_legacy_root/teamwork-discuss"
+printf '%s\n' '---' 'name: teamwork-discuss' 'description: Use when retired fixture probe.' '---' > "$readonly_legacy_root/teamwork-discuss/SKILL.md"
 printf '%s\n' current > "$readonly_legacy_root/.teamwork-version"
 printf '%s\n' performance-first > "$readonly_legacy_root/.teamwork-profile"
 chmod a-w "$readonly_legacy_root"
@@ -338,9 +342,9 @@ chmod u+w "$readonly_legacy_root"
 if [[ "$readonly_legacy_rc" -eq 0 ]]; then
   fail "Codex install must reject a legacy root that cannot be cleaned"
 fi
-[[ -f "$readonly_legacy_root/grill-me/SKILL.md" ]] \
+[[ -f "$readonly_legacy_root/teamwork-discuss/SKILL.md" ]] \
   || fail "failed legacy cleanup preflight must preserve the legacy skill"
-[[ ! -e "$readonly_legacy_home/.agents/skills/grill-me" ]] \
+[[ ! -e "$readonly_legacy_home/.agents/skills/teamwork-discuss" ]] \
   || fail "failed legacy cleanup preflight must not create a duplicate new-root skill"
 [[ ! -e "$readonly_legacy_home/.codex/config.toml" ]] \
   || fail "legacy cleanup preflight must fail before routing mutation"
@@ -348,48 +352,48 @@ fi
 custom_codex_home="$tmp/home-codex-custom-root"
 custom_codex_runtime="$tmp/custom-codex-runtime"
 mkdir -p "$custom_codex_runtime/skills"
-cp -R "$ROOT/skills/grill-me" "$custom_codex_runtime/skills/grill-me"
+cp -R "$ROOT/skills/teamwork-collaborate" "$custom_codex_runtime/skills/teamwork-collaborate"
 printf '%s\n' current > "$custom_codex_runtime/skills/.teamwork-version"
 printf '%s\n' performance-first > "$custom_codex_runtime/skills/.teamwork-profile"
 HOME="$custom_codex_home" CODEX_HOME="$custom_codex_runtime" \
   "$ROOT/install.sh" codex >/dev/null
-[[ -f "$custom_codex_home/.agents/skills/grill-me/SKILL.md" ]] \
+[[ -f "$custom_codex_home/.agents/skills/teamwork-collaborate/SKILL.md" ]] \
   || fail "Codex install must keep the supported skill root independent of CODEX_HOME"
-[[ ! -e "$custom_codex_runtime/skills/grill-me" ]] \
+[[ ! -e "$custom_codex_runtime/skills/teamwork-collaborate" ]] \
   || fail "Codex install must migrate an owned legacy CODEX_HOME skill"
 
 unknown_legacy_home="$tmp/home-codex-unknown-legacy"
 mkdir -p "$unknown_legacy_home/.codex/skills"
-cp -R "$ROOT/skills/grill-me" "$unknown_legacy_home/.codex/skills/grill-me"
+cp -R "$ROOT/skills/teamwork-collaborate" "$unknown_legacy_home/.codex/skills/teamwork-collaborate"
 if HOME="$unknown_legacy_home" "$ROOT/install.sh" codex >/dev/null 2>&1; then
   fail "Codex install must reject an unmarked legacy same-name skill"
 fi
-[[ -f "$unknown_legacy_home/.codex/skills/grill-me/SKILL.md" ]] \
+[[ -f "$unknown_legacy_home/.codex/skills/teamwork-collaborate/SKILL.md" ]] \
   || fail "rejected legacy migration must preserve the existing skill"
-[[ ! -e "$unknown_legacy_home/.agents/skills/grill-me" ]] \
+[[ ! -e "$unknown_legacy_home/.agents/skills/teamwork-collaborate" ]] \
   || fail "rejected legacy migration must not create a duplicate skill"
 [[ ! -e "$unknown_legacy_home/.codex/config.toml" ]] \
   || fail "legacy migration preflight must fail before routing mutation"
 
 unknown_inventory_home="$tmp/home-codex-unknown-inventory"
 mkdir -p "$unknown_inventory_home/.codex/skills"
-cp -R "$ROOT/skills/grill-me" "$unknown_inventory_home/.codex/skills/grill-me"
+cp -R "$ROOT/skills/teamwork-collaborate" "$unknown_inventory_home/.codex/skills/teamwork-collaborate"
 printf '%s\n' current > "$unknown_inventory_home/.codex/skills/.teamwork-version"
 printf '%s\n' performance-first > "$unknown_inventory_home/.codex/skills/.teamwork-profile"
-printf '%s\n' 'user file' > "$unknown_inventory_home/.codex/skills/grill-me/notes.md"
+printf '%s\n' 'user file' > "$unknown_inventory_home/.codex/skills/teamwork-collaborate/notes.md"
 if HOME="$unknown_inventory_home" "$ROOT/install.sh" codex >/dev/null 2>&1; then
   fail "Codex install must reject unknown files inside a legacy Teamwork skill"
 fi
-[[ -f "$unknown_inventory_home/.codex/skills/grill-me/notes.md" ]] \
+[[ -f "$unknown_inventory_home/.codex/skills/teamwork-collaborate/notes.md" ]] \
   || fail "rejected unknown legacy inventory must remain untouched"
 
 unknown_destination_home="$tmp/home-codex-unknown-destination"
 mkdir -p "$unknown_destination_home/.agents/skills"
-cp -R "$ROOT/skills/grill-me" "$unknown_destination_home/.agents/skills/grill-me"
+cp -R "$ROOT/skills/teamwork-collaborate" "$unknown_destination_home/.agents/skills/teamwork-collaborate"
 if HOME="$unknown_destination_home" "$ROOT/install.sh" codex >/dev/null 2>&1; then
   fail "Codex install must reject an unmarked same-name skill at the supported root"
 fi
-[[ -f "$unknown_destination_home/.agents/skills/grill-me/SKILL.md" ]] \
+[[ -f "$unknown_destination_home/.agents/skills/teamwork-collaborate/SKILL.md" ]] \
   || fail "rejected supported-root collision must remain untouched"
 [[ ! -e "$unknown_destination_home/.codex/config.toml" ]] \
   || fail "supported-root preflight must fail before routing mutation"
@@ -625,39 +629,39 @@ HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-routing-ready.out"
 grep_required '^CODEX_ROUTING=ready$' "$tmp/global-routing-ready.out" \
   "user refresh must repair Codex routing readiness"
-printf '\n# stale grill-me skill fixture\n' >> "$tmp/home-project-update/.agents/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-grill-skill-stale.out" || true
-grep_required '^INSTALL_READY=no$' "$tmp/global-grill-skill-stale.out" \
-  "check-update readiness must fail when installed grill-me content drifts"
-grep_required 'codex-skill-content' "$tmp/global-grill-skill-stale.out" \
+printf '\n# stale teamwork-collaborate skill fixture\n' >> "$tmp/home-project-update/.agents/skills/teamwork-collaborate/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-collaborate-skill-stale.out" || true
+grep_required '^INSTALL_READY=no$' "$tmp/global-collaborate-skill-stale.out" \
+  "check-update readiness must fail when installed teamwork-collaborate content drifts"
+grep_required 'codex-skill-content' "$tmp/global-collaborate-skill-stale.out" \
   "check-update readiness must identify global Codex skill content drift"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
-rm "$tmp/home-project-update/.agents/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-codex-grill-missing.out" || true
-grep_required 'codex-skills' "$tmp/global-codex-grill-missing.out" \
-  "check-update readiness must identify missing Codex grill-me content"
+rm "$tmp/home-project-update/.agents/skills/teamwork-collaborate/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-codex-collaborate-missing.out" || true
+grep_required 'codex-skills' "$tmp/global-codex-collaborate-missing.out" \
+  "check-update readiness must identify missing Codex teamwork-collaborate content"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
-rm "$tmp/home-project-update/.claude/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-grill-skill-missing.out" || true
-grep_required '^INSTALL_READY=no$' "$tmp/global-grill-skill-missing.out" \
-  "check-update readiness must fail when installed grill-me is missing"
-grep_required 'claude-skills' "$tmp/global-grill-skill-missing.out" \
+rm "$tmp/home-project-update/.claude/skills/teamwork-collaborate/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-collaborate-skill-missing.out" || true
+grep_required '^INSTALL_READY=no$' "$tmp/global-collaborate-skill-missing.out" \
+  "check-update readiness must fail when installed teamwork-collaborate is missing"
+grep_required 'claude-skills' "$tmp/global-collaborate-skill-missing.out" \
   "check-update readiness must identify a missing global Claude skill"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
-printf '\n# stale Claude grill-me fixture\n' >> "$tmp/home-project-update/.claude/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-claude-grill-stale.out" || true
-grep_required 'claude-skill-content' "$tmp/global-claude-grill-stale.out" \
-  "check-update readiness must identify changed Claude grill-me content"
+printf '\n# stale Claude teamwork-collaborate fixture\n' >> "$tmp/home-project-update/.claude/skills/teamwork-collaborate/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-claude-collaborate-stale.out" || true
+grep_required 'claude-skill-content' "$tmp/global-claude-collaborate-stale.out" \
+  "check-update readiness must identify changed Claude teamwork-collaborate content"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
-printf '\n# stale Cursor grill-me fixture\n' >> "$tmp/home-project-update/.cursor/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-cursor-grill-stale.out" || true
-grep_required 'cursor-skill-content' "$tmp/global-cursor-grill-stale.out" \
-  "check-update readiness must identify changed Cursor grill-me content"
+printf '\n# stale Cursor teamwork-collaborate fixture\n' >> "$tmp/home-project-update/.cursor/skills/teamwork-collaborate/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-cursor-collaborate-stale.out" || true
+grep_required 'cursor-skill-content' "$tmp/global-cursor-collaborate-stale.out" \
+  "check-update readiness must identify changed Cursor teamwork-collaborate content"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
-rm "$tmp/home-project-update/.cursor/skills/grill-me/SKILL.md"
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-cursor-grill-missing.out" || true
-grep_required 'cursor-skills' "$tmp/global-cursor-grill-missing.out" \
-  "check-update readiness must identify missing Cursor grill-me content"
+rm "$tmp/home-project-update/.cursor/skills/teamwork-collaborate/SKILL.md"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-cursor-collaborate-missing.out" || true
+grep_required 'cursor-skills' "$tmp/global-cursor-collaborate-missing.out" \
+  "check-update readiness must identify missing Cursor teamwork-collaborate content"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
 printf '\n# stale global agent drift fixture\n' >> "$tmp/home-project-update/.codex/agents/teamwork-worker.toml"
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --no-fetch > "$tmp/global-agent-stale-report.out" || true
@@ -705,7 +709,7 @@ HOME="$tmp/home-link" "$ROOT/install.sh" --link codex >/dev/null
 for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/home-link/.agents/skills/$skill" ]] || fail "link install must symlink $skill directory"
 done
-check_skill_link "$tmp/home-link/.agents/skills/teamwork-design" "teamwork-design" "Codex"
+check_skill_link "$tmp/home-link/.agents/skills/teamwork-collaborate" "teamwork-collaborate" "Codex"
 
 HOME="$tmp/home-cursor" "$ROOT/install.sh" cursor >/dev/null
 for skill in "${SKILLS[@]}"; do
@@ -930,7 +934,7 @@ HOME="$tmp/home-claude-link" "$ROOT/install.sh" --link claude >/dev/null
 for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/home-claude-link/.claude/skills/$skill" ]] || fail "Claude Code link install must symlink $skill directory"
 done
-check_skill_link "$tmp/home-claude-link/.claude/skills/teamwork-design" "teamwork-design" "Claude Code"
+check_skill_link "$tmp/home-claude-link/.claude/skills/teamwork-collaborate" "teamwork-collaborate" "Claude Code"
 
 HOME="$tmp/home-claude-agents-link" "$ROOT/install.sh" --link claude-agents >/dev/null
 for agent in "${CLAUDE_AGENTS[@]}"; do
@@ -946,9 +950,9 @@ for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/home-all/.cursor/skills/$skill" ]] || fail "all install must link Cursor skill $skill"
   [[ -L "$tmp/home-all/.claude/skills/$skill" ]] || fail "all install must link Claude skill $skill"
 done
-check_skill_link "$tmp/home-all/.agents/skills/teamwork-design" "teamwork-design" "Codex all"
-check_skill_link "$tmp/home-all/.cursor/skills/teamwork-design" "teamwork-design" "Cursor all"
-check_skill_link "$tmp/home-all/.claude/skills/teamwork-design" "teamwork-design" "Claude Code all"
+check_skill_link "$tmp/home-all/.agents/skills/teamwork-collaborate" "teamwork-collaborate" "Codex all"
+check_skill_link "$tmp/home-all/.cursor/skills/teamwork-collaborate" "teamwork-collaborate" "Cursor all"
+check_skill_link "$tmp/home-all/.claude/skills/teamwork-collaborate" "teamwork-collaborate" "Claude Code all"
 for agent in "${CODEX_AGENTS[@]}"; do
   [[ -L "$tmp/home-all/.codex/agents/$agent.toml" ]] || fail "all install must link Codex agent $agent"
 done
@@ -980,9 +984,11 @@ grep_required 'docs/teamwork/README.md' "$init_root/AGENTS.md" \
 grep_required '# TEAMWORK_LOCAL_START' "$init_root/.gitignore" \
   "init-project must write local .gitignore block"
 grep_required '^docs/teamwork/discussion/$' "$init_root/.gitignore" \
-  "init-project must ignore local discussion artifacts"
+  "init-project must ignore historical local discussion artifacts"
 grep_required '^docs/teamwork/design/$' "$init_root/.gitignore" \
-  "init-project must ignore local design artifacts"
+  "init-project must ignore historical local design artifacts"
+grep_required '^docs/teamwork/collaborate/$' "$init_root/.gitignore" \
+  "init-project must ignore local Collaborate artifacts"
 [[ ! -e "$init_root/.cursor" ]] \
   || fail "default init-project must not create project .cursor surfaces"
 for removed_ignore in '^\.agents/$' '^\.codex/$' '^\.cursor/$' '^\.claude/$'; do

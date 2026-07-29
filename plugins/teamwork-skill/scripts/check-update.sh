@@ -15,20 +15,23 @@ PLUGIN_ACTIVATION_PATH="$CODEX_HOME_DIR/teamwork/plugin-activation.json"
 STATUS_PROFILE_OVERRIDE=""
 
 SKILLS=(
-  grill-me
+  teamwork-collaborate
   teamwork-debug
-  teamwork-design
   teamwork-explore
-  teamwork-init
   teamwork-goal
-  teamwork-research
+  teamwork-init
   teamwork-plan
+  teamwork-research
   teamwork-review
   teamwork-update
 )
 RETIRED_SKILLS=(
+  grill-me
+  teamwork-design
+  teamwork-discuss
   using-teamwork
   teamwork-execute
+  teamwork
 )
 CODEX_AGENTS=(
   teamwork-researcher

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate ordinary Teamwork memory without owning Grill discussion state."""
+"""Validate ordinary Teamwork memory without owning Discuss checkpoint state."""
 
 from __future__ import annotations
 
@@ -35,9 +35,10 @@ AUTHORITIES = {"canonical", "active-summary", "supporting", "candidate", "histor
 ACTIVE_STATUSES = {"active", "accepted"}
 ACTIVE_AUTHORITIES = {"canonical", "active-summary", "supporting"}
 ACTIVE_POINTER_KEYS = ("current", "design", "plan", "progress", "goal", "report")
+COLLABORATE_CURRENT_PATH = "docs/teamwork/collaborate/current.md"
 # W4 may retain a nullable compatibility slot while it owns the discussion
 # lifecycle. A non-null pointer is legacy migration input, not post-v4 truth.
-ALLOWED_ACTIVE_KEYS = {*ACTIVE_POINTER_KEYS, "results", "discussion"}
+ALLOWED_ACTIVE_KEYS = {*ACTIVE_POINTER_KEYS, "results", "collaborate", "discussion"}
 CANONICAL_CURRENT_PATH = "docs/teamwork/current.md"
 
 
@@ -171,6 +172,45 @@ def validate_string_list(value: object, label: str) -> None:
     require(len(value) == len(set(value)), f"{label} must not contain duplicates")
 
 
+def validate_sha256(value: object, label: str) -> None:
+    require(
+        isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None,
+        f"{label} must be lowercase sha256 hex",
+    )
+
+
+def validate_utc_timestamp(value: object, label: str) -> None:
+    require(
+        isinstance(value, str)
+        and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value) is not None,
+        f"{label} must be UTC timestamp YYYY-MM-DDTHH:MM:SSZ",
+    )
+
+
+def validate_collaborate_consumed_sources(value: object) -> None:
+    require(isinstance(value, list), "collaborate_consumed_sources must be an array")
+    assert isinstance(value, list)
+    seen: set[tuple[str, str, str]] = set()
+    for position, row in enumerate(value):
+        require(isinstance(row, dict), f"collaborate_consumed_sources[{position}] must be an object")
+        assert isinstance(row, dict)
+        require(
+            set(row) == {"consumed_at", "consumed_by_decision_id", "kind", "path", "sha256"},
+            f"collaborate_consumed_sources[{position}] has invalid fields",
+        )
+        validate_utc_timestamp(row["consumed_at"], f"collaborate_consumed_sources[{position}].consumed_at")
+        require(
+            isinstance(row["consumed_by_decision_id"], str) and row["consumed_by_decision_id"].strip(),
+            f"collaborate_consumed_sources[{position}].consumed_by_decision_id must be text",
+        )
+        require(row["kind"] in {"design", "discussion"}, f"collaborate_consumed_sources[{position}].kind is invalid")
+        validate_memory_path(row["path"], f"collaborate_consumed_sources[{position}].path")
+        validate_sha256(row["sha256"], f"collaborate_consumed_sources[{position}].sha256")
+        key = (str(row["kind"]), str(row["path"]), str(row["sha256"]))
+        require(key not in seen, "collaborate_consumed_sources must not duplicate source digests")
+        seen.add(key)
+
+
 def validate_entry(entry: object, index: int, *, migration_read: bool = False) -> dict:
     require(isinstance(entry, dict), f"entries[{index}] must be an object")
     assert isinstance(entry, dict)
@@ -237,7 +277,7 @@ def validate_active(
             validate_memory_path(value, f"active.{key}")
             require(
                 value != "docs/teamwork/discussion/current.md",
-                f"active.{key} must not point at Grill discussion state",
+                f"active.{key} must not point at Discuss checkpoint state",
             )
     legacy_discussion = active.get("discussion")
     require(
@@ -246,6 +286,11 @@ def validate_active(
     )
     if isinstance(legacy_discussion, str):
         validate_memory_path(legacy_discussion, "legacy active.discussion")
+    collaborate = active.get("collaborate")
+    require(
+        collaborate is None or collaborate == COLLABORATE_CURRENT_PATH,
+        f"active.collaborate must be null or {COLLABORATE_CURRENT_PATH}",
+    )
 
     by_path: dict[str, list[dict]] = {}
     for entry in entries:
@@ -255,15 +300,27 @@ def validate_active(
         for key in ACTIVE_POINTER_KEYS
         if isinstance((value := active.get(key)), str)
     ]
+    if isinstance(active.get("collaborate"), str):
+        pointers.append(("active.collaborate", str(active["collaborate"])))
     pointers.extend((f"active.results[{position}]", value) for position, value in enumerate(active["results"]))
     for label, path in pointers:
         matching = [
             entry
             for entry in by_path.get(path, [])
-            if entry["kind"] != "discussion"
-            and entry["status"] in ACTIVE_STATUSES
-            and entry["currentness"] == "current"
-            and entry["authority"] in ACTIVE_AUTHORITIES
+            if (
+                entry["kind"] != "discussion"
+                and entry["status"] in ACTIVE_STATUSES
+                and entry["currentness"] == "current"
+                and entry["authority"] in ACTIVE_AUTHORITIES
+            )
+            or (
+                label == "active.collaborate"
+                and entry["kind"] == "decision"
+                and entry.get("artifact_type") == "collaborate"
+                and entry["status"] in {"active", "accepted", "blocked"}
+                and entry["currentness"] == "current"
+                and entry["authority"] == "canonical"
+            )
         ]
         require(matching, f"{label} has no eligible ordinary-memory entry: {path}")
         if reader is not None:
@@ -308,6 +365,7 @@ def validate_index(
         for position, entry in enumerate(entries_raw)
     ]
     validate_active(index.get("active"), entries, project_reader, migration_read=migration_read)
+    validate_collaborate_consumed_sources(index.get("collaborate_consumed_sources", []))
     profiles = index.get("profiles")
     require(isinstance(profiles, dict) and profiles, "profiles must be a non-empty object")
     assert isinstance(profiles, dict)
@@ -359,7 +417,8 @@ def validate_memory_templates(directory: Path) -> None:
         fail(f"memory index template is invalid JSON: {exc}")
     validate_index(index, directory / "index.json")
     active = index["active"]
-    require(active.get("discussion") is None, "memory index template discussion compatibility slot must be null")
+    require("discussion" not in active, "memory index template must not contain the discussion compatibility slot")
+    require(active.get("collaborate") is None, "memory index template active.collaborate must be null")
     require(
         all(entry["kind"] != "discussion" for entry in index["entries"]),
         "memory index template must not contain discussion entries",

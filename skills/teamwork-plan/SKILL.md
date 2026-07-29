@@ -1,6 +1,6 @@
 ---
 name: teamwork-plan
-description: Use when the user asks for an implementation plan, task breakdown, checklist, roadmap, or handoff for a direction and contract already selected, or a host requires that execution plan; do not use to brainstorm or settle product/architecture choices, research external facts, diagnose failures, review a candidate, or execute changes.
+description: Use when the user asks for an implementation plan, task breakdown, checklist, roadmap, or handoff, when an accepted Collaborate decision is ready to become executable work, or when a host requires that plan; do not use to brainstorm, grill, settle product/architecture choices, research external facts, diagnose failures, review a candidate, or execute changes.
 ---
 
 # Teamwork Plan
@@ -9,9 +9,10 @@ Translate an already selected direction into work that can be executed without
 redesign. Every Plan invocation defaults to a durable Plan in an initialized
 writable project unless the user says `no files`, `off-record`, `read-only`, `no
 writes`, or equivalent. Planner produces an execution-ready Plan packet only;
-Writer saves or rewrites it. Do not redesign or implement. Ordinary natural
-discussion or brainstorming does not activate Plan unless the existing outcome
-trigger applies.
+Writer saves or rewrites it. Do not redesign or implement. Collaborate owns
+dialogue, brainstorming, grilling, and decision convergence; Plan activates only
+after the material direction has been selected and, when required, accepted
+through Collaborate.
 
 ## Readiness
 
@@ -23,20 +24,25 @@ Root alone asks users through the current host's native surface; Planner and
 other leaf roles return proposed questions or blockers to Root. Answers do not
 expand authority.
 
-When a prior Teamwork Design is claimed, require the controlled durable Design
-path and revision returned by its transaction. Run
-`discussion-transaction.py design-inspect --project-root <project>` and confirm
-the active path/revision match the claim and `active.acceptance == accepted`.
-Pending or blocked Design records are durable but never Plan-ready. Older v1/v2
-controlled Design records count as accepted only when `design-inspect` reports
-accepted. A conversational Design recommendation, adversarial audit result,
-Grill record, hand-written file, or failed transaction is not Plan-ready and
-must not be promoted by Planner.
+When a prior Teamwork Collaborate decision is claimed, require the controlled
+durable Collaborate readback returned by its transaction. The handoff must
+freeze exactly path, decision id, Collaborate-scoped revision, semantic digest,
+and lineage digest. Run
+`discussion-transaction.py collaborate-inspect --project-root <project>` and
+confirm `active.path == docs/teamwork/collaborate/current.md`,
+`active.acceptance == accepted`, the exact accepted path, decision id, revision,
+semantic digest, and lineage digest match the handoff, `current_batch == []`, no
+open items, no blockers, no open question, no open frontier, and
+`adversarial.status` is `not_run` or `pass`. Pending or blocked Collaborate
+records are durable but never Plan-ready. Legacy Design, Discussion,
+conversational recommendations, adversarial audit results, hand-written files,
+generic artifacts, or failed transactions are not Plan-ready and must not be
+promoted by Planner.
 
 If an open choice would change behavior, architecture, public contracts, data,
 permissions, migration, or scope, stop and state the exact decision needed. Do
 not compare options or hide it as an assumption. Return unresolved material
-direction to Design. If a genuinely user-owned plan boundary remains after
+direction to Collaborate. If a genuinely user-owned plan boundary remains after
 evidence, propose it to Root. Missing implementation details may remain
 prerequisites that block only dependent steps.
 

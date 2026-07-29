@@ -1,10 +1,10 @@
 {
-   "evidence" : "Static and executable specialized Grill transaction control.",
+   "evidence" : "Static and executable specialized Collaborate transaction control.",
    "expected" : {
       "capability" : "persistence",
       "language" : "en",
       "requires" : [
-         "specialized-grill-design-goal-route",
+         "specialized-collaborate-design-goal-route",
          "lifecycle-checkpoint-readback",
          "inspect-schema-apply",
          "transaction-owned-writer",
@@ -16,7 +16,7 @@
    },
    "id" : "persistence-specialized-artifact-writer",
    "must" : [
-      "persist specialized Grill, Design, or Goal lifecycle checkpoints through their managed inspect -> schema -> apply route with Writer as caller, transaction as filesystem writer, and readback before any durable claim"
+      "persist specialized Collaborate, Design, or Goal lifecycle checkpoints through their managed collaborate-inspect -> collaborate-schema -> collaborate-apply route with Writer as caller, transaction as filesystem writer, and readback before any durable claim"
    ],
    "must_not" : [
       "save specialized artifacts through generic workflow artifacts, hand-author Markdown or indexes, implement, or infer release authority"
@@ -33,7 +33,7 @@
       },
       {
          "class" : "skill",
-         "source" : "skills/grill-me/SKILL.md"
+         "source" : "skills/teamwork-collaborate/SKILL.md"
       },
       {
          "class" : "role-template",
@@ -52,7 +52,7 @@
          "source" : "scripts/discussion-transaction.py"
       }
    ],
-   "prompt" : "$grill-me Save the major release-direction discussion in the initialized project.",
+   "prompt" : "$teamwork-collaborate Save the major release-direction collaboration in the initialized project.",
    "source" : "synthetic",
    "split" : "dev"
 }

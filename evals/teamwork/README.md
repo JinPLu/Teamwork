@@ -22,20 +22,20 @@ The dev matrix keeps bilingual coverage for:
 - external Research and the local-evidence Native negative control;
 - default Design activation, input-driven adversarial Design selection,
   selected-direction Plan, and their ownership boundaries;
-- ordinary dialogue-native brainstorming with contribution first and at most one
-  useful open or bounded question, with no Grill, premature Design, or artifact;
-- ordinary natural question-first Grill with no file write, plus explicit
-  `$grill-me` save persistence and independently-major automatic persistence
-  through the managed `inspect -> schema -> apply` transaction;
+- adaptive Collaborate activation for dialogue, brainstorm, and grill, with a useful
+  contribution first and at most one open prose or genuinely bounded native
+  question;
+- semantic Collaborate persistence through Writer and the managed
+  `collaborate-inspect -> collaborate-schema -> collaborate-apply` transaction, including schema v1 and frozen v1/v2
+  compatibility, with no transcript or report substitute;
 - Debug, Goal, Review, Init, Update, Ask Gate, minimal native change,
   monotonic verification, permission/privacy, and cross-platform host ownership.
 
 The release split is deliberately small but non-empty. It holds out four public
 boundaries: external Research versus local Native inspection, unresolved Design
 versus selected-direction Plan, automatic adversarial Design versus weak-cue or
-explicit-standard default Design and chat-only recommendations, and ordinary no-write Grill versus
-explicit persistence or independently-major automatic persistence through the
-managed transaction. Release cases are never
+explicit-standard default Design and chat-only recommendations, and adaptive
+Collaborate persistence versus one-shot and no-files controls. Release cases are never
 optimizer inputs.
 
 The deterministic runner does not execute Codex, Cursor, or Claude Code and does
@@ -47,22 +47,25 @@ removing or inverting a protected boundary makes the harness fail.
 
 The active harness no longer protects the retired router, generic Execute skill,
 an exact reference inventory, shared behavioral-reference prose, staged packet
-terminology, transaction-helper anchors, multi-file discussion lifecycle, or
+terminology, transaction-helper anchors, multi-file collaboration lifecycle, or
 fixed source sentences. Each of the ten public skills owns its behavior in one
 `SKILL.md`; topology validation rejects behavioral references, skill-local
 behavior scripts, cross-skill loading, dependency cycles, and retired skill
 names.
 
 Mechanical safety tests for ordinary memory/index handling remain separate from
-behavior activation. Ordinary discussion and brainstorming stay native: answer
-with synthesis, tension, or candidate space first, then ask at most one useful
-open or bounded question when feedback would improve the next turn. Grill
-persistence has one public contract: ordinary natural question-first language is
-conversation-only; explicit save/resume/record may persist only through the
-managed `inspect -> schema -> apply` transaction, while an independently-major
-Grill automatically records its state through that same route in a named,
-initialized writable project;
-`no files` overrides it; no discussion action grants implementation authority.
+behavior activation. Natural collaboration and brainstorming activate Collaborate:
+answer with synthesis, tension, candidate space, or a decision map first, select
+dialogue, brainstorm, or grill from intent and risk, then ask at most one useful
+open prose or genuinely bounded native question. App-server probes select Plan
+collaboration mode for bounded native requests and Default for open prose.
+Sustained collaboration with a
+substantive synthesis and unresolved question defaults to one semantic
+Collaborate checkpoint through Writer and the managed
+`collaborate-inspect -> collaborate-schema -> collaborate-apply` transaction in a named, initialized writable
+project. New records use schema v1, frozen v1/v2 records remain readable, no
+transcript or report is substituted, `no files` overrides persistence, and no
+Collaborate action grants implementation authority.
 
 ## Evidence lanes
 

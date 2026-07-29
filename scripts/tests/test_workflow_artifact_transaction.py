@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import runpy
 import stat
 import subprocess
 import sys
@@ -14,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ROOT / "scripts/discussion-transaction.py"
 TEMPLATES = ROOT / "templates/teamwork-memory"
+CONTRACT = runpy.run_path(str(CLI), run_name="teamwork_workflow_artifact_contract")
 
 
 class WorkflowArtifactTransactionTests(unittest.TestCase):
@@ -67,6 +69,7 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
         previous_path: str | None = None,
         expected_revision: str | None = None,
         body: str = "## Evidence\n\n- Direct local observation.",
+        consumer: str = "Writer",
     ) -> dict[str, object]:
         request: dict[str, object] = {
             "schema_version": 1,
@@ -77,7 +80,7 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
             "slug": slug,
             "title": title,
             "summary": f"{title} summary.",
-            "consumer": "Writer",
+            "consumer": consumer,
             "source_revision": "source-revision-1",
             "updated": updated,
             "body": body,
@@ -140,6 +143,7 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
             "plan": ("plan", "plan", "docs/teamwork/plans/2026-07-22-plan-note.md"),
             "debug": ("report", "results", "docs/teamwork/workflows/debug/2026-07-22-debug-note.md"),
             "review": ("report", "results", "docs/teamwork/workflows/review/2026-07-22-review-note.md"),
+            "execution": ("result", "results", "docs/teamwork/workflows/execution/2026-07-22-execution-note.md"),
             "conclusion": ("result", "results", "docs/teamwork/workflows/conclusion/2026-07-22-conclusion-note.md"),
             "init": ("report", "results", "docs/teamwork/workflows/init/2026-07-22-init-note.md"),
             "update": ("report", "results", "docs/teamwork/workflows/update/2026-07-22-update-note.md"),
@@ -157,18 +161,24 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
                     original_memory = self.memory
                     self.project = project
                     self.memory = memory
-                    created = self.create(workflow=workflow, slug=f"{workflow}-note", title=f"{workflow.title()} note")
+                    consumer = "Root handoff" if workflow == "execution" else "Writer"
+                    created = self.create(
+                        workflow=workflow,
+                        slug=f"{workflow}-note",
+                        title=f"{workflow.title()} note",
+                        consumer=consumer,
+                    )
                     self.assertEqual(created["path"], path)
                     text = (project / path).read_text(encoding="utf-8")
                     self.assertIn(f"Artifact Kind: {kind}\nArtifact Type: workflow-artifact\nWorkflow: {workflow}", text)
-                    self.assertIn("Consumer: Writer\nSource Revision: source-revision-1\n\n#", text)
+                    self.assertIn(f"Consumer: {consumer}\nSource Revision: source-revision-1\n\n#", text)
                     index = self.index()
                     entry = next(item for item in index["entries"] if item["path"] == path)
                     self.assertEqual(entry["kind"], kind)
                     self.assertEqual(entry["artifact_type"], "workflow-artifact")
                     self.assertEqual(entry["workflow"], workflow)
-                    self.assertEqual(entry["consumer"], "Writer")
-                    self.assertEqual(entry["applies_to"], ["Writer"])
+                    self.assertEqual(entry["consumer"], consumer)
+                    self.assertEqual(entry["applies_to"], [consumer])
                     self.assertIn(path, entry["evidence_paths"])
                     if active_slot == "results":
                         self.assertIn(path, index["active"]["results"])
@@ -252,6 +262,107 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
         old_report = next(item for item in self.index()["entries"] if item["path"] == report["path"])
         self.assertEqual(old_report["authority"], "superseded")
 
+    def test_supersede_migrates_a_current_legacy_plan_and_binds_its_bytes(self) -> None:
+        legacy_path = "docs/teamwork/plans/2026-07-19-legacy-plan.md"
+        legacy_text = (
+            "Artifact Type: plan\n"
+            "Last Updated: 2026-07-19\n\n"
+            "# Legacy plan\n\n"
+            "## Steps\n\n"
+            "- Preserve this historical body.\n"
+        )
+        target = self.project / legacy_path
+        target.parent.mkdir(parents=True)
+        target.write_text(legacy_text, encoding="utf-8")
+        index = self.index()
+        index["active"]["plan"] = legacy_path
+        index["entries"].append(
+            {
+                "topic": "legacy-plan",
+                "kind": "plan",
+                "title": "Legacy plan",
+                "status": "accepted",
+                "currentness": "current",
+                "authority": "active-summary",
+                "path": legacy_path,
+                "linked": [],
+                "evidence_paths": [legacy_path],
+                "supersedes": [],
+                "search_keys": ["legacy-plan"],
+                "updated": "2026-07-19",
+                "summary": "Legacy plan summary.",
+            }
+        )
+        self.write_index(index)
+
+        inspected = self.inspect()
+        migrated = self.apply(
+            self.request(
+                "supersede",
+                workflow="plan",
+                slug="current-plan",
+                title="Current plan",
+                updated="2026-07-28",
+                previous_path=legacy_path,
+                expected_revision=str(inspected["revision"]),
+                body="## Plan\n\n- Use the current transaction route.",
+            )
+        )
+        self.assertEqual(migrated.returncode, 0, migrated.stderr)
+        payload = json.loads(migrated.stdout)
+        current_path = "docs/teamwork/plans/2026-07-28-current-plan.md"
+        self.assertEqual(payload["path"], current_path)
+        self.assertEqual((self.project / legacy_path).read_text(encoding="utf-8"), legacy_text)
+        current_index = self.index()
+        self.assertEqual(current_index["active"]["plan"], current_path)
+        legacy_entry = next(item for item in current_index["entries"] if item["path"] == legacy_path)
+        self.assertEqual(
+            (legacy_entry["status"], legacy_entry["currentness"], legacy_entry["authority"]),
+            ("superseded", "historical", "superseded"),
+        )
+        self.assertEqual(legacy_entry["superseded_by"], current_path)
+        current_entry = next(item for item in current_index["entries"] if item["path"] == current_path)
+        self.assertEqual(current_entry["workflow"], "plan")
+        self.assertEqual(current_entry["supersedes"], [legacy_path])
+
+        stale_project = Path(self.temporary.name) / "stale-project"
+        stale_memory = stale_project / "docs/teamwork"
+        stale_memory.mkdir(parents=True)
+        for name in ("index.json", "current.md", "README.md"):
+            (stale_memory / name).write_bytes((TEMPLATES / name).read_bytes())
+        stale_target = stale_project / legacy_path
+        stale_target.parent.mkdir(parents=True)
+        stale_target.write_text(legacy_text, encoding="utf-8")
+        stale_index = json.loads((stale_memory / "index.json").read_text(encoding="utf-8"))
+        stale_index["active"]["plan"] = legacy_path
+        stale_index["entries"].append(index["entries"][-1])
+        (stale_memory / "index.json").write_text(
+            json.dumps(stale_index, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        original_project = self.project
+        original_memory = self.memory
+        try:
+            self.project = stale_project
+            self.memory = stale_memory
+            stale_revision = str(self.inspect()["revision"])
+            stale_target.write_text(legacy_text + "\nUnindexed drift.\n", encoding="utf-8")
+            rejected = self.apply(
+                self.request(
+                    "supersede",
+                    workflow="plan",
+                    slug="current-plan",
+                    title="Current plan",
+                    updated="2026-07-28",
+                    previous_path=legacy_path,
+                    expected_revision=stale_revision,
+                )
+            )
+            self.assert_error(rejected, "stale")
+        finally:
+            self.project = original_project
+            self.memory = original_memory
+
     def test_stale_revision_and_active_byte_tampering_are_rejected(self) -> None:
         created = self.create()
         stale = self.apply(self.request("update", previous_path=created["path"], expected_revision="0" * 64))
@@ -333,6 +444,106 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
         self.create(workflow="plan", slug="first-plan", title="First plan")
         blocked_plan = self.apply(self.request("create", workflow="plan", slug="second-plan", title="Second plan"))
         self.assert_error(blocked_plan, "active.plan")
+
+    def test_execution_is_one_terminal_handoff_and_active_goal_suppresses_it(self) -> None:
+        rejected_consumer = self.apply(
+            self.request(
+                "create",
+                workflow="execution",
+                slug="terminal-handoff",
+                title="Terminal handoff",
+            )
+        )
+        self.assert_error(rejected_consumer, "real downstream consumer")
+
+        created = self.create(
+            workflow="execution",
+            slug="terminal-handoff",
+            title="Terminal handoff",
+            consumer="Root",
+        )
+        update = self.apply(
+            self.request(
+                "update",
+                workflow="execution",
+                slug="terminal-handoff",
+                title="Incremental progress",
+                previous_path=created["path"],
+                consumer="Root",
+            )
+        )
+        self.assert_error(update, "one terminal handoff")
+
+        temporary = tempfile.TemporaryDirectory()
+        original_project = self.project
+        original_memory = self.memory
+        try:
+            project = Path(temporary.name) / "project"
+            memory = project / "docs/teamwork"
+            memory.mkdir(parents=True)
+            for name in ("index.json", "current.md", "README.md"):
+                (memory / name).write_bytes((TEMPLATES / name).read_bytes())
+            self.project = project
+            self.memory = memory
+            goal = {
+                "schema_version": 1,
+                "artifact_type": "goal",
+                "slug": "finish-run",
+                "title": "Finish run",
+                "objective": "Finish the verified execution.",
+                "scope": {"included": ["Execution"]},
+                "protected_boundaries": ["No release."],
+                "invariants": ["Keep direct evidence."],
+                "success_signal": "The execution path passes.",
+                "budget": {"token_budget": 1000},
+                "hard_stops": ["Missing authority."],
+                "status": "active",
+                "current_unmet_claim": "The execution path has not passed.",
+                "started_at": "2026-07-22",
+                "updated": "2026-07-22",
+                "next_strategy": "Run the direct path.",
+                "attempts": [],
+                "state_revision": 1,
+                "closure": None,
+            }
+            goal_path = CONTRACT["goal_path"](goal)
+            target = project / goal_path
+            target.parent.mkdir(parents=True)
+            target.write_text(CONTRACT["render_goal_artifact"](goal), encoding="utf-8")
+            index = self.index()
+            index["active"]["progress"] = goal_path
+            index["entries"].append(
+                {
+                    "topic": "finish-run",
+                    "kind": "progress",
+                    "title": "Finish run",
+                    "status": "active",
+                    "currentness": "current",
+                    "authority": "canonical",
+                    "path": goal_path,
+                    "linked": [],
+                    "evidence_paths": [goal_path],
+                    "supersedes": [],
+                    "search_keys": ["finish-run"],
+                    "updated": "2026-07-22",
+                    "summary": "Finish the verified execution.",
+                }
+            )
+            self.write_index(index)
+            blocked = self.apply(
+                self.request(
+                    "create",
+                    workflow="execution",
+                    slug="duplicate-progress",
+                    title="Duplicate progress",
+                    consumer="Root",
+                )
+            )
+            self.assert_error(blocked, "active Goal owns execution progress")
+        finally:
+            self.project = original_project
+            self.memory = original_memory
+            temporary.cleanup()
 
     def test_legacy_workflow_report_slot_is_inspected_and_migrated_on_apply(self) -> None:
         update = self.create(workflow="update", slug="update-receipt", title="Update receipt")

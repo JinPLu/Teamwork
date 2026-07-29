@@ -1,0 +1,26 @@
+{
+  "id": "collaborate-multiturn-pilot",
+  "category": "collaborate",
+  "prompts": [
+    "Stress-test this public compatibility change with me before planning. Start with the global decision map and ask only the currently independent material choices.",
+    "Existing users must keep the current default. Continue from that answer without reopening it, and ask only a newly valid dependent choice.",
+    "Proceed with the recommended handoff."
+  ],
+  "sandbox": "read-only",
+  "unscored_annotations": {
+    "expected": [
+      "natural collaboration intent activates teamwork-collaborate without requiring a legacy skill name",
+      "the first turn leads with a goal, boundary, and detail map before a batch of no more than three independent material questions",
+      "dependent choices remain serial and previously answered choices are not reopened",
+      "question ownership and usefulness are reviewed semantically"
+    ],
+    "forbidden": [
+      "mutation, goal, dispatch, external effect, or enactment while gathering answers",
+      "subagent dispatch",
+      "answer treated as implementation authority without explicit wording",
+      "legacy Grill status or Decision ID ceremony",
+      "legacy $grill-me activation",
+      "model or effort fallback"
+    ]
+  }
+}

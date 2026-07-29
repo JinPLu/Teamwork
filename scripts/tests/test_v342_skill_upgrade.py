@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Regression coverage for the real v3.4.2-to-v4 skill migration."""
+"""Regression coverage for the real v3.4.2-to-current skill migration."""
 
 from __future__ import annotations
 
 import io
+import hashlib
 import json
 import os
 import pathlib
@@ -20,10 +21,14 @@ FIXTURE_PATH = (
     / "fixtures"
     / "v3.4.2-skill-inventory.json"
 )
-EXPECTED_V4_SKILLS = {
-    "grill-me",
+RETIRED_V5_PATH = (
+    pathlib.Path(__file__).resolve().parent
+    / "fixtures"
+    / "retired-teamwork-skills-v5.json"
+)
+EXPECTED_CURRENT_SKILLS = {
+    "teamwork-collaborate",
     "teamwork-debug",
-    "teamwork-design",
     "teamwork-explore",
     "teamwork-goal",
     "teamwork-init",
@@ -32,15 +37,22 @@ EXPECTED_V4_SKILLS = {
     "teamwork-review",
     "teamwork-update",
 }
-RETIRED_V342_SKILLS = {"using-teamwork", "teamwork-execute"}
+RETIRED_V342_SKILLS = {
+    "grill-me",
+    "teamwork-design",
+    "teamwork-discuss",
+    "using-teamwork",
+    "teamwork-execute",
+    "teamwork",
+}
 RETIRED_AGENT_SAMPLE = {
     "codex": "teamwork-deep-judge.toml",
     "cursor": "deep-judge.md",
     "claude": "deep-judge.md",
 }
-EXPECTED_V4_REFERENCES = {
+EXPECTED_CURRENT_REFERENCES = {
+    "teamwork-collaborate/references/adversarial-search.md",
     "teamwork-debug/references/runtime-diagnosis.md",
-    "teamwork-design/references/adversarial-search.md",
     "teamwork-research/references/deep-research.md",
     "teamwork-review/references/strict-review.md",
 }
@@ -94,6 +106,7 @@ class V342SkillUpgradeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.fixture = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+        cls.retired_fixture = json.loads(RETIRED_V5_PATH.read_text(encoding="utf-8"))
         cls.commit = cls.fixture["commit"]
         cls.tag = cls.fixture["tag"]
 
@@ -287,12 +300,59 @@ install_plugin_codex_bootstrap
                 snapshot[rel] = ("directory", mode, b"")
         return snapshot
 
-    def assert_v4_skill_root(self, skill_root: pathlib.Path) -> None:
+    @staticmethod
+    def retired_tree_digest(rows: list[dict[str, str]]) -> str:
+        payload = "".join(
+            f"{row['path']}\0{row['file_type']}\0{row['mode']}\0{row['sha256']}\n"
+            for row in sorted(rows, key=lambda item: item["path"].encode("utf-8"))
+        )
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    def derive_retired_rows(self, manifest: dict[str, object], ref: str) -> list[dict[str, str]]:
+        source_tree = str(manifest["source_tree"])
+        result = subprocess.run(
+            ["git", "ls-tree", "-r", "-l", ref, "--", source_tree],
+            cwd=REPO_ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        rows: list[dict[str, str]] = []
+        for line in result.stdout.splitlines():
+            metadata, path = line.split("\t", 1)
+            mode = metadata.split()[0]
+            content = subprocess.run(
+                ["git", "show", f"{ref}:{path}"],
+                cwd=REPO_ROOT,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+            self.assertEqual(content.returncode, 0, content.stderr.decode())
+            data = content.stdout
+            relative = path.removeprefix(f"{source_tree}/")
+            if manifest.get("projection") == "teamwork-router" and relative == "SKILL.md":
+                data = data.replace(
+                    b"name: using-teamwork\n", b"name: teamwork\n", 1
+                )
+            rows.append(
+                {
+                    "file_type": "file",
+                    "mode": "0" + mode[-3:],
+                    "path": relative,
+                    "sha256": hashlib.sha256(data).hexdigest(),
+                }
+            )
+        return rows
+
+    def assert_current_skill_root(self, skill_root: pathlib.Path) -> None:
         self.assertEqual(
             {path.name for path in skill_root.iterdir() if path.is_dir()},
-            EXPECTED_V4_SKILLS,
+            EXPECTED_CURRENT_SKILLS,
         )
-        for skill in EXPECTED_V4_SKILLS:
+        for skill in EXPECTED_CURRENT_SKILLS:
             self.assertFalse((skill_root / skill).is_symlink(), skill_root / skill)
             skill_file = skill_root / skill / "SKILL.md"
             self.assertTrue(skill_file.is_file(), skill_file)
@@ -304,7 +364,7 @@ install_plugin_codex_bootstrap
             for path in skill_root.glob("*/references/*")
             if path.is_file()
         }
-        self.assertEqual(actual_references, EXPECTED_V4_REFERENCES)
+        self.assertEqual(actual_references, EXPECTED_CURRENT_REFERENCES)
         self.assertEqual(
             (skill_root / ".teamwork-version").read_text(encoding="utf-8").strip(),
             (REPO_ROOT / "VERSION").read_text(encoding="utf-8").strip(),
@@ -331,7 +391,7 @@ install_plugin_codex_bootstrap
         }:
             self.assertFalse((skill_root / skill).is_symlink(), skill_root / skill)
 
-    def assert_v4_agent_roots(self, home: pathlib.Path) -> None:
+    def assert_current_agent_roots(self, home: pathlib.Path) -> None:
         for platform, (relative, extension, expected) in PLATFORM_AGENT_ROOTS.items():
             with self.subTest(platform=platform):
                 root = home / relative
@@ -368,6 +428,70 @@ install_plugin_codex_bootstrap
         )
         self.assertNotIn("skills/teamwork-design/SKILL.md", self.fixture["files"])
 
+    def test_retired_v5_fixture_schema_and_no_source_discuss_rule(self) -> None:
+        fixture = self.retired_fixture
+        self.assertEqual(fixture["schema_version"], 2)
+        self.assertEqual(
+            set(fixture["skills"]),
+            {
+                "grill-me",
+                "teamwork",
+                "teamwork-design",
+                "teamwork-discuss",
+                "teamwork-execute",
+                "using-teamwork",
+            },
+        )
+        self.assertEqual(fixture["skills"]["teamwork-discuss"], [])
+        self.assertEqual(
+            fixture["no_released_source"],
+            {"teamwork-discuss": "no_released_source"},
+        )
+
+    def test_retired_v5_fixture_derives_from_raw_git_and_alias_refs(self) -> None:
+        self.assertEqual(
+            subprocess.check_output(
+                ["git", "rev-parse", "v4.5.0^{commit}"], cwd=REPO_ROOT, text=True
+            ).strip(),
+            "e143d054bb17915afbeb5f9f0f69ca3058c85ac1",
+        )
+        self.assertEqual(
+            subprocess.check_output(
+                ["git", "rev-parse", "v4.6.0^{commit}"], cwd=REPO_ROOT, text=True
+            ).strip(),
+            "acd2d155a1a36e061cfa83eb2199d48ab57b5f6a",
+        )
+        for skill, manifests in self.retired_fixture["skills"].items():
+            for manifest in manifests:
+                with self.subTest(skill=skill, manifest=manifest["id"]):
+                    rows = self.derive_retired_rows(manifest, manifest["source_commit"])
+                    self.assertEqual(rows, manifest["files"])
+                    self.assertEqual(
+                        self.retired_tree_digest(rows),
+                        manifest["whole_tree_sha256"],
+                    )
+                    for ref in manifest["source_refs"]:
+                        ref_rows = self.derive_retired_rows(manifest, ref)
+                        self.assertEqual(ref_rows, manifest["files"])
+                        self.assertEqual(
+                            self.retired_tree_digest(ref_rows),
+                            manifest["whole_tree_sha256"],
+                        )
+
+    def test_retired_teamwork_projection_changes_only_the_skill_name(self) -> None:
+        source = self.retired_fixture["skills"]["using-teamwork"][0]
+        projected = self.retired_fixture["skills"]["teamwork"][0]
+        self.assertEqual(projected["projection"], "teamwork-router")
+        self.assertEqual(
+            [row["path"] for row in source["files"]],
+            [row["path"] for row in projected["files"]],
+        )
+        for source_row, projected_row in zip(source["files"], projected["files"]):
+            if source_row["path"] == "SKILL.md":
+                self.assertNotEqual(source_row["sha256"], projected_row["sha256"])
+            else:
+                self.assertEqual(source_row, projected_row)
+
     def test_real_copy_upgrade_reconciles_all_three_platforms(self) -> None:
         home = self.base / "upgrade-home"
         self.install_v342(home, "all")
@@ -381,8 +505,8 @@ install_plugin_codex_bootstrap
         )
         self.assertEqual(upgraded.returncode, 0, upgraded.stdout)
         for relative in PLATFORM_SKILL_ROOTS.values():
-            self.assert_v4_skill_root(home / relative)
-        self.assert_v4_agent_roots(home)
+            self.assert_current_skill_root(home / relative)
+        self.assert_current_agent_roots(home)
         self.assert_codex_profile_matrix(home, "performance-first")
 
         readiness = self.run_check_update(home)
@@ -393,7 +517,7 @@ install_plugin_codex_bootstrap
             r"(?m)^(?:CODEX|CURSOR|CLAUDE)_SKILL_CONTENT=.*(?:extra|drift)",
         )
 
-    def test_cost_first_v342_upgrade_installs_exact_v4_surfaces(self) -> None:
+    def test_cost_first_v342_upgrade_installs_exact_current_surfaces(self) -> None:
         home = self.base / "cost-upgrade-home"
         old = self.run_installer(
             self.old_release, home, "all", profile="cost-first"
@@ -408,18 +532,18 @@ install_plugin_codex_bootstrap
         )
         self.assertEqual(upgraded.returncode, 0, upgraded.stdout)
         for relative in PLATFORM_SKILL_ROOTS.values():
-            self.assert_v4_skill_root(home / relative)
+            self.assert_current_skill_root(home / relative)
             self.assertEqual(
                 (home / relative / ".teamwork-profile").read_text(encoding="utf-8").strip(),
                 "cost-first",
             )
-        self.assert_v4_agent_roots(home)
+        self.assert_current_agent_roots(home)
         self.assert_codex_profile_matrix(home, "cost-first")
         readiness = self.run_check_update(home)
         self.assertEqual(readiness.returncode, 0, readiness.stdout)
         self.assertIn("PROFILE=cost-first\n", readiness.stdout)
 
-    def test_legacy_v342_profile_upgrades_to_the_v4_default(self) -> None:
+    def test_legacy_v342_profile_upgrades_to_the_current_default(self) -> None:
         home = self.base / "legacy-profile-upgrade-home"
         old = self.run_installer(
             self.old_release, home, "all", profile="gpt56-role"
@@ -434,10 +558,10 @@ install_plugin_codex_bootstrap
                 (home / relative / ".teamwork-profile").read_text(encoding="utf-8").strip(),
                 "performance-first",
             )
-        self.assert_v4_agent_roots(home)
+        self.assert_current_agent_roots(home)
         self.assert_codex_profile_matrix(home, "performance-first")
 
-    def test_default_report_uses_v4_vocabulary_after_v342_upgrade(self) -> None:
+    def test_default_report_uses_current_vocabulary_after_v342_upgrade(self) -> None:
         home = self.base / "report-after-upgrade-home"
         self.install_v342(home, "all")
         upgraded = self.run_installer(

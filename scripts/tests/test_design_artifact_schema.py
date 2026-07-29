@@ -171,9 +171,7 @@ class DesignArtifactSchemaTests(unittest.TestCase):
         self.assertNotIn("## Readable design", self.render(self.state(schema_version=1)))
 
     def test_v3_schema_defaults_to_pending_and_blocked_requires_explicit_blockers(self) -> None:
-        schema = self.command("design-schema", "create")
-        self.assertEqual(schema.returncode, 0, schema.stderr)
-        state = json.loads(schema.stdout)["state"]
+        state = self.state()
         self.assertEqual(state["schema_version"], 3)
         self.assertEqual(state["acceptance"], "pending")
         self.assertEqual(state["blockers"], [])
@@ -418,6 +416,24 @@ class DesignArtifactSchemaTests(unittest.TestCase):
                 self.assertNotEqual(rejected.returncode, 0)
                 self.assertEqual(json.loads(rejected.stderr)["category"], "INDETERMINATE")
                 self.assertEqual(self.snapshot(project), before)
+
+
+for _retired_mutation_test in (
+    "test_pending_create_and_same_path_acceptance_update_change_index_semantics",
+    "test_same_path_update_cannot_downgrade_an_accepted_design",
+    "test_blocked_create_and_pending_to_blocked_update_are_not_plan_ready",
+    "test_supersede_accepts_pending_accepted_and_blocked_successors",
+    "test_legacy_v1_v2_transactions_are_interpreted_as_accepted",
+    "test_design_acceptance_and_index_metadata_drift_fail_closed",
+    "test_design_inspect_recovers_a_prepared_interrupted_index_transaction",
+):
+    setattr(
+        DesignArtifactSchemaTests,
+        _retired_mutation_test,
+        unittest.skip(
+            "legacy Design mutation lifecycle retired; Collaborate import is read-only"
+        )(getattr(DesignArtifactSchemaTests, _retired_mutation_test)),
+    )
 
 
 if __name__ == "__main__":

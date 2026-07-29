@@ -27,7 +27,7 @@ from grill_contract import (
 
 SCHEMA_VERSION = 5
 CASE_CATEGORIES = {
-    "grill",
+    "collaborate",
     "lightweight",
     "missing-required-state",
     "community-research",
@@ -305,7 +305,7 @@ def parse_events(stdout: str) -> tuple[
 def assess_structure(
     turns: list[dict[str, Any]], *, category: str, dry_run: bool
 ) -> tuple[str, list[str]]:
-    """Check read-only safety everywhere and grill-only visible structure.
+    """Check read-only safety everywhere and Collaborate-only visible structure.
 
     Question ownership and usefulness require semantic review.  This recorder
     intentionally does not infer them from packet labels or stable IDs.
@@ -319,7 +319,7 @@ def assess_structure(
     for index, turn in enumerate(turns, start=1):
         output = turn.get("final_output") or ""
         raw_events = turn.get("raw_events", [])
-        if category == "grill":
+        if category == "collaborate":
             if has_legacy_grill_ceremony(output):
                 violations.append(
                     f"turn {index} exposes the superseded grill packet/state protocol"

@@ -34,24 +34,26 @@ personal information.
    read-only local evidence question belongs to `teamwork-explore`; external,
    current, multi-source, or citation-backed evidence belongs to
    `teamwork-research`; unknown-cause failure belongs to `teamwork-debug`.
-   `teamwork-design` owns unsettled consequential choices and
-   `teamwork-plan` starts only after the controlled Design is `accepted`.
-4. Keep Design bounded: use Explorer only for an unresolved local constraint and
+   `teamwork-collaborate` owns natural dialogue, brainstorming, grill,
+   stress-testing, question-before-action, and unsettled consequential choices;
+   `teamwork-plan` starts only after controlled Collaborate is `accepted`.
+4. Keep Collaborate bounded: use Explorer only for an unresolved local constraint and
    Research only for a named sanitized external/current claim that can change the
    decision; do not run both by default. Genuine trade-offs receive 2–3
    alternatives, and a clear safe path receives evidence and exclusions.
-   Preserve the default one-challenge path. Activate adversarial Design only from
-   Design's automatic gate or an explicit override; after the initial evidence
-   wave, freeze its trial budget before dispatch,
+   Preserve the default one-challenge path. Activate adversarial search only from
+   Collaborate's automatic gate or an explicit override; after the initial
+   evidence wave, freeze its trial budget before dispatch,
    give every actual hypothesis two fresh isolated critics, require two new final
    auditors to pass, and fail closed when freshness or coverage is unproven.
-   Preserve a finite decision frontier and the controlled Design v3 transaction:
+   Preserve a finite decision frontier and the controlled Collaborate v1 transaction:
    it records `acceptance: pending`, `accepted`, or `blocked`; persistence is not
-   acceptance, and only `accepted` is Plan-ready. Legacy v1/v2 records are read
-   as `accepted` for compatibility. Unproven freshness or coverage remains
-   `pending` or becomes `blocked`, rather than erasing the durable state.
-   The frontier shows a global map first, batches only independent
-   material questions, and serializes dependent questions. Independent Plan Review runs only on
+   acceptance, and only `accepted` is Plan-ready. Legacy Discussion/Design
+   records are read-only migration inputs. Unproven freshness or coverage
+   remains `pending` or becomes `blocked`, rather than erasing the durable state.
+   Grill shows the global map first, then boundary, then detail; batches only
+   independent material questions; and serializes dependent questions.
+   Independent Plan Review runs only on
    user request or a named material risk gate.
 5. Preserve result-first code work: change the canonical owner, reuse existing
    patterns/built-ins/suitable dependencies, add the smallest complete logic,
@@ -75,29 +77,38 @@ personal information.
    `evals/teamwork/` conventions.
 
 In an initialized writable project, named Teamwork workflows persist reusable
-artifacts by default; `no files`, off-record, read-only, or no-write overrides
-that default. Grill, Design, and Goal use specialized transactions; Research,
-Debug, Plan, Review, and mutating Init/Update use the generic artifact
-transaction. Explore creates no standalone report. Ordinary clarification or
-chat, one-off native work, and clear code implementation requests do not force
-an extra workflow artifact.
+checkpoints and results by default; `no files`, off-record, read-only, or
+no-write overrides that default. Collaborate and Goal use specialized
+transactions; Research, Debug, Plan, Plan Review, Review, mutating Init/Update,
+and qualifying terminal execution handoffs use the generic artifact
+transaction. An active Goal suppresses duplicate execution artifacts. Explore
+creates no standalone report. One-shot explanations, casual fact questions, and
+tiny native work do not force an extra workflow artifact.
 
 Use Writer's simple model for standalone documents and runtime artifacts only
-from a frozen bounded brief. Writer may draft, rewrite, organize, summarize,
-translate, and polish, but must not research, invent or change facts, citations,
-decisions, authority, status, or acceptance. Code comments, docstrings, tests,
+from a frozen bounded packet. Writer may draft, organize, summarize, translate,
+and polish, but must not research, invent, paraphrase, or change frozen facts,
+citations, decisions, authority, status, or acceptance; missing route/readback
+fails closed as unsaved. Code comments, docstrings, tests,
 schemas, manifests, machine config, and inline config text stay with the
 implementation owner.
 
-The public release inventory is ten skills, four skill-owned advanced
-references, and nine host roles. A v3.4.2 cleanup can recognize only files the
-installer proves it owns; it does not preserve Router, Execute, or legacy roles
-as v4 aliases. Ordinary clarification stays conversation-only and does not
-trigger Grill. A named or resumed Grill workflow and independently major
-boundaries use its sole durable transaction record by default unless a negative
-write override applies. Within one scope, persistence is limited to create,
-semantic decision/frontier change, and close/supersede; unchanged state is a
-no-op. New discussion records use `frontier` / `current_batch` state.
+The public release inventory is nine skills, four skill-owned advanced
+references, and nine host roles. Cleanup can recognize only files the installer
+proves it owns; it does not preserve Router, Execute, public Design/Discuss, or
+legacy roles as aliases. `teamwork-collaborate` owns dialogue, brainstorm,
+grill, and accepted-direction convergence; it contributes before asking and
+chooses the mode without asking the user to name one. Sustained collaboration
+intent plus substantive synthesis, candidate space, or decision map and an
+unresolved question or unaccepted direction defaults to its sole durable
+transaction record unless a negative write override applies. Grill must preserve
+strict global -> boundary -> detail progression, at most three independent
+decisions per batch, dependent-decision serialization, and exactly one semantic
+update for an answered batch. Persistence is limited to semantic create, update,
+accept, block, close, or supersede; unchanged state is a no-op. New Collaborate
+records use schema v1, legacy Discussion/Design records remain read-only
+migration inputs, and neither a transcript nor a report/conclusion may
+substitute for Collaborate.
 
 ## Changelog style
 

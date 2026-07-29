@@ -4,8 +4,9 @@
       "capability" : "grill",
       "language" : "en",
       "requires" : [
-         "ordinary-no-write",
-         "major-change-auto-transaction",
+         "one-shot-no-write",
+         "sustained-checkpoint",
+         "major-change-grill-mode",
          "explicit-save-authorizes-transaction",
          "managed-transaction-only",
          "initialized-writable-project",
@@ -17,10 +18,10 @@
    },
    "id" : "release-grill-persistence",
    "must" : [
-      "keep ordinary question-first requests conversation-only; independently major Grill and explicit save use only the managed inspect -> schema -> apply transaction in an initialized writable project, with new records written as schema v2 frontier/current_batch state, one atomic answered-batch update, and v1 archives still readable under transaction-owned authority"
+      "keep a one-shot explanation conversation-only; sustained Collaborate and independently major grill mode use only Writer plus the managed collaborate-inspect -> collaborate-schema -> collaborate-apply transaction in an initialized writable project, with new records written as schema v1 dialogue/brainstorm/grill state and v1/v2 artifacts still readable under transaction-owned authority"
    ],
    "must_not" : [
-      "write when no files is present, directly write discussion Markdown or an index, implement, or infer implementation authority"
+      "write when no files is present, directly write collaboration Markdown or an index, implement, or infer implementation authority"
    ],
    "platforms" : [
       "codex",
@@ -34,14 +35,26 @@
       },
       {
          "class" : "skill",
-         "source" : "skills/grill-me/SKILL.md"
+         "source" : "skills/teamwork-collaborate/SKILL.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/codex-agents/teamwork-writer.toml"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/cursor-agents/writer.md"
+      },
+      {
+         "class" : "role-template",
+         "source" : "templates/claude-agents/writer.md"
       },
       {
          "class" : "artifact-engine",
          "source" : "scripts/discussion-transaction.py"
       }
    ],
-   "prompt" : "Contrast 'ask me first' with '$grill-me and save', including the user's 'no files' override.",
+   "prompt" : "Contrast a one-shot explanation with '$teamwork-collaborate and save', including sustained collaboration, major grill mode, and the user's 'no files' override.",
    "source" : "release",
    "split" : "release"
 }

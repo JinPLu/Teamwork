@@ -94,16 +94,27 @@ class InitProjectFilesTests(unittest.TestCase):
             memory = project / "docs/teamwork"
             for name in ("index.json", "current.md", "README.md"):
                 self.assertTrue((memory / name).is_file(), name)
-            for name in ("research", "design", "plans", "reports", "workflows"):
+            for name in ("research", "design", "collaborate", "plans", "reports", "workflows"):
                 self.assertTrue((memory / name).is_dir(), name)
             self.assertFalse((memory / "discussion").exists())
             self.assertFalse((project / ".teamwork-init-transaction.json").exists())
             self.assertFalse((memory / ".teamwork-init-transaction.json").exists())
             index = json.loads((memory / "index.json").read_text(encoding="utf-8"))
+            self.assertIsNone(index["active"]["collaborate"])
+            self.assertEqual(index["collaborate_consumed_sources"], [])
             self.assertNotIn("discussion", index["active"])
             self.assertNotIn(
                 "docs/teamwork/discussion",
                 (memory / "README.md").read_text(encoding="utf-8"),
+            )
+            agents_text = (project / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertIn(
+                "docs/teamwork/collaborate/current.md",
+                agents_text,
+            )
+            self.assertNotIn(
+                "sustained Discuss",
+                agents_text,
             )
             self.assertEqual(self.run_files(project, "validate").returncode, 0)
 

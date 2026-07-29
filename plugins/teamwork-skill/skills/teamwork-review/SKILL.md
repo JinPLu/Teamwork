@@ -1,6 +1,6 @@
 ---
 name: teamwork-review
-description: Use when the user asks to review, audit, critique, validate, or decide whether a candidate or claim is correct or complete, or a named material risk gate requires independent review of a sealed integrated candidate; do not use for each Worker slice, to implement fixes, write a plan, or perform ordinary evidence collection.
+description: Use when the user asks to review, audit, critique, validate, or decide whether a candidate or claim is correct or complete, or when an active workflow reaches a named material risk gate requiring independent review of one sealed integrated candidate; do not use for each Worker slice, to implement fixes, write a plan, or perform ordinary evidence collection.
 ---
 
 # Teamwork Review

@@ -136,7 +136,7 @@ def project_label(root: Path, explicit: str | None) -> str:
 def managed_agents_block(tree: "InitTree", label: str) -> str:
     lines = [
         f"- Project label (local routing only): `{label}`.",
-        "- For saved, resumed, or independently major Grill discussion, use only `docs/teamwork/discussion/current.md`; never mirror it into ordinary memory.",
+        "- For sustained Collaborate dialogue, brainstorm, or grill checkpoints, use only `docs/teamwork/collaborate/current.md`; never mirror them into ordinary memory or a report.",
         "- For ordinary durable memory, read `docs/teamwork/index.json` first, then `docs/teamwork/README.md`; keep volatile progress in its actual artifact.",
     ]
     codegraph = tree.stat("root", ".codegraph")
@@ -161,6 +161,7 @@ GITIGNORE_BLOCK = f"""{IGNORE_START}
 docs/teamwork/plans/
 docs/teamwork/design/
 docs/teamwork/discussion/
+docs/teamwork/collaborate/
 docs/teamwork/research/
 docs/teamwork/reports/
 docs/teamwork/workflows/
@@ -173,6 +174,7 @@ docs/teamwork/{INIT_JOURNAL}
 # Legacy v3 location retained as a fail-closed migration interlock.
 docs/teamwork/{DISCUSSION_MARKER}
 docs/teamwork/discussion/{DISCUSSION_MARKER}
+docs/teamwork/collaborate/.collaborate-transaction.json
 docs/teamwork/.*.teamwork-init-*
 {IGNORE_END}
 """
@@ -212,6 +214,7 @@ class InitTree:
         ("root", "docs", "docs"),
         ("docs", "teamwork", "teamwork"),
         ("teamwork", "discussion", "discussion"),
+        ("teamwork", "collaborate", "collaborate"),
         ("root", ".cursor", "cursor"),
         ("cursor", "rules", "cursor_rules"),
     )
@@ -445,6 +448,7 @@ def _validate_journal_target(parent: str, name: str, logical: str) -> None:
         "root": name,
         "teamwork": f"docs/teamwork/{name}",
         "discussion": f"docs/teamwork/discussion/{name}",
+        "collaborate": f"docs/teamwork/collaborate/{name}",
         "plans": f"docs/teamwork/plans/{name}",
         "cursor_rules": f".cursor/rules/{name}",
     }.get(parent)
@@ -458,6 +462,10 @@ def _validate_journal_target(parent: str, name: str, logical: str) -> None:
         r"[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md", name
     ):
         fail("init journal has an unsupported W4 discussion target")
+    if parent == "collaborate" and name not in {"current.md", ".collaborate-transaction.json"} and not re.fullmatch(
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md", name
+    ):
+        fail("init journal has an unsupported Collaborate target")
     if parent == "plans" and (not name.endswith(".md") or name == ".md"):
         fail("init journal has an unsupported active Plan guard")
     if parent == "cursor_rules" and name not in {"codegraph.mdc", "gpu-broker.mdc"}:
@@ -888,6 +896,7 @@ class InitTransaction:
         ("docs", "teamwork", "teamwork"),
         ("teamwork", "research", "research"),
         ("teamwork", "design", "design"),
+        ("teamwork", "collaborate", "collaborate"),
         ("teamwork", "plans", "plans"),
         ("teamwork", "reports", "reports"),
         ("teamwork", "workflows", "workflows"),

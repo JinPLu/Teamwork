@@ -1,6 +1,6 @@
 ---
 name: teamwork-research
-description: Use when the requested answer depends on external sources, including current web, API, library, platform, literature, market, or ecosystem facts, multi-source comparison, source verification, or citations; do not use for local repository/source/config/test/log/runtime/artifact inspection, supplied-text explanation, clear implementation, or unknown-cause debugging.
+description: Use when a request or active workflow depends on external sources, including current web, API, library, platform, literature, market, or ecosystem facts, multi-source comparison, source verification, or citations; do not use for local repository/source/config/test/log/runtime/artifact inspection, supplied-text explanation, clear implementation, or unknown-cause debugging.
 ---
 
 # Teamwork Research

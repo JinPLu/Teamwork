@@ -1,9 +1,10 @@
 # Teamwork for Codex
 
-Teamwork adds focused methods for external research, consequential design,
-unknown-cause debugging, planning, review, and long-running convergence. Codex
-keeps local repository inspection and clear authorized implementation on its
-native path, so ordinary work does not need an Execute or router skill.
+Teamwork adds focused methods for collaborative convergence, external research,
+unknown-cause debugging, planning, review, and
+long-running convergence. Codex keeps local repository inspection and clear
+authorized implementation on its native path, so ordinary work does not need an
+Execute or router skill.
 
 ## Quick start: default Marketplace plugin
 
@@ -37,7 +38,8 @@ Describe the outcome directly:
 ```text
 Inspect this repository and implement the requested validation change.
 Research the current provider options from official sources and cite the recommendation.
-Design the authentication boundary; explore only alternatives with real tradeoffs.
+Brainstorm a lower-maintenance onboarding flow with me, then ask the most useful next question.
+Decide the authentication boundary; explore only alternatives with real tradeoffs.
 This public API could be synchronous, queued, or hybrid; a wrong choice forces costly client migration and the evidence conflicts. Help me decide.
 Find the cause of this CI failure, fix it, and rerun the same failing path.
 Turn the selected migration direction into an executable plan without changing files.
@@ -51,43 +53,60 @@ Teamwork artifacts. A clear authorized edit or fix also stays native. Use
 `$teamwork-research` only for external, current, multi-source, or
 citation-backed research.
 
-Use `$teamwork-design` while a consequential solution is open, and
-`$teamwork-plan` only after the controlled Design records `acceptance: accepted`. Design uses Explorer only
-for an unresolved local constraint and sanitized external Research only for a
-named external/current claim that can change the choice; it never runs both by
-default. It compares 2–3 real
-alternatives or records safe-path evidence, runs one challenge pass, and keeps
-the user-decision frontier finite: it shows the global map first, batches only
-independent material decisions, and asks dependent decisions in later turns. Its controlled transaction records
-`acceptance: pending`, `accepted`, or `blocked`; persistence is not acceptance,
-and only `accepted` is Plan-ready. Legacy v1/v2 records are read as `accepted`
-for compatibility. Independent Plan Review runs only on user
-request or a named material risk gate. Design never
-implements. `$teamwork-debug` begins with a real failure and reproduction;
+Use `$teamwork-collaborate` for natural discussion, brainstorming, grill,
+stress-testing, question-before-action, or a consequential solution that is
+still open. Use `$teamwork-plan` only after controlled Collaborate records
+`acceptance: accepted`. Collaborate uses Explorer only for an unresolved local
+constraint and sanitized external Research only for a named external/current
+claim that can change the choice; it never runs both by default. It compares
+2–3 real alternatives or records safe-path evidence, runs one challenge pass,
+and keeps the user-decision frontier finite. It contributes synthesis,
+candidate space, a decision map, or provisional recommendation before asking.
+Its controlled transaction records `acceptance: pending`, `accepted`, or
+`blocked`; persistence is not acceptance, and only `accepted` is Plan-ready.
+Legacy Discussion/Design records are read-only migration inputs. Independent
+Plan Review runs only on user request or a named material risk gate.
+Collaborate never implements. `$teamwork-debug` begins with a real failure and reproduction;
 `$teamwork-review` does not edit the candidate and returns `ACCEPT`, `REVISE`, or `BLOCKED`;
 `$teamwork-goal` persists an explicit objective, success signal, scope, budget,
 and attempts before it iterates.
 
+Collaborate selects `dialogue`, `brainstorm`, or `grill` from the requested
+outcome and evidence, and never asks the user to name a mode. Open questions
+stay in prose.
+Only a genuine finite decision with two or three mutually exclusive options
+uses Codex's native `request_user_input` surface when the host exposes it. The
+live app-server probe selects Plan collaboration mode for bounded scenarios
+because that preset exposes the native tool; open brainstorm stays in Default
+mode and prose. Grill strictly publishes and follows the complete global ->
+boundary -> detail map, places at most three independent decisions in one native
+batch, serializes dependent decisions, and applies one semantic Collaborate
+update after each answered batch before opening a dependent one.
+
 In an initialized writable project, named Teamwork workflows persist reusable
-artifacts by default; `no files`, off-record, read-only, or no-write overrides
-that default. Ordinary clarification or chat, one-off native work, and clear
-code implementation requests do not force an extra workflow artifact. Grill,
-Design, and Goal use specialized transactions. Research, Debug, Plan, Review,
-and mutating Init/Update use the generic artifact transaction. Explore creates
+checkpoints and results by default; `no files`, off-record, read-only, or
+no-write overrides that default. One-shot explanations, casual fact questions,
+and tiny native work create no standalone artifact. Collaborate and Goal
+use specialized transactions. Research, Debug, Plan, Plan Review, Review,
+mutating Init/Update, and a terminal execution handoff with an explicit consumer
+and no active Goal use the generic artifact transaction. An active Goal owns
+execution progress and suppresses duplicate execution artifacts. Explore creates
 no standalone report; its evidence is folded into the consuming artifact or
 answer.
 
-Design chooses its search strategy from the request and evidence. It selects
-adversarial only when at least two viable directions remain and costly or
-irreversible error or conflicting evidence makes one challenge inadequate;
-“high-risk” or “complex” alone is insufficient. `adversarial` forces the method
-and `standard` disables it. The model states its reason and uses default `B=3`
-without another confirmation. Every hypothesis then receives two fresh isolated
-Designer critics and two new final auditors must both pass. Missing isolation,
-exhausted budget, or failed closure returns an incomplete result whose controlled
-state remains `pending` or becomes `blocked`; it cannot be `accepted` or
-Plan-ready. A passing chat recommendation is not Plan-ready. Only a controlled
-Design with `acceptance: accepted` may enter Plan.
+Collaborate chooses its search strategy from the request and evidence. It uses
+the internal read-only Designer for direction selection, a frozen-hypothesis
+challenge, or a search-closure audit. It selects adversarial only when at least
+two viable directions remain and costly or irreversible error or conflicting
+evidence makes one challenge inadequate; “high-risk” or “complex” alone is
+insufficient. `adversarial` forces the method and `standard` disables it. The
+model states its reason and uses default `B=3` without another confirmation.
+Every hypothesis then receives two fresh isolated Designer critics and two new
+final auditors must both pass. Missing isolation, exhausted budget, or failed
+closure returns an incomplete result whose controlled state remains `pending` or
+becomes `blocked`; it cannot be `accepted` or Plan-ready. A passing chat
+recommendation is not Plan-ready. Only a controlled Collaborate state with
+`acceptance: accepted` may enter Plan.
 
 For a clear authorized code change, work result-first: modify the canonical
 owner, reuse existing patterns/built-ins/suitable dependencies, add the smallest
@@ -100,16 +119,16 @@ recheck per candidate.
 Skill selection remains model behavior rather than a deterministic Teamwork
 router, so invoke a skill by name when exact selection is important. Codex still
 owns native Plan mode, tools, browser and MCP access, permissions, agent
-coordination, and the final response. An ordinary request to "ask me first"
-stays conversation-only and does not trigger Grill or persistence. Once Grill is
-named or entered, an existing Grill is resumed, or an independently major
-public/installable, migration/release, permission, security, data, destructive,
-or cross-platform boundary invokes it, the specialized transaction updates only
-`docs/teamwork/discussion/current.md` by default.
-Within one scope, only creation, semantic decision/frontier change, and
-close/supersede persist; unchanged state is a no-op. New records use schema v2
-`frontier` / `current_batch` state. `no files`, off-record, read-only, or
-no-write wins.
+coordination, and the final response. Sustained Collaborate intent plus a
+substantive synthesis, candidate space, or decision map and an unresolved
+question or unaccepted direction defaults to one semantic checkpoint in
+`docs/teamwork/collaborate/current.md`. New records use Collaborate schema v1:
+dialogue records synthesis and tensions, brainstorm adds candidate space, and
+grill records the finite frontier/current_batch. Frozen legacy Discussion and
+Design records stay readable only as migration inputs and migrate only on a real
+semantic mutation. Unchanged state is a no-op. Collaborate never stores a
+transcript or substitutes a report/conclusion; `no files`, off-record,
+read-only, or no-write wins.
 
 ## Agents and profiles
 
@@ -120,9 +139,10 @@ worthwhile; the main task remains responsible for scope and integration. No
 subagent is required for routine local inspection or implementation. Writer uses
 a simple model and a frozen bounded brief for standalone project/product docs,
 README/guide/architecture docs, change and release notes, and Teamwork runtime
-artifacts. It may draft, rewrite, organize, summarize, translate, and polish,
-but must not research, invent or change facts, citations, decisions, authority,
-status, or acceptance. Code, comments, docstrings, tests, schemas, manifests,
+artifacts. It may draft, organize, summarize, translate, and polish,
+but must not research, invent, paraphrase, or change frozen facts, citations,
+decisions, authority, status, or acceptance; missing route/readback fails closed
+as unsaved. Code, comments, docstrings, tests, schemas, manifests,
 machine config, and inline config text remain with implementation owners. The recommended and currently verified local Root
 configuration remains user-controlled. The installer
 configures only subagent profiles and routing; it does not set Codex's Root
@@ -152,9 +172,9 @@ handle the roles where that profile permits it:
 ./install.sh codex --profile cost-first
 ```
 
-`./install.sh --help` lists supported targets and profiles. v3.4.2 migration
-can remove only verified Router/Execute and legacy-role files; this is cleanup,
-not an alias—v4 has no legacy role, Router, or Execute compatibility names.
+`./install.sh --help` lists supported targets and profiles. v5 removes retired public names `$grill-me`, `$teamwork-discuss`, and `$teamwork-design`; use `$teamwork-collaborate` instead, with no alias. Migration removes only exact
+Teamwork-owned legacy Grill/Discuss/Design/Router/Execute and legacy-role
+files. Modified or unmarked copies are preserved and stop automatic replacement.
 Readiness confirms installed configuration, not that Codex will spawn a
 particular agent for a natural-language request. Subagents do not send Teamwork
 completion or permission notifications.

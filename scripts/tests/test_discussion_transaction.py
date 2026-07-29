@@ -17,6 +17,7 @@ TEMPLATES = ROOT / "templates/teamwork-memory"
 CONTRACT = runpy.run_path(str(CLI), run_name="teamwork_discussion_contract")
 
 
+@unittest.skip("legacy Discussion write lifecycle retired; Collaborate import covers read-only compatibility")
 class DiscussionTransactionTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
@@ -49,17 +50,21 @@ class DiscussionTransactionTests(unittest.TestCase):
 
     def record(self, *, title: str = "Choose the recovery route", updated: str = "2026-07-19") -> dict[str, object]:
         return {
-            "schema_version": 2,
+            "schema_version": 3,
             "artifact_type": "discussion",
             "slug": "recovery-route",
             "title": title,
             "updated": updated,
+            "mode": "grill",
             "goal": "Preserve one recoverable durable decision.",
             "current_branch": "Choose the artifact transition route.",
             "return_path": "Resume at the recovery proof.",
             "blockers": ["The interruption proof is pending."],
             "convergence": "One exact recovery proof passes.",
             "key_evidence": ["The journal stores exact preimages."],
+            "settled": [],
+            "synthesis": ["Exact preimages make the discussion checkpoint recoverable."],
+            "tensions": ["Handoff speed competes with proving recovery first."],
             "frontier": [
                 {
                     "id": "Q1",
@@ -132,7 +137,7 @@ class DiscussionTransactionTests(unittest.TestCase):
 
     def request(self, operation: str, *, record: dict[str, object] | None = None, **extra: object) -> dict[str, object]:
         result: dict[str, object] = {
-            "schema_version": 2,
+            "schema_version": 3,
             "operation": operation,
             "expected_revision": self.inspect()["revision"],
         }
@@ -170,7 +175,7 @@ class DiscussionTransactionTests(unittest.TestCase):
         self.assertEqual(created["path"], "docs/teamwork/discussion/current.md")
         self.assertTrue(current.is_file())
         state = CONTRACT["validate_discussion_artifact"](current.read_text(encoding="utf-8"))
-        self.assertEqual(state["schema_version"], 2)
+        self.assertEqual(state["schema_version"], 3)
         self.assertEqual(state["status"], "active")
         self.assertEqual(state["slug"], "recovery-route")
         self.assertEqual(
@@ -187,7 +192,7 @@ class DiscussionTransactionTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         stale = self.apply(
             {
-                "schema_version": 1,
+                "schema_version": 3,
                 "operation": "update",
                 "expected_revision": "0" * 64,
                 "record": updated,
@@ -223,6 +228,22 @@ class DiscussionTransactionTests(unittest.TestCase):
             "superseded",
         )
         self.assertEqual(self.inspect()["active"]["state"]["title"], "Choose a successor route")
+
+    def test_semantic_noop_update_does_not_write(self) -> None:
+        created = self.create()
+        before = self.snapshot()
+        result = self.apply(
+            {
+                "schema_version": 3,
+                "operation": "update",
+                "expected_revision": created["revision"],
+                "record": self.record(),
+            }
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["changed_paths"], [])
+        self.assertEqual(self.snapshot(), before)
 
     def test_hard_interruption_auto_recovers_exact_preimage_on_next_inspect(self) -> None:
         self.create()
@@ -281,6 +302,267 @@ class DiscussionTransactionTests(unittest.TestCase):
         )
         with self.assertRaises(CONTRACT["TransactionError"]):
             CONTRACT["validate_discussion_artifact"](text.replace("Goal:", "Wrong goal:", 1))
+
+
+class CollaborateTransactionTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.project = Path(self.temporary.name) / "project"
+        self.memory = self.project / "docs/teamwork"
+        self.memory.mkdir(parents=True)
+        for name in ("index.json", "current.md", "README.md"):
+            (self.memory / name).write_bytes((TEMPLATES / name).read_bytes())
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def cli(self, *arguments: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+        merged = os.environ.copy()
+        if env:
+            merged.update(env)
+        return subprocess.run(
+            [sys.executable, str(CLI), *arguments],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            env=merged,
+            check=False,
+        )
+
+    def inspect(self) -> dict[str, object]:
+        result = self.cli("collaborate-inspect", "--project-root", str(self.project))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)
+
+    def apply(self, request: dict[str, object], *, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+        return self.cli(
+            "collaborate-apply",
+            "--project-root",
+            str(self.project),
+            "--request-json",
+            json.dumps(request),
+            env=env,
+        )
+
+    def state(
+        self,
+        *,
+        decision_id: str = "c-collaborate-route",
+        title: str = "Choose the Collaborate route",
+        updated: str = "2026-07-29T00:00:00Z",
+        status: str = "active",
+        acceptance: str = "pending",
+    ) -> dict[str, object]:
+        question_status = "open" if status == "active" else "answered"
+        state: dict[str, object] = {
+            "schema_version": 1,
+            "artifact_type": "collaborate",
+            "decision_id": decision_id,
+            "slug": "collaborate-route",
+            "title": title,
+            "updated": updated,
+            "status": status,
+            "acceptance": acceptance,
+            "mode": "dialogue",
+            "goal": "Resolve one public decision route.",
+            "synthesis": ["The durable route must be transaction-owned."],
+            "questions": [{"id": "q1", "prompt": "Which route owns the checkpoint?", "answer": "", "status": question_status}],
+            "current_batch": ["q1"] if status == "active" else [],
+            "settled": ["Inspect/schema/apply is the public surface."],
+            "key_evidence": ["The renderer validates readback."],
+            "open_items": [] if status != "active" else ["Choose the active route."],
+            "blockers": [],
+            "recommendation": "",
+            "acceptance_evidence": [],
+        }
+        if status == "accepted":
+            state["questions"] = [{"id": "q1", "prompt": "Which route owns the checkpoint?", "answer": "Use Collaborate.", "status": "answered"}]
+            state["open_items"] = []
+            state["recommendation"] = "Use Collaborate."
+            state["acceptance_evidence"] = ["Focused CLI proof passed."]
+        return state
+
+    def request(self, operation: str, *, state: dict[str, object] | None = None, **extra: object) -> dict[str, object]:
+        request: dict[str, object] = {
+            "schema_version": 1,
+            "operation": operation,
+            "expected_revision": self.inspect()["revision"],
+        }
+        if state is not None:
+            request["state"] = state
+        request.update(extra)
+        return request
+
+    def test_collaborate_cli_create_accept_and_supersede_are_cas_checked(self) -> None:
+        schema = self.cli("collaborate-schema", "create")
+        self.assertEqual(schema.returncode, 0, schema.stderr)
+        self.assertNotIn("destination", json.loads(schema.stdout))
+
+        created = self.apply(self.request("create", state=self.state()))
+        self.assertEqual(created.returncode, 0, created.stderr)
+        current = self.memory / "collaborate/current.md"
+        self.assertTrue(current.is_file())
+        state = CONTRACT["validate_collaborate_artifact"](current.read_text(encoding="utf-8"))
+        self.assertEqual(state["decision_id"], "c-collaborate-route")
+        self.assertEqual(json.loads(created.stdout)["path"], "docs/teamwork/collaborate/current.md")
+
+        stale = self.apply(
+            {
+                "schema_version": 1,
+                "operation": "update",
+                "expected_revision": "0" * 64,
+                "state": self.state(title="Stale update"),
+            }
+        )
+        self.assertNotEqual(stale.returncode, 0)
+        self.assertEqual(json.loads(stale.stderr)["category"], "PREWRITE_SAFE")
+
+        accepted = self.apply(self.request("accept", state=self.state(status="accepted", acceptance="accepted")))
+        self.assertEqual(accepted.returncode, 0, accepted.stderr)
+        accepted_state = CONTRACT["validate_collaborate_artifact"](current.read_text(encoding="utf-8"))
+        self.assertEqual(accepted_state["acceptance"], "accepted")
+        self.assertEqual(accepted_state["lineage"][-1]["operation"], "accept")
+
+        successor = self.state(
+            decision_id="c-successor-route",
+            title="Choose the successor route",
+            updated="2026-07-30T00:00:00Z",
+        )
+        superseded = self.apply(self.request("supersede", state=successor))
+        self.assertEqual(superseded.returncode, 0, superseded.stderr)
+        archive = next((self.memory / "collaborate").glob("2026-07-29-collaborate-route*.md"))
+        archive_state = CONTRACT["validate_collaborate_artifact"](archive.read_text(encoding="utf-8"))
+        self.assertEqual(archive_state["status"], "superseded")
+        self.assertEqual(archive_state["superseded_by"], "c-successor-route")
+        self.assertEqual(self.inspect()["active"]["state"]["decision_id"], "c-successor-route")
+
+    def test_collaborate_import_consumes_legacy_sources_without_mutating_them(self) -> None:
+        design = CONTRACT["design_schema"]("create")["state"]
+        design.update(
+            {
+                "slug": "shared-route",
+                "title": "Shared route",
+                "updated": "2026-07-29",
+                "acceptance": "accepted",
+                "decision_frontier": [],
+                "open_items": [],
+            }
+        )
+        design_path = CONTRACT["design_path"](design)
+        (self.memory / "design").mkdir()
+        (self.project / design_path).write_text(CONTRACT["render_design_artifact"](design), encoding="utf-8")
+        discussion = DiscussionTransactionTests.record(self, title="Shared route", updated="2026-07-29")
+        discussion["slug"] = "shared-route"
+        discussion["blockers"] = []
+        (self.memory / "discussion").mkdir()
+        (self.memory / "discussion/current.md").write_text(CONTRACT["render_discussion_artifact"](discussion), encoding="utf-8")
+        legacy_before = {
+            design_path: (self.project / design_path).read_bytes(),
+            "docs/teamwork/discussion/current.md": (
+                self.memory / "discussion/current.md"
+            ).read_bytes(),
+        }
+        index = json.loads((self.memory / "index.json").read_text(encoding="utf-8"))
+        index["active"]["design"] = design_path
+        index["entries"].append(CONTRACT["_index_entry"]("design", design_path, design, active=True))
+        (self.memory / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
+
+        inspected = self.inspect()
+        self.assertEqual({row["type"] for row in inspected["sources"]}, {"design", "discussion"})
+        imported = self.apply(
+            {
+                "schema_version": 1,
+                "operation": "import",
+                "expected_revision": inspected["revision"],
+                "decision_id": "c-imported-route",
+                "updated": "2026-07-29T01:02:03Z",
+            }
+        )
+        self.assertEqual(imported.returncode, 0, imported.stderr)
+        index = json.loads((self.memory / "index.json").read_text(encoding="utf-8"))
+        self.assertEqual(index["active"]["collaborate"], "docs/teamwork/collaborate/current.md")
+        self.assertIsNone(index["active"]["design"])
+        self.assertEqual(len(index["collaborate_consumed_sources"]), 2)
+        self.assertEqual(
+            (self.project / design_path).read_bytes(),
+            legacy_before[design_path],
+        )
+        self.assertEqual(
+            (self.memory / "discussion/current.md").read_bytes(),
+            legacy_before["docs/teamwork/discussion/current.md"],
+        )
+        design_entry = next(
+            entry for entry in index["entries"] if entry["path"] == design_path
+        )
+        self.assertEqual(design_entry["status"], "superseded")
+        self.assertEqual(
+            design_entry["superseded_by"],
+            "docs/teamwork/collaborate/current.md",
+        )
+        self.assertEqual(self.inspect()["sources"], [])
+
+    def test_legacy_write_cli_is_a_zero_read_zero_write_tombstone(self) -> None:
+        before = {
+            path.relative_to(self.project).as_posix(): path.read_bytes()
+            for path in self.project.rglob("*")
+            if path.is_file()
+        }
+        missing_request = self.project / "must-not-be-read.json"
+        cases = (
+            ("schema", "create"),
+            ("design-schema", "create"),
+            (
+                "apply",
+                "--project-root",
+                str(self.project),
+                "--request-json",
+                "{}",
+            ),
+            (
+                "design-apply",
+                "--project-root",
+                str(self.project),
+                "--request",
+                str(missing_request),
+            ),
+        )
+        for arguments in cases:
+            with self.subTest(command=arguments[0]):
+                result = self.cli(*arguments)
+                self.assertEqual(result.returncode, 2)
+                error = json.loads(result.stderr)
+                self.assertEqual(error["category"], "PREWRITE_SAFE")
+                self.assertIn(
+                    "legacy lifecycle retired; use collaborate-*",
+                    error["message"],
+                )
+                after = {
+                    path.relative_to(self.project).as_posix(): path.read_bytes()
+                    for path in self.project.rglob("*")
+                    if path.is_file()
+                }
+                self.assertEqual(after, before)
+                self.assertFalse(missing_request.exists())
+
+    def test_collaborate_recovery_restores_create_preimage(self) -> None:
+        before = {
+            path.relative_to(self.project).as_posix(): path.read_bytes()
+            for path in self.project.rglob("*")
+            if path.is_file()
+        }
+        failed = self.apply(
+            self.request("create", state=self.state()),
+            env={"TEAMWORK_ARTIFACT_TRANSACTION_FAIL_INSTALL_N": "1"},
+        )
+        self.assertNotEqual(failed.returncode, 0)
+        self.assertEqual(json.loads(failed.stderr)["category"], "INDETERMINATE")
+        recovered = {
+            path.relative_to(self.project).as_posix(): path.read_bytes()
+            for path in self.project.rglob("*")
+            if path.is_file()
+        }
+        self.assertEqual(recovered, before)
+        self.assertFalse((self.memory / "collaborate/.collaborate-transaction.json").exists())
 
 
 if __name__ == "__main__":

@@ -6,9 +6,10 @@ description: Use when the user asks to check, install, activate, repair, or refr
 # Teamwork Update
 
 Check or refresh Teamwork-managed global installation surfaces only. Never rewrite
-project context as part of an update. Ordinary natural discussion or
-brainstorming does not activate Update unless the existing global-install
-outcome trigger applies.
+project context as part of an update. Collaborate owns natural dialogue,
+brainstorming, grilling, and decision convergence; Update activates only when
+the requested outcome is an actual global install, skill, agent, managed policy,
+routing, or notification refresh.
 
 ## Resolve The Package
 

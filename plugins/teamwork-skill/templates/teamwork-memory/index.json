@@ -19,6 +19,7 @@
     "header_first": true
   },
   "active": {
+    "collaborate": null,
     "current": "docs/teamwork/current.md",
     "design": null,
     "plan": null,
@@ -26,6 +27,7 @@
     "report": null,
     "results": []
   },
+  "collaborate_consumed_sources": [],
   "entries": [
     {
       "topic": "project-initialization",

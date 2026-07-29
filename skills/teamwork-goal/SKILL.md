@@ -6,9 +6,11 @@ description: Use when the user explicitly asks the host to keep working until a 
 # Teamwork Goal
 
 Apply persistence around the user's actual task. Goal is a modifier, not a
-separate research, design, planning, debugging, implementation, or review stage.
-It never broadens scope or effect authority. Ordinary natural discussion or
-brainstorming does not activate Goal unless the user asks for persistence.
+separate research, collaboration, planning, debugging, implementation, or review
+stage. It never broadens scope or effect authority. Collaborate owns
+conversational continuity and decision convergence; Goal activates only when the
+user explicitly asks to keep pursuing a verifiable outcome, budget, or monitor
+contract.
 
 ## Establish State
 

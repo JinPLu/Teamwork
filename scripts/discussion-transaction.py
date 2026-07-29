@@ -22,9 +22,10 @@ import secrets
 import stat
 import sys
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterator, NoReturn
+import unicodedata
 
 
 MAX_REQUEST_BYTES = 256 * 1024
@@ -42,7 +43,7 @@ GOAL_PATH_RE = re.compile(
     r"^docs/teamwork/reports/(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)-goal\.md$"
 )
 WORKFLOW_ARTIFACT_PATH_RE = re.compile(
-    r"^docs/teamwork/(?:research|plans|workflows/(?:debug|review|conclusion|init|update))/(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$"
+    r"^docs/teamwork/(?:research|plans|workflows/(?:debug|review|execution|conclusion|init|update))/(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$"
 )
 DISCUSSION_CURRENT = "docs/teamwork/discussion/current.md"
 INDEX_PATH = "docs/teamwork/index.json"
@@ -50,7 +51,13 @@ DISCUSSION_MARKER = "docs/teamwork/discussion/.discussion-transaction.json"
 DESIGN_MARKER = "docs/teamwork/.design-transaction.json"
 GOAL_MARKER = "docs/teamwork/.goal-transaction.json"
 WORKFLOW_ARTIFACT_MARKER = "docs/teamwork/.workflow-artifact-transaction.json"
+COLLABORATE_MARKER = "docs/teamwork/collaborate/.collaborate-transaction.json"
 CANONICAL_CURRENT = "docs/teamwork/current.md"
+COLLABORATE_CURRENT = "docs/teamwork/collaborate/current.md"
+COLLABORATE_PREFIXES = (
+    "docs/teamwork/collaborate/",
+    INDEX_PATH,
+)
 WORKFLOW_ARTIFACT_KIND = "workflow-artifact"
 WORKFLOW_ARTIFACT_PREFIXES = (
     "docs/teamwork/plans/",
@@ -63,6 +70,7 @@ WORKFLOW_CONFIG: dict[str, dict[str, str]] = {
     "plan": {"kind": "plan", "active": "plan", "directory": "docs/teamwork/plans"},
     "debug": {"kind": "report", "active": "results", "directory": "docs/teamwork/workflows/debug"},
     "review": {"kind": "report", "active": "results", "directory": "docs/teamwork/workflows/review"},
+    "execution": {"kind": "result", "active": "results", "directory": "docs/teamwork/workflows/execution"},
     "conclusion": {"kind": "result", "active": "results", "directory": "docs/teamwork/workflows/conclusion"},
     "init": {"kind": "report", "active": "results", "directory": "docs/teamwork/workflows/init"},
     "update": {"kind": "report", "active": "results", "directory": "docs/teamwork/workflows/update"},
@@ -905,11 +913,16 @@ DISCUSSION_LIST_FIELDS = ("settled", "still_open", "blockers", "key_evidence")
 DISCUSSION_TEXT_FIELDS = ("goal", "current_branch", "return_path", "convergence")
 DISCUSSION_V2_LIST_FIELDS = ("blockers", "key_evidence")
 DISCUSSION_V2_TEXT_FIELDS = ("goal", "current_branch", "return_path", "convergence")
+DISCUSSION_MODES = {"dialogue", "brainstorm", "grill"}
+DISCUSSION_V3_LIST_FIELDS = ("blockers", "key_evidence", "settled", "synthesis", "tensions")
+DISCUSSION_V3_TEXT_FIELDS = ("goal", "current_branch", "return_path", "convergence")
 FRONTIER_ID_RE = re.compile(r"^Q[1-9][0-9]{0,2}$")
 OPTION_ID_RE = re.compile(r"^[a-z][a-z0-9_-]{0,23}$")
 FRONTIER_LEVELS = {"goal": 0, "boundary": 1, "detail": 2}
 FRONTIER_STATUSES = {"open", "current", "closed", "rejected"}
 FRONTIER_MUTABLE_FIELDS = ("prompt", "options", "recommendation", "depends_on", "closure_signal")
+DISCUSSION_QUESTION_STATUSES = {"open", "current", "answered", "rejected"}
+DISCUSSION_QUESTION_KINDS = {"open", "bounded"}
 
 
 def normalize_discussion_state_v1(value: object, *, require_status: bool = True) -> dict[str, object]:
@@ -1163,9 +1176,248 @@ def normalize_discussion_state_v2(value: object) -> dict[str, object]:
     return state
 
 
+def _normalize_discussion_question(value: object, label: str) -> dict[str, object]:
+    if not isinstance(value, dict):
+        fail(f"{label} must be an object")
+    question_id = value.get("id")
+    if not isinstance(question_id, str):
+        fail(f"{label}.id must be text")
+    _frontier_number(question_id)
+    kind = value.get("kind")
+    if kind not in DISCUSSION_QUESTION_KINDS:
+        fail(f"{label}.kind must be open or bounded")
+    status = value.get("status")
+    if status not in DISCUSSION_QUESTION_STATUSES:
+        fail(f"{label}.status is invalid")
+    question: dict[str, object] = {
+        "id": question_id,
+        "kind": str(kind),
+        "status": str(status),
+        "prompt": require_text(value.get("prompt"), f"{label}.prompt", maximum=4000),
+    }
+    resolution = value.get("resolution")
+    if status in {"open", "current"}:
+        if resolution is not None:
+            fail(f"{label}.resolution must be null while open or current")
+        question["resolution"] = None
+    elif status == "rejected":
+        if not isinstance(resolution, dict) or resolution.get("kind") != "rejected":
+            fail(f"{label}.resolution must carry a rejected reason")
+        question["resolution"] = {
+            "kind": "rejected",
+            "reason": require_text(resolution.get("reason"), f"{label}.resolution.reason", maximum=1000),
+        }
+    elif kind == "open":
+        if not isinstance(resolution, dict) or resolution.get("kind") != "text":
+            fail(f"{label}.resolution must carry a text answer")
+        question["resolution"] = {
+            "kind": "text",
+            "answer": require_text(resolution.get("answer"), f"{label}.resolution.answer", maximum=4000),
+        }
+    if kind == "open":
+        forbidden = {
+            "options",
+            "recommendation",
+            "largest_downside",
+            "why_critical",
+            "closure_signal",
+        }
+        if forbidden.intersection(value):
+            fail(f"{label} open question cannot carry bounded-choice fields")
+        return question
+    options_raw = value.get("options")
+    if not isinstance(options_raw, list) or not 2 <= len(options_raw) <= 3:
+        fail(f"{label}.options must contain two or three items")
+    options = [
+        _normalize_frontier_option(option, f"{label}.options[{position}]")
+        for position, option in enumerate(options_raw)
+    ]
+    option_ids = [str(option["id"]) for option in options]
+    if len(set(option_ids)) != len(option_ids):
+        fail(f"{label}.options must have unique ids")
+    recommendation = value.get("recommendation")
+    if recommendation not in option_ids:
+        fail(f"{label}.recommendation must name one option id")
+    if status == "answered":
+        if (
+            not isinstance(resolution, dict)
+            or resolution.get("kind") != "selected"
+            or resolution.get("option_id") not in option_ids
+        ):
+            fail(f"{label}.resolution must select one option when answered")
+        question["resolution"] = {
+            "kind": "selected",
+            "option_id": str(resolution["option_id"]),
+        }
+    question.update(
+        {
+            "options": options,
+            "recommendation": str(recommendation),
+            "largest_downside": require_text(
+                value.get("largest_downside"),
+                f"{label}.largest_downside",
+                maximum=2000,
+            ),
+            "why_critical": require_text(
+                value.get("why_critical"),
+                f"{label}.why_critical",
+                maximum=2000,
+            ),
+            "closure_signal": require_text(
+                value.get("closure_signal"),
+                f"{label}.closure_signal",
+                maximum=2000,
+            ),
+        }
+    )
+    return question
+
+
+def _validate_discussion_questions(
+    questions: list[dict[str, object]],
+    current_question: object,
+    lifecycle: str,
+) -> str | None:
+    ids = [str(item["id"]) for item in questions]
+    if len(ids) != len(set(ids)):
+        fail("Discussion questions must have unique ids")
+    if ids != sorted(ids, key=_frontier_number):
+        fail("Discussion questions must be ordered by monotonically increasing id")
+    current_ids = [str(item["id"]) for item in questions if item["status"] == "current"]
+    if lifecycle == "active":
+        if len(current_ids) != 1:
+            fail("active dialogue or brainstorm must have exactly one current question")
+        if current_question != current_ids[0]:
+            fail("Discussion current_question must exactly match status=current")
+        return current_ids[0]
+    if current_question is not None:
+        fail("closed Discussion cannot retain current_question")
+    if any(item["status"] in {"open", "current"} for item in questions):
+        fail("closed Discussion cannot retain open questions")
+    return None
+
+
+def normalize_discussion_state_v3(value: object) -> dict[str, object]:
+    if not isinstance(value, dict):
+        fail("Discussion state must be an object")
+    state: dict[str, object] = {
+        "schema_version": 3,
+        "artifact_type": "discussion",
+        "slug": require_slug(value.get("slug")),
+        "title": require_text(value.get("title"), "Discussion title"),
+        "updated": require_date(value.get("updated"), "Discussion updated"),
+        "status": value.get("status", "active"),
+        "superseded_by": value.get("superseded_by"),
+        "mode": value.get("mode"),
+    }
+    if state["status"] not in {"active", "accepted", "superseded"}:
+        fail("Discussion status must be active, accepted, or superseded")
+    if state["status"] == "active":
+        if state["superseded_by"] is not None:
+            fail("active Discussion cannot have superseded_by")
+    elif state["status"] == "superseded":
+        state["superseded_by"] = checked_relative(
+            state["superseded_by"],
+            "Discussion superseded_by",
+        )
+        if not str(state["superseded_by"]).startswith("docs/teamwork/discussion/"):
+            fail("Discussion superseded_by must stay in docs/teamwork/discussion/")
+    elif state["superseded_by"] is not None:
+        fail("accepted Discussion cannot have superseded_by")
+    if state["mode"] not in DISCUSSION_MODES:
+        fail("Discussion mode must be dialogue, brainstorm, or grill")
+    for field in DISCUSSION_V3_TEXT_FIELDS:
+        state[field] = require_text(
+            value.get(field),
+            f"Discussion {field.replace('_', ' ')}",
+        )
+    for field in DISCUSSION_V3_LIST_FIELDS:
+        minimum = 1 if field == "synthesis" else 0
+        state[field] = require_text_list(
+            value.get(field),
+            f"Discussion {field.replace('_', ' ')}",
+            minimum=minimum,
+        )
+    if state["mode"] == "grill":
+        for forbidden in ("questions", "current_question", "candidate_space"):
+            if forbidden in value:
+                fail(f"grill Discussion cannot carry {forbidden}")
+        frontier_raw = value.get("frontier")
+        if not isinstance(frontier_raw, list) or not frontier_raw:
+            fail("grill Discussion frontier must be a non-empty array")
+        state["frontier"] = [
+            _normalize_frontier_item(item, f"Discussion frontier[{position}]")
+            for position, item in enumerate(frontier_raw)
+        ]
+        state["current_batch"] = require_text_list(
+            value.get("current_batch"),
+            "Discussion current_batch",
+            minimum=0,
+            maximum=3,
+        )
+        _validate_frontier_graph(
+            state["frontier"],
+            state["current_batch"],
+            str(state["status"]),
+        )
+    else:
+        for forbidden in ("frontier", "current_batch"):
+            if forbidden in value:
+                fail(f"{state['mode']} Discussion cannot carry {forbidden}")
+        questions_raw = value.get("questions")
+        if not isinstance(questions_raw, list) or not questions_raw:
+            fail("dialogue and brainstorm questions must be a non-empty array")
+        state["questions"] = [
+            _normalize_discussion_question(item, f"Discussion questions[{position}]")
+            for position, item in enumerate(questions_raw)
+        ]
+        current = value.get("current_question")
+        state["current_question"] = _validate_discussion_questions(
+            state["questions"],
+            current,
+            str(state["status"]),
+        )
+        if state["mode"] == "brainstorm":
+            state["candidate_space"] = require_text_list(
+                value.get("candidate_space"),
+                "Discussion candidate_space",
+                minimum=2,
+                maximum=12,
+            )
+        elif "candidate_space" in value:
+            fail("dialogue Discussion cannot carry candidate_space")
+    migration = value.get("migration_source")
+    if migration is not None:
+        if not isinstance(migration, dict):
+            fail("Discussion migration_source must be an object")
+        source_path = checked_relative(
+            migration.get("path"),
+            "Discussion migration source path",
+        )
+        source_hash = migration.get("sha256")
+        source_text = migration.get("source_text")
+        if (
+            not source_path.startswith("docs/teamwork/discussion/")
+            or not isinstance(source_hash, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", source_hash)
+            or not isinstance(source_text, str)
+        ):
+            fail("Discussion migration_source is malformed")
+        if hashlib.sha256(source_text.encode("utf-8")).hexdigest() != source_hash:
+            fail("Discussion migration_source hash does not match source_text")
+        state["migration_source"] = {
+            "path": source_path,
+            "sha256": source_hash,
+            "source_text": source_text,
+        }
+    return state
+
+
 def normalize_discussion_state(value: object, *, require_status: bool = True) -> dict[str, object]:
     if not isinstance(value, dict):
         fail("Discussion state must be an object")
+    if value.get("schema_version") == 3:
+        return normalize_discussion_state_v3(value)
     if value.get("schema_version") == 2:
         return normalize_discussion_state_v2(value)
     return normalize_discussion_state_v1(value, require_status=require_status)
@@ -1211,8 +1463,35 @@ def discussion_route_mermaid_v2(state: dict[str, object]) -> str:
     return "\n".join(lines)
 
 
+def discussion_route_mermaid_v3(state: dict[str, object]) -> str:
+    if state["mode"] == "grill":
+        return discussion_route_mermaid_v2(state)
+    questions = {str(item["id"]): item for item in state["questions"]}
+    current = state["current_question"]
+    current_label = "none"
+    if isinstance(current, str):
+        current_label = f"{current} · {questions[current]['kind']}"
+    answered = sum(
+        1
+        for item in state["questions"]
+        if item["status"] in {"answered", "rejected"}
+    )
+    return "\n".join(
+        (
+            "flowchart TD",
+            f'    goal["Goal · {state["status"]}"] --> mode["Mode · {state["mode"]}"]',
+            f'    mode --> question["Question · {_mermaid_label(current_label)}"]',
+            f'    question --> converge["Converge · resolved {answered}"]',
+        )
+    )
+
+
 def discussion_route_mermaid(state: dict[str, object]) -> str:
-    return discussion_route_mermaid_v2(state) if state.get("schema_version") == 2 else discussion_route_mermaid_v1(state)
+    if state.get("schema_version") == 3:
+        return discussion_route_mermaid_v3(state)
+    if state.get("schema_version") == 2:
+        return discussion_route_mermaid_v2(state)
+    return discussion_route_mermaid_v1(state)
 
 
 def discussion_fallback_v1(state: dict[str, object]) -> str:
@@ -1250,8 +1529,36 @@ def discussion_fallback_v2(state: dict[str, object]) -> str:
     )
 
 
+def discussion_fallback_v3(state: dict[str, object]) -> str:
+    if state["mode"] == "grill":
+        return "\n".join(
+            (
+                f"Mode: {state['mode']}",
+                discussion_fallback_v2(state),
+            )
+        )
+    questions = [
+        f"{item['id']} · {item['kind']} · {item['status']}"
+        for item in state["questions"]
+    ]
+    return "\n".join(
+        (
+            f"Mode: {state['mode']}",
+            f"Current question: {state['current_question'] or 'none'}",
+            f"Questions: {' | '.join(questions)}",
+            f"Synthesis points: {len(state['synthesis'])}",
+            f"Tensions: {len(state['tensions'])}",
+            f"Convergence status: {state['status']}",
+        )
+    )
+
+
 def discussion_fallback(state: dict[str, object]) -> str:
-    return discussion_fallback_v2(state) if state.get("schema_version") == 2 else discussion_fallback_v1(state)
+    if state.get("schema_version") == 3:
+        return discussion_fallback_v3(state)
+    if state.get("schema_version") == 2:
+        return discussion_fallback_v2(state)
+    return discussion_fallback_v1(state)
 
 
 def _discussion_semantics_v2(state: dict[str, object]) -> str:
@@ -1315,6 +1622,77 @@ def _discussion_semantics_v2(state: dict[str, object]) -> str:
     return "\n".join(detail)
 
 
+def _discussion_semantics_v3(state: dict[str, object]) -> str:
+    common: list[str] = [
+        "## Readable state",
+        "",
+        f"Mode: {state['mode']}",
+        f"Goal: {state['goal']}",
+        f"Current branch: {state['current_branch']}",
+        f"Return path: {state['return_path']}",
+        f"Convergence: {state['convergence']}",
+        "",
+        "Synthesis:",
+        _bullets(state["synthesis"]),
+        "",
+        "Tensions:",
+        _bullets(state["tensions"]),
+        "",
+        "Settled:",
+        _bullets(state["settled"]),
+        "",
+        "Blockers:",
+        _bullets(state["blockers"]),
+        "",
+        "Key evidence:",
+        _bullets(state["key_evidence"]),
+    ]
+    if state["mode"] == "grill":
+        v2 = _discussion_semantics_v2(state)
+        frontier = v2.split("## Frontier", 1)[1]
+        return "\n".join([*common, "", "## Frontier" + frontier])
+    if state["mode"] == "brainstorm":
+        common.extend(
+            [
+                "",
+                "Candidate space:",
+                _bullets(state["candidate_space"]),
+            ]
+        )
+    rows = [
+        "| ID | Kind | Status | Prompt |",
+        "|---|---|---|---|",
+    ]
+    for item in state["questions"]:
+        prompt = str(item["prompt"]).replace("|", "\\|")
+        rows.append(f"| {item['id']} | {item['kind']} | {item['status']} | {prompt} |")
+    common.extend(["", "## Questions", "", *rows])
+    for item in state["questions"]:
+        common.extend(["", f"### {item['id']} · {item['kind']}", ""])
+        if item["kind"] == "bounded":
+            common.extend(
+                [
+                    f"Why critical: {item['why_critical']}",
+                    f"Largest downside: {item['largest_downside']}",
+                    f"Closure signal: {item['closure_signal']}",
+                    "",
+                    "Options:",
+                    _bullets(
+                        [
+                            f"{option['id']}: {option['label']} - {option['tradeoff']}"
+                            for option in item["options"]
+                        ]
+                    ),
+                    f"Recommendation: {item['recommendation']}",
+                ]
+            )
+        if item["resolution"] is not None:
+            common.append(
+                f"Resolution: {json.dumps(item['resolution'], ensure_ascii=False, sort_keys=True)}"
+            )
+    return "\n".join(common)
+
+
 def render_discussion_artifact(value: object) -> str:
     state = normalize_discussion_state(value)
     parts = [
@@ -1324,6 +1702,11 @@ def render_discussion_artifact(value: object) -> str:
             f"Last Updated: {state['updated']}",
             f"Discussion Slug: {state['slug']}",
             f"Superseded By: {state['superseded_by'] or 'none'}",
+    ]
+    if state.get("schema_version") == 3:
+        parts.append(f"Discussion Mode: {state['mode']}")
+    parts.extend(
+        [
             "",
             f"# {state['title']}",
             "",
@@ -1337,7 +1720,10 @@ def render_discussion_artifact(value: object) -> str:
             "",
             discussion_fallback(state),
             "",
-    ]
+        ]
+    )
+    if state.get("schema_version") == 3:
+        parts.extend([_discussion_semantics_v3(state), ""])
     if state.get("schema_version") == 2:
         parts.extend([_discussion_semantics_v2(state), ""])
     parts.extend(
@@ -1370,7 +1756,199 @@ def _frontier_by_id(state: dict[str, object]) -> dict[str, dict[str, object]]:
 
 
 def _frontier_equal(left: dict[str, object], right: dict[str, object]) -> bool:
-    return json.dumps(left, ensure_ascii=False, sort_keys=True) == json.dumps(right, ensure_ascii=False, sort_keys=True)
+    left_payload = {
+        "frontier": left.get("frontier"),
+        "current_batch": left.get("current_batch"),
+    }
+    right_payload = {
+        "frontier": right.get("frontier"),
+        "current_batch": right.get("current_batch"),
+    }
+    return json.dumps(left_payload, ensure_ascii=False, sort_keys=True) == json.dumps(
+        right_payload,
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+
+
+def _validate_frontier_transition(
+    old: dict[str, object],
+    state: dict[str, object],
+    request: dict[str, object],
+) -> None:
+    if _frontier_equal(old, state):
+        return
+    old_items = _frontier_by_id(old)
+    new_items = _frontier_by_id(state)
+    missing = set(old_items) - set(new_items)
+    if missing:
+        fail("Discussion update cannot remove existing frontier ids")
+    max_old_id = max(
+        (_frontier_number(item_id) for item_id in old_items),
+        default=0,
+    )
+    for item_id in set(new_items) - set(old_items):
+        if _frontier_number(item_id) <= max_old_id:
+            fail("Discussion update must allocate monotonically increasing frontier ids")
+    old_current = {
+        str(item["id"])
+        for item in old["frontier"]
+        if item["status"] == "current"
+    }
+    unresolved = [
+        item_id
+        for item_id in old_current
+        if new_items[item_id]["status"] == "current"
+    ]
+    if unresolved:
+        fail("answered-batch update must close or reject every prior-current item")
+    for item_id, old_item in old_items.items():
+        new_item = new_items[item_id]
+        if old_item["status"] in {"closed", "rejected"} and old_item != new_item:
+            fail("closed and rejected Discussion frontier items are immutable")
+        if old_item["status"] == "current" and new_item["status"] not in {
+            "closed",
+            "rejected",
+        }:
+            fail("a current Discussion frontier item must close or reject")
+        if old_item["status"] == "open":
+            for stable in ("id", "title", "level"):
+                if old_item[stable] != new_item[stable]:
+                    fail("open Discussion frontier items retain id, title, and level")
+            changed_mutable = any(
+                old_item[field] != new_item[field]
+                for field in FRONTIER_MUTABLE_FIELDS
+            )
+            if changed_mutable and new_item["status"] == "open":
+                reasons = request.get("frontier_delta_reasons")
+                if (
+                    not isinstance(reasons, dict)
+                    or not isinstance(reasons.get(item_id), str)
+                    or not reasons[item_id].strip()
+                ):
+                    fail("changed open Discussion frontier items require frontier_delta_reasons")
+                newly_resolved = [
+                    dep
+                    for dep in old_item["depends_on"]
+                    if dep in new_items
+                    and old_items[str(dep)]["status"] in {"open", "current"}
+                    and new_items[str(dep)]["status"] == "closed"
+                ]
+                if not newly_resolved or not any(
+                    dep in reasons[item_id] for dep in newly_resolved
+                ):
+                    fail("frontier_delta_reasons must name a newly resolved dependency")
+
+
+def _question_by_id(state: dict[str, object]) -> dict[str, dict[str, object]]:
+    return {str(item["id"]): item for item in state.get("questions", [])}
+
+
+def _question_payload_equal(
+    left: dict[str, object],
+    right: dict[str, object],
+) -> bool:
+    left_payload = {
+        "questions": left.get("questions"),
+        "current_question": left.get("current_question"),
+    }
+    right_payload = {
+        "questions": right.get("questions"),
+        "current_question": right.get("current_question"),
+    }
+    return json.dumps(left_payload, ensure_ascii=False, sort_keys=True) == json.dumps(
+        right_payload,
+        ensure_ascii=False,
+        sort_keys=True,
+    )
+
+
+def _validate_question_transition(
+    old: dict[str, object],
+    state: dict[str, object],
+) -> None:
+    if _question_payload_equal(old, state):
+        return
+    old_items = _question_by_id(old)
+    new_items = _question_by_id(state)
+    if set(old_items) - set(new_items):
+        fail("Discussion update cannot remove existing question ids")
+    max_old_id = max(
+        (_frontier_number(item_id) for item_id in old_items),
+        default=0,
+    )
+    for item_id in set(new_items) - set(old_items):
+        if _frontier_number(item_id) <= max_old_id:
+            fail("Discussion update must allocate monotonically increasing question ids")
+    old_current = old.get("current_question")
+    if isinstance(old_current, str):
+        if new_items[old_current]["status"] not in {"answered", "rejected"}:
+            fail("Discussion update must answer or reject the prior current question")
+    for item_id, old_item in old_items.items():
+        new_item = new_items[item_id]
+        if old_item["status"] in {"answered", "rejected"}:
+            if old_item != new_item:
+                fail("answered and rejected Discussion questions are immutable")
+            continue
+        stable_fields = set(old_item) - {"status", "resolution"}
+        if any(old_item[field] != new_item.get(field) for field in stable_fields):
+            fail("open and current Discussion question wording is immutable")
+        allowed = {
+            "open": {"open", "current", "answered", "rejected"},
+            "current": {"answered", "rejected"},
+        }[str(old_item["status"])]
+        if new_item["status"] not in allowed:
+            fail("Discussion question lifecycle moved backward")
+
+
+def _attach_discussion_migration_source(
+    state: dict[str, object],
+    active_source_text: str | None,
+) -> dict[str, object]:
+    if active_source_text is None:
+        fail("legacy Discussion migration requires exact source text")
+    state["migration_source"] = {
+        "path": DISCUSSION_CURRENT,
+        "sha256": hashlib.sha256(active_source_text.encode("utf-8")).hexdigest(),
+        "source_text": active_source_text,
+    }
+    return normalize_discussion_state_v3(state)
+
+
+def _validate_v1_to_v3_migration(
+    prior: dict[str, object],
+    state: dict[str, object],
+) -> None:
+    if state["mode"] != "dialogue":
+        fail("active v1 Discussion migration must enter dialogue mode")
+    if not set(prior["settled"]).issubset(set(state["settled"])):
+        fail("v1 Discussion migration must preserve settled items")
+    prompts = {str(item["prompt"]) for item in state["questions"]}
+    preserved = prompts.union(set(state["settled"]))
+    if not set(prior["still_open"]).issubset(preserved):
+        fail("v1 Discussion migration must preserve every still_open item")
+    for field in ("blockers", "key_evidence"):
+        if not set(prior[field]).issubset(set(state[field])):
+            fail(f"v1 Discussion migration must preserve {field}")
+
+
+def _validate_mode_transition(
+    old: dict[str, object],
+    state: dict[str, object],
+    request: dict[str, object],
+) -> None:
+    reason = request.get("mode_transition_reason")
+    if not isinstance(reason, str) or not reason.strip():
+        fail("Discussion mode transition requires mode_transition_reason")
+    resolution = request.get("mode_transition_resolution")
+    if not isinstance(resolution, str) or not resolution.strip():
+        fail("Discussion mode transition requires mode_transition_resolution")
+    if resolution.strip() not in state["settled"]:
+        fail("mode_transition_resolution must be recorded in settled")
+    if not set(old["settled"]).issubset(set(state["settled"])):
+        fail("Discussion mode transition must preserve settled items")
+    if not set(old["key_evidence"]).issubset(set(state["key_evidence"])):
+        fail("Discussion mode transition must preserve key evidence")
 
 
 def validate_discussion_transition(
@@ -1380,79 +1958,27 @@ def validate_discussion_transition(
     *,
     active_source_text: str | None = None,
 ) -> dict[str, object]:
-    state = normalize_discussion_state_v2(proposed)
+    state = normalize_discussion_state_v3(proposed)
     if prior is None:
         return state
-    if prior.get("schema_version") != 2:
-        enrichments = request.get("legacy_enrichment")
-        if not isinstance(enrichments, list):
-            fail("active v1 Discussion migration requires legacy_enrichment")
-        legacy_open = prior.get("still_open")
-        if not isinstance(legacy_open, list):
-            fail("active v1 Discussion has no migratable open list")
-        seen_indexes: set[int] = set()
-        seen_ids: set[str] = set()
-        for item in enrichments:
-            if not isinstance(item, dict) or not isinstance(item.get("still_open_index"), int) or not isinstance(item.get("frontier_id"), str):
-                fail("legacy_enrichment items must map one v1 still_open index to one frontier id")
-            index = int(item["still_open_index"])
-            if not 0 <= index < len(legacy_open) or index in seen_indexes:
-                fail("legacy_enrichment must cover v1 still_open indexes injectively")
-            seen_indexes.add(index)
-            frontier_id = str(item["frontier_id"])
-            if frontier_id in seen_ids:
-                fail("legacy_enrichment must map to unique frontier ids")
-            seen_ids.add(frontier_id)
-            matches = [frontier for frontier in state["frontier"] if frontier["id"] == frontier_id]
-            if len(matches) != 1:
-                fail("legacy_enrichment frontier_id must exist exactly once in v2 frontier")
-        if seen_indexes != set(range(len(legacy_open))):
-            fail("legacy_enrichment must cover every v1 still_open item")
-        if active_source_text is None:
-            fail("active v1 Discussion migration requires exact source text")
-        source_path = DISCUSSION_CURRENT
-        state["migration_source"] = {
-            "path": source_path,
-            "sha256": hashlib.sha256(active_source_text.encode("utf-8")).hexdigest(),
-            "source_text": active_source_text,
-        }
-        return normalize_discussion_state_v2(state)
-    old = normalize_discussion_state_v2(prior)
-    if _frontier_equal(old, state):
+    if prior.get("schema_version") == 1:
+        old_v1 = normalize_discussion_state_v1(prior)
+        _validate_v1_to_v3_migration(old_v1, state)
+        return _attach_discussion_migration_source(state, active_source_text)
+    if prior.get("schema_version") == 2:
+        old_v2 = normalize_discussion_state_v2(prior)
+        if state["mode"] != "grill":
+            fail("active v2 Discussion migration must enter grill mode")
+        _validate_frontier_transition(old_v2, state, request)
+        return _attach_discussion_migration_source(state, active_source_text)
+    old = normalize_discussion_state_v3(prior)
+    if old["mode"] != state["mode"]:
+        _validate_mode_transition(old, state, request)
         return state
-    old_items = _frontier_by_id(old)
-    new_items = _frontier_by_id(state)
-    missing = set(old_items) - set(new_items)
-    if missing:
-        fail("Discussion update cannot remove existing frontier ids")
-    max_old_id = max((_frontier_number(item_id) for item_id in old_items), default=0)
-    for item_id in set(new_items) - set(old_items):
-        if _frontier_number(item_id) <= max_old_id:
-            fail("Discussion update must allocate monotonically increasing frontier ids")
-    old_current = {str(item["id"]) for item in old["frontier"] if item["status"] == "current"}
-    if old_current:
-        unresolved = [item_id for item_id in old_current if new_items[item_id]["status"] == "current"]
-        if unresolved:
-            fail("answered-batch update must close or reject every prior-current item")
-    for item_id, old_item in old_items.items():
-        new_item = new_items[item_id]
-        if old_item["status"] in {"closed", "rejected"} and old_item != new_item:
-            fail("closed and rejected Discussion frontier items are immutable")
-        if old_item["status"] == "open":
-            for stable in ("id", "title", "level"):
-                if old_item[stable] != new_item[stable]:
-                    fail("open Discussion frontier items retain id, title, and level")
-            changed_mutable = any(old_item[field] != new_item[field] for field in FRONTIER_MUTABLE_FIELDS)
-            if changed_mutable and new_item["status"] == "open":
-                reasons = request.get("frontier_delta_reasons")
-                if not isinstance(reasons, dict) or not isinstance(reasons.get(item_id), str) or not reasons[item_id].strip():
-                    fail("changed open Discussion frontier items require frontier_delta_reasons")
-                newly_resolved = [
-                    dep for dep in old_item["depends_on"]
-                    if dep in new_items and old_items[str(dep)]["status"] in {"open", "current"} and new_items[str(dep)]["status"] == "closed"
-                ]
-                if not newly_resolved or not any(dep in reasons[item_id] for dep in newly_resolved):
-                    fail("frontier_delta_reasons must name a newly resolved dependency")
+    if state["mode"] == "grill":
+        _validate_frontier_transition(old, state, request)
+    else:
+        _validate_question_transition(old, state)
     return state
 
 
@@ -1474,7 +2000,7 @@ def validate_artifact(text: str, *, operation: str | None = None, entry: dict[st
 
 def discussion_revision(root: Path) -> str:
     current = safe_read_bytes(root, DISCUSSION_CURRENT, optional=True) or b""
-    return _hash(b"discussion-v4", current)
+    return _hash(b"discussion-v5", current)
 
 
 def discussion_active(root: Path) -> dict[str, object] | None:
@@ -1486,41 +2012,38 @@ def discussion_schema(operation: str) -> dict[str, object]:
     if operation not in {"create", "update", "close", "replace", "supersede"}:
         fail("Discussion schema operation must be create, update, close, replace, or supersede")
     record: dict[str, object] = {
-        "schema_version": 2,
+        "schema_version": 3,
         "artifact_type": "discussion",
-        "slug": "decision-slug",
-        "title": "Decision title",
+        "slug": "discussion-slug",
+        "title": "Discussion title",
         "updated": "YYYY-MM-DD",
-        "goal": "The user outcome this discussion protects.",
-        "current_branch": "The current material branch.",
-        "return_path": "Resume at the named discriminator.",
-        "blockers": ["none recorded"],
-        "convergence": "What directly closes this discussion.",
+        "mode": "dialogue",
+        "goal": "The user outcome this discussion serves.",
+        "current_branch": "The current line of thought.",
+        "return_path": "Resume at the current unresolved question.",
+        "blockers": [],
+        "convergence": "The user has enough shared context to choose the next route.",
         "key_evidence": ["One compact evidence statement."],
-        "frontier": [
+        "settled": ["One conclusion that should not be reopened without new evidence."],
+        "synthesis": ["The current substantive synthesis."],
+        "tensions": ["The material tension that keeps the discussion open."],
+        "questions": [
             {
                 "id": "Q1",
-                "title": "Decision route",
-                "level": "goal",
-                "status": "current" if operation != "close" else "closed",
-                "prompt": "Which route should this discussion choose?",
-                "options": [
-                    {"id": "recommended", "label": "Recommended route", "tradeoff": "Preserves the accepted boundary."},
-                    {"id": "alternate", "label": "Alternate route", "tradeoff": "Changes a named constraint."},
-                ],
-                "recommendation": "recommended",
-                "largest_downside": "The recommended route still has one explicit cost.",
-                "why_critical": "The answer changes the selected outcome.",
-                "blocks": ["selected direction"],
-                "depends_on": [],
-                "closure_signal": "The user selects one option or rejects the premise.",
-                "resolution": None if operation != "close" else {"kind": "selected", "option_id": "recommended"},
+                "kind": "open",
+                "status": "current" if operation != "close" else "answered",
+                "prompt": "What would most improve or redirect this synthesis?",
+                "resolution": (
+                    None
+                    if operation != "close"
+                    else {"kind": "text", "answer": "The discussion is complete."}
+                ),
             }
         ],
-        "current_batch": ["Q1"] if operation != "close" else [],
+        "current_question": "Q1" if operation != "close" else None,
     }
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "operation": operation,
         "expected_revision": "<revision from inspect>",
         "record": record,
@@ -1549,7 +2072,14 @@ def _archive_path(root: Path, slug: str, updated: str) -> str:
 def _merge_discussion_record(old: dict[str, object], record: object, *, active: bool) -> dict[str, object]:
     if not isinstance(record, dict):
         fail("Discussion request record must be an object")
-    merged = {key: value for key, value in old.items() if key not in {"status", "superseded_by", "migration_source"}}
+    if record.get("schema_version") == 3 and old.get("schema_version") in {1, 2}:
+        merged = dict(record)
+    else:
+        merged = {
+            key: value
+            for key, value in old.items()
+            if key not in {"status", "superseded_by"}
+        }
     merged.update(record)
     merged["status"] = "active" if active else merged.get("status", "accepted")
     merged["superseded_by"] = None
@@ -1560,7 +2090,9 @@ def _superseded_discussion_archive(state: dict[str, object], superseded_by: str)
     archive = dict(state)
     archive["status"] = "superseded"
     archive["superseded_by"] = superseded_by
-    if archive.get("schema_version") == 2:
+    if archive.get("schema_version") in {2, 3} and (
+        archive.get("schema_version") == 2 or archive.get("mode") == "grill"
+    ):
         frontier = []
         for item in archive["frontier"]:
             next_item = dict(item)
@@ -1570,7 +2102,23 @@ def _superseded_discussion_archive(state: dict[str, object], superseded_by: str)
             frontier.append(next_item)
         archive["frontier"] = frontier
         archive["current_batch"] = []
+        if archive.get("schema_version") == 3:
+            return normalize_discussion_state_v3(archive)
         return normalize_discussion_state_v2(archive)
+    if archive.get("schema_version") == 3:
+        questions = []
+        for item in archive["questions"]:
+            next_item = dict(item)
+            if next_item["status"] in {"open", "current"}:
+                next_item["status"] = "rejected"
+                next_item["resolution"] = {
+                    "kind": "rejected",
+                    "reason": "Superseded by successor discussion.",
+                }
+            questions.append(next_item)
+        archive["questions"] = questions
+        archive["current_question"] = None
+        return normalize_discussion_state_v3(archive)
     archive["still_open"] = []
     return normalize_discussion_state_v1(archive)
 
@@ -1589,8 +2137,8 @@ def inspect_discussion(root: Path) -> dict[str, object]:
 
 
 def apply_discussion(root: Path, request: dict[str, object]) -> dict[str, object]:
-    if request.get("schema_version") != 2:
-        fail("Discussion request schema_version must be 2")
+    if request.get("schema_version") != 3:
+        fail("Discussion request schema_version must be 3")
     operation = request.get("operation")
     if operation not in {"create", "update", "close", "replace", "supersede"}:
         fail("Discussion request operation is invalid")
@@ -1639,15 +2187,15 @@ def apply_discussion(root: Path, request: dict[str, object]) -> dict[str, object
             if isinstance(record, dict):
                 state = _merge_discussion_record(active, record, active=False)
             state["status"] = close_status
-            if state.get("schema_version") == 2:
+            if state.get("schema_version") == 3:
                 state = validate_discussion_transition(active, state, request, active_source_text=active_text)
             else:
-                fail("closing an active v1 Discussion requires a schema v2 migration record")
+                fail("closing a legacy Discussion requires a schema v3 migration record")
             if close_status == "superseded":
                 state["superseded_by"] = checked_relative(request.get("superseded_by"), "Discussion superseded_by")
             else:
                 state["superseded_by"] = None
-            state = normalize_discussion_state_v2(state)
+            state = normalize_discussion_state_v3(state)
             archive = _archive_path(root, str(active["slug"]), str(state["updated"]))
             outputs = {
                 archive: Output(render_discussion_artifact(state).encode("utf-8")),
@@ -2044,7 +2592,7 @@ def parse_index(text: str) -> dict[str, object]:
     active = index.get("active")
     if not isinstance(active, dict):
         fail("Teamwork index active must be an object")
-    allowed = {"current", "design", "plan", "progress", "report", "results"}
+    allowed = {"current", "collaborate", "design", "plan", "progress", "report", "results"}
     unknown = set(active) - allowed
     if unknown:
         if "discussion" in unknown:
@@ -2063,6 +2611,11 @@ def parse_index(text: str) -> dict[str, object]:
             active[pointer] = checked_relative(value, f"active.{pointer}")
             if active[pointer].startswith("docs/teamwork/discussion/"):
                 fail(f"active.{pointer} cannot point at Discussion state")
+    collaborate = active.get("collaborate")
+    if collaborate is not None:
+        active["collaborate"] = checked_relative(collaborate, "active.collaborate")
+        if active["collaborate"] != COLLABORATE_CURRENT:
+            fail(f"active.collaborate must be null or {COLLABORATE_CURRENT}")
     raw_entries = index.get("entries")
     if not isinstance(raw_entries, list) or not raw_entries:
         fail("Teamwork index entries must be a non-empty array")
@@ -2084,6 +2637,14 @@ def _eligible(entry: dict[str, object]) -> bool:
 
 
 def _pointer_eligible(pointer: str, entry: dict[str, object]) -> bool:
+    if pointer == "collaborate":
+        return (
+            entry.get("artifact_type") == "collaborate"
+            and entry.get("kind") == "decision"
+            and entry.get("status") in {"active", "accepted", "blocked"}
+            and entry.get("currentness") == "current"
+            and entry.get("authority") == "canonical"
+        )
     if pointer != "design":
         return _eligible(entry)
     if entry.get("kind") != "design":
@@ -2105,6 +2666,8 @@ def _pointer_shape(pointer: str, path: str, entry: dict[str, object]) -> bool:
         return entry["kind"] == "progress" and GOAL_PATH_RE.fullmatch(path) is not None
     if pointer == "report":
         return entry["kind"] == "report"
+    if pointer == "collaborate":
+        return entry.get("artifact_type") == "collaborate" and path == COLLABORATE_CURRENT
     return True
 
 
@@ -2143,6 +2706,28 @@ def _validate_pointer_metadata(index: dict[str, object]) -> None:
         if raw in used:
             fail("one artifact path cannot own more than one active pointer")
         used.add(raw)
+    current_collaborate = [
+        entry
+        for entry in entries
+        if isinstance(entry, dict) and _pointer_eligible("collaborate", entry)
+    ]
+    raw_collaborate = active.get("collaborate")
+    if raw_collaborate is None:
+        if current_collaborate:
+            fail("active.collaborate is null while a current Collaborate artifact exists")
+    else:
+        assert isinstance(raw_collaborate, str)
+        matching = [
+            entry
+            for entry in current_collaborate
+            if entry.get("path") == raw_collaborate
+            and _pointer_shape("collaborate", raw_collaborate, entry)
+        ]
+        if len(matching) != 1 or len(current_collaborate) != 1:
+            fail("active.collaborate is ambiguous")
+        if raw_collaborate in used:
+            fail("one artifact path cannot own more than one active pointer")
+        used.add(raw_collaborate)
     _validate_workflow_pointer_metadata(index, used)
 
 
@@ -2402,6 +2987,20 @@ def validate_currentness(root: Path, index: dict[str, object]) -> None:
             text = safe_read_text(root, result_path)
             assert text is not None
             validate_workflow_artifact_entry(text, entry)
+    collaborate_path = active.get("collaborate")
+    if isinstance(collaborate_path, str):
+        text = safe_read_text(root, collaborate_path)
+        assert text is not None
+        state = validate_collaborate_artifact(text)
+        _, entry = _find_entry(index, collaborate_path)
+        if (
+            collaborate_path != COLLABORATE_CURRENT
+            or state["title"] != entry["title"]
+            or str(state["updated"])[:10] != entry["updated"]
+            or state["slug"] != entry["topic"]
+            or entry.get("artifact_type") != "collaborate"
+        ):
+            fail("active.collaborate artifact does not agree with its index entry")
 
 
 def normalize_workflow_request(value: object) -> dict[str, object]:
@@ -2460,6 +3059,11 @@ def normalize_workflow_request(value: object) -> dict[str, object]:
         "evidence_paths": require_path_list(value.get("evidence_paths", []), "workflow artifact evidence_paths"),
         "search_keys": require_text_list(value.get("search_keys", []), "workflow artifact search_keys"),
     }
+    if workflow == "execution":
+        if operation == "update":
+            fail("execution artifacts are one terminal handoff; use supersede for a later run")
+        if str(state["consumer"]).casefold() in {"writer", "none", "unknown"}:
+            fail("execution artifact consumer must name the real downstream consumer")
     previous = value.get("previous_path")
     if operation == "create":
         if previous is not None:
@@ -2543,10 +3147,20 @@ def _workflow_active_entry_map(index: dict[str, object]) -> dict[str, dict[str, 
 
 def workflow_revision(root: Path, index_text: str, index: dict[str, object]) -> str:
     parts = [b"workflow-artifact-v1", index_text.encode("utf-8")]
-    for path in sorted(_workflow_active_entry_map(index)):
+    active_workflow_entries = _workflow_active_entry_map(index)
+    for path in sorted(active_workflow_entries):
         data = safe_read_bytes(root, path)
         assert data is not None
         parts.append(path.encode("utf-8"))
+        parts.append(data)
+    active = index["active"]
+    assert isinstance(active, dict)
+    legacy_plan = active.get("plan")
+    if isinstance(legacy_plan, str) and legacy_plan not in active_workflow_entries:
+        data = safe_read_bytes(root, legacy_plan)
+        assert data is not None
+        parts.append(b"legacy-plan")
+        parts.append(legacy_plan.encode("utf-8"))
         parts.append(data)
     return _hash(*parts)
 
@@ -2618,6 +3232,27 @@ def _find_workflow_entry(index: dict[str, object], path: str) -> tuple[int, dict
     return position, entry
 
 
+def _find_supersedable_workflow_entry(
+    index: dict[str, object],
+    path: str,
+    workflow: str,
+) -> tuple[int, dict[str, object], bool]:
+    position, entry = _find_entry(index, path)
+    if _is_workflow_entry(entry) and _eligible(entry):
+        return position, entry, False
+    active = index["active"]
+    assert isinstance(active, dict)
+    if (
+        workflow == "plan"
+        and active.get("plan") == path
+        and entry.get("kind") == "plan"
+        and _eligible(entry)
+        and _pointer_shape("plan", path, entry)
+    ):
+        return position, entry, True
+    fail("previous_path is not a current generic workflow artifact or migratable active Plan from artifact-inspect")
+
+
 def _conflicting_workflow_slug(index: dict[str, object], workflow: str, slug: str, *, except_path: str | None = None) -> bool:
     for entry in index["entries"]:
         if not isinstance(entry, dict) or not _is_workflow_entry(entry) or not _eligible(entry):
@@ -2659,6 +3294,8 @@ def apply_workflow_artifact(root: Path, request: dict[str, object]) -> dict[str,
         validate_currentness(root, index)
         if state["expected_revision"] != workflow_revision(root, index_text, index):
             fail("stale workflow artifact expected_revision; run artifact-inspect again")
+        if workflow == "execution" and index["active"].get("progress") is not None:
+            fail("active Goal owns execution progress and suppresses a separate execution artifact")
         if _conflicting_workflow_slug(index, workflow, str(state["slug"]), except_path=str(state["previous_path"])):
             fail("a current workflow artifact already owns this workflow and slug")
         active = index["active"]
@@ -2676,8 +3313,8 @@ def apply_workflow_artifact(root: Path, request: dict[str, object]) -> dict[str,
             outputs = {target: Output(render_workflow_artifact(state).encode("utf-8"))}
         else:
             old_path = str(state["previous_path"])
-            _, old_entry = _find_workflow_entry(index, old_path)
             if operation == "update":
+                _, old_entry = _find_workflow_entry(index, old_path)
                 if old_entry.get("workflow") != workflow:
                     fail("update cannot change workflow; use supersede")
                 if target != old_path:
@@ -2685,7 +3322,8 @@ def apply_workflow_artifact(root: Path, request: dict[str, object]) -> dict[str,
                 _replace_index_entry(index, old_path, _workflow_index_entry(state, target, active=True, supersedes=list(old_entry.get("supersedes", []))))
                 outputs = {target: Output(render_workflow_artifact(state).encode("utf-8"))}
             else:
-                old_slot = _workflow_artifact_slot(str(old_entry["workflow"]))
+                _, old_entry, legacy_plan = _find_supersedable_workflow_entry(index, old_path, workflow)
+                old_slot = slot if legacy_plan else _workflow_artifact_slot(str(old_entry["workflow"]))
                 if old_slot != slot:
                     fail("supersede cannot move a workflow artifact between active registration classes")
                 if target == old_path or safe_read_bytes(root, target, optional=True) is not None:
@@ -3443,14 +4081,1086 @@ def plan_v342_discussion_migration(
     }
 
 
+# ---------------------------------------------------------------------------
+# Collaborate: unified public discussion/design decision transaction.
+
+
+COLLABORATE_ARCHIVE_RE = re.compile(
+    r"^docs/teamwork/collaborate/(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)(?:-(\d+))?\.md$"
+)
+COLLABORATE_DECISION_ID_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
+HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
+UTC_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+COLLABORATE_FIELDS = (
+    "schema_version", "artifact_type", "decision_id", "slug", "title", "updated",
+    "status", "acceptance", "mode", "lineage", "migration_sources", "goal",
+    "synthesis", "tensions", "candidate_space", "questions", "frontier",
+    "current_batch", "settled", "key_evidence", "open_items", "blockers",
+    "recommendation", "largest_downside", "decision_rule", "adversarial",
+    "plan_handoff", "review_handoff", "rejected_alternatives",
+    "acceptance_evidence", "return_path", "exclusions", "superseded_by",
+)
+COLLABORATE_SET_FIELDS = {
+    "settled", "key_evidence", "open_items", "blockers", "rejected_alternatives",
+    "acceptance_evidence", "exclusions",
+}
+COLLABORATE_UPDATE_FIELDS = {
+    "title", "mode", "goal", "synthesis", "tensions", "candidate_space",
+    "questions", "frontier", "current_batch", "settled", "key_evidence",
+    "open_items", "recommendation", "largest_downside", "decision_rule",
+    "adversarial", "plan_handoff", "review_handoff", "rejected_alternatives",
+    "acceptance_evidence", "return_path", "exclusions",
+}
+
+
+def _canonical_json(value: object) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _sha256_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _norm_text(value: object, label: str, *, allow_empty: bool = True) -> str:
+    if not isinstance(value, str):
+        fail(f"{label} must be text")
+    text = unicodedata.normalize("NFC", value.replace("\r\n", "\n").replace("\r", "\n")).strip()
+    if not allow_empty and not text:
+        fail(f"{label} must be non-empty text")
+    if CONTROL_RE.search(text) is not None:
+        fail(f"{label} contains unsafe control characters")
+    return text
+
+
+def _norm_slug(value: object, fallback: str = "collaborate") -> str:
+    raw = value if isinstance(value, str) and value.strip() else fallback
+    slug = re.sub(r"[^a-z0-9]+", "-", _norm_text(raw, "slug source").casefold()).strip("-")
+    slug = re.sub(r"-+", "-", slug) or "collaborate"
+    if SLUG_RE.fullmatch(slug) is None:
+        fail("slug must be lowercase kebab-case")
+    return slug[:80].strip("-") or "collaborate"
+
+
+def _new_decision_id() -> str:
+    return "c-" + secrets.token_hex(12)
+
+
+def _require_utc(value: object, label: str) -> str:
+    text = _norm_text(value, label, allow_empty=False)
+    if UTC_RE.fullmatch(text) is None:
+        fail(f"{label} must be UTC timestamp YYYY-MM-DDTHH:MM:SSZ")
+    try:
+        datetime.strptime(text, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError:
+        fail(f"{label} must be UTC timestamp YYYY-MM-DDTHH:MM:SSZ")
+    return text
+
+
+def _norm_str_list(value: object, label: str, *, ordered: bool = True, maximum: int = 200) -> list[str]:
+    if value is None:
+        value = []
+    if not isinstance(value, list) or len(value) > maximum:
+        fail(f"{label} must be an array")
+    items = [_norm_text(item, f"{label} item") for item in value]
+    if ordered:
+        return items
+    return sorted(set(items), key=lambda item: item.encode("utf-8"))
+
+
+def _norm_collab_path(value: object, label: str) -> str:
+    path = _norm_text(value, label, allow_empty=False)
+    pure = PurePosixPath(path)
+    if (
+        pure.is_absolute()
+        or pure.as_posix() != path
+        or "\\" in path
+        or any(part in {"", ".", ".."} for part in pure.parts)
+        or pure.parts[:2] != ("docs", "teamwork")
+    ):
+        fail(f"{label} must be a normalized path under docs/teamwork/")
+    return path
+
+
+def _normalize_source_row(value: object, label: str) -> dict[str, object]:
+    if not isinstance(value, dict) or set(value) != {"path", "schema_version", "scope_key", "sha256", "type"}:
+        fail(f"{label} must match the Collaborate source schema")
+    source_type = value.get("type")
+    if source_type not in {"design", "discussion"}:
+        fail(f"{label}.type must be design or discussion")
+    schema_version = value.get("schema_version")
+    if not isinstance(schema_version, int) or isinstance(schema_version, bool) or schema_version <= 0:
+        fail(f"{label}.schema_version must be a positive integer")
+    digest = value.get("sha256")
+    if not isinstance(digest, str) or HEX64_RE.fullmatch(digest) is None:
+        fail(f"{label}.sha256 must be lowercase sha256 hex")
+    return {
+        "path": _norm_collab_path(value.get("path"), f"{label}.path"),
+        "schema_version": schema_version,
+        "scope_key": _norm_text(value.get("scope_key"), f"{label}.scope_key", allow_empty=False),
+        "sha256": digest,
+        "type": source_type,
+    }
+
+
+def _normalize_ledger_row(value: object, label: str) -> dict[str, object]:
+    if not isinstance(value, dict) or set(value) != {"consumed_at", "consumed_by_decision_id", "kind", "path", "sha256"}:
+        fail(f"{label} must match the Collaborate consumed source ledger schema")
+    kind = value.get("kind")
+    if kind not in {"design", "discussion"}:
+        fail(f"{label}.kind must be design or discussion")
+    decision_id = _norm_text(value.get("consumed_by_decision_id"), f"{label}.consumed_by_decision_id", allow_empty=False).lower()
+    digest = value.get("sha256")
+    if COLLABORATE_DECISION_ID_RE.fullmatch(decision_id) is None:
+        fail(f"{label}.consumed_by_decision_id is invalid")
+    if not isinstance(digest, str) or HEX64_RE.fullmatch(digest) is None:
+        fail(f"{label}.sha256 must be lowercase sha256 hex")
+    return {
+        "consumed_at": _require_utc(value.get("consumed_at"), f"{label}.consumed_at"),
+        "consumed_by_decision_id": decision_id,
+        "kind": kind,
+        "path": _norm_collab_path(value.get("path"), f"{label}.path"),
+        "sha256": digest,
+    }
+
+
+def _sort_collaborate_ledger(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    order = {"design": 0, "discussion": 1}
+    return sorted(rows, key=lambda row: (order[str(row["kind"])], str(row["path"]).encode("utf-8"), str(row["sha256"]), str(row["consumed_by_decision_id"])))
+
+
+def normalize_collaborate_ledger(value: object | None) -> list[dict[str, object]]:
+    if value is None:
+        value = []
+    if not isinstance(value, list):
+        fail("collaborate_consumed_sources must be an array")
+    rows = [_normalize_ledger_row(item, f"collaborate_consumed_sources[{position}]") for position, item in enumerate(value)]
+    seen_full: set[tuple[str, str, str, str]] = set()
+    seen_digest: set[tuple[str, str, str]] = set()
+    by_path: dict[tuple[str, str], str] = {}
+    for row in rows:
+        full = (str(row["kind"]), str(row["path"]), str(row["sha256"]), str(row["consumed_by_decision_id"]))
+        if full in seen_full:
+            fail("collaborate_consumed_sources contains duplicate rows")
+        seen_full.add(full)
+        digest_key = (str(row["kind"]), str(row["path"]), str(row["sha256"]))
+        if digest_key in seen_digest:
+            fail("collaborate_consumed_sources duplicates a consumed source")
+        seen_digest.add(digest_key)
+        key = (str(row["kind"]), str(row["path"]))
+        if key in by_path and by_path[key] != row["sha256"]:
+            fail("collaborate_consumed_sources records source drift")
+        by_path[key] = str(row["sha256"])
+    sorted_rows = _sort_collaborate_ledger(rows)
+    if sorted_rows != rows:
+        fail("collaborate_consumed_sources must be canonically sorted")
+    return sorted_rows
+
+
+def _norm_candidate(value: object, label: str) -> dict[str, str]:
+    if not isinstance(value, dict) or set(value) != {"id", "status", "summary", "title"}:
+        fail(f"{label} must match the Collaborate candidate schema")
+    if value.get("status") not in {"open", "recommended", "rejected", "settled"}:
+        fail(f"{label}.status is invalid")
+    return {
+        "id": _norm_text(value.get("id"), f"{label}.id", allow_empty=False),
+        "status": str(value["status"]),
+        "summary": _norm_text(value.get("summary"), f"{label}.summary"),
+        "title": _norm_text(value.get("title"), f"{label}.title"),
+    }
+
+
+def _norm_question(value: object, label: str) -> dict[str, str]:
+    if not isinstance(value, dict) or set(value) != {"answer", "id", "prompt", "status"}:
+        fail(f"{label} must match the Collaborate question schema")
+    if value.get("status") not in {"open", "answered", "skipped"}:
+        fail(f"{label}.status is invalid")
+    return {
+        "answer": _norm_text(value.get("answer"), f"{label}.answer"),
+        "id": _norm_text(value.get("id"), f"{label}.id", allow_empty=False),
+        "prompt": _norm_text(value.get("prompt"), f"{label}.prompt"),
+        "status": str(value["status"]),
+    }
+
+
+def _norm_frontier(value: object, label: str) -> dict[str, str]:
+    if not isinstance(value, dict) or set(value) != {"id", "rationale", "status", "title"}:
+        fail(f"{label} must match the Collaborate frontier schema")
+    if value.get("status") not in {"open", "settled", "rejected"}:
+        fail(f"{label}.status is invalid")
+    return {
+        "id": _norm_text(value.get("id"), f"{label}.id", allow_empty=False),
+        "rationale": _norm_text(value.get("rationale"), f"{label}.rationale"),
+        "status": str(value["status"]),
+        "title": _norm_text(value.get("title"), f"{label}.title"),
+    }
+
+
+def _norm_handoff(value: object, label: str) -> dict[str, object]:
+    if value is None:
+        value = {"notes": [], "ready": False}
+    if not isinstance(value, dict) or set(value) != {"notes", "ready"} or not isinstance(value.get("ready"), bool):
+        fail(f"{label} must match the Collaborate handoff schema")
+    return {"notes": _norm_str_list(value.get("notes"), f"{label}.notes"), "ready": bool(value["ready"])}
+
+
+def _norm_adversarial(value: object) -> dict[str, object]:
+    if value is None:
+        value = {"evidence": [], "status": "not_run", "summary": ""}
+    if not isinstance(value, dict) or set(value) != {"evidence", "status", "summary"}:
+        fail("adversarial must match the Collaborate schema")
+    if value.get("status") not in {"not_run", "pass", "fail"}:
+        fail("adversarial.status is invalid")
+    return {
+        "evidence": _norm_str_list(value.get("evidence"), "adversarial.evidence"),
+        "status": str(value["status"]),
+        "summary": _norm_text(value.get("summary"), "adversarial.summary"),
+    }
+
+
+def _norm_lineage(value: object, label: str) -> dict[str, str]:
+    if not isinstance(value, dict) or set(value) != {"decision_id", "operation", "previous_lineage_digest"}:
+        fail(f"{label} must match the Collaborate lineage schema")
+    if value.get("operation") not in {"create", "update", "accept", "block", "close", "supersede"}:
+        fail(f"{label}.operation is invalid")
+    decision_id = _norm_text(value.get("decision_id"), f"{label}.decision_id", allow_empty=False).lower()
+    previous = _norm_text(value.get("previous_lineage_digest"), f"{label}.previous_lineage_digest")
+    if COLLABORATE_DECISION_ID_RE.fullmatch(decision_id) is None or (previous and HEX64_RE.fullmatch(previous) is None):
+        fail(f"{label} has invalid digest or decision_id")
+    return {"decision_id": decision_id, "operation": str(value["operation"]), "previous_lineage_digest": previous}
+
+
+def normalize_collaborate_state(value: object) -> dict[str, object]:
+    if not isinstance(value, dict):
+        fail("Collaborate state must be an object")
+    unknown = set(value) - set(COLLABORATE_FIELDS)
+    if unknown:
+        fail(f"Collaborate state has unknown fields: {', '.join(sorted(unknown))}")
+    decision_id = _norm_text(value.get("decision_id", _new_decision_id()), "decision_id", allow_empty=False).lower()
+    if COLLABORATE_DECISION_ID_RE.fullmatch(decision_id) is None:
+        fail("decision_id is invalid")
+    status = value.get("status", "active")
+    acceptance = value.get("acceptance", "pending")
+    if status not in {"active", "accepted", "blocked", "closed", "superseded"}:
+        fail("Collaborate status is invalid")
+    if acceptance not in {"pending", "accepted", "blocked"}:
+        fail("Collaborate acceptance is invalid")
+    if (status, acceptance) not in {
+        ("active", "pending"), ("accepted", "accepted"), ("blocked", "blocked"),
+        ("closed", "pending"), ("superseded", "pending"), ("superseded", "accepted"), ("superseded", "blocked"),
+    }:
+        fail("Collaborate status and acceptance are inconsistent")
+    mode = value.get("mode", "dialogue")
+    if mode not in {"dialogue", "brainstorm", "grill"}:
+        fail("Collaborate mode is invalid")
+    superseded_by = value.get("superseded_by")
+    if superseded_by is not None:
+        superseded_by = _norm_text(superseded_by, "superseded_by", allow_empty=False).lower()
+        if COLLABORATE_DECISION_ID_RE.fullmatch(superseded_by) is None:
+            fail("superseded_by is invalid")
+    state: dict[str, object] = {
+        "schema_version": 1,
+        "artifact_type": "collaborate",
+        "decision_id": decision_id,
+        "slug": _norm_slug(value.get("slug"), str(value.get("title") or value.get("goal") or "collaborate")),
+        "title": _norm_text(value.get("title", ""), "title"),
+        "updated": _require_utc(value.get("updated", _utc_now()), "updated"),
+        "status": str(status),
+        "acceptance": str(acceptance),
+        "mode": str(mode),
+        "lineage": [_norm_lineage(item, f"lineage[{position}]") for position, item in enumerate(value.get("lineage", []))],
+        "migration_sources": [_normalize_source_row(item, f"migration_sources[{position}]") for position, item in enumerate(value.get("migration_sources", []))],
+        "goal": _norm_text(value.get("goal", ""), "goal"),
+        "synthesis": _norm_str_list(value.get("synthesis"), "synthesis"),
+        "tensions": _norm_str_list(value.get("tensions"), "tensions"),
+        "candidate_space": [_norm_candidate(item, f"candidate_space[{position}]") for position, item in enumerate(value.get("candidate_space", []))],
+        "questions": [_norm_question(item, f"questions[{position}]") for position, item in enumerate(value.get("questions", []))],
+        "frontier": [_norm_frontier(item, f"frontier[{position}]") for position, item in enumerate(value.get("frontier", []))],
+        "current_batch": _norm_str_list(value.get("current_batch"), "current_batch", maximum=3),
+        "settled": _norm_str_list(value.get("settled"), "settled", ordered=False),
+        "key_evidence": _norm_str_list(value.get("key_evidence"), "key_evidence", ordered=False),
+        "open_items": _norm_str_list(value.get("open_items"), "open_items", ordered=False),
+        "blockers": _norm_str_list(value.get("blockers"), "blockers", ordered=False),
+        "recommendation": _norm_text(value.get("recommendation", ""), "recommendation"),
+        "largest_downside": _norm_text(value.get("largest_downside", ""), "largest_downside"),
+        "decision_rule": _norm_text(value.get("decision_rule", ""), "decision_rule"),
+        "adversarial": _norm_adversarial(value.get("adversarial")),
+        "plan_handoff": _norm_handoff(value.get("plan_handoff"), "plan_handoff"),
+        "review_handoff": _norm_handoff(value.get("review_handoff"), "review_handoff"),
+        "rejected_alternatives": _norm_str_list(value.get("rejected_alternatives"), "rejected_alternatives", ordered=False),
+        "acceptance_evidence": _norm_str_list(value.get("acceptance_evidence"), "acceptance_evidence", ordered=False),
+        "return_path": _norm_text(value.get("return_path", ""), "return_path"),
+        "exclusions": _norm_str_list(value.get("exclusions"), "exclusions", ordered=False),
+        "superseded_by": superseded_by,
+    }
+    if not state["lineage"]:
+        state["lineage"] = [{"decision_id": decision_id, "operation": "create", "previous_lineage_digest": ""}]
+    _validate_collaborate_relations(state)
+    return state
+
+
+def _validate_collaborate_relations(state: dict[str, object]) -> None:
+    questions = {str(item["id"]): item for item in state["questions"]}
+    frontier = {str(item["id"]): item for item in state["frontier"]}
+    if len(questions) != len(state["questions"]) or len(frontier) != len(state["frontier"]):
+        fail("Collaborate question and frontier ids must be unique")
+    batch = [str(item) for item in state["current_batch"]]
+    if len(batch) != len(set(batch)) or len(batch) > 3:
+        fail("current_batch must contain at most three unique ids")
+    if state["mode"] == "dialogue" and len(batch) > 1:
+        fail("dialogue current_batch may contain at most one id")
+    source = frontier if state["mode"] == "grill" else questions
+    wrong = questions if state["mode"] == "grill" else frontier
+    for item_id in batch:
+        if item_id in wrong:
+            fail("current_batch references the wrong mode collection")
+        if item_id not in source:
+            fail("current_batch references an unknown id")
+        if source[item_id]["status"] != "open":
+            fail("current_batch references a non-open record")
+    if state["status"] in {"accepted", "blocked", "closed", "superseded"} and batch:
+        fail("terminal Collaborate states cannot retain current_batch")
+    if state["status"] == "accepted" and (
+        any(item["status"] == "open" for item in state["questions"])
+        or any(item["status"] == "open" for item in state["frontier"])
+    ):
+        fail("accepted Collaborate cannot retain open records")
+
+
+def collaborate_semantic_digest(state: dict[str, object]) -> str:
+    normalized = normalize_collaborate_state(state)
+    return _sha256_text(_canonical_json({key: normalized[key] for key in COLLABORATE_FIELDS}))
+
+
+def collaborate_lineage_digest(state: dict[str, object]) -> str:
+    normalized = normalize_collaborate_state(state)
+    lineage = normalized["lineage"]
+    assert isinstance(lineage, list) and lineage
+    last = lineage[-1]
+    assert isinstance(last, dict)
+    return _sha256_text(_canonical_json({
+        "decision_id": last["decision_id"],
+        "operation": last["operation"],
+        "previous_lineage_digest": last["previous_lineage_digest"],
+        "semantic_digest": collaborate_semantic_digest(normalized),
+    }))
+
+
+def render_collaborate_artifact(value: object) -> str:
+    state = normalize_collaborate_state(value)
+    return "\n".join((
+        "Artifact Kind: collaborate",
+        "Artifact Type: collaborate",
+        "Schema Version: 1",
+        f"Status: {state['status']}",
+        f"Acceptance: {state['acceptance']}",
+        f"Mode: {state['mode']}",
+        f"Last Updated: {state['updated']}",
+        f"Decision ID: {state['decision_id']}",
+        f"Collaborate Slug: {state['slug']}",
+        f"Semantic Digest: {collaborate_semantic_digest(state)}",
+        f"Lineage Digest: {collaborate_lineage_digest(state)}",
+        f"Superseded By: {state['superseded_by'] or 'none'}",
+        "",
+        f"# {state['title'] or state['slug']}",
+        "",
+        "## Decision Map",
+        "",
+        "```mermaid",
+        "flowchart TD",
+        f'    mode["Mode: {_mermaid_label(str(state["mode"]))}"] --> status["Status: {_mermaid_label(str(state["status"]))}"]',
+        f'    status --> batch["Current batch: {_mermaid_label(", ".join(state["current_batch"]) or "none")}"]',
+        "```",
+        "",
+        "Plain-text fallback:",
+        "",
+        f"Goal: {state['goal'] or 'none'}",
+        f"Current batch: {', '.join(state['current_batch']) or 'none'}",
+        f"Recommendation: {state['recommendation'] or 'none'}",
+        "",
+        "## Collaborate State",
+        "",
+        "```json",
+        json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True),
+        "```",
+        "",
+    ))
+
+
+def validate_collaborate_artifact(text: str) -> dict[str, object]:
+    block = _section(text, "Collaborate State")
+    match = re.fullmatch(r"```json\n(.*)\n```", block, flags=re.DOTALL)
+    if match is None:
+        fail("Collaborate state must be one JSON fenced block")
+    state = normalize_collaborate_state(_decode_json(match.group(1), "Collaborate state"))
+    if text != render_collaborate_artifact(state):
+        fail("Collaborate artifact graph, fallback, headers, or state drifted from canonical renderer")
+    return state
+
+
+def _materialize_collaborate_index(index: dict[str, object]) -> dict[str, object]:
+    index = dict(index)
+    active = dict(index.get("active") or {})
+    active.setdefault("collaborate", None)
+    index["active"] = active
+    index["collaborate_consumed_sources"] = normalize_collaborate_ledger(index.get("collaborate_consumed_sources"))
+    return index
+
+
+def _collaborate_revision(
+    index: dict[str, object],
+    current_bytes: bytes | None,
+    *,
+    index_text: str,
+    full_sources: list[dict[str, object]],
+) -> str:
+    active = index.get("active")
+    pointer = active.get("collaborate") if isinstance(active, dict) else None
+    if pointer is not None:
+        pointer = checked_relative(pointer, "active.collaborate")
+    if pointer not in {None, COLLABORATE_CURRENT}:
+        fail("active.collaborate must be null or docs/teamwork/collaborate/current.md")
+    if pointer is None and current_bytes is not None:
+        fail("Collaborate current exists without active.collaborate")
+    if pointer == COLLABORATE_CURRENT and current_bytes is None:
+        fail("active.collaborate points at missing current")
+    current_sha = None if pointer is None else hashlib.sha256(current_bytes or b"").hexdigest()
+    payload = {
+        "active_pointer": pointer,
+        "current_path": COLLABORATE_CURRENT,
+        "current_sha256": current_sha,
+        "index_sha256": _sha256_text(index_text),
+        "schema_version": 1,
+        "sources": full_sources,
+    }
+    return hashlib.sha256(b"collaborate-cas-v1\0" + _canonical_json(payload).encode("utf-8")).hexdigest()
+
+
+def collaborate_revision(root: Path, index: dict[str, object] | None = None) -> str:
+    if index is None:
+        index_text, index = _read_index(root)
+    else:
+        index_text = _serialize_index(index)
+    index = _materialize_collaborate_index(index)
+    return _collaborate_revision(
+        index,
+        safe_read_bytes(root, COLLABORATE_CURRENT, optional=True),
+        index_text=index_text,
+        full_sources=enumerate_collaborate_sources(root, index),
+    )
+
+
+def _source_row(kind: str, path: str, schema_version: int, scope_key: str, raw: bytes) -> dict[str, object]:
+    return _normalize_source_row(
+        {
+            "path": path,
+            "schema_version": schema_version,
+            "scope_key": scope_key,
+            "sha256": hashlib.sha256(raw).hexdigest(),
+            "type": kind,
+        },
+        "legacy source",
+    )
+
+
+def enumerate_collaborate_sources(root: Path, index: dict[str, object]) -> list[dict[str, object]]:
+    sources: list[dict[str, object]] = []
+    active = index.get("active")
+    design_path_value = active.get("design") if isinstance(active, dict) else None
+    if isinstance(design_path_value, str):
+        design_path_value = checked_relative(design_path_value, "active.design")
+        raw = safe_read_bytes(root, design_path_value)
+        assert raw is not None
+        text = raw.decode("utf-8")
+        state = validate_design_artifact(text)
+        if state.get("status") == "current":
+            sources.append(_source_row("design", design_path_value, int(state["schema_version"]), str(state["slug"]), raw))
+    discussion_raw = safe_read_bytes(root, DISCUSSION_CURRENT, optional=True)
+    if discussion_raw is not None:
+        state = validate_discussion_artifact(discussion_raw.decode("utf-8"))
+        if state.get("status") == "active":
+            sources.append(_source_row("discussion", DISCUSSION_CURRENT, int(state["schema_version"]), str(state["slug"]), discussion_raw))
+    return sources
+
+
+def classify_collaborate_sources(full_sources: list[dict[str, object]], ledger: list[dict[str, object]]) -> dict[str, list[dict[str, object]]]:
+    ledger_by_path = {(str(row["kind"]), str(row["path"])): row for row in ledger}
+    sources: list[dict[str, object]] = []
+    consumed: list[dict[str, object]] = []
+    for source in full_sources:
+        row = ledger_by_path.get((str(source["type"]), str(source["path"])))
+        if row is None:
+            sources.append(source)
+        elif row["sha256"] == source["sha256"]:
+            consumed.append(row)
+        else:
+            fail("consumed legacy source drift detected")
+    return {"full_sources": full_sources, "sources": sources, "consumed_sources": consumed}
+
+
+def _current_collaborate(root: Path) -> tuple[bytes | None, dict[str, object] | None]:
+    current = safe_read_bytes(root, COLLABORATE_CURRENT, optional=True)
+    if current is None:
+        return None, None
+    return current, validate_collaborate_artifact(current.decode("utf-8"))
+
+
+def _require_collaborate_closure(state: dict[str, object]) -> None:
+    state = normalize_collaborate_state(state)
+    if state["current_batch"]:
+        fail("accepted Collaborate requires empty current_batch")
+    if any(item["status"] == "open" for item in state["questions"]):
+        fail("accepted Collaborate requires no open questions")
+    if any(item["status"] == "open" for item in state["frontier"]):
+        fail("accepted Collaborate requires no open frontier")
+    if state["open_items"] or state["blockers"]:
+        fail("accepted Collaborate requires no open_items or blockers")
+    adversarial = state["adversarial"]
+    assert isinstance(adversarial, dict)
+    if adversarial["status"] not in {"not_run", "pass"}:
+        fail("accepted Collaborate requires adversarial status not_run or pass")
+    if not state["recommendation"] or not state["acceptance_evidence"]:
+        fail("accepted Collaborate requires recommendation and acceptance_evidence")
+
+
+def _append_collab_lineage(state: dict[str, object], operation: str, previous_digest: str) -> dict[str, object]:
+    state = dict(state)
+    lineage = list(state["lineage"])
+    lineage.append({"decision_id": state["decision_id"], "operation": operation, "previous_lineage_digest": previous_digest})
+    state["lineage"] = lineage
+    return normalize_collaborate_state(state)
+
+
+def _merge_unique(*groups: object) -> list[str]:
+    values: list[str] = []
+    for group in groups:
+        if isinstance(group, list):
+            values.extend(str(item) for item in group)
+    return sorted(set(_norm_text(item, "set item") for item in values), key=lambda item: item.encode("utf-8"))
+
+
+def _map_design_to_collaborate(state: dict[str, object]) -> dict[str, object]:
+    acceptance = design_acceptance(state)
+    blockers = list(state.get("blockers", [])) if state.get("schema_version") == 3 else []
+    return {
+        "title": state["title"],
+        "slug": state["slug"],
+        "goal": state["decision_rule"],
+        "key_evidence": state["evidence_waves"],
+        "exclusions": state["exclusions"],
+        "settled": state["settled"],
+        "open_items": state["open_items"],
+        "blockers": blockers,
+        "recommendation": state["recommendation"],
+        "largest_downside": state["largest_downside"],
+        "decision_rule": state["decision_rule"],
+        "rejected_alternatives": [f"{row['option']}: {row['reason']}" for row in state["rejected_alternatives"]],
+        "acceptance_evidence": _merge_unique(state["evidence_waves"], [state["challenge_result"]]),
+        "plan_handoff": {"notes": [str(state["plan_handoff"])], "ready": acceptance == "accepted"},
+        "review_handoff": {"notes": [str(state["review_handoff"])], "ready": acceptance == "accepted"},
+        "adversarial": {"evidence": state["evidence_waves"], "status": "pass" if acceptance == "accepted" else "fail" if acceptance == "blocked" else "not_run", "summary": state["challenge_result"]},
+        "candidate_space": [
+            {"id": f"design-alternative-{position:03d}", "status": "settled" if acceptance == "accepted" else "open", "summary": str(item), "title": str(item)}
+            for position, item in enumerate(state["alternatives"], start=1)
+        ],
+        "frontier": [
+            {"id": f"design-frontier-{position:03d}", "rationale": f"Design decision frontier: {item}", "status": "open", "title": str(item)}
+            for position, item in enumerate(state["decision_frontier"], start=1)
+        ],
+        "synthesis": [str(state["recommendation"])] if str(state["recommendation"]).strip() else [],
+        "tensions": [str(item) for item in (state["largest_downside"], state["residual_uncertainty"]) if str(item).strip()],
+        "return_path": state["plan_handoff"],
+        "_acceptance": acceptance,
+        "_material": acceptance == "pending" or bool(state["decision_frontier"]) or bool(state["open_items"]) or bool(blockers),
+    }
+
+
+def _map_discussion_to_collaborate(state: dict[str, object]) -> dict[str, object]:
+    if state["schema_version"] == 1:
+        still_open = list(state["still_open"])
+        return {
+            "title": state["title"], "slug": state["slug"], "goal": state["goal"], "mode": "dialogue",
+            "synthesis": [item for item in (state["current_branch"], state["convergence"]) if str(item).strip()],
+            "tensions": still_open, "settled": state["settled"], "open_items": still_open,
+            "blockers": state["blockers"], "key_evidence": state["key_evidence"], "return_path": state["return_path"],
+            "questions": [{"id": f"discussion-question-{i:03d}", "answer": "", "prompt": str(item), "status": "open"} for i, item in enumerate(still_open, start=1)],
+            "frontier": [{"id": f"discussion-frontier-{i:03d}", "rationale": f"Discussion still_open: {item}", "status": "open", "title": str(item)} for i, item in enumerate(still_open, start=1)],
+            "current_batch": ["discussion-question-001"] if still_open else [],
+            "_material": bool(still_open),
+        }
+    if state["schema_version"] == 2 or state.get("mode") == "grill":
+        frontier: list[dict[str, str]] = []
+        open_items: list[str] = []
+        tensions: list[str] = []
+        settled: list[str] = []
+        for item in state["frontier"]:
+            status = str(item["status"])
+            if status in {"open", "current"}:
+                open_items.append(f"{item['id']}: {item['prompt']}")
+                tensions.append(f"{item['id']}: {item['largest_downside']}")
+            elif status == "closed":
+                settled.append(f"{item['id']}: {item['title']}")
+            frontier.append({
+                "id": f"discussion-frontier-{item['id']}",
+                "title": str(item["title"]),
+                "status": "open" if status in {"open", "current"} else "settled" if status == "closed" else "rejected",
+                "rationale": f"prompt: {item['prompt']}; why_critical: {item['why_critical']}; largest_downside: {item['largest_downside']}; closure_signal: {item['closure_signal']}",
+            })
+        synthesis = list(state.get("synthesis", [])) or [item for item in (state["current_branch"], state["convergence"]) if str(item).strip()]
+        return {
+            "title": state["title"], "slug": state["slug"], "goal": state["goal"], "mode": "grill",
+            "synthesis": synthesis, "tensions": tensions, "settled": _merge_unique(settled, state.get("settled", [])),
+            "open_items": open_items, "blockers": state["blockers"], "key_evidence": state["key_evidence"],
+            "return_path": state["return_path"], "questions": [], "frontier": frontier,
+            "current_batch": [f"discussion-frontier-{item}" for item in state["current_batch"]],
+            "_material": bool(open_items) or bool(state["current_batch"]),
+        }
+    questions: list[dict[str, str]] = []
+    open_items: list[str] = []
+    for item in state["questions"]:
+        source_id = str(item["id"])
+        if item["status"] in {"open", "current"}:
+            open_items.append(f"{source_id}: {item['prompt']}")
+        questions.append({"id": f"discussion-question-{source_id}", "answer": "", "prompt": str(item["prompt"]), "status": "open" if item["status"] in {"open", "current"} else "answered" if item["status"] == "answered" else "skipped"})
+    return {
+        "title": state["title"], "slug": state["slug"], "goal": state["goal"], "mode": state["mode"],
+        "synthesis": state["synthesis"], "tensions": state["tensions"], "settled": state["settled"],
+        "open_items": open_items, "blockers": state["blockers"], "key_evidence": state["key_evidence"],
+        "return_path": state["return_path"], "questions": questions, "frontier": [],
+        "candidate_space": [{"id": f"discussion-candidate-{i:03d}", "status": "open", "summary": str(item), "title": str(item)} for i, item in enumerate(state.get("candidate_space", []), start=1)],
+        "current_batch": [f"discussion-question-{state['current_question']}"] if state.get("current_question") is not None else [],
+        "_material": bool(open_items) or state.get("current_question") is not None,
+    }
+
+
+def _derive_import_collaborate(root: Path, sources: list[dict[str, object]], decision_id: str, updated: str) -> dict[str, object]:
+    design_map: dict[str, object] = {}
+    discussion_map: dict[str, object] = {}
+    for source in sources:
+        text = (safe_read_bytes(root, str(source["path"])) or b"").decode("utf-8")
+        if source["type"] == "design":
+            design_map = _map_design_to_collaborate(validate_design_artifact(text))
+        else:
+            discussion_map = _map_discussion_to_collaborate(validate_discussion_artifact(text))
+    if design_map and discussion_map and design_map.get("slug") != discussion_map.get("slug"):
+        fail("Design and Discussion import sources have different scope keys")
+    state: dict[str, object] = {
+        "decision_id": decision_id, "updated": updated, "lineage": [{"decision_id": decision_id, "operation": "create", "previous_lineage_digest": ""}],
+        "migration_sources": sources,
+    }
+    for mapping in (design_map, discussion_map):
+        for key, value in mapping.items():
+            if key.startswith("_"):
+                continue
+            if key in COLLABORATE_SET_FIELDS:
+                state[key] = _merge_unique(state.get(key, []), value)
+            elif key in {"synthesis", "tensions"} and key in state:
+                state[key] = list(state[key]) + list(value)  # preserve ordered contributions
+            elif key in {"title", "slug", "goal"} and key in state and design_map:
+                continue
+            else:
+                state[key] = value
+    if design_map and discussion_map and discussion_map.get("return_path"):
+        state["return_path"] = discussion_map["return_path"]
+    if discussion_map and not design_map:
+        final = ("blocked", "blocked") if state.get("blockers") else ("active", "pending")
+    elif design_map.get("_acceptance") == "blocked" or state.get("blockers"):
+        final = ("blocked", "blocked")
+    elif design_map.get("_acceptance") == "accepted" and not design_map.get("_material") and not discussion_map.get("_material"):
+        final = ("accepted", "accepted")
+    else:
+        final = ("active", "pending")
+    state["status"], state["acceptance"] = final
+    if state["status"] in {"accepted", "blocked"}:
+        state["current_batch"] = []
+    normalized = normalize_collaborate_state(state)
+    if normalized["status"] == "accepted":
+        _require_collaborate_closure(normalized)
+    return normalized
+
+
+def _collab_archive_path(root: Path, state: dict[str, object]) -> str:
+    day = str(state["updated"])[:10]
+    number = 1
+    while True:
+        suffix = "" if number == 1 else f"-{number}"
+        candidate = f"docs/teamwork/collaborate/{day}-{state['slug']}{suffix}.md"
+        if safe_read_bytes(root, candidate, optional=True) is None:
+            return candidate
+        number += 1
+
+
+def _collab_entry(state: dict[str, object], path: str, *, active: bool) -> dict[str, object]:
+    return {
+        "topic": str(state["slug"]), "kind": "decision", "artifact_type": "collaborate",
+        "title": str(state["title"] or state["slug"]),
+        "status": str(state["status"]) if active else "superseded",
+        "currentness": "current" if active else "historical",
+        "authority": "canonical" if active else "superseded",
+        "path": path, "linked": [], "evidence_paths": [path], "supersedes": [],
+        "search_keys": [str(state["slug"]), "collaborate"], "updated": str(state["updated"])[:10],
+        "summary": str(state["recommendation"] or state["goal"] or state["title"] or "Collaborate state."),
+    }
+
+
+def _replace_collaborate_index_entry(index: dict[str, object], path: str, entry: dict[str, object]) -> None:
+    entries = index["entries"]
+    assert isinstance(entries, list)
+    for position, existing in enumerate(entries):
+        if isinstance(existing, dict) and existing.get("path") == path:
+            entries[position] = entry
+            return
+    entries.append(entry)
+
+
+def _collaborate_current_payload(root: Path, index_text: str, index: dict[str, object]) -> dict[str, object]:
+    index = _materialize_collaborate_index(index)
+    full_sources = enumerate_collaborate_sources(root, index)
+    classified = classify_collaborate_sources(full_sources, normalize_collaborate_ledger(index.get("collaborate_consumed_sources")))
+    current_bytes, current_state = _current_collaborate(root)
+    return {
+        "index": index,
+        "full_sources": classified["full_sources"],
+        "sources": classified["sources"],
+        "consumed_sources": classified["consumed_sources"],
+        "current_bytes": current_bytes,
+        "current_state": current_state,
+        "revision": _collaborate_revision(index, current_bytes, index_text=index_text, full_sources=full_sources),
+    }
+
+
+def inspect_collaborate(root: Path) -> dict[str, object]:
+    with locked_memory(root):
+        recovered = recover_transaction(root, COLLABORATE_MARKER, COLLABORATE_PREFIXES, "collaborate")
+        recover_transaction(root, DESIGN_MARKER, ("docs/teamwork/design/", INDEX_PATH), "design")
+        recover_transaction(root, DISCUSSION_MARKER, ("docs/teamwork/discussion/",), "discussion")
+        require_initialized_memory(root)
+        index_text, index = _read_index(root)
+        index = _materialize_collaborate_index(index)
+        validate_currentness(root, index)
+        payload = _collaborate_current_payload(root, index_text, index)
+        active = None
+        if payload["current_state"] is not None:
+            active = {"path": COLLABORATE_CURRENT, "state": payload["current_state"]}
+        return {
+            "initialized": True,
+            "recovered": recovered,
+            "revision": payload["revision"],
+            "active": active,
+            "sources": payload["sources"],
+            "consumed_sources": payload["consumed_sources"],
+            "ledger": normalize_collaborate_ledger(payload["index"].get("collaborate_consumed_sources")),
+            "full_sources": payload["full_sources"],
+        }
+
+
+def collaborate_schema(operation: str) -> dict[str, object]:
+    if operation not in {"create", "import", "update", "accept", "block", "close", "supersede"}:
+        fail("Collaborate schema operation is invalid")
+    state = normalize_collaborate_state(
+        {
+            "decision_id": "c-example-decision",
+            "slug": "decision-slug",
+            "title": "Collaborate decision",
+            "updated": "2026-07-29T00:00:00Z",
+            "status": "active",
+            "acceptance": "pending",
+            "mode": "dialogue",
+            "goal": "Resolve the selected decision boundary.",
+            "synthesis": ["Current shared understanding."],
+            "questions": [{"id": "Q1", "prompt": "What decision still changes the outcome?", "answer": "", "status": "open"}],
+            "current_batch": ["Q1"],
+        }
+    )
+    request: dict[str, object] = {
+        "schema_version": 1,
+        "operation": operation,
+        "expected_revision": "<revision from collaborate-inspect>",
+    }
+    if operation == "import":
+        request.update({"updated": "YYYY-MM-DDTHH:MM:SSZ", "decision_id": "<optional stable decision id>"})
+    elif operation == "close":
+        request["state"] = {**state, "status": "closed", "acceptance": "pending", "current_batch": []}
+    elif operation == "accept":
+        request["state"] = {
+            **state,
+            "status": "accepted",
+            "acceptance": "accepted",
+            "questions": [{"id": "Q1", "prompt": "What decision still changes the outcome?", "answer": "Use the accepted route.", "status": "answered"}],
+            "current_batch": [],
+            "open_items": [],
+            "blockers": [],
+            "recommendation": "Use the accepted route.",
+            "acceptance_evidence": ["Direct acceptance evidence."],
+        }
+    elif operation == "block":
+        request["state"] = {**state, "status": "blocked", "acceptance": "blocked", "current_batch": [], "blockers": ["Named blocker."]}
+    else:
+        request["state"] = state
+    return request
+
+
+def _validate_collaborate_request(value: object) -> dict[str, object]:
+    if not isinstance(value, dict):
+        fail("Collaborate request must be an object")
+    operation = value.get("operation")
+    if value.get("schema_version") != 1 or operation not in {"create", "import", "update", "accept", "block", "close", "supersede"}:
+        fail("Collaborate request has an unsupported schema or operation")
+    expected = value.get("expected_revision")
+    if not isinstance(expected, str) or re.fullmatch(r"[0-9a-f]{64}", expected) is None:
+        fail("Collaborate expected_revision must come from collaborate-inspect")
+    request = dict(value)
+    request["operation"] = str(operation)
+    if operation == "import":
+        if "state" in value:
+            fail("Collaborate import derives state from inspected legacy sources")
+        if "updated" in value:
+            request["updated"] = _require_utc(value["updated"], "Collaborate import updated")
+        else:
+            request["updated"] = _utc_now()
+        if value.get("decision_id") is None:
+            request["decision_id"] = _new_decision_id()
+        else:
+            decision_id = _norm_text(value.get("decision_id"), "Collaborate import decision_id", allow_empty=False).lower()
+            if COLLABORATE_DECISION_ID_RE.fullmatch(decision_id) is None:
+                fail("Collaborate import decision_id is invalid")
+            request["decision_id"] = decision_id
+        return request
+    request["state"] = normalize_collaborate_state(value.get("state"))
+    return request
+
+
+def _archive_current_collaborate(root: Path, state: dict[str, object]) -> str:
+    archive = _collab_archive_path(root, state)
+    if archive == COLLABORATE_CURRENT:
+        fail("Collaborate archive path collided with current")
+    return archive
+
+
+def _mark_legacy_source_index_consumed(
+    sources: list[dict[str, object]],
+    index: dict[str, object],
+    successor: str,
+) -> None:
+    """Record legacy Design consumption without mutating legacy artifact bytes."""
+
+    active = index["active"]
+    assert isinstance(active, dict)
+    for source in sources:
+        path = str(source["path"])
+        if source["type"] == "design":
+            for entry in index["entries"]:
+                if isinstance(entry, dict) and entry.get("path") == path:
+                    entry["status"] = "superseded"
+                    entry["currentness"] = "historical"
+                    entry["authority"] = "superseded"
+                    entry["superseded_by"] = successor
+            if active.get("design") == path:
+                active["design"] = None
+
+
+def _append_consumed_sources(
+    ledger: list[dict[str, object]],
+    sources: list[dict[str, object]],
+    *,
+    consumed_at: str,
+    decision_id: str,
+) -> list[dict[str, object]]:
+    additions = [
+        _normalize_ledger_row(
+            {
+                "consumed_at": consumed_at,
+                "consumed_by_decision_id": decision_id,
+                "kind": source["type"],
+                "path": source["path"],
+                "sha256": source["sha256"],
+            },
+            "Collaborate consumed source",
+        )
+        for source in sources
+    ]
+    return _sort_collaborate_ledger([*ledger, *additions])
+
+
+def apply_collaborate(root: Path, value: dict[str, object]) -> dict[str, object]:
+    request = _validate_collaborate_request(value)
+    operation = str(request["operation"])
+    expected = str(request["expected_revision"])
+    with locked_memory(root):
+        recover_transaction(root, COLLABORATE_MARKER, COLLABORATE_PREFIXES, "collaborate")
+        recover_transaction(root, DESIGN_MARKER, ("docs/teamwork/design/", INDEX_PATH), "design")
+        recover_transaction(root, DISCUSSION_MARKER, ("docs/teamwork/discussion/",), "discussion")
+        require_initialized_memory(root)
+        index_text, index = _read_index(root)
+        index = _materialize_collaborate_index(index)
+        validate_currentness(root, index)
+        payload = _collaborate_current_payload(root, index_text, index)
+        if expected != payload["revision"]:
+            fail("stale Collaborate expected_revision; run collaborate-inspect again")
+        current = payload["current_state"]
+        current_bytes = payload["current_bytes"]
+        outputs: dict[str, Output] = {}
+        changed: list[str]
+        active = index["active"]
+        assert isinstance(active, dict)
+        ledger = normalize_collaborate_ledger(index.get("collaborate_consumed_sources"))
+        if operation == "import":
+            sources = list(payload["sources"])
+            if current is not None:
+                fail("cannot import legacy sources while active.collaborate already exists")
+            if not sources:
+                fail("Collaborate import has no unconsumed Design or Discussion sources")
+            state = _derive_import_collaborate(root, sources, str(request["decision_id"]), str(request["updated"]))
+            rendered = render_collaborate_artifact(state).encode("utf-8")
+            if safe_read_bytes(root, COLLABORATE_CURRENT, optional=True) is not None:
+                fail("controlled Collaborate destination already exists")
+            active["collaborate"] = COLLABORATE_CURRENT
+            _replace_collaborate_index_entry(index, COLLABORATE_CURRENT, _collab_entry(state, COLLABORATE_CURRENT, active=True))
+            index["collaborate_consumed_sources"] = _append_consumed_sources(
+                ledger,
+                sources,
+                consumed_at=str(state["updated"]),
+                decision_id=str(state["decision_id"]),
+            )
+            index["last_updated"] = str(state["updated"])[:10]
+            _mark_legacy_source_index_consumed(
+                sources,
+                index,
+                COLLABORATE_CURRENT,
+            )
+            outputs = {
+                COLLABORATE_CURRENT: Output(rendered),
+                INDEX_PATH: Output(_serialize_index(index).encode("utf-8")),
+            }
+            changed = list(outputs)
+            result_path: str | None = COLLABORATE_CURRENT
+            result_active: dict[str, object] | None = state
+        elif operation == "create":
+            if current is not None:
+                fail("cannot create Collaborate while active.collaborate already exists")
+            if payload["sources"]:
+                fail("unconsumed legacy sources require Collaborate import")
+            state = normalize_collaborate_state(request["state"])
+            if state["status"] == "accepted":
+                _require_collaborate_closure(state)
+            active["collaborate"] = COLLABORATE_CURRENT
+            _replace_collaborate_index_entry(index, COLLABORATE_CURRENT, _collab_entry(state, COLLABORATE_CURRENT, active=True))
+            index["last_updated"] = str(state["updated"])[:10]
+            outputs = {
+                COLLABORATE_CURRENT: Output(render_collaborate_artifact(state).encode("utf-8")),
+                INDEX_PATH: Output(_serialize_index(index).encode("utf-8")),
+            }
+            changed = list(outputs)
+            result_path = COLLABORATE_CURRENT
+            result_active = state
+        elif operation in {"update", "accept", "block"}:
+            if current is None or current_bytes is None:
+                fail(f"cannot {operation} without active.collaborate")
+            state = normalize_collaborate_state(request["state"])
+            if state["decision_id"] != current["decision_id"]:
+                fail("Collaborate update cannot change decision_id; use supersede")
+            expected_lifecycle = {"update": ("active", "pending"), "accept": ("accepted", "accepted"), "block": ("blocked", "blocked")}[operation]
+            if (state["status"], state["acceptance"]) != expected_lifecycle:
+                fail(f"Collaborate {operation} has an invalid lifecycle state")
+            if operation == "accept":
+                _require_collaborate_closure(state)
+            state = _append_collab_lineage(state, operation, collaborate_lineage_digest(current))
+            rendered = render_collaborate_artifact(state).encode("utf-8")
+            if rendered == current_bytes and operation == "update":
+                return {"path": COLLABORATE_CURRENT, "active": current, "revision": payload["revision"], "changed_paths": []}
+            active["collaborate"] = COLLABORATE_CURRENT
+            _replace_collaborate_index_entry(index, COLLABORATE_CURRENT, _collab_entry(state, COLLABORATE_CURRENT, active=True))
+            index["last_updated"] = str(state["updated"])[:10]
+            outputs = {
+                COLLABORATE_CURRENT: Output(rendered),
+                INDEX_PATH: Output(_serialize_index(index).encode("utf-8")),
+            }
+            changed = list(outputs)
+            result_path = COLLABORATE_CURRENT
+            result_active = state
+        elif operation == "close":
+            if current is None or current_bytes is None:
+                fail("cannot close without active.collaborate")
+            state = normalize_collaborate_state(request["state"])
+            if state["decision_id"] != current["decision_id"] or state["status"] != "closed":
+                fail("Collaborate close must close the active decision_id")
+            state = _append_collab_lineage(state, "close", collaborate_lineage_digest(current))
+            archive = _archive_current_collaborate(root, state)
+            active["collaborate"] = None
+            _replace_collaborate_index_entry(index, COLLABORATE_CURRENT, _collab_entry(state, archive, active=False))
+            index["last_updated"] = str(state["updated"])[:10]
+            outputs = {
+                archive: Output(render_collaborate_artifact(state).encode("utf-8")),
+                COLLABORATE_CURRENT: Output(None),
+                INDEX_PATH: Output(_serialize_index(index).encode("utf-8")),
+            }
+            changed = list(outputs)
+            result_path = archive
+            result_active = None
+        else:
+            if current is None or current_bytes is None:
+                fail("cannot supersede without active.collaborate")
+            state = normalize_collaborate_state(request["state"])
+            if state["decision_id"] == current["decision_id"]:
+                fail("Collaborate supersede requires a new decision_id")
+            if state["status"] == "accepted":
+                _require_collaborate_closure(state)
+            old = dict(current)
+            old["status"] = "superseded"
+            old["acceptance"] = current["acceptance"]
+            old["current_batch"] = []
+            old["superseded_by"] = state["decision_id"]
+            old = _append_collab_lineage(old, "supersede", collaborate_lineage_digest(current))
+            archive = _archive_current_collaborate(root, old)
+            state = dict(state)
+            state["lineage"] = [{"decision_id": state["decision_id"], "operation": "create", "previous_lineage_digest": collaborate_lineage_digest(old)}]
+            state = normalize_collaborate_state(state)
+            active["collaborate"] = COLLABORATE_CURRENT
+            _replace_collaborate_index_entry(index, COLLABORATE_CURRENT, _collab_entry(old, archive, active=False))
+            index["entries"].append(_collab_entry(state, COLLABORATE_CURRENT, active=True))
+            index["last_updated"] = str(state["updated"])[:10]
+            outputs = {
+                archive: Output(render_collaborate_artifact(old).encode("utf-8")),
+                COLLABORATE_CURRENT: Output(render_collaborate_artifact(state).encode("utf-8")),
+                INDEX_PATH: Output(_serialize_index(index).encode("utf-8")),
+            }
+            changed = list(outputs)
+            result_path = COLLABORATE_CURRENT
+            result_active = state
+        _validate_pointer_metadata(index)
+        created_directories: list[str] = []
+        ensure_directory(root, "docs/teamwork/collaborate", created=created_directories)
+        apply_transaction(
+            root,
+            kind="collaborate",
+            marker=COLLABORATE_MARKER,
+            prefixes=COLLABORATE_PREFIXES,
+            outputs=outputs,
+            created_directories=created_directories,
+        )
+        final_text, final_index = _read_index(root)
+        final_index = _materialize_collaborate_index(final_index)
+        validate_currentness(root, final_index)
+        return {
+            "path": result_path,
+            "active": result_active,
+            "revision": collaborate_revision(root, final_index),
+            "changed_paths": changed,
+        }
+
 def artifact_index_validate(root: Path) -> dict[str, object]:
     with locked_memory(root):
         recover_transaction(root, DESIGN_MARKER, ("docs/teamwork/design/", INDEX_PATH), "design")
         recover_transaction(root, GOAL_MARKER, ("docs/teamwork/reports/", INDEX_PATH), "goal")
         recover_transaction(root, WORKFLOW_ARTIFACT_MARKER, WORKFLOW_ARTIFACT_PREFIXES, WORKFLOW_ARTIFACT_KIND)
         recover_transaction(root, DISCUSSION_MARKER, ("docs/teamwork/discussion/",), "discussion")
+        recover_transaction(root, COLLABORATE_MARKER, COLLABORATE_PREFIXES, "collaborate")
         require_initialized_memory(root)
         _, index = _read_index(root)
+        index = _materialize_collaborate_index(index)
         validate_currentness(root, index)
         return {"valid": True}
 
@@ -3462,15 +5172,15 @@ def _print(value: object) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("inspect", "design-inspect", "goal-inspect", "artifact-inspect", "artifact-index-validate"):
+    for name in ("inspect", "design-inspect", "goal-inspect", "artifact-inspect", "collaborate-inspect", "artifact-index-validate"):
         child = sub.add_parser(name)
         child.add_argument("--project-root", required=True)
     child = sub.add_parser("schema")
     child.add_argument("operation")
-    for name in ("design-schema", "goal-schema", "artifact-schema"):
+    for name in ("design-schema", "goal-schema", "artifact-schema", "collaborate-schema"):
         child = sub.add_parser(name)
         child.add_argument("operation")
-    for name in ("apply", "design-apply", "goal-apply", "artifact-apply"):
+    for name in ("apply", "design-apply", "goal-apply", "artifact-apply", "collaborate-apply"):
         child = sub.add_parser(name)
         child.add_argument("--project-root", required=True)
         group = child.add_mutually_exclusive_group(required=True)
@@ -3487,14 +5197,14 @@ def main(argv: list[str] | None = None) -> int:
     arguments = build_parser().parse_args(argv)
     try:
         command = arguments.command
-        if command == "schema":
-            _print(discussion_schema(arguments.operation))
-        elif command == "design-schema":
-            _print(design_schema(arguments.operation))
-        elif command == "goal-schema":
+        if command in {"schema", "apply", "design-schema", "design-apply"}:
+            fail("legacy lifecycle retired; use collaborate-*")
+        if command == "goal-schema":
             _print(goal_schema(arguments.operation))
         elif command == "artifact-schema":
             _print(workflow_schema(arguments.operation))
+        elif command == "collaborate-schema":
+            _print(collaborate_schema(arguments.operation))
         elif command == "design-render":
             print(render_design_artifact(_decode_json(arguments.state_json, "Design state")), end="")
         elif command == "design-validate":
@@ -3517,18 +5227,18 @@ def main(argv: list[str] | None = None) -> int:
                 _print(inspect_goal(root))
             elif command == "artifact-inspect":
                 _print(inspect_workflow_artifacts(root))
+            elif command == "collaborate-inspect":
+                _print(inspect_collaborate(root))
             elif command == "artifact-index-validate":
                 _print(artifact_index_validate(root))
             else:
                 request = read_request(arguments.request, arguments.request_json)
-                if command == "apply":
-                    _print(apply_discussion(root, request))
-                elif command == "design-apply":
-                    _print(apply_design(root, request))
-                elif command == "goal-apply":
+                if command == "goal-apply":
                     _print(apply_goal(root, request))
-                else:
+                elif command == "artifact-apply":
                     _print(apply_workflow_artifact(root, request))
+                else:
+                    _print(apply_collaborate(root, request))
     except TransactionError as exc:
         print(json.dumps({"ok": False, "category": exc.category, "message": str(exc)}, ensure_ascii=False), file=sys.stderr)
         return 2

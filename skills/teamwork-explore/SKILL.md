@@ -1,6 +1,6 @@
 ---
 name: teamwork-explore
-description: Use when the requested result is direct evidence about local code, files, configuration, logs, tests, history, artifacts, or runtime state; do not use for external or current-source research, ordinary local reads needed during implementation, unknown-cause diagnosis, design, or mutation.
+description: Use when a request or active workflow needs direct evidence about local code, files, configuration, logs, tests, history, artifacts, or runtime state as its result or next discriminator; do not use for external or current-source research, ordinary local reads already needed during implementation, unknown-cause diagnosis, design, or mutation.
 ---
 
 # Teamwork Explore
@@ -8,9 +8,10 @@ description: Use when the requested result is direct evidence about local code, 
 Answer one local evidence question without changing the project. Explore is
 local-only and read-only; it does not browse the web, edit files, run destructive
 commands, create a standalone artifact, ask users directly, or turn an
-investigation into implementation. Ordinary natural discussion, brainstorming,
-and focused reads needed for already authorized implementation do not activate
-Explore.
+investigation into implementation. Collaborate owns natural dialogue,
+brainstorming, grilling, and decision convergence, but it may hand Root a
+bounded local-evidence question for Explore. Focused reads needed for already
+authorized implementation stay native.
 
 ## Method
 
@@ -28,8 +29,9 @@ Explore.
 5. Stop when the local question is answered or the missing evidence is precisely
    identified. Return any missing discriminator precisely to the owning Root or
    workflow; leaf Explore roles never ask the user. Do not create an Explore
-   report; evidence belongs in the workflow writing brief, packet, or artifact
-   that owns the decision. Writer never creates an independent Explore artifact.
+   report; evidence belongs in the workflow writing brief, packet, or semantic
+   checkpoint that owns the decision. Writer never creates an independent
+   Explore artifact.
 
 Use Explore when the evidence question is structurally complex (multiple files,
 callers, definitions, or history), separable from the current task, or benefits

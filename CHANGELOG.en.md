@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 5.0.0 - 2026-07-29
+
+**Teamwork 5 unifies discussion, pressure-testing, and direction convergence into Collaborate, so collaboration starts and resumes through one public workflow.**
+
+- **One public entry owns collaboration.** `$teamwork-collaborate` handles dialogue, brainstorm, grill, and accepted-direction convergence. The public skill inventory is now 9, and `$grill-me`, `$teamwork-discuss`, and `$teamwork-design` are no longer public names or aliases.
+- **Questions use the right interaction shape.** The agent contributes synthesis, candidate space, a decision map, or a provisional recommendation first. Grill strictly follows global → boundary → detail, batches at most three independent decisions, and serializes dependent decisions. Open questions stay in natural prose; only genuine finite decisions with 2–3 mutually exclusive choices use Codex's native choice surface.
+- **Writer leaves reviewable checkpoints by default.** Sustained collaboration with substantive state and an unresolved question or unaccepted direction defaults to a Collaborate checkpoint. Research, Debug, Plan, Plan Review, Review, mutating Init/Update, and terminal execution with a real downstream consumer also save their matching result; an active Goal owns execution progress and prevents duplicate documents.
+- **Legacy records become migration inputs.** New state is written to `docs/teamwork/collaborate/current.md`; old Discussion/Design artifacts are read-only imports, and old lifecycle writes are unavailable. No transcript is stored, and neither report nor conclusion may substitute for Collaborate.
+
+Upgrade action: replace existing `$grill-me`, `$teamwork-discuss`, or `$teamwork-design` invocations with `$teamwork-collaborate`. Codex Marketplace users re-add `JinPLu/Teamwork`, install `teamwork-skill@teamwork`, and run `$teamwork-update` in a new task. Checkout users run `git pull --ff-only`, `./install.sh all`, and `./scripts/check-update.sh --readiness`.
+
+Important limit: collaboration mode, adversarial search, and persistence thresholds still depend on host-model semantic judgment. The native choice UI requires a host that exposes `request_user_input`, and Writer persistence requires the installed Writer agent plus transaction readback. Missing capabilities must be reported as unsaved instead of being simulated with prose choices or direct Root writes; `no files`, off-record, read-only, or no-write always wins. Upgrade removes only exact Teamwork-owned legacy Grill/Discuss/Design/Router/Execute copies; modified or unmarked copies are preserved and block automatic replacement until the user inspects the conflict.
+
 ## 4.6.0 - 2026-07-26
 
 **Teamwork now organizes replies and human-facing documents around what readers need to understand and decide, while preserving the original meaning.**

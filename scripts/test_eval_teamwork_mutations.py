@@ -104,7 +104,7 @@ class TopologyMutationTests(unittest.TestCase):
                 "---\nname: teamwork-execute\ndescription: Use when testing.\n---\n",
                 encoding="utf-8",
             )
-            with self.assertRaisesRegex(EvalError, "must contain 10 skills"):
+            with self.assertRaisesRegex(EvalError, "must contain 9 skills"):
                 validate_skill_topology(root)
 
     def test_router_name_is_rejected_even_if_count_stays_nine(self) -> None:
@@ -127,8 +127,8 @@ class TopologyMutationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.write_inventory(root)
-            reference = root / "skills/teamwork-design/references/options.md"
-            reference.parent.mkdir()
+            reference = root / "skills/teamwork-collaborate/references/options.md"
+            reference.parent.mkdir(parents=True, exist_ok=True)
             reference.write_text("hidden behavior\n", encoding="utf-8")
             with self.assertRaisesRegex(EvalError, "only the four named one-level advanced references are allowed"):
                 validate_skill_topology(root)
@@ -137,7 +137,7 @@ class TopologyMutationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.write_inventory(root)
-            script = root / "skills/grill-me/scripts/state.py"
+            script = root / "skills/teamwork-collaborate/scripts/state.py"
             script.parent.mkdir()
             script.write_text("pass\n", encoding="utf-8")
             with self.assertRaisesRegex(EvalError, "behavioral scripts are not allowed"):
@@ -147,7 +147,7 @@ class TopologyMutationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self.write_inventory(root)
-            design = root / "skills/teamwork-design/SKILL.md"
+            design = root / "skills/teamwork-collaborate/SKILL.md"
             design.write_text(
                 design.read_text(encoding="utf-8")
                 + "Read `skills/teamwork-research/SKILL.md` before proceeding.\n",
@@ -201,15 +201,15 @@ class SemanticSourceMutationTests(unittest.TestCase):
             validate_skill_source_contract("teamwork-research", mutated)
 
     def test_design_activation_and_tradeoff_boundaries_are_protected(self) -> None:
-        self.assert_concept_removal_rejected("teamwork-design", "unresolved material choice trigger")
-        self.assert_concept_removal_rejected("teamwork-design", "genuine alternatives only")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "unresolved material choice trigger")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "genuine alternatives only")
 
     def test_design_question_and_plan_boundaries_are_protected(self) -> None:
-        self.assert_concept_removal_rejected("teamwork-design", "bounded independent batch")
-        self.assert_concept_removal_rejected("teamwork-design", "dependency serialization")
-        self.assert_concept_removal_rejected("teamwork-design", "question criticality")
-        self.assert_concept_removal_rejected("teamwork-design", "managed Design transaction")
-        self.assert_concept_removal_rejected("teamwork-design", "Plan boundary")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "bounded independent batch")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "dependency serialization")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "question criticality")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "transaction-owned writer")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "Plan boundary")
 
     def test_plan_selected_direction_and_no_redesign_are_protected(self) -> None:
         self.assert_concept_removal_rejected("teamwork-plan", "selected direction prerequisite")
@@ -220,24 +220,24 @@ class SemanticSourceMutationTests(unittest.TestCase):
         with self.assertRaisesRegex(EvalError, "Plan owns option discovery"):
             validate_skill_source_contract("teamwork-plan", mutated)
 
-    def test_grill_chat_boundary_and_actual_record_are_protected(self) -> None:
-        self.assert_concept_removal_rejected("grill-me", "ordinary clarification is chat-only")
-        self.assert_concept_removal_rejected("grill-me", "actual Grill auto-record")
+    def test_Collaborate_trigger_and_checkpoint_threshold_are_protected(self) -> None:
+        self.assert_concept_removal_rejected("teamwork-collaborate", "natural collaboration trigger")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "adaptive checkpoint threshold")
 
-    def test_grill_transaction_writer_and_no_files_override_are_protected(self) -> None:
-        self.assert_concept_removal_rejected("grill-me", "transaction-owned writer")
-        self.assert_concept_removal_rejected("grill-me", "initialized writable prerequisite")
-        self.assert_concept_removal_rejected("grill-me", "no-files override")
-        self.assert_concept_removal_rejected("grill-me", "global decision map")
-        self.assert_concept_removal_rejected("grill-me", "bounded independent batch")
-        self.assert_concept_removal_rejected("grill-me", "dependency serialization")
-        self.assert_concept_removal_rejected("grill-me", "question criticality")
+    def test_Collaborate_transaction_writer_and_no_files_override_are_protected(self) -> None:
+        self.assert_concept_removal_rejected("teamwork-collaborate", "transaction-owned writer")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "initialized writable prerequisite")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "no-files override")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "global decision map")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "bounded independent batch")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "dependency serialization")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "question criticality")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "recommendation before question")
 
     def test_nonimplementation_boundary_is_protected_across_cognitive_skills(self) -> None:
         for skill, label in (
-            ("teamwork-design", "read-only and no implementation"),
             ("teamwork-plan", "no redesign or implementation"),
-            ("grill-me", "no implementation authority"),
+            ("teamwork-collaborate", "no implementation authority"),
         ):
             with self.subTest(skill=skill):
                 self.assert_concept_removal_rejected(skill, label)
@@ -315,14 +315,14 @@ class CapabilityCaseMutationTests(unittest.TestCase):
 
     def test_natural_question_first_cannot_smuggle_save_invocation(self) -> None:
         data = self.case("grill", "natural-question-first", "en")
-        data["prompt"] += " $grill-me"
-        with self.assertRaisesRegex(EvalError, "must not use \\$grill-me"):
+        data["prompt"] += " $teamwork-collaborate"
+        with self.assertRaisesRegex(EvalError, "must not use \\$teamwork-collaborate"):
             self.validate_mutated_case(data)
 
     def test_explicit_save_requires_explicit_skill_invocation(self) -> None:
         data = self.case("grill", "explicit-save", "en")
-        data["prompt"] = "Save this discussion."
-        with self.assertRaisesRegex(EvalError, "must explicitly invoke \\$grill-me"):
+        data["prompt"] = "Save this collaboration."
+        with self.assertRaisesRegex(EvalError, "must explicitly invoke \\$teamwork-collaborate"):
             self.validate_mutated_case(data)
 
     def test_no_implementation_needs_an_observable_negative_control(self) -> None:
@@ -354,7 +354,7 @@ class LedgerMutationTests(unittest.TestCase):
             "model": "deterministic",
             "model_config": "fixed",
             "prompt_or_template": "not_applicable",
-            "owned_files": ["skills/teamwork-design/SKILL.md"],
+            "owned_files": ["skills/teamwork-collaborate/SKILL.md"],
             "denylist": ["evals/teamwork/cases/*.json"],
             "baseline": "README.md",
             "treatment": "README.md",

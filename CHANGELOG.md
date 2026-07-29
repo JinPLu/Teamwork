@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 5.0.0 - 2026-07-29
+
+**Teamwork 5 把讨论、压力测试和方案收敛统一到 Collaborate，让协作更容易启动，也更容易续上。**
+
+- **一个公开入口承接协作。** `$teamwork-collaborate` 统一处理 dialogue、brainstorm、grill 和可接受方向收敛；公开 Skill 数量变为 9 个，`$grill-me`、`$teamwork-discuss` 和 `$teamwork-design` 不再作为公开名称或别名存在。
+- **提问回到合适的交互形态。** Agent 先给综合、候选空间、决策地图或临时建议；grill 严格按 global → boundary → detail 推进，每批最多三个独立决定，依赖决定分轮处理。开放问题保留自然文字，只有真实有限的 2–3 个互斥选择才调用 Codex 原生选择界面。
+- **Writer 默认留下可复查断点。** 持续协作形成实质状态且仍有未决问题或未接受方向时，会默认保存 Collaborate 检查点；Research、Debug、Plan、Plan Review、Review、会产生变更的 Init/Update 和有真实下游消费者的终态执行也会保存对应结果，active Goal 会接管执行进度并避免重复文档。
+- **旧记录只作为迁移输入。** 新状态写入 `docs/teamwork/collaborate/current.md`；旧 Discussion/Design 只读导入，旧生命周期写入不再可用。记录不保存逐字对话，也不会用 report 或 conclusion 代替。
+
+升级操作：把现有调用中的 `$grill-me`、`$teamwork-discuss` 或 `$teamwork-design` 改为 `$teamwork-collaborate`。Codex Marketplace 用户重新添加 `JinPLu/Teamwork`、安装 `teamwork-skill@teamwork`，并在新任务中运行 `$teamwork-update`；checkout 用户运行 `git pull --ff-only`、`./install.sh all` 和 `./scripts/check-update.sh --readiness`。
+
+重要限制：协作模式、对抗搜索和落盘门槛仍依赖宿主模型的语义判断；原生选择界面要求宿主暴露 `request_user_input`，Writer 落盘要求宿主提供已安装的 Writer agent 与事务 readback。缺失能力时必须明确报告未保存，不能用文字选项或 Root 直写伪装成功；`no files`、off-record、read-only/no-write 始终优先。升级只会自动删除内容完全匹配的 Teamwork 旧 Grill/Discuss/Design/Router/Execute；改过或无所有权标记的副本会保留并阻止自动替换，需要用户先检查冲突。
+
 ## 4.6.0 - 2026-07-26
 
 **Teamwork 现在会围绕读者真正需要理解和决定的内容组织回答与文档，同时保持原意不变。**
