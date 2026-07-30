@@ -76,6 +76,84 @@ WORKFLOW_CONFIG: dict[str, dict[str, str]] = {
     "update": {"kind": "report", "active": "results", "directory": "docs/teamwork/workflows/update"},
 }
 
+CASE_TRANSACTION_MARKER = "docs/teamwork/.case-transaction.json"
+CASE_PREFIXES = (
+    "docs/teamwork/index.json",
+    "docs/teamwork/cases/",
+)
+CASE_ID_RE = re.compile(r"^c-[0-9a-f]{64}$")
+ARTIFACT_ID_RE = re.compile(r"^a-[0-9a-f]{64}$")
+HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
+TASK_KEY_RE = SLUG_RE
+CASE_ACTIVE_PHASES = {"collaborating", "collecting", "planned", "executing", "reviewing"}
+CASE_PHASES = {*CASE_ACTIVE_PHASES, "closed"}
+CASE_TRANSITIONS = {
+    None: {"collaborating"},
+    "collaborating": {"collaborating", "collecting", "planned", "closed"},
+    "collecting": {"collecting", "planned", "executing", "closed"},
+    "planned": {"planned", "collecting", "executing", "closed"},
+    "executing": {"executing", "reviewing", "closed"},
+    "reviewing": {"reviewing", "executing", "closed"},
+    "closed": {"closed"},
+}
+CASE_LIVE_KINDS = {"collaborate", "goal"}
+CASE_SINGLETON_KINDS = {"decision", "plan"}
+CASE_HISTORY_KINDS = {"plan", "decision", "result"}
+CASE_REVIEW_KINDS = {"review", "review-delta"}
+CASE_RESULT_KINDS = {"result"}
+CASE_EVIDENCE_KINDS = {"research", "debug", "init", "update", "evidence"}
+CASE_ARTIFACT_KINDS = (
+    CASE_LIVE_KINDS
+    | CASE_SINGLETON_KINDS
+    | CASE_REVIEW_KINDS
+    | CASE_RESULT_KINDS
+    | CASE_EVIDENCE_KINDS
+    | {f"history-{kind}" for kind in CASE_HISTORY_KINDS}
+)
+CASE_INDEX_MAX_BYTES = 256 * 1024
+CASE_MANIFEST_MAX_BYTES = 256 * 1024
+CASE_CAPS = {
+    "active_cases": 32,
+    "claim_heads": 2048,
+    "aliases": 256,
+    "recent_cases": 10,
+    "claims": 256,
+    "artifacts": 2048,
+    "history": 1024,
+    "references": 1024,
+    "migration_sources": 4096,
+}
+CASE_MIGRATION_PHASES = {
+    None,
+    "baseline_approved",
+    "archive_durable",
+    "candidate_validated",
+    "old_tree_renamed",
+    "new_tree_installed",
+    "postinstall_validated",
+    "committed",
+    "cleanup_complete",
+}
+CLAIM_ID_RE = re.compile(r"^cl-[0-9a-f]{64}$")
+MIGRATION_ID_RE = re.compile(r"^m-[0-9a-f]{64}$")
+
+MIGRATION_KIND = "case-migration"
+MIGRATION_PREFIXES = (
+    ".teamwork/",
+)
+MIGRATION_RUNTIME_ROOT = ".teamwork/runtime"
+MIGRATION_ARCHIVE_ROOT = ".teamwork/cold-archive/v1"
+MIGRATION_PHASES = {
+    "baseline_approved",
+    "archive_durable",
+    "candidate_validated",
+    "old_tree_renamed",
+    "new_tree_installed",
+    "postinstall_validated",
+    "committed",
+    "cleanup_complete",
+}
+
 
 class TransactionError(Exception):
     """A user-actionable failure with a recovery classification."""
@@ -437,6 +515,30 @@ def locked_memory(root: Path) -> Iterator[None]:
     except OSError as exc:
         fail(f"cannot lock Teamwork artifact directory: {exc}")
     try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
+
+
+@contextlib.contextmanager
+def locked_runtime(root: Path) -> Iterator[None]:
+    ensure_directory(root, ".teamwork/runtime")
+    runtime = _safe_dir(root, ".teamwork/runtime")
+    assert runtime is not None
+    lock_path = runtime / ".memory.lock"
+    flags = os.O_RDWR | os.O_CREAT | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
+    try:
+        fd = os.open(lock_path, flags, 0o600)
+    except OSError as exc:
+        fail(f"cannot open migration runtime lock: {exc}", category="INDETERMINATE")
+    try:
+        opened = os.fstat(fd)
+        if not stat.S_ISREG(opened.st_mode) or opened.st_dev != _root_device(root):
+            fail("migration runtime lock must be same-device regular file", category="INDETERMINATE")
         fcntl.flock(fd, fcntl.LOCK_EX)
         yield
     finally:
@@ -839,6 +941,31 @@ def apply_transaction(
             f"transaction was prepared; exact journal recovery completed after: {exc}",
             "INDETERMINATE",
         ) from exc
+
+
+def ensure_no_migration_intermediate(root: Path) -> None:
+    runtime = root / ".teamwork/runtime/migrations"
+    if not runtime.exists():
+        return
+    try:
+        children = sorted(runtime.iterdir(), key=lambda path: path.name)
+    except OSError as exc:
+        fail(f"cannot inspect migration runtime: {exc}")
+    for child in children:
+        if not child.is_dir() or child.is_symlink():
+            fail("migration runtime has an unsafe entry")
+        journal = child / "journal.json"
+        if not journal.exists():
+            continue
+        try:
+            state = json.loads(journal.read_text(encoding="utf-8"))
+        except Exception as exc:
+            fail(f"cannot inspect migration journal: {exc}", category="INDETERMINATE")
+        if not isinstance(state, dict):
+            fail("migration journal is malformed", category="INDETERMINATE")
+        phase = state.get("phase")
+        if phase not in {"committed", "cleanup_complete"}:
+            fail("non-migration writes are blocked while migration is in an intermediate phase")
 
 
 def _decode_json(raw: str, label: str) -> object:
@@ -2125,6 +2252,7 @@ def _superseded_discussion_archive(state: dict[str, object], superseded_by: str)
 
 def inspect_discussion(root: Path) -> dict[str, object]:
     with locked_memory(root):
+        ensure_no_migration_intermediate(root)
         require_initialized_memory(root)
         recovered = recover_transaction(root, DISCUSSION_MARKER, ("docs/teamwork/discussion/",), "discussion")
         active = discussion_active(root)
@@ -3288,6 +3416,7 @@ def apply_workflow_artifact(root: Path, request: dict[str, object]) -> dict[str,
     slot = _workflow_artifact_slot(workflow)
     target = _workflow_artifact_path(workflow, str(state["updated"]), str(state["slug"]))
     with locked_memory(root):
+        ensure_no_migration_intermediate(root)
         recover_transaction(root, WORKFLOW_ARTIFACT_MARKER, WORKFLOW_ARTIFACT_PREFIXES, WORKFLOW_ARTIFACT_KIND)
         require_initialized_memory(root)
         index_text, index = _read_index(root)
@@ -3438,6 +3567,7 @@ def apply_design(root: Path, request: dict[str, object]) -> dict[str, object]:
         fail("Design apply accepts a current successor state; supersession is derived atomically")
     target = design_path(state)
     with locked_memory(root):
+        ensure_no_migration_intermediate(root)
         recover_transaction(root, DESIGN_MARKER, ("docs/teamwork/design/", INDEX_PATH), "design")
         require_initialized_memory(root)
         index_text, index = _read_index(root)
@@ -3718,6 +3848,7 @@ def apply_goal(root: Path, request: dict[str, object]) -> dict[str, object]:
     if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
         fail("Goal expected_revision must come from goal-inspect")
     with locked_memory(root):
+        ensure_no_migration_intermediate(root)
         recover_transaction(root, GOAL_MARKER, ("docs/teamwork/reports/", INDEX_PATH), "goal")
         require_initialized_memory(root)
         index_text, index = _read_index(root)
@@ -4990,6 +5121,7 @@ def apply_collaborate(root: Path, value: dict[str, object]) -> dict[str, object]
     operation = str(request["operation"])
     expected = str(request["expected_revision"])
     with locked_memory(root):
+        ensure_no_migration_intermediate(root)
         recover_transaction(root, COLLABORATE_MARKER, COLLABORATE_PREFIXES, "collaborate")
         recover_transaction(root, DESIGN_MARKER, ("docs/teamwork/design/", INDEX_PATH), "design")
         recover_transaction(root, DISCUSSION_MARKER, ("docs/teamwork/discussion/",), "discussion")
@@ -5165,6 +5297,1661 @@ def artifact_index_validate(root: Path) -> dict[str, object]:
         return {"valid": True}
 
 
+# ---------------------------------------------------------------------------
+# Case-bundle memory v2.
+
+
+def reject_float(value: object, label: str = "value") -> None:
+    if isinstance(value, float):
+        fail(f"{label} must not contain floats")
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                fail(f"{label} object keys must be strings")
+            reject_float(item, f"{label}.{key}")
+    elif isinstance(value, list):
+        for position, item in enumerate(value):
+            reject_float(item, f"{label}[{position}]")
+
+
+def canonical_json_bytes(value: object) -> bytes:
+    reject_float(value)
+    return unicodedata.normalize(
+        "NFC",
+        json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+    ).encode("utf-8")
+
+
+def canonical_text_bytes(value: str) -> bytes:
+    return unicodedata.normalize("NFC", value.replace("\r\n", "\n").replace("\r", "\n")).encode("utf-8")
+
+
+def case_digest(domain: str, value: object | str | bytes) -> str:
+    if isinstance(value, bytes):
+        payload = value
+    elif isinstance(value, str):
+        payload = canonical_text_bytes(value)
+    else:
+        payload = canonical_json_bytes(value)
+    return _hash(f"teamwork-case-v2:{domain}".encode("utf-8"), payload)
+
+
+def seeded_case_digest(domain: bytes, seed: object) -> str:
+    if not isinstance(seed, str) or HEX64_RE.fullmatch(seed) is None:
+        fail("seed must be 64 lowercase hex characters")
+    return _hash(domain, bytes.fromhex(seed))
+
+
+def _seeded_id(prefix: str, domain: str, seed: object) -> str:
+    domains = {
+        "case-id": b"teamwork-case-id-v1",
+        "claim-id": b"teamwork-claim-id-v1",
+        "migration-id": b"teamwork-migration-id-v1",
+    }
+    if domain not in domains:
+        fail(f"{domain} is not a supported seeded id domain")
+    digest = seeded_case_digest(domains[domain], seed)
+    return prefix + digest if prefix else digest
+
+
+def case_id_from_seed(seed: object) -> str:
+    return _seeded_id("c-", "case-id", seed)
+
+
+def claim_id_from_seed(seed: object) -> str:
+    return _seeded_id("cl-", "claim-id", seed)
+
+
+def migration_id_from_seed(seed: object) -> str:
+    return _seeded_id("m-", "migration-id", seed)
+
+
+def _case_id(value: object) -> str:
+    if not isinstance(value, str) or CASE_ID_RE.fullmatch(value) is None:
+        fail("case_id must be c- followed by 64 lowercase hex characters")
+    return value
+
+
+def _artifact_id(value: object) -> str:
+    if not isinstance(value, str) or ARTIFACT_ID_RE.fullmatch(value) is None:
+        fail("artifact_id must be a- followed by 64 lowercase hex characters")
+    return value
+
+
+def _claim_id(value: object) -> str:
+    if not isinstance(value, str) or CLAIM_ID_RE.fullmatch(value) is None:
+        fail("claim_id must be cl- followed by 64 lowercase hex characters")
+    return value
+
+
+def _migration_id(value: object) -> str:
+    if not isinstance(value, str) or MIGRATION_ID_RE.fullmatch(value) is None:
+        fail("migration_id must be m- followed by 64 lowercase hex characters")
+    return value
+
+
+def _hex64(value: object, label: str) -> str:
+    if not isinstance(value, str) or HEX64_RE.fullmatch(value) is None:
+        fail(f"{label} must be 64 lowercase hex characters")
+    return value
+
+
+def _task_key(value: object) -> str:
+    if not isinstance(value, str) or TASK_KEY_RE.fullmatch(value) is None or len(value) > 120:
+        fail("task_key must be lowercase stable text")
+    return value
+
+
+def _iso(value: object, label: str) -> str:
+    if not isinstance(value, str) or CONTROL_RE.search(value) is not None:
+        fail(f"{label} must be an ISO timestamp")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        fail(f"{label} must be an ISO timestamp")
+    if parsed.tzinfo is None:
+        fail(f"{label} must include a timezone")
+    if parsed.utcoffset() != timezone.utc.utcoffset(parsed):
+        fail(f"{label} must be UTC")
+    if parsed.microsecond != 0:
+        fail(f"{label} must not include fractional seconds")
+    return parsed.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def case_manifest_path(case_id: str) -> str:
+    return f"docs/teamwork/cases/{_case_id(case_id)}/manifest.json"
+
+
+def case_base(case_id: str) -> str:
+    return f"docs/teamwork/cases/{_case_id(case_id)}"
+
+
+def derive_case_artifact_path(case_id: str, kind: str, artifact_id: str, *, delta: bool = False) -> str:
+    base = case_base(case_id)
+    if kind == "collaborate":
+        return f"{base}/live/collaborate.md"
+    if kind == "goal":
+        return f"{base}/live/goal.md"
+    if kind == "decision":
+        return f"{base}/decision.md"
+    if kind == "plan":
+        return f"{base}/plan.md"
+    if kind in CASE_EVIDENCE_KINDS:
+        return f"{base}/evidence/{_artifact_id(artifact_id)}.md"
+    if kind == "result":
+        return f"{base}/results/{_artifact_id(artifact_id)}.md"
+    if kind == "review":
+        review_digest = _hex64(artifact_id, "review digest")
+        suffix = "-delta" if delta else ""
+        return f"{base}/reviews/{review_digest}{suffix}.md"
+    if kind.startswith("history-"):
+        history_kind = kind.removeprefix("history-")
+        if history_kind not in CASE_HISTORY_KINDS:
+            fail("unsupported history artifact kind")
+        return f"{base}/history/{history_kind}/{_artifact_id(artifact_id)}.md"
+    fail("unsupported case artifact kind")
+
+
+def artifact_id_for_case(kind: str, envelope: dict[str, object], body: str) -> str:
+    clean_envelope = {
+        "schema_version": 1,
+        "role": require_slug(envelope.get("role", kind), "artifact role"),
+        "subtype": require_slug(envelope.get("subtype", kind), "artifact subtype"),
+        "case_id": _case_id(envelope.get("case_id")),
+        "claim_ids": sorted(_claim_id(item) for item in envelope.get("claim_ids", [])),
+        "consumer": require_text(envelope.get("consumer", "teamwork"), "artifact consumer", maximum=200),
+        "source_revision": _hex64(envelope.get("source_revision"), "artifact source_revision"),
+        "immutable": True if envelope.get("immutable", True) is True else fail("artifact envelope immutable must be true"),
+    }
+    return "a-" + case_digest("artifact-id", {"envelope": clean_envelope, "rendered_sha256": hashlib.sha256(canonical_text_bytes(body)).hexdigest()})
+
+
+def artifact_envelope_digest(envelope: dict[str, object]) -> str:
+    return case_digest("artifact-envelope", envelope)
+
+
+def artifact_digest(path: str, body: str) -> str:
+    return hashlib.sha256(canonical_text_bytes(body)).hexdigest()
+
+
+def validate_case_manifest(value: object) -> dict[str, object]:
+    expected_keys = {
+        "schema_version", "case_id", "case_seed_b64", "created_at", "closed_at",
+        "status", "claims", "artifacts", "history", "references", "runtime",
+        "migration_sources",
+    }
+    if not isinstance(value, dict) or set(value) != expected_keys:
+        fail("v2 case manifest has an unsupported schema")
+    if value.get("schema_version") != 1:
+        fail("v2 case manifest schema_version must be 1")
+    case_id = _case_id(value.get("case_id"))
+    status = value.get("status")
+    if status not in CASE_PHASES:
+        fail("v2 case manifest has an invalid lifecycle phase")
+    closed_at = value.get("closed_at")
+    if status == "closed":
+        closed_at = _iso(closed_at, "closed_at")
+    elif closed_at is not None:
+        fail("closed_at must be null unless status is closed")
+    case_seed_b64 = value.get("case_seed_b64")
+    if not isinstance(case_seed_b64, str):
+        fail("case_seed_b64 must be base64 text")
+    try:
+        seed_bytes = base64.b64decode(case_seed_b64.encode("ascii"), validate=True)
+    except Exception:
+        fail("case_seed_b64 must be valid base64")
+    if len(seed_bytes) != 32:
+        fail("case_seed_b64 must encode exactly 32 bytes")
+    runtime = value.get("runtime")
+    if not isinstance(runtime, dict) or set(runtime) != {"active_route", "state_revision"}:
+        fail("manifest runtime has an unsupported schema")
+    active_route = checked_relative(runtime.get("active_route"), "runtime.active_route")
+    if not active_route.startswith(case_base(case_id) + "/"):
+        fail("runtime active_route must stay inside its case")
+    state_revision = _hex64(runtime.get("state_revision"), "runtime.state_revision")
+    for name in ("history", "references", "migration_sources"):
+        raw = value.get(name)
+        if not isinstance(raw, list) or len(raw) > CASE_CAPS[name]:
+            fail(f"manifest {name} exceeds its cap or is not an array")
+    claims_raw = value.get("claims")
+    if not isinstance(claims_raw, dict) or len(claims_raw) > CASE_CAPS["claims"]:
+        fail("manifest claims exceeds its cap or is not an object")
+    claims: dict[str, dict[str, object]] = {}
+    for claim_id_raw, raw in claims_raw.items():
+        claim_id = _claim_id(claim_id_raw)
+        if not isinstance(raw, dict) or set(raw) != {"descriptor_version", "descriptor_digest", "status", "acquired_at", "released_at", "head_artifact_id", "head_digest"}:
+            fail(f"manifest claims[{claim_id}] has an unsupported schema")
+        claim_status = raw.get("status")
+        if claim_status not in {"active", "released"}:
+            fail(f"manifest claims[{claim_id}].status is invalid")
+        acquired_at = _iso(raw.get("acquired_at"), "claim acquired_at")
+        released_at = raw.get("released_at")
+        if claim_status == "released":
+            released_at = _iso(released_at, "claim released_at")
+        elif released_at is not None:
+            fail("released_at must be null unless claim is released")
+        claims[claim_id] = {
+            "descriptor_version": raw.get("descriptor_version") if raw.get("descriptor_version") == 1 else fail("claim descriptor_version must be 1"),
+            "descriptor_digest": _hex64(raw.get("descriptor_digest"), "claim descriptor_digest"),
+            "status": claim_status,
+            "acquired_at": acquired_at,
+            "released_at": released_at,
+            "head_artifact_id": _artifact_id(raw.get("head_artifact_id")),
+            "head_digest": _hex64(raw.get("head_digest"), "claim head_digest"),
+        }
+    artifacts_raw = value.get("artifacts")
+    if not isinstance(artifacts_raw, dict) or len(artifacts_raw) > CASE_CAPS["artifacts"]:
+        fail("manifest artifacts exceeds its cap or is not an object")
+    artifacts: dict[str, dict[str, object]] = {}
+    for artifact_id_raw, raw in artifacts_raw.items():
+        artifact_id = _artifact_id(artifact_id_raw)
+        if not isinstance(raw, dict) or set(raw) != {"role", "subtype", "path", "envelope_digest", "byte_digest", "created_at", "immutable", "consumer", "source_revision"}:
+            fail(f"manifest artifacts[{artifact_id}] has an unsupported schema")
+        role = require_slug(raw.get("role"), "artifact role")
+        subtype = require_slug(raw.get("subtype"), "artifact subtype")
+        manifest_kind = role if role != "history" else f"history-{subtype}"
+        if manifest_kind not in CASE_ARTIFACT_KINDS:
+            fail(f"manifest artifacts[{artifact_id}].role/subtype is unsupported")
+        path = checked_relative(raw.get("path"), "case artifact path")
+        if not path.startswith(case_base(case_id) + "/"):
+            fail("case artifact path must stay inside its case")
+        if raw.get("immutable") is not True:
+            fail("case artifacts must be immutable")
+        artifacts[artifact_id] = {
+            "role": role,
+            "subtype": subtype,
+            "path": path,
+            "envelope_digest": _hex64(raw.get("envelope_digest"), "artifact envelope_digest"),
+            "byte_digest": _hex64(raw.get("byte_digest"), "artifact byte_digest"),
+            "created_at": _iso(raw.get("created_at"), "artifact created_at"),
+            "immutable": True,
+            "consumer": require_text(raw.get("consumer"), "artifact consumer", maximum=200),
+            "source_revision": _hex64(raw.get("source_revision"), "artifact source_revision"),
+        }
+    history: list[dict[str, object]] = []
+    for position, raw in enumerate(value["history"]):
+        if not isinstance(raw, dict) or set(raw) != {"artifact_id", "role", "superseded_by", "retained_reason", "recorded_at"}:
+            fail(f"manifest history[{position}] has an unsupported schema")
+        artifact_id = _artifact_id(raw.get("artifact_id"))
+        superseded_by = raw.get("superseded_by")
+        if superseded_by is not None:
+            superseded_by = _artifact_id(superseded_by)
+        retained_reason = raw.get("retained_reason")
+        if retained_reason not in {"consumed", "reviewed", "superseded", "closed"}:
+            fail("history retained_reason is invalid")
+        history.append({
+            "artifact_id": artifact_id,
+            "role": require_slug(raw.get("role"), "history role"),
+            "superseded_by": superseded_by,
+            "retained_reason": retained_reason,
+            "recorded_at": _iso(raw.get("recorded_at"), "history recorded_at"),
+        })
+    references: list[dict[str, object]] = []
+    for position, raw in enumerate(value["references"]):
+        if not isinstance(raw, dict) or set(raw) != {"case_id", "claim_id", "artifact_id", "digest"}:
+            fail(f"manifest references[{position}] has an unsupported schema")
+        references.append({"case_id": _case_id(raw.get("case_id")), "claim_id": _claim_id(raw.get("claim_id")), "artifact_id": _artifact_id(raw.get("artifact_id")), "digest": _hex64(raw.get("digest"), "reference digest")})
+    sources: list[dict[str, object]] = []
+    for position, raw in enumerate(value["migration_sources"]):
+        if not isinstance(raw, dict) or set(raw) != {"source_path", "source_digest", "classification", "migration_id"}:
+            fail(f"manifest migration_sources[{position}] has an unsupported schema")
+        sources.append({"source_path": checked_relative(raw.get("source_path"), "migration source path"), "source_digest": _hex64(raw.get("source_digest"), "migration source_digest"), "classification": require_slug(raw.get("classification"), "migration source classification"), "migration_id": _migration_id(raw.get("migration_id"))})
+    for name, rows, key in (("history", history, "artifact_id"), ("references", references, "digest"), ("migration_sources", sources, "source_path")):
+        ids = [str(row[key]) for row in rows]
+        if len(ids) != len(set(ids)):
+            fail(f"manifest {name} contains duplicate identifiers")
+    manifest = {
+        "schema_version": 1,
+        "case_id": case_id,
+        "case_seed_b64": case_seed_b64,
+        "created_at": _iso(value.get("created_at"), "created_at"),
+        "closed_at": closed_at,
+        "status": status,
+        "claims": dict(sorted(claims.items())),
+        "artifacts": dict(sorted(artifacts.items())),
+        "history": history,
+        "references": references,
+        "runtime": {"active_route": active_route, "state_revision": state_revision},
+        "migration_sources": sources,
+    }
+    text = json.dumps(manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if len(text.encode("utf-8")) > CASE_MANIFEST_MAX_BYTES:
+        fail("case manifest exceeds maximum serialized size")
+    return manifest
+
+
+def validate_case_index(value: object) -> dict[str, object]:
+    expected_keys = {"schema_version", "project", "active_cases", "claim_heads", "aliases", "recent_cases", "migration"}
+    if not isinstance(value, dict) or set(value) != expected_keys:
+        fail("v2 root index has an unsupported schema")
+    if value.get("schema_version") != 2:
+        fail("v2 root index schema_version must be 2")
+    project = value.get("project")
+    if not isinstance(project, dict) or set(project) != {"name", "root", "description"}:
+        fail("v2 root index project must be an object")
+    project_clean = {
+        "name": require_text(project.get("name"), "project.name", maximum=200),
+        "root": project.get("root") if project.get("root") == "." else fail("project.root must be ."),
+        "description": require_text(project.get("description"), "project.description", maximum=1000),
+    }
+    active_cases_raw = value.get("active_cases")
+    claim_heads_raw = value.get("claim_heads")
+    aliases_raw = value.get("aliases")
+    recent_raw = value.get("recent_cases")
+    if not isinstance(active_cases_raw, list) or len(active_cases_raw) > CASE_CAPS["active_cases"]:
+        fail("active_cases exceeds its cap or is not an array")
+    if not isinstance(claim_heads_raw, dict) or len(claim_heads_raw) > CASE_CAPS["claim_heads"]:
+        fail("claim_heads exceeds its cap or is not an object")
+    if not isinstance(aliases_raw, dict) or len(aliases_raw) > CASE_CAPS["aliases"]:
+        fail("aliases exceeds its cap or is not an object")
+    if not isinstance(recent_raw, list):
+        fail("recent_cases must be an array")
+    active_cases: list[dict[str, object]] = []
+    seen_cases: set[str] = set()
+    seen_tasks: set[str] = set()
+    for position, raw in enumerate(active_cases_raw):
+        if not isinstance(raw, dict) or set(raw) != {"case_id", "manifest_path", "manifest_revision", "phase", "task_key"}:
+            fail(f"active_cases[{position}] has an unsupported schema")
+        case_id = _case_id(raw.get("case_id"))
+        task = _task_key(raw.get("task_key"))
+        if case_id in seen_cases or task in seen_tasks:
+            fail("active_cases case_id and task_key must be unique")
+        seen_cases.add(case_id)
+        seen_tasks.add(task)
+        phase = raw.get("phase")
+        if phase not in CASE_ACTIVE_PHASES:
+            fail("active_cases phase must be active")
+        path = checked_relative(raw.get("manifest_path"), "active_cases manifest_path")
+        if path != case_manifest_path(case_id):
+            fail("active_cases manifest_path does not match case_id")
+        active_cases.append({"case_id": case_id, "manifest_path": path, "manifest_revision": _hex64(raw.get("manifest_revision"), "manifest_revision"), "phase": phase, "task_key": task})
+    claim_heads: dict[str, dict[str, object]] = {}
+    for claim_id_raw, raw in claim_heads_raw.items():
+        claim_id = _claim_id(claim_id_raw)
+        if not isinstance(raw, dict) or set(raw) != {"case_id", "artifact_id", "artifact_digest", "claim_revision", "status"}:
+            fail(f"claim_heads[{claim_id}] has an unsupported schema")
+        case_id = _case_id(raw.get("case_id"))
+        artifact_id = _artifact_id(raw.get("artifact_id"))
+        if raw.get("status") != "active":
+            fail("root claim_heads status must be active")
+        claim_heads[claim_id] = {"case_id": case_id, "artifact_id": artifact_id, "artifact_digest": _hex64(raw.get("artifact_digest"), "artifact_digest"), "claim_revision": _hex64(raw.get("claim_revision"), "claim_revision"), "status": "active"}
+    aliases: dict[str, dict[str, object]] = {}
+    for alias, raw in aliases_raw.items():
+        alias = require_slug(alias, "case alias")
+        if not isinstance(raw, dict) or set(raw) != {"target_type", "target_id", "manifest_path", "manifest_revision"}:
+            fail(f"aliases[{alias}] has an unsupported schema")
+        if raw.get("target_type") != "case":
+            fail("case aliases may only target cases")
+        target_id = _case_id(raw.get("target_id"))
+        aliases[alias] = {
+            "target_type": "case",
+            "target_id": target_id,
+            "manifest_path": checked_relative(raw.get("manifest_path"), "alias manifest_path"),
+            "manifest_revision": _hex64(raw.get("manifest_revision"), "alias manifest_revision"),
+        }
+        if aliases[alias]["manifest_path"] != case_manifest_path(target_id):
+            fail("alias manifest_path does not match target_id")
+    recent_cases: list[dict[str, object]] = []
+    for position, raw in enumerate(recent_raw):
+        if not isinstance(raw, dict) or set(raw) != {"case_id", "manifest_path", "closed_at", "result_artifact_id", "result_digest"}:
+            fail(f"recent_cases[{position}] has an unsupported schema")
+        case_id = _case_id(raw.get("case_id"))
+        manifest_path = checked_relative(raw.get("manifest_path"), "recent manifest_path")
+        if manifest_path != case_manifest_path(case_id):
+            fail("recent manifest_path does not match case_id")
+        recent_cases.append({"case_id": case_id, "manifest_path": manifest_path, "closed_at": _iso(raw.get("closed_at"), "recent closed_at"), "result_artifact_id": _artifact_id(raw.get("result_artifact_id")), "result_digest": _hex64(raw.get("result_digest"), "recent result_digest")})
+    recent_cases = sorted(recent_cases, key=lambda item: (str(item["closed_at"]), str(item["case_id"])), reverse=True)[:CASE_CAPS["recent_cases"]]
+    migration_raw = value.get("migration")
+    migration_keys = {"migration_id", "phase", "journal_path", "baseline_digest", "report_digest", "candidate_digest", "archive_manifest_digest"}
+    if migration_raw is None:
+        migration = None
+    elif not isinstance(migration_raw, dict) or set(migration_raw) != migration_keys:
+        fail("migration has an unsupported schema")
+    else:
+        phase = migration_raw.get("phase")
+        if phase not in MIGRATION_PHASES:
+            fail("migration phase is invalid")
+        migration = {"phase": phase, "migration_id": _migration_id(migration_raw.get("migration_id")), "journal_path": checked_relative(migration_raw.get("journal_path"), "journal_path")}
+        for key in ("baseline_digest", "report_digest", "candidate_digest", "archive_manifest_digest"):
+            migration[key] = _hex64(migration_raw.get(key), key)
+    index = {"schema_version": 2, "project": project_clean, "active_cases": active_cases, "claim_heads": dict(sorted(claim_heads.items())), "aliases": dict(sorted(aliases.items())), "recent_cases": recent_cases, "migration": migration}
+    text = json.dumps(index, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    if len(text.encode("utf-8")) > CASE_INDEX_MAX_BYTES:
+        fail("v2 root index exceeds maximum serialized size")
+    return index
+
+
+def empty_case_index(project_name: str = "Teamwork") -> dict[str, object]:
+    return validate_case_index({
+        "schema_version": 2,
+        "project": {
+            "name": project_name,
+            "root": ".",
+            "description": "Local Teamwork case-bundle index for this project.",
+        },
+        "active_cases": [],
+        "claim_heads": {},
+        "aliases": {},
+        "recent_cases": [],
+        "migration": None,
+    })
+
+
+def detect_teamwork_memory_schema(root: Path) -> str:
+    text = safe_read_text(root, INDEX_PATH, optional=True)
+    if text is None:
+        fail("Teamwork memory is not initialized")
+    value = _decode_json(text, "Teamwork index")
+    if not isinstance(value, dict):
+        fail("Teamwork index must be an object")
+    v1_keys = {"last_updated", "active", "entries"}.intersection(value)
+    v2_keys = {"active_cases", "claim_heads", "aliases", "recent_cases", "migration"}.intersection(value)
+    if v1_keys and v2_keys:
+        fail("hybrid v1/v2 Teamwork memory state detected")
+    if value.get("schema_version") == 1 and v1_keys:
+        parse_index(text)
+        return "legacy-v1"
+    if value.get("schema_version") == 2 and v2_keys:
+        validate_case_index(value)
+        return "case-v2"
+    fail("unknown Teamwork memory schema")
+
+
+def serialize_case_index(index: dict[str, object]) -> str:
+    return json.dumps(validate_case_index(index), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+
+
+def serialize_case_manifest(manifest: dict[str, object]) -> str:
+    return json.dumps(validate_case_manifest(manifest), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+
+
+def case_manifest_revision(manifest: dict[str, object]) -> str:
+    stable = {key: value for key, value in validate_case_manifest(manifest).items() if key != "updated_at"}
+    return case_digest("manifest-revision", stable)
+
+
+def read_case_index(root: Path) -> tuple[str, dict[str, object]]:
+    text = safe_read_text(root, INDEX_PATH)
+    assert text is not None
+    return text, validate_case_index(_decode_json(text, "case index"))
+
+
+def read_case_manifest(root: Path, case_id: str) -> tuple[str, dict[str, object]]:
+    text = safe_read_text(root, case_manifest_path(case_id))
+    assert text is not None
+    return text, validate_case_manifest(_decode_json(text, "case manifest"))
+
+
+def cases_revision(root: Path, index_text: str, index: dict[str, object]) -> str:
+    parts = [b"case-v2", index_text.encode("utf-8")]
+    case_ids = sorted({str(item["case_id"]) for item in index["active_cases"]} | {str(item["case_id"]) for item in index["recent_cases"]})
+    for case_id in case_ids:
+        manifest = safe_read_bytes(root, case_manifest_path(case_id), optional=True)
+        if manifest is not None:
+            parts.append(case_id.encode("utf-8"))
+            parts.append(manifest)
+    return _hash(*parts)
+
+
+def inspect_cases(root: Path) -> dict[str, object]:
+    with locked_memory(root):
+        recovered = recover_transaction(root, CASE_TRANSACTION_MARKER, CASE_PREFIXES, "case")
+        mode = detect_teamwork_memory_schema(root)
+        if mode == "legacy-v1":
+            text = safe_read_text(root, INDEX_PATH)
+            assert text is not None
+            return {"initialized": True, "schema_mode": "legacy-v1", "recovered": recovered, "revision": case_digest("legacy-v1", text), "active_cases": []}
+        index_text, index = read_case_index(root)
+        active_cases = []
+        for row in index["active_cases"]:
+            _, manifest = read_case_manifest(root, str(row["case_id"]))
+            revision = case_manifest_revision(manifest)
+            if revision != row["manifest_revision"]:
+                fail("active case manifest revision does not match root index")
+            active_cases.append({"path": row["manifest_path"], "revision": revision, "state": manifest})
+        return {"initialized": True, "schema_mode": "case-v2", "recovered": recovered, "revision": cases_revision(root, index_text, index), "active_cases": active_cases, "claim_heads": index["claim_heads"], "aliases": index["aliases"], "recent_cases": index["recent_cases"], "migration": index["migration"]}
+
+
+def render_case_artifact(kind: str, title: str, body: str, *, source_digest: str, updated_at: str) -> str:
+    return f"Artifact Type: case-{kind}\nLast Updated: {updated_at}\nSource Digest: {source_digest}\n\n# {title}\n\n{body.rstrip()}\n"
+
+
+def case_schema(operation: str) -> dict[str, object]:
+    case_operations = {"create", "update", "collaborate-upsert", "accept-decision", "evidence-add", "research-add", "debug-add", "init-result", "update-result", "native-result", "plan-upsert", "plan-review-add", "review-add", "code-review-add", "repair-return", "result-add", "goal-acquire", "goal-update", "goal-transfer", "goal-close", "close"}
+    if operation not in case_operations:
+        fail("case schema operation is invalid")
+    request: dict[str, object] = {"schema_version": 2, "operation": operation, "expected_revision": "<revision from case-inspect>", "updated_at": "2026-07-30T00:00:00+00:00"}
+    if operation == "create":
+        request.update({"case_seed": "<64 lowercase hex seed>", "title": "Case title", "task_key": "task-key", "aliases": []})
+        request["initial_phase"] = "collaborating"
+    else:
+        request.update({"case_id": "c-" + "0" * 64, "expected_manifest_revision": "<manifest revision from case-inspect>"})
+    if operation in {"collaborate-upsert", "accept-decision", "evidence-add", "research-add", "debug-add", "init-result", "update-result", "native-result", "plan-upsert", "plan-review-add", "review-add", "code-review-add", "result-add", "goal-acquire", "goal-update"}:
+        request.update({"source_digest": "0" * 64, "body": "Markdown body"})
+    if operation in {"evidence-add", "research-add", "debug-add"}:
+        request["kind"] = "research"
+    if operation in {"review-add", "code-review-add", "plan-review-add"}:
+        request.update({"sealed_candidate_digest": "0" * 64, "delta": False})
+    if operation in {"goal-acquire", "goal-update"}:
+        request.update({"claim_seed": "<64 lowercase hex seed>", "owner": "Goal"})
+    if operation == "goal-transfer":
+        request.update({"artifact_id": "a-" + "0" * 64, "new_case_id": "c-" + "1" * 64, "new_expected_manifest_revision": "<target manifest revision>"})
+    if operation == "goal-close":
+        request["artifact_id"] = "a-" + "0" * 64
+    if operation == "close":
+        request["closed_at"] = "2026-07-30T00:00:00+00:00"
+    return request
+
+
+def normalize_case_request(value: object) -> dict[str, object]:
+    if not isinstance(value, dict):
+        fail("case request must be an object")
+    operation = value.get("operation")
+    case_operations = {"create", "update", "collaborate-upsert", "accept-decision", "evidence-add", "research-add", "debug-add", "init-result", "update-result", "native-result", "plan-upsert", "plan-review-add", "review-add", "code-review-add", "repair-return", "result-add", "goal-acquire", "goal-update", "goal-transfer", "goal-close", "close"}
+    if value.get("schema_version") != 2 or operation not in case_operations:
+        fail("case request has an unsupported schema or operation")
+    result: dict[str, object] = {
+        "operation": operation,
+        "expected_revision": _hex64(value.get("expected_revision"), "expected_revision"),
+        "updated_at": _iso(value.get("updated_at"), "updated_at"),
+    }
+    if operation == "create":
+        aliases = require_text_list(value.get("aliases", []), "case aliases", maximum=CASE_CAPS["aliases"])
+        for alias in aliases:
+            require_slug(alias, "case alias")
+        result.update({
+            "case_id": case_id_from_seed(value.get("case_seed")),
+            "case_seed": _hex64(value.get("case_seed"), "case_seed"),
+            "title": require_text(value.get("title"), "case title", maximum=200),
+            "task_key": _task_key(value.get("task_key")),
+            "aliases": sorted(aliases),
+            "initial_phase": value.get("initial_phase", "collaborating"),
+        })
+        if result["initial_phase"] not in {"collaborating", "collecting", "planned"}:
+            fail("case create initial_phase must be collaborating, collecting, or planned")
+        return result
+    result["case_id"] = _case_id(value.get("case_id"))
+    result["expected_manifest_revision"] = _hex64(value.get("expected_manifest_revision"), "expected_manifest_revision")
+    if operation == "update":
+        if "title" in value:
+            result["title"] = require_text(value.get("title"), "case title", maximum=200)
+        if "aliases" in value:
+            aliases = require_text_list(value.get("aliases"), "case aliases", maximum=CASE_CAPS["aliases"])
+            for alias in aliases:
+                require_slug(alias, "case alias")
+            result["aliases"] = sorted(aliases)
+        if "phase" in value:
+            phase = value.get("phase")
+            if phase not in CASE_PHASES:
+                fail("case phase is invalid")
+            result["phase"] = phase
+    if operation in {"collaborate-upsert", "accept-decision", "evidence-add", "research-add", "debug-add", "init-result", "update-result", "native-result", "plan-upsert", "plan-review-add", "review-add", "code-review-add", "result-add", "goal-acquire", "goal-update"}:
+        result["source_digest"] = _hex64(value.get("source_digest"), "source_digest")
+        result["body"] = require_markdown_body(value.get("body"), "case artifact body")
+    if operation in {"evidence-add", "research-add", "debug-add", "init-result", "update-result"}:
+        defaults = {
+            "evidence-add": "evidence",
+            "research-add": "research",
+            "debug-add": "debug",
+            "init-result": "init",
+            "update-result": "update",
+        }
+        kind = value.get("kind", defaults[str(operation)])
+        if kind not in CASE_EVIDENCE_KINDS:
+            fail("evidence kind is invalid")
+        result["kind"] = kind
+    if operation in {"review-add", "code-review-add", "plan-review-add"}:
+        result["sealed_candidate_digest"] = _hex64(value.get("sealed_candidate_digest"), "sealed_candidate_digest")
+        result["delta"] = bool(value.get("delta", False))
+    if operation in {"goal-acquire", "goal-update"}:
+        result["claim_id"] = claim_id_from_seed(value.get("claim_seed", "00" * 32))
+        result["owner"] = require_text(value.get("owner"), "claim owner", maximum=200)
+    if operation == "goal-transfer":
+        result["artifact_id"] = _artifact_id(value.get("artifact_id"))
+        result["new_case_id"] = _case_id(value.get("new_case_id"))
+        result["new_expected_manifest_revision"] = _hex64(value.get("new_expected_manifest_revision"), "new_expected_manifest_revision")
+    if operation == "goal-close":
+        result["artifact_id"] = _artifact_id(value.get("artifact_id"))
+    if operation == "close":
+        result["closed_at"] = _iso(value.get("closed_at"), "closed_at")
+    return result
+
+
+def _set_case_phase(
+    index: dict[str, object],
+    manifest: dict[str, object],
+    phase: str,
+    updated_at: str,
+    *,
+    closed_at: str | None = None,
+    preserve_runtime: bool = False,
+) -> tuple[dict[str, object], dict[str, object]]:
+    current = str(manifest["status"])
+    if phase not in CASE_TRANSITIONS[current]:
+        fail(f"invalid case lifecycle transition {current} -> {phase}")
+    manifest = dict(manifest)
+    manifest["status"] = phase
+    manifest["closed_at"] = closed_at if phase == "closed" else None
+    active_route = case_manifest_path(str(manifest["case_id"]))
+    if preserve_runtime and isinstance(manifest.get("runtime"), dict):
+        active_route = checked_relative(manifest["runtime"].get("active_route"), "runtime.active_route")
+    manifest["runtime"] = {
+        "active_route": active_route,
+        "state_revision": case_digest("case-runtime", {"case_id": manifest["case_id"], "phase": phase, "active_route": active_route, "at": updated_at}),
+    }
+    manifest = validate_case_manifest(manifest)
+    index = dict(index)
+    active = list(index["active_cases"])
+    if phase == "closed":
+        active = [row for row in active if row["case_id"] != manifest["case_id"]]
+        result_artifacts = [
+            (artifact_id, row)
+            for artifact_id, row in manifest["artifacts"].items()
+            if row["role"] == "result"
+        ]
+        if not result_artifacts:
+            fail("case close requires a terminal result artifact")
+        result_artifact_id, result_artifact = sorted(result_artifacts, key=lambda item: str(item[1]["created_at"]))[-1]
+        recent = [
+            *index["recent_cases"],
+            {
+                "case_id": manifest["case_id"],
+                "manifest_path": case_manifest_path(str(manifest["case_id"])),
+                "closed_at": closed_at or updated_at,
+                "result_artifact_id": result_artifact_id,
+                "result_digest": result_artifact["byte_digest"],
+            },
+        ]
+        index["recent_cases"] = sorted(recent, key=lambda row: (str(row["closed_at"]), str(row["case_id"])), reverse=True)[:CASE_CAPS["recent_cases"]]
+    else:
+        matches = [position for position, row in enumerate(active) if row["case_id"] == manifest["case_id"]]
+        if len(matches) != 1:
+            fail("case is not active in root index")
+        active[matches[0]] = {
+            "case_id": manifest["case_id"],
+            "manifest_path": case_manifest_path(str(manifest["case_id"])),
+            "manifest_revision": case_manifest_revision(manifest),
+            "phase": phase,
+            "task_key": active[matches[0]]["task_key"],
+        }
+    index["active_cases"] = active
+    return validate_case_index(index), manifest
+
+
+def _case_add_artifact(
+    manifest: dict[str, object],
+    *,
+    kind: str,
+    path: str,
+    artifact_id: str,
+    digest: str,
+    updated_at: str,
+    source_revision: str,
+    consumer: str = "teamwork",
+) -> dict[str, object]:
+    role = kind
+    subtype = kind
+    if kind.startswith("history-"):
+        role = "history"
+        subtype = kind.removeprefix("history-")
+    elif kind in {"review", "review-delta"}:
+        role = "review"
+        subtype = kind
+    elif kind in CASE_EVIDENCE_KINDS:
+        role = "evidence"
+        subtype = kind
+    artifacts = dict(manifest["artifacts"])
+    history = list(manifest["history"])
+    if artifact_id in artifacts:
+        fail("case artifact id already exists")
+    for prior_id, row in artifacts.items():
+        if row["path"] == path:
+            history.append({
+                "artifact_id": prior_id,
+                "role": row["role"],
+                "superseded_by": artifact_id,
+                "retained_reason": "superseded",
+                "recorded_at": updated_at,
+            })
+    artifacts[artifact_id] = {
+        "role": role,
+        "subtype": subtype,
+        "path": path,
+        "envelope_digest": artifact_envelope_digest({
+            "schema_version": 1,
+            "role": role,
+            "subtype": subtype,
+            "case_id": manifest["case_id"],
+            "claim_ids": [],
+            "consumer": consumer,
+            "source_revision": source_revision,
+            "immutable": True,
+        }),
+        "byte_digest": digest,
+        "created_at": updated_at,
+        "immutable": True,
+        "consumer": consumer,
+        "source_revision": source_revision,
+    }
+    manifest = dict(manifest)
+    manifest["artifacts"] = artifacts
+    manifest["history"] = history
+    manifest["runtime"] = {
+        "active_route": path,
+        "state_revision": case_digest("case-runtime", {"case_id": manifest["case_id"], "path": path, "at": updated_at}),
+    }
+    return validate_case_manifest(manifest)
+
+
+def _case_singleton_history_path(case_id: str, artifact_id: str, role: object) -> str:
+    role_slug = require_slug(role, "singleton artifact role")
+    segment = "live" if role_slug in CASE_LIVE_KINDS else role_slug
+    return f"{case_base(case_id)}/history/{segment}/{_artifact_id(artifact_id)}.md"
+
+
+def _relocate_prior_singleton_artifacts(
+    root: Path,
+    manifest: dict[str, object],
+    *,
+    singleton_path: str,
+    superseded_by: str,
+    updated_at: str,
+    outputs: dict[str, Output],
+) -> dict[str, object]:
+    artifacts = dict(manifest["artifacts"])
+    history = list(manifest["history"])
+    relocated = False
+    for prior_id, row in list(artifacts.items()):
+        if row["path"] != singleton_path:
+            continue
+        prior_bytes = safe_read_bytes(root, singleton_path)
+        assert prior_bytes is not None
+        if hashlib.sha256(prior_bytes).hexdigest() != row["byte_digest"]:
+            fail("singleton case artifact no longer matches its immutable manifest record", category="INDETERMINATE")
+        archived_path = _case_singleton_history_path(str(manifest["case_id"]), prior_id, row["role"])
+        if safe_read_bytes(root, archived_path, optional=True) is not None or archived_path in outputs:
+            fail("singleton case artifact history path already exists", category="INDETERMINATE")
+        mode = _mode_of(root, singleton_path)
+        outputs[archived_path] = Output(prior_bytes, 0o600 if mode is None else mode)
+        relocated_row = dict(row)
+        relocated_row["path"] = archived_path
+        artifacts[prior_id] = relocated_row
+        history.append({
+            "artifact_id": prior_id,
+            "role": row["role"],
+            "superseded_by": superseded_by,
+            "retained_reason": "superseded",
+            "recorded_at": updated_at,
+        })
+        relocated = True
+    if not relocated:
+        return manifest
+    relocated_manifest = dict(manifest)
+    relocated_manifest["artifacts"] = artifacts
+    relocated_manifest["history"] = history
+    return validate_case_manifest(relocated_manifest)
+
+
+def _write_case_index_and_manifest_outputs(index: dict[str, object], manifests: list[dict[str, object]], outputs: dict[str, Output]) -> None:
+    refreshed = validate_case_index(index)
+    for manifest in manifests:
+        manifest = validate_case_manifest(manifest)
+        manifest_revision = case_manifest_revision(manifest)
+        for position, row in enumerate(refreshed["active_cases"]):
+            if row["case_id"] == manifest["case_id"]:
+                refreshed["active_cases"][position] = dict(row)
+                refreshed["active_cases"][position]["manifest_revision"] = manifest_revision
+        for alias, row in list(refreshed["aliases"].items()):
+            if row["target_id"] == manifest["case_id"]:
+                updated = dict(row)
+                updated["manifest_revision"] = manifest_revision
+                refreshed["aliases"][alias] = updated
+        outputs[case_manifest_path(str(manifest["case_id"]))] = Output(serialize_case_manifest(manifest).encode("utf-8"))
+    outputs[INDEX_PATH] = Output(serialize_case_index(refreshed).encode("utf-8"))
+
+
+def apply_case(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
+    request = normalize_case_request(raw_request)
+    with locked_memory(root):
+        ensure_no_migration_intermediate(root)
+        recover_transaction(root, CASE_TRANSACTION_MARKER, CASE_PREFIXES, "case")
+        if detect_teamwork_memory_schema(root) != "case-v2":
+            fail("case operations require v2 case-bundle memory; legacy v1 uses existing artifact routes")
+        index_text, index = read_case_index(root)
+        if request["expected_revision"] != cases_revision(root, index_text, index):
+            fail("stale case expected_revision; run case-inspect again")
+        outputs: dict[str, Output] = {}
+        created: list[str] = []
+        operation = str(request["operation"])
+        result_case_id: str
+        result_manifest: dict[str, object]
+        changed: set[str] = set()
+        if operation == "create":
+            case_id = str(request["case_id"])
+            result_case_id = case_id
+            if safe_read_bytes(root, case_manifest_path(case_id), optional=True) is not None:
+                fail("derived case manifest already exists")
+            if any(row["task_key"] == request["task_key"] for row in index["active_cases"]):
+                fail("active case task_key already exists")
+            for alias in request["aliases"]:
+                if alias in index["aliases"]:
+                    fail("case alias already exists")
+            initial_phase = str(request["initial_phase"])
+            seed_hex = str(request["case_seed"])
+            manifest = validate_case_manifest({
+                "schema_version": 1,
+                "case_id": case_id,
+                "case_seed_b64": base64.b64encode(bytes.fromhex(seed_hex)).decode("ascii"),
+                "created_at": request["updated_at"],
+                "closed_at": None,
+                "status": initial_phase,
+                "claims": {},
+                "artifacts": {},
+                "history": [],
+                "references": [],
+                "runtime": {
+                    "active_route": case_manifest_path(case_id),
+                    "state_revision": case_digest("case-runtime", {"case_id": case_id, "phase": initial_phase, "at": request["updated_at"]}),
+                },
+                "migration_sources": [],
+            })
+            index["active_cases"].append({"case_id": case_id, "manifest_path": case_manifest_path(case_id), "manifest_revision": case_manifest_revision(manifest), "phase": initial_phase, "task_key": request["task_key"]})
+            for alias in request["aliases"]:
+                index["aliases"][str(alias)] = {
+                    "target_type": "case",
+                    "target_id": case_id,
+                    "manifest_path": case_manifest_path(case_id),
+                    "manifest_revision": case_manifest_revision(manifest),
+                }
+            result_manifest = manifest
+            _write_case_index_and_manifest_outputs(index, [manifest], outputs)
+        else:
+            case_id = str(request["case_id"])
+            result_case_id = case_id
+            _, manifest = read_case_manifest(root, case_id)
+            if request["expected_manifest_revision"] != case_manifest_revision(manifest):
+                fail("stale case manifest revision; run case-inspect again")
+            if operation == "update":
+                manifest = dict(manifest)
+                active_row = next((row for row in index["active_cases"] if row["case_id"] == case_id), None)
+                if active_row is None:
+                    fail("case is not active in root index")
+                if "title" in request:
+                    pass
+                if "aliases" in request:
+                    old_aliases = {alias for alias, row in index["aliases"].items() if row["target_id"] == case_id}
+                    new_aliases = set(str(alias) for alias in request["aliases"])
+                    for alias in new_aliases:
+                        owner = index["aliases"].get(alias)
+                        if owner is not None and owner["target_id"] != case_id:
+                            fail("case alias conflict")
+                    for alias in old_aliases - new_aliases:
+                        index["aliases"].pop(alias, None)
+                    for alias in new_aliases:
+                        index["aliases"][alias] = {
+                            "target_type": "case",
+                            "target_id": case_id,
+                            "manifest_path": case_manifest_path(case_id),
+                            "manifest_revision": case_manifest_revision(manifest),
+                        }
+                phase = str(request.get("phase", manifest["status"]))
+                index, manifest = _set_case_phase(index, validate_case_manifest(manifest), phase, str(request["updated_at"]))
+                result_manifest = manifest
+            elif operation in {"collaborate-upsert", "accept-decision", "evidence-add", "research-add", "debug-add", "init-result", "update-result", "native-result", "plan-upsert", "plan-review-add", "review-add", "code-review-add", "result-add", "goal-acquire", "goal-update"}:
+                allowed = {
+                    "collaborate-upsert": CASE_ACTIVE_PHASES,
+                    "accept-decision": {"collaborating"},
+                    "evidence-add": {"collecting", "planned", "executing", "reviewing"},
+                    "research-add": {"collecting", "planned", "executing", "reviewing"},
+                    "debug-add": {"collecting", "planned", "executing", "reviewing"},
+                    "init-result": {"collecting", "executing"},
+                    "update-result": {"collecting", "executing"},
+                    "native-result": {"collecting", "executing"},
+                    "plan-upsert": {"planned", "executing"},
+                    "plan-review-add": {"planned"},
+                    "review-add": {"executing", "reviewing"},
+                    "code-review-add": {"executing", "reviewing"},
+                    "result-add": {"executing", "reviewing"},
+                    "goal-acquire": {"executing"},
+                    "goal-update": {"executing"},
+                }[operation]
+                if manifest["status"] not in allowed:
+                    fail(f"{operation} is not allowed while case is {manifest['status']}")
+                kind = {
+                    "collaborate-upsert": "collaborate",
+                    "accept-decision": "decision",
+                    "plan-upsert": "plan",
+                    "plan-review-add": "review",
+                    "review-add": "review",
+                    "code-review-add": "review",
+                    "result-add": "result",
+                    "native-result": "result",
+                    "goal-acquire": "goal",
+                    "goal-update": "goal",
+                }.get(operation, str(request.get("kind", "evidence")))
+                body = str(request["body"])
+                source_digest = str(request["source_digest"])
+                active_row = next((row for row in index["active_cases"] if row["case_id"] == case_id), None)
+                if active_row is None:
+                    fail("case is not active in root index")
+                title = str(active_row["task_key"]).replace("-", " ").title()
+                rendered = render_case_artifact(kind, title, body, source_digest=source_digest, updated_at=str(request["updated_at"]))
+                role = "evidence" if kind in CASE_EVIDENCE_KINDS else kind
+                subtype = kind
+                envelope = {"role": role, "subtype": subtype, "case_id": case_id, "claim_ids": [], "consumer": "teamwork", "source_revision": source_digest, "immutable": True}
+                artifact_id = artifact_id_for_case(kind, envelope, rendered)
+                manifest_kind = kind
+                if operation in {"review-add", "code-review-add", "plan-review-add"}:
+                    review_digest = str(request["sealed_candidate_digest"])
+                    path = derive_case_artifact_path(case_id, "review", review_digest, delta=bool(request["delta"]))
+                    artifact_id = "a-" + (case_digest("review-delta-artifact-id", {"case_id": case_id, "sealed_candidate_digest": review_digest}) if request["delta"] else review_digest)
+                    manifest_kind = "review-delta" if request["delta"] else "review"
+                    existing_paths = {str(row["path"]) for row in manifest["artifacts"].values()}
+                    if artifact_id in manifest["artifacts"] or path in existing_paths or safe_read_bytes(root, path, optional=True) is not None:
+                        fail("sealed-candidate review artifact already exists")
+                else:
+                    path = derive_case_artifact_path(case_id, kind, artifact_id)
+                digest = artifact_digest(path, rendered)
+                if kind in CASE_LIVE_KINDS | CASE_SINGLETON_KINDS:
+                    manifest = _relocate_prior_singleton_artifacts(
+                        root,
+                        manifest,
+                        singleton_path=path,
+                        superseded_by=artifact_id,
+                        updated_at=str(request["updated_at"]),
+                        outputs=outputs,
+                    )
+                manifest = _case_add_artifact(manifest, kind=manifest_kind, path=path, artifact_id=artifact_id, digest=digest, updated_at=str(request["updated_at"]), source_revision=source_digest)
+                if operation == "plan-upsert":
+                    index, manifest = _set_case_phase(index, manifest, "executing", str(request["updated_at"]), preserve_runtime=True)
+                elif operation == "plan-review-add":
+                    index, manifest = _set_case_phase(index, manifest, "planned", str(request["updated_at"]), preserve_runtime=True)
+                elif operation in {"review-add", "code-review-add"}:
+                    index, manifest = _set_case_phase(index, manifest, "reviewing", str(request["updated_at"]), preserve_runtime=True)
+                else:
+                    index, manifest = _set_case_phase(index, manifest, str(manifest["status"]), str(request["updated_at"]), preserve_runtime=True)
+                if operation in {"goal-acquire", "goal-update"}:
+                    descriptor_digest = case_digest("claim-descriptor", {"case_id": case_id, "claim_id": request["claim_id"], "owner": request["owner"]})
+                    claim = {
+                        "descriptor_version": 1,
+                        "descriptor_digest": descriptor_digest,
+                        "status": "active",
+                        "acquired_at": request["updated_at"],
+                        "released_at": None,
+                        "head_artifact_id": artifact_id,
+                        "head_digest": digest,
+                    }
+                    manifest = dict(manifest)
+                    manifest["claims"] = {**manifest["claims"], str(request["claim_id"]): claim}
+                    claim_revision = case_digest("claim-revision", {"case_id": case_id, "claim_id": request["claim_id"], "artifact_digest": digest})
+                    index["claim_heads"][str(request["claim_id"])] = {"case_id": case_id, "artifact_id": artifact_id, "artifact_digest": digest, "claim_revision": claim_revision, "status": "active"}
+                    manifest = validate_case_manifest(manifest)
+                outputs[path] = Output(rendered.encode("utf-8"))
+                result_manifest = manifest
+            elif operation == "repair-return":
+                if manifest["status"] != "reviewing":
+                    fail("repair-return requires reviewing phase")
+                repair_events = [row for row in manifest["history"] if row.get("role") == "repair-return"]
+                if repair_events:
+                    fail("only one review repair batch is allowed")
+                marker_id = artifact_id_for_case(
+                    "history-result",
+                    {"role": "history", "subtype": "result", "case_id": case_id, "claim_ids": [], "consumer": "teamwork", "source_revision": case_digest("repair-return", str(request["updated_at"])), "immutable": True},
+                    str(request["updated_at"]),
+                )
+                manifest = dict(manifest)
+                manifest["history"] = [
+                    *manifest["history"],
+                    {"artifact_id": marker_id, "role": "repair-return", "superseded_by": None, "retained_reason": "reviewed", "recorded_at": request["updated_at"]},
+                ]
+                index, manifest = _set_case_phase(index, validate_case_manifest(manifest), "executing", str(request["updated_at"]))
+                result_manifest = manifest
+            elif operation == "goal-transfer":
+                new_case_id = str(request["new_case_id"])
+                _, new_manifest = read_case_manifest(root, new_case_id)
+                if request["new_expected_manifest_revision"] != case_manifest_revision(new_manifest):
+                    fail("stale target manifest revision; run case-inspect again")
+                artifact_id = str(request["artifact_id"])
+                matches = [(claim_id, claim) for claim_id, claim in manifest["claims"].items() if claim["head_artifact_id"] == artifact_id and claim["status"] == "active"]
+                if len(matches) != 1:
+                    fail("goal transfer requires exactly one active source claim")
+                claim_id, prior_raw = matches[0]
+                prior = dict(prior_raw)
+                old_claims = dict(manifest["claims"])
+                released_claim = dict(prior)
+                released_claim["status"] = "released"
+                released_claim["released_at"] = request["updated_at"]
+                old_claims[claim_id] = released_claim
+                new_claim = dict(prior)
+                new_claim["acquired_at"] = request["updated_at"]
+                new_claim["released_at"] = None
+                manifest = dict(manifest)
+                manifest["claims"] = old_claims
+                new_manifest = dict(new_manifest)
+                new_manifest["claims"] = {**new_manifest["claims"], claim_id: new_claim}
+                manifest = validate_case_manifest(manifest)
+                new_manifest = validate_case_manifest(new_manifest)
+                index["claim_heads"][claim_id] = {"case_id": new_case_id, "artifact_id": artifact_id, "artifact_digest": new_claim["head_digest"], "claim_revision": case_digest("claim-transfer", {"claim_id": claim_id, "from": case_id, "to": new_case_id, "at": request["updated_at"]}), "status": "active"}
+                index, manifest = _set_case_phase(index, manifest, str(manifest["status"]), str(request["updated_at"]))
+                index, new_manifest = _set_case_phase(index, new_manifest, str(new_manifest["status"]), str(request["updated_at"]))
+                _write_case_index_and_manifest_outputs(index, [manifest, new_manifest], outputs)
+                result_manifest = manifest
+            elif operation == "goal-close":
+                artifact_id = str(request["artifact_id"])
+                manifest = dict(manifest)
+                claims = {}
+                for claim_id, claim in manifest["claims"].items():
+                    next_claim = dict(claim)
+                    if next_claim["head_artifact_id"] == artifact_id and next_claim["status"] == "active":
+                        next_claim["status"] = "released"
+                        next_claim["released_at"] = request["updated_at"]
+                    claims[claim_id] = next_claim
+                manifest["claims"] = claims
+                index["claim_heads"] = {claim_id: head for claim_id, head in index["claim_heads"].items() if not (head["case_id"] == case_id and head["artifact_id"] == artifact_id)}
+                index, manifest = _set_case_phase(index, validate_case_manifest(manifest), str(manifest["status"]), str(request["updated_at"]))
+                result_manifest = manifest
+            else:
+                index, manifest = _set_case_phase(index, manifest, "closed", str(request["updated_at"]), closed_at=str(request["closed_at"]))
+                result_manifest = manifest
+            if not outputs or case_manifest_path(case_id) not in outputs:
+                _write_case_index_and_manifest_outputs(index, [result_manifest], outputs)
+        for path in outputs:
+            ensure_directory(root, PurePosixPath(path).parent.as_posix(), created=created)
+            changed.add(path)
+        apply_transaction(root, kind="case", marker=CASE_TRANSACTION_MARKER, prefixes=CASE_PREFIXES, outputs=outputs, created_directories=created)
+        final_index_text, final_index = read_case_index(root)
+        _, final_manifest = read_case_manifest(root, result_case_id)
+        return {"schema_mode": "case-v2", "case_id": result_case_id, "manifest_path": case_manifest_path(result_case_id), "manifest_revision": case_manifest_revision(final_manifest), "revision": cases_revision(root, final_index_text, final_index), "changed_paths": sorted(changed)}
+
+
+def migration_runtime_dir(migration_id: str) -> str:
+    return f"{MIGRATION_RUNTIME_ROOT}/migrations/{_migration_id(migration_id)}"
+
+
+def migration_marker(migration_id: str) -> str:
+    return f"{migration_runtime_dir(migration_id)}/.transaction.json"
+
+
+def migration_runtime_path(migration_id: str, name: str) -> str:
+    checked_relative(name, "migration runtime relative path")
+    return f"{migration_runtime_dir(migration_id)}/{name}"
+
+
+def migration_archive_object_path(digest: str) -> str:
+    digest = _hex64(digest, "archive object digest")
+    return f"{MIGRATION_ARCHIVE_ROOT}/objects/sha256/{digest[:2]}/{digest}"
+
+
+def migration_archive_manifest_path(migration_id: str) -> str:
+    return f"{MIGRATION_ARCHIVE_ROOT}/manifests/{_migration_id(migration_id)}.json"
+
+
+def migration_json_output(value: object) -> Output:
+    return Output((json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8"))
+
+
+def read_migration_json(root: Path, migration_id: str, name: str, *, optional: bool = False) -> dict[str, object] | None:
+    raw = safe_read_text(root, migration_runtime_path(migration_id, name), optional=optional)
+    if raw is None:
+        return None
+    value = _decode_json(raw, name)
+    if not isinstance(value, dict):
+        fail(f"migration runtime {name} must be an object", category="INDETERMINATE")
+    return value
+
+
+def _validate_baseline_payload(value: object) -> dict[str, object]:
+    if not isinstance(value, dict) or set(value) != {"schema_version", "paths", "baseline_digest"}:
+        fail("migration baseline has an unsupported schema")
+    if value.get("schema_version") != 1:
+        fail("migration baseline schema_version must be 1")
+    rows_raw = value.get("paths")
+    if not isinstance(rows_raw, list) or not rows_raw:
+        fail("migration baseline must contain at least one file")
+    rows: list[dict[str, object]] = []
+    seen: set[str] = set()
+    for position, raw in enumerate(rows_raw):
+        if not isinstance(raw, dict) or set(raw) != {"path", "sha256", "mode", "size"}:
+            fail(f"migration baseline row {position} is malformed")
+        path = checked_relative(raw.get("path"), "baseline source path")
+        if path in seen:
+            fail("migration baseline must not duplicate paths")
+        seen.add(path)
+        mode = raw.get("mode")
+        size = raw.get("size")
+        if not isinstance(mode, int) or not 0 <= mode <= 0o777:
+            fail("migration baseline mode is invalid")
+        if not isinstance(size, int) or size < 0:
+            fail("migration baseline size is invalid")
+        rows.append({"path": path, "sha256": _hex64(raw.get("sha256"), "baseline sha256"), "mode": mode, "size": size})
+    rows = sorted(rows, key=lambda row: str(row["path"]))
+    digest = _hex64(value.get("baseline_digest"), "baseline_digest")
+    if case_digest("migration-baseline", rows) != digest:
+        fail("migration baseline payload does not match digest")
+    return {"schema_version": 1, "paths": rows, "baseline_digest": digest}
+
+
+def _baseline_row_by_path(baseline: dict[str, object]) -> dict[str, dict[str, object]]:
+    checked = _validate_baseline_payload(baseline)
+    return {str(row["path"]): row for row in checked["paths"]}
+
+
+def _assert_current_file_matches_baseline(root: Path, row: dict[str, object]) -> bytes:
+    source_path = checked_relative(row.get("path"), "baseline source path")
+    data = safe_read_bytes(root, source_path)
+    assert data is not None
+    mode = _mode_of(root, source_path)
+    if mode is None:
+        fail("baseline source disappeared during migration", category="INDETERMINATE")
+    digest = hashlib.sha256(data).hexdigest()
+    if digest != row.get("sha256") or len(data) != row.get("size") or mode != row.get("mode"):
+        fail("baseline changed before archive materialization")
+    return data
+
+
+def _validate_archive_manifest(value: object, state: dict[str, object], baseline: dict[str, object]) -> dict[str, object]:
+    if not isinstance(value, dict) or set(value) != {"schema_version", "migration_id", "baseline_digest", "objects", "archive_manifest_digest"}:
+        fail("archive manifest has an unsupported schema", category="INDETERMINATE")
+    if value.get("schema_version") != 1 or value.get("migration_id") != state.get("migration_id"):
+        fail("archive manifest identity mismatch", category="INDETERMINATE")
+    if value.get("baseline_digest") != state.get("baseline_digest"):
+        fail("archive manifest baseline mismatch", category="INDETERMINATE")
+    objects_raw = value.get("objects")
+    if not isinstance(objects_raw, list) or not objects_raw:
+        fail("archive manifest must contain at least one object", category="INDETERMINATE")
+    expected_by_path = _baseline_row_by_path(baseline)
+    objects: list[dict[str, object]] = []
+    seen_sources: set[str] = set()
+    for position, raw in enumerate(objects_raw):
+        if not isinstance(raw, dict) or set(raw) != {"source_path", "object_path", "sha256", "mode", "size"}:
+            fail(f"archive object row {position} is malformed", category="INDETERMINATE")
+        source_path = checked_relative(raw.get("source_path"), "archive source path")
+        object_path = checked_relative(raw.get("object_path"), "archive object path")
+        digest = _hex64(raw.get("sha256"), "archive object sha256")
+        mode = raw.get("mode")
+        size = raw.get("size")
+        if not isinstance(mode, int) or not 0 <= mode <= 0o777 or not isinstance(size, int) or size < 0:
+            fail("archive object mode or size is invalid", category="INDETERMINATE")
+        if source_path in seen_sources:
+            fail("archive manifest duplicates a source path", category="INDETERMINATE")
+        seen_sources.add(source_path)
+        baseline_row = expected_by_path.get(source_path)
+        if baseline_row is None:
+            fail("archive manifest contains a source outside the baseline", category="INDETERMINATE")
+        if (
+            baseline_row["sha256"] != digest
+            or baseline_row["mode"] != mode
+            or baseline_row["size"] != size
+            or object_path != migration_archive_object_path(digest)
+        ):
+            fail("archive manifest does not exactly cover the baseline", category="INDETERMINATE")
+        objects.append({"source_path": source_path, "object_path": object_path, "sha256": digest, "mode": mode, "size": size})
+    if set(expected_by_path) != seen_sources:
+        fail("archive manifest does not exactly cover the baseline", category="INDETERMINATE")
+    manifest = {
+        "schema_version": 1,
+        "migration_id": state["migration_id"],
+        "baseline_digest": state["baseline_digest"],
+        "objects": sorted(objects, key=lambda row: str(row["source_path"])),
+    }
+    archive_digest = case_digest("archive-manifest", manifest)
+    if value.get("archive_manifest_digest") != archive_digest or state.get("archive_manifest_digest") != archive_digest:
+        fail("archive manifest digest does not match runtime state", category="INDETERMINATE")
+    manifest["archive_manifest_digest"] = archive_digest
+    return manifest
+
+
+def export_v1_baseline(root: Path) -> dict[str, object]:
+    if detect_teamwork_memory_schema(root) != "legacy-v1":
+        fail("migration baseline export requires legacy-v1 memory")
+    base = root / "docs/teamwork"
+    rows: list[dict[str, object]] = []
+    for path in sorted(base.rglob("*")):
+        relative = path.relative_to(root).as_posix()
+        info = path.lstat()
+        if stat.S_ISLNK(info.st_mode):
+            fail("migration baseline refuses symlinks")
+        if stat.S_ISREG(info.st_mode):
+            data = safe_read_bytes(root, relative)
+            assert data is not None
+            rows.append({"path": relative, "sha256": hashlib.sha256(data).hexdigest(), "mode": stat.S_IMODE(info.st_mode), "size": len(data)})
+    digest = case_digest("migration-baseline", rows)
+    return {"schema_version": 1, "paths": rows, "baseline_digest": digest}
+
+
+def migration_schema(operation: str) -> dict[str, object]:
+    if operation not in {"request", "approve-baseline", "materialize-archive", "prepare-candidate", "restore-drill", "cutover", "cleanup"}:
+        fail("migration schema operation is invalid")
+    if operation == "request":
+        return {"schema_version": 1, "operation": "approve-baseline", "migration_seed": "<64 lowercase hex seed>"}
+    request: dict[str, object] = {"schema_version": 1, "operation": operation, "migration_id": "m-" + "0" * 64, "baseline_digest": "0" * 64, "request_digest": "0" * 64}
+    if operation == "approve-baseline":
+        request["baseline"] = {"schema_version": 1, "paths": [], "baseline_digest": "0" * 64}
+    if operation == "cutover":
+        request["cutover_authority"] = "I authorize Teamwork memory cutover"
+    return request
+
+
+def construct_migration_request(root: Path, raw: dict[str, object]) -> dict[str, object]:
+    if raw.get("schema_version") != 1:
+        fail("migration-request schema_version must be 1")
+    operation = raw.get("operation", "approve-baseline")
+    if operation not in {"approve-baseline", "materialize-archive", "prepare-candidate", "restore-drill", "cleanup"}:
+        fail("migration-request operation is invalid")
+    migration_id = migration_id_from_seed(raw.get("migration_seed"))
+    with locked_memory(root):
+        baseline = export_v1_baseline(root)
+        request = {
+            "schema_version": 1,
+            "operation": operation,
+            "migration_id": migration_id,
+            "baseline_digest": baseline["baseline_digest"],
+            "baseline": baseline if operation == "approve-baseline" else None,
+        }
+        request["request_digest"] = migration_request_digest(request)
+        return request
+
+
+def _validate_migration_request(raw: dict[str, object]) -> dict[str, object]:
+    if raw.get("schema_version") != 1:
+        fail("migration apply schema_version must be 1")
+    operation = raw.get("operation")
+    if operation not in {"approve-baseline", "materialize-archive", "prepare-candidate", "restore-drill", "cutover", "cleanup"}:
+        fail("migration apply operation is invalid")
+    request = {
+        "operation": operation,
+        "migration_id": _migration_id(raw.get("migration_id")),
+        "baseline_digest": _hex64(raw.get("baseline_digest"), "baseline_digest"),
+        "request_digest": _hex64(raw.get("request_digest"), "request_digest"),
+    }
+    if operation == "approve-baseline":
+        baseline = _validate_baseline_payload(raw.get("baseline"))
+        if baseline.get("baseline_digest") != request["baseline_digest"]:
+            fail("migration baseline digest mismatch")
+        request["baseline"] = baseline
+    if operation == "cutover":
+        request["cutover_authority"] = raw.get("cutover_authority")
+    digest_payload: dict[str, object] = {
+        "schema_version": 1,
+        "operation": operation,
+        "migration_id": request["migration_id"],
+        "baseline_digest": request["baseline_digest"],
+        "baseline": request.get("baseline") if operation == "approve-baseline" else None,
+    }
+    if operation == "cutover":
+        digest_payload["cutover_authority"] = request.get("cutover_authority")
+    expected_digest = migration_request_digest(digest_payload)
+    if request["request_digest"] != expected_digest:
+        fail("migration request digest mismatch")
+    return request
+
+
+def migration_request_digest(payload: dict[str, object]) -> str:
+    return case_digest(
+        "migration-request",
+        {key: value for key, value in payload.items() if key != "request_digest"},
+    )
+
+
+def migration_phase_request(operation: str, migration_id: str, baseline_digest: str, *, baseline: dict[str, object] | None = None, cutover_authority: str | None = None) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "schema_version": 1,
+        "operation": operation,
+        "migration_id": migration_id,
+        "baseline_digest": baseline_digest,
+        "baseline": baseline if operation == "approve-baseline" else None,
+    }
+    if operation == "cutover":
+        payload["cutover_authority"] = cutover_authority
+    payload["request_digest"] = migration_request_digest(payload)
+    return payload
+
+
+def migration_failpoint(name: str) -> None:
+    if os.environ.get("TEAMWORK_MIGRATION_FAILPOINT") == name:
+        raise TransactionError(f"simulated migration failpoint: {name}", "INDETERMINATE")
+
+
+def _safe_dir(root: Path, relative: str, *, optional: bool = False) -> Path | None:
+    checked_relative(relative, "directory path")
+    parent = _walk_parent(root, f"{relative}/placeholder", create=False)
+    if parent is None:
+        if optional:
+            return None
+        fail("directory parent does not exist", category="INDETERMINATE")
+    path = parent
+    # _walk_parent returns the parent of the synthetic placeholder, i.e. the
+    # requested directory.
+    try:
+        info = path.lstat()
+    except FileNotFoundError:
+        if optional:
+            return None
+        fail(f"directory is missing: {relative}", category="INDETERMINATE")
+    except OSError as exc:
+        fail(f"cannot inspect directory {relative}: {exc}", category="INDETERMINATE")
+    if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode) or info.st_dev != _root_device(root):
+        fail(f"directory must be same-device non-symlink: {relative}", category="INDETERMINATE")
+    return path
+
+
+def _rename_dir(root: Path, source: str, target: str) -> None:
+    source_path = _safe_dir(root, source)
+    assert source_path is not None
+    target_parent = _walk_parent(root, target, create=True)
+    if target_parent is None:
+        fail("target directory parent does not exist", category="INDETERMINATE")
+    target_path = target_parent / PurePosixPath(target).name
+    if target_path.exists():
+        fail(f"target directory already exists: {target}", category="INDETERMINATE")
+    try:
+        os.rename(source_path, target_path)
+    except OSError as exc:
+        fail(f"cannot rename directory {source} -> {target}: {exc}", category="INDETERMINATE")
+    _fsync_directory(source_path.parent)
+    _fsync_directory(target_path.parent)
+
+
+def _read_json_relative(root: Path, relative: str, label: str) -> dict[str, object]:
+    raw = safe_read_text(root, relative)
+    assert raw is not None
+    try:
+        value = json.loads(raw)
+    except Exception as exc:
+        fail(f"cannot read {label}: {exc}", category="INDETERMINATE")
+    if not isinstance(value, dict):
+        fail(f"{label} must be an object", category="INDETERMINATE")
+    return value
+
+
+def _write_json_relative(root: Path, relative: str, value: dict[str, object]) -> None:
+    ensure_directory(root, PurePosixPath(checked_relative(relative, "cutover JSON path")).parent.as_posix())
+    data = (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8")
+    parent = PurePosixPath(relative).parent.as_posix()
+    stage = _write_temp(root, parent, f".tw-cutover-{secrets.token_hex(16)}", data, 0o600)
+    _replace(root, stage, relative)
+
+
+def _load_cutover_journal(root: Path, migration_id: str) -> dict[str, object] | None:
+    relative = migration_runtime_path(migration_id, "cutover-journal.json")
+    if safe_read_bytes(root, relative, optional=True) is None:
+        return None
+    journal = _read_json_relative(root, relative, "cutover journal")
+    if journal.get("schema_version") != 1 or journal.get("migration_id") != migration_id:
+        fail("cutover journal schema mismatch", category="INDETERMINATE")
+    return journal
+
+
+def _store_cutover_journal(root: Path, migration_id: str, journal: dict[str, object]) -> None:
+    _write_json_relative(root, migration_runtime_path(migration_id, "cutover-journal.json"), journal)
+
+
+def _validate_installed_candidate(root: Path, migration_id: str, state: dict[str, object]) -> dict[str, object]:
+    index = _read_json_relative(root, "docs/teamwork/index.json", "installed v2 index")
+    index["migration"] = {
+        "migration_id": migration_id,
+        "phase": "committed",
+        "journal_path": migration_runtime_path(migration_id, "journal.json"),
+        "baseline_digest": state["baseline_digest"],
+        "report_digest": case_digest("restore-report", state.get("restore_drill")),
+        "candidate_digest": state["candidate_digest"],
+        "archive_manifest_digest": state["archive_manifest_digest"],
+    }
+    validate_case_index(index)
+    _write_json_relative(root, "docs/teamwork/index.json", index)
+    detect_teamwork_memory_schema(root)
+    return index
+
+
+def _recover_migration_unlocked(root: Path, migration_id_raw: str) -> dict[str, object]:
+    migration_id = _migration_id(migration_id_raw)
+    recover_transaction(root, migration_marker(migration_id), MIGRATION_PREFIXES, MIGRATION_KIND)
+    state = read_migration_json(root, migration_id, "journal.json", optional=True)
+    cutover = _load_cutover_journal(root, migration_id)
+    if cutover is None:
+        return {"migration_id": migration_id, "recovered": False, "phase": None if state is None else state.get("phase")}
+    phase = cutover.get("phase")
+    old_rel = str(cutover["old_tree"])
+    renamed_rel = str(cutover["renamed_old_tree"])
+    candidate_rel = str(cutover["candidate_tree"])
+    new_rel = str(cutover["new_tree"])
+    if state is None:
+        fail("missing migration runtime state during cutover recovery", category="INDETERMINATE")
+    if phase == "prepared":
+        if _safe_dir(root, renamed_rel, optional=True) is None:
+            if _safe_dir(root, old_rel, optional=True) is None:
+                fail("cutover prepared state lost the old tree", category="INDETERMINATE")
+            _rename_dir(root, old_rel, renamed_rel)
+        cutover["phase"] = "old_tree_renamed"
+        _store_cutover_journal(root, migration_id, cutover)
+        phase = "old_tree_renamed"
+    if phase == "old_tree_renamed":
+        if _safe_dir(root, renamed_rel, optional=True) is None:
+            fail("cutover recovery cannot find renamed old tree", category="INDETERMINATE")
+        if _safe_dir(root, new_rel, optional=True) is None:
+            if _safe_dir(root, candidate_rel, optional=True) is None:
+                fail("cutover recovery cannot find candidate or installed new tree", category="INDETERMINATE")
+            _rename_dir(root, candidate_rel, new_rel)
+        cutover["phase"] = "new_tree_installed"
+        _store_cutover_journal(root, migration_id, cutover)
+        phase = "new_tree_installed"
+    if phase == "new_tree_installed":
+        _validate_installed_candidate(root, migration_id, state)
+        cutover["phase"] = "committed"
+        _store_cutover_journal(root, migration_id, cutover)
+        state["phase"] = "committed"
+        state["renamed_old_tree"] = renamed_rel
+        state["cleanup"] = "pending"
+        _write_json_relative(root, migration_runtime_path(migration_id, "journal.json"), state)
+        return {"migration_id": migration_id, "recovered": True, "phase": "committed", "renamed_old_tree": renamed_rel}
+    if phase == "committed":
+        return {"migration_id": migration_id, "recovered": False, "phase": "committed", "renamed_old_tree": renamed_rel}
+    fail("cutover recovery found an unknown phase", category="INDETERMINATE")
+
+
+def recover_migration(root: Path, migration_id_raw: str) -> dict[str, object]:
+    with locked_runtime(root):
+        return _recover_migration_unlocked(root, migration_id_raw)
+
+
+def perform_cutover(root: Path, migration_id: str, state: dict[str, object]) -> dict[str, object]:
+    if state.get("phase") != "candidate_validated" or state.get("restore_drill") != "passed":
+        fail("migration cutover requires candidate validation and restore drill")
+    candidate_rel = migration_runtime_path(migration_id, "candidate/docs-teamwork")
+    old_rel = "docs/teamwork"
+    renamed_rel = migration_runtime_path(migration_id, "renamed-old/docs-teamwork")
+    new_rel = "docs/teamwork"
+    _safe_dir(root, candidate_rel)
+    _safe_dir(root, old_rel)
+    if _load_cutover_journal(root, migration_id) is not None:
+        return _recover_migration_unlocked(root, migration_id)
+    journal = {
+        "schema_version": 1,
+        "migration_id": migration_id,
+        "phase": "prepared",
+        "old_tree": old_rel,
+        "renamed_old_tree": renamed_rel,
+        "candidate_tree": candidate_rel,
+        "new_tree": new_rel,
+    }
+    _store_cutover_journal(root, migration_id, journal)
+    migration_failpoint("after-cutover-prepared")
+    _rename_dir(root, old_rel, renamed_rel)
+    migration_failpoint("after-old-tree-renamed-before-journal")
+    journal["phase"] = "old_tree_renamed"
+    _store_cutover_journal(root, migration_id, journal)
+    migration_failpoint("after-old-tree-renamed")
+    _rename_dir(root, candidate_rel, new_rel)
+    journal["phase"] = "new_tree_installed"
+    _store_cutover_journal(root, migration_id, journal)
+    migration_failpoint("after-new-tree-installed")
+    _validate_installed_candidate(root, migration_id, state)
+    journal["phase"] = "committed"
+    _store_cutover_journal(root, migration_id, journal)
+    state["phase"] = "committed"
+    state["renamed_old_tree"] = renamed_rel
+    state["cleanup"] = "pending"
+    _write_json_relative(root, migration_runtime_path(migration_id, "journal.json"), state)
+    return {"migration_id": migration_id, "phase": "committed", "renamed_old_tree": renamed_rel}
+
+
+def _apply_migration_locked(root: Path, request: dict[str, object]) -> dict[str, object]:
+    migration_id = str(request["migration_id"])
+    marker = migration_marker(migration_id)
+    if request["operation"] == "cutover" and _safe_dir(root, "docs/teamwork", optional=True) is None:
+        if request.get("cutover_authority") != "I authorize Teamwork memory cutover":
+            fail("migration cutover requires explicit cutover authority")
+        recovered = _recover_migration_unlocked(root, migration_id)
+        return {
+            "migration_id": migration_id,
+            "phase": recovered.get("phase"),
+            "renamed_old_tree": recovered.get("renamed_old_tree"),
+            "changed_paths": ["docs/teamwork", str(recovered.get("renamed_old_tree"))],
+        }
+    with locked_memory(root):
+        recover_transaction(root, marker, MIGRATION_PREFIXES, MIGRATION_KIND)
+        state = read_migration_json(root, migration_id, "journal.json", optional=True)
+        outputs: dict[str, Output] = {}
+        created: list[str] = []
+        operation = str(request["operation"])
+        if operation == "approve-baseline":
+            if state is not None:
+                fail("migration request was already used")
+            state = {
+                "schema_version": 1,
+                "migration_id": migration_id,
+                "phase": "baseline_approved",
+                "baseline_digest": request["baseline_digest"],
+                "request_ledger": [request["request_digest"]],
+                "archive_manifest_digest": None,
+                "candidate_digest": None,
+                "restore_drill": None,
+                "cleanup": None,
+            }
+            outputs[migration_runtime_path(migration_id, "baseline.json")] = migration_json_output(request["baseline"])
+            outputs[migration_runtime_path(migration_id, "journal.json")] = migration_json_output(state)
+        else:
+            if state is None:
+                fail("migration must approve baseline first")
+            if state.get("baseline_digest") != request["baseline_digest"]:
+                fail("migration baseline digest mismatch")
+            ledger = state.get("request_ledger")
+            if not isinstance(ledger, list):
+                fail("migration request ledger is malformed", category="INDETERMINATE")
+            if request["request_digest"] in ledger:
+                fail("migration request was already used")
+            ledger.append(request["request_digest"])
+            phase = state.get("phase")
+            if phase not in MIGRATION_PHASES:
+                fail("migration phase is invalid", category="INDETERMINATE")
+            if operation == "materialize-archive":
+                if phase != "baseline_approved":
+                    fail("archive materialization requires baseline_approved")
+                baseline = read_migration_json(root, migration_id, "baseline.json")
+                assert baseline is not None
+                baseline = _validate_baseline_payload(baseline)
+                objects = []
+                for row in baseline.get("paths", []):
+                    if not isinstance(row, dict):
+                        fail("baseline row is malformed", category="INDETERMINATE")
+                    source_path = checked_relative(row.get("path"), "baseline source path")
+                    data = _assert_current_file_matches_baseline(root, row)
+                    digest = hashlib.sha256(data).hexdigest()
+                    object_path = migration_archive_object_path(digest)
+                    existing = safe_read_bytes(root, object_path, optional=True)
+                    if existing is not None:
+                        existing_mode = _mode_of(root, object_path)
+                        if hashlib.sha256(existing).hexdigest() != digest or len(existing) != len(data) or existing_mode != 0o444:
+                            fail("cold archive object hash mismatch", category="INDETERMINATE")
+                    if existing is None:
+                        outputs[object_path] = Output(data, 0o444)
+                    objects.append({"source_path": source_path, "object_path": object_path, "sha256": digest, "mode": row.get("mode"), "size": len(data)})
+                manifest = {"schema_version": 1, "migration_id": migration_id, "baseline_digest": request["baseline_digest"], "objects": objects}
+                archive_digest = case_digest("archive-manifest", manifest)
+                manifest["archive_manifest_digest"] = archive_digest
+                state["phase"] = "archive_durable"
+                state["archive_manifest_digest"] = archive_digest
+                outputs[migration_archive_manifest_path(migration_id)] = migration_json_output(manifest)
+                outputs[migration_runtime_path(migration_id, "journal.json")] = migration_json_output(state)
+            elif operation == "prepare-candidate":
+                if phase != "archive_durable":
+                    fail("candidate preparation requires archive_durable")
+                candidate = empty_case_index("Teamwork")
+                candidate["migration"] = {
+                    "migration_id": migration_id,
+                    "phase": "candidate_validated",
+                    "journal_path": migration_runtime_path(migration_id, "journal.json"),
+                    "baseline_digest": state["baseline_digest"],
+                    "report_digest": case_digest("restore-report", "pending"),
+                    "candidate_digest": "0" * 64,
+                    "archive_manifest_digest": state["archive_manifest_digest"],
+                }
+                candidate_digest = case_digest("candidate-tree", candidate)
+                candidate["migration"]["candidate_digest"] = candidate_digest
+                state["phase"] = "candidate_validated"
+                state["candidate_digest"] = candidate_digest
+                outputs[migration_runtime_path(migration_id, "candidate/docs-teamwork/index.json")] = migration_json_output(candidate)
+                outputs[migration_runtime_path(migration_id, "journal.json")] = migration_json_output(state)
+            elif operation == "restore-drill":
+                if phase != "candidate_validated":
+                    fail("restore drill requires candidate_validated")
+                baseline = read_migration_json(root, migration_id, "baseline.json")
+                assert baseline is not None
+                baseline = _validate_baseline_payload(baseline)
+                archive_raw = safe_read_text(root, migration_archive_manifest_path(migration_id), optional=True)
+                if archive_raw is None:
+                    fail("archive manifest is missing", category="INDETERMINATE")
+                archive = _validate_archive_manifest(_decode_json(archive_raw, "archive manifest"), state, baseline)
+                checked = 0
+                for row in archive.get("objects", []):
+                    if not isinstance(row, dict):
+                        fail("archive object row is malformed", category="INDETERMINATE")
+                    object_path = checked_relative(row.get("object_path"), "archive object path")
+                    data = safe_read_bytes(root, object_path)
+                    assert data is not None
+                    mode = _mode_of(root, object_path)
+                    if (
+                        hashlib.sha256(data).hexdigest() != row.get("sha256")
+                        or len(data) != row.get("size")
+                        or mode != 0o444
+                    ):
+                        fail("restore drill object digest mismatch", category="INDETERMINATE")
+                    checked += 1
+                report = {"schema_version": 1, "migration_id": migration_id, "status": "passed", "checked_objects": checked}
+                state["restore_drill"] = "passed"
+                state["report_digest"] = case_digest("restore-report", report)
+                outputs[migration_runtime_path(migration_id, "restore-drill/report.json")] = migration_json_output(report)
+                outputs[migration_runtime_path(migration_id, "journal.json")] = migration_json_output(state)
+            elif operation == "cutover":
+                if request.get("cutover_authority") != "I authorize Teamwork memory cutover":
+                    fail("migration cutover requires explicit cutover authority")
+                result = perform_cutover(root, migration_id, state)
+                return {"migration_id": migration_id, "phase": result["phase"], "renamed_old_tree": result["renamed_old_tree"], "changed_paths": ["docs/teamwork", str(result["renamed_old_tree"])]}
+            else:
+                if phase != "committed":
+                    fail("cleanup requires committed migration state")
+                state["phase"] = "cleanup_complete"
+                state["cleanup"] = "complete"
+                outputs[migration_runtime_path(migration_id, "journal.json")] = migration_json_output(state)
+        for path in outputs:
+            ensure_directory(root, PurePosixPath(path).parent.as_posix(), created=created)
+        apply_transaction(root, kind=MIGRATION_KIND, marker=marker, prefixes=MIGRATION_PREFIXES, outputs=outputs, created_directories=created)
+        for directory in created:
+            if directory.startswith(".teamwork/cold-archive/"):
+                try:
+                    os.chmod(root.joinpath(*PurePosixPath(directory).parts), 0o755)
+                except OSError as exc:
+                    fail(f"cannot chmod cold archive directory: {exc}", category="INDETERMINATE")
+        final = read_migration_json(root, migration_id, "journal.json", optional=True)
+        return {"migration_id": migration_id, "phase": None if final is None else final.get("phase"), "changed_paths": sorted(outputs)}
+
+
+def apply_migration(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
+    request = _validate_migration_request(raw_request)
+    with locked_runtime(root):
+        return _apply_migration_locked(root, request)
+
+
 def _print(value: object) -> None:
     print(json.dumps(value, ensure_ascii=False, sort_keys=True))
 
@@ -5172,20 +6959,23 @@ def _print(value: object) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("inspect", "design-inspect", "goal-inspect", "artifact-inspect", "collaborate-inspect", "artifact-index-validate"):
+    for name in ("inspect", "design-inspect", "goal-inspect", "artifact-inspect", "collaborate-inspect", "case-inspect", "artifact-index-validate"):
         child = sub.add_parser(name)
         child.add_argument("--project-root", required=True)
     child = sub.add_parser("schema")
     child.add_argument("operation")
-    for name in ("design-schema", "goal-schema", "artifact-schema", "collaborate-schema"):
+    for name in ("design-schema", "goal-schema", "artifact-schema", "collaborate-schema", "case-schema", "migration-schema"):
         child = sub.add_parser(name)
         child.add_argument("operation")
-    for name in ("apply", "design-apply", "goal-apply", "artifact-apply", "collaborate-apply"):
+    for name in ("apply", "design-apply", "goal-apply", "artifact-apply", "collaborate-apply", "case-apply", "migration-request", "migration-apply"):
         child = sub.add_parser(name)
         child.add_argument("--project-root", required=True)
         group = child.add_mutually_exclusive_group(required=True)
         group.add_argument("--request")
         group.add_argument("--request-json")
+    child = sub.add_parser("migration-recover")
+    child.add_argument("--project-root", required=True)
+    child.add_argument("--migration-id", required=True)
     child = sub.add_parser("design-render")
     child.add_argument("--state-json", required=True)
     child = sub.add_parser("design-validate")
@@ -5205,6 +6995,10 @@ def main(argv: list[str] | None = None) -> int:
             _print(workflow_schema(arguments.operation))
         elif command == "collaborate-schema":
             _print(collaborate_schema(arguments.operation))
+        elif command == "case-schema":
+            _print(case_schema(arguments.operation))
+        elif command == "migration-schema":
+            _print(migration_schema(arguments.operation))
         elif command == "design-render":
             print(render_design_artifact(_decode_json(arguments.state_json, "Design state")), end="")
         elif command == "design-validate":
@@ -5229,14 +7023,24 @@ def main(argv: list[str] | None = None) -> int:
                 _print(inspect_workflow_artifacts(root))
             elif command == "collaborate-inspect":
                 _print(inspect_collaborate(root))
+            elif command == "case-inspect":
+                _print(inspect_cases(root))
             elif command == "artifact-index-validate":
                 _print(artifact_index_validate(root))
+            elif command == "migration-recover":
+                _print(recover_migration(root, arguments.migration_id))
             else:
                 request = read_request(arguments.request, arguments.request_json)
                 if command == "goal-apply":
                     _print(apply_goal(root, request))
                 elif command == "artifact-apply":
                     _print(apply_workflow_artifact(root, request))
+                elif command == "case-apply":
+                    _print(apply_case(root, request))
+                elif command == "migration-request":
+                    _print(construct_migration_request(root, request))
+                elif command == "migration-apply":
+                    _print(apply_migration(root, request))
                 else:
                     _print(apply_collaborate(root, request))
     except TransactionError as exc:

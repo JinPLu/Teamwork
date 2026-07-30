@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 5.1.0 - 2026-07-30
+
+**Teamwork 5.1 repairs workflow document maintenance: new projects converge durable documents into case bundles without forcing existing projects to migrate.**
+
+- **New projects use case bundles.** Newly initialized Teamwork memory uses one case to hold Collaborate, Plan, Research, Debug, Review, Goal, and execution results, reducing competing ownership across `discussion/`, `plans/`, `research/`, `reports/`, and related folders.
+- **Existing projects stay compatible.** Upgrading to 5.1.0 does not automatically rewrite, migrate, or delete existing `docs/teamwork`; old projects continue on legacy-v1 routes until explicit cutover.
+- **Writer is more aggressive but still transaction-bound.** Named workflows default to handing reviewable intermediate state and completion results to Writer through controlled persistence transactions; missing Writer, route, authority, or readback must be reported as unsaved.
+- **The runtime package can verify itself.** Marketplace runtime packages carry an integrity manifest so mixed, stale, or modified package roots can be detected; source checkouts and runtime packages resolve under their own boundaries.
+
+Upgrade action: Codex Marketplace users re-add `JinPLu/Teamwork`, install `teamwork-skill@teamwork`, and run `$teamwork-update` in a new task. Checkout users run `git pull --ff-only`, `./install.sh all`, and `./scripts/check-update.sh --readiness`. The upgrade itself does not migrate project documents.
+
+Important limit: cutover from legacy-v1 to v2 case bundles is a separate one-way operation that needs explicit authority after candidate-tree validation and a cold-archive restore drill pass. Cold archive preserves bytes and POSIX mode only; it is not a physical backup, and Teamwork does not automatically delete old documents or cold archive objects.
+
 ## 5.0.0 - 2026-07-29
 
 **Teamwork 5 unifies discussion, pressure-testing, and direction convergence into Collaborate, so collaboration starts and resumes through one public workflow.**

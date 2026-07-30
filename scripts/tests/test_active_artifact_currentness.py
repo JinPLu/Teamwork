@@ -14,6 +14,61 @@ TEMPLATES = ROOT / "templates/teamwork-memory"
 CONTRACT = runpy.run_path(str(CLI), run_name="teamwork_currentness_contract")
 
 
+def write_legacy_v1_memory(memory: Path) -> None:
+    memory.mkdir(parents=True, exist_ok=True)
+    index = {
+        "schema_version": 1,
+        "last_updated": "2026-07-19",
+        "project": {
+            "name": "Fixture",
+            "root": ".",
+            "description": "Local Teamwork memory index for this project.",
+        },
+        "source_of_truth_order": ["active", "linked", "header_search", "fulltext"],
+        "ignore_globs": [".planning/**"],
+        "budgets": {"header_first": True},
+        "active": {
+            "collaborate": None,
+            "current": "docs/teamwork/current.md",
+            "design": None,
+            "plan": None,
+            "progress": None,
+            "report": None,
+            "results": [],
+        },
+        "collaborate_consumed_sources": [],
+        "entries": [
+            {
+                "topic": "project-initialization",
+                "kind": "result",
+                "title": "Teamwork project initialization",
+                "status": "active",
+                "currentness": "current",
+                "authority": "active-summary",
+                "path": "docs/teamwork/current.md",
+                "applies_to": ["AGENTS.md", "docs/teamwork/"],
+                "linked": [],
+                "evidence_paths": ["docs/teamwork/current.md"],
+                "supersedes": [],
+                "search_keys": ["teamwork-init", "project-init", "initialization"],
+                "updated": "2026-07-19",
+                "summary": "Initial ordinary Teamwork memory entry created by project initialization.",
+            }
+        ],
+        "profiles": {
+            "status": ["index", "current", "topic"],
+            "implementation": ["index", "current", "active_design_or_plan", "linked_research_headers"],
+            "review": ["index", "current", "active_design_or_plan", "active_progress", "verification"],
+            "research": ["index", "current", "topic_headers", "linked_artifacts"],
+            "design": ["index", "current", "accepted_decisions", "active_design_plan", "linked_research"],
+        },
+        "pending": [],
+    }
+    (memory / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (memory / "current.md").write_text("# Teamwork Current State\n", encoding="utf-8")
+    (memory / "README.md").write_text("# Teamwork Runtime Index README\n", encoding="utf-8")
+
+
 class ActiveArtifactCurrentnessTests(unittest.TestCase):
     def design_state(self, **overrides: object) -> dict[str, object]:
         state: dict[str, object] = {
@@ -92,9 +147,7 @@ class ActiveArtifactCurrentnessTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         project = Path(temporary.name) / "project"
         memory = project / "docs/teamwork"
-        memory.mkdir(parents=True)
-        for name in ("index.json", "current.md", "README.md"):
-            (memory / name).write_bytes((TEMPLATES / name).read_bytes())
+        write_legacy_v1_memory(memory)
         index = json.loads((memory / "index.json").read_text(encoding="utf-8"))
         return temporary, project, index
 
@@ -127,9 +180,23 @@ class ActiveArtifactCurrentnessTests(unittest.TestCase):
 
     def test_template_has_no_discussion_or_legacy_goal_pointer(self) -> None:
         index = json.loads((TEMPLATES / "index.json").read_text(encoding="utf-8"))
-        self.assertNotIn("discussion", index["active"])
-        self.assertNotIn("goal", index["active"])
-        self.assertEqual(CONTRACT["parse_index"](json.dumps(index))["active"]["progress"], None)
+        self.assertEqual(
+            set(index),
+            {"schema_version", "project", "active_cases", "claim_heads", "aliases", "recent_cases", "migration"},
+        )
+        self.assertEqual(index["schema_version"], 2)
+        self.assertEqual(index["active_cases"], [])
+        self.assertEqual(index["claim_heads"], {})
+        self.assertEqual(index["aliases"], {})
+        self.assertEqual(index["recent_cases"], [])
+        self.assertIsNone(index["migration"])
+        serialized = json.dumps(index).lower()
+        self.assertNotIn("docs/teamwork/current.md", serialized)
+        self.assertNotIn("docs/teamwork/readme.md", serialized)
+        self.assertNotIn("discussion", serialized)
+        self.assertNotIn('"goal"', serialized)
+        self.assertFalse((TEMPLATES / "current.md").exists())
+        self.assertFalse((TEMPLATES / "README.md").exists())
 
     def test_active_targets_must_exist_parse_and_agree_with_index_metadata(self) -> None:
         temporary, project, index = self.valid_index_and_targets()

@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 5.1.0 - 2026-07-30
+
+**Teamwork 5.1 修复工作流文档维护：新项目把持久文档收敛到 case bundle，同时不强制迁移已有项目。**
+
+- **新项目使用 case bundle。** 新初始化的 Teamwork memory 以一个 case 承接 Collaborate、Plan、Research、Debug、Review、Goal 和执行结果，减少 `discussion/`、`plans/`、`research/`、`reports/` 等目录各自争抢所有权。
+- **已有项目保持兼容。** 升级到 5.1.0 不会自动改写、迁移或删除现有 `docs/teamwork`；旧项目在明确 cutover 前继续使用 legacy-v1 路由。
+- **Writer 更积极但仍受事务约束。** 命名工作流默认把可复查的中间状态和完成结果交给 Writer，经受控事务落盘；缺少 Writer、路由、权限或 readback 时必须报告未保存。
+- **运行包可自检。** Marketplace runtime 带有 integrity manifest，用于发现混合、陈旧或被改动的包根；源码 checkout 和 runtime 包各自按自己的边界解析。
+
+升级操作：Codex Marketplace 用户重新添加 `JinPLu/Teamwork`、安装 `teamwork-skill@teamwork`，并在新任务中运行 `$teamwork-update`；checkout 用户运行 `git pull --ff-only`、`./install.sh all` 和 `./scripts/check-update.sh --readiness`。升级本身不会执行项目文档迁移。
+
+重要限制：从 legacy-v1 到 v2 case bundle 的 cutover 是单独的单向操作，需要在候选树验证和 cold archive restore drill 通过后再次明确授权。Cold archive 只保存字节和 POSIX mode，不是物理备份；Teamwork 不会自动删除旧文档或冷归档对象。
+
 ## 5.0.0 - 2026-07-29
 
 **Teamwork 5 把讨论、压力测试和方案收敛统一到 Collaborate，让协作更容易启动，也更容易续上。**

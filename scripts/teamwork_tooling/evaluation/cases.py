@@ -113,6 +113,85 @@ def _require_source_phrases(source: str, path: Path, source_path: str, groups: l
             )  # noqa: F405
 
 
+def _seed_legacy_v1_memory(memory: Path) -> None:
+    """Create a disposable legacy-v1 memory tree for transaction probes.
+
+    Fresh 5.1 templates are v2 case-bundle inputs and intentionally no longer
+    carry maintained legacy current/README files. These eval probes exercise the
+    legacy transaction CLI, so they seed the smallest valid legacy fixture inside
+    the temporary project instead of depending on fresh-init templates.
+    """
+
+    memory.mkdir(parents=True, exist_ok=True)
+    (memory / "current.md").write_text(
+        "# Teamwork Current State\n\n"
+        "Last Updated: 2026-06-01\n\n"
+        "## Active Snapshot\n\n"
+        "- Current focus: Transaction probe.\n"
+        "- Active design: none.\n"
+        "- Active plan: none.\n"
+        "- Active Goal progress: none.\n"
+        "- Progress summary: Disposable legacy-v1 memory fixture.\n"
+        "- Latest result: Probe memory is ready.\n"
+        "- Blockers: none recorded.\n",
+        encoding="utf-8",
+    )
+    (memory / "README.md").write_text(
+        "# Teamwork Runtime Index README\n\nDisposable legacy-v1 probe fixture.\n",
+        encoding="utf-8",
+    )
+    (memory / "index.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "last_updated": "2026-06-01",
+                "project": {
+                    "name": "Probe Project",
+                    "root": ".",
+                    "description": "Disposable Teamwork legacy-v1 memory fixture.",
+                },
+                "source_of_truth_order": ["active", "linked", "header_search", "fulltext"],
+                "ignore_globs": [".planning/**"],
+                "budgets": {"header_first": True},
+                "active": {
+                    "collaborate": None,
+                    "current": "docs/teamwork/current.md",
+                    "design": None,
+                    "plan": None,
+                    "progress": None,
+                    "report": None,
+                    "results": [],
+                },
+                "collaborate_consumed_sources": [],
+                "entries": [
+                    {
+                        "topic": "probe",
+                        "kind": "result",
+                        "title": "Transaction probe",
+                        "status": "active",
+                        "currentness": "current",
+                        "authority": "active-summary",
+                        "path": "docs/teamwork/current.md",
+                        "linked": [],
+                        "evidence_paths": ["docs/teamwork/current.md"],
+                        "supersedes": [],
+                        "search_keys": ["probe"],
+                        "updated": "2026-06-01",
+                        "summary": "Disposable legacy-v1 memory fixture for transaction probes.",
+                    }
+                ],
+                "profiles": {},
+                "pending": [],
+            },
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
 @lru_cache(maxsize=16)
 def _collaborate_transaction_cli_probe(source: str) -> str | None:
     """Exercise the Collaborate owner CLI rather than freezing parser details."""
@@ -123,13 +202,10 @@ def _collaborate_transaction_cli_probe(source: str) -> str | None:
         script.write_text(source, encoding="utf-8")
         project = root / "project"
         memory = project / "docs/teamwork"
-        memory.mkdir(parents=True)
-        for name in ("index.json", "current.md", "README.md"):
-            template = ROOT / "templates/teamwork-memory" / name  # noqa: F405
-            try:
-                (memory / name).write_bytes(template.read_bytes())
-            except OSError as exc:
-                return f"cannot prepare transaction probe: {exc}"
+        try:
+            _seed_legacy_v1_memory(memory)
+        except OSError as exc:
+            return f"cannot prepare transaction probe: {exc}"
 
         def invoke(*arguments: str) -> subprocess.CompletedProcess[str]:
             return subprocess.run(
@@ -209,13 +285,10 @@ def _workflow_artifact_transaction_cli_probe(source: str) -> str | None:
         script.write_text(source, encoding="utf-8")
         project = root / "project"
         memory = project / "docs/teamwork"
-        memory.mkdir(parents=True)
-        for name in ("index.json", "current.md", "README.md"):
-            template = ROOT / "templates/teamwork-memory" / name  # noqa: F405
-            try:
-                (memory / name).write_bytes(template.read_bytes())
-            except OSError as exc:
-                return f"cannot prepare workflow artifact probe: {exc}"
+        try:
+            _seed_legacy_v1_memory(memory)
+        except OSError as exc:
+            return f"cannot prepare workflow artifact probe: {exc}"
 
         def invoke(*arguments: str) -> subprocess.CompletedProcess[str]:
             return subprocess.run(
@@ -457,6 +530,7 @@ def validate_bound_producer_sources(
                         ("artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply",),
                         ("transaction derives the destination",),
                         ("registers the ordinary index",),
+                        ("v2 case-bundle projects", "case plan slot"),
                         ("frozen",),
                         ("answer-invariant",),
                         ("join", "joins"),
@@ -472,6 +546,7 @@ def validate_bound_producer_sources(
                         ("interruption before generic artifact-apply gives no durable claim",),
                         ("managed artifacts only through their exact specialized transaction",),
                         ("artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply",),
+                        ("v2 case bundle sinks", "v2 case-bundle"),
                         ("accept transaction-derived destination",),
                         ("read back", "readback"),
                         ("required transaction gate",),
@@ -491,6 +566,7 @@ def validate_bound_producer_sources(
                         ("discussion-transaction.py collaborate-schema",),
                         ("discussion-transaction.py collaborate-apply",),
                         ("managed Collaborate checkpoint",),
+                        ("v2, the transaction derives", "v2 case-bundle"),
                         ("readback",),
                         ("dispatches writer",),
                         ("sole filesystem writer", "sole caller of managed artifact transactions"),
@@ -502,6 +578,7 @@ def validate_bound_producer_sources(
                         ("collaborate-inspect -> collaborate-schema <operation> -> collaborate-apply -> collaborate-inspect/readback",),
                         ("legacy Discussion/Design=read-only sources, no write route",),
                         ("Goal=attempts/progress",),
+                        ("v2 case bundle sinks", "v2 case bundle"),
                         ("required transaction gate",),
                         ("accept transaction-derived destination",),
                     ])

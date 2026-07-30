@@ -4,9 +4,10 @@
       "capability" : "persistence",
       "language" : "en",
       "requires" : [
-         "specialized-collaborate-design-goal-route",
+         "specialized-collaborate-goal-route",
          "lifecycle-checkpoint-readback",
          "inspect-schema-apply",
+         "case-bundle-sinks",
          "transaction-owned-writer",
          "required-transaction-gate",
          "writer-only",
@@ -16,10 +17,11 @@
    },
    "id" : "persistence-specialized-artifact-writer",
    "must" : [
-      "persist specialized Collaborate, Design, or Goal lifecycle checkpoints through their managed collaborate-inspect -> collaborate-schema -> collaborate-apply route with Writer as caller, transaction as filesystem writer, and readback before any durable claim"
+      "persist specialized Collaborate or Goal lifecycle checkpoints through their managed collaborate-inspect -> collaborate-schema -> collaborate-apply route with Writer as caller, transaction as filesystem writer, and readback before any durable claim",
+      "in v2 projects, route specialized checkpoints only to transaction-derived case live collaborate, decision, or live goal slots"
    ],
    "must_not" : [
-      "save specialized artifacts through generic workflow artifacts, hand-author Markdown or indexes, implement, or infer release authority"
+      "save specialized artifacts through generic workflow artifacts, hand-author Markdown or indexes, restore a public Design/Discussion route, implement, infer release authority, or write one request to both legacy-v1 and v2 case-bundle trees"
    ],
    "platforms" : [
       "codex",

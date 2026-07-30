@@ -110,18 +110,13 @@ def render_memory_files(today: str, label: str) -> dict[str, str]:
         index = json.loads(index_text)
     except json.JSONDecodeError as exc:
         fail(f"Teamwork memory index template is invalid JSON: {exc}")
-    index["last_updated"] = today
+    if index.get("schema_version") != 2:
+        fail("fresh Teamwork memory template must use schema_version 2")
     index["project"]["name"] = label
-    for entry in index["entries"]:
-        entry["updated"] = today
     rendered_index = json.dumps(index, indent=2, ensure_ascii=False) + "\n"
-    current = read_template("current.md").replace("YYYY-MM-DD", today)
-    readme = read_template("README.md")
     validator.validate_index(index, Path("templates/teamwork-memory/index.json"))
     return {
         "docs/teamwork/index.json": rendered_index,
-        "docs/teamwork/current.md": current,
-        "docs/teamwork/README.md": readme,
     }
 
 
@@ -133,12 +128,24 @@ def project_label(root: Path, explicit: str | None) -> str:
     return label
 
 
-def managed_agents_block(tree: "InitTree", label: str) -> str:
+def managed_agents_block(tree: "InitTree", label: str, index: dict[str, object] | None) -> str:
+    schema_version = 2 if index is None else index.get("schema_version")
     lines = [
         f"- Project label (local routing only): `{label}`.",
-        "- For sustained Collaborate dialogue, brainstorm, or grill checkpoints, use only `docs/teamwork/collaborate/current.md`; never mirror them into ordinary memory or a report.",
-        "- For ordinary durable memory, read `docs/teamwork/index.json` first, then `docs/teamwork/README.md`; keep volatile progress in its actual artifact.",
+        "- Read `docs/teamwork/index.json` first before choosing Teamwork memory routes.",
     ]
+    if schema_version == 2:
+        lines.extend([
+            "- For Collaborate dialogue, brainstorm, grill, and accepted-decision checkpoints, use the selected v2 case manifest and `live/collaborate.md` through `case-inspect`, `case-schema`, and `case-apply`; never mirror them into ordinary memory, legacy Discussion/Design, or a report.",
+            "- For ordinary durable memory, follow the relevant case manifest. Keep volatile progress in its actual artifact.",
+        ])
+    elif schema_version == 1:
+        lines.extend([
+            "- For Collaborate dialogue, brainstorm, grill, and accepted-decision checkpoints, legacy-v1 alone uses `docs/teamwork/collaborate/current.md` through `collaborate-inspect`, `collaborate-schema`, and `collaborate-apply`; never mirror them into ordinary memory, legacy Discussion/Design, or a report.",
+            "- For ordinary durable memory, read `docs/teamwork/README.md` after the index, then the referenced artifact. Keep volatile progress in its actual artifact.",
+        ])
+    else:
+        fail("docs/teamwork/index.json has unsupported schema_version")
     codegraph = tree.stat("root", ".codegraph")
     if (
         codegraph is not None
@@ -158,16 +165,9 @@ def managed_agents_block(tree: "InitTree", label: str) -> str:
 GITIGNORE_BLOCK = f"""{IGNORE_START}
 # Teamwork local runtime state
 .codegraph/
-docs/teamwork/plans/
-docs/teamwork/design/
-docs/teamwork/discussion/
-docs/teamwork/collaborate/
-docs/teamwork/research/
-docs/teamwork/reports/
-docs/teamwork/workflows/
-docs/teamwork/index.json
-docs/teamwork/README.md
-docs/teamwork/current.md
+docs/teamwork/**
+.teamwork/runtime/**
+.teamwork/cold-archive/**
 {INIT_JOURNAL}
 .*.teamwork-init-*
 docs/teamwork/{INIT_JOURNAL}
@@ -894,12 +894,6 @@ class InitTransaction:
     BASE_DIRECTORY_LAYOUT = (
         ("root", "docs", "docs"),
         ("docs", "teamwork", "teamwork"),
-        ("teamwork", "research", "research"),
-        ("teamwork", "design", "design"),
-        ("teamwork", "collaborate", "collaborate"),
-        ("teamwork", "plans", "plans"),
-        ("teamwork", "reports", "reports"),
-        ("teamwork", "workflows", "workflows"),
     )
 
     def __init__(self, root: Path, args: argparse.Namespace) -> None:
@@ -1028,29 +1022,43 @@ class InitTransaction:
     def _memory_snapshots(self) -> tuple[dict[str, FdSnapshot], dict[str, object] | None]:
         if "teamwork" not in self.tree.fds:
             return {}, None
-        snapshots = {
-            name: _snapshot(self.tree, "teamwork", name, f"docs/teamwork/{name}")
-            for name in ("index.json", "current.md", "README.md")
-        }
-        present = [snapshot.exists for snapshot in snapshots.values()]
-        if any(present) and not all(present):
-            fail("partial Teamwork runtime initialization; all three ordinary-memory anchors are required")
-        if all(present):
-            index = snapshots["index.json"]
-            assert index.data is not None
-            try:
-                value = json.loads(index.data)
-            except json.JSONDecodeError as exc:
-                fail(f"cannot parse docs/teamwork/index.json: {exc}")
-            reader = validator.SafeProjectReader(self.root)
-            try:
-                validator.validate_index(value, self.root / "docs/teamwork/index.json", reader, migration_read=True)
-            finally:
-                reader.close()
-            for snapshot in snapshots.values():
+        index = _snapshot(self.tree, "teamwork", "index.json", "docs/teamwork/index.json")
+        current = _snapshot(self.tree, "teamwork", "current.md", "docs/teamwork/current.md")
+        readme = _snapshot(self.tree, "teamwork", "README.md", "docs/teamwork/README.md")
+        snapshots = {"index.json": index, "current.md": current, "README.md": readme}
+        if not index.exists:
+            if current.exists or readme.exists:
+                fail("hybrid Teamwork runtime initialization; index.json is required")
+            return snapshots, None
+        assert index.data is not None
+        try:
+            value = json.loads(index.data)
+        except json.JSONDecodeError as exc:
+            fail(f"cannot parse docs/teamwork/index.json: {exc}")
+        version = value.get("schema_version") if isinstance(value, dict) else None
+        if version == 1:
+            if not current.exists or not readme.exists:
+                fail("partial schema v1 Teamwork runtime initialization; current.md and README.md are required")
+        elif version == 2:
+            if current.exists or readme.exists:
+                fail("hybrid schema v2 Teamwork runtime initialization; current.md and README.md are legacy v1 anchors")
+        else:
+            fail("docs/teamwork/index.json has unsupported schema_version")
+        reader = validator.SafeProjectReader(self.root)
+        try:
+            validator.validate_index(
+                value,
+                self.root / "docs/teamwork/index.json",
+                reader,
+                migration_read=True,
+                raw_bytes=len(index.data),
+            )
+        finally:
+            reader.close()
+        for snapshot in snapshots.values():
+            if snapshot.exists:
                 self._guard(snapshot)
-            return snapshots, value
-        return snapshots, None
+        return snapshots, value
 
     def _discussion_migration_candidates(
         self,
@@ -1172,7 +1180,8 @@ class InitTransaction:
         if target_position not in eligible_positions:
             fail("active.plan target must be an eligible current Plan entry")
         if "plans" not in self.tree.fds:
-            fail("active.plan artifact directory is missing")
+            if self.tree.open_existing("teamwork", "plans", "plans") is None:
+                fail("active.plan artifact directory is missing")
         artifact = _snapshot(self.tree, "plans", pure.name, raw_plan)
         if not artifact.exists:
             fail(f"active.plan artifact is missing: {raw_plan}")
@@ -1195,14 +1204,18 @@ class InitTransaction:
         label = project_label(self.root, self.args.project_label)
         rendered = render_memory_files(self.args.today, label)
         candidates: list[tuple[str, str, str, bytes | None]] = []
-        if not memory:
+        if not memory or index is None:
             candidates.extend(
                 ("teamwork", PurePosixPath(path).name, path, text.encode("utf-8"))
                 for path, text in rendered.items()
             )
         else:
-            assert index is not None
-            candidates.extend(self._discussion_migration_candidates(memory, index))
+            if index.get("schema_version") == 1:
+                candidates.extend(self._discussion_migration_candidates(memory, index))
+            elif index.get("schema_version") == 2:
+                pass
+            else:
+                fail("docs/teamwork/index.json has unsupported schema_version")
 
         agents = _snapshot(self.tree, "root", "AGENTS.md", "AGENTS.md")
         agents_text = "" if not agents.exists else _snapshot_text(agents, "AGENTS.md")
@@ -1210,7 +1223,7 @@ class InitTransaction:
             agents_text,
             MANAGED_START,
             MANAGED_END,
-            managed_agents_block(self.tree, label),
+            managed_agents_block(self.tree, label, index),
             prefix="# Repository Guidelines\n",
             known_heading="Teamwork Project Instructions",
         ).encode("utf-8")
@@ -1704,18 +1717,31 @@ class InitTransaction:
             fail(f"cannot parse post-init index: {exc}")
         reader = validator.SafeProjectReader(self.root)
         try:
-            validator.validate_index(value, self.root / "docs/teamwork/index.json", reader)
+            validator.validate_index(
+                value,
+                self.root / "docs/teamwork/index.json",
+                reader,
+                raw_bytes=len(index.data),
+            )
         finally:
             reader.close()
-        memory = {
-            "index.json": index,
-            "current.md": _snapshot(self.tree, "teamwork", "current.md", "docs/teamwork/current.md"),
-            "README.md": _snapshot(self.tree, "teamwork", "README.md", "docs/teamwork/README.md"),
-        }
-        if not all(snapshot.exists for snapshot in memory.values()):
-            fail("ordinary-memory anchors are missing after initialization")
-        if self._discussion_migration_candidates(memory, value):
-            fail("post-init discussion migration or anchor repair remains pending")
+        if value.get("schema_version") == 1:
+            memory = {
+                "index.json": index,
+                "current.md": _snapshot(self.tree, "teamwork", "current.md", "docs/teamwork/current.md"),
+                "README.md": _snapshot(self.tree, "teamwork", "README.md", "docs/teamwork/README.md"),
+            }
+            if not all(snapshot.exists for snapshot in memory.values()):
+                fail("schema v1 ordinary-memory anchors are missing after initialization")
+            if self._discussion_migration_candidates(memory, value):
+                fail("post-init discussion migration or anchor repair remains pending")
+        elif value.get("schema_version") == 2:
+            current = _snapshot(self.tree, "teamwork", "current.md", "docs/teamwork/current.md")
+            readme = _snapshot(self.tree, "teamwork", "README.md", "docs/teamwork/README.md")
+            if current.exists or readme.exists:
+                fail("schema v2 initialization must not create legacy ordinary-memory anchors")
+        else:
+            fail("post-init index has unsupported schema_version")
         self.tree.verify()
 
 
@@ -1748,6 +1774,7 @@ def _recover_init_transaction(root: Path) -> None:
             tree.open_existing("docs", "teamwork", "teamwork")
         if "teamwork" in tree.fds:
             tree.open_existing("teamwork", "discussion", "discussion")
+            tree.open_existing("teamwork", "plans", "plans")
             if _unfinished_w4_discussion_transaction(tree):
                 fail("an unfinished W4 discussion transaction blocks Init recovery")
         if root_marker is None:
@@ -1844,8 +1871,6 @@ def _preflight_runtime(root: Path) -> None:
         tree.open_existing("teamwork", "discussion", "discussion")
         if _unfinished_w4_discussion_transaction(tree):
             fail("an unfinished W4 discussion transaction marker exists")
-        for name in ("index.json", "current.md", "README.md"):
-            _snapshot(tree, "teamwork", name, f"docs/teamwork/{name}")
         index = _snapshot(tree, "teamwork", "index.json", "docs/teamwork/index.json")
         if index.exists:
             assert index.data is not None
@@ -1853,9 +1878,22 @@ def _preflight_runtime(root: Path) -> None:
                 value = json.loads(index.data)
             except json.JSONDecodeError as exc:
                 fail(f"cannot parse docs/teamwork/index.json: {exc}")
+            current = _snapshot(tree, "teamwork", "current.md", "docs/teamwork/current.md")
+            readme = _snapshot(tree, "teamwork", "README.md", "docs/teamwork/README.md")
+            version = value.get("schema_version") if isinstance(value, dict) else None
+            if version == 1 and (not current.exists or not readme.exists):
+                fail("partial schema v1 Teamwork runtime initialization; current.md and README.md are required")
+            if version == 2 and (current.exists or readme.exists):
+                fail("hybrid schema v2 Teamwork runtime initialization; current.md and README.md are legacy v1 anchors")
             reader = validator.SafeProjectReader(root)
             try:
-                validator.validate_index(value, root / "docs/teamwork/index.json", reader, migration_read=True)
+                validator.validate_index(
+                    value,
+                    root / "docs/teamwork/index.json",
+                    reader,
+                    migration_read=True,
+                    raw_bytes=len(index.data),
+                )
             finally:
                 reader.close()
         tree.verify()
@@ -1943,8 +1981,8 @@ def command_validate(root: Path, _args: argparse.Namespace) -> None:
             fail("docs/teamwork is not initialized")
         memory, index = transaction._memory_snapshots()
         if not memory or index is None:
-            fail("docs/teamwork ordinary-memory anchors are incomplete")
-        if transaction._discussion_migration_candidates(memory, index):
+            fail("docs/teamwork index is incomplete")
+        if index.get("schema_version") == 1 and transaction._discussion_migration_candidates(memory, index):
             fail("W4 discussion migration or ordinary-memory anchor repair is pending")
         transaction.tree.verify()
     finally:

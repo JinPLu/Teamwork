@@ -50,15 +50,20 @@ files`, `off-record`, `read-only`, `no writes`, or equivalent; it is not a turn
 log. Freeze the bounded terminal or blocked packet before persistence. Debugger
 returns a bounded packet: purpose/audience, facts/sources, frozen
 decision/status, style/structure, artifact kind/consumer, preserve/forbid,
-failure, cause evidence, attempted fixes, blocker, and verification. Writer uses
-`artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`;
-the transaction derives the destination and registers the ordinary index. Writer
-is disposable; Root may continue only answer-invariant delivery work and must
-join before claiming saved or durable. Interruption before `artifact-apply` means
-unsaved unless surviving evidence permits a new frozen packet. Missing project
-memory, Writer, brief, authority, consumer, or transaction blocks only
-persistence: deliver the diagnosis and report it unsaved/blocked. No Debugger,
-Root, or Worker fallback writes it.
+failure, cause evidence, attempted fixes, blocker, and verification. Writer
+routes from observed schema: `case-inspect` first; case-v2 uses exact
+`case_id`/alias or creates from a frozen seed/task_key, then
+`case-schema <debug-add> -> case-apply -> case-inspect/readback`; legacy-v1 uses
+`artifact-inspect -> artifact-schema <create|update|supersede> ->
+artifact-apply`. The transaction derives the destination and registers the
+ordinary index or case manifest/claim heads. Writer is disposable; Root may
+continue only answer-invariant delivery work and must join before claiming saved
+or durable. Interruption before apply means unsaved unless surviving evidence
+permits a new frozen packet. Missing project memory, Writer, brief, authority,
+consumer, route, or transaction blocks only persistence: deliver the diagnosis
+and report it unsaved/blocked. No Debugger, Root, or Worker fallback writes it.
+Mixed v1/v2, unknown, stale, ambiguous case, missing seed/task_key, or partially
+migrated state fails closed before any write.
 
 Ask only for the exact unavailable runtime value, access grant, or human-only
 observation needed for the next discriminating check. Debugger or another leaf

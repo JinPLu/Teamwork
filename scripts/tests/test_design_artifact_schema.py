@@ -19,6 +19,61 @@ TEMPLATE = TEMPLATES / "teamwork-design-template.md"
 CONTRACT = runpy.run_path(str(CLI), run_name="teamwork_design_contract")
 
 
+def write_legacy_v1_memory(memory: Path) -> None:
+    memory.mkdir(parents=True, exist_ok=True)
+    index = {
+        "schema_version": 1,
+        "last_updated": "2026-07-19",
+        "project": {
+            "name": "Fixture",
+            "root": ".",
+            "description": "Local Teamwork memory index for this project.",
+        },
+        "source_of_truth_order": ["active", "linked", "header_search", "fulltext"],
+        "ignore_globs": [".planning/**"],
+        "budgets": {"header_first": True},
+        "active": {
+            "collaborate": None,
+            "current": "docs/teamwork/current.md",
+            "design": None,
+            "plan": None,
+            "progress": None,
+            "report": None,
+            "results": [],
+        },
+        "collaborate_consumed_sources": [],
+        "entries": [
+            {
+                "topic": "project-initialization",
+                "kind": "result",
+                "title": "Teamwork project initialization",
+                "status": "active",
+                "currentness": "current",
+                "authority": "active-summary",
+                "path": "docs/teamwork/current.md",
+                "applies_to": ["AGENTS.md", "docs/teamwork/"],
+                "linked": [],
+                "evidence_paths": ["docs/teamwork/current.md"],
+                "supersedes": [],
+                "search_keys": ["teamwork-init", "project-init", "initialization"],
+                "updated": "2026-07-19",
+                "summary": "Initial ordinary Teamwork memory entry created by project initialization.",
+            }
+        ],
+        "profiles": {
+            "status": ["index", "current", "topic"],
+            "implementation": ["index", "current", "active_design_or_plan", "linked_research_headers"],
+            "review": ["index", "current", "active_design_or_plan", "active_progress", "verification"],
+            "research": ["index", "current", "topic_headers", "linked_artifacts"],
+            "design": ["index", "current", "accepted_decisions", "active_design_plan", "linked_research"],
+        },
+        "pending": [],
+    }
+    (memory / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (memory / "current.md").write_text("# Teamwork Current State\n", encoding="utf-8")
+    (memory / "README.md").write_text("# Teamwork Runtime Index README\n", encoding="utf-8")
+
+
 class DesignArtifactSchemaTests(unittest.TestCase):
     def state(self, **overrides: object) -> dict[str, object]:
         state: dict[str, object] = {
@@ -60,9 +115,7 @@ class DesignArtifactSchemaTests(unittest.TestCase):
     def project(self, temporary: str) -> Path:
         project = Path(temporary) / "project"
         memory = project / "docs/teamwork"
-        memory.mkdir(parents=True)
-        for name in ("index.json", "current.md", "README.md"):
-            (memory / name).write_bytes((TEMPLATES / name).read_bytes())
+        write_legacy_v1_memory(memory)
         return project
 
     def command(self, *arguments: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:

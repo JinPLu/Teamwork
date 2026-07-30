@@ -71,22 +71,22 @@ grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' "$ROOT/VERSION" || fail "VERSION must be pla
 if git -C "$ROOT" ls-files 'docs/teamwork/design/*' 'docs/teamwork/discussion/*' 'docs/teamwork/plans/*' 'docs/teamwork/research/*' 'docs/teamwork/reports/*' 'docs/teamwork/workflows/*' | grep -q .; then
   fail "local workflow artifacts under docs/teamwork/{design,discussion,plans,research,reports,workflows}/ must not be tracked"
 fi
-grep_required '^docs/teamwork/design/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork design artifacts"
+grep_required '^docs/teamwork/\*\*$' "$ROOT/.gitignore" ".gitignore must ignore all local Teamwork memory"
 git -C "$ROOT" check-ignore -q docs/teamwork/design/validation-probe.md \
   || fail ".gitignore must match untracked Teamwork design artifacts"
-grep_required '^docs/teamwork/discussion/$' "$ROOT/.gitignore" ".gitignore must ignore historical Teamwork discussion artifacts"
 git -C "$ROOT" check-ignore -q docs/teamwork/discussion/validation-probe.md \
   || fail ".gitignore must match historical Teamwork discussion artifacts"
-grep_required '^docs/teamwork/collaborate/$' "$ROOT/.gitignore" ".gitignore must ignore Teamwork Collaborate artifacts"
 git -C "$ROOT" check-ignore -q docs/teamwork/collaborate/validation-probe.md \
   || fail ".gitignore must match untracked Teamwork Collaborate artifacts"
+git -C "$ROOT" check-ignore -q docs/teamwork/cases/c-0000000000000000000000000000000000000000000000000000000000000000/manifest.json \
+  || fail ".gitignore must match v2 Teamwork case memory"
 python3 - "$ROOT/.gitignore" <<'PY'
 import pathlib
 import sys
 
 path = pathlib.Path(sys.argv[1])
 lines = path.read_text(encoding="utf-8").splitlines()
-needle = "docs/teamwork/collaborate/"
+needle = "docs/teamwork/**"
 try:
     start = lines.index("# TEAMWORK_LOCAL_START")
     end = lines.index("# TEAMWORK_LOCAL_END")
@@ -99,14 +99,10 @@ managed_count = lines[start + 1 : end].count(needle)
 total_count = lines.count(needle)
 if top_count != 1 or managed_count != 1 or total_count != 2:
     raise SystemExit(
-        "FAIL: .gitignore must list docs/teamwork/collaborate/ exactly once "
+        "FAIL: .gitignore must list docs/teamwork/** exactly once "
         "before TEAMWORK_LOCAL and exactly once inside TEAMWORK_LOCAL"
     )
 PY
-grep_required '^docs/teamwork/plans/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork plan artifacts"
-grep_required '^docs/teamwork/research/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork research artifacts"
-grep_required '^docs/teamwork/reports/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork report artifacts"
-grep_required '^docs/teamwork/workflows/$' "$ROOT/.gitignore" ".gitignore must ignore local Teamwork workflow artifacts"
 
 # --- Skill frontmatter ---
 for skill in "${SKILLS[@]}"; do
@@ -343,19 +339,19 @@ python3 "$ROOT/scripts/validate_teamwork_index.py" \
 index_pointer_tmp="$(mktemp -d "${TMPDIR:-/tmp}/teamwork-index-pointer.XXXXXX")"
 CLEANUP_PATHS+=("$index_pointer_tmp")
 
-sed 's#"current": "docs/teamwork/current.md"#"current": "docs/teamwork/missing.md"#' \
+sed 's/"claim_heads": {}/"claim_heads": []/' \
   "$ROOT/templates/teamwork-memory/index.json" \
-  > "$index_pointer_tmp/missing-pointer.json"
+  > "$index_pointer_tmp/invalid-claim-heads.json"
 if python3 "$ROOT/scripts/validate_teamwork_index.py" \
-  "$index_pointer_tmp/missing-pointer.json" >/dev/null 2>&1; then
-  fail "Teamwork index validator accepted an active pointer without a matching entry"
+  "$index_pointer_tmp/invalid-claim-heads.json" >/dev/null 2>&1; then
+  fail "Teamwork index validator accepted non-object v2 claim_heads"
 fi
-sed 's/"status": "active"/"status": "candidate"/' \
+sed 's/"schema_version": 2/"schema_version": 3/' \
   "$ROOT/templates/teamwork-memory/index.json" \
-  > "$index_pointer_tmp/candidate-pointer.json"
+  > "$index_pointer_tmp/unknown-schema.json"
 if python3 "$ROOT/scripts/validate_teamwork_index.py" \
-  "$index_pointer_tmp/candidate-pointer.json" >/dev/null 2>&1; then
-  fail "Teamwork index validator accepted a candidate entry as active truth"
+  "$index_pointer_tmp/unknown-schema.json" >/dev/null 2>&1; then
+  fail "Teamwork index validator accepted an unknown schema version"
 fi
 if [[ "${TEAMWORK_VALIDATE_LOCAL_MEMORY:-0}" == "1" && -f "$ROOT/docs/teamwork/index.json" ]]; then
   python3 "$ROOT/scripts/validate_teamwork_index.py" "$ROOT/docs/teamwork/index.json" >/dev/null
@@ -379,8 +375,10 @@ python3 "$ROOT/scripts/build-codex-plugin.py" --check \
 python3 -m json.tool "$ROOT/.codex-plugin/plugin.json" >/dev/null
 python3 -m json.tool "$ROOT/.claude-plugin/plugin.json" >/dev/null
 python3 - "$ROOT" <<'PY'
+import hashlib
 import json
 import pathlib
+import stat
 import sys
 
 root = pathlib.Path(sys.argv[1])
@@ -471,6 +469,7 @@ required_runtime = {
     "scripts/init-project.sh",
     "scripts/init-project-files.py",
     "scripts/discussion-transaction.py",
+    "scripts/teamwork-case-migration.py",
     "scripts/plugin-activation.py",
     "templates/codex-agents/teamwork-worker.toml",
     "templates/cursor-agents/worker.md",
@@ -479,9 +478,11 @@ required_runtime = {
     "scripts/plugin-runtime-root.py",
     "scripts/tests/fixtures/v3.4.2-owned-surfaces.json",
     "scripts/tests/fixtures/retired-teamwork-skills-v5.json",
+    "scripts/tests/fixtures/v5.1-case-bundle-owned-surfaces.json",
     "templates/teamwork-memory/index.json",
     "templates/teamwork-memory/teamwork-collaborate-template.md",
     "evals/teamwork/ledgers/v4-capability-migration.jsonl",
+    ".teamwork-runtime-integrity.json",
 }
 for rel in required_runtime:
     if not (bundle / rel).is_file():
@@ -492,6 +493,40 @@ if (bundle / ".claude-plugin").exists():
     raise SystemExit("FAIL: Marketplace bundle must copy only the Codex plugin manifest")
 if (bundle / ".teamwork-plugin-runtime").read_text() != "TEAMWORK_CODEX_PLUGIN_RUNTIME=1\n":
     raise SystemExit("FAIL: Marketplace bundle runtime marker is invalid")
+integrity = json.loads((bundle / ".teamwork-runtime-integrity.json").read_text())
+if set(integrity) != {"schema_version", "version", "marker", "manifest_sha256", "files"}:
+    raise SystemExit("FAIL: Marketplace bundle runtime integrity manifest has unexpected fields")
+if integrity.get("version") != version or integrity.get("schema_version") != 1:
+    raise SystemExit("FAIL: Marketplace bundle runtime integrity manifest has the wrong version/schema")
+if integrity.get("marker") != "TEAMWORK_CODEX_PLUGIN_RUNTIME=1":
+    raise SystemExit("FAIL: Marketplace bundle runtime integrity manifest has the wrong marker")
+manifest_hash = hashlib.sha256((bundle / ".codex-plugin/plugin.json").read_bytes()).hexdigest()
+if integrity.get("manifest_sha256") != manifest_hash:
+    raise SystemExit("FAIL: Marketplace bundle runtime integrity manifest has the wrong manifest hash")
+files = integrity.get("files")
+if not isinstance(files, dict):
+    raise SystemExit("FAIL: Marketplace bundle runtime integrity file inventory drifted")
+actual_integrity_files = set()
+for path in bundle.rglob("*"):
+    rel = path.relative_to(bundle).as_posix()
+    if rel == ".teamwork-runtime-integrity.json":
+        continue
+    info = path.lstat()
+    if stat.S_ISDIR(info.st_mode):
+        continue
+    if not stat.S_ISREG(info.st_mode):
+        raise SystemExit(f"FAIL: Marketplace bundle runtime integrity rejects non-regular input: {rel}")
+    actual_integrity_files.add(rel)
+if set(files) != actual_integrity_files:
+    raise SystemExit("FAIL: Marketplace bundle runtime integrity file inventory drifted")
+for rel, expected in files.items():
+    if not isinstance(expected, dict) or set(expected) != {"sha256", "mode"}:
+        raise SystemExit(f"FAIL: Marketplace bundle runtime integrity has invalid entry: {rel}")
+    path = bundle / rel
+    if expected["sha256"] != hashlib.sha256(path.read_bytes()).hexdigest():
+        raise SystemExit(f"FAIL: Marketplace bundle runtime integrity hash drifted: {rel}")
+    if expected["mode"] != f"{path.stat().st_mode & 0o777:04o}":
+        raise SystemExit(f"FAIL: Marketplace bundle runtime integrity mode drifted: {rel}")
 if claude.get("skills") != "./skills/":
     raise SystemExit("FAIL: Claude manifest skills must remain ./skills/")
 if "Claude Code" not in claude.get("description", ""):

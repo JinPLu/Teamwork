@@ -14,8 +14,62 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ROOT / "scripts/discussion-transaction.py"
-TEMPLATES = ROOT / "templates/teamwork-memory"
 CONTRACT = runpy.run_path(str(CLI), run_name="teamwork_workflow_artifact_contract")
+
+
+def write_legacy_v1_memory(memory: Path) -> None:
+    memory.mkdir(parents=True, exist_ok=True)
+    index = {
+        "schema_version": 1,
+        "last_updated": "2026-07-22",
+        "project": {
+            "name": "Fixture",
+            "root": ".",
+            "description": "Local Teamwork memory index for this project.",
+        },
+        "source_of_truth_order": ["active", "linked", "header_search", "fulltext"],
+        "ignore_globs": [".planning/**"],
+        "budgets": {"header_first": True},
+        "active": {
+            "collaborate": None,
+            "current": "docs/teamwork/current.md",
+            "design": None,
+            "plan": None,
+            "progress": None,
+            "report": None,
+            "results": [],
+        },
+        "collaborate_consumed_sources": [],
+        "entries": [
+            {
+                "topic": "project-initialization",
+                "kind": "result",
+                "title": "Teamwork project initialization",
+                "status": "active",
+                "currentness": "current",
+                "authority": "active-summary",
+                "path": "docs/teamwork/current.md",
+                "applies_to": ["AGENTS.md", "docs/teamwork/"],
+                "linked": [],
+                "evidence_paths": ["docs/teamwork/current.md"],
+                "supersedes": [],
+                "search_keys": ["teamwork-init", "project-init", "initialization"],
+                "updated": "2026-07-22",
+                "summary": "Initial ordinary Teamwork memory entry created by project initialization.",
+            }
+        ],
+        "profiles": {
+            "status": ["index", "current", "topic"],
+            "implementation": ["index", "current", "active_design_or_plan", "linked_research_headers"],
+            "review": ["index", "current", "active_design_or_plan", "active_progress", "verification"],
+            "research": ["index", "current", "topic_headers", "linked_artifacts"],
+            "design": ["index", "current", "accepted_decisions", "active_design_plan", "linked_research"],
+        },
+        "pending": [],
+    }
+    (memory / "index.json").write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    (memory / "current.md").write_text("# Teamwork Current State\n", encoding="utf-8")
+    (memory / "README.md").write_text("# Teamwork Runtime Index README\n", encoding="utf-8")
 
 
 class WorkflowArtifactTransactionTests(unittest.TestCase):
@@ -23,9 +77,7 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.project = Path(self.temporary.name) / "project"
         self.memory = self.project / "docs/teamwork"
-        self.memory.mkdir(parents=True)
-        for name in ("index.json", "current.md", "README.md"):
-            (self.memory / name).write_bytes((TEMPLATES / name).read_bytes())
+        write_legacy_v1_memory(self.memory)
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -154,9 +206,7 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
                 try:
                     project = Path(temporary.name) / "project"
                     memory = project / "docs/teamwork"
-                    memory.mkdir(parents=True)
-                    for name in ("index.json", "current.md", "README.md"):
-                        (memory / name).write_bytes((TEMPLATES / name).read_bytes())
+                    write_legacy_v1_memory(memory)
                     original_project = self.project
                     original_memory = self.memory
                     self.project = project
@@ -327,9 +377,7 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
 
         stale_project = Path(self.temporary.name) / "stale-project"
         stale_memory = stale_project / "docs/teamwork"
-        stale_memory.mkdir(parents=True)
-        for name in ("index.json", "current.md", "README.md"):
-            (stale_memory / name).write_bytes((TEMPLATES / name).read_bytes())
+        write_legacy_v1_memory(stale_memory)
         stale_target = stale_project / legacy_path
         stale_target.parent.mkdir(parents=True)
         stale_target.write_text(legacy_text, encoding="utf-8")
@@ -390,9 +438,7 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
 
         unsafe_project = Path(self.temporary.name) / "unsafe"
         unsafe_memory = unsafe_project / "docs/teamwork"
-        unsafe_memory.mkdir(parents=True)
-        for name in ("index.json", "current.md", "README.md"):
-            (unsafe_memory / name).write_bytes((TEMPLATES / name).read_bytes())
+        write_legacy_v1_memory(unsafe_memory)
         target = unsafe_project / "docs/teamwork/research/2026-07-22-runtime-evidence.md"
         target.parent.mkdir(parents=True)
         os.symlink(unsafe_project / "outside.md", target)
@@ -480,9 +526,7 @@ class WorkflowArtifactTransactionTests(unittest.TestCase):
         try:
             project = Path(temporary.name) / "project"
             memory = project / "docs/teamwork"
-            memory.mkdir(parents=True)
-            for name in ("index.json", "current.md", "README.md"):
-                (memory / name).write_bytes((TEMPLATES / name).read_bytes())
+            write_legacy_v1_memory(memory)
             self.project = project
             self.memory = memory
             goal = {

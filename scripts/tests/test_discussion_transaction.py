@@ -13,8 +13,69 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ROOT / "scripts/discussion-transaction.py"
-TEMPLATES = ROOT / "templates/teamwork-memory"
 CONTRACT = runpy.run_path(str(CLI), run_name="teamwork_discussion_contract")
+
+
+def legacy_v1_memory_bytes() -> dict[str, bytes]:
+    index = {
+        "schema_version": 1,
+        "last_updated": "2026-07-19",
+        "project": {
+            "name": "Fixture",
+            "root": ".",
+            "description": "Local Teamwork memory index for this project.",
+        },
+        "source_of_truth_order": ["active", "linked", "header_search", "fulltext"],
+        "ignore_globs": [".planning/**"],
+        "budgets": {"header_first": True},
+        "active": {
+            "collaborate": None,
+            "current": "docs/teamwork/current.md",
+            "design": None,
+            "plan": None,
+            "progress": None,
+            "report": None,
+            "results": [],
+        },
+        "collaborate_consumed_sources": [],
+        "entries": [
+            {
+                "topic": "project-initialization",
+                "kind": "result",
+                "title": "Teamwork project initialization",
+                "status": "active",
+                "currentness": "current",
+                "authority": "active-summary",
+                "path": "docs/teamwork/current.md",
+                "applies_to": ["AGENTS.md", "docs/teamwork/"],
+                "linked": [],
+                "evidence_paths": ["docs/teamwork/current.md"],
+                "supersedes": [],
+                "search_keys": ["teamwork-init", "project-init", "initialization"],
+                "updated": "2026-07-19",
+                "summary": "Initial ordinary Teamwork memory entry created by project initialization.",
+            }
+        ],
+        "profiles": {
+            "status": ["index", "current", "topic"],
+            "implementation": ["index", "current", "active_design_or_plan", "linked_research_headers"],
+            "review": ["index", "current", "active_design_or_plan", "active_progress", "verification"],
+            "research": ["index", "current", "topic_headers", "linked_artifacts"],
+            "design": ["index", "current", "accepted_decisions", "active_design_plan", "linked_research"],
+        },
+        "pending": [],
+    }
+    return {
+        "index.json": (json.dumps(index, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
+        "current.md": b"# Teamwork Current State\n",
+        "README.md": b"# Teamwork Runtime Index README\n",
+    }
+
+
+def write_legacy_v1_memory(memory: Path) -> None:
+    memory.mkdir(parents=True, exist_ok=True)
+    for name, data in legacy_v1_memory_bytes().items():
+        (memory / name).write_bytes(data)
 
 
 @unittest.skip("legacy Discussion write lifecycle retired; Collaborate import covers read-only compatibility")
@@ -23,9 +84,7 @@ class DiscussionTransactionTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.project = Path(self.temporary.name) / "project"
         self.memory = self.project / "docs/teamwork"
-        self.memory.mkdir(parents=True)
-        for name in ("index.json", "current.md", "README.md"):
-            (self.memory / name).write_bytes((TEMPLATES / name).read_bytes())
+        write_legacy_v1_memory(self.memory)
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -167,7 +226,7 @@ class DiscussionTransactionTests(unittest.TestCase):
     def test_create_uses_only_single_active_discussion_not_ordinary_memory(self) -> None:
         ordinary_before = {
             name: (self.memory / name).read_bytes()
-            for name in ("index.json", "current.md", "README.md")
+            for name in legacy_v1_memory_bytes()
         }
         created = self.create()
 
@@ -309,9 +368,7 @@ class CollaborateTransactionTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.project = Path(self.temporary.name) / "project"
         self.memory = self.project / "docs/teamwork"
-        self.memory.mkdir(parents=True)
-        for name in ("index.json", "current.md", "README.md"):
-            (self.memory / name).write_bytes((TEMPLATES / name).read_bytes())
+        write_legacy_v1_memory(self.memory)
 
     def tearDown(self) -> None:
         self.temporary.cleanup()

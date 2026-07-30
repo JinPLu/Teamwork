@@ -79,15 +79,24 @@ purpose/audience, facts/sources, frozen decision/status, style/structure,
 artifact kind/consumer, preserve/forbid, changed surfaces, evidence, validation,
 and human action. Dispatch one low-cost Writer; Root may do only
 answer-invariant handoff work while Writer runs and must join and read back
-before claiming the receipt is saved or durable. Writer uses `artifact-inspect
--> artifact-schema <create|update|supersede> -> artifact-apply`; the transaction
-derives the destination and registers the ordinary index. Writer is disposable
-compute and the transaction owns destination, compare-and-swap, journal recovery,
-atomic apply, and readback. If interrupted before generic artifact apply begins,
-there is no durable claim; recover only from surviving workflow evidence or
-report unsaved. Missing project memory, Writer, brief, authority, consumer, or
-transaction blocks only persistence: deliver the receipt and report it
-unsaved/blocked. No Root or Worker fallback writes it.
+before claiming the receipt is saved or durable. Writer routes from observed
+schema: `case-inspect` first; case-v2 uses exact `case_id`/alias or creates from
+a frozen seed/task_key, then `case-schema <init-result> -> case-apply ->
+case-inspect/readback`; legacy-v1 uses `artifact-inspect -> artifact-schema
+<create|update|supersede> -> artifact-apply`. The transaction derives the
+destination and registers the ordinary index or case manifest/claim heads.
+Writer is disposable compute and the transaction owns destination,
+compare-and-swap, journal recovery, atomic apply, and readback. If interrupted
+before apply begins, there is no durable claim; recover only from surviving
+workflow evidence or report unsaved. Missing project memory, Writer, brief,
+authority, consumer, route, or transaction blocks only persistence: deliver the
+receipt and report it unsaved/blocked. No Root or Worker fallback writes it.
+Fresh 5.1 project initialization creates v2 case-bundle memory and does not
+create maintained `docs/teamwork/current.md` or `docs/teamwork/README.md`.
+Existing legacy-v1 memory remains compatible and is not migrated by Init unless
+the user explicitly authorizes a project migration/cutover operation. Mixed,
+unknown, stale, ambiguous case, missing seed/task_key, or partially migrated
+memory fails closed before any write.
 
 If the Explorer audit finds no decision-relevant change, dispatch no Worker and
 write nothing. Report the selected

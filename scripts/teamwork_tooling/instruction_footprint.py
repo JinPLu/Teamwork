@@ -101,9 +101,18 @@ def generated_surfaces() -> dict[str, str]:
         )
         if not match:
             raise RuntimeError("generated AGENTS.md lacks the Teamwork project block")
+        memory_readme = project / "docs/teamwork/README.md"
+        if memory_readme.exists():
+            memory_readme_text = memory_readme.read_text(encoding="utf-8")
+        else:
+            memory_readme_text = (
+                "Fresh v2 case-bundle memory has no maintained "
+                "docs/teamwork/README.md; read docs/teamwork/index.json and the "
+                "relevant case manifest."
+            )
         return {
             "project_block": match.group(1),
-            "memory_readme": (project / "docs/teamwork/README.md").read_text(encoding="utf-8"),
+            "memory_readme": memory_readme_text,
             "memory_index": (project / "docs/teamwork/index.json").read_text(encoding="utf-8"),
         }
 

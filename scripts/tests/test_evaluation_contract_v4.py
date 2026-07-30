@@ -419,8 +419,8 @@ class EvaluationContractV4Tests(unittest.TestCase):
         source_path = "scripts/discussion-transaction.py"
         source = (ROOT / source_path).read_text(encoding="utf-8")
         mutated = source.replace(
-            'for name in ("inspect", "design-inspect", "goal-inspect", "artifact-inspect", "collaborate-inspect", "artifact-index-validate"):',
-            'for name in ("inspect", "design-inspect", "goal-inspect", "collaborate-inspect", "artifact-index-validate"):',
+            'for name in ("inspect", "design-inspect", "goal-inspect", "artifact-inspect", "collaborate-inspect", "case-inspect", "artifact-index-validate"):',
+            'for name in ("inspect", "design-inspect", "goal-inspect", "collaborate-inspect", "case-inspect", "artifact-index-validate"):',
             1,
         )
         self.assertNotEqual(source, mutated)

@@ -11,15 +11,18 @@ from __future__ import annotations
 
 import argparse
 import filecmp
+import hashlib
 import json
 import os
 import shutil
+import stat
 import sys
 import tempfile
 from pathlib import Path
 
 
 PLUGIN_NAME = "teamwork-skill"
+RUNTIME_INTEGRITY_MANIFEST = ".teamwork-runtime-integrity.json"
 RUNTIME_MARKER = "TEAMWORK_CODEX_PLUGIN_RUNTIME=1\n"
 MAX_DEFAULT_PROMPT_CHARS = 128
 COPY_ITEMS = (
@@ -33,12 +36,16 @@ COPY_ITEMS = (
     ("scripts/codex_routing_config.py", "scripts/codex_routing_config.py"),
     ("scripts/configure-codex-routing.py", "scripts/configure-codex-routing.py"),
     ("scripts/configure-notifications.py", "scripts/configure-notifications.py"),
+    # Runtime helpers are always shipped with the transaction owner so an
+    # installed Marketplace package can validate its own root and construct
+    # memory requests without falling back to a checkout path.
     ("scripts/init-project.sh", "scripts/init-project.sh"),
-    ("scripts/init-project-files.py", "scripts/init-project-files.py"),
     ("scripts/discussion-transaction.py", "scripts/discussion-transaction.py"),
+    ("scripts/init-project-files.py", "scripts/init-project-files.py"),
+    ("scripts/teamwork-case-migration.py", "scripts/teamwork-case-migration.py"),
+    ("scripts/validate_teamwork_index.py", "scripts/validate_teamwork_index.py"),
     ("scripts/plugin-activation.py", "scripts/plugin-activation.py"),
     ("scripts/plugin-runtime-root.py", "scripts/plugin-runtime-root.py"),
-    ("scripts/validate_teamwork_index.py", "scripts/validate_teamwork_index.py"),
     (
         "scripts/tests/fixtures/v3.4.2-owned-surfaces.json",
         "scripts/tests/fixtures/v3.4.2-owned-surfaces.json",
@@ -46,6 +53,10 @@ COPY_ITEMS = (
     (
         "scripts/tests/fixtures/retired-teamwork-skills-v5.json",
         "scripts/tests/fixtures/retired-teamwork-skills-v5.json",
+    ),
+    (
+        "scripts/tests/fixtures/v5.1-case-bundle-owned-surfaces.json",
+        "scripts/tests/fixtures/v5.1-case-bundle-owned-surfaces.json",
     ),
     (
         "evals/teamwork/ledgers/v4-capability-migration.jsonl",
@@ -112,6 +123,7 @@ EXPECTED_ROLE_TEMPLATES = {
 }
 TRANSIENT_NAMES = {"__pycache__"}
 TRANSIENT_SUFFIXES = (".pyc", ".pyo")
+RUNTIME_INTEGRITY_EXCLUDED_FILES = {RUNTIME_INTEGRITY_MANIFEST}
 
 
 def parse_args() -> argparse.Namespace:
@@ -140,6 +152,56 @@ def copy_item(source: Path, destination: Path) -> None:
     else:
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, destination, follow_symlinks=False)
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def runtime_integrity_paths(root: Path) -> tuple[str, ...]:
+    paths: list[str] = []
+    for path in sorted(root.rglob("*")):
+        rel = path.relative_to(root).as_posix()
+        if rel in RUNTIME_INTEGRITY_EXCLUDED_FILES:
+            continue
+        mode = path.lstat().st_mode
+        if stat.S_ISDIR(mode):
+            continue
+        if not stat.S_ISREG(mode):
+            raise SystemExit(f"runtime integrity input is not a regular file: {rel}")
+        paths.append(rel)
+    return tuple(paths)
+
+
+def runtime_integrity_document(root: Path, *, version: str) -> dict[str, object]:
+    files: dict[str, dict[str, object]] = {}
+    for rel in runtime_integrity_paths(root):
+        path = root / rel
+        file_stat = path.stat()
+        files[rel] = {
+            "sha256": sha256_file(path),
+            "mode": f"{file_stat.st_mode & 0o777:04o}",
+        }
+    manifest_path = root / ".codex-plugin/plugin.json"
+    return {
+        "schema_version": 1,
+        "version": version,
+        "marker": RUNTIME_MARKER.rstrip("\n"),
+        "manifest_sha256": sha256_file(manifest_path),
+        "files": files,
+    }
+
+
+def write_runtime_integrity(stage: Path, *, version: str) -> None:
+    document = runtime_integrity_document(stage, version=version)
+    (stage / RUNTIME_INTEGRITY_MANIFEST).write_text(
+        json.dumps(document, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
 
 def validate_marketplace(root: Path) -> None:
@@ -194,6 +256,8 @@ def build_stage(root: Path, parent: Path) -> Path:
         for source_rel, destination_rel in COPY_ITEMS:
             copy_item(root / source_rel, stage / destination_rel)
         (stage / ".teamwork-plugin-runtime").write_text(RUNTIME_MARKER, encoding="utf-8")
+        version = (stage / "VERSION").read_text(encoding="utf-8").strip()
+        write_runtime_integrity(stage, version=version)
         validate_bundle(stage, root)
         return stage
     except BaseException:
@@ -235,6 +299,17 @@ def validate_bundle(bundle: Path, root: Path) -> None:
         raise SystemExit("bundle is missing the notification runtime")
     if (bundle / ".teamwork-plugin-runtime").read_text(encoding="utf-8") != RUNTIME_MARKER:
         raise SystemExit("bundle runtime marker is invalid")
+    integrity_path = bundle / RUNTIME_INTEGRITY_MANIFEST
+    try:
+        integrity = json.loads(integrity_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"bundle runtime integrity manifest is invalid: {exc}") from exc
+    expected_integrity = runtime_integrity_document(
+        bundle,
+        version=(bundle / "VERSION").read_text(encoding="utf-8").strip(),
+    )
+    if integrity != expected_integrity:
+        raise SystemExit("bundle runtime integrity manifest drifted from bundled runtime files")
     for path in bundle.rglob("*"):
         if path.name in TRANSIENT_NAMES or path.suffix in TRANSIENT_SUFFIXES:
             raise SystemExit(f"bundle must not contain transient runtime output: {path}")

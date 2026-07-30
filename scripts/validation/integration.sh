@@ -979,16 +979,18 @@ HOME="$tmp/home-init-project" \
   || fail "init-project must not invoke the host CLI to manage interaction capabilities"
 grep_required '<!-- TEAMWORK_PROJECT_START -->' "$init_root/AGENTS.md" \
   "init-project must write managed AGENTS.md block"
-grep_required 'docs/teamwork/README.md' "$init_root/AGENTS.md" \
+grep_required 'selected v2 case manifest' "$init_root/AGENTS.md" \
   "init-project AGENTS.md block must point to Teamwork memory"
+! grep -q 'docs/teamwork/collaborate/current.md' "$init_root/AGENTS.md" \
+  || fail "fresh schema v2 AGENTS.md block must not require the legacy Collaborate route"
 grep_required '# TEAMWORK_LOCAL_START' "$init_root/.gitignore" \
   "init-project must write local .gitignore block"
-grep_required '^docs/teamwork/discussion/$' "$init_root/.gitignore" \
-  "init-project must ignore historical local discussion artifacts"
-grep_required '^docs/teamwork/design/$' "$init_root/.gitignore" \
-  "init-project must ignore historical local design artifacts"
-grep_required '^docs/teamwork/collaborate/$' "$init_root/.gitignore" \
-  "init-project must ignore local Collaborate artifacts"
+grep_required '^docs/teamwork/\*\*$' "$init_root/.gitignore" \
+  "init-project must ignore Teamwork case memory and workflow artifacts"
+grep_required '^\.teamwork/runtime/\*\*$' "$init_root/.gitignore" \
+  "init-project must ignore Teamwork transaction runtime state"
+grep_required '^\.teamwork/cold-archive/\*\*$' "$init_root/.gitignore" \
+  "init-project must ignore Teamwork cold archives"
 [[ ! -e "$init_root/.cursor" ]] \
   || fail "default init-project must not create project .cursor surfaces"
 for removed_ignore in '^\.agents/$' '^\.codex/$' '^\.cursor/$' '^\.claude/$'; do
@@ -996,22 +998,23 @@ for removed_ignore in '^\.agents/$' '^\.codex/$' '^\.cursor/$' '^\.claude/$'; do
     || fail "init-project must not add a project-local Teamwork package ignore: $removed_ignore"
 done
 python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/index.json" >/dev/null
-[[ -f "$init_root/docs/teamwork/current.md" ]] || fail "init-project must write current.md"
-[[ ! -e "$init_root/docs/teamwork/discussion" ]] \
-  || fail "init-project must not create an empty or fake discussion artifact directory"
-discussion_file="$init_root/docs/teamwork/discussion/current.md"
-mkdir -p "$(dirname "$discussion_file")"
+[[ ! -e "$init_root/docs/teamwork/current.md" ]] \
+  || fail "fresh schema v2 init-project must not write legacy current.md"
+[[ ! -e "$init_root/docs/teamwork/README.md" ]] \
+  || fail "fresh schema v2 init-project must not write the legacy runtime README"
+[[ ! -e "$init_root/docs/teamwork/collaborate" ]] \
+  || fail "init-project must not create an empty or fake Collaborate artifact directory"
+collaborate_file="$init_root/docs/teamwork/collaborate/current.md"
+mkdir -p "$(dirname "$collaborate_file")"
 printf '%s\n' \
-  '# Saved Grill discussion' \
+  '# Saved Collaborate checkpoint' \
   '' \
   'This project-local file must survive init reruns without becoming an index anchor.' \
-  > "$discussion_file"
+  > "$collaborate_file"
 init_snapshot="$tmp/init-project-snapshot"
 mkdir -p "$init_snapshot"
 cp "$init_root/docs/teamwork/index.json" "$init_snapshot/index.json"
-cp "$init_root/docs/teamwork/current.md" "$init_snapshot/current.md"
-cp "$init_root/docs/teamwork/README.md" "$init_snapshot/README.md"
-cp "$discussion_file" "$init_snapshot/discussion-current.md"
+cp "$collaborate_file" "$init_snapshot/collaborate-current.md"
 for global_surface in \
   "$tmp/home-init-project/.agents" \
   "$tmp/home-init-project/.codex" \
@@ -1058,17 +1061,15 @@ HOME="$tmp/home-init-project" \
   "$ROOT/install.sh" --project-root "$init_root" init-project >/dev/null
 cmp -s "$init_snapshot/index.json" "$init_root/docs/teamwork/index.json" \
   || fail "init-project rerun must preserve the existing index"
-cmp -s "$init_snapshot/current.md" "$init_root/docs/teamwork/current.md" \
-  || fail "init-project rerun must preserve existing current.md"
-cmp -s "$init_snapshot/README.md" "$init_root/docs/teamwork/README.md" \
-  || fail "init-project rerun must preserve the existing runtime README"
-cmp -s "$init_snapshot/discussion-current.md" "$discussion_file" \
-  || fail "init-project rerun must preserve Grill's direct discussion file"
+[[ ! -e "$init_root/docs/teamwork/current.md" ]] \
+  || fail "schema v2 init-project rerun must not create legacy current.md"
+[[ ! -e "$init_root/docs/teamwork/README.md" ]] \
+  || fail "schema v2 init-project rerun must not create the legacy runtime README"
+cmp -s "$init_snapshot/collaborate-current.md" "$collaborate_file" \
+  || fail "init-project rerun must preserve Collaborate's direct checkpoint file"
 python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/index.json" >/dev/null
-for anchor in "$init_root/docs/teamwork/index.json" "$init_root/docs/teamwork/current.md" "$init_root/docs/teamwork/README.md"; do
-  ! grep -q 'docs/teamwork/discussion' "$anchor" \
-    || fail "ordinary Teamwork memory must not duplicate Grill's discussion pointer: $anchor"
-done
+! grep -q 'docs/teamwork/collaborate' "$init_root/docs/teamwork/index.json" \
+  || fail "ordinary Teamwork memory must not duplicate Collaborate's direct checkpoint pointer"
 
 global_isolation_root="$tmp/init-project-isolated"
 global_isolation_home="$tmp/home-init-project-isolated"

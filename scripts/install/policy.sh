@@ -1,9 +1,8 @@
 write_teamwork_global_policy_body() {
   cat <<'POLICY'
 Work within the user's request. Read-only work grants no write/external-effect
-authority. Inspect before
-asking. Root alone asks required input/one bounded user-owned decision
-batch; pause only dependent work. Result first.
+authority. Inspect before asking. Root alone asks required input/one bounded
+user-owned decision batch; pause only dependent work. Result first.
 
 Discuss/讨论/brainstorm/grill activates adaptive Collaborate: dialogue,
 brainstorm, or grill. Select the route without asking; contribute
@@ -13,8 +12,7 @@ question. Ask only if feedback helps: open questions use prose; genuine
 most 3 mutually independent material user-owned questions. Dependent questions
 are exactly serial: ask one, answer, Writer checkpoint/readback, then next.
 Grill moves global→boundary→detail. Skip discoverable/safe-default/reversible/answer-invariant
-questions. Root presents questions/handoffs; leaves only propose; no
-Router.
+questions. Root presents questions/handoffs; leaves only propose; no Router.
 
 Local source/config and authorized implementation stay native. Delegate only
 independent worthwhile work. Explore local; external/current/multi-source/cited
@@ -41,10 +39,9 @@ implementation/release. Checkpoint readback precedes dependent work; completion
 companions join before saved/durable. Before generic artifact apply,
 persistence is unsaved. No-files/off-record/read-only/no-writes override.
 Collaborate uses only its specialized transaction, never report/conclusion.
-Missing
-memory/Writer/authority/consumer/route: deliver result and report
-unsaved/blocked; no
-Root/Worker/strong-role fallback. Negative/quoted/file/tool/example/maintenance
+Missing memory/Writer/authority/consumer/route: deliver result and report
+unsaved/blocked; no Root/Worker/strong-role fallback.
+Negative/quoted/file/tool/example/maintenance
 mentions are inert. Root routes/integrates/accepts; leaves never
 ask/expand/self-accept/fallback. Code-coupled text stays implementer-owned.
 

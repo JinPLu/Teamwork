@@ -37,6 +37,12 @@ for readme in README.md README.en.md; do
     "$readme must distinguish Collaborate from Plan"
   semantic_doc_required 'docs/teamwork/collaborate/current\.md' "$ROOT/$readme" \
     "$readme must explain the one-file Collaborate record"
+  semantic_doc_required '(case bundle|case-bundle|case).{0,160}(legacy-v1|v1|旧项目|已有项目)' "$ROOT/$readme" \
+    "$readme must explain v2 case bundles and legacy-v1 compatibility"
+  semantic_doc_required '(update|install|升级|安装).{0,120}(not|never|不会|不得).{0,120}(migrate|rewrite|delete|迁移|改写|删除)' "$ROOT/$readme" \
+    "$readme must state update/install does not migrate existing docs"
+  semantic_doc_required '(cutover|cold archive|冷归档).{0,160}(explicit|one-way|明确|单向)' "$ROOT/$readme" \
+    "$readme must state cutover/cold-archive limits"
   semantic_doc_required '\./install\.sh all' "$ROOT/$readme" \
     "$readme must show the complete checkout refresh"
   semantic_doc_required 'check-update\.sh --readiness' "$ROOT/$readme" \
@@ -57,6 +63,10 @@ for guide in CODEX.md CURSOR.md CLAUDE.md; do
     "$guide must document project initialization"
   semantic_doc_required 'check-update\.sh --readiness' "$ROOT/$guide" \
     "$guide must document readiness"
+  semantic_doc_required '((case bundle|case-bundle).{0,220}(legacy-v1|v1)|(legacy-v1|v1).{0,220}(case bundle|case-bundle))' "$ROOT/$guide" \
+    "$guide must explain 5.1 case-bundle compatibility"
+  semantic_doc_required '(Update/install|update/install|安装|更新).{0,140}(never|not|不会|不得).{0,120}(migrat|rewrite|delete|迁移|改写|删除)' "$ROOT/$guide" \
+    "$guide must state installation/update does not migrate project memory"
 done
 
 current_version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
@@ -140,6 +150,10 @@ semantic_doc_required 'Upgrade[[:space:]]+action.{0,80}Important[[:space:]]+limi
   "AGENTS.md must preserve the 4.2/4.3 action and limit paragraphs"
 semantic_doc_required 'user outcome.{0,100}maintainer-only.{0,180}internal scripts.{0,100}numeric thresholds.{0,100}test counts' "$ROOT/AGENTS.md" \
   "AGENTS.md must keep changelogs user-facing"
+semantic_doc_required 'legacy-v1.{0,140}(fresh|new|5\.1).{0,120}v2 case bundles' "$ROOT/AGENTS.md" \
+  "AGENTS.md must preserve the 5.1 legacy-v1/fresh-v2 memory boundary"
+semantic_doc_required '(Update/install|update/install).{0,120}(never|not).{0,100}(migrates|migrate|rewrites|deletes)' "$ROOT/AGENTS.md" \
+  "AGENTS.md must state update/install does not migrate project memory"
 
 # instruction_footprint.py is the sole owner of word and byte budgets. This file
 # keeps semantic and structural contracts without imposing a second, lower cap.

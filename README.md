@@ -39,25 +39,29 @@ Teamwork 是一套按需调用的协作方法，而不是一个接管宿主的�
 
 已初始化且可写的项目进入命名 Teamwork workflow 后，默认会把可复用的中间检查点和完成结果写成对应 artifact，并登记到 `docs/teamwork/index.json`；明确 `no files`、off-record、read-only/no-write 会覆盖这个默认。一次性说明、随口事实问题和很小的 native work 不会强制造文档；但持续讨论已经形成实质综合且仍有未决问题时，会默认保存一份语义检查点。
 
+Teamwork 5.1 对新初始化的项目启用 v2 case bundle。一个 case 成为持久文档单元，集中承接 live collaboration、已接受决定、计划、证据、复查、Goal 状态和结果，路径位于 `docs/teamwork/cases/c-<64hex>/`。已有项目在明确授权单向 cutover 前继续走 legacy-v1 路由；安装或更新 Teamwork 本身不会迁移、改写或删除项目文档。
+
 Writer 只根据 Root 或强角色给出的 frozen bounded packet 成文：可起草、整理、摘要、翻译和润色独立文档或 runtime artifact，但不能研究、发明、转述或改变冻结事实、引用、决策、权限、状态、验收结论，也不能自验收；内容缺口必须失败关闭并报告未保存。代码耦合的注释、docstring、测试、schema、manifest、机器配置和配置内说明仍归写代码的 Worker 或对应实现所有者。
 
-Collaborate 和 Goal 分别使用各自的专用事务；Research、Debug、Plan、Plan Review、Review、会产生变更的 Init/Update，以及满足条件的终态执行交接使用 generic artifact transaction。Writer 只根据冻结内容调用事务，事务才是实际文件写入者。Explore 不独立造报告，证据并入消费它的 artifact 或答复。
+持久化先读 `docs/teamwork/index.json` 决定 schema：v2 项目中 Collaborate、Research、Debug、Plan、Plan Review、Review、Goal、会产生变更的 Init/Update，以及满足条件的终态执行交接都写入 case transaction / case artifact；legacy-v1 项目中 Collaborate 和 Goal 继续使用各自专用事务，Research、Debug、Plan、Plan Review、Review、会产生变更的 Init/Update 与终态执行交接继续使用既有 generic artifact transaction。Writer 只根据冻结内容调用事务，事务才是实际文件写入者。Explore 不独立造报告，证据并入消费它的 artifact 或答复。
 
 | 工作流 | 默认是否落盘 | 主要产物 | 之后怎么消费 |
 | --- | --- | --- | --- |
 | 一次性说明、随口事实问题或很小的 native work | 否 | 无强制 artifact | 只按当前对话和宿主原生上下文继续。 |
-| Collaborate | 达到“持续协作 + 实质综合/候选空间/决策地图 + 未决问题或未接受方向”即默认落盘 | schema v1 受控 Collaborate | 恢复同一协作；`dialogue` 记综合与张力，`brainstorm` 记候选空间，`grill` 记 frontier/current_batch；被接受后成为 Plan 的唯一公共入口。旧 Discussion/Design 只作为只读迁移输入。 |
-| Research | 是 | research | 作为 Collaborate、Plan、Review、文档或最终答复的引用证据。 |
+| Collaborate | 达到“持续协作 + 实质综合/候选空间/决策地图 + 未决问题或未接受方向”即默认落盘 | v2 case live collaborate/decision；legacy-v1 受控 Collaborate | 恢复同一协作；v2 从 case manifest 继续，legacy-v1 从 current record 继续；被接受后成为 Plan 的唯一公共入口。旧 Discussion/Design 只作为只读迁移输入。 |
+| Research | 是 | v2 case evidence；legacy-v1 research artifact | 作为 Collaborate、Plan、Review、文档或最终答复的引用证据。 |
 | 方案收敛 | 由 Collaborate 承接 | Collaborate 中的 `pending`、`accepted` 或 `blocked` acceptance | 只有 accepted Collaborate 能进入 Plan；内部 Designer 只读参与方向选择、挑战或收敛审计。 |
-| Plan | 是 | canonical plan | Worker/Root 按 owner、路径、验证和停止条件执行。 |
-| Debug | 是 | diagnosis/report | Worker 或 Root 用根因、修复边界和同路径验证继续。 |
-| Plan Review / Review | 是，落盘不代表验收 | review | Root 用证据结论决定修复、重做计划或收口。 |
+| Plan | 是 | v2 case plan；legacy-v1 canonical plan | Worker/Root 按 owner、路径、验证和停止条件执行。 |
+| Debug | 是 | v2 case evidence/result；legacy-v1 diagnosis/report | Worker 或 Root 用根因、修复边界和同路径验证继续。 |
+| Plan Review / Review | 是，落盘不代表验收 | v2 case review/delta；legacy-v1 review | Root 用证据结论决定修复、重做计划或收口。 |
 | Goal | 是 | 既有 entry/attempt/status | 后续回合按目标、预算、成功信号和阻塞状态续跑；Goal 激活期间不再重复创建 execution artifact。 |
 | Native / Worker 执行 | 仅在有明确下游消费者、终态交接且没有 active Goal 时 | execution | 把已完成结果交给指定的 Plan、Review、发布或其他真实消费者。 |
 | mutating Init / Update | 是 | receipt | 后续 readiness、排错和用户复核使用。 |
 | Explore | 否 | 不独立造报告 | 本地证据并入消费它的 Collaborate、Plan、Debug、Review、Goal 或答复。 |
 
 Collaborate 只能写到专用 collaborate 路由，不能拿普通 report、conclusion、旧 Discussion 或旧 Design 代替；execution 也不能拿 conclusion 代替。只有用户确实要求一份独立综合文档时，才使用 conclusion。
+
+cutover 期间，旧文档只作为迁移输入，之后作为 cold archive 来源。cold archive 只保存字节和 POSIX mode，不是物理备份；Teamwork 不会自动删除冷归档对象。
 
 | 你遇到的情况 | 推荐用法 |
 | --- | --- |
@@ -193,11 +197,12 @@ git pull --ff-only
 
 - Research、Collaborate、Plan、排错诊断和 Review 不授权修改候选代码或产生外部效果；命名 workflow 的可复用结果仍按上面的矩阵默认持久化，接受 Plan 也不等于授权执行。
 - Collaborate 只在至少两个可行方向仍成立，且错误代价高、难以逆转或证据冲突使一次普通挑战不足时，才通过内部只读 Designer 自动升级到 adversarial；只写“高风险”“复杂”不会触发。模型说明选择理由并直接使用默认 `B=3`，无需再次确认；`adversarial` / `standard` 可强制覆盖。每个实际假设使用两名全新批评者，最后两名全新审计者必须同时通过；Collaborate v1 始终显式记录 `acceptance: pending`、`accepted` 或 `blocked`。隔离或收敛不可证明时只能保持 `pending` 或记为 `blocked`，不能成为 Plan-ready；落盘不等于接受，只有 `accepted` 才能进入 Plan。
-- 自然讨论、一起想、brainstorm、grill、压力测试或“行动前先问我”会更积极地触发 Collaborate；它先给有用综合、候选空间、决策地图或临时建议，再按问题形态提问。grill 严格按 global → boundary → detail 推进，每批最多提出三个彼此独立的决定，依赖决定分轮处理；每个已回答批次只形成一次完整语义更新。开放问题保留为文字，只有真实有限的 2–3 个互斥选择才使用 Codex 原生询问界面；宿主必须实际暴露 `request_user_input`。达到持续协作语义门槛后，默认通过 Writer 和专用事务维护 `docs/teamwork/collaborate/current.md`；若宿主未提供 Writer、路由或 readback，必须明确报告未保存，禁止 Root 伪装成已落盘。记录不保存逐字对话，也不复制成 report/conclusion 或旧 Discussion/Design；`no files`、off-record、read-only/no-write 始终优先。
+- 自然讨论、一起想、brainstorm、grill、压力测试或“行动前先问我”会更积极地触发 Collaborate；它先给有用综合、候选空间、决策地图或临时建议，再按问题形态提问。grill 严格按 global → boundary → detail 推进，每批最多提出三个彼此独立的决定，依赖决定分轮处理；每个已回答批次只形成一次完整语义更新。开放问题保留为文字，只有真实有限的 2–3 个互斥选择才使用 Codex 原生询问界面；宿主必须实际暴露 `request_user_input`。达到持续协作语义门槛后，默认先读 `docs/teamwork/index.json` 决定 schema：v2 通过 Writer 和 case transaction 更新所选 case 的 `live/collaborate.md`，只有 legacy-v1 继续通过 Collaborate transaction 维护 `docs/teamwork/collaborate/current.md`；若宿主未提供 Writer、路由或 readback，必须明确报告未保存，禁止 Root 伪装成已落盘。记录不保存逐字对话，也不复制成 report/conclusion 或旧 Discussion/Design；`no files`、off-record、read-only/no-write 始终优先。
 - 安装器只删除能证明由 Teamwork 生成的条目。不要整体删除 `.agents`、`.codex`、`.cursor` 或 `.claude`。
 - 启用 Codex 通知后，请重启 Codex，在 `/hooks` 中只信任 Teamwork 的 `Stop` 和 `PermissionRequest`，不要使用 trust-all。
 - `./scripts/check-update.sh --readiness` 只检查 Teamwork 受管文件和配置；它不能代替 Cursor User Rules、hook 信任等宿主手动步骤。
 - v5 移除了公开 `$grill-me`、`$teamwork-discuss` 和 `$teamwork-design` 名称，由 `$teamwork-collaborate` 统一承接三种协作模式与可接受方向收敛；Router、Execute 和 legacy role alias 也仍不存在。升级只清理 Teamwork 能用精确内容证明归属的旧 Grill/Discuss/Design/Router/Execute 文件；改过或无所有权标记的副本会被保留并阻止自动替换，不会创建别名。
+- v5.1 保持 legacy-v1 项目 memory 兼容，同时让新项目使用 v2 case bundle。cutover 是单独、明确授权、单向的操作；update/install 本身不得改写现有 `docs/teamwork` 文档。
 
 ---
 

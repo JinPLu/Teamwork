@@ -83,6 +83,67 @@ class InitProjectFilesTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
+    def write_legacy_v1_project(self, project: Path) -> None:
+        memory = project / "docs/teamwork"
+        memory.mkdir(parents=True)
+        index = {
+            "schema_version": 1,
+            "last_updated": "2026-07-19",
+            "project": {
+                "name": "Fixture",
+                "root": ".",
+                "description": "Local Teamwork memory index for this project.",
+            },
+            "source_of_truth_order": ["active", "linked", "header_search", "fulltext"],
+            "ignore_globs": [".planning/**"],
+            "budgets": {"header_first": True},
+            "active": {
+                "collaborate": None,
+                "current": "docs/teamwork/current.md",
+                "design": None,
+                "plan": None,
+                "progress": None,
+                "report": None,
+                "results": [],
+            },
+            "collaborate_consumed_sources": [],
+            "entries": [
+                {
+                    "topic": "project-initialization",
+                    "kind": "result",
+                    "title": "Teamwork project initialization",
+                    "status": "active",
+                    "currentness": "current",
+                    "authority": "active-summary",
+                    "path": "docs/teamwork/current.md",
+                    "applies_to": ["AGENTS.md", "docs/teamwork/"],
+                    "linked": [],
+                    "evidence_paths": ["docs/teamwork/current.md"],
+                    "supersedes": [],
+                    "search_keys": ["teamwork-init", "project-init", "initialization"],
+                    "updated": "2026-07-19",
+                    "summary": "Initial ordinary Teamwork memory entry created by project initialization.",
+                }
+            ],
+            "profiles": {
+                "status": ["index", "current", "topic"],
+                "implementation": ["index", "current", "active_design_or_plan", "linked_research_headers"],
+                "review": ["index", "current", "active_design_or_plan", "active_progress", "verification"],
+                "research": ["index", "current", "topic_headers", "linked_artifacts"],
+                "design": ["index", "current", "accepted_decisions", "active_design_plan", "linked_research"],
+            },
+            "pending": [],
+        }
+        (memory / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
+        (memory / "current.md").write_text(
+            "# Teamwork Current State\n\nLast Updated: 2026-07-19\n\n## Active Snapshot\n\n- Current focus: Fixture.\n",
+            encoding="utf-8",
+        )
+        (memory / "README.md").write_text(
+            "# Teamwork Runtime Index README\n\nLegacy schema v1 fixture.\n",
+            encoding="utf-8",
+        )
+
     def test_fresh_project_init_is_project_only_and_transaction_clean(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = self.project(temporary)
@@ -92,31 +153,115 @@ class InitProjectFilesTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("CodeGraph: skipped (explicit consent not given)", result.stdout)
             memory = project / "docs/teamwork"
-            for name in ("index.json", "current.md", "README.md"):
-                self.assertTrue((memory / name).is_file(), name)
-            for name in ("research", "design", "collaborate", "plans", "reports", "workflows"):
-                self.assertTrue((memory / name).is_dir(), name)
-            self.assertFalse((memory / "discussion").exists())
+            self.assertTrue((memory / "index.json").is_file())
+            for name in ("current.md", "README.md"):
+                self.assertFalse((memory / name).exists(), name)
+            for name in ("research", "design", "collaborate", "plans", "reports", "workflows", "discussion"):
+                self.assertFalse((memory / name).exists(), name)
             self.assertFalse((project / ".teamwork-init-transaction.json").exists())
             self.assertFalse((memory / ".teamwork-init-transaction.json").exists())
             index = json.loads((memory / "index.json").read_text(encoding="utf-8"))
-            self.assertIsNone(index["active"]["collaborate"])
-            self.assertEqual(index["collaborate_consumed_sources"], [])
-            self.assertNotIn("discussion", index["active"])
-            self.assertNotIn(
-                "docs/teamwork/discussion",
-                (memory / "README.md").read_text(encoding="utf-8"),
-            )
+            self.assertEqual(index["schema_version"], 2)
+            self.assertEqual(index["active_cases"], [])
+            self.assertEqual(index["claim_heads"], {})
+            self.assertEqual(index["aliases"], {})
+            self.assertEqual(index["recent_cases"], [])
+            self.assertIsNone(index["migration"])
             agents_text = (project / "AGENTS.md").read_text(encoding="utf-8")
             self.assertIn(
-                "docs/teamwork/collaborate/current.md",
+                "Read `docs/teamwork/index.json` first",
                 agents_text,
             )
+            self.assertIn(
+                "selected v2 case manifest",
+                agents_text,
+            )
+            self.assertIn(
+                "live/collaborate.md",
+                agents_text,
+            )
+            self.assertIn("case-inspect", agents_text)
+            self.assertNotIn("docs/teamwork/collaborate/current.md", agents_text)
+            self.assertNotIn("collaborate-inspect", agents_text)
             self.assertNotIn(
                 "sustained Discuss",
                 agents_text,
             )
+            ignored_text = (project / ".gitignore").read_text(encoding="utf-8")
+            self.assertIn("docs/teamwork/**", ignored_text)
+            self.assertIn(".teamwork/runtime/**", ignored_text)
+            self.assertIn(".teamwork/cold-archive/**", ignored_text)
             self.assertEqual(self.run_files(project, "validate").returncode, 0)
+
+    def test_collaborate_route_selection_is_schema_specific(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            fresh = self.project(temporary)
+            self.initialize(fresh, label="Fresh")
+            fresh_agents = (fresh / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertIn("Read `docs/teamwork/index.json` first", fresh_agents)
+            self.assertIn("selected v2 case manifest", fresh_agents)
+            self.assertIn("live/collaborate.md", fresh_agents)
+            self.assertIn("case-inspect", fresh_agents)
+            self.assertNotIn("docs/teamwork/collaborate/current.md", fresh_agents)
+            self.assertNotIn("collaborate-inspect", fresh_agents)
+
+            legacy = Path(temporary).resolve() / "legacy"
+            legacy.mkdir()
+            self.write_legacy_v1_project(legacy)
+            result = self.run_files(
+                legacy,
+                "write-context",
+                "--today",
+                "2026-07-19",
+                "--project-label",
+                "Legacy",
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            legacy_agents = (legacy / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertIn("Read `docs/teamwork/index.json` first", legacy_agents)
+            self.assertIn("legacy-v1 alone uses `docs/teamwork/collaborate/current.md`", legacy_agents)
+            self.assertIn("collaborate-inspect", legacy_agents)
+            self.assertNotIn("selected v2 case manifest", legacy_agents)
+
+        skill = (ROOT / "skills/teamwork-collaborate/SKILL.md").read_text(encoding="utf-8")
+        v2_segment = skill.split("In case-v2", 1)[1].split("Read-only helpers", 1)[0]
+        self.assertIn("case-inspect", v2_segment)
+        self.assertIn("live/collaborate.md", skill)
+        self.assertNotIn("docs/teamwork/collaborate/current.md", v2_segment)
+        self.assertNotIn("collaborate-inspect", v2_segment)
+        legacy_segment = skill.split("If legacy-v1, Writer uses:", 1)[1].split("In case-v2", 1)[0]
+        self.assertIn("collaborate-inspect", legacy_segment)
+        self.assertIn("collaborate-apply", legacy_segment)
+
+        writer = "\n".join(
+            (ROOT / path).read_text(encoding="utf-8")
+            for path in (
+                "templates/codex-agents/teamwork-writer.toml",
+                "templates/cursor-agents/writer.md",
+                "templates/claude-agents/writer.md",
+            )
+        )
+        self.assertIn("run case-inspect first", writer)
+        self.assertIn("v2 case bundle sinks", writer)
+        self.assertIn("legacy-v1=`collaborate-inspect", writer)
+
+    def test_repository_project_block_matches_observed_schema(self) -> None:
+        index = json.loads((ROOT / "docs/teamwork/index.json").read_text(encoding="utf-8"))
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        block = agents.split("<!-- TEAMWORK_PROJECT_START -->", 1)[1].split(
+            "<!-- TEAMWORK_PROJECT_END -->", 1
+        )[0]
+        self.assertIn("Read `docs/teamwork/index.json` first", block)
+        if index["schema_version"] == 1:
+            self.assertIn("legacy-v1 alone uses `docs/teamwork/collaborate/current.md`", block)
+            self.assertIn("collaborate-inspect", block)
+            self.assertNotIn("selected v2 case manifest", block)
+        elif index["schema_version"] == 2:
+            self.assertIn("selected v2 case manifest", block)
+            self.assertIn("case-inspect", block)
+            self.assertNotIn("docs/teamwork/collaborate/current.md", block)
+        else:
+            self.fail(f"unsupported schema_version: {index['schema_version']!r}")
 
     def test_no_change_preserves_bytes_identity_mtime_and_has_no_temps(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -138,6 +283,44 @@ class InitProjectFilesTests(unittest.TestCase):
             self.assertEqual(
                 [path for path in project.rglob("*.teamwork-init-*")],
                 [],
+            )
+
+    def test_teamwork_memory_runtime_and_cold_archive_sinks_are_git_ignored(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = self.project(temporary)
+            result = self.run_files(
+                project,
+                "write-context",
+                "--today",
+                "2026-07-30",
+                "--project-label",
+                "Fixture",
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            subprocess.run(["git", "init"], cwd=project, text=True, capture_output=True, check=True)
+            checked = subprocess.run(
+                [
+                    "git",
+                    "check-ignore",
+                    "docs/teamwork/index.json",
+                    "docs/teamwork/cases/c-" + "a" * 64 + "/manifest.json",
+                    ".teamwork/runtime/migration/request.json",
+                    ".teamwork/cold-archive/v1/objects/sha256/aa/" + "b" * 64,
+                ],
+                cwd=project,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(checked.returncode, 0, checked.stderr)
+            self.assertEqual(
+                checked.stdout.splitlines(),
+                [
+                    "docs/teamwork/index.json",
+                    "docs/teamwork/cases/c-" + "a" * 64 + "/manifest.json",
+                    ".teamwork/runtime/migration/request.json",
+                    ".teamwork/cold-archive/v1/objects/sha256/aa/" + "b" * 64,
+                ],
             )
 
     def test_duplicate_managed_block_fails_before_any_mutation(self) -> None:

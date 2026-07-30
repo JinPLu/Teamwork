@@ -23,6 +23,7 @@ evals/teamwork/
   outputs/                       compact authored output fixtures
 scripts/
   build-codex-plugin.py          Marketplace bundle producer/checker
+  plugin-runtime-root.py         Marketplace/source runtime resolver with integrity checks
   validate.sh                    stable validation entrypoint
   eval-teamwork.py               stable deterministic evaluation entrypoint
   run-teamwork-live-eval.py      bounded live trajectory recorder
@@ -37,6 +38,7 @@ install.sh                       stable installer dispatcher
 .claude-plugin/                  authored Claude Code package metadata
 .agents/plugins/marketplace.json authored Marketplace catalog
 plugins/teamwork-skill/          tracked generated Marketplace runtime
+.teamwork-runtime-integrity.json generated inside Marketplace runtime only
 VERSION, CHANGELOG*, README*     authored release and public docs
 docs/architecture.md             this architecture contract
 CONTRIBUTING.md                  contributor entrypoint
@@ -78,28 +80,39 @@ The following are sinks, not package sources:
   do not force an extra workflow artifact. Writer authors ordinary artifacts
   from frozen bounded packets without paraphrasing, filling gaps, or changing
   frozen facts, citations, decisions, authority, status, or acceptance; durable workflow
-  artifacts are registered only through the exact specialized or generic
-  transaction route. Collaborate and Goal use their specialized transactions.
-  Research, Debug, Plan, Plan Review, Review, mutating Init/Update,
-  and a qualifying terminal execution handoff use the generic artifact
-  transaction. Active Goal owns execution progress and forbids a duplicate
-  execution artifact. Ordinary completion workflows share
+  artifacts are registered only through the schema-selected transaction route.
+  In v2, Collaborate, Research, Debug, Plan, Plan Review, Review, Goal,
+  mutating Init/Update, and qualifying terminal execution handoffs write case
+  transactions/case artifacts. In legacy-v1, Collaborate and Goal keep their
+  specialized transactions, while Research, Debug, Plan, Plan Review, Review,
+  mutating Init/Update, and terminal execution handoffs keep the generic
+  artifact transaction. Active Goal owns execution progress and forbids a
+  duplicate execution artifact. Ordinary completion workflows share
   `active.results` so their companions can coexist; `active.report` remains for
   non-workflow report pointers. Explore does not create a standalone report; its
   evidence is folded into the consuming artifact or answer.
+
+  Teamwork 5.1 is schema-first. Existing projects with legacy-v1 memory keep
+  their existing sinks until an explicit one-way cutover. Fresh 5.1 projects
+  initialize v2 case-bundle memory: a case manifest under
+  `docs/teamwork/cases/c-<64hex>/manifest.json` owns live collaboration,
+  accepted decision, plan, evidence, review, goal, and result slots under the
+  same case directory. One transaction may not touch both v1 and v2 trees.
+  Unknown, hybrid, stale, or partially migrated state fails closed before write.
+  Update/install does not migrate project memory.
 - Temporary live outputs, homes, caches, logs, and build results are evidence or
   scratch state. They must not become package inputs.
 
 | Workflow | Runtime artifact |
 | --- | --- |
-| Collaborate | controlled schema v1 Collaborate in `dialogue`, `brainstorm`, or `grill` mode; accepted Collaborate is the public Plan gate; legacy Discussion/Design remain read-only migration inputs |
-| Research | research |
-| Plan | canonical plan |
-| Debug | diagnosis/report |
-| Plan Review / Review | evidence review; persistence is not acceptance |
-| Goal | existing entry/attempt/status |
-| Native / Worker execution | terminal execution handoff only with an explicit real consumer and no active Goal |
-| Mutating Init / Update | receipt |
+| Collaborate | legacy-v1 controlled Collaborate current record, or v2 case live collaborate and decision slots; accepted Collaborate is the public Plan gate; legacy Discussion/Design remain read-only migration inputs |
+| Research | legacy-v1 research artifact, or v2 case evidence artifact with claim head |
+| Plan | legacy-v1 canonical plan, or v2 case plan slot and plan history |
+| Debug | legacy-v1 diagnosis/report, or v2 case evidence/result artifact |
+| Plan Review / Review | legacy-v1 evidence review, or v2 case review/delta artifact; persistence is not acceptance |
+| Goal | legacy-v1 entry/attempt/status, or v2 case live goal while executing |
+| Native / Worker execution | terminal execution handoff/result only with an explicit real consumer and no active Goal |
+| Mutating Init / Update | receipt; update/install alone never migrates project memory |
 | Explore | no standalone report; evidence is folded into its consumer |
 
 ## Dialogue and persistence
@@ -117,12 +130,13 @@ identity of the Writer that drafted it.
 | Completion companion | A durable companion to an already determined result packet | Root freezes the result before dispatch, may overlap only answer-invariant delivery work, and joins before claiming saved/durable |
 | None | Native dialogue answer or local work without a standalone durable artifact | No Writer transaction and no saved/durable claim |
 
-Feedback loops stay reference-local: specialized Collaborate and Goal loops use
-their own transactions; Research, Debug, Plan, Plan Review, Review, mutating
+Feedback loops stay reference-local: v2 workflows use case transactions/case
+artifacts; legacy-v1 Collaborate and Goal loops use their own specialized
+transactions; legacy-v1 Research, Debug, Plan, Plan Review, Review, mutating
 Init/Update, and terminal execution handoffs use the generic artifact
-transaction only through the exact route selected by Root. Before generic
-`artifact-apply`, inspection/schema work is preparatory only; interruption
-before apply/readback provides no durable claim.
+transaction only through the exact route selected by Root. Before any
+`case-apply` or legacy `artifact-apply`, inspection/schema work is preparatory
+only; interruption before apply/readback provides no durable claim.
 
 Collaborate schema v1 writes the three explicit acceptance states `pending`,
 `accepted`, and `blocked`; persistence is not acceptance and only `accepted` is
@@ -137,13 +151,14 @@ decisions, and keeps dependent decisions serial. One answered batch is one
 semantic transaction unit: all resolutions and the next valid frontier change
 are applied together before a dependent batch opens.
 
-Persistence behavior is checked on real command paths: the generic probe runs
-`artifact-inspect` → `artifact-schema` → `artifact-apply` → `artifact-inspect`,
-while the specialized probe runs Collaborate `collaborate-inspect` →
-`collaborate-schema` → `collaborate-apply` → `collaborate-inspect`. Positive
-and negative persistence cases cover specialized routing, generic routing,
-semantic no-ops, legacy read-only migration inputs, Goal/execution
-deduplication, and write overrides.
+Persistence behavior is checked on real command paths. v2 probes run
+`case-inspect` → `case-schema` → `case-apply` → `case-inspect` against case
+bundles. legacy-v1 generic probes run `artifact-inspect` → `artifact-schema` →
+`artifact-apply` → `artifact-inspect`, while legacy-v1 Collaborate runs
+`collaborate-inspect` → `collaborate-schema` → `collaborate-apply` →
+`collaborate-inspect`. Positive and negative persistence cases cover
+specialized routing, generic routing, semantic no-ops, legacy read-only
+migration inputs, Goal/execution deduplication, and write overrides.
 
 `evals/teamwork/outputs/` is the exception: its compact tracked JSONL files are
 authored static fixtures. `evals/teamwork/outputs/installed-v4/**` is ignored
@@ -157,7 +172,11 @@ helpers, all three host-role template inventories, memory templates, migration
 fixtures and ledger, notifications, `VERSION`, and the Codex manifest. The root
 Claude Code manifest is validated with the release but is not copied into the
 Codex-only bundle. Generated evidence may verify those sources but never defines
-them.
+them. Generated Marketplace runtimes carry `.teamwork-plugin-runtime` and
+`.teamwork-runtime-integrity.json`; `scripts/plugin-runtime-root.py` verifies the
+marker, `VERSION`, Codex manifest hash, and regular single-link runtime file
+hashes before reporting a runtime root. Source checkouts omit the marker and are
+accepted only through source-manifest consistency.
 
 ## Capability boundaries
 

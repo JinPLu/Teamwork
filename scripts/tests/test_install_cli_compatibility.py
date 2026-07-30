@@ -81,6 +81,14 @@ class InstallCliCompatibilityTests(unittest.TestCase):
             REPO_ROOT / "scripts" / "configure-notifications.py",
             self.fixture / "scripts" / "configure-notifications.py",
         )
+        shutil.copy2(
+            REPO_ROOT / "scripts" / "configure-codex-routing.py",
+            self.fixture / "scripts" / "configure-codex-routing.py",
+        )
+        shutil.copy2(
+            REPO_ROOT / "scripts" / "codex_routing_config.py",
+            self.fixture / "scripts" / "codex_routing_config.py",
+        )
         shutil.copytree(
             REPO_ROOT / "scripts" / "install",
             self.fixture / "scripts" / "install",
@@ -370,6 +378,30 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout.decode())
         self.assertTrue((home / ".codex" / "AGENTS.md").is_file())
         self.assertTrue((home / ".claude" / "CLAUDE.md").is_file())
+
+    def test_all_install_can_refresh_owned_writer_agents(self) -> None:
+        home = self.base / "all-install-idempotent"
+        first = self.run_install("all", home=home)
+        self.assertEqual(first.returncode, 0, first.stdout.decode())
+
+        second = self.run_install("all", home=home)
+        self.assertEqual(second.returncode, 0, second.stdout.decode())
+
+        for relative in (
+            ".cursor/agents/writer.md",
+            ".claude/agents/writer.md",
+        ):
+            with self.subTest(agent=relative):
+                rendered = (home / relative).read_text(encoding="utf-8")
+                self.assertIn("name: writer\n", rendered)
+                self.assertIn("You are the Teamwork Writer leaf role.", rendered)
+                self.assertIn("Do not spawn or delegate.", rendered)
+
+        codex_writer = (
+            home / ".codex" / "agents" / "teamwork-writer.toml"
+        ).read_text(encoding="utf-8")
+        self.assertIn('name = "teamwork_writer"', codex_writer)
+        self.assertIn("Do not spawn or delegate.", codex_writer)
 
     def test_owned_skill_content_drift_is_refreshed(self) -> None:
         home = self.base / "drifted-home"

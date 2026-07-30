@@ -21,8 +21,57 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
         project = Path(temporary) / "project"
         memory = project / "docs/teamwork"
         memory.mkdir(parents=True)
-        for name in ("index.json", "current.md", "README.md"):
-            (memory / name).write_bytes((TEMPLATES / name).read_bytes())
+        index = {
+            "schema_version": 1,
+            "last_updated": "2026-07-19",
+            "project": {
+                "name": "Fixture",
+                "root": ".",
+                "description": "Local Teamwork memory index for this project.",
+            },
+            "source_of_truth_order": ["active", "linked", "header_search", "fulltext"],
+            "ignore_globs": [".planning/**"],
+            "budgets": {"header_first": True},
+            "active": {
+                "collaborate": None,
+                "current": "docs/teamwork/current.md",
+                "design": None,
+                "plan": None,
+                "progress": None,
+                "report": None,
+                "results": [],
+            },
+            "collaborate_consumed_sources": [],
+            "entries": [
+                {
+                    "topic": "project-initialization",
+                    "kind": "result",
+                    "title": "Teamwork project initialization",
+                    "status": "active",
+                    "currentness": "current",
+                    "authority": "active-summary",
+                    "path": "docs/teamwork/current.md",
+                    "applies_to": ["AGENTS.md", "docs/teamwork/"],
+                    "linked": [],
+                    "evidence_paths": ["docs/teamwork/current.md"],
+                    "supersedes": [],
+                    "search_keys": ["teamwork-init", "project-init", "initialization"],
+                    "updated": "2026-07-19",
+                    "summary": "Initial ordinary Teamwork memory entry created by project initialization.",
+                }
+            ],
+            "profiles": {
+                "status": ["index", "current", "topic"],
+                "implementation": ["index", "current", "active_design_or_plan", "linked_research_headers"],
+                "review": ["index", "current", "active_design_or_plan", "active_progress", "verification"],
+                "research": ["index", "current", "topic_headers", "linked_artifacts"],
+                "design": ["index", "current", "accepted_decisions", "active_design_plan", "linked_research"],
+            },
+            "pending": [],
+        }
+        (memory / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
+        (memory / "current.md").write_text("# Teamwork Current State\n", encoding="utf-8")
+        (memory / "README.md").write_text("# Teamwork Runtime Index README\n", encoding="utf-8")
         return project
 
     def command(self, *arguments: str) -> subprocess.CompletedProcess[str]:
@@ -36,11 +85,11 @@ class DiscussionIndexSafetyTests(unittest.TestCase):
 
     def test_ordinary_templates_have_no_discussion_anchor_or_mirror(self) -> None:
         index = json.loads((TEMPLATES / "index.json").read_text(encoding="utf-8"))
-        self.assertNotIn("discussion", index["active"])
-        combined = "\n".join(
-            (TEMPLATES / name).read_text(encoding="utf-8")
-            for name in ("index.json", "current.md", "README.md")
-        ).lower()
+        self.assertEqual(index["schema_version"], 2)
+        self.assertNotIn("active", index)
+        self.assertFalse((TEMPLATES / "current.md").exists())
+        self.assertFalse((TEMPLATES / "README.md").exists())
+        combined = (TEMPLATES / "index.json").read_text(encoding="utf-8").lower()
         self.assertNotIn("active discussion", combined)
         self.assertNotIn("active_discussion", combined)
         self.assertNotIn("discussion/current.md", (TEMPLATES / "index.json").read_text(encoding="utf-8"))

@@ -94,6 +94,14 @@ execution progress and suppresses duplicate execution artifacts. Explore creates
 no standalone report; its evidence is folded into the consuming artifact or
 answer.
 
+Teamwork 5.1 resolves schema before routing. Existing project memory remains
+legacy-v1 and keeps the current sinks until explicit cutover. Fresh initialized
+projects use v2 case bundles under `docs/teamwork/cases/c-<64hex>/`, where
+Collaborate, Plan, Research, Debug, Review, Goal, and execution results attach
+to one case. Update/install alone never migrates, rewrites, or deletes existing
+`docs/teamwork`; cutover is a separate one-way operation with cold-archive and
+restore-drill gates.
+
 Collaborate chooses its search strategy from the request and evidence. It uses
 the internal read-only Designer for direction selection, a frozen-hypothesis
 challenge, or a search-closure audit. It selects adversarial only when at least
@@ -121,14 +129,14 @@ router, so invoke a skill by name when exact selection is important. Codex still
 owns native Plan mode, tools, browser and MCP access, permissions, agent
 coordination, and the final response. Sustained Collaborate intent plus a
 substantive synthesis, candidate space, or decision map and an unresolved
-question or unaccepted direction defaults to one semantic checkpoint in
-`docs/teamwork/collaborate/current.md`. New records use Collaborate schema v1:
-dialogue records synthesis and tensions, brainstorm adds candidate space, and
-grill records the finite frontier/current_batch. Frozen legacy Discussion and
-Design records stay readable only as migration inputs and migrate only on a real
-semantic mutation. Unchanged state is a no-op. Collaborate never stores a
-transcript or substitutes a report/conclusion; `no files`, off-record,
-read-only, or no-write wins.
+question or unaccepted direction defaults to one semantic checkpoint after
+reading `docs/teamwork/index.json`: v2 writes the selected case manifest and
+`live/collaborate.md` through case transactions, while legacy-v1 alone maintains
+`docs/teamwork/collaborate/current.md` through Collaborate transactions. Frozen
+legacy Discussion and Design records stay readable only as migration inputs and
+migrate only on a real semantic mutation. Unchanged state is a no-op.
+Collaborate never stores a transcript or substitutes a report/conclusion; `no
+files`, off-record, read-only, or no-write wins.
 
 ## Agents and profiles
 
@@ -175,6 +183,8 @@ handle the roles where that profile permits it:
 `./install.sh --help` lists supported targets and profiles. v5 removes retired public names `$grill-me`, `$teamwork-discuss`, and `$teamwork-design`; use `$teamwork-collaborate` instead, with no alias. Migration removes only exact
 Teamwork-owned legacy Grill/Discuss/Design/Router/Execute and legacy-role
 files. Modified or unmarked copies are preserved and stop automatic replacement.
+v5.1 keeps legacy-v1 project memory compatible while fresh projects use v2 case
+bundles; no install or update performs live cutover.
 Readiness confirms installed configuration, not that Codex will spawn a
 particular agent for a natural-language request. Subagents do not send Teamwork
 completion or permission notifications.

@@ -9,18 +9,9 @@ dist/
 
 # Local workflow artifacts. Keep them in the working tree, but do not publish
 # them to GitHub unless a specific artifact is intentionally force-added.
-docs/teamwork/plans/
-docs/teamwork/design/
-docs/teamwork/discussion/
-docs/teamwork/collaborate/
-docs/teamwork/research/
-docs/teamwork/reports/
-docs/teamwork/workflows/
-docs/teamwork/index.json
-docs/teamwork/README.md
-docs/teamwork/current.md
-docs/teamwork/decisions.md
-docs/teamwork/migrations.md
+docs/teamwork/**
+.teamwork/runtime/**
+.teamwork/cold-archive/**
 docs/superpowers/
 
 # Local Teamwork install profile
@@ -29,16 +20,9 @@ docs/superpowers/
 # TEAMWORK_LOCAL_START
 # Teamwork local runtime state
 .codegraph/
-docs/teamwork/plans/
-docs/teamwork/design/
-docs/teamwork/discussion/
-docs/teamwork/collaborate/
-docs/teamwork/research/
-docs/teamwork/reports/
-docs/teamwork/workflows/
-docs/teamwork/index.json
-docs/teamwork/README.md
-docs/teamwork/current.md
+docs/teamwork/**
+.teamwork/runtime/**
+.teamwork/cold-archive/**
 .teamwork-init-transaction.json
 .*.teamwork-init-*
 docs/teamwork/.teamwork-init-transaction.json

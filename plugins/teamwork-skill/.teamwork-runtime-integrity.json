@@ -1,0 +1,296 @@
+{
+  "files": {
+    ".codex-plugin/plugin.json": {
+      "mode": "0644",
+      "sha256": "3460682ce4b0b6e4114ef29bf52be0956fe04279b9d8499363c2d449e4f32d56"
+    },
+    ".teamwork-plugin-runtime": {
+      "mode": "0644",
+      "sha256": "ba266e937ae180e2fcd11b20b6051e3c6f160ce8e94c93fc35c8f02f8312d66a"
+    },
+    "VERSION": {
+      "mode": "0644",
+      "sha256": "c0eacacd7e27bbf341d21e7e0e2997a363840a210d8e358d4babaebd765b5bfd"
+    },
+    "evals/teamwork/ledgers/v4-capability-migration.jsonl": {
+      "mode": "0644",
+      "sha256": "a6cc41c29ee5f34b894ead80186db0175c25cb6c1af7ac9a59c38b307911c77d"
+    },
+    "hooks/notify.py": {
+      "mode": "0755",
+      "sha256": "6f1c662dac24d5e10c9aab4d6d5a18405545b2f221b66ab6cdb95ba0ff3abec1"
+    },
+    "install.sh": {
+      "mode": "0755",
+      "sha256": "af969edc06c7ff5ddd9c0824f5fa36580e7a937432d248dd30c328131904ad8b"
+    },
+    "scripts/check-codex-routing.py": {
+      "mode": "0644",
+      "sha256": "194f18c117fb2be5f6925dcf95eb13fd1292fa5f738a28dccbc58aa326288e9a"
+    },
+    "scripts/check-update.sh": {
+      "mode": "0755",
+      "sha256": "e2f0311ba91cd73b59d978bf1024e585d3b020add6d532aa70c59e8590c575c2"
+    },
+    "scripts/codex_routing_config.py": {
+      "mode": "0644",
+      "sha256": "dadf14a046de5ebe32a91bc82b3a6117ef6c8941fddb98d384207c59a01b185d"
+    },
+    "scripts/configure-codex-routing.py": {
+      "mode": "0644",
+      "sha256": "24d998636fc6ef7972179db2d96ad29cb66dd9a06458baefe104fbee07f538ac"
+    },
+    "scripts/configure-notifications.py": {
+      "mode": "0644",
+      "sha256": "ed9d6241068a368370a5bf32b69b583e5decc5fddc68466f116744895b7a6951"
+    },
+    "scripts/discussion-transaction.py": {
+      "mode": "0755",
+      "sha256": "88cc95856dcbdeeccafa08acb8ce22d7afd3473a070fc347ca8f825f4e5be51c"
+    },
+    "scripts/init-project-files.py": {
+      "mode": "0755",
+      "sha256": "d2190f7f544e5bf99a0594034110a3e804d54639961b6745fc2eb47fe1ba5cfa"
+    },
+    "scripts/init-project.sh": {
+      "mode": "0755",
+      "sha256": "a1ec179c48fea6ea17bb17ecf64f545a1e429dfacf33fd183bb524eaf2f22486"
+    },
+    "scripts/install/common.sh": {
+      "mode": "0644",
+      "sha256": "0c4ca6d5b6d255cb336e3b42feb41db1bb1c6d63725700571124f7072e111e76"
+    },
+    "scripts/install/configure_cursor_mcp.py": {
+      "mode": "0644",
+      "sha256": "5bb4c595de942ef681d45019394a8acef5de9d32282d037a4751fc8a4663ffef"
+    },
+    "scripts/install/policy.sh": {
+      "mode": "0644",
+      "sha256": "e106dc4207eeb63b3d755b0b098c0d3753f18082196d0a765f1dbdd6af1ffd67"
+    },
+    "scripts/install/profiles.sh": {
+      "mode": "0644",
+      "sha256": "e31899053deef8d58d10ee4cb07f87fb729bffde9a95ffaea8558540166fa097"
+    },
+    "scripts/install/targets.sh": {
+      "mode": "0644",
+      "sha256": "3fe4307bd475f1e5ae2f98a42341c7fac8a2d5e98e8d8a7bbf9c492e123612ef"
+    },
+    "scripts/plugin-activation.py": {
+      "mode": "0755",
+      "sha256": "463202b3f5ec45e9c80379d7085db2af2590e0e2b8d72497c33aa2fe6f123af2"
+    },
+    "scripts/plugin-runtime-root.py": {
+      "mode": "0755",
+      "sha256": "fccb048783a3433cd2e8daef6b3853bc1bd8c41e95ecf2578c170c6420635fdf"
+    },
+    "scripts/teamwork-case-migration.py": {
+      "mode": "0755",
+      "sha256": "ccfdd3814351a3991c95177b46d87b2e7ce6986570f2ac0fb37005c5d6396494"
+    },
+    "scripts/tests/fixtures/retired-teamwork-skills-v5.json": {
+      "mode": "0644",
+      "sha256": "2df62061d687794f1271f6f785c6cd2ad45835d02210b2bed7d068efdacfae93"
+    },
+    "scripts/tests/fixtures/v3.4.2-owned-surfaces.json": {
+      "mode": "0644",
+      "sha256": "52cabbe9d4f1a3be8335c24477dcbbb5196c6888a76f23192916d1c6c85b2c80"
+    },
+    "scripts/tests/fixtures/v5.1-case-bundle-owned-surfaces.json": {
+      "mode": "0644",
+      "sha256": "5422fae0e29904f3ed3b5d9803225c27c1a9e103e1ce88d286559f0f45d6052c"
+    },
+    "scripts/validate_teamwork_index.py": {
+      "mode": "0755",
+      "sha256": "6b7dc2b660747e874acd6793e838a4f4d98141843f02542c249e958cfb2fd7fd"
+    },
+    "skills/teamwork-collaborate/SKILL.md": {
+      "mode": "0644",
+      "sha256": "29c33a7dacf0e660f2916a98d421653fcecc20e04052011b00cd6fca2d82b15d"
+    },
+    "skills/teamwork-collaborate/references/adversarial-search.md": {
+      "mode": "0644",
+      "sha256": "923a14d4231528fdea31695f7abdce033359f67350d1834c5745d4ec1f17c4b6"
+    },
+    "skills/teamwork-debug/SKILL.md": {
+      "mode": "0644",
+      "sha256": "97dbfd3469c76bd7e11963ea4d7a634f56fe12e4e866deb8b4de4c51c4f32eb7"
+    },
+    "skills/teamwork-debug/references/runtime-diagnosis.md": {
+      "mode": "0644",
+      "sha256": "34be8a493fbb5f0fcd8bc579903b07fa390fb161c0cba637604afaf9fc765002"
+    },
+    "skills/teamwork-explore/SKILL.md": {
+      "mode": "0644",
+      "sha256": "cbac8d2887853d6107dc6d3f4dc1e279044ef60dd2fb69aa2d3f10670d349b28"
+    },
+    "skills/teamwork-goal/SKILL.md": {
+      "mode": "0644",
+      "sha256": "b7d717ce4ab3900e4d474c2e354822163caebd6116029f810fef7594d66594fd"
+    },
+    "skills/teamwork-init/SKILL.md": {
+      "mode": "0644",
+      "sha256": "51e1e59d72cc53180de285b106b7685352bc6ef07680e09a7e170af74b641a61"
+    },
+    "skills/teamwork-plan/SKILL.md": {
+      "mode": "0644",
+      "sha256": "f2f302777833beb4294b4d59b7dc38adc40eb45c9e7717bf7ec1c7a20f46d6a7"
+    },
+    "skills/teamwork-research/SKILL.md": {
+      "mode": "0644",
+      "sha256": "0cb4e19c65d70bb63ed7e543d2eb380f827657e67c154af1281669b66bfe41d5"
+    },
+    "skills/teamwork-research/references/deep-research.md": {
+      "mode": "0644",
+      "sha256": "47bae5c74d4c418c7a4a3582bcbe0538e4efc9e0d957bc573cd35d17b85113d2"
+    },
+    "skills/teamwork-review/SKILL.md": {
+      "mode": "0644",
+      "sha256": "19c7aeba923a3283ba3d4a0bef9a84bdda7dab765c8ae2400029f16fed700565"
+    },
+    "skills/teamwork-review/references/strict-review.md": {
+      "mode": "0644",
+      "sha256": "921d17537e931d61042faea893159b32d0618a6edf74dcafc5a2d835ffe16985"
+    },
+    "skills/teamwork-update/SKILL.md": {
+      "mode": "0644",
+      "sha256": "ba45ef7713f8b0e9bfec5e7aab2d43317a83c7675a24a0decd07541470060303"
+    },
+    "templates/claude-agents/debugger.md": {
+      "mode": "0644",
+      "sha256": "4e9edf852de260a00ef69510c9a05328c5f20ec19292f2b39b5048f56a757de7"
+    },
+    "templates/claude-agents/designer.md": {
+      "mode": "0644",
+      "sha256": "e3f90414c2a98fb44e759631de815b6213b1863db2e8bce6b9cba7d387811756"
+    },
+    "templates/claude-agents/explorer.md": {
+      "mode": "0644",
+      "sha256": "7f748a5aa50418c54af2731c3c43610ade9278b831fbf7f9d5740a8496a69543"
+    },
+    "templates/claude-agents/plan-reviewer.md": {
+      "mode": "0644",
+      "sha256": "88b7382bd1c3af3b16a0ce3b43edadd31d3bf757259d5bcb592a8ea398ac5bed"
+    },
+    "templates/claude-agents/planner.md": {
+      "mode": "0644",
+      "sha256": "10566a969fa3e9f846411154ba0fbb6bc732130b2c70131e35fab247eb5408a6"
+    },
+    "templates/claude-agents/researcher.md": {
+      "mode": "0644",
+      "sha256": "16e59562515d88721373881ef17e57db4ccdb8e9a4e7d1f98ee0839b511e3712"
+    },
+    "templates/claude-agents/reviewer.md": {
+      "mode": "0644",
+      "sha256": "6a4d41cc876d88b5b099588e82a7aca33c3ccaf9b06e0d79dd33eb67ffbc467e"
+    },
+    "templates/claude-agents/worker.md": {
+      "mode": "0644",
+      "sha256": "9ee0a333f146aad160891c3b6475be1419e22b26ecb13769718800886063fa85"
+    },
+    "templates/claude-agents/writer.md": {
+      "mode": "0644",
+      "sha256": "b6f7d250b79c7f8b06197e90b642e16a7072a4443a36f61c4bf9e061a28ce2b5"
+    },
+    "templates/codex-agents/teamwork-debugger.toml": {
+      "mode": "0644",
+      "sha256": "690f566092707a84eff1e0e21cbe24e659ad98b8061b32c251a61b7b035d2dd8"
+    },
+    "templates/codex-agents/teamwork-designer.toml": {
+      "mode": "0644",
+      "sha256": "3f99ede32a4c8a0f2d1b8ce0b303832f12898943825003edae1aa371365440d7"
+    },
+    "templates/codex-agents/teamwork-explorer.toml": {
+      "mode": "0644",
+      "sha256": "49130d30e10c7017e9256ffeecb4588934daaf5be499924aad97878a73154c59"
+    },
+    "templates/codex-agents/teamwork-plan-reviewer.toml": {
+      "mode": "0644",
+      "sha256": "44de70f007e0adbb37f4a7c70b3cf7745a14fab5fe25a318328abddda8767427"
+    },
+    "templates/codex-agents/teamwork-planner.toml": {
+      "mode": "0644",
+      "sha256": "bef9903090b2fab05134ca4524df3ea75c8f24eb2e6cad92a57c2822e700e908"
+    },
+    "templates/codex-agents/teamwork-researcher.toml": {
+      "mode": "0644",
+      "sha256": "2232d5fb7f54e32ea674f2cfa27f0864b9ac957d75cb6cd23251c48cda5b2bcf"
+    },
+    "templates/codex-agents/teamwork-reviewer.toml": {
+      "mode": "0644",
+      "sha256": "a5d2e3b2e994b28ae66ce143087f046e1b790281a0ff76751bc83457ee61920b"
+    },
+    "templates/codex-agents/teamwork-worker.toml": {
+      "mode": "0644",
+      "sha256": "cd5565fbba7275e05c346ff551a3636f8c0509abc4d9c034f10e7dfd4e2be1aa"
+    },
+    "templates/codex-agents/teamwork-writer.toml": {
+      "mode": "0644",
+      "sha256": "80e75212e5cb363728a870b9f7177dc475a0613a91ab786de8727a9e3e44ec47"
+    },
+    "templates/cursor-agents/debugger.md": {
+      "mode": "0644",
+      "sha256": "e8bd64c04109e3fcfec68200ac185597d8bc4773a2355447f41629ef55a5ea4d"
+    },
+    "templates/cursor-agents/designer.md": {
+      "mode": "0644",
+      "sha256": "7ccf851ba5ef0c348696fe2d6c9d54f5e3839537dfeecdc442cc25412721f625"
+    },
+    "templates/cursor-agents/explorer.md": {
+      "mode": "0644",
+      "sha256": "a0aeb6787c620c9980bf0b471b31d04abeb99034ac6517b33cc8e701cba791c2"
+    },
+    "templates/cursor-agents/plan-reviewer.md": {
+      "mode": "0644",
+      "sha256": "98a3aec63c97cd0ae8752665179c716d0b5f5a00638df0fd8c1161137a597e62"
+    },
+    "templates/cursor-agents/planner.md": {
+      "mode": "0644",
+      "sha256": "c7b9e53d18b683c0ec1d89c6618bd9fa9ab19c52cd7f40efe2d17d91854bb2d8"
+    },
+    "templates/cursor-agents/researcher.md": {
+      "mode": "0644",
+      "sha256": "177944a50875350fe24cf68cc50ab4459a38b1f678ddc6cba635c7604061484c"
+    },
+    "templates/cursor-agents/reviewer.md": {
+      "mode": "0644",
+      "sha256": "00068e03d3b3911e5612908cf0850a92760e2cb1ecb81053263d81abc7850cda"
+    },
+    "templates/cursor-agents/worker.md": {
+      "mode": "0644",
+      "sha256": "150f17414e5dd26402bfa0b9241859f601a7723d06fcb874fdb8063170f9885b"
+    },
+    "templates/cursor-agents/writer.md": {
+      "mode": "0644",
+      "sha256": "761d963d3d88880b99c7b7dcdffe57b35144f811972d41a26b997675124143e5"
+    },
+    "templates/cursor-mcp/codegraph.mdc": {
+      "mode": "0644",
+      "sha256": "2234bc4c7618c7de03cdc47de6012a2fc640493505c02dd03ee96848adc29b18"
+    },
+    "templates/cursor-mcp/gpu-broker.mdc": {
+      "mode": "0644",
+      "sha256": "4e69a2c30d11248d662702aad3a296311ffee05ef697715659d6ec4bb363c82d"
+    },
+    "templates/cursor-mcp/servers.json": {
+      "mode": "0644",
+      "sha256": "043eab01a34d202f3a6aae5ba28f52a8334c2d6a2ad2df4ac45e308099dab151"
+    },
+    "templates/teamwork-memory/index.json": {
+      "mode": "0644",
+      "sha256": "3620126e27efa715d6bda689d89125fc356d3c29b5c4cb8c6293027bdd3e3527"
+    },
+    "templates/teamwork-memory/teamwork-collaborate-template.md": {
+      "mode": "0644",
+      "sha256": "fa60c5ba027fea1379f16d5941b213cd47d1b136bb0421a86e422168fbfcaa1b"
+    },
+    "templates/teamwork-memory/teamwork-design-template.md": {
+      "mode": "0644",
+      "sha256": "dc2700b7e267a81a56723ab6ac6312eff524e9d78bf3bcf273982bcfe264f758"
+    }
+  },
+  "manifest_sha256": "3460682ce4b0b6e4114ef29bf52be0956fe04279b9d8499363c2d449e4f32d56",
+  "marker": "TEAMWORK_CODEX_PLUGIN_RUNTIME=1",
+  "schema_version": 1,
+  "version": "5.1.0"
+}

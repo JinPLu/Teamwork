@@ -72,16 +72,21 @@ defaults to a research artifact unless the user says `no files`, `off-record`,
 `read-only`, `no writes`, or equivalent. Freeze the terminal cited answer before
 persistence. Researcher returns a bounded packet: purpose/audience,
 facts/sources, citations, frozen decision/status, style/structure, artifact
-kind/consumer, and preserve/forbid. Writer must use `discussion-transaction.py
-artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`;
-the transaction derives the destination and registers the ordinary index. Writer
-may rewrite expression but must not research, invent, or alter facts, citations,
-authority, status, decisions, or acceptance. Writer is disposable; Root may
-continue only answer-invariant delivery work and must join before claiming saved
-or durable. Interruption before `artifact-apply` means unsaved unless surviving
-evidence permits a new frozen packet. Missing project memory, Writer, brief,
-authority, consumer, or transaction blocks only persistence: deliver the answer
-and report it unsaved/blocked. No Researcher, Root, or Worker fallback writes it.
+kind/consumer, and preserve/forbid. Writer routes from observed schema:
+`case-inspect` first; case-v2 uses exact `case_id`/alias or creates from a
+frozen seed/task_key, then `case-schema <research-add> -> case-apply ->
+case-inspect/readback`; legacy-v1 uses `discussion-transaction.py
+artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`.
+The transaction derives the destination and registers the ordinary index or case
+manifest/claim heads. Writer may rewrite expression but must not research,
+invent, or alter facts, citations, authority, status, decisions, or acceptance.
+Writer is disposable; Root may continue only answer-invariant delivery work and
+must join before claiming saved or durable. Interruption before apply means
+unsaved unless surviving evidence permits a new frozen packet. Missing project
+memory, Writer, brief, authority, consumer, route, or transaction blocks only
+persistence: deliver the answer and report it unsaved/blocked. No Researcher,
+Root, or Worker fallback writes it. Mixed v1/v2, unknown, stale, ambiguous case,
+missing seed/task_key, or partially migrated state fails closed before any write.
 
 After the primary Researcher handoff, additional fan-out remains conditional:
 use it only for separable source classes, required public/private isolation, or

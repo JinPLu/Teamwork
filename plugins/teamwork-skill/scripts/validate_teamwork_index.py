@@ -4,17 +4,50 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import json
 import os
 import re
 import stat
 import sys
-from datetime import date
+from datetime import date, timezone, datetime
 from pathlib import Path, PurePosixPath
+import unicodedata
 
 
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
+HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
+CASE_ID_RE = re.compile(r"^c-[0-9a-f]{64}$")
+CLAIM_ID_RE = re.compile(r"^cl-[0-9a-f]{64}$")
+ARTIFACT_ID_RE = re.compile(r"^a-[0-9a-f]{64}$")
+MIGRATION_ID_RE = re.compile(r"^m-[0-9a-f]{64}$")
+KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+V2_INDEX_MAX_BYTES = 262144
+V2_MANIFEST_MAX_BYTES = 262144
+V2_ACTIVE_CASES_MAX = 32
+V2_CLAIM_HEADS_MAX = 2048
+V2_ALIASES_MAX = 256
+V2_RECENT_CASES_MAX = 10
+V2_MANIFEST_CLAIMS_MAX = 256
+V2_MANIFEST_ARTIFACTS_MAX = 2048
+V2_MANIFEST_HISTORY_MAX = 1024
+V2_MANIFEST_REFS_MAX = 1024
+V2_MANIFEST_MIGRATION_SOURCES_MAX = 4096
+V2_CASE_PHASES = {"collaborating", "collecting", "planned", "executing", "reviewing"}
+V2_CASE_LIFECYCLES = {"collaborating", "collecting", "planned", "executing", "reviewing", "closed"}
+V2_CLAIM_HEAD_STATUSES = {"active"}
+V2_MIGRATION_PHASES = {
+    "baseline_approved",
+    "archive_durable",
+    "candidate_validated",
+    "old_tree_renamed",
+    "new_tree_installed",
+    "postinstall_validated",
+    "committed",
+    "cleanup_complete",
+}
 CURRENT_KINDS = {
     "result",
     "progress",
@@ -174,17 +207,148 @@ def validate_string_list(value: object, label: str) -> None:
 
 def validate_sha256(value: object, label: str) -> None:
     require(
-        isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None,
+        isinstance(value, str) and HEX64_RE.fullmatch(value) is not None,
         f"{label} must be lowercase sha256 hex",
     )
 
 
-def validate_utc_timestamp(value: object, label: str) -> None:
+def validate_case_id(value: object, label: str) -> str:
     require(
-        isinstance(value, str)
-        and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value) is not None,
-        f"{label} must be UTC timestamp YYYY-MM-DDTHH:MM:SSZ",
+        isinstance(value, str) and CASE_ID_RE.fullmatch(value) is not None,
+        f"{label} must be c- followed by lowercase sha256 hex",
     )
+    assert isinstance(value, str)
+    return value
+
+
+def validate_claim_id(value: object, label: str) -> str:
+    require(
+        isinstance(value, str) and CLAIM_ID_RE.fullmatch(value) is not None,
+        f"{label} must be cl- followed by lowercase sha256 hex",
+    )
+    assert isinstance(value, str)
+    return value
+
+
+def validate_artifact_id(value: object, label: str) -> str:
+    require(
+        isinstance(value, str) and ARTIFACT_ID_RE.fullmatch(value) is not None,
+        f"{label} must be a- followed by lowercase sha256 hex",
+    )
+    assert isinstance(value, str)
+    return value
+
+
+def validate_migration_id(value: object, label: str) -> str:
+    require(
+        isinstance(value, str) and MIGRATION_ID_RE.fullmatch(value) is not None,
+        f"{label} must be m- followed by lowercase sha256 hex",
+    )
+    assert isinstance(value, str)
+    return value
+
+
+def validate_kebab(value: object, label: str) -> str:
+    require(
+        isinstance(value, str) and KEBAB_RE.fullmatch(value) is not None,
+        f"{label} must be lowercase kebab text",
+    )
+    assert isinstance(value, str)
+    return value
+
+
+def validate_case_manifest_path(value: object, label: str, *, expected_case_id: str | None = None) -> PurePosixPath:
+    path = validate_memory_path(value, label)
+    require(
+        len(path.parts) == 5
+        and path.parts[:3] == ("docs", "teamwork", "cases")
+        and path.name == "manifest.json",
+        f"{label} must be docs/teamwork/cases/c-<64hex>/manifest.json",
+    )
+    case_id = path.parts[3]
+    validate_case_id(case_id, f"{label}.case_id")
+    if expected_case_id is not None:
+        require(case_id == expected_case_id, f"{label} must match {expected_case_id}")
+    return path
+
+
+def validate_any_relative_path(value: object, label: str) -> PurePosixPath:
+    require(isinstance(value, str) and value, f"{label} must be a non-empty string")
+    assert isinstance(value, str)
+    path = PurePosixPath(value)
+    require(
+        not path.is_absolute()
+        and path.as_posix() == value
+        and "\\" not in value
+        and CONTROL_RE.search(value) is None
+        and "." not in path.parts
+        and ".." not in path.parts
+        and len(path.parts) >= 1,
+        f"{label} must be a normalized relative path",
+    )
+    return path
+
+
+def _hash(*parts: bytes) -> str:
+    digest = hashlib.sha256()
+    for part in parts:
+        digest.update(len(part).to_bytes(8, "big"))
+        digest.update(part)
+    return digest.hexdigest()
+
+
+def _reject_float(value: object) -> None:
+    if isinstance(value, float):
+        fail("canonical JSON does not allow floats")
+    if isinstance(value, dict):
+        for item in value.values():
+            _reject_float(item)
+    if isinstance(value, list):
+        for item in value:
+            _reject_float(item)
+
+
+def canonical_json_bytes(value: object) -> bytes:
+    _reject_float(value)
+    return unicodedata.normalize(
+        "NFC",
+        json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+    ).encode("utf-8")
+
+
+def case_digest(domain: str, value: object | str | bytes) -> str:
+    if isinstance(value, bytes):
+        payload = value
+    elif isinstance(value, str):
+        payload = unicodedata.normalize("NFC", value.replace("\r\n", "\n").replace("\r", "\n")).encode("utf-8")
+    else:
+        payload = canonical_json_bytes(value)
+    return _hash(f"teamwork-case-v2:{domain}".encode("utf-8"), payload)
+
+
+def computed_case_manifest_revision(manifest: dict[str, object]) -> str:
+    return case_digest("manifest-revision", manifest)
+
+
+def validate_case_artifact_path(value: object, label: str, case_id: str) -> PurePosixPath:
+    path = validate_memory_path(value, label)
+    require(
+        len(path.parts) >= 5
+        and path.parts[:4] == ("docs", "teamwork", "cases", case_id),
+        f"{label} must stay inside docs/teamwork/cases/{case_id}/",
+    )
+    require(path.name != "manifest.json", f"{label} must not point at the manifest")
+    return path
+
+
+def validate_utc_timestamp(value: object, label: str) -> None:
+    require(isinstance(value, str), f"{label} must be a UTC timestamp")
+    assert isinstance(value, str)
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        fail(f"{label} must be a UTC timestamp")
+    require(parsed.tzinfo is not None and parsed.utcoffset() == timezone.utc.utcoffset(parsed), f"{label} must be UTC")
 
 
 def validate_collaborate_consumed_sources(value: object) -> None:
@@ -327,7 +491,7 @@ def validate_active(
             reader.read_text(PurePosixPath(path), label)
 
 
-def validate_index(
+def validate_v1_index(
     index: object,
     index_path: Path,
     project_reader: SafeProjectReader | None = None,
@@ -376,6 +540,358 @@ def validate_index(
     require(isinstance(pending, list), "pending must be an array")
 
 
+def validate_v2_migration(value: object) -> None:
+    if value is None:
+        return
+    require(isinstance(value, dict), "migration must be null or an object")
+    assert isinstance(value, dict)
+    expected = {
+        "migration_id",
+        "phase",
+        "journal_path",
+        "baseline_digest",
+        "report_digest",
+        "candidate_digest",
+        "archive_manifest_digest",
+    }
+    require(set(value) == expected, "migration has invalid fields")
+    validate_migration_id(value["migration_id"], "migration.migration_id")
+    require(value["phase"] in V2_MIGRATION_PHASES, "migration.phase is invalid")
+    validate_any_relative_path(value["journal_path"], "migration.journal_path")
+    for key in ("baseline_digest", "report_digest", "candidate_digest", "archive_manifest_digest"):
+        validate_sha256(value[key], f"migration.{key}")
+
+
+def validate_v2_root_index(
+    index: object,
+    index_path: Path,
+    project_reader: SafeProjectReader | None = None,
+    *,
+    raw_bytes: int | None = None,
+) -> None:
+    if raw_bytes is not None:
+        require(raw_bytes <= V2_INDEX_MAX_BYTES, "v2 index exceeds 262144 bytes")
+    require(isinstance(index, dict), "index root must be an object")
+    assert isinstance(index, dict)
+    expected = {
+        "schema_version",
+        "project",
+        "active_cases",
+        "claim_heads",
+        "aliases",
+        "recent_cases",
+        "migration",
+    }
+    require(set(index) == expected, "v2 index top-level fields are invalid")
+    require(index["schema_version"] == 2, "schema_version must be 2")
+    project = index["project"]
+    require(isinstance(project, dict), "project must be an object")
+    assert isinstance(project, dict)
+    require(set(project) == {"name", "root", "description"}, "project fields are invalid")
+    require(isinstance(project["name"], str) and project["name"].strip(), "project.name must be non-empty text")
+    require(project["root"] == ".", "project.root must be .")
+    require(
+        isinstance(project["description"], str) and project["description"].strip(),
+        "project.description must be non-empty text",
+    )
+
+    active_cases = index["active_cases"]
+    require(isinstance(active_cases, list), "active_cases must be an array")
+    assert isinstance(active_cases, list)
+    require(len(active_cases) <= V2_ACTIVE_CASES_MAX, "active_cases exceeds 32 records")
+    active_case_ids: set[str] = set()
+    active_task_keys: set[str] = set()
+    for position, row in enumerate(active_cases):
+        require(isinstance(row, dict), f"active_cases[{position}] must be an object")
+        assert isinstance(row, dict)
+        require(
+            set(row) == {"case_id", "manifest_path", "manifest_revision", "phase", "task_key"},
+            f"active_cases[{position}] has invalid fields",
+        )
+        case_id = validate_case_id(row["case_id"], f"active_cases[{position}].case_id")
+        require(case_id not in active_case_ids, "active_cases must not duplicate case_id")
+        active_case_ids.add(case_id)
+        validate_case_manifest_path(row["manifest_path"], f"active_cases[{position}].manifest_path", expected_case_id=case_id)
+        validate_sha256(row["manifest_revision"], f"active_cases[{position}].manifest_revision")
+        require(row["phase"] in V2_CASE_PHASES, f"active_cases[{position}].phase is invalid")
+        task_key = validate_kebab(row["task_key"], f"active_cases[{position}].task_key")
+        require(task_key not in active_task_keys, "active_cases must not duplicate task_key")
+        active_task_keys.add(task_key)
+
+    claim_heads = index["claim_heads"]
+    require(isinstance(claim_heads, dict), "claim_heads must be an object")
+    assert isinstance(claim_heads, dict)
+    require(len(claim_heads) <= V2_CLAIM_HEADS_MAX, "claim_heads exceeds 2048 records")
+    for claim_id, row in claim_heads.items():
+        validate_claim_id(claim_id, f"claim_heads key {claim_id!r}")
+        require(isinstance(row, dict), f"claim_heads[{claim_id}] must be an object")
+        assert isinstance(row, dict)
+        require(
+            set(row) == {"case_id", "artifact_id", "artifact_digest", "claim_revision", "status"},
+            f"claim_heads[{claim_id}] has invalid fields",
+        )
+        validate_case_id(row["case_id"], f"claim_heads[{claim_id}].case_id")
+        validate_artifact_id(row["artifact_id"], f"claim_heads[{claim_id}].artifact_id")
+        validate_sha256(row["artifact_digest"], f"claim_heads[{claim_id}].artifact_digest")
+        validate_sha256(row["claim_revision"], f"claim_heads[{claim_id}].claim_revision")
+        require(row["status"] in V2_CLAIM_HEAD_STATUSES, f"claim_heads[{claim_id}].status is invalid")
+
+    aliases = index["aliases"]
+    require(isinstance(aliases, dict), "aliases must be an object")
+    assert isinstance(aliases, dict)
+    require(len(aliases) <= V2_ALIASES_MAX, "aliases exceeds 256 records")
+    for alias, row in aliases.items():
+        validate_kebab(alias, f"aliases key {alias!r}")
+        require(isinstance(row, dict), f"aliases.{alias} must be an object")
+        assert isinstance(row, dict)
+        require(set(row) == {"target_type", "target_id", "manifest_path", "manifest_revision"}, f"aliases.{alias} has invalid fields")
+        require(row["target_type"] == "case", f"aliases.{alias}.target_type must be case")
+        target_id = validate_case_id(row["target_id"], f"aliases.{alias}.target_id")
+        validate_case_manifest_path(row["manifest_path"], f"aliases.{alias}.manifest_path", expected_case_id=target_id)
+        validate_sha256(row["manifest_revision"], f"aliases.{alias}.manifest_revision")
+
+    recent_cases = index["recent_cases"]
+    require(isinstance(recent_cases, list), "recent_cases must be an array")
+    assert isinstance(recent_cases, list)
+    require(len(recent_cases) <= V2_RECENT_CASES_MAX, "recent_cases exceeds 10 records")
+    recent_ids: set[str] = set()
+    for position, row in enumerate(recent_cases):
+        require(isinstance(row, dict), f"recent_cases[{position}] must be an object")
+        assert isinstance(row, dict)
+        require(
+            set(row) == {"case_id", "manifest_path", "closed_at", "result_artifact_id", "result_digest"},
+            f"recent_cases[{position}] has invalid fields",
+        )
+        case_id = validate_case_id(row["case_id"], f"recent_cases[{position}].case_id")
+        require(case_id not in recent_ids, "recent_cases must not duplicate case_id")
+        recent_ids.add(case_id)
+        require(case_id not in active_case_ids, "recent_cases must not duplicate active cases")
+        validate_case_manifest_path(row["manifest_path"], f"recent_cases[{position}].manifest_path", expected_case_id=case_id)
+        validate_utc_timestamp(row["closed_at"], f"recent_cases[{position}].closed_at")
+        validate_artifact_id(row["result_artifact_id"], f"recent_cases[{position}].result_artifact_id")
+        validate_sha256(row["result_digest"], f"recent_cases[{position}].result_digest")
+
+    validate_v2_migration(index["migration"])
+
+    if project_reader is not None:
+        loaded_manifests: dict[str, dict[str, object]] = {}
+        for collection, rows in (("active_cases", active_cases), ("recent_cases", recent_cases)):
+            for position, row in enumerate(rows):
+                manifest_path = validate_case_manifest_path(
+                    row["manifest_path"],
+                    f"{collection}[{position}].manifest_path",
+                    expected_case_id=str(row["case_id"]),
+                )
+                text = project_reader.read_text(manifest_path, f"{collection}[{position}].manifest", require_single_link=True)
+                try:
+                    manifest = json.loads(text)
+                except json.JSONDecodeError as exc:
+                    fail(f"{collection}[{position}].manifest is invalid JSON: {exc}")
+                validate_v2_case_manifest(
+                    manifest,
+                    Path(manifest_path.as_posix()),
+                    project_reader,
+                    raw_bytes=len(text.encode("utf-8")),
+                    expected_case_id=str(row["case_id"]),
+                    expected_revision=str(row["manifest_revision"]) if collection == "active_cases" else None,
+                )
+                loaded_manifests[str(row["case_id"])] = manifest
+                if collection == "recent_cases":
+                    require(manifest["status"] == "closed", f"{collection}[{position}].manifest must be closed")
+                    artifacts = manifest["artifacts"]
+                    assert isinstance(artifacts, dict)
+                    artifact = artifacts.get(row["result_artifact_id"])
+                    require(isinstance(artifact, dict), f"{collection}[{position}].result_artifact_id must exist in manifest")
+                    assert isinstance(artifact, dict)
+                    require(artifact.get("role") == "result", f"{collection}[{position}].result_artifact_id must be a result")
+                    require(artifact.get("byte_digest") == row["result_digest"], f"{collection}[{position}].result_digest must match manifest")
+        for alias, row in aliases.items():
+            manifest = loaded_manifests.get(str(row["target_id"]))
+            require(manifest is not None, f"aliases.{alias} target must exist")
+            require(computed_case_manifest_revision(manifest) == row["manifest_revision"], f"aliases.{alias}.manifest_revision must match target")
+        for claim_id, row in claim_heads.items():
+            manifest = loaded_manifests.get(str(row["case_id"]))
+            require(manifest is not None, f"claim_heads[{claim_id}] case must exist")
+            claims = manifest["claims"]
+            artifacts = manifest["artifacts"]
+            assert isinstance(claims, dict) and isinstance(artifacts, dict)
+            claim = claims.get(claim_id)
+            require(isinstance(claim, dict), f"claim_heads[{claim_id}] claim must exist in manifest")
+            assert isinstance(claim, dict)
+            require(claim.get("status") == "active", f"claim_heads[{claim_id}] claim must be active")
+            require(claim.get("head_artifact_id") == row["artifact_id"], f"claim_heads[{claim_id}].artifact_id must match manifest claim")
+            require(claim.get("head_digest") == row["artifact_digest"], f"claim_heads[{claim_id}].artifact_digest must match manifest claim")
+            artifact = artifacts.get(row["artifact_id"])
+            require(isinstance(artifact, dict), f"claim_heads[{claim_id}] artifact must exist in manifest")
+            assert isinstance(artifact, dict)
+            require(artifact.get("byte_digest") == row["artifact_digest"], f"claim_heads[{claim_id}].artifact_digest must match manifest artifact")
+
+
+def validate_v2_case_manifest(
+    manifest: object,
+    manifest_path: Path,
+    project_reader: SafeProjectReader | None = None,
+    *,
+    raw_bytes: int | None = None,
+    expected_case_id: str | None = None,
+    expected_revision: str | None = None,
+) -> None:
+    if raw_bytes is not None:
+        require(raw_bytes <= V2_MANIFEST_MAX_BYTES, "case manifest exceeds 262144 bytes")
+    require(isinstance(manifest, dict), "case manifest root must be an object")
+    assert isinstance(manifest, dict)
+    expected = {
+        "schema_version",
+        "case_id",
+        "case_seed_b64",
+        "created_at",
+        "closed_at",
+        "status",
+        "claims",
+        "artifacts",
+        "history",
+        "references",
+        "runtime",
+        "migration_sources",
+    }
+    require(set(manifest) == expected, "case manifest top-level fields are invalid")
+    require(manifest["schema_version"] == 1, "case manifest schema_version must be 1")
+    case_id = validate_case_id(manifest["case_id"], "case_id")
+    if expected_case_id is not None:
+        require(case_id == expected_case_id, "case manifest case_id does not match index")
+    case_seed_b64 = manifest["case_seed_b64"]
+    require(isinstance(case_seed_b64, str), "case_seed_b64 must be base64 text")
+    assert isinstance(case_seed_b64, str)
+    try:
+        seed = base64.b64decode(case_seed_b64.encode("ascii"), validate=True)
+    except Exception as exc:
+        fail(f"case_seed_b64 must be valid base64: {exc}")
+    require(len(seed) == 32, "case_seed_b64 must encode exactly 32 bytes")
+    require(manifest["status"] in V2_CASE_LIFECYCLES, "status is invalid")
+    validate_utc_timestamp(manifest["created_at"], "created_at")
+    closed_at = manifest["closed_at"]
+    require(closed_at is None or isinstance(closed_at, str), "closed_at must be null or a UTC timestamp")
+    if isinstance(closed_at, str):
+        validate_utc_timestamp(closed_at, "closed_at")
+    require((manifest["status"] == "closed") == (closed_at is not None), "closed_at must agree with status")
+    if expected_revision is not None:
+        require(computed_case_manifest_revision(manifest) == expected_revision, "case manifest revision does not match index")
+
+    claims = manifest["claims"]
+    require(isinstance(claims, dict), "claims must be an object")
+    assert isinstance(claims, dict)
+    require(len(claims) <= V2_MANIFEST_CLAIMS_MAX, "claims exceeds 256 records")
+    for claim_id, row in claims.items():
+        validate_claim_id(claim_id, f"claims key {claim_id!r}")
+        require(isinstance(row, dict), f"claims[{claim_id}] must be an object")
+        assert isinstance(row, dict)
+        require(set(row) == {"descriptor_version", "descriptor_digest", "status", "acquired_at", "released_at", "head_artifact_id", "head_digest"}, f"claims[{claim_id}] has invalid fields")
+        require(row["descriptor_version"] == 1, f"claims[{claim_id}].descriptor_version must be 1")
+        validate_sha256(row["descriptor_digest"], f"claims[{claim_id}].descriptor_digest")
+        require(row["status"] in {"active", "released"}, f"claims[{claim_id}].status is invalid")
+        validate_utc_timestamp(row["acquired_at"], f"claims[{claim_id}].acquired_at")
+        released_at = row["released_at"]
+        require(released_at is None or isinstance(released_at, str), f"claims[{claim_id}].released_at must be null or timestamp")
+        if isinstance(released_at, str):
+            validate_utc_timestamp(released_at, f"claims[{claim_id}].released_at")
+        require((row["status"] == "released") == (released_at is not None), f"claims[{claim_id}].released_at must agree with status")
+        validate_artifact_id(row["head_artifact_id"], f"claims[{claim_id}].head_artifact_id")
+        validate_sha256(row["head_digest"], f"claims[{claim_id}].head_digest")
+
+    artifacts = manifest["artifacts"]
+    require(isinstance(artifacts, dict), "artifacts must be an object")
+    assert isinstance(artifacts, dict)
+    require(len(artifacts) <= V2_MANIFEST_ARTIFACTS_MAX, "artifacts exceeds 2048 records")
+    for artifact_id, row in artifacts.items():
+        validate_artifact_id(artifact_id, f"artifacts key {artifact_id!r}")
+        require(isinstance(row, dict), f"artifacts[{artifact_id}] must be an object")
+        assert isinstance(row, dict)
+        require(
+            set(row) == {"role", "subtype", "path", "envelope_digest", "byte_digest", "created_at", "immutable", "consumer", "source_revision"},
+            f"artifacts[{artifact_id}] has invalid fields",
+        )
+        validate_kebab(row["role"], f"artifacts[{artifact_id}].role")
+        validate_kebab(row["subtype"], f"artifacts[{artifact_id}].subtype")
+        validate_case_artifact_path(row["path"], f"artifacts[{artifact_id}].path", case_id)
+        validate_sha256(row["envelope_digest"], f"artifacts[{artifact_id}].envelope_digest")
+        validate_sha256(row["byte_digest"], f"artifacts[{artifact_id}].byte_digest")
+        validate_utc_timestamp(row["created_at"], f"artifacts[{artifact_id}].created_at")
+        require(row["immutable"] is True, f"artifacts[{artifact_id}].immutable must be true")
+        require(isinstance(row["consumer"], str) and row["consumer"].strip(), f"artifacts[{artifact_id}].consumer must be text")
+        validate_sha256(row["source_revision"], f"artifacts[{artifact_id}].source_revision")
+
+    for collection, limit in (
+        ("history", V2_MANIFEST_HISTORY_MAX),
+        ("references", V2_MANIFEST_REFS_MAX),
+        ("migration_sources", V2_MANIFEST_MIGRATION_SOURCES_MAX),
+    ):
+        rows = manifest[collection]
+        require(isinstance(rows, list), f"{collection} must be an array")
+        assert isinstance(rows, list)
+        require(len(rows) <= limit, f"{collection} exceeds {limit} records")
+        seen: set[str] = set()
+        for position, row in enumerate(rows):
+            require(isinstance(row, dict), f"{collection}[{position}] must be an object")
+            assert isinstance(row, dict)
+            if collection == "history":
+                require(set(row) == {"artifact_id", "role", "superseded_by", "retained_reason", "recorded_at"}, f"{collection}[{position}] has invalid fields")
+                artifact_id = validate_artifact_id(row["artifact_id"], f"{collection}[{position}].artifact_id")
+                validate_kebab(row["role"], f"{collection}[{position}].role")
+                superseded_by = row["superseded_by"]
+                require(superseded_by is None or isinstance(superseded_by, str), f"{collection}[{position}].superseded_by must be null or artifact id")
+                if isinstance(superseded_by, str):
+                    validate_artifact_id(superseded_by, f"{collection}[{position}].superseded_by")
+                require(row["retained_reason"] in {"consumed", "reviewed", "superseded", "closed"}, f"{collection}[{position}].retained_reason is invalid")
+                validate_utc_timestamp(row["recorded_at"], f"{collection}[{position}].recorded_at")
+                key = artifact_id
+            elif collection == "references":
+                require(set(row) == {"case_id", "claim_id", "artifact_id", "digest"}, f"{collection}[{position}] has invalid fields")
+                validate_case_id(row["case_id"], f"{collection}[{position}].case_id")
+                validate_claim_id(row["claim_id"], f"{collection}[{position}].claim_id")
+                validate_artifact_id(row["artifact_id"], f"{collection}[{position}].artifact_id")
+                validate_sha256(row["digest"], f"{collection}[{position}].digest")
+                key = str(row["digest"])
+            else:
+                require(set(row) == {"source_path", "source_digest", "classification", "migration_id"}, f"{collection}[{position}] has invalid fields")
+                validate_any_relative_path(row["source_path"], f"{collection}[{position}].source_path")
+                validate_sha256(row["source_digest"], f"{collection}[{position}].source_digest")
+                validate_kebab(row["classification"], f"{collection}[{position}].classification")
+                validate_migration_id(row["migration_id"], f"{collection}[{position}].migration_id")
+                key = str(row["source_path"])
+            require(key not in seen, f"{collection} must not duplicate paths")
+            seen.add(key)
+
+    runtime = manifest["runtime"]
+    require(isinstance(runtime, dict), "runtime must be an object")
+    assert isinstance(runtime, dict)
+    require(set(runtime) == {"active_route", "state_revision"}, "runtime has invalid fields")
+    active_route = validate_memory_path(runtime["active_route"], "runtime.active_route")
+    require(
+        len(active_route.parts) >= 5 and active_route.parts[:4] == ("docs", "teamwork", "cases", case_id),
+        "runtime.active_route must stay inside its case",
+    )
+    validate_sha256(runtime["state_revision"], "runtime.state_revision")
+
+
+def validate_index(
+    index: object,
+    index_path: Path,
+    project_reader: SafeProjectReader | None = None,
+    *,
+    migration_read: bool = False,
+    raw_bytes: int | None = None,
+) -> None:
+    require(isinstance(index, dict), "index root must be an object")
+    assert isinstance(index, dict)
+    version = index.get("schema_version")
+    if version == 1:
+        validate_v1_index(index, index_path, project_reader, migration_read=migration_read)
+    elif version == 2:
+        validate_v2_root_index(index, index_path, project_reader, raw_bytes=raw_bytes)
+    else:
+        fail("schema_version must be 1 or 2")
+
+
 def read_regular_text(path: Path, label: str) -> str:
     try:
         expected = path.lstat()
@@ -409,26 +925,20 @@ def read_regular_text(path: Path, label: str) -> str:
 
 def validate_memory_templates(directory: Path) -> None:
     index_text = read_regular_text(directory / "index.json", "memory index template")
-    current = read_regular_text(directory / "current.md", "memory current template")
-    readme = read_regular_text(directory / "README.md", "memory README template")
     try:
         index = json.loads(index_text)
     except json.JSONDecodeError as exc:
         fail(f"memory index template is invalid JSON: {exc}")
-    validate_index(index, directory / "index.json")
-    active = index["active"]
-    require("discussion" not in active, "memory index template must not contain the discussion compatibility slot")
-    require(active.get("collaborate") is None, "memory index template active.collaborate must be null")
-    require(
-        all(entry["kind"] != "discussion" for entry in index["entries"]),
-        "memory index template must not contain discussion entries",
-    )
-    combined = "\n".join((index_text, current, readme)).casefold()
-    for forbidden in ("discussion-transaction", "using-teamwork/scripts"):
+    validate_index(index, directory / "index.json", raw_bytes=len(index_text.encode("utf-8")))
+    require(index.get("schema_version") == 2, "memory index template must use schema_version 2")
+    combined = index_text.casefold()
+    for forbidden in (
+        "discussion-transaction",
+        "using-teamwork/scripts",
+        "docs/teamwork/current.md",
+        "docs/teamwork/readme.md",
+    ):
         require(forbidden not in combined, f"ordinary memory templates must not contain {forbidden!r}")
-    require("YYYY-MM-DD" in current, "memory current template must retain the date placeholder")
-    require(len(current.splitlines()) <= 80, "memory current template exceeds 80 lines")
-    require(len(readme.splitlines()) <= 80, "memory README template exceeds 80 lines")
 
 
 def canonical_project_root(index_path: Path) -> Path | None:
@@ -438,6 +948,18 @@ def canonical_project_root(index_path: Path) -> Path | None:
         and index_path.parent.parent.name == "docs"
     ):
         return index_path.parent.parent.parent
+    return None
+
+
+def canonical_case_project_root(manifest_path: Path) -> Path | None:
+    parts = manifest_path.parts
+    if (
+        manifest_path.name == "manifest.json"
+        and len(parts) >= 5
+        and parts[-5:-2] == ("docs", "teamwork", "cases")
+        and CASE_ID_RE.fullmatch(parts[-2]) is not None
+    ):
+        return Path(*parts[:-5]) if parts[:-5] else Path("/")
     return None
 
 
@@ -454,19 +976,42 @@ def main() -> int:
     try:
         text = read_regular_text(path, "index input")
         try:
-            index = json.loads(text)
+            value = json.loads(text)
         except json.JSONDecodeError as exc:
             fail(f"invalid JSON: {exc}")
         if path.parent.name == "teamwork-memory" and path.parent.parent.name == "templates":
             validate_memory_templates(path.parent)
+        elif (case_root := canonical_case_project_root(path)) is not None:
+            reader = SafeProjectReader(case_root)
+            try:
+                validate_v2_case_manifest(
+                    value,
+                    path,
+                    reader,
+                    raw_bytes=len(text.encode("utf-8")),
+                    expected_case_id=path.parent.name,
+                )
+            finally:
+                reader.close()
         elif (root := canonical_project_root(path)) is not None:
             reader = SafeProjectReader(root)
             try:
-                validate_index(index, path, reader, migration_read=arguments.migration_read)
+                validate_index(
+                    value,
+                    path,
+                    reader,
+                    migration_read=arguments.migration_read,
+                    raw_bytes=len(text.encode("utf-8")),
+                )
             finally:
                 reader.close()
         else:
-            validate_index(index, path, migration_read=arguments.migration_read)
+            validate_index(
+                value,
+                path,
+                migration_read=arguments.migration_read,
+                raw_bytes=len(text.encode("utf-8")),
+            )
     except ValidationError as exc:
         print(f"invalid Teamwork index: {exc}", file=sys.stderr)
         return 1

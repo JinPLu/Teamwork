@@ -25,12 +25,23 @@ and no host-native durable state satisfies it, Goal fails closed before promisin
 persistence; deliver no continuity claim.
 
 Create durable Goal state at entry, before attempt one, through the host-native
-mechanism or, for an initialized project, Writer calling the Goal artifact
-transaction. Writer runs `discussion-transaction.py goal-inspect --project-root
-<project>` and retains its revision, runs `discussion-transaction.py goal-schema
+mechanism or, for an initialized project, Writer calling the Goal transaction
+route selected from observed schema. Writer runs
+`discussion-transaction.py case-inspect --project-root <project>` first. In
+case-v2, it uses exact `case_id`/alias or creates from a frozen seed/task_key,
+then `case-schema <goal-acquire|goal-update|goal-transfer|goal-close> ->
+case-apply -> case-inspect/readback`; Goal is permitted only while the case is
+`executing` except transfer/close. In legacy-v1, Writer runs
+`discussion-transaction.py goal-inspect --project-root <project>` and retains
+its revision, runs `discussion-transaction.py goal-schema
 <start|attempt|close>`, then runs `discussion-transaction.py goal-apply
---project-root <project> --request <file>` with that revision and reads back. The transaction derives
+--project-root <project> --request <file>` with that revision and reads back.
+The legacy transaction derives
 `docs/teamwork/reports/YYYY-MM-DD-<slug>-goal.md`; never invent or hand-author it.
+Existing legacy-v1 projects keep their current Goal route until explicit
+cutover. Unknown, hybrid, mixed v1/v2, stale, ambiguous case, missing
+seed/task_key, or partial migration fails closed before any write, and one request
+must never touch both trees.
 Writer is disposable compute and only the caller; the transaction is the sole
 filesystem writer and owns destination, compare-and-swap, journal recovery,
 atomic apply, and readback. Record objective, success signal, invariants, scope,

@@ -31,15 +31,66 @@ class InitProjectIntegrationTests(unittest.TestCase):
         )
 
     def initialize(self, project: Path) -> None:
-        result = self.run_files(
-            project,
-            "write-context",
-            "--today",
-            "2026-07-19",
-            "--project-label",
-            "Fixture",
+        memory = project / "docs/teamwork"
+        memory.mkdir(parents=True, exist_ok=True)
+        index = {
+            "schema_version": 1,
+            "last_updated": "2026-07-19",
+            "project": {
+                "name": "Fixture",
+                "root": ".",
+                "description": "Local Teamwork memory index for this project.",
+            },
+            "source_of_truth_order": ["active", "linked", "header_search", "fulltext"],
+            "ignore_globs": [".planning/**"],
+            "budgets": {"header_first": True},
+            "active": {
+                "collaborate": None,
+                "current": "docs/teamwork/current.md",
+                "design": None,
+                "plan": None,
+                "progress": None,
+                "report": None,
+                "results": [],
+            },
+            "collaborate_consumed_sources": [],
+            "entries": [
+                {
+                    "topic": "project-initialization",
+                    "kind": "result",
+                    "title": "Teamwork project initialization",
+                    "status": "active",
+                    "currentness": "current",
+                    "authority": "active-summary",
+                    "path": "docs/teamwork/current.md",
+                    "applies_to": ["AGENTS.md", "docs/teamwork/"],
+                    "linked": [],
+                    "evidence_paths": ["docs/teamwork/current.md"],
+                    "supersedes": [],
+                    "search_keys": ["teamwork-init", "project-init", "initialization"],
+                    "updated": "2026-07-19",
+                    "summary": "Initial ordinary Teamwork memory entry created by project initialization.",
+                }
+            ],
+            "profiles": {
+                "status": ["index", "current", "topic"],
+                "implementation": ["index", "current", "active_design_or_plan", "linked_research_headers"],
+                "review": ["index", "current", "active_design_or_plan", "active_progress", "verification"],
+                "research": ["index", "current", "topic_headers", "linked_artifacts"],
+                "design": ["index", "current", "accepted_decisions", "active_design_plan", "linked_research"],
+            },
+            "pending": [],
+        }
+        (memory / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
+        (memory / "current.md").write_text(
+            "# Teamwork Current State\n\nLast Updated: 2026-07-19\n\n## Active Snapshot\n\n- Current focus: Fixture.\n",
+            encoding="utf-8",
         )
-        self.assertEqual(result.returncode, 0, result.stderr)
+        (memory / "README.md").write_text(
+            "# Teamwork Runtime Index README\n\nLegacy schema v1 fixture.\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(self.run_files(project, "validate").returncode, 0)
 
     @staticmethod
     def run_transaction(project: Path, action: str) -> subprocess.CompletedProcess[str]:
@@ -440,7 +491,7 @@ Choose the evidence that should lead the next reply.
                 selected,
                 [eligible],
                 {},
-                "missing or unreadable active.plan",
+                "cannot inspect active.plan parent",
             ),
             "artifact-disagrees": (
                 selected,

@@ -1,92 +1,13 @@
 {
-  "schema_version": 1,
-  "last_updated": "2026-06-01",
+  "schema_version": 2,
   "project": {
     "name": "Example Project",
     "root": ".",
-    "description": "Local Teamwork memory index for this project."
+    "description": "Local Teamwork case-bundle index for this project."
   },
-  "source_of_truth_order": [
-    "active",
-    "linked",
-    "header_search",
-    "fulltext"
-  ],
-  "ignore_globs": [
-    ".planning/**"
-  ],
-  "budgets": {
-    "header_first": true
-  },
-  "active": {
-    "collaborate": null,
-    "current": "docs/teamwork/current.md",
-    "design": null,
-    "plan": null,
-    "progress": null,
-    "report": null,
-    "results": []
-  },
-  "collaborate_consumed_sources": [],
-  "entries": [
-    {
-      "topic": "project-initialization",
-      "kind": "result",
-      "title": "Teamwork project initialization",
-      "status": "active",
-      "currentness": "current",
-      "authority": "active-summary",
-      "path": "docs/teamwork/current.md",
-      "applies_to": [
-        "AGENTS.md",
-        "docs/teamwork/"
-      ],
-      "linked": [],
-      "evidence_paths": [
-        "docs/teamwork/current.md"
-      ],
-      "supersedes": [],
-      "search_keys": [
-        "teamwork-init",
-        "project-init",
-        "initialization"
-      ],
-      "updated": "2026-06-01",
-      "summary": "Initial ordinary Teamwork memory entry created by project initialization."
-    }
-  ],
-  "profiles": {
-    "status": [
-      "index",
-      "current",
-      "topic"
-    ],
-    "implementation": [
-      "index",
-      "current",
-      "active_design_or_plan",
-      "linked_research_headers"
-    ],
-    "review": [
-      "index",
-      "current",
-      "active_design_or_plan",
-      "active_progress",
-      "verification"
-    ],
-    "research": [
-      "index",
-      "current",
-      "topic_headers",
-      "linked_artifacts"
-    ],
-    "design": [
-      "index",
-      "current",
-      "accepted_decisions",
-      "active_design_plan",
-      "linked_research"
-    ]
-  },
-  "pending": []
+  "active_cases": [],
+  "claim_heads": {},
+  "aliases": {},
+  "recent_cases": [],
+  "migration": null
 }

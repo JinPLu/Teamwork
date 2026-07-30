@@ -136,9 +136,17 @@ class SkillTopologyV4Test(unittest.TestCase):
                 (
                     "accepted Collaborate decision",
                     "Do not redesign or implement",
+                    "schema-specific Collaborate readback",
+                    "case-v2",
+                    "case-inspect",
+                    "selected case manifest",
+                    "accepted decision artifact",
+                    "manifest revision",
+                    "legacy-v1",
                     "discussion-transaction.py collaborate-inspect --project-root <project>",
                     "active.path == docs/teamwork/collaborate/current.md",
                     "active.acceptance == accepted",
+                    "Collaborate-scoped revision",
                     "semantic digest",
                     "lineage digest",
                     "Pending or blocked Collaborate records are durable but never Plan-ready",
@@ -273,6 +281,64 @@ class SkillTopologyV4Test(unittest.TestCase):
         for skill in EXPECTED_SKILLS:
             with self.subTest(skill=skill):
                 self.assert_skill_contract(skill, (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8"))
+
+    def test_case_v2_writer_routes_are_explicit_and_legacy_routes_remain(self) -> None:
+        contracts = {
+            "teamwork-collaborate": ("case-inspect", "case-schema <create|collaborate-upsert|accept-decision>", "case-apply"),
+            "teamwork-research": ("case-inspect", "case-schema <research-add>", "case-apply"),
+            "teamwork-debug": ("case-inspect", "case-schema <debug-add>", "case-apply"),
+            "teamwork-plan": ("case-inspect", "case-schema <plan-upsert>", "case-apply"),
+            "teamwork-review": ("case-inspect", "case-schema <review-add|code-review-add|plan-review-add>", "case-apply"),
+            "teamwork-goal": ("case-inspect", "case-schema <goal-acquire|goal-update|goal-transfer|goal-close>", "case-apply"),
+            "teamwork-init": ("case-inspect", "case-schema <init-result>", "case-apply"),
+            "teamwork-update": ("case-inspect", "case-schema <update-result>", "case-apply"),
+        }
+        for skill, route in contracts.items():
+            with self.subTest(skill=skill):
+                text = " ".join((SKILLS / skill / "SKILL.md").read_text(encoding="utf-8").split())
+                if skill == "teamwork-collaborate":
+                    legacy_route = "collaborate-inspect --project-root <project>"
+                elif skill == "teamwork-goal":
+                    legacy_route = "goal-inspect --project-root <project>"
+                else:
+                    legacy_route = "artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply"
+                for fragment in (
+                    *route,
+                    "case_id",
+                    "alias",
+                    "frozen seed/task_key",
+                    legacy_route,
+                    "fails closed before any write",
+                ):
+                    self.assertIn(fragment, text)
+
+    def test_plan_readiness_schema_first_segments(self) -> None:
+        text = normalized(SKILLS / "teamwork-plan" / "SKILL.md")
+        v2_segment = text.split("In case-v2", 1)[1].split("In legacy-v1", 1)[0]
+        self.assertIn("case-inspect", v2_segment)
+        self.assertIn("selected case manifest", v2_segment)
+        self.assertIn("accepted decision artifact", v2_segment)
+        self.assertIn("manifest revision", v2_segment)
+        self.assertNotIn("docs/teamwork/collaborate/current.md", v2_segment)
+        self.assertNotIn("collaborate-inspect", v2_segment)
+        legacy_segment = text.split("In legacy-v1", 1)[1].split("Pending or blocked", 1)[0]
+        self.assertIn("collaborate-inspect", legacy_segment)
+        self.assertIn("docs/teamwork/collaborate/current.md", legacy_segment)
+        self.assertIn("Collaborate-scoped revision", legacy_segment)
+
+    def test_public_docs_describe_schema_conditional_artifact_routes(self) -> None:
+        stale_generic = (
+            "Research, Debug, Plan, Plan Review, Review, mutating Init/Update, "
+            "and qualifying terminal execution handoffs use the generic artifact transaction. Writer calls"
+        )
+        for relative in ("README.md", "README.en.md", "docs/architecture.md"):
+            with self.subTest(path=relative):
+                text = normalized(ROOT / relative)
+                self.assertIn("v2", text)
+                self.assertIn("case", text)
+                self.assertIn("legacy-v1", text)
+                self.assertIn("generic artifact transaction", text)
+                self.assertNotIn(stale_generic, text)
 
     def test_collaborate_and_plan_gate_inversions_are_rejected(self) -> None:
         mutations = {

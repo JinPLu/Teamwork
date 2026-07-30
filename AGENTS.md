@@ -24,6 +24,10 @@ generic Execute skill, cross-skill behavior load, or shared behavior reference.
   not paraphrase or fill gaps in frozen facts, decisions, authority, status, or
   acceptance, and missing Writer/route/readback fails closed as unsaved.
   Code-coupled wording stays with the implementation owner.
+- Persistent memory is schema-first. Existing legacy-v1 project memory keeps its
+  current routes until explicit cutover; fresh 5.1 projects use v2 case bundles
+  under `docs/teamwork/cases/`. Update/install alone never migrates, rewrites,
+  deletes, or cold-archives project documents.
 - Change the canonical owner, reuse existing patterns, write the smallest
   complete logic, and verify the real changed path in proportion to risk.
   Each Worker self-verifies its slice. Independent Plan or code Review runs only
@@ -73,7 +77,8 @@ generic Execute skill, cross-skill behavior load, or shared behavior reference.
 ## Teamwork Project Instructions
 
 - Project label (local routing only): `Teamwork`.
-- For Collaborate dialogue, brainstorm, grill, and accepted-decision checkpoints, use only `docs/teamwork/collaborate/current.md`; never mirror them into ordinary memory, legacy Discussion/Design, or a report.
-- For ordinary durable memory, read `docs/teamwork/index.json` first, then `docs/teamwork/README.md`; keep volatile progress in its actual artifact.
+- Read `docs/teamwork/index.json` first before choosing Teamwork memory routes.
+- For Collaborate dialogue, brainstorm, grill, and accepted-decision checkpoints, legacy-v1 alone uses `docs/teamwork/collaborate/current.md` through `collaborate-inspect`, `collaborate-schema`, and `collaborate-apply`; never mirror them into ordinary memory, legacy Discussion/Design, or a report.
+- For ordinary durable memory, read `docs/teamwork/README.md` after the index, then the referenced artifact. Keep volatile progress in its actual artifact.
 - CodeGraph: this project has a local `.codegraph/` index.
 <!-- TEAMWORK_PROJECT_END -->

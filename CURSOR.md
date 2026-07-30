@@ -123,15 +123,24 @@ and no active Goal use the generic artifact transaction. An active Goal
 suppresses duplicate execution artifacts. Explore creates no standalone report;
 its evidence is folded into the consuming artifact or answer.
 
+Teamwork 5.1 resolves schema before routing. Existing project memory remains
+legacy-v1 and keeps the current sinks until explicit cutover. Fresh initialized
+projects use v2 case bundles under `docs/teamwork/cases/c-<64hex>/`, where
+Collaborate, Plan, Research, Debug, Review, Goal, and execution results attach
+to one case. Update/install alone never migrates, rewrites, or deletes existing
+`docs/teamwork`; cutover is a separate one-way operation with cold-archive and
+restore-drill gates.
+
 Sustained Collaborate intent plus a substantive synthesis, candidate space, or
 decision map and an unresolved question or unaccepted direction defaults to one
-semantic checkpoint in `docs/teamwork/collaborate/current.md`. New records use
-Collaborate schema v1: dialogue records synthesis and tensions, brainstorm adds
-candidate space, and grill records the finite frontier/current_batch. Frozen
-legacy Discussion and Design records remain readable only as migration inputs
-and migrate only on semantic mutation. Unchanged state is a no-op. Collaborate
-never stores a transcript or substitutes a report/conclusion; `no files`,
-off-record, read-only, or no-write keeps it in the conversation.
+semantic checkpoint after reading `docs/teamwork/index.json`: v2 writes the
+selected case manifest and `live/collaborate.md` through case transactions,
+while legacy-v1 alone maintains `docs/teamwork/collaborate/current.md` through
+Collaborate transactions. Frozen legacy Discussion and Design records remain
+readable only as migration inputs and migrate only on semantic mutation.
+Unchanged state is a no-op. Collaborate never stores a transcript or substitutes
+a report/conclusion; `no files`, off-record, read-only, or no-write keeps it in
+the conversation.
 
 ## Initialize a project
 
