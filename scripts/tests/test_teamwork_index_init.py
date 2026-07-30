@@ -103,6 +103,35 @@ class InitProjectIntegrationTests(unittest.TestCase):
         )
 
     @staticmethod
+    def run_init(project: Path) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            [
+                str(INIT),
+                "--project-root",
+                str(project),
+                "--no-codegraph",
+                "--no-cursor-mcp",
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+    @staticmethod
+    def migration_coverage(project: Path) -> dict[str, tuple[dict[str, object], dict[str, object], dict[str, object]]]:
+        coverage: dict[str, tuple[dict[str, object], dict[str, object], dict[str, object]]] = {}
+        for manifest_path in sorted((project / "docs/teamwork/cases").glob("c-*/manifest.json")):
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            for source in manifest["migration_sources"]:
+                coverage[source["source_path"]] = (
+                    manifest,
+                    source,
+                    manifest["artifacts"][source["artifact_id"]],
+                )
+        return coverage
+
+    @staticmethod
     def plan_artifact(title: str, updated: str = "2026-07-19") -> str:
         return f"Artifact Type: plan\nLast Updated: {updated}\n\n# {title}\n"
 
@@ -319,56 +348,32 @@ Choose the evidence that should lead the next reply.
             self.assertTrue((project / "AGENTS.md").is_file())
             self.assertTrue((project / "docs/teamwork/index.json").is_file())
 
-    def test_present_null_legacy_discussion_key_is_removed_idempotently_and_unlocks_design(self) -> None:
+    def test_null_legacy_discussion_key_migrates_through_exact_root_init_idempotently(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = Path(temporary).resolve() / "project"
             project.mkdir()
             self.initialize(project)
             index_path = project / "docs/teamwork/index.json"
             index = json.loads(index_path.read_text(encoding="utf-8"))
-            expected_active = dict(index["active"])
             index["active"]["discussion"] = None
             index_path.write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
 
-            pending = self.run_files(project, "validate")
-            self.assertNotEqual(pending.returncode, 0)
-            self.assertIn("ordinary-memory anchor repair is pending", pending.stderr)
-
-            migrated = self.run_files(
-                project,
-                "write-context",
-                "--today",
-                "2026-07-19",
-                "--project-label",
-                "Fixture",
-            )
+            migrated = self.run_init(project)
 
             self.assertEqual(migrated.returncode, 0, migrated.stderr)
             migrated_index = json.loads(index_path.read_text(encoding="utf-8"))
-            self.assertNotIn("discussion", migrated_index["active"])
-            self.assertEqual(migrated_index["active"], expected_active)
-            artifact_check = self.run_transaction(project, "artifact-index-validate")
-            self.assertEqual(artifact_check.returncode, 0, artifact_check.stderr)
-            design = self.run_transaction(project, "design-inspect")
-            self.assertEqual(design.returncode, 0, design.stderr)
-            design_state = json.loads(design.stdout)
-            self.assertTrue(design_state["initialized"])
-            self.assertIsNone(design_state["active"])
-            self.assertRegex(design_state["revision"], r"^[0-9a-f]{64}$")
+            self.assertEqual(migrated_index["schema_version"], 2)
+            self.assertEqual(migrated_index["migration"]["phase"], "cleanup_complete")
+            inspected = self.run_transaction(project, "case-inspect")
+            self.assertEqual(inspected.returncode, 0, inspected.stderr)
+            self.assertEqual(json.loads(inspected.stdout)["schema_mode"], "case-v2")
 
             before_repeat = (
                 index_path.read_bytes(),
                 index_path.stat().st_ino,
                 index_path.stat().st_mtime_ns,
             )
-            repeated = self.run_files(
-                project,
-                "write-context",
-                "--today",
-                "2026-07-19",
-                "--project-label",
-                "Fixture",
-            )
+            repeated = self.run_init(project)
             self.assertEqual(repeated.returncode, 0, repeated.stderr)
             self.assertEqual(
                 (
@@ -379,7 +384,7 @@ Choose the evidence that should lead the next reply.
                 before_repeat,
             )
 
-    def test_active_plan_selects_one_candidate_and_only_demotes_other_eligible_plans(self) -> None:
+    def test_active_and_historical_plans_migrate_to_case_v2_with_provenance(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = Path(temporary).resolve() / "project"
             project.mkdir()
@@ -409,39 +414,23 @@ Choose the evidence that should lead the next reply.
                 },
             )
 
-            migrated = self.run_files(
-                project,
-                "write-context",
-                "--today",
-                "2026-07-19",
-                "--project-label",
-                "Fixture",
-            )
+            migrated = self.run_init(project)
 
             self.assertEqual(migrated.returncode, 0, migrated.stderr)
-            repaired = json.loads(index_path.read_text(encoding="utf-8"))
-            by_path = {entry["path"]: entry for entry in repaired["entries"]}
-            self.assertEqual(by_path[selected], selected_entry)
-            expected_prior = dict(prior_entry)
-            expected_prior["currentness"] = "historical"
-            self.assertEqual(by_path[prior], expected_prior)
-            self.assertEqual(by_path[already_historical], historical_entry)
-            validated = self.run_transaction(project, "artifact-index-validate")
-            self.assertEqual(validated.returncode, 0, validated.stderr)
+            coverage = self.migration_coverage(project)
+            self.assertTrue({selected, prior, already_historical}.issubset(coverage))
+            selected_manifest, _, selected_artifact = coverage[selected]
+            self.assertEqual(selected_manifest["status"], "planned")
+            self.assertEqual(selected_artifact["role"], "plan")
+            self.assertEqual(coverage[prior][2]["role"], "plan")
+            self.assertEqual(coverage[already_historical][2]["role"], "plan")
 
             before_repeat = (
                 index_path.read_bytes(),
                 index_path.stat().st_ino,
                 index_path.stat().st_mtime_ns,
             )
-            repeated = self.run_files(
-                project,
-                "write-context",
-                "--today",
-                "2026-07-19",
-                "--project-label",
-                "Fixture",
-            )
+            repeated = self.run_init(project)
             self.assertEqual(repeated.returncode, 0, repeated.stderr)
             self.assertEqual(
                 (
@@ -530,7 +519,7 @@ Choose the evidence that should lead the next reply.
                     (project / "docs/teamwork/.teamwork-init-transaction.json").exists()
                 )
 
-    def test_init_uses_the_w4_migration_plan_and_repairs_anchors_atomically(self) -> None:
+    def test_init_semantically_migrates_legacy_discussion_and_cold_archives_sources(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = Path(temporary).resolve() / "project"
             project.mkdir()
@@ -599,44 +588,28 @@ Choose the evidence that should lead the next reply.
                 encoding="utf-8",
             )
 
-            migrated = self.run_files(
-                project,
-                "write-context",
-                "--today",
-                "2026-07-19",
-                "--project-label",
-                "Fixture",
-            )
+            migrated = self.run_init(project)
 
             self.assertEqual(migrated.returncode, 0, migrated.stderr)
-            current_artifact = memory / "discussion/current.md"
             self.assertFalse(artifact.exists())
-            self.assertTrue(current_artifact.is_file())
-            migrated_text = current_artifact.read_text(encoding="utf-8")
-            self.assertIn('"migration_source"', migrated_text)
-            self.assertIn(ACTIVE_DISCUSSION_PATH, migrated_text)
-            closed_text = closed_artifact.read_text(encoding="utf-8")
-            self.assertIn("Status: accepted", closed_text)
-            self.assertIn(CLOSED_DISCUSSION_PATH, closed_text)
-            self.assertIn("- Active discussion: none.", (memory / "current.md").read_text(encoding="utf-8"))
-            self.assertIn("- Active discussion route: none", (memory / "README.md").read_text(encoding="utf-8"))
+            self.assertFalse(closed_artifact.exists())
             migrated_index = json.loads(index_path.read_text(encoding="utf-8"))
-            self.assertNotIn("discussion", migrated_index["active"])
-            self.assertFalse(any(entry.get("kind") == "discussion" for entry in migrated_index["entries"]))
-            self.assertEqual(self.run_files(project, "validate").returncode, 0)
+            self.assertEqual(migrated_index["schema_version"], 2)
+            self.assertEqual(migrated_index["migration"]["phase"], "cleanup_complete")
+            coverage = self.migration_coverage(project)
+            self.assertTrue({ACTIVE_DISCUSSION_PATH, CLOSED_DISCUSSION_PATH}.issubset(coverage))
+            self.assertEqual(coverage[ACTIVE_DISCUSSION_PATH][2]["role"], "evidence")
+            self.assertEqual(coverage[CLOSED_DISCUSSION_PATH][2]["role"], "evidence")
+            archive_manifests = sorted((project / ".teamwork/cold-archive/v1/manifests").glob("m-*.json"))
+            self.assertEqual(len(archive_manifests), 1)
+            archive = json.loads(archive_manifests[0].read_text(encoding="utf-8"))
+            archived_paths = {row["source_path"] for row in archive["objects"]}
+            self.assertIn(ACTIVE_DISCUSSION_PATH, archived_paths)
+            self.assertIn(CLOSED_DISCUSSION_PATH, archived_paths)
             index_bytes = index_path.read_bytes()
             index_identity = (index_path.stat().st_ino, index_path.stat().st_mtime_ns)
-            repeated = self.run_files(
-                project,
-                "write-context",
-                "--today",
-                "2026-07-19",
-                "--project-label",
-                "Fixture",
-            )
+            repeated = self.run_init(project)
             self.assertEqual(repeated.returncode, 0, repeated.stderr)
-            self.assertEqual(current_artifact.read_text(encoding="utf-8"), migrated_text)
-            self.assertEqual(closed_artifact.read_text(encoding="utf-8"), closed_text)
             self.assertEqual(index_path.read_bytes(), index_bytes)
             self.assertEqual((index_path.stat().st_ino, index_path.stat().st_mtime_ns), index_identity)
 

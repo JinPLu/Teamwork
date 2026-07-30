@@ -16,6 +16,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 BUILD_SCRIPT = ROOT / "scripts/build-codex-plugin.py"
+CURRENT_VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 FIXED_DAY = "2026-07-30"
 MIGRATION_SEED = "51" * 32
 UPDATED_AT = "2026-07-30T00:00:00+00:00"
@@ -132,7 +133,7 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory(prefix=".case-installed-e2e-", dir=ROOT)
         self.tmp = Path(self.temporary.name)
         self.cache = self.tmp / "cache"
-        self.package_root = self.cache / "teamwork/teamwork-skill/5.1.0"
+        self.package_root = self.cache / f"teamwork/teamwork-skill/{CURRENT_VERSION}"
         builder = load_builder()
         stage = builder.build_stage(ROOT, self.tmp)
         self.package_root.parent.mkdir(parents=True)
@@ -301,8 +302,14 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
         return project
 
     def test_installed_runtime_root_is_cache_version_tail_and_integrity_checked(self) -> None:
-        self.assertEqual(self.package_root.relative_to(self.cache).as_posix(), "teamwork/teamwork-skill/5.1.0")
-        self.assertEqual((self.package_root / "VERSION").read_text(encoding="utf-8").strip(), "5.1.0")
+        self.assertEqual(
+            self.package_root.relative_to(self.cache).as_posix(),
+            f"teamwork/teamwork-skill/{CURRENT_VERSION}",
+        )
+        self.assertEqual(
+            (self.package_root / "VERSION").read_text(encoding="utf-8").strip(),
+            CURRENT_VERSION,
+        )
         result = self.run_pkg(self.runtime_root_cli)
         self.assertEqual(Path(result.stdout.strip()).resolve(), self.package_root.resolve())
         self.assertTrue(self.helper_cli.is_file(), "installed package must ship scripts/teamwork-case-migration.py")
@@ -313,7 +320,7 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
         self.assertIn("baseline_digest", helper["baseline"])
         self.assertEqual(before, tree_fingerprint(helper_project, "."))
 
-        tampered_root = self.tmp / "tampered/teamwork/teamwork-skill/5.1.0"
+        tampered_root = self.tmp / f"tampered/teamwork/teamwork-skill/{CURRENT_VERSION}"
         shutil.copytree(self.package_root, tampered_root, symlinks=True)
         transaction = tampered_root / "scripts/discussion-transaction.py"
         transaction.write_text(transaction.read_text(encoding="utf-8") + "\n# tamper\n", encoding="utf-8")
@@ -326,6 +333,42 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("runtime hash mismatch", result.stderr)
+
+    def test_installed_helper_rejects_symlink_project_roots_before_writes(self) -> None:
+        for kind in ("leaf", "ancestor"):
+            with self.subTest(kind=kind):
+                project = self.make_legacy_project(f"symlink-{kind}-target")
+                outside = self.tmp / f"symlink-{kind}-outside"
+                outside.mkdir()
+                if kind == "leaf":
+                    alias = self.tmp / "leaf-project-alias"
+                    os.symlink(project, alias)
+                    project_root = alias
+                    alias_to_check = alias
+                else:
+                    alias_parent = self.tmp / "ancestor-parent-alias"
+                    os.symlink(self.tmp, alias_parent)
+                    project_root = alias_parent / project.name
+                    alias_to_check = alias_parent
+                target_before = tree_fingerprint(project, ".")
+                alias_target = os.readlink(alias_to_check)
+
+                result = self.run_pkg(
+                    self.helper_cli,
+                    "migrate",
+                    "--project-root",
+                    str(project_root),
+                    "--cutover",
+                    "--cleanup",
+                    check=False,
+                )
+
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("symlink", result.stderr)
+                self.assertEqual(tree_fingerprint(project, "."), target_before)
+                self.assertTrue(alias_to_check.is_symlink())
+                self.assertEqual(os.readlink(alias_to_check), alias_target)
+                self.assertEqual(list(outside.iterdir()), [])
 
     def test_fresh_init_uses_v2_index_without_legacy_current_or_readme(self) -> None:
         project = self.tmp / "fresh-project"
@@ -523,41 +566,34 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
         self.assertFalse((project / "docs/teamwork/reports").exists())
         self.assertTrue(expected_paths)
 
-    def test_legacy_v1_artifact_route_stays_exact_until_cutover(self) -> None:
+    def test_legacy_v1_runtime_routes_are_no_longer_publicly_callable(self) -> None:
         project = self.make_legacy_project()
-        inspect = self.json_pkg(self.transaction_cli, "artifact-inspect", "--project-root", str(project))
-        request = {
-            "schema_version": 1,
-            "operation": "create",
-            "artifact_type": "workflow-artifact",
-            "expected_revision": inspect["revision"],
-            "workflow": "plan",
-            "slug": "legacy-installed-plan",
-            "title": "Legacy Installed Plan",
-            "updated": FIXED_DAY,
-            "source_revision": "1" * 64,
-            "consumer": "Writer",
-            "summary": "Legacy v1 artifact route remains available before cutover.",
-            "search_keys": ["legacy-installed-plan"],
-            "linked": [],
-            "evidence_paths": [],
-            "body": "Installed package writes the existing legacy plan route.\n",
-        }
-        result = self.json_pkg(
-            self.transaction_cli,
-            "artifact-apply",
-            "--project-root",
-            str(project),
-            "--request-json",
-            json.dumps(request, ensure_ascii=False, sort_keys=True),
-        )
+        before_index = (project / "docs/teamwork/index.json").read_bytes()
+        retired_commands = [
+            ("inspect", "--project-root", str(project)),
+            ("schema", "create"),
+            ("apply", "--project-root", str(project), "--request-json", "{}"),
+            ("design-inspect", "--project-root", str(project)),
+            ("design-schema", "create"),
+            ("design-apply", "--project-root", str(project), "--request-json", "{}"),
+            ("goal-inspect", "--project-root", str(project)),
+            ("goal-schema", "acquire"),
+            ("goal-apply", "--project-root", str(project), "--request-json", "{}"),
+            ("artifact-inspect", "--project-root", str(project)),
+            ("artifact-schema", "create"),
+            ("artifact-apply", "--project-root", str(project), "--request-json", "{}"),
+            ("collaborate-inspect", "--project-root", str(project)),
+            ("collaborate-schema", "create"),
+            ("collaborate-apply", "--project-root", str(project), "--request-json", "{}"),
+        ]
+        for command in retired_commands:
+            with self.subTest(command=command[0]):
+                result = self.run_pkg(self.transaction_cli, *command, check=False)
+                self.assertNotEqual(result.returncode, 0)
 
-        expected_path = "docs/teamwork/plans/2026-07-30-legacy-installed-plan.md"
-        self.assertEqual(result["path"], expected_path)
-        self.assertTrue((project / expected_path).is_file())
-        index = json.loads((project / "docs/teamwork/index.json").read_text(encoding="utf-8"))
-        self.assertEqual(index["active"]["plan"], expected_path)
-        self.assertEqual(index["schema_version"], 1)
+        self.assertEqual((project / "docs/teamwork/index.json").read_bytes(), before_index)
+        self.assertFalse((project / "docs/teamwork/plans").exists())
+        self.assertEqual(json.loads(before_index)["schema_version"], 1)
 
     def test_full_legacy_migration_cutover_recovery_cleanup_and_post_cutover_guards(self) -> None:
         project = self.make_legacy_project()
@@ -640,6 +676,64 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
         journal = json.loads((project / f".teamwork/runtime/migrations/{migration_id}/journal.json").read_text(encoding="utf-8"))
         self.assertEqual(journal["cleanup"], "complete")
         self.assertEqual(claude_before, tree_fingerprint(project, ".claude"))
+
+    def test_installed_helper_migrate_reports_case_v2_cleanup_complete(self) -> None:
+        project = self.make_legacy_project("helper-terminal-mode")
+
+        result = self.run_pkg(
+            self.helper_cli,
+            "migrate",
+            "--project-root",
+            str(project),
+            "--cutover",
+            "--cleanup",
+        )
+        payload = json.loads(result.stdout)
+
+        self.assertEqual(payload["mode"], "case-v2")
+        self.assertEqual(payload["phase"], "cleanup_complete")
+        installed = json.loads((project / "docs/teamwork/index.json").read_text(encoding="utf-8"))
+        self.assertEqual(installed["schema_version"], 2)
+        self.assertEqual(installed["migration"]["phase"], "cleanup_complete")
+
+    def test_installed_helper_resume_cleanup_rejects_hybrid_terminal_readback(self) -> None:
+        project = self.make_legacy_project("helper-hybrid-terminal")
+        migrated = self.run_pkg(
+            self.helper_cli,
+            "migrate",
+            "--project-root",
+            str(project),
+            "--cutover",
+            "--cleanup",
+        )
+        migration_id = json.loads(migrated.stdout)["migration_id"]
+        self.assertEqual(json.loads(migrated.stdout)["phase"], "cleanup_complete")
+
+        index_path = project / "docs/teamwork/index.json"
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        index["last_updated"] = FIXED_DAY
+        index["active"] = {"current": "docs/teamwork/current.md", "design": None, "plan": None, "progress": None, "report": None, "results": [], "collaborate": None}
+        index["entries"] = []
+        index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        outside = self.tmp / "helper-hybrid-terminal-outside"
+        outside.mkdir()
+        before = tree_fingerprint(project, ".")
+
+        failed = self.run_pkg(
+            self.helper_cli,
+            "resume",
+            "--project-root",
+            str(project),
+            "--migration-id",
+            migration_id,
+            "--cleanup",
+            check=False,
+        )
+
+        self.assertNotEqual(failed.returncode, 0)
+        self.assertIn("case-v2", failed.stderr)
+        self.assertEqual(tree_fingerprint(project, "."), before)
+        self.assertEqual(list(outside.iterdir()), [])
 
     def test_hybrid_and_tampered_archive_fail_before_mutating_project(self) -> None:
         hybrid = self.make_legacy_project("hybrid-project")

@@ -1,15 +1,20 @@
 ---
 name: teamwork-update
-description: Use when the user asks to check, install, activate, repair, or refresh globally installed Teamwork skills, agents, managed policy, routing, or notifications; do not use for project-local instructions, memory, CodeGraph context, source release publication, or unrelated plugins and tools.
+description: Use when the user asks to check, install, activate, repair, or refresh globally installed Teamwork skills, agents, managed policy, routing, or notifications, including an explicitly authorized migration of Teamwork memory for one exact project root during that refresh; do not use for general project-local instructions, CodeGraph context, source release publication, or unrelated plugins and tools.
 ---
 
 # Teamwork Update
 
-Check or refresh Teamwork-managed global installation surfaces only. Never rewrite
-project context as part of an update. Collaborate owns natural dialogue,
-brainstorming, grilling, and decision convergence; Update activates only when
-the requested outcome is an actual global install, skill, agent, managed policy,
-routing, or notification refresh.
+Check or refresh Teamwork-managed global installation surfaces. An explicit
+update or repair may additionally migrate Teamwork memory for one exact named
+project through the package transaction; never rewrite its other project context
+or inspect sibling projects. Collaborate owns natural dialogue,
+brainstorming, stress-testing, and decision convergence; Update activates only
+when the requested outcome is an actual global install, skill, agent, managed
+policy, routing, or notification refresh. The role order is exact: Explorer
+checks first; Worker runs only authorized, precisely owned refresh actions. If a
+mandatory role is unavailable or required isolation cannot be verified, return
+`capability-blocked`; Root must not perform a named-method fallback.
 
 ## Resolve The Package
 
@@ -47,7 +52,7 @@ searching or modifying arbitrary directories.
    or other human action separately.
 
 A check-only Update remains read-only and conversational. After a mutating Update
-in an initialized writable project, a receipt is a completion companion and
+in an initialized writable project, a receipt is a case-v2 completion companion and
 defaults through Writer unless the user says `no files`, `off-record`,
 `read-only`, `no writes`, or equivalent. Freeze a bounded receipt packet:
 purpose/audience, facts/sources, frozen decision/status, style/structure,
@@ -57,22 +62,33 @@ answer-invariant handoff work while Writer runs and must join and read back
 before claiming the receipt is saved or durable. Writer routes from observed
 schema: `case-inspect` first; case-v2 uses exact `case_id`/alias or creates from
 a frozen seed/task_key for the update receipt, then `case-schema <update-result>
--> case-apply -> case-inspect/readback`; legacy-v1 uses `artifact-inspect ->
-artifact-schema <create|update|supersede> -> artifact-apply`. The transaction
-derives the destination and registers the ordinary index or case manifest/claim
-heads. Writer is disposable compute and the transaction owns destination,
+-> case-apply -> case-inspect/readback`. The transaction derives the destination
+and registers the case manifest/claim heads. Writer is disposable compute and
+the transaction owns destination,
 compare-and-swap, journal recovery, atomic apply, and readback. If interrupted
 before apply begins, there is no durable claim; recover only from surviving
 workflow evidence or report unsaved. Missing project memory, Writer, brief,
 authority, consumer, route, or transaction blocks only persistence: deliver the
 receipt and report it unsaved/blocked. No Root or Worker fallback writes it.
-Updating or activating Teamwork 5.1 does not migrate project documents. Existing
-projects stay on legacy-v1 memory until explicit cutover; fresh initialized
-projects use v2 case bundles through Init. Update may report the package version
-and readiness, and a receipt case may be selected or created only through the
-Writer route above; it must not infer migration authority or touch both v1 and
-v2 memory trees. Mixed, unknown, stale, ambiguous case, missing seed/task_key, or
-partial migration fails closed before any write.
+Updating or activating Teamwork does not migrate project documents by default.
+Existing legacy-v1 project memory is read-only migration input; normal Update
+receipts use only case-v2. Update may migrate a project only when Root has
+explicit authority for the current named project or an exact `--project-root`
+value; it must not scan for projects. Use the package-owned helper for that
+exact root, for example `scripts/teamwork-case-migration.py classify
+--project-root <exact-project-root>` and
+`scripts/teamwork-case-migration.py request-inputs --project-root
+<exact-project-root>` before any cutover. If the accepted migration requires
+`teamwork-case-migration.py migrate --project-root <exact-project-root>` or
+`teamwork-case-migration.py resume --project-root <exact-project-root>` and the
+installed helper does not expose that phase, stop `capability-blocked` instead
+of scanning or inventing a replacement. Fresh initialized projects use v2 case
+bundles through Init. Update may report the package version and readiness, and
+a receipt case may be selected or created only through the Writer route above;
+it must not infer migration authority or touch both v1 and v2 memory trees.
+Mixed, unknown, stale, ambiguous case, missing seed/task_key, legacy-v1 without
+explicit migration authority, or partial migration fails closed before any
+write.
 
 For notifications, trust only the specific Teamwork hooks reported by the
 package; never enable trust-all. Do not install external dependencies, MCP
@@ -81,6 +97,8 @@ authority.
 
 This skill does not edit `VERSION`, manifests, changelogs, commits, tags, or
 GitHub Releases. It does not pull or publish source without explicit repository
-authority. It never runs project initialization or edits project instruction and
-memory files. Finish with source and installed versions, profile, each managed
-surface's freshness, activation strength, manual actions, and unresolved drift.
+authority. It never runs general project initialization or edits project
+instructions; only the exact-root migration exception above may change Teamwork
+memory, and only through the migration transaction. Finish with source and
+installed versions, profile, each managed surface's freshness, activation
+strength, manual actions, and unresolved drift.

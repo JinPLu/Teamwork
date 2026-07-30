@@ -91,7 +91,7 @@ Ask what is missing right now, not how complicated the task looks.
 
 | What you are missing | Use | What it does |
 | --- | --- | --- |
-| An acceptable direction | 💬 `$teamwork-collaborate` | Dialogue, brainstorm, grill, stress-test, or converge on an unsettled product, architecture, workflow, or API direction. |
+| An acceptable direction | 💬 `$teamwork-collaborate` | Dialogue, brainstorm, stress-test, or converge on an unsettled product, architecture, workflow, or API direction; challenge/adversarial is an internal method, not a public mode. |
 | External or current facts | 🔎 `$teamwork-research` | Read official sources, papers, market, or ecosystem evidence; compare multiple sources or provide citations. |
 | Read-only local evidence | 🗂️ `$teamwork-explore` | Inspect code, config, logs, tests, history, or artifacts without changing the project. |
 | The cause of a real failure | 🐞 `$teamwork-debug` | Reproduce the failure, discriminate among hypotheses, and establish a safe repair boundary. |
@@ -182,13 +182,19 @@ Use $teamwork-goal to keep fixing until the named check passes. Stop only for a 
 
 Teamwork is not a control layer and does not turn every small request into a workflow. It supplements the host instead of replacing Codex, Cursor, or Claude Code tools, permissions, and execution paths.
 
+Research, Explore, Debug, Plan, and Review must be handled by their owning leaf.
+If the host lacks that capability, Teamwork reports capability-blocked instead
+of letting Root or another role simulate it. Collaborate and Goal are Root-owned.
+The default dispatch is 1 child and the everyday ceiling is 4; 5-8 children are
+reserved for explicit adversarial or release work when the host supports them.
+
 ## 🗃️ Persistence and safety boundaries
 
 - In an initialized writable project, named Teamwork workflows save reusable checkpoints or results by default. One-shot explanations, small edits, and ordinary local work do not force a document.
 - Explicit `no files`, off-record, read-only, or no-write instructions override default persistence.
 - Research, Collaborate, Plan, diagnostic Debug, and Review do not automatically authorize code edits or external effects. Accepting a plan does not authorize execution.
-- Freshly initialized projects use v2 case bundles to keep one matter's collaboration, evidence, plan, review, Goal, and result under `docs/teamwork/cases/`. In existing legacy-v1 projects, Collaborate keeps its one-file record at `docs/teamwork/collaborate/current.md`, while Goal retains its dedicated route and the generic artifact transaction handles other durable artifacts.
-- Any `cutover` must be explicit and one-way. Installing or updating Teamwork does not migrate, rewrite, or delete existing project documents.
+- v6 normal runtime uses only v2 case bundles to keep one matter's collaboration, evidence, plan, review, Goal, and result under `docs/teamwork/cases/`. legacy-v1, old grill, Discussion, and Design records are Init/Update semantic migration inputs only, not a compatible runtime mode.
+- Init/Update migration must use one exact project root and is authorized and one-time. Installing or updating Teamwork does not mean any project has migrated. A project migration may be claimed only after successful Init/Update transaction readback for that root, and keeps the cold archive / restore drill boundary.
 - Teamwork also does not remove configuration whose ownership it cannot prove.
 
 For persistence internals, agent profiles, adversarial Collaborate, and platform limits, see [Codex](CODEX.md), [Cursor](CURSOR.md), [Claude Code](CLAUDE.md), and [repository architecture](docs/architecture.md).

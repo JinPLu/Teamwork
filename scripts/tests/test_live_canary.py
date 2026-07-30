@@ -533,8 +533,8 @@ class CandidateInstalledV4Tests(unittest.TestCase):
                     "gpt-5.5", "high", "gpt-5.5", "medium", 1,
                 ),
                 (
-                    "performance-legacy-high", "performance-first", "design-challenge-bounded-convergence", "designer", "teamwork-design",
-                    "command_execution", "read-only", "EVIDENCE_DESIGN_CONVERGENCE_V4",
+                    "performance-legacy-high", "performance-first", "collaborate-challenge-bounded-convergence", "designer", "teamwork-collaborate",
+                    "command_execution", "read-only", "EVIDENCE_COLLABORATE_CONVERGENCE_V4",
                     "gpt-5.6-sol", "high", "gpt-5.6-sol", "max", 1,
                 ),
                 (

@@ -1,0 +1,62 @@
+{
+  "evidence": "Static layered dependent-sequence contract; reviewer still judges whether the dependency is real.",
+  "expected": {
+    "capability": "collaborate",
+    "language": "en",
+    "requires": [
+      "global-decision-map",
+      "global-to-detail-order",
+      "dependency-serialization",
+      "one-batch-per-turn",
+      "one-checkpoint-per-answered-batch",
+      "transaction-owned-writer",
+      "recommend-first",
+      "question-criticality",
+      "closure-signal",
+      "no-implementation"
+    ],
+    "scenario": "challenge-dependent-sequence"
+  },
+  "id": "collaborate-challenge-dependent-sequence-en",
+  "must": [
+    "show the global decision map and mark the rollout-window item as dependent on the compatibility answer",
+    "ask only the compatibility decision in the first batch, apply one semantic checkpoint update for the answered batch through Writer, then ask the rollout-window decision only after that dependency closes"
+  ],
+  "must_not": [
+    "batch the dependent rollout-window question with its prerequisite, ask a questionnaire, implement, edit files, or treat answers as implementation authority"
+  ],
+  "platforms": [
+    "codex",
+    "cursor",
+    "claude"
+  ],
+  "producers": [
+    {
+      "class": "root-policy",
+      "source": "scripts/install/policy.sh"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/codex-agents/teamwork-writer.toml"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/cursor-agents/writer.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/claude-agents/writer.md"
+    },
+    {
+      "class": "artifact-engine",
+      "source": "scripts/discussion-transaction.py"
+    }
+  ],
+  "prompt": "Collaborate me on a public migration: first decide whether compatibility is required; only that answer determines which rollout-window options are valid.",
+  "source": "synthetic",
+  "split": "dev"
+}

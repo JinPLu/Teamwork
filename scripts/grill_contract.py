@@ -1,9 +1,10 @@
-"""Minimal structural helpers for capability-first grill evaluations.
+"""Minimal structural helpers for capability-first Collaborate evaluations.
 
 The skill owns decision semantics.  This module deliberately does not model a
-grill state machine, parse a user-facing packet, or choose an interaction
-adapter.  It only supplies observable text and read-only event checks used by
-offline fixtures and the maintainer live recorder.
+Collaborate challenge state machine, parse a user-facing packet, or choose an
+interaction adapter. It only supplies observable text and read-only event
+checks used by offline fixtures and the maintainer live recorder. The legacy
+ceremony matcher remains only to reject superseded packet/state output.
 """
 
 from __future__ import annotations

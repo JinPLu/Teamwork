@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 6.0.0 - 2026-07-30
+
+**Teamwork 6.0 moves normal runtime to case-v2 only, so collaboration, evidence, plans, reviews, Goal state, and results live under one matter container.**
+
+- **Normal runtime uses only case-v2.** New Teamwork workflows no longer treat legacy-v1 as a compatible operating mode; one case bundle owns the related Collaborate, Research, Debug, Plan, Review, Goal, and execution result records.
+- **Old records are migration inputs only.** legacy-v1 and old grill/Discussion/Design records are read only by `$teamwork-init` or `$teamwork-update` semantic migration; install, update, or ordinary runtime does not claim a successful migration.
+- **Missing capabilities block explicitly.** Research, Explore, Debug, Plan, and Review must be handled by their owning leaf, and missing support returns capability-blocked. Collaborate and Goal remain Root-owned, while tiny reads, ordinary explanations, simple commands, clear authorized implementation, and integration stay on the native host path.
+- **Concurrency and state are more visible.** The default is 1 child and the everyday ceiling is 4; 5-8 children are reserved for explicit adversarial or release work when the host supports them. Research, Plan, Review, and Goal expose monotonic status, and Debug starts from hypotheses and reproduction.
+
+Upgrade action: replace prompts that still depend on `$grill-me`, `$teamwork-discuss`, `$teamwork-design`, or legacy-v1 runtime routing with `$teamwork-collaborate`, case-v2 memory, and the owning workflow. Codex Marketplace users re-add `JinPLu/Teamwork`, install `teamwork-skill@teamwork`, and run `$teamwork-update` in a new task. Checkout users run `git pull --ff-only`, `./install.sh all`, and `./scripts/check-update.sh --readiness`.
+
+Important limit: the v6 hard cut describes the runtime boundary; installing or updating does not mean any project has migrated. A project migration may be claimed only after successful Init/Update transaction readback for the exact project root. Init/Update migration remains a one-time operation with cold archive / restore drill boundaries. Teamwork does not promise exact CodexRadar prices or rankings; `performance-first` and `cost-first` keep the existing model preference mapping.
+
 ## 5.1.0 - 2026-07-30
 
 **Teamwork 5.1 repairs workflow document maintenance: new projects converge durable documents into case bundles without forcing existing projects to migrate.**

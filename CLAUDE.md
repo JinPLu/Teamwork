@@ -48,17 +48,20 @@ runtime, and artifact inspection. Clear authorized implementation also stays
 native. Use `teamwork-explore` for a distinct read-only local evidence question,
 and `teamwork-research` only for external, current, multi-source, or
 citation-backed research. Use `teamwork-collaborate` for natural discussion,
-brainstorming, grill, stress-testing, question-before-action, or an unsettled
-consequential solution, and use `teamwork-plan` only after controlled
+brainstorming, stress-testing, question-before-action, or an unsettled
+consequential solution. Challenge and adversarial search are Collaborate
+methods, not public mode names. Use `teamwork-plan` only after controlled
 Collaborate records `acceptance: accepted`. Collaborate uses Explorer only for
 an unresolved local constraint and sanitized external Research only for a named
 external/current claim that can change the choice; it never runs both by
-default. It compares 2-3 real alternatives or records safe-path evidence, makes
-one challenge pass, and keeps the decision frontier finite. It contributes
+default. It compares 2-3 real alternatives or records safe-path evidence,
+applies the needed challenge/adversarial method, and keeps the decision frontier
+finite. It contributes
 synthesis, candidate space, a decision map, or provisional recommendation before
 asking. Its controlled transaction records `acceptance: pending`, `accepted`, or
 `blocked`; persistence is not acceptance, and only `accepted` is Plan-ready.
-Legacy Discussion/Design records are read-only migration inputs. Independent
+Legacy-v1, old grill, Discussion, and Design records are Init/Update semantic
+migration inputs only. Independent
 Plan Review runs only on user request or a named material risk gate. It does not
 implement the result or enter Plan silently.
 
@@ -95,39 +98,44 @@ diagnosis alone was requested; an original request that already authorizes a fix
 allows the evidenced narrow change. Approving a design or plan does not
 authorize implementation.
 
-Collaborate selects `dialogue`, `brainstorm`, or `grill`, contributes before
+Collaborate selects `dialogue` or `brainstorm`, contributes before
 asking, and never asks the user to name a mode. Open questions stay in prose; a
 host-native choice surface is appropriate only for a genuine finite decision
-with two or three mutually exclusive options. Grill strictly follows the
-complete global -> boundary -> detail map, batches at most three independent
+with two or three mutually exclusive options. Sustained pressure-testing follows
+the complete global -> boundary -> detail map, batches at most three independent
 decisions, serializes dependent decisions, and applies one semantic Collaborate
 update per answered batch.
 
 In an initialized writable project, named Teamwork workflows persist reusable
 checkpoints and results by default; `no files`, off-record, read-only, or
 no-write overrides that default. One-shot explanations, casual fact questions,
-and tiny native work create no standalone artifact. Collaborate and Goal use
-specialized transactions. Research, Debug, Plan, Plan Review, Review,
-mutating Init/Update, and a terminal execution handoff with an explicit consumer
-and no active Goal use the generic artifact transaction. An active Goal
-suppresses duplicate execution artifacts. Explore creates no standalone report;
-its evidence is folded into the consuming artifact or answer.
+and tiny native work create no standalone artifact. Collaborate, Goal, Research,
+Debug, Plan, Plan Review, Review, mutating Init/Update, and a terminal execution
+handoff with an explicit consumer and no active Goal write their selected
+case-v2 artifact. An active Goal suppresses duplicate execution artifacts.
+Explore creates no standalone report; its evidence is folded into the consuming
+artifact or answer.
 
-Teamwork 5.1 resolves schema before routing. Existing project memory remains
-legacy-v1 and keeps the current sinks until explicit cutover. Fresh initialized
-projects use v2 case bundles under `docs/teamwork/cases/c-<64hex>/`, where
+Teamwork 6.0 is a hard cut for normal runtime: runtime writes use v2 case
+bundles under `docs/teamwork/cases/c-<64hex>/`, where
 Collaborate, Plan, Research, Debug, Review, Goal, and execution results attach
-to one case. Update/install alone never migrates, rewrites, or deletes existing
-`docs/teamwork`; cutover is a separate one-way operation with cold-archive and
-restore-drill gates.
+to one case. legacy-v1 is not a compatible runtime mode. Init/Update may read
+legacy-v1 and old grill/Discussion/Design records only as semantic migration
+input during an exact one-time project-root migration. Update/install alone
+never claims to migrate, rewrite, or delete existing `docs/teamwork`; the
+cold-archive and restore-drill gates remain.
+
+Research, Explore, Debug, Plan, and Review require their owning leaf. If Claude
+Code cannot provide that capability, the workflow returns capability-blocked
+instead of falling back to Root or another role. Collaborate and Goal remain
+Root-owned.
 
 Sustained Collaborate intent plus a substantive synthesis, candidate space, or
 decision map and an unresolved question or unaccepted direction defaults to one
-semantic checkpoint after reading `docs/teamwork/index.json`: v2 writes the
-selected case manifest and `live/collaborate.md` through case transactions,
-while legacy-v1 alone maintains `docs/teamwork/collaborate/current.md` through
-Collaborate transactions. Frozen legacy Discussion and Design records remain
-readable only as migration inputs and migrate only on semantic mutation.
+semantic checkpoint after reading `docs/teamwork/index.json`: v6 writes the
+selected case manifest and `live/collaborate.md` through case transactions.
+Frozen legacy-v1, old grill, Discussion, and Design records remain readable
+only as Init/Update migration inputs.
 Unchanged state is a no-op. Collaborate never stores a transcript or substitutes
 a report/conclusion; `no files`, off-record, read-only, or no-write wins.
 
@@ -149,7 +157,10 @@ for global setup.
 Teamwork may use nine Claude Code roles—Researcher, Explorer, Debugger,
 Designer, Planner, Worker, Writer, Plan Reviewer, and Reviewer—when separate
 context, standalone document writing, or independent acceptance is worth the
-coordination cost. Writer uses a simple `haiku`/`medium` profile and a frozen
+coordination cost. Default dispatch is one child, everyday work is capped at
+four, and five to eight children are reserved for explicit adversarial or
+release work when Claude Code supports that concurrency. Writer uses a simple
+`haiku`/`medium` profile and a frozen
 bounded packet for standalone docs and runtime artifacts. It may draft,
 organize, summarize, translate, and polish, but must not research, invent,
 paraphrase, or change frozen facts, citations, decisions, authority, status, or

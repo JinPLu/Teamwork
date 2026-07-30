@@ -29,5 +29,6 @@ docs/teamwork/.teamwork-init-transaction.json
 # Legacy v3 location retained as a fail-closed migration interlock.
 docs/teamwork/.discussion-transaction.json
 docs/teamwork/discussion/.discussion-transaction.json
+docs/teamwork/collaborate/.collaborate-transaction.json
 docs/teamwork/.*.teamwork-init-*
 # TEAMWORK_LOCAL_END

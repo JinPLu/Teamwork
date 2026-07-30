@@ -15,6 +15,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
 BUILD_SCRIPT = ROOT / "scripts/build-codex-plugin.py"
+CURRENT_VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 
 
 def load_builder() -> Any:
@@ -32,7 +33,7 @@ class RuntimeIntegrityTests(unittest.TestCase):
         self.tmp = Path(self.temporary.name)
         builder = load_builder()
         self.stage = builder.build_stage(ROOT, self.tmp)
-        self.package_root = self.tmp / "cache/teamwork/teamwork-skill/5.1.0"
+        self.package_root = self.tmp / f"cache/teamwork/teamwork-skill/{CURRENT_VERSION}"
         self.package_root.parent.mkdir(parents=True)
         shutil.copytree(self.stage, self.package_root, symlinks=True)
         shutil.rmtree(self.stage.parent)
@@ -55,7 +56,7 @@ class RuntimeIntegrityTests(unittest.TestCase):
         )
 
     def copy_package(self, name: str) -> Path:
-        destination = self.tmp / name / "teamwork/teamwork-skill/5.1.0"
+        destination = self.tmp / name / f"teamwork/teamwork-skill/{CURRENT_VERSION}"
         destination.parent.mkdir(parents=True)
         shutil.copytree(self.package_root, destination, symlinks=True)
         return destination

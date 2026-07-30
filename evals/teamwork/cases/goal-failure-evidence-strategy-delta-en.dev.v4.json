@@ -1,0 +1,36 @@
+{
+  "id": "goal-failure-evidence-strategy-delta-en",
+  "split": "dev",
+  "source": "trajectory",
+  "producers": [
+    {"class": "root-policy", "source": "scripts/install/policy.sh"},
+    {"class": "skill", "source": "skills/teamwork-goal/SKILL.md"},
+    {"class": "role-template", "source": "templates/codex-agents/teamwork-worker.toml"},
+    {"class": "role-template", "source": "templates/cursor-agents/worker.md"},
+    {"class": "role-template", "source": "templates/claude-agents/worker.md"},
+    {"class": "role-template", "source": "templates/codex-agents/teamwork-writer.toml"},
+    {"class": "role-template", "source": "templates/cursor-agents/writer.md"},
+    {"class": "role-template", "source": "templates/claude-agents/writer.md"}
+  ],
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Keep working until the named test passes; the first attempt produces no new evidence.",
+  "expected": {
+    "capability": "goal",
+    "scenario": "failure-evidence-strategy-delta",
+    "language": "en",
+    "requires": [
+      "objective",
+      "signal",
+      "attempt",
+      "failure-class",
+      "evidence-delta",
+      "strategy-delta",
+      "status",
+      "case-v2-artifact-only",
+      "no-narrative-success-upgrade"
+    ]
+  },
+  "must": ["classify the failure and change strategy before the next attempt"],
+  "must_not": ["repeat a no-progress attempt or narrate success without the real signal"],
+  "evidence": "Static trajectory contract for monotonic Goal attempts."
+}

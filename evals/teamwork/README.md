@@ -20,21 +20,24 @@ The cases are organized by capability metadata rather than hard-coded case IDs.
 The dev matrix keeps bilingual coverage for:
 
 - external Research and the local-evidence Native negative control;
-- default Design activation, input-driven adversarial Design selection,
+- Collaborate challenge activation, input-driven adversarial method selection,
   selected-direction Plan, and their ownership boundaries;
-- adaptive Collaborate activation for dialogue, brainstorm, and grill, with a useful
+- adaptive Collaborate activation for dialogue and brainstorm, with challenge
+  methods when risk warrants them, a useful
   contribution first and at most one open prose or genuinely bounded native
   question;
-- semantic Collaborate persistence through Writer and the managed
-  `collaborate-inspect -> collaborate-schema -> collaborate-apply` transaction, including schema v1 and frozen v1/v2
-  compatibility, with no transcript or report substitute;
+- semantic Collaborate persistence through Writer and the managed case-v2
+  `case-inspect -> case-schema -> case-apply` transaction, with legacy-v1
+  artifacts treated only as read-only migration inputs and no transcript or
+  report substitute;
 - Debug, Goal, Review, Init, Update, Ask Gate, minimal native change,
   monotonic verification, permission/privacy, and cross-platform host ownership.
 
 The release split is deliberately small but non-empty. It holds out four public
-boundaries: external Research versus local Native inspection, unresolved Design
-versus selected-direction Plan, automatic adversarial Design versus weak-cue or
-explicit-standard default Design and chat-only recommendations, and adaptive
+boundaries: external Research versus local Native inspection, unresolved
+Collaborate options versus selected-direction Plan, automatic adversarial
+Collaborate challenge versus weak-cue or explicit-standard default Collaborate
+and chat-only recommendations, and adaptive
 Collaborate persistence versus one-shot and no-files controls. Release cases are never
 optimizer inputs.
 
@@ -48,24 +51,24 @@ removing or inverting a protected boundary makes the harness fail.
 The active harness no longer protects the retired router, generic Execute skill,
 an exact reference inventory, shared behavioral-reference prose, staged packet
 terminology, transaction-helper anchors, multi-file collaboration lifecycle, or
-fixed source sentences. Each of the ten public skills owns its behavior in one
+fixed source sentences. Each public skill owns its behavior in one
 `SKILL.md`; topology validation rejects behavioral references, skill-local
 behavior scripts, cross-skill loading, dependency cycles, and retired skill
 names.
 
 Mechanical safety tests for ordinary memory/index handling remain separate from
-behavior activation. Natural collaboration and brainstorming activate Collaborate:
-answer with synthesis, tension, candidate space, or a decision map first, select
-dialogue, brainstorm, or grill from intent and risk, then ask at most one useful
-open prose or genuinely bounded native question. App-server probes select Plan
-collaboration mode for bounded native requests and Default for open prose.
-Sustained collaboration with a
-substantive synthesis and unresolved question defaults to one semantic
-Collaborate checkpoint through Writer and the managed
-`collaborate-inspect -> collaborate-schema -> collaborate-apply` transaction in a named, initialized writable
-project. New records use schema v1, frozen v1/v2 records remain readable, no
-transcript or report is substituted, `no files` overrides persistence, and no
-Collaborate action grants implementation authority.
+behavior activation. Natural collaboration and brainstorming activate
+Collaborate: answer with synthesis, tension, candidate space, or a decision map
+first, select dialogue or brainstorm from intent, apply challenge or adversarial
+methods only when warranted, then ask at most one useful open prose or genuinely
+bounded native question. App-server probes select Plan collaboration mode for
+bounded native requests and Default for open prose. Sustained collaboration with
+a substantive synthesis and unresolved question defaults to one semantic
+Collaborate checkpoint through Writer and the managed case-v2
+`case-inspect -> case-schema -> case-apply` transaction in a named, initialized
+writable project. Legacy-v1 records are read-only migration inputs with no
+write fallback, no transcript or report is substituted, `no files` overrides
+persistence, and no Collaborate action grants implementation authority.
 
 ## Evidence lanes
 
@@ -80,7 +83,8 @@ Keep evidence lanes separate:
    install into disposable host homes, and emit the shared v4 trajectory schema.
 4. **Disposable write** — an explicitly authorized test uses a disposable
    initialized project and before/after manifests. Only this lane can support a
-   claim about the observed Grill write footprint.
+   claim about the observed case-v2 Collaborate write footprint. Historical
+   Grill names appear only in legacy detector fixtures or migration inputs.
 
 Do not merge these into one green claim. Record the host, model, prompt set,
 repeats, sandbox, and unresolved evidence limit.

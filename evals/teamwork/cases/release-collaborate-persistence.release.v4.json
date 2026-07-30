@@ -1,0 +1,62 @@
+{
+  "evidence": "Held-out static Collaborate persistence release boundary.",
+  "expected": {
+    "capability": "collaborate",
+    "language": "en",
+    "requires": [
+      "case-v2-artifact-only",
+      "challenge-method-for-major-risk",
+      "explicit-save-authorizes-transaction",
+      "initialized-writable-project",
+      "managed-transaction-only",
+      "no-files-overrides",
+      "no-implementation",
+      "no-legacy-write-fallback",
+      "one-shot-no-write",
+      "sustained-checkpoint",
+      "transaction-owned-writer"
+    ],
+    "scenario": "persistence-boundary"
+  },
+  "id": "release-collaborate-persistence",
+  "must": [
+    "keep a one-shot explanation conversation-only; sustained Collaborate and independently major-risk challenge method use only Writer plus the managed case-inspect -> case-schema <collaborate-upsert> -> case-apply/readback transaction in an initialized writable project, with new records written as case-v2 dialogue/brainstorm Collaborate state and legacy-v1 artifacts still readable only as migration inputs under transaction-owned authority"
+  ],
+  "must_not": [
+    "write when no files is present, directly write collaboration Markdown or an index, implement, or infer implementation authority"
+  ],
+  "platforms": [
+    "codex",
+    "cursor",
+    "claude"
+  ],
+  "producers": [
+    {
+      "class": "root-policy",
+      "source": "scripts/install/policy.sh"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/codex-agents/teamwork-writer.toml"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/cursor-agents/writer.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/claude-agents/writer.md"
+    },
+    {
+      "class": "artifact-engine",
+      "source": "scripts/discussion-transaction.py"
+    }
+  ],
+  "prompt": "Contrast a one-shot explanation with '$teamwork-collaborate and save', including sustained collaboration, major-risk challenge method, and the user's 'no files' override.",
+  "source": "release",
+  "split": "release"
+}

@@ -130,22 +130,18 @@ def project_label(root: Path, explicit: str | None) -> str:
 
 def managed_agents_block(tree: "InitTree", label: str, index: dict[str, object] | None) -> str:
     schema_version = 2 if index is None else index.get("schema_version")
+    if schema_version != 2:
+        fail(
+            "project context requires case-v2 memory; run the exact-root "
+            "Init/Update migration before write-context"
+        )
     lines = [
         f"- Project label (local routing only): `{label}`.",
         "- Read `docs/teamwork/index.json` first before choosing Teamwork memory routes.",
+        "- Normal Teamwork workflow writes use case-v2 only; legacy-v1 and old collaboration modes are migration inputs, not runtime routes.",
+        "- For Collaborate dialogue, brainstorm, and challenge checkpoints, use the selected v2 case manifest and `live/collaborate.md`; accepted decisions use `decision.md`. Route both through `case-inspect`, `case-schema`, and `case-apply`; never mirror them into ordinary memory, legacy Discussion/Design, or a report.",
+        "- For ordinary durable memory, follow the relevant case manifest. Keep volatile progress in its actual artifact.",
     ]
-    if schema_version == 2:
-        lines.extend([
-            "- For Collaborate dialogue, brainstorm, grill, and accepted-decision checkpoints, use the selected v2 case manifest and `live/collaborate.md` through `case-inspect`, `case-schema`, and `case-apply`; never mirror them into ordinary memory, legacy Discussion/Design, or a report.",
-            "- For ordinary durable memory, follow the relevant case manifest. Keep volatile progress in its actual artifact.",
-        ])
-    elif schema_version == 1:
-        lines.extend([
-            "- For Collaborate dialogue, brainstorm, grill, and accepted-decision checkpoints, legacy-v1 alone uses `docs/teamwork/collaborate/current.md` through `collaborate-inspect`, `collaborate-schema`, and `collaborate-apply`; never mirror them into ordinary memory, legacy Discussion/Design, or a report.",
-            "- For ordinary durable memory, read `docs/teamwork/README.md` after the index, then the referenced artifact. Keep volatile progress in its actual artifact.",
-        ])
-    else:
-        fail("docs/teamwork/index.json has unsupported schema_version")
     codegraph = tree.stat("root", ".codegraph")
     if (
         codegraph is not None

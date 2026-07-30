@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 6.0.0 - 2026-07-30
+
+**Teamwork 6.0 切到 case-v2-only 运行模型，让协作、证据、计划、复查、Goal 和结果都落在同一个事项容器里。**
+
+- **普通运行只使用 case-v2。** 新的 Teamwork workflow 不再把 legacy-v1 当作兼容运行模式；同一事项的 Collaborate、Research、Debug、Plan、Review、Goal 和执行结果都归入 case bundle。
+- **旧记录只用于迁移输入。** legacy-v1 和旧 grill/Discussion/Design 记录只在 `$teamwork-init` 或 `$teamwork-update` 的语义迁移中读取；安装、更新或普通运行不会声称已经迁移成功。
+- **能力缺失会明确阻塞。** Research、Explore、Debug、Plan 和 Review 必须由对应 owning leaf 承接，缺少能力时返回 capability-blocked；Collaborate 和 Goal 仍由 Root 拥有，微小读取、普通解释、简单命令、清楚授权的实现和集成继续走宿主原生路径。
+- **并发和状态更可见。** 默认只派发 1 个 child，日常上限为 4；5-8 个 child 只在显式 adversarial 或 release 且宿主支持时使用。Research、Plan、Review 和 Goal 暴露单调状态，Debug 从假设和复现开始。
+
+升级操作：把仍依赖 `$grill-me`、`$teamwork-discuss`、`$teamwork-design` 或 legacy-v1 运行路由的提示词改为 `$teamwork-collaborate`、case-v2 memory 和对应 workflow。Codex Marketplace 用户重新添加 `JinPLu/Teamwork`、安装 `teamwork-skill@teamwork`，并在新任务中运行 `$teamwork-update`；checkout 用户运行 `git pull --ff-only`、`./install.sh all` 和 `./scripts/check-update.sh --readiness`。
+
+重要限制：v6 hard cut 描述的是运行边界；安装或更新本身不代表任意项目已经迁移。只有针对精确 project-root 的 Init/Update transaction readback 成功后，才能声称该项目迁移完成。Init/Update 迁移仍是一次性操作，并保留 cold archive / restore drill 边界；Teamwork 不承诺 CodexRadar 的精确价格或排名，`performance-first` 和 `cost-first` 只保留既有模型偏好映射。
+
 ## 5.1.0 - 2026-07-30
 
 **Teamwork 5.1 修复工作流文档维护：新项目把持久文档收敛到 case bundle，同时不强制迁移已有项目。**

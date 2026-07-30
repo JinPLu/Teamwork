@@ -55,62 +55,19 @@ class InitProjectAbaTests(unittest.TestCase):
         memory = project / "docs/teamwork"
         memory.mkdir(parents=True, exist_ok=True)
         index = {
-            "schema_version": 1,
-            "last_updated": "2026-07-19",
+            "schema_version": 2,
             "project": {
                 "name": "Fixture",
                 "root": ".",
-                "description": "Local Teamwork memory index for this project.",
+                "description": "Local Teamwork case-bundle index for this project.",
             },
-            "source_of_truth_order": ["active", "linked", "header_search", "fulltext"],
-            "ignore_globs": [".planning/**"],
-            "budgets": {"header_first": True},
-            "active": {
-                "collaborate": None,
-                "current": "docs/teamwork/current.md",
-                "design": None,
-                "plan": None,
-                "progress": None,
-                "report": None,
-                "results": [],
-            },
-            "collaborate_consumed_sources": [],
-            "entries": [
-                {
-                    "topic": "project-initialization",
-                    "kind": "result",
-                    "title": "Teamwork project initialization",
-                    "status": "active",
-                    "currentness": "current",
-                    "authority": "active-summary",
-                    "path": "docs/teamwork/current.md",
-                    "applies_to": ["AGENTS.md", "docs/teamwork/"],
-                    "linked": [],
-                    "evidence_paths": ["docs/teamwork/current.md"],
-                    "supersedes": [],
-                    "search_keys": ["teamwork-init", "project-init", "initialization"],
-                    "updated": "2026-07-19",
-                    "summary": "Initial ordinary Teamwork memory entry created by project initialization.",
-                }
-            ],
-            "profiles": {
-                "status": ["index", "current", "topic"],
-                "implementation": ["index", "current", "active_design_or_plan", "linked_research_headers"],
-                "review": ["index", "current", "active_design_or_plan", "active_progress", "verification"],
-                "research": ["index", "current", "topic_headers", "linked_artifacts"],
-                "design": ["index", "current", "accepted_decisions", "active_design_plan", "linked_research"],
-            },
-            "pending": [],
+            "active_cases": [],
+            "claim_heads": {},
+            "aliases": {},
+            "recent_cases": [],
+            "migration": None,
         }
         (memory / "index.json").write_text(json.dumps(index, indent=2) + "\n", encoding="utf-8")
-        (memory / "current.md").write_text(
-            "# Teamwork Current State\n\nLast Updated: 2026-07-19\n\n## Active Snapshot\n\n- Current focus: Fixture.\n",
-            encoding="utf-8",
-        )
-        (memory / "README.md").write_text(
-            "# Teamwork Runtime Index README\n\nLegacy schema v1 fixture.\n",
-            encoding="utf-8",
-        )
         (project / ".gitignore").write_text(
             "# TEAMWORK_LOCAL_START\n"
             "# Teamwork local runtime state\n"
@@ -302,17 +259,17 @@ Choose the evidence that should lead the next reply.
             self.assertEqual(agents.read_text(encoding="utf-8"), "external writer wins\n")
             self.assertTrue((project / ".teamwork-init-transaction.json").is_file())
 
-    def test_w4_delete_recovers_exact_prestate_or_finishes_when_committed(self) -> None:
-        for case in ("after-delete", "committed"):
+    def test_case_v2_state_recovers_exact_prestate_or_finishes_when_committed(self) -> None:
+        for case in ("after-replace", "committed"):
             with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary:
                 project = Path(temporary).resolve() / "project"
                 project.mkdir()
                 self.initialize(project)
-                self.install_legacy_active_discussion(project)
                 before = self.state(project)
+                index_before = (project / "docs/teamwork/index.json").read_bytes()
                 env = (
-                    {"TEAMWORK_TEST_HARD_EXIT_INIT_REPLACE_AT": "2"}
-                    if case == "after-delete"
+                    {"TEAMWORK_TEST_HARD_EXIT_INIT_REPLACE_AT": "1"}
+                    if case == "after-replace"
                     else {"TEAMWORK_TEST_HARD_EXIT_INIT_PHASE": "committed"}
                 )
 
@@ -329,23 +286,17 @@ Choose the evidence that should lead the next reply.
                 self.assertEqual(interrupted.returncode, 86, interrupted.stderr)
                 recovered = self.run_files(project, "preflight")
                 self.assertEqual(recovered.returncode, 0, recovered.stderr)
-                old_artifact = project / ACTIVE_DISCUSSION_PATH
-                current_artifact = project / "docs/teamwork/discussion/current.md"
-                if case == "after-delete":
+                if case == "after-replace":
                     self.assertEqual(self.state(project), before)
-                    self.assertTrue(old_artifact.is_file())
-                    self.assertFalse(current_artifact.exists())
                 else:
-                    self.assertFalse(old_artifact.exists())
-                    self.assertTrue(current_artifact.is_file())
+                    self.assertEqual((project / "docs/teamwork/index.json").read_bytes(), index_before)
                     self.assertEqual(self.run_files(project, "validate").returncode, 0)
 
-    def test_plan_currentness_repair_recovers_exact_prestate_after_interruption(self) -> None:
+    def test_case_v2_context_repair_recovers_exact_prestate_after_interruption(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = Path(temporary).resolve() / "project"
             project.mkdir()
             self.initialize(project)
-            self.install_legacy_plan_candidates(project)
             before = self.state(project)
 
             interrupted = self.run_files(

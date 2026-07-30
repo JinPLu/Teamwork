@@ -83,8 +83,24 @@ project_files() {
     --project-root "$PROJECT_ROOT_INPUT" "$@"
 }
 
-project_files preflight
 PROJECT_ROOT="$(project_files print-root)"
+
+if [[ -f "$PROJECT_ROOT/docs/teamwork/index.json" ]]; then
+  migration_rc=0
+  migration_output="$(
+    python3 "$TEAMWORK_ROOT/scripts/teamwork-case-migration.py" \
+    migrate \
+    --project-root "$PROJECT_ROOT" \
+    --cutover \
+      --cleanup 2>&1
+  )" || migration_rc=$?
+  if [[ "$migration_rc" -ne 0 ]]; then
+    printf 'Teamwork project init refused: %s\n' "$migration_output" >&2
+    exit "$migration_rc"
+  fi
+fi
+
+project_files preflight
 
 if (( RUN_CODEGRAPH == 0 )); then
   echo "CodeGraph: skipped (explicit consent not given)"

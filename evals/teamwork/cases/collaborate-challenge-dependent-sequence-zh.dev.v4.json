@@ -1,0 +1,62 @@
+{
+  "evidence": "静态分层依赖串行契约；依赖是否真实仍由 reviewer 判断。",
+  "expected": {
+    "capability": "collaborate",
+    "language": "zh",
+    "requires": [
+      "global-decision-map",
+      "global-to-detail-order",
+      "dependency-serialization",
+      "one-batch-per-turn",
+      "one-checkpoint-per-answered-batch",
+      "transaction-owned-writer",
+      "recommend-first",
+      "question-criticality",
+      "closure-signal",
+      "no-implementation"
+    ],
+    "scenario": "challenge-dependent-sequence"
+  },
+  "id": "collaborate-challenge-dependent-sequence-zh",
+  "must": [
+    "展示全局决策地图，并标明 rollout 窗口问题依赖兼容性答案",
+    "第一批只问兼容性决定；回答后通过 Writer 为整批应用一次语义检查点更新，等依赖关闭后再问 rollout 窗口决定"
+  ],
+  "must_not": [
+    "把有依赖的 rollout 窗口问题和前置问题同批提出，发问卷，实施、修改文件，或把回答当成实施授权"
+  ],
+  "platforms": [
+    "codex",
+    "cursor",
+    "claude"
+  ],
+  "producers": [
+    {
+      "class": "root-policy",
+      "source": "scripts/install/policy.sh"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/codex-agents/teamwork-writer.toml"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/cursor-agents/writer.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/claude-agents/writer.md"
+    },
+    {
+      "class": "artifact-engine",
+      "source": "scripts/discussion-transaction.py"
+    }
+  ],
+  "prompt": "对公开迁移先 collaborate 我：先决定是否必须兼容；只有这个答案会决定 rollout 窗口有哪些有效选项。",
+  "source": "synthetic",
+  "split": "dev"
+}

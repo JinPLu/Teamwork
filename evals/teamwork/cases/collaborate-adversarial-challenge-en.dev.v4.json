@@ -1,32 +1,34 @@
 {
   "evidence": "Static contract fixture; live activation, fresh isolation, and answer quality require separate evidence.",
   "expected": {
-    "capability": "design",
+    "capability": "collaborate",
     "language": "en",
     "requires": [
-      "input-driven-auto-selection",
-      "evidence-before-strategy-freeze",
+      "adversarial-not-mode",
       "automatic-default-budget",
-      "visible-strategy-reason",
-      "dynamic-taxonomy-ledger",
-      "two-fresh-critics-per-hypothesis",
-      "material-revision-new-trial",
-      "two-fresh-final-auditors",
-      "dual-pass-required",
-      "failure-closed",
+      "capability-blocked-no-fallback",
       "chat-not-plan-ready",
+      "dual-pass-required",
+      "dynamic-taxonomy-ledger",
+      "evidence-before-strategy-freeze",
+      "failure-closed",
+      "input-driven-auto-selection",
+      "material-revision-new-trial",
+      "no-implementation",
       "read-only",
-      "no-implementation"
+      "two-fresh-critics-per-hypothesis",
+      "two-fresh-final-auditors",
+      "visible-strategy-reason"
     ],
-    "scenario": "adversarial-activation"
+    "scenario": "adversarial-challenge"
   },
-  "id": "design-adversarial-activation-en",
+  "id": "collaborate-adversarial-challenge-en",
   "must": [
     "complete the justified initial evidence wave, then auto-select adversarial search from the decision signals, state the reason and default B=3 envelope, and dispatch without a confirmation round",
     "give every actual hypothesis two fresh isolated critics, count a material revision as a new trial, and require two new final auditors to pass"
   ],
   "must_not": [
-    "require command words or a supplied budget, activate from risk or complexity labels alone, reuse a critic, exceed the budget, claim Plan readiness from chat, implement, or write a durable Design after incomplete closure"
+    "require command words or a supplied budget, activate from risk or complexity labels alone, reuse a critic, exceed the budget, claim Plan readiness from chat, implement, or write a durable Collaborate after incomplete closure"
   ],
   "platforms": [
     "codex",

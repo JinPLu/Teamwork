@@ -1,7 +1,7 @@
 # Teamwork Repository Architecture
 
 Teamwork is a Codex-first skill package with Cursor and Claude Code adapters.
-Version 5 keeps each skill self-contained, makes Collaborate and durable workflow
+Version 6 keeps each skill self-contained, makes Collaborate and durable workflow
 handoffs first-class, and leaves ordinary local inspection and clear authorized
 implementation to the host. The repository separates authored capability
 sources from producer tooling and from generated or local install surfaces.
@@ -81,36 +81,35 @@ The following are sinks, not package sources:
   from frozen bounded packets without paraphrasing, filling gaps, or changing
   frozen facts, citations, decisions, authority, status, or acceptance; durable workflow
   artifacts are registered only through the schema-selected transaction route.
-  In v2, Collaborate, Research, Debug, Plan, Plan Review, Review, Goal,
-  mutating Init/Update, and qualifying terminal execution handoffs write case
-  transactions/case artifacts. In legacy-v1, Collaborate and Goal keep their
-  specialized transactions, while Research, Debug, Plan, Plan Review, Review,
-  mutating Init/Update, and terminal execution handoffs keep the generic
-  artifact transaction. Active Goal owns execution progress and forbids a
-  duplicate execution artifact. Ordinary completion workflows share
+  In v6 normal runtime, Collaborate, Research, Debug, Plan, Plan Review,
+  Review, Goal, mutating Init/Update, and qualifying terminal execution
+  handoffs write case-v2 transactions/case artifacts. legacy-v1 is not a
+  compatible runtime mode; legacy-v1, old grill, Discussion, and Design records
+  are read only as Init/Update semantic migration inputs. Active Goal owns
+  execution progress and forbids a duplicate execution artifact. Ordinary completion workflows share
   `active.results` so their companions can coexist; `active.report` remains for
   non-workflow report pointers. Explore does not create a standalone report; its
   evidence is folded into the consuming artifact or answer.
 
-  Teamwork 5.1 is schema-first. Existing projects with legacy-v1 memory keep
-  their existing sinks until an explicit one-way cutover. Fresh 5.1 projects
-  initialize v2 case-bundle memory: a case manifest under
+  Teamwork 6.0 is a hard cut to case-v2 for normal runtime. Initialized
+  projects use case-bundle memory: a case manifest under
   `docs/teamwork/cases/c-<64hex>/manifest.json` owns live collaboration,
   accepted decision, plan, evidence, review, goal, and result slots under the
   same case directory. One transaction may not touch both v1 and v2 trees.
   Unknown, hybrid, stale, or partially migrated state fails closed before write.
-  Update/install does not migrate project memory.
+  Init/Update project-root migration is exact and one-time, and update/install
+  alone does not migrate project memory or claim migration success.
 - Temporary live outputs, homes, caches, logs, and build results are evidence or
   scratch state. They must not become package inputs.
 
 | Workflow | Runtime artifact |
 | --- | --- |
-| Collaborate | legacy-v1 controlled Collaborate current record, or v2 case live collaborate and decision slots; accepted Collaborate is the public Plan gate; legacy Discussion/Design remain read-only migration inputs |
-| Research | legacy-v1 research artifact, or v2 case evidence artifact with claim head |
-| Plan | legacy-v1 canonical plan, or v2 case plan slot and plan history |
-| Debug | legacy-v1 diagnosis/report, or v2 case evidence/result artifact |
-| Plan Review / Review | legacy-v1 evidence review, or v2 case review/delta artifact; persistence is not acceptance |
-| Goal | legacy-v1 entry/attempt/status, or v2 case live goal while executing |
+| Collaborate | v2 case live collaborate and decision slots; accepted Collaborate is the public Plan gate; legacy-v1, old grill, Discussion, and Design remain Init/Update migration inputs only |
+| Research | v2 case evidence artifact with claim head and monotonic status |
+| Plan | v2 case plan slot and plan history with monotonic status |
+| Debug | v2 case evidence/result artifact; hypothesis-first diagnosis starts from failure and reproduction |
+| Plan Review / Review | v2 case review/delta artifact with monotonic status; persistence is not acceptance |
+| Goal | v2 case live goal with monotonic attempts/progress while executing |
 | Native / Worker execution | terminal execution handoff/result only with an explicit real consumer and no active Goal |
 | Mutating Init / Update | receipt; update/install alone never migrates project memory |
 | Explore | no standalone report; evidence is folded into its consumer |
@@ -130,33 +129,29 @@ identity of the Writer that drafted it.
 | Completion companion | A durable companion to an already determined result packet | Root freezes the result before dispatch, may overlap only answer-invariant delivery work, and joins before claiming saved/durable |
 | None | Native dialogue answer or local work without a standalone durable artifact | No Writer transaction and no saved/durable claim |
 
-Feedback loops stay reference-local: v2 workflows use case transactions/case
-artifacts; legacy-v1 Collaborate and Goal loops use their own specialized
-transactions; legacy-v1 Research, Debug, Plan, Plan Review, Review, mutating
-Init/Update, and terminal execution handoffs use the generic artifact
-transaction only through the exact route selected by Root. Before any
+Feedback loops stay reference-local: v6 workflows use case transactions/case
+artifacts. legacy-v1 generic and specialized transaction routes are migration
+inputs only where Init/Update explicitly owns semantic migration. Before any
 `case-apply` or legacy `artifact-apply`, inspection/schema work is preparatory
 only; interruption before apply/readback provides no durable claim.
 
 Collaborate schema v1 writes the three explicit acceptance states `pending`,
 `accepted`, and `blocked`; persistence is not acceptance and only `accepted` is
-Plan-ready. Frozen legacy Discussion and Design records stay readable as
-migration inputs and migrate through the transaction only on a real semantic
-mutation; archives are never rewritten merely to upgrade schema. Collaborate
-uses a common lifecycle plus a `dialogue|brainstorm|grill` discriminator and
-selects the mode from natural intent and evidence rather than asking for a mode
-name. Grill publishes and follows the strict global -> boundary -> detail
-decision map, limits each current batch to three mutually independent
-decisions, and keeps dependent decisions serial. One answered batch is one
+Plan-ready. Frozen legacy-v1, old grill, Discussion, and Design records stay
+readable as Init/Update migration inputs only; archives are never rewritten
+merely to upgrade schema. Collaborate uses a common lifecycle plus a
+`dialogue|brainstorm` discriminator and selects the mode from natural intent and
+evidence rather than asking for a mode name. Sustained pressure-testing follows
+the strict global -> boundary -> detail decision map, limits each current batch
+to three mutually independent decisions, and keeps dependent decisions serial.
+One answered batch is one
 semantic transaction unit: all resolutions and the next valid frontier change
 are applied together before a dependent batch opens.
 
 Persistence behavior is checked on real command paths. v2 probes run
 `case-inspect` → `case-schema` → `case-apply` → `case-inspect` against case
-bundles. legacy-v1 generic probes run `artifact-inspect` → `artifact-schema` →
-`artifact-apply` → `artifact-inspect`, while legacy-v1 Collaborate runs
-`collaborate-inspect` → `collaborate-schema` → `collaborate-apply` →
-`collaborate-inspect`. Positive and negative persistence cases cover
+bundles. legacy-v1 generic and Collaborate probes are migration-path checks, not
+normal runtime compatibility. Positive and negative persistence cases cover
 specialized routing, generic routing, semantic no-ops, legacy read-only
 migration inputs, Goal/execution deduplication, and write overrides.
 
@@ -199,9 +194,8 @@ This keeps the main boundaries visible:
   the decision; neither is mandatory and they do not run together by default.
   Internal Designer integrates only the evidence actually needed. A real
   trade-off gets two or three alternatives; one safe path gets explicit evidence
-  and exclusions. Default Collaborate uses one challenge pass for consequential
-  direction work. After that initial evidence wave, Collaborate automatically
-  replaces the pass with a budget-bounded hypothesis search only when multiple
+  and exclusions. Collaborate uses challenge/adversarial methods for
+  consequential direction work. It uses a budget-bounded hypothesis search only when multiple
   viable directions plus costly error or conflicting evidence make one challenge
   inadequate; `adversarial` forces the method and `standard` disables it. The
   default budget is 3 without another confirmation. Each actual hypothesis gets
@@ -209,10 +203,10 @@ This keeps the main boundaries visible:
   new trial, and two new final auditors must both pass. Missing isolation or
   closure leaves the controlled Collaborate state `pending` or `blocked`; it
   never produces an `accepted`, Plan-ready result. All strategies use the same
-  finite user-decision frontier and controlled v1 Collaborate transaction.
-  Persistence is not acceptance, and only `accepted` may enter Plan. Grill shows
-  a global map first, then boundary, then detail; batches only independent
-  material questions; and serializes dependent questions;
+  finite user-decision frontier and controlled v2 case transaction. Persistence
+  is not acceptance, and only `accepted` may enter Plan. Sustained
+  pressure-testing shows a global map first, then boundary, then detail; batches
+  only independent material questions; and serializes dependent questions;
 - Plan turns an `accepted` Collaborate handoff into executable steps; independent
   Plan Review runs only on user request or a named material risk gate. Each
   Worker self-verifies its slice. After integration, a sealed candidate receives
@@ -224,6 +218,13 @@ This keeps the main boundaries visible:
 - Goal adds explicit durable objective, success signal, scope, protected
   boundaries, budget, and attempt state; Init changes one project's context
   only, while Update changes global Teamwork-managed installation state only.
+
+Research, Explore, Debug, Plan, and Review require the corresponding owning
+leaf. Missing host support is capability-blocked; Root does not impersonate a
+missing leaf or reroute the workflow to a different role. Collaborate and Goal
+remain Root-owned. Default dispatch is one child, ordinary work is capped at
+four, and five to eight children are reserved for explicit adversarial or
+release work when the host supports that concurrency.
 
 There is no Teamwork router or generic Execute skill. `execution` is only a
 terminal artifact kind with a named consumer, never a routing capability. Host

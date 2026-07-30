@@ -40,10 +40,19 @@ class InitProjectFilesTests(unittest.TestCase):
             check=False,
         )
 
-    def run_init(self, project: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    def run_init(
+        self,
+        project: Path,
+        *args: str,
+        env: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        run_env = os.environ.copy()
+        if env:
+            run_env.update(env)
         return subprocess.run(
             [str(INIT), "--project-root", str(project), "--no-codegraph", *args],
             cwd=ROOT,
+            env=run_env,
             text=True,
             capture_output=True,
             check=False,
@@ -180,6 +189,7 @@ class InitProjectFilesTests(unittest.TestCase):
                 "live/collaborate.md",
                 agents_text,
             )
+            self.assertIn("accepted decisions use `decision.md`", agents_text)
             self.assertIn("case-inspect", agents_text)
             self.assertNotIn("docs/teamwork/collaborate/current.md", agents_text)
             self.assertNotIn("collaborate-inspect", agents_text)
@@ -193,7 +203,32 @@ class InitProjectFilesTests(unittest.TestCase):
             self.assertIn(".teamwork/cold-archive/**", ignored_text)
             self.assertEqual(self.run_files(project, "validate").returncode, 0)
 
-    def test_collaborate_route_selection_is_schema_specific(self) -> None:
+    def test_init_project_refuses_invalid_existing_memory_before_migration_or_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = self.project(temporary)
+            memory = project / "docs/teamwork"
+            memory.mkdir(parents=True)
+            index = memory / "index.json"
+            index.write_text('{"bad": true}\n', encoding="utf-8")
+            before = self.tree_state(project)
+            home = Path(temporary) / "home"
+
+            result = self.run_init(
+                project,
+                env={
+                    "HOME": str(home),
+                    "TEAMWORK_INIT_CODEGRAPH": "0",
+                    "TEAMWORK_INIT_CURSOR_POLICY_COPY": "0",
+                },
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Teamwork project init refused", result.stderr)
+            self.assertIn("migration requires an exact legacy-v1 or case-v2 Teamwork root", result.stderr)
+            self.assertEqual(before, self.tree_state(project))
+            self.assertFalse(home.exists())
+
+    def test_project_context_is_case_v2_only_and_legacy_requires_migration(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             fresh = self.project(temporary)
             self.initialize(fresh, label="Fresh")
@@ -201,6 +236,7 @@ class InitProjectFilesTests(unittest.TestCase):
             self.assertIn("Read `docs/teamwork/index.json` first", fresh_agents)
             self.assertIn("selected v2 case manifest", fresh_agents)
             self.assertIn("live/collaborate.md", fresh_agents)
+            self.assertIn("accepted decisions use `decision.md`", fresh_agents)
             self.assertIn("case-inspect", fresh_agents)
             self.assertNotIn("docs/teamwork/collaborate/current.md", fresh_agents)
             self.assertNotIn("collaborate-inspect", fresh_agents)
@@ -216,22 +252,16 @@ class InitProjectFilesTests(unittest.TestCase):
                 "--project-label",
                 "Legacy",
             )
-            self.assertEqual(result.returncode, 0, result.stderr)
-            legacy_agents = (legacy / "AGENTS.md").read_text(encoding="utf-8")
-            self.assertIn("Read `docs/teamwork/index.json` first", legacy_agents)
-            self.assertIn("legacy-v1 alone uses `docs/teamwork/collaborate/current.md`", legacy_agents)
-            self.assertIn("collaborate-inspect", legacy_agents)
-            self.assertNotIn("selected v2 case manifest", legacy_agents)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("requires case-v2 memory", result.stderr)
+            self.assertFalse((legacy / "AGENTS.md").exists())
 
         skill = (ROOT / "skills/teamwork-collaborate/SKILL.md").read_text(encoding="utf-8")
-        v2_segment = skill.split("In case-v2", 1)[1].split("Read-only helpers", 1)[0]
-        self.assertIn("case-inspect", v2_segment)
+        self.assertIn("managed case-v2 Collaborate checkpoint", skill)
+        self.assertIn("case-inspect", skill)
         self.assertIn("live/collaborate.md", skill)
-        self.assertNotIn("docs/teamwork/collaborate/current.md", v2_segment)
-        self.assertNotIn("collaborate-inspect", v2_segment)
-        legacy_segment = skill.split("If legacy-v1, Writer uses:", 1)[1].split("In case-v2", 1)[0]
-        self.assertIn("collaborate-inspect", legacy_segment)
-        self.assertIn("collaborate-apply", legacy_segment)
+        self.assertNotIn("collaborate-inspect", skill)
+        self.assertNotIn("collaborate-apply", skill)
 
         writer = "\n".join(
             (ROOT / path).read_text(encoding="utf-8")
@@ -242,8 +272,11 @@ class InitProjectFilesTests(unittest.TestCase):
             )
         )
         self.assertIn("run case-inspect first", writer)
-        self.assertIn("v2 case bundle sinks", writer)
-        self.assertIn("legacy-v1=`collaborate-inspect", writer)
+        self.assertIn("Normal workflow sinks are case-v2 only", writer)
+        self.assertIn(
+            "legacy-v1 artifacts/collaborate/goal are read-only migration inputs, no write route",
+            writer,
+        )
 
     def test_repository_project_block_matches_observed_schema(self) -> None:
         index = json.loads((ROOT / "docs/teamwork/index.json").read_text(encoding="utf-8"))

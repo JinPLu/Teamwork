@@ -1,32 +1,34 @@
 {
   "evidence": "静态契约样例；真实激活、fresh 隔离和回答质量需要独立证据。",
   "expected": {
-    "capability": "design",
+    "capability": "collaborate",
     "language": "zh",
     "requires": [
-      "input-driven-auto-selection",
-      "evidence-before-strategy-freeze",
+      "adversarial-not-mode",
       "automatic-default-budget",
-      "visible-strategy-reason",
-      "dynamic-taxonomy-ledger",
-      "two-fresh-critics-per-hypothesis",
-      "material-revision-new-trial",
-      "two-fresh-final-auditors",
-      "dual-pass-required",
-      "failure-closed",
+      "capability-blocked-no-fallback",
       "chat-not-plan-ready",
+      "dual-pass-required",
+      "dynamic-taxonomy-ledger",
+      "evidence-before-strategy-freeze",
+      "failure-closed",
+      "input-driven-auto-selection",
+      "material-revision-new-trial",
+      "no-implementation",
       "read-only",
-      "no-implementation"
+      "two-fresh-critics-per-hypothesis",
+      "two-fresh-final-auditors",
+      "visible-strategy-reason"
     ],
-    "scenario": "adversarial-activation"
+    "scenario": "adversarial-challenge"
   },
-  "id": "design-adversarial-activation-zh",
+  "id": "collaborate-adversarial-challenge-zh",
   "must": [
     "先完成有理由的初始证据波，再根据决策信号自动选择 adversarial 搜索，说明理由和默认 B=3 envelope，并且不增加确认轮次就派发",
     "每个实际假设使用两名全新隔离批评者，实质修订计为新试验，并要求两名全新最终审计者同时通过"
   ],
   "must_not": [
-    "要求用户写命令词或提供预算、仅因风险或复杂度字样激活、复用批评者、超预算、把聊天结论当成 Plan-ready、实施，或在收敛不完整时写 durable Design"
+    "要求用户写命令词或提供预算、仅因风险或复杂度字样激活、复用批评者、超预算、把聊天结论当成 Plan-ready、实施，或在收敛不完整时写 durable Collaborate"
   ],
   "platforms": [
     "codex",

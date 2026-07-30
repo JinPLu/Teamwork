@@ -271,8 +271,8 @@
       "prompt": "Inspect scenario/dispatch-probe.txt through the installed local Explorer path and keep local and external evidence routes distinct."
     },
     {
-      "id": "design-challenge-bounded-convergence",
-      "selected_skill": "teamwork-design",
+      "id": "collaborate-challenge-bounded-convergence",
+      "selected_skill": "teamwork-collaborate",
       "required_role": "designer",
       "expected_roles": [
         "explorer",
@@ -285,16 +285,16 @@
       "required_tools": [
         "command_execution"
       ],
-      "scenario": "evals/teamwork/live-scenarios/v4/design-challenge-bounded-convergence.json",
+      "scenario": "evals/teamwork/live-scenarios/v4/collaborate-challenge-bounded-convergence.json",
       "evidence": {
         "kind": "trace",
-        "artifact_path": "scenario/design-probe.txt",
+        "artifact_path": "scenario/collaborate-probe.txt",
         "markers": [
-          "EVIDENCE_DESIGN_CONVERGENCE_V4"
+          "EVIDENCE_COLLABORATE_CONVERGENCE_V4"
         ]
       },
       "private_markers": [],
-      "prompt": "Inspect scenario/design-probe.txt and exercise the installed Design boundary: evidence, real alternatives, bounded frontier batching with dependent decisions serialized, then the revision-checked design-inspect -> design-schema -> design-apply route and a separately reviewed Plan path."
+      "prompt": "Inspect scenario/collaborate-probe.txt and exercise the installed Collaborate challenge boundary: evidence, real alternatives, bounded frontier batching with dependent decisions serialized, then the revision-checked case-v2 handoff route and a separately reviewed Plan path."
     },
     {
       "id": "debug-fixed-authority-human-resume",
@@ -316,7 +316,7 @@
         ]
       },
       "private_markers": [],
-      "prompt": "Use the installed Debugger path on scenario/debug-input.txt. Reproduce the bounded failure, apply only the authorized fix, rerun the same path, and write the direct result to scenario/debug-result.txt."
+      "prompt": "Use the installed Debugger path on scenario/debug-input.txt. Freeze the stated failure, form the ranked hypothesis ledger before probes, run one discriminating experiment at a time, keep the unrelated noise/decoy outside this causal thread, apply only the authorized causal fix, rerun the exact same path, and write Debug Findings to scenario/debug-result.txt."
     },
     {
       "id": "native-result-minimality",
@@ -431,8 +431,8 @@
       "prompt": "Use the explicit installed Goal path from scenario/goal-input.txt, preserve scope across a strategy change, and write the verified completion artifact to scenario/goal-result.txt."
     },
     {
-      "id": "discussion-opening-map-transaction",
-      "selected_skill": "grill-me",
+      "id": "collaborate-case-v2-transaction",
+      "selected_skill": "teamwork-collaborate",
       "required_role": "worker",
       "expected_roles": [
         "worker"
@@ -441,16 +441,16 @@
       "required_tools": [
         "command_execution"
       ],
-      "scenario": "evals/teamwork/live-scenarios/v4/discussion-opening-map-transaction.json",
+      "scenario": "evals/teamwork/live-scenarios/v4/collaborate-case-v2-transaction.json",
       "evidence": {
         "kind": "workspace",
-        "artifact_path": "scenario/discussion-result.txt",
+        "artifact_path": "scenario/collaborate-result.txt",
         "markers": [
-          "EVIDENCE_DISCUSSION_TRANSACTION_V4"
+          "EVIDENCE_COLLABORATE_TRANSACTION_V4"
         ]
       },
       "private_markers": [],
-      "prompt": "In the disposable project, exercise the authorized Grill discussion transaction from scenario/discussion-input.txt. Use the package inspect, schema, and apply flow; write the direct transaction result to scenario/discussion-result.txt."
+      "prompt": "In the disposable project, exercise the authorized Collaborate case-v2 transaction from scenario/collaborate-input.txt. Use the package inspect, schema, and apply flow; write the direct transaction result to scenario/collaborate-result.txt."
     },
     {
       "id": "init-recovery-promotion",

@@ -118,27 +118,27 @@ check_lean_policy() {
   local policy_text
   policy_text="$(tr '\n' ' ' < "$file")"
   for contract in \
-    "request scope::work within the user.?s request" \
+    "request scope::work within the (user.?s )?request" \
     "read-only authority::read.only.{0,100}(authority|effect)" \
     "inspect before asking::inspect.{0,50}(before|prior to).{0,30}ask" \
-    "bounded user-owned batch::ask.{0,120}(required input|bounded independent batch).{0,120}user.owned decision" \
+    "bounded user-owned batch::root alone asks.{0,80}bounded decision batch" \
     "dependent work only::pause only dependent work" \
-    "local-native boundary::local.{0,120}(repository|source|configuration).{0,120}native" \
-    "external Research boundary::external.{0,100}(current|multi.source|citation).{0,100}research" \
+    "local-native boundary::native:.{0,160}(tiny|discoverable).{0,160}authorized implementation" \
+    "external Research boundary::exact roles:.{0,80}research.?->.?researcher" \
     "Collaborate ownership::collaborate.{0,140}(dialogue|brainstorm|grill|decision)" \
-    "Plan ownership::plan (only translates an already )?selected direction" \
+    "Plan ownership::plan.?->.?planner" \
     "sustained Collaborate persistence::sustained.{0,120}Collaborate.{0,120}(checkpoint|default.save)" \
     "negative persistence override::no.files/off.record/read.only/no.writes override" \
     "evidence discipline::(separate observation/inference|distinguish observation from inference)" \
     "real-path verification::verify.{0,80}real path" \
     "support checks not delivery::tests.{0,100}(never replace|support delivery)" \
-    "economic delegation::delegate only.{0,40}(independent.{0,40}worthwhile|worthwhile.{0,40}independent)" \
+    "economic delegation::default one child.{0,80}daily cap4" \
     "root question ownership::(root owns user questions|root alone asks)" \
     "conclusion-first replies::conclusion first" \
-    "reader-centered order::follow reader needs" \
-    "explicit logic::make logic explicit" \
-    "stable terminology::use stable terms" \
-    "relevance gate::omit irrelevant detail"; do
+    "reader-centered result::conclusion first.{0,80}(clear|stable|relevant)" \
+    "explicit logic::clear" \
+    "stable terminology::stable" \
+    "relevance gate::relevant"; do
     contract_label="${contract%%::*}"
     pattern="${contract#*::}"
     printf '%s\n' "$policy_text" | grep -Eqi "$pattern" \

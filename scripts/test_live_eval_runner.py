@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Focused tests for the capability-first live recorder and grill helpers."""
+"""Focused tests for the capability-first live recorder and legacy ceremony helpers."""
 
 from __future__ import annotations
 
@@ -124,7 +124,7 @@ class CollaborateContractTests(unittest.TestCase):
             with self.subTest(command=command):
                 self.assertTrue(readonly_event_violations([command_event(command)]))
 
-    def test_grill_structure_allows_bounded_batch_but_rejects_four_questions(self) -> None:
+    def test_collaborate_structure_allows_bounded_batch_but_rejects_four_questions(self) -> None:
         two_question_turn = [{"final_output": "Compatibility? Telemetry?", "raw_events": []}]
         self.assertEqual(
             RUNNER.assess_structure(two_question_turn, category="collaborate", dry_run=False),
@@ -278,7 +278,7 @@ class LiveRecorderTests(unittest.TestCase):
         self.assertEqual(record["config_source"]["fallback_policy"], "none")
 
     def test_multiturn_resume_consumes_every_prompt(self) -> None:
-        case = self.write_case(prompts=["Grill me first.", "Keep compatibility."])
+        case = self.write_case(prompts=["Challenge my assumptions first.", "Keep compatibility."])
         result = self.run_cli(case, codex=self.write_fake_codex())
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         record = self.read_record()

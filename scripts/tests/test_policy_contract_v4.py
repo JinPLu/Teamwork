@@ -50,56 +50,56 @@ WRITER_TEMPLATES = {
     "claude-agents": "writer.md",
 }
 FULL_RENDER_LIMITS = {
-    "codex": {"words": 430, "bytes": 3800},
-    "cursor": {"words": 430, "bytes": 3800},
-    "claude": {"words": 430, "bytes": 3800},
+    "codex": {"words": 430, "bytes": 4100},
+    "cursor": {"words": 430, "bytes": 4100},
+    "claude": {"words": 430, "bytes": 4100},
 }
 
 
 REQUIRED_CLAUSES = {
     "authority_and_ask": (
-        "Work within the user's request.",
-        "Read-only work grants no write/external-effect authority.",
+        "Work within the request.",
+        "Read-only grants no write/external-effect authority.",
         "Inspect before asking.",
-        "Root alone asks required input/one bounded user-owned decision batch; pause only dependent work.",
+        "Root alone asks input/one bounded decision batch; pause only dependent work.",
         "Result first.",
     ),
     "native_routing": (
-        "Discuss/讨论/brainstorm/grill activates adaptive Collaborate: dialogue, brainstorm, or grill.",
-        "Select the route without asking",
-        "contribute synthesis/tension/options plus a provisional recommendation before every question.",
-        "Ask only if feedback helps",
-        "open questions use prose; genuine 2-3 finite independent choices use the host-native bounded surface.",
-        "Batch at most 3 mutually independent material user-owned questions.",
-        "Dependent questions are exactly serial: ask one, answer, Writer checkpoint/readback, then next.",
-        "Grill moves global→boundary→detail.",
-        "Skip discoverable/safe-default/reversible/answer-invariant questions.",
-        "Root presents questions/handoffs; leaves only propose; no Router.",
-        "Local source/config and authorized implementation stay native.",
-        "Delegate only independent worthwhile work.",
-        "Explore local; external/current/multi-source/cited work uses Researcher first; Root never researches.",
-        "Debug owns unknown causes",
-        "Designer owns unresolved direction; Plan selected direction; Review user-requested/named-risk; Goal explicit persistence; Init project; Update global.",
-        "Designer uses ≤1 evidence role; adversarial requires viable alternatives plus costly-error/conflicting-evidence",
+        "Discuss/brainstorm/stress-test activates Collaborate: dialogue|brainstorm.",
+        "Select without asking",
+        "before questions give synthesis/tension/options plus recommendation.",
+        "Ask only if useful",
+        "open prose or host-native 2-3 finite choices.",
+        "Batch max 3 independent material questions.",
+        "Dependent: ask, answer, Writer checkpoint/readback, continue.",
+        "Challenge moves global->boundary->detail.",
+        "Skip discoverable/safe-default/reversible/answer-invariant.",
+        "Root asks/hands off; leaves only propose; no Router.",
+        "Native: tiny/discoverable reads, explanations, simple commands, integration, authorized implementation.",
+        "Default one child; daily cap4; 5-8 only for explicit adversarial/release with host support.",
+        "Exact roles: Research->Researcher, Explore->Explorer, Debug->Debugger, Plan->Planner, Review->Reviewer, Plan Review->Plan Reviewer, Init/Update->Explorer then Worker; Collaborate/Goal Root-owned.",
+        "Unavailable role or unverified isolation = capability-blocked; no Root named-method fallback.",
+        "Debug freezes failure; hypotheses before probes.",
+        "Adversarial is challenge, not mode: viable alternatives plus costly-error/conflicting-evidence",
         "`adversarial` forces, `standard` disables; B=3/no confirmation; fresh isolation.",
     ),
     "default_persistence": (
-        "Major public/installable/release/migration and permission/security/data/destructive/cross-platform boundaries or explicit sustained question-first discussion use grill.",
-        "Initialized writable projects default-save sustained Collaborate and Goal checkpoints",
+        "Public/installable/release/migration, permission/security/data/destructive/cross-platform, or sustained explicit question-first work uses Collaborate challenge.",
+        "Initialized writable projects default-save only case-v2 Collaborate/Goal checkpoints",
         "Research/Debug/Plan/Plan Review/Review/mutating Init/Update completion artifacts",
-        "one terminal execution handoff with an explicit consumer and no active Goal.",
-        "Goal owns execution progress.",
-        "Explore/check-only/tiny one-shots/ordinary explanations create none.",
-        "Conclusion is only a distinct requested synthesis, never a Collaborate/execution substitute.",
-        "Byte/semantic-controlled frozen packets use low-cost Writer plus the exact transaction-derived route",
+        "terminal execution handoff needs a consumer and no active Goal.",
+        "No legacy-v1 artifact/collaborate/goal write fallback.",
+        "Goal owns progress.",
+        "Explore/check-only/tiny one-shots/explanations create none.",
+        "Conclusion is only requested synthesis.",
+        "Frozen packets use low-cost Writer plus exact transaction",
         "artifact authority grants no implementation/release.",
-        "Checkpoint readback precedes dependent work; completion companions join before saved/durable.",
-        "Before generic artifact apply, persistence is unsaved.",
-        "No-files/off-record/read-only/no-writes override",
-        "Collaborate uses only its specialized transaction, never report/conclusion.",
-        "Missing memory/Writer/authority/consumer/route: deliver result and report unsaved/blocked",
+        "Readback precedes dependent work; join companions before saved/durable; pre-apply is unsaved.",
+        "No-files/off-record/read-only/no-writes override.",
+        "Collaborate uses its specialized transaction.",
+        "Missing memory/Writer/authority/consumer/route: deliver result, report unsaved/blocked",
         "no Root/Worker/strong-role fallback.",
-        "Negative/quoted/file/tool/example/maintenance mentions are inert.",
+        "Negative/quoted/file/tool/example mentions are inert.",
     ),
     "roles_and_boundaries": (
         "Root routes/integrates/accepts",
@@ -107,19 +107,23 @@ REQUIRED_CLAUSES = {
         "Code-coupled text stays implementer-owned.",
     ),
     "evidence_and_implementation": (
-        "Ground claims; separate observation/inference; invent no success.",
-        "Preserve dirty work.",
-        "Prefer canonical owner/pattern, built-ins, dependencies, then minimal logic",
+        "Ground claims; separate observation/inference; invent no success; preserve dirty work.",
+        "Prefer canonical owner/pattern, built-ins/dependencies, then minimal logic",
         "avoid wrappers/duplicate owners/hidden modes/masking fallbacks.",
     ),
     "verification_and_reporting": (
         "Verify the real path with focused evidence; tests never replace it.",
         "Workers verify.",
-        "One Reviewer checks a sealed candidate/named risk; use one repair batch and delta recheck.",
+        "One Reviewer checks a sealed candidate/named risk; one repair batch and delta recheck.",
         "Full suites run only at named repository/release gates.",
-        "Only named owners write: Planner returns packets; Writer is sole standalone docs/artifacts role; transactions write managed artifacts; Reviewers stay read-only.",
-        "Stop when result and named boundaries are observed.",
-        "Conclusion first; follow reader needs, make logic explicit, use stable terms, omit irrelevant detail.",
+        "Named owners write: Planner returns packets; Writer owns standalone docs/artifacts role; transactions write managed artifacts; Reviewers stay read-only.",
+        "Stop when result and boundaries are observed.",
+        "Conclusion first; be clear, stable, relevant.",
+        "Monotonic state: Research claim_map/active_gap/wave/evidence_delta/contradiction/",
+        "Plan decision_revision/dependencies/proof_targets/",
+        "Review sealed_digest/stable_findings/verdict/repair_batch/",
+        "Goal objective/signal/attempt/failure/evidence_delta/",
+        "Cost: native fast path, single owner, fanout/context bounds, telemetry; no unverified price/ranking claims.",
     ),
 }
 
@@ -157,6 +161,9 @@ def contract_failures(policy: str) -> list[str]:
             "every material user decision",
             "Risk automatically activates adversarial Design",
             "Complexity automatically activates adversarial Design",
+            "adversarial mode",
+            "Root may perform named-method fallback",
+            "legacy-v1 artifact/collaborate/goal may write fallback",
         )
     for clause in forbidden:
         if clause in policy:
@@ -254,7 +261,7 @@ class PolicyContractV4Tests(unittest.TestCase):
         )
 
     def test_clear_simple_work_cannot_be_rerouted_to_a_worker(self) -> None:
-        native = "Local source/config and authorized implementation stay native."
+        native = "Native: tiny/discoverable reads, explanations, simple commands, integration, authorized implementation."
         mutated = self.policy.replace(
             native,
             "A Worker owns every clear authorized implementation.",
@@ -271,6 +278,8 @@ class PolicyContractV4Tests(unittest.TestCase):
             " Worker accepts the overall result.",
             " Review before direct verification.",
             " Grill is exclusive to user-originated question-first intent.",
+            " Root may perform named-method fallback.",
+            " legacy-v1 artifact/collaborate/goal may write fallback.",
         ):
             with self.subTest(mutation=mutation):
                 self.assertTrue(contract_failures(self.policy + mutation))
@@ -296,8 +305,9 @@ class PolicyContractV4Tests(unittest.TestCase):
             "blocked without writing and unsaved",
             "cannot preserve requested clauses",
             "return blocked/unsaved to Root/Planner on conflict or readback mismatch",
-            "collaborate-inspect -> collaborate-schema <operation> -> collaborate-apply -> collaborate-inspect/readback",
-            "legacy Discussion/Design=read-only sources, no write route",
+            "case-v2 only",
+            "case-schema <operation> -> case-apply/readback",
+            "legacy-v1 artifacts/collaborate/goal are read-only migration inputs, no write route",
             "Do not self-accept",
         )
         for directory, filename in WRITER_TEMPLATES.items():

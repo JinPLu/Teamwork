@@ -6,12 +6,16 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import queue
 import subprocess
+import stat
+import sys
 import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Any
 
 
@@ -50,24 +54,24 @@ SCENARIOS = {
             "one genuinely open steering question so we can continue."
         ),
     },
-    "explicit-grill-independent-batch": {
+    "explicit-challenge-independent-batch": {
         "expected_requests": 1,
         "max_questions_per_request": 3,
         "forbid_text_question": True,
         "prompt": (
-            "Collaborate in grill mode before changing this public SDK. Compatibility horizon, "
-            "telemetry default, and deprecation messaging are all material and "
+            "Use Collaborate's challenge method before changing this public SDK. "
+            "Compatibility horizon, telemetry default, and deprecation messaging are all material and "
             "independent: no answer changes another question's options. Ask them "
             "as one global-only bounded native batch with stable ids, after a recommendation."
         ),
     },
-    "explicit-grill-dependent-sequence": {
+    "explicit-challenge-dependent-sequence": {
         "expected_requests": 3,
         "max_questions_per_request": 1,
         "forbid_text_question": True,
         "prompts": [
             (
-                "Collaborate in grill mode before changing this public SDK. Start at the "
+                "Use Collaborate's challenge method before changing this public SDK. Start at the "
                 "global layer: first decide whether compatibility is required. Only that "
                 "answer determines valid boundary options, so ask only that prerequisite."
             ),
@@ -119,20 +123,187 @@ def collaboration_mode_for_scenario(
     }
 
 
-def collaborate_checkpoint_digest(root: Path) -> str:
-    path = root / "docs" / "teamwork" / "collaborate" / "current.md"
+def _checked_relative_path(value: object, label: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ProtocolError(f"{label} must be a project-relative path")
+    pure = PurePosixPath(value)
+    if (
+        pure.is_absolute()
+        or pure.as_posix() != value
+        or "\\" in value
+        or any(part in {"", ".", ".."} for part in pure.parts)
+    ):
+        raise ProtocolError(f"{label} must be a normalized project-relative path")
+    return value
+
+
+def _safe_project_file_bytes(root: Path, relative: object, label: str) -> bytes:
+    rel = _checked_relative_path(relative, label)
     try:
-        content = path.read_bytes()
+        root_real = root.resolve(strict=True)
     except OSError as exc:
-        raise ProtocolError("managed Collaborate checkpoint was not created") from exc
-    required = (
-        b"Artifact Type: collaborate",
-        b"Schema Version: 1",
-        b'"schema_version": 1',
-    )
-    if not all(marker in content for marker in required):
-        raise ProtocolError("managed Collaborate checkpoint is not a canonical v1 record")
-    return hashlib.sha256(content).hexdigest()
+        raise ProtocolError(f"project root was not readable: {exc}") from exc
+    path = root_real.joinpath(*PurePosixPath(rel).parts)
+    try:
+        resolved = path.resolve(strict=True)
+        resolved.relative_to(root_real)
+    except (OSError, ValueError) as exc:
+        raise ProtocolError(f"{label} escapes the project root: {rel}") from exc
+
+    current = root_real
+    try:
+        root_info = current.lstat()
+    except OSError as exc:
+        raise ProtocolError(f"project root was not readable: {exc}") from exc
+    if stat.S_ISLNK(root_info.st_mode) or not stat.S_ISDIR(root_info.st_mode):
+        raise ProtocolError("project root must be a non-symlink directory")
+    for part in PurePosixPath(rel).parts[:-1]:
+        current /= part
+        try:
+            info = current.lstat()
+        except OSError as exc:
+            raise ProtocolError(f"{label} parent was not readable: {rel}") from exc
+        if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
+            raise ProtocolError(f"{label} parent must be a non-symlink directory: {rel}")
+
+    try:
+        before = path.lstat()
+    except OSError as exc:
+        raise ProtocolError(f"{label} was not readable: {rel}") from exc
+    if (
+        stat.S_ISLNK(before.st_mode)
+        or not stat.S_ISREG(before.st_mode)
+        or before.st_nlink != 1
+    ):
+        raise ProtocolError(f"{label} must be a single-link non-symlink file: {rel}")
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
+    try:
+        fd = os.open(path, flags)
+    except OSError as exc:
+        raise ProtocolError(f"{label} could not be safely opened: {rel}") from exc
+    try:
+        opened = os.fstat(fd)
+        if (
+            (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
+            or opened.st_nlink != 1
+            or not stat.S_ISREG(opened.st_mode)
+        ):
+            raise ProtocolError(f"{label} changed identity while opening: {rel}")
+        chunks: list[bytes] = []
+        while True:
+            chunk = os.read(fd, 1024 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        final = os.fstat(fd)
+        if (final.st_dev, final.st_ino) != (opened.st_dev, opened.st_ino):
+            raise ProtocolError(f"{label} changed identity while reading: {rel}")
+        return b"".join(chunks)
+    finally:
+        os.close(fd)
+
+
+def _case_inspect(root: Path) -> dict[str, Any]:
+    script = Path(__file__).resolve().with_name("discussion-transaction.py")
+    try:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(script),
+                "case-inspect",
+                "--project-root",
+                str(root),
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ProtocolError(f"case-inspect failed: {exc}") from exc
+    if result.returncode != 0:
+        detail = result.stderr.strip() or result.stdout.strip()
+        raise ProtocolError(f"case-inspect failed: {detail}")
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise ProtocolError("case-inspect did not return JSON") from exc
+    if not isinstance(payload, dict) or payload.get("schema_mode") != "case-v2":
+        raise ProtocolError("managed Collaborate checkpoint requires case-v2 readback")
+    return payload
+
+
+def collaborate_checkpoint_digest(root: Path) -> str:
+    inspection = _case_inspect(root)
+    revision = inspection.get("revision")
+    if not isinstance(revision, str) or len(revision) != 64:
+        raise ProtocolError("case-inspect did not return a canonical root revision")
+    active_cases = inspection.get("active_cases")
+    if not isinstance(active_cases, list):
+        raise ProtocolError("case-inspect readback did not include active cases")
+    observed: list[dict[str, str]] = []
+    for active in active_cases:
+        if not isinstance(active, dict):
+            continue
+        manifest_path = active.get("path")
+        manifest_revision = active.get("revision")
+        manifest = active.get("state")
+        if not isinstance(manifest, dict) or not isinstance(manifest.get("case_id"), str):
+            continue
+        if not isinstance(manifest_revision, str) or len(manifest_revision) != 64:
+            raise ProtocolError("case-inspect did not return a canonical manifest revision")
+        case_id = manifest["case_id"]
+        if manifest_path != f"docs/teamwork/cases/{case_id}/manifest.json":
+            raise ProtocolError("case-inspect returned a noncanonical case manifest path")
+        artifacts = manifest.get("artifacts")
+        if not isinstance(artifacts, dict):
+            continue
+        for artifact_id, row in artifacts.items():
+            if not isinstance(artifact_id, str) or not isinstance(row, dict):
+                continue
+            path = row.get("path")
+            role = row.get("role")
+            subtype = row.get("subtype")
+            expected_type: str | None = None
+            if (
+                role == "collaborate"
+                and subtype == "collaborate"
+                and path == f"docs/teamwork/cases/{case_id}/live/collaborate.md"
+            ):
+                expected_type = "Artifact Type: case-collaborate\n"
+            elif (
+                role == "decision"
+                and subtype == "decision"
+                and path == f"docs/teamwork/cases/{case_id}/decision.md"
+            ):
+                expected_type = "Artifact Type: case-decision\n"
+            if expected_type is None or not isinstance(path, str):
+                continue
+            content = _safe_project_file_bytes(root, path, "case-v2 Collaborate artifact")
+            if not content.startswith(expected_type.encode()):
+                raise ProtocolError("case-v2 Collaborate artifact has the wrong artifact type")
+            byte_digest = row.get("byte_digest")
+            actual_digest = hashlib.sha256(content).hexdigest()
+            if byte_digest != actual_digest:
+                raise ProtocolError("case-v2 Collaborate artifact digest does not match readback bytes")
+            observed.append(
+                {
+                    "artifact_id": artifact_id,
+                    "byte_digest": actual_digest,
+                    "case_id": case_id,
+                    "manifest_revision": manifest_revision,
+                    "path": path,
+                    "role": str(role),
+                }
+            )
+
+    if not observed:
+        raise ProtocolError(
+            "managed Collaborate checkpoint was not created through the case-v2 live/decision route"
+        )
+    return hashlib.sha256(
+        json.dumps(observed, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
 
 
 def forbidden_generic_collaborate_artifacts(root: Path) -> list[str]:
@@ -141,13 +312,17 @@ def forbidden_generic_collaborate_artifacts(root: Path) -> list[str]:
         root / "docs" / "teamwork" / "workflows" / "collaborate",
         root / "docs" / "teamwork" / "workflows" / "execution",
     )
-    return sorted(
+    found = [
         path.relative_to(root).as_posix()
         for directory in forbidden_roots
         if directory.exists()
         for path in directory.rglob("*")
         if path.is_file()
-    )
+    ]
+    retired_current = root / "docs" / "teamwork" / "collaborate" / "current.md"
+    if retired_current.exists():
+        found.append(retired_current.relative_to(root).as_posix())
+    return sorted(found)
 
 
 def validate_request_params(
@@ -400,6 +575,12 @@ class AppServerProbe:
         prompts = spec.get("prompts") or [spec["prompt"]]
         if not isinstance(prompts, list) or not prompts:
             raise ProtocolError("scenario prompts must be a non-empty list")
+        prior_collaborate_checkpoint: str | None = None
+        if spec.get("require_collaborate_checkpoint"):
+            try:
+                prior_collaborate_checkpoint = collaborate_checkpoint_digest(self.cwd)
+            except ProtocolError:
+                prior_collaborate_checkpoint = None
         self._start()
         resolved_ids: set[str | int] = set()
         try:
@@ -522,6 +703,10 @@ class AppServerProbe:
                 self.collaborate_checkpoint_sha256 = collaborate_checkpoint_digest(
                     self.cwd
                 )
+                if self.collaborate_checkpoint_sha256 == prior_collaborate_checkpoint:
+                    raise ProtocolError(
+                        "managed Collaborate checkpoint was not updated through the case-v2 route"
+                    )
                 self.generic_collaborate_artifacts = (
                     forbidden_generic_collaborate_artifacts(self.cwd)
                 )

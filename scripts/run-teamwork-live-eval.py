@@ -322,7 +322,7 @@ def assess_structure(
         if category == "collaborate":
             if has_legacy_grill_ceremony(output):
                 violations.append(
-                    f"turn {index} exposes the superseded grill packet/state protocol"
+                    f"turn {index} exposes the superseded Collaborate packet/state protocol"
                 )
             if question_count(output) > 3:
                 violations.append(f"turn {index} asks more than three textual questions")

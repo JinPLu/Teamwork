@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "case_id": "collaborate-case-v2-transaction",
+  "private_paths": [],
+  "files": [
+    {"path":"scenario/collaborate-input.txt","content":"Use inspect, schema, and apply for the authorized Collaborate case-v2 transaction; do not write collaboration Markdown directly.\n"},
+    {"path":"scenario/collaborate-state.json","content":"{\"operation\":\"pending\",\"expected_revision\":null,\"active\":null}\n"},
+    {"path":"scenario/collaborate-result.txt","content":"PENDING\n"},
+    {"path":"scenario/verify.py","content":"import json\nfrom pathlib import Path\nstate = json.loads(Path('scenario/collaborate-state.json').read_text())\nassert state['operation'] in {'create', 'update', 'close'}\nassert isinstance(state['expected_revision'], str) and state['expected_revision']\nassert isinstance(state['active'], str) and state['active'].startswith('cases/')\nassert 'EVIDENCE_COLLABORATE_TRANSACTION_V4' in Path('scenario/collaborate-result.txt').read_text()\n"}
+  ],
+  "verification": {"argv":["python3","scenario/verify.py"],"immutable_paths":["scenario/verify.py"]}
+}

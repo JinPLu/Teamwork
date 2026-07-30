@@ -1,0 +1,32 @@
+{
+  "id": "research-lightweight-lookup-control-en",
+  "split": "dev",
+  "source": "synthetic",
+  "producers": [
+    {"class": "root-policy", "source": "scripts/install/policy.sh"},
+    {"class": "skill", "source": "skills/teamwork-research/SKILL.md"},
+    {"class": "role-template", "source": "templates/codex-agents/teamwork-researcher.toml"},
+    {"class": "role-template", "source": "templates/cursor-agents/researcher.md"},
+    {"class": "role-template", "source": "templates/claude-agents/researcher.md"}
+  ],
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Look up one current canonical limit that is documented by a single official source.",
+  "expected": {
+    "capability": "research",
+    "scenario": "lightweight-lookup-control",
+    "language": "en",
+    "requires": [
+      "exact-researcher-dispatch",
+      "lookup-depth",
+      "one-canonical-source",
+      "no-deep-fanout",
+      "default-one-child",
+      "cap4-daily",
+      "five-to-eight-explicit-only",
+      "capability-blocked-no-fallback"
+    ]
+  },
+  "must": ["use the lightest adequate lookup and one owning Researcher"],
+  "must_not": ["turn a canonical lookup into deep multi-agent research"],
+  "evidence": "Static lightweight Research control."
+}

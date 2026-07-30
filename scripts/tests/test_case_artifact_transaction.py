@@ -131,7 +131,7 @@ class CaseArtifactTransactionTests(unittest.TestCase):
         self.assertEqual(inspected["recent_cases"][0]["case_id"], case_id)
         self.assertRegex(inspected["recent_cases"][0]["result_artifact_id"], r"^a-[0-9a-f]{64}$")
 
-    def test_legacy_v1_index_is_inspectable_but_case_apply_fails_closed(self) -> None:
+    def test_legacy_v1_index_is_migration_input_only_for_runtime(self) -> None:
         v1 = {
             "schema_version": 1,
             "last_updated": "2026-07-30",
@@ -141,8 +141,13 @@ class CaseArtifactTransactionTests(unittest.TestCase):
         }
         (self.memory / "index.json").write_text(json.dumps(v1, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         (self.memory / "current.md").write_text("# Current\n", encoding="utf-8")
-        inspected = self.inspect()
-        self.assertEqual(inspected["schema_mode"], "legacy-v1")
+        before_index = (self.memory / "index.json").read_bytes()
+        inspected = self.cli("case-inspect", "--project-root", str(self.project))
+        self.assertNotEqual(inspected.returncode, 0)
+        self.assertEqual(json.loads(inspected.stderr)["category"], "PREWRITE_SAFE")
+        preflight = self.cli("migration-preflight", "--project-root", str(self.project))
+        self.assertEqual(preflight.returncode, 0, preflight.stderr)
+        self.assertEqual(json.loads(preflight.stdout)["mode"], "legacy-v1")
         result = self.cli(
             "case-apply",
             "--project-root",
@@ -151,7 +156,7 @@ class CaseArtifactTransactionTests(unittest.TestCase):
             json.dumps({
                 "schema_version": 2,
                 "operation": "create",
-                "expected_revision": inspected["revision"],
+                "expected_revision": "stale",
                 "updated_at": "2026-07-30T00:00:00+00:00",
                 "case_seed": "03" * 32,
                 "title": "Blocked",
@@ -161,6 +166,24 @@ class CaseArtifactTransactionTests(unittest.TestCase):
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(json.loads(result.stderr)["category"], "PREWRITE_SAFE")
+        self.assertEqual((self.memory / "index.json").read_bytes(), before_index)
+
+    def test_runtime_collaborate_state_rejects_retired_grill_mode(self) -> None:
+        with self.assertRaisesRegex(CONTRACT["TransactionError"], "Collaborate mode is invalid"):
+            CONTRACT["normalize_collaborate_state"](
+                {
+                    "decision_id": "c-retired-grill",
+                    "slug": "retired-grill",
+                    "title": "Retired Grill",
+                    "updated": "2026-07-30T00:00:00Z",
+                    "status": "active",
+                    "acceptance": "pending",
+                    "mode": "grill",
+                    "goal": "Reject retired runtime mode.",
+                    "frontier": [{"id": "Q1", "title": "Boundary", "rationale": "Legacy grill routing.", "status": "open"}],
+                    "current_batch": ["Q1"],
+                }
+            )
 
     def test_goal_claim_transfer_binds_source_target_and_root_head(self) -> None:
         source = self.create_case("11" * 32, "source-case")
@@ -317,6 +340,24 @@ class CaseArtifactTransactionTests(unittest.TestCase):
         self.assertEqual(manifest["runtime"]["active_route"], decision_path)
         self.assertEqual(len([row for row in manifest["artifacts"].values() if row["path"] == decision_path]), 1)
         self.assertEqual(len([row for row in manifest["artifacts"].values() if row["path"].startswith(f"docs/teamwork/cases/{second['case_id']}/history/decision/")]), 1)
+
+    def test_planned_case_can_receive_an_imported_accepted_decision(self) -> None:
+        created = self.create_case("39" * 32, "planned-decision-repair", initial_phase="planned")
+        accepted = self.apply(
+            self.base_request(
+                "accept-decision",
+                created,
+                updated_at="2026-07-30T01:00:00+00:00",
+                source_digest="b" * 64,
+                body="## Decision\n\n- Accepted before the imported plan.",
+            )
+        )
+        manifest = self.assert_artifact_records_match_extant_bytes(str(accepted["case_id"]))
+        self.assertEqual(manifest["status"], "planned")
+        self.assertEqual(
+            manifest["runtime"]["active_route"],
+            f"docs/teamwork/cases/{accepted['case_id']}/decision.md",
+        )
 
     def test_plan_revisions_relocate_prior_singleton_record_to_matching_history_bytes(self) -> None:
         created = self.create_case("38" * 32, "plan-revision", initial_phase="planned")

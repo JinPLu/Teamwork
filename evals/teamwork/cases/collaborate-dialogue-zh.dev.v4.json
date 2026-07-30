@@ -1,0 +1,63 @@
+{
+  "evidence": "静态自然 question-first 不落盘对照。",
+  "expected": {
+    "capability": "collaborate",
+    "language": "zh",
+    "requires": [
+      "natural-activation",
+      "sustained-checkpoint",
+      "challenge-method-for-major-risk",
+      "recommend-first",
+      "global-decision-map",
+      "global-to-detail-order",
+      "bounded-independent-batch",
+      "one-checkpoint-per-answered-batch",
+      "question-criticality",
+      "transaction-owned-writer",
+      "no-files-overrides",
+      "no-implementation"
+    ],
+    "scenario": "dialogue"
+  },
+  "id": "collaborate-dialogue-zh",
+  "must": [
+    "自然语言的持续先问请求应启动 Collaborate；重大 API 边界自动选择 collaborate 模式，并只通过 Writer 和受管 case-schema <collaborate-upsert> -> case-apply/readback 事务记录状态；先展示 goal/boundary/detail 全局决策地图，再给推荐并提出有限独立批次的关键实质问题；一个回答批次只产生一次语义检查点更新，依赖问题随后再打开，同时保留权限边界"
+  ],
+  "must_not": [
+    "直接写讨论 Markdown、索引、报告或其他文件；保存逐字对话；实施、修改，或把回答当成实施授权；no files 必须覆盖任何事务"
+  ],
+  "platforms": [
+    "codex",
+    "cursor",
+    "claude"
+  ],
+  "producers": [
+    {
+      "class": "root-policy",
+      "source": "scripts/install/policy.sh"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/codex-agents/teamwork-writer.toml"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/cursor-agents/writer.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/claude-agents/writer.md"
+    },
+    {
+      "class": "artifact-engine",
+      "source": "scripts/discussion-transaction.py"
+    }
+  ],
+  "prompt": "先问我，并在行动前挑战我对 API 兼容性的假设。",
+  "source": "synthetic",
+  "split": "dev"
+}

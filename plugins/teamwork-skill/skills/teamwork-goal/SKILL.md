@@ -10,7 +10,9 @@ separate research, collaboration, planning, debugging, implementation, or review
 stage. It never broadens scope or effect authority. Collaborate owns
 conversational continuity and decision convergence; Goal activates only when the
 user explicitly asks to keep pursuing a verifiable outcome, budget, or monitor
-contract.
+contract. Goal is Root-owned. It may dispatch the exact role matching the
+current blocker, but a mandatory role unavailable or not verifiably isolated is
+`capability-blocked`; Root must not perform a named-method fallback.
 
 ## Establish State
 
@@ -25,30 +27,23 @@ and no host-native durable state satisfies it, Goal fails closed before promisin
 persistence; deliver no continuity claim.
 
 Create durable Goal state at entry, before attempt one, through the host-native
-mechanism or, for an initialized project, Writer calling the Goal transaction
-route selected from observed schema. Writer runs
+mechanism or, for an initialized project, Writer calling the case-v2 Goal
+transaction route selected from observed schema. Writer runs
 `discussion-transaction.py case-inspect --project-root <project>` first. In
 case-v2, it uses exact `case_id`/alias or creates from a frozen seed/task_key,
 then `case-schema <goal-acquire|goal-update|goal-transfer|goal-close> ->
 case-apply -> case-inspect/readback`; Goal is permitted only while the case is
-`executing` except transfer/close. In legacy-v1, Writer runs
-`discussion-transaction.py goal-inspect --project-root <project>` and retains
-its revision, runs `discussion-transaction.py goal-schema
-<start|attempt|close>`, then runs `discussion-transaction.py goal-apply
---project-root <project> --request <file>` with that revision and reads back.
-The legacy transaction derives
-`docs/teamwork/reports/YYYY-MM-DD-<slug>-goal.md`; never invent or hand-author it.
-Existing legacy-v1 projects keep their current Goal route until explicit
-cutover. Unknown, hybrid, mixed v1/v2, stale, ambiguous case, missing
-seed/task_key, or partial migration fails closed before any write, and one request
-must never touch both trees.
+`executing` except transfer/close. Legacy-v1, unknown, hybrid, mixed v1/v2,
+stale, ambiguous case, missing seed/task_key, or partial migration fails closed
+before any write, and one request must never touch both trees.
 Writer is disposable compute and only the caller; the transaction is the sole
 filesystem writer and owns destination, compare-and-swap, journal recovery,
 atomic apply, and readback. Record objective, success signal, invariants, scope,
-budget, hard stops, status, and attempts. If interrupted before apply begins or
-state is otherwise unavailable, stop and report the continuity gap without a
-durable claim. Recover only from surviving workflow evidence. Preserve an exact
-user-supplied token budget; never invent one.
+budget, hard stops, status, attempts, failure, evidence delta, and strategy
+delta. If interrupted before apply begins or state is otherwise unavailable,
+stop and report the continuity gap without a durable claim. Recover only from
+surviving workflow evidence. Preserve an exact user-supplied token budget; never
+invent one.
 
 ## Iterate
 
@@ -66,6 +61,11 @@ Do not repeat an unchanged command, hypothesis, fix, or review loop. A new
 attempt needs a strategy delta grounded in new evidence or relevant change. Use
 planning only when scope or criteria change; use review only when requested or
 required by a named risk gate.
+
+Maintain visible monotonic Goal state: `objective`, `signal`, `attempt`,
+`failure`, `evidence_delta`, `strategy_delta`, and `status`. Every attempt must
+move at least one of failure understanding, evidence, or strategy; otherwise
+stop for no-progress instead of consuming budget.
 
 Mark the durable goal complete only when the real success signal passes and every
 named protected boundary is satisfied. Continue after an ordinary failure while

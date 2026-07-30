@@ -11,9 +11,10 @@ accept.
 
 Show the goal, hard requirements, weighted preferences, empirical gates, primary
 taxonomy axis, and maximum hypothesis-trial budget `B`. Accept a user override
-only when `2 <= B <= 5`; reject an out-of-range override. If omitted, set
+only when `2 <= B <= 3`; reject an out-of-range override. If omitted, set
 `B = 3`. The maximum adversarial critic/auditor cost is `2B + 2` fresh
-dispatches: two per actual trial plus two final auditors. Declare any separately
+dispatches: two per actual trial plus two final auditors, capped at eight total
+children and only when the host exposes that capacity. Declare any separately
 justified evidence wave and add it to the total envelope. State the selected
 strategy, reason, and envelope before critic dispatch, but do not request
 confirmation. Selection authorizes only read-only Collaborate search, not

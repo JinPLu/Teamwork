@@ -94,6 +94,7 @@ class SkillTopologyV4Test(unittest.TestCase):
                     "A native bounded batch contains at most three questions",
                     "Dependent questions are serial",
                     "global -> boundary -> detail",
+                    "Stress-testing is a challenge method inside dialogue or brainstorm, not a third runtime mode",
                     "why the answer is critical",
                     "what it blocks",
                     "observable closing condition",
@@ -102,17 +103,14 @@ class SkillTopologyV4Test(unittest.TestCase):
                     "Acceptance requires closure evidence",
                     "`recommendation` is nonempty",
                     "`acceptance_evidence` is nonempty",
-                    "sustained semantic Collaborate state defaults to a managed Collaborate checkpoint",
+                    "sustained semantic Collaborate state defaults to a managed case-v2 Collaborate checkpoint",
                     "Writer calls only the controlled transaction route",
-                    "`discussion-transaction.py collaborate-inspect --project-root <project>`",
-                    "`discussion-transaction.py collaborate-schema <create|update|accept|block|close|supersede>`",
-                    "`discussion-transaction.py collaborate-apply --project-root <project> --request <file>`",
-                    "`docs/teamwork/collaborate/current.md`",
-                    "`active.collaborate`",
-                    "Legacy Discussion and Design artifacts are read-only migration inputs only",
+                    "`discussion-transaction.py case-inspect --project-root <project>`",
+                    "case-inspect -> case-schema <create|collaborate-upsert|accept-decision> -> case-apply -> case-inspect/readback",
+                    "managed case-v2 Collaborate checkpoint",
+                    "Legacy Discussion, Design, Collaborate, artifact, and Goal files are read-only migration inputs only",
                     "Legacy write lifecycle commands are retired",
                     "Plan Gate",
-                    "Collaborate-scoped revision",
                     "semantic digest",
                     "lineage digest",
                     "Pending or blocked Collaborate records are durable but not Plan-ready",
@@ -121,9 +119,9 @@ class SkillTopologyV4Test(unittest.TestCase):
             )
             self.assert_in_order(
                 text,
-                "discussion-transaction.py collaborate-inspect --project-root <project>",
-                "discussion-transaction.py collaborate-schema <create|update|accept|block|close|supersede>",
-                "discussion-transaction.py collaborate-apply --project-root <project> --request <file>",
+                "discussion-transaction.py case-inspect --project-root <project>",
+                "case-inspect -> case-schema <create|collaborate-upsert|accept-decision>",
+                "case-apply -> case-inspect/readback",
             )
             for override in NEGATIVE_ARTIFACT_OVERRIDES:
                 self.assertIn(override, text)
@@ -136,22 +134,20 @@ class SkillTopologyV4Test(unittest.TestCase):
                 (
                     "accepted Collaborate decision",
                     "Do not redesign or implement",
-                    "schema-specific Collaborate readback",
+                    "controlled case-v2 Collaborate readback",
                     "case-v2",
                     "case-inspect",
                     "selected case manifest",
                     "accepted decision artifact",
                     "manifest revision",
-                    "legacy-v1",
-                    "discussion-transaction.py collaborate-inspect --project-root <project>",
-                    "active.path == docs/teamwork/collaborate/current.md",
-                    "active.acceptance == accepted",
-                    "Collaborate-scoped revision",
-                    "semantic digest",
-                    "lineage digest",
-                    "Pending or blocked Collaborate records are durable but never Plan-ready",
+                    "Legacy-v1",
+                    "decision revision",
+                    "digests",
+                    "acceptance evidence",
+                    "Legacy-v1, pending, or blocked Collaborate records are durable/migration inputs but never Plan-ready",
                     "Legacy Design, Discussion",
                     "not Plan-ready",
+                    "Maintain visible monotonic Plan state",
                     "No Planner, Root, or Worker fallback writes it",
                 ),
             )
@@ -173,7 +169,18 @@ class SkillTopologyV4Test(unittest.TestCase):
         if skill == "teamwork-debug":
             self.assert_has_fragments(
                 text,
-                ("`observe`", "`instrument`", "`fix`", "Never infer or upgrade authority"),
+                (
+                    "`observe`",
+                    "`instrument`",
+                    "`fix`",
+                    "Never infer or upgrade authority",
+                    "Freeze The Failure",
+                    "Hypothesis Gate",
+                    "rank three to five plausible hypotheses",
+                    "one active discriminating experiment at a time",
+                    "`new-failure-split`",
+                    "Do not invoke Reviewer",
+                ),
             )
             return
         if skill == "teamwork-review":
@@ -185,19 +192,39 @@ class SkillTopologyV4Test(unittest.TestCase):
         if skill == "teamwork-goal":
             self.assert_has_fragments(
                 text,
-                ("durable Goal state at entry", "goal-inspect", "goal-schema", "goal-apply"),
+                (
+                    "durable Goal state at entry",
+                    "case-v2 Goal transaction route",
+                    "case-inspect",
+                    "case-schema <goal-acquire|goal-update|goal-transfer|goal-close>",
+                    "case-apply",
+                    "Maintain visible monotonic Goal state",
+                ),
             )
             return
         if skill == "teamwork-init":
             self.assert_has_fragments(
                 text,
-                ("only for an explicit full bootstrap", "Candidate-promotion gates (all must pass)", "project"),
+                (
+                    "project-local",
+                    "capability-blocked",
+                    "migrate --project-root <exact-project-root>",
+                    "resume --project-root <exact-project-root>",
+                    "case-v2",
+                ),
             )
             return
         if skill == "teamwork-update":
             self.assert_has_fragments(
                 text,
-                ("global installation surfaces only", "check-update.sh", "global"),
+                (
+                    "global",
+                    "check-update.sh",
+                    "capability-blocked",
+                    "migrate --project-root <exact-project-root>",
+                    "resume --project-root <exact-project-root>",
+                    "case-v2",
+                ),
             )
             return
         self.fail(f"missing contract validator for {skill}")
@@ -209,11 +236,12 @@ class SkillTopologyV4Test(unittest.TestCase):
                 text,
                 (
                     "Collaborate selects it automatically or an explicit adversarial override",
-                    "Accept a user override only when `2 <= B <= 5`",
+                    "Accept a user override only when `2 <= B <= 3`",
                     "reject an out-of-range override",
                     "`B = 3`",
                     "do not request confirmation",
                     "maximum adversarial critic/auditor cost is `2B + 2` fresh dispatches",
+                    "capped at eight total children",
                     "Every actual hypothesis gets exactly two fresh internal Designer critics",
                     "Launch exactly two final internal Designer auditors",
                     "Converge only when both final auditors return `PASS`",
@@ -282,7 +310,7 @@ class SkillTopologyV4Test(unittest.TestCase):
             with self.subTest(skill=skill):
                 self.assert_skill_contract(skill, (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8"))
 
-    def test_case_v2_writer_routes_are_explicit_and_legacy_routes_remain(self) -> None:
+    def test_case_v2_writer_routes_are_explicit_and_legacy_routes_are_migration_only(self) -> None:
         contracts = {
             "teamwork-collaborate": ("case-inspect", "case-schema <create|collaborate-upsert|accept-decision>", "case-apply"),
             "teamwork-research": ("case-inspect", "case-schema <research-add>", "case-apply"),
@@ -296,37 +324,31 @@ class SkillTopologyV4Test(unittest.TestCase):
         for skill, route in contracts.items():
             with self.subTest(skill=skill):
                 text = " ".join((SKILLS / skill / "SKILL.md").read_text(encoding="utf-8").split())
-                if skill == "teamwork-collaborate":
-                    legacy_route = "collaborate-inspect --project-root <project>"
-                elif skill == "teamwork-goal":
-                    legacy_route = "goal-inspect --project-root <project>"
-                else:
-                    legacy_route = "artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply"
                 for fragment in (
                     *route,
                     "case_id",
                     "alias",
                     "frozen seed/task_key",
-                    legacy_route,
                     "fails closed before any write",
                 ):
                     self.assertIn(fragment, text)
+                self.assertNotIn("artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply", text)
+                self.assertNotIn("collaborate-inspect -> collaborate-schema", text)
+                self.assertNotIn("goal-inspect --project-root <project>", text)
 
     def test_plan_readiness_schema_first_segments(self) -> None:
         text = normalized(SKILLS / "teamwork-plan" / "SKILL.md")
-        v2_segment = text.split("In case-v2", 1)[1].split("In legacy-v1", 1)[0]
+        v2_segment = text.split("In case-v2", 1)[1].split("Legacy-v1", 1)[0]
         self.assertIn("case-inspect", v2_segment)
         self.assertIn("selected case manifest", v2_segment)
         self.assertIn("accepted decision artifact", v2_segment)
         self.assertIn("manifest revision", v2_segment)
         self.assertNotIn("docs/teamwork/collaborate/current.md", v2_segment)
         self.assertNotIn("collaborate-inspect", v2_segment)
-        legacy_segment = text.split("In legacy-v1", 1)[1].split("Pending or blocked", 1)[0]
-        self.assertIn("collaborate-inspect", legacy_segment)
-        self.assertIn("docs/teamwork/collaborate/current.md", legacy_segment)
-        self.assertIn("Collaborate-scoped revision", legacy_segment)
+        self.assertIn("Legacy-v1, pending, or blocked Collaborate records are durable/migration inputs but never Plan-ready", text)
+        self.assertNotIn("active.path == docs/teamwork/collaborate/current.md", text)
 
-    def test_public_docs_describe_schema_conditional_artifact_routes(self) -> None:
+    def test_public_docs_describe_case_v2_only_routes_and_migration_inputs(self) -> None:
         stale_generic = (
             "Research, Debug, Plan, Plan Review, Review, mutating Init/Update, "
             "and qualifying terminal execution handoffs use the generic artifact transaction. Writer calls"
@@ -337,7 +359,11 @@ class SkillTopologyV4Test(unittest.TestCase):
                 self.assertIn("v2", text)
                 self.assertIn("case", text)
                 self.assertIn("legacy-v1", text)
-                self.assertIn("generic artifact transaction", text)
+                self.assertTrue(
+                    "migration input" in text or "迁移输入" in text,
+                    relative,
+                )
+                self.assertNotIn("generic artifact transaction", text)
                 self.assertNotIn(stale_generic, text)
 
     def test_collaborate_and_plan_gate_inversions_are_rejected(self) -> None:
@@ -351,8 +377,8 @@ class SkillTopologyV4Test(unittest.TestCase):
             ),
             "teamwork-plan": (
                 ("accepted Collaborate decision", "accepted Design decision"),
-                ("active.acceptance == accepted", "active.acceptance != blocked"),
-                ("Pending or blocked Collaborate records are durable but never Plan-ready", "Pending or blocked Collaborate records may be Plan-ready"),
+                ("controlled case-v2 Collaborate readback", "uncontrolled Collaborate summary"),
+                ("Legacy-v1, pending, or blocked Collaborate records are durable/migration inputs but never Plan-ready", "Pending or blocked Collaborate records may be Plan-ready"),
                 ("Legacy Design, Discussion", "Current Design, Discussion"),
             ),
         }

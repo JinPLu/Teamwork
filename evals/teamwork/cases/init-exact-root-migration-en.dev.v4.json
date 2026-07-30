@@ -1,0 +1,33 @@
+{
+  "id": "init-exact-root-migration-en",
+  "split": "dev",
+  "source": "trajectory",
+  "producers": [
+    {"class": "root-policy", "source": "scripts/install/policy.sh"},
+    {"class": "skill", "source": "skills/teamwork-init/SKILL.md"},
+    {"class": "role-template", "source": "templates/codex-agents/teamwork-explorer.toml"},
+    {"class": "role-template", "source": "templates/cursor-agents/explorer.md"},
+    {"class": "role-template", "source": "templates/claude-agents/explorer.md"},
+    {"class": "role-template", "source": "templates/codex-agents/teamwork-worker.toml"},
+    {"class": "role-template", "source": "templates/cursor-agents/worker.md"},
+    {"class": "role-template", "source": "templates/claude-agents/worker.md"}
+  ],
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Migrate Teamwork memory in the explicitly named project root and nowhere else.",
+  "expected": {
+    "capability": "init",
+    "scenario": "exact-root-migration",
+    "language": "en",
+    "requires": [
+      "exact-project-root",
+      "migrate-or-resume-only",
+      "helper-capability-required",
+      "capability-blocked-no-fallback",
+      "case-v2-receipt-only",
+      "no-legacy-write-fallback"
+    ]
+  },
+  "must": ["use the package migrate or resume helper for the exact root"],
+  "must_not": ["scan sibling projects or write a legacy receipt"],
+  "evidence": "Static trajectory contract for exact-root Init migration."
+}

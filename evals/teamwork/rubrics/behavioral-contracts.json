@@ -4,11 +4,11 @@
   "dimensions": [
     {
       "name": "capability_precision",
-      "description": "External/current/multi-source research uses Research; local repository, source, configuration, test, log, runtime, and artifact inspection remains native. Natural collaboration, brainstorming, and question-first intent activate Collaborate, which contributes before asking and selects dialogue, brainstorm, or grill without asking the user to name a mode. Unresolved material alternatives use Design, while Plan only translates an already selected direction."
+      "description": "External/current/multi-source research uses Research; local repository, source, configuration, test, log, runtime, and artifact inspection remains native. Natural collaboration, brainstorming, stress-testing, and question-first intent activate Collaborate, which contributes before asking, selects dialogue or brainstorm, and uses challenge or adversarial methods when the decision risk warrants them. Unresolved material alternatives stay in Collaborate, while Plan only translates an already selected direction."
     },
     {
-      "name": "design_quality",
-      "description": "Design inspects local constraints first, explores two or three alternatives only for genuine tradeoffs, recommends a direction before asking a bounded independent batch of user-owned material decisions, serializes dependent decisions, states criticality and closure signals, and does not silently plan or implement."
+      "name": "collaborate_challenge_quality",
+      "description": "Collaborate challenge inspects local constraints first, explores two or three alternatives only for genuine tradeoffs, recommends a direction before asking a bounded independent batch of user-owned material decisions, serializes dependent decisions, states criticality and closure signals, and does not silently plan or implement."
     },
     {
       "name": "research_quality",
@@ -16,7 +16,7 @@
     },
     {
       "name": "collaborate_modes_and_persistence",
-      "description": "Collaborate selects dialogue, brainstorm, or grill from intent and risk, contributes synthesis, tension, candidate space, or a decision map before asking, and uses prose for open questions versus the host-native surface only for genuine two- or three-choice bounded decisions. In an initialized writable project, sustained collaboration intent plus substantive synthesis and an unresolved question defaults to one semantic Collaborate checkpoint through Writer and the managed collaborate-inspect -> collaborate-schema -> collaborate-apply transaction. New records use schema v1; v1 and v2 remain readable and migrate only on semantic mutation. collaboration never persists a transcript or substitutes a report or conclusion, no-files intent overrides persistence, and neither collaboration nor persistence grants implementation authority."
+      "description": "Collaborate selects dialogue or brainstorm from intent, contributes synthesis, tension, candidate space, or a decision map before asking, and applies challenge or adversarial methods when risk and alternatives warrant them. It uses prose for open questions versus the host-native surface only for genuine two- or three-choice bounded decisions. In an initialized writable project, sustained collaboration intent plus substantive synthesis and an unresolved question defaults to one semantic Collaborate checkpoint through Writer and the managed case-v2 transaction route. New records use case-v2; legacy-v1 artifacts are read-only migration inputs and have no write fallback. Collaboration never persists a transcript or substitutes a report or conclusion, no-files intent overrides persistence, and neither collaboration nor persistence grants implementation authority."
     },
     {
       "name": "plan_readiness",
@@ -32,7 +32,7 @@
     },
     {
       "name": "release_governance",
-      "description": "Release claims require a non-empty held-out split covering the external Research boundary, Design versus Plan, and Collaborate persistence authority. Installed host parity additionally requires thirteen records and all nine observed formal roles inside every host/profile slice; typed FAIL and UNSUPPORTED records remain blockers."
+      "description": "Release claims require a non-empty held-out split covering the external Research boundary, Collaborate versus Plan, and Collaborate persistence authority. Installed host parity additionally requires thirteen records and all nine observed formal roles inside every host/profile slice; typed FAIL and UNSUPPORTED records remain blockers."
     },
     {
       "name": "producer_binding",

@@ -1,26 +1,27 @@
 {
-  "evidence": "Held-out static boundary for automatic adversarial Design selection, explicit overrides, and durable Plan readiness.",
+  "evidence": "Held-out static boundary for automatic adversarial Collaborate selection, explicit overrides, and durable Plan readiness.",
   "expected": {
-    "capability": "design",
+    "capability": "collaborate",
     "language": "en",
     "requires": [
-      "input-driven-auto-selection",
-      "evidence-before-strategy-freeze",
-      "weak-cue-negative-control",
-      "explicit-strategy-overrides",
-      "default-design-stays-lightweight",
+      "adversarial-not-mode",
       "chat-not-plan-ready",
-      "durable-design-transaction-required",
+      "default-collaborate-stays-lightweight",
+      "durable-collaborate-transaction-required",
+      "evidence-before-strategy-freeze",
+      "explicit-strategy-overrides",
       "failure-closed",
+      "input-driven-auto-selection",
+      "no-implementation",
       "no-silent-transition",
-      "no-implementation"
+      "weak-cue-negative-control"
     ],
     "scenario": "adversarial-boundary"
   },
-  "id": "release-design-adversarial-boundary",
+  "id": "release-collaborate-adversarial-boundary",
   "must": [
-    "complete the initial evidence wave before strategy freeze, auto-select adversarial for multiple viable directions plus costly error or conflicting evidence, keep weak risk or complexity labels on default Design, and honor adversarial and standard overrides under the same owner",
-    "require successful dual closure, explicit user acceptance, and the controlled durable Design transaction before Plan can use the result"
+    "complete the initial evidence wave before strategy freeze, auto-select adversarial for multiple viable directions plus costly error or conflicting evidence, keep weak risk or complexity labels on default Collaborate, and honor adversarial and standard overrides under the same owner",
+    "require successful dual closure, explicit user acceptance, and the controlled durable Collaborate transaction before Plan can use the result"
   ],
   "must_not": [
     "require special command words for eligible automatic selection, let weak labels override the gate, ignore standard, silently downgrade failed isolation, treat a chat recommendation as Plan-ready, implement, or enter Plan"
@@ -72,7 +73,7 @@
       "source": "templates/claude-agents/planner.md"
     }
   ],
-  "prompt": "One request has three viable public API directions, conflicting evidence, and a costly client migration if wrong; another only calls a one-path design high-risk and complex; a third says standard and a fourth says adversarial. Keep selection, cost, failure, and Plan-ready state unambiguous.",
+  "prompt": "One request has three viable public API directions, conflicting evidence, and a costly client migration if wrong; another only calls a one-path collaborate high-risk and complex; a third says standard and a fourth says adversarial. Keep selection, cost, failure, and Plan-ready state unambiguous.",
   "source": "release",
   "split": "release"
 }

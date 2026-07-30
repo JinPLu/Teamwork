@@ -30,7 +30,7 @@
     },
     {
       "id": "mainline_question_value",
-      "description": "Where Grill is active, each question advances the current project-level decision; locally interesting implementation details, task switches, and already-settled choices do not displace that mainline."
+      "description": "Where Collaborate challenge is active, each question advances the current project-level decision; locally interesting implementation details, task switches, and already-settled choices do not displace that mainline."
     }
   ]
 }

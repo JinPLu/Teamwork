@@ -1,57 +1,57 @@
 {
-   "evidence" : "Static dialogue-native Ask fixture.",
-   "expected" : {
-      "capability" : "ask",
-      "language" : "en",
-      "requires" : [
-         "contribution-first",
-         "one-high-information-question",
-         "open-or-bounded-native",
-         "collaborate-adaptive-mode",
-         "no-design-premature",
-         "semantic-checkpoint"
-      ],
-      "scenario" : "dialogue-native"
-   },
-   "id" : "ask-dialogue-native-en",
-   "must" : [
-      "activate Collaborate, respond with useful synthesis, tensions, or candidate space, persist one semantic checkpoint through Writer when initialized and writable, then ask at most one high-information open prose or truthfully bounded native question"
-   ],
-   "must_not" : [
-      "prematurely dispatch Design, persist a transcript or duplicate report, implement, or ask multiple questions"
-   ],
-   "platforms" : [
-      "codex",
-      "cursor",
-      "claude"
-   ],
-   "producers" : [
-      {
-         "class" : "root-policy",
-         "source" : "scripts/install/policy.sh"
-      },
-      {
-         "class" : "skill",
-         "source" : "skills/teamwork-collaborate/SKILL.md"
-      },
-      {
-         "class" : "role-template",
-         "source" : "templates/codex-agents/teamwork-writer.toml"
-      },
-      {
-         "class" : "role-template",
-         "source" : "templates/cursor-agents/writer.md"
-      },
-      {
-         "class" : "role-template",
-         "source" : "templates/claude-agents/writer.md"
-      },
-      {
-         "class" : "artifact-engine",
-         "source" : "scripts/discussion-transaction.py"
-      }
-   ],
-   "prompt" : "Let's brainstorm how to make the project onboarding feel less brittle for new contributors.",
-   "source" : "synthetic",
-   "split" : "dev"
+  "evidence": "Static dialogue-native Ask fixture.",
+  "expected": {
+    "capability": "ask",
+    "language": "en",
+    "requires": [
+      "collaborate-adaptive-mode",
+      "contribution-first",
+      "no-challenge-premature",
+      "one-high-information-question",
+      "open-or-bounded-native",
+      "semantic-checkpoint"
+    ],
+    "scenario": "dialogue-native"
+  },
+  "id": "ask-dialogue-native-en",
+  "must": [
+    "activate Collaborate, respond with useful synthesis, tensions, or candidate space, persist one semantic checkpoint through Writer when initialized and writable, then ask at most one high-information open prose or truthfully bounded native question"
+  ],
+  "must_not": [
+    "prematurely dispatch Collaborate, persist a transcript or duplicate report, implement, or ask multiple questions"
+  ],
+  "platforms": [
+    "codex",
+    "cursor",
+    "claude"
+  ],
+  "producers": [
+    {
+      "class": "root-policy",
+      "source": "scripts/install/policy.sh"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/codex-agents/teamwork-writer.toml"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/cursor-agents/writer.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/claude-agents/writer.md"
+    },
+    {
+      "class": "artifact-engine",
+      "source": "scripts/discussion-transaction.py"
+    }
+  ],
+  "prompt": "Let's brainstorm how to make the project onboarding feel less brittle for new contributors.",
+  "source": "synthetic",
+  "split": "dev"
 }

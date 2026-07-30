@@ -7,9 +7,14 @@ description: Use when the user asks to initialize, audit, repair, migrate, or sl
 
 Make project-local agent context accurate, small, and maintainable. This skill
 owns only the named project; it never refreshes global Teamwork installations.
-Collaborate owns natural dialogue, brainstorming, grilling, and decision
+Collaborate owns natural dialogue, brainstorming, stress-testing, and decision
 convergence; Init activates only when the requested outcome is an actual
-project-local context, memory, routing, or CodeGraph setup change.
+project-local context, memory, routing, or CodeGraph setup change. The role
+order is exact: Explorer performs the read-only audit first; only after explicit
+authorized changes are identified does Worker mutate exact project-local
+surfaces. If either mandatory role is unavailable or required isolation cannot
+be verified, return `capability-blocked`; Root must not perform a named-method
+fallback.
 
 ## Authority
 
@@ -72,9 +77,9 @@ promotes candidate material.
    state that limit instead of treating syntax or file presence as live proof.
 
 An audit/check-only Init remains read-only and conversational. After a mutating
-Init in an initialized writable project, a receipt is a completion companion and
-defaults through Writer unless the user says `no files`, `off-record`,
-`read-only`, `no writes`, or equivalent. Freeze a bounded receipt packet:
+Init in an initialized writable project, a receipt is a case-v2 completion
+companion and defaults through Writer unless the user says `no files`,
+`off-record`, `read-only`, `no writes`, or equivalent. Freeze a bounded receipt packet:
 purpose/audience, facts/sources, frozen decision/status, style/structure,
 artifact kind/consumer, preserve/forbid, changed surfaces, evidence, validation,
 and human action. Dispatch one low-cost Writer; Root may do only
@@ -82,21 +87,29 @@ answer-invariant handoff work while Writer runs and must join and read back
 before claiming the receipt is saved or durable. Writer routes from observed
 schema: `case-inspect` first; case-v2 uses exact `case_id`/alias or creates from
 a frozen seed/task_key, then `case-schema <init-result> -> case-apply ->
-case-inspect/readback`; legacy-v1 uses `artifact-inspect -> artifact-schema
-<create|update|supersede> -> artifact-apply`. The transaction derives the
-destination and registers the ordinary index or case manifest/claim heads.
+case-inspect/readback`. The transaction derives the destination and registers
+the case manifest/claim heads.
 Writer is disposable compute and the transaction owns destination,
 compare-and-swap, journal recovery, atomic apply, and readback. If interrupted
 before apply begins, there is no durable claim; recover only from surviving
 workflow evidence or report unsaved. Missing project memory, Writer, brief,
 authority, consumer, route, or transaction blocks only persistence: deliver the
 receipt and report it unsaved/blocked. No Root or Worker fallback writes it.
-Fresh 5.1 project initialization creates v2 case-bundle memory and does not
+Fresh v6 project initialization creates v2 case-bundle memory and does not
 create maintained `docs/teamwork/current.md` or `docs/teamwork/README.md`.
-Existing legacy-v1 memory remains compatible and is not migrated by Init unless
-the user explicitly authorizes a project migration/cutover operation. Mixed,
-unknown, stale, ambiguous case, missing seed/task_key, or partially migrated
-memory fails closed before any write.
+Existing legacy-v1 memory is read-only migration input and is not used for
+normal Collaborate, Goal, or artifact writes. Init may migrate only the exact
+project root named by Root and only after explicit project migration/cutover
+authority. Use the package-owned helper for that exact root, for example
+`scripts/teamwork-case-migration.py classify --project-root <exact-project-root>`
+and `scripts/teamwork-case-migration.py request-inputs --project-root
+<exact-project-root>` before any cutover. If the accepted migration requires
+`teamwork-case-migration.py migrate --project-root <exact-project-root>` or
+`teamwork-case-migration.py resume --project-root <exact-project-root>` and the
+installed helper does not expose that phase, stop `capability-blocked` instead
+of scanning or inventing a replacement. Mixed, unknown, stale, ambiguous case,
+missing seed/task_key, legacy-v1 without explicit migration authority, or
+partially migrated memory fails closed before any write.
 
 If the Explorer audit finds no decision-relevant change, dispatch no Worker and
 write nothing. Report the selected

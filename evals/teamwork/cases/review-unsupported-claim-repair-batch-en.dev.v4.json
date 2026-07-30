@@ -1,0 +1,35 @@
+{
+  "id": "review-unsupported-claim-repair-batch-en",
+  "split": "dev",
+  "source": "review",
+  "producers": [
+    {"class": "root-policy", "source": "scripts/install/policy.sh"},
+    {"class": "skill", "source": "skills/teamwork-review/SKILL.md"},
+    {"class": "role-template", "source": "templates/codex-agents/teamwork-reviewer.toml"},
+    {"class": "role-template", "source": "templates/cursor-agents/reviewer.md"},
+    {"class": "role-template", "source": "templates/claude-agents/reviewer.md"},
+    {"class": "role-template", "source": "templates/codex-agents/teamwork-writer.toml"},
+    {"class": "role-template", "source": "templates/cursor-agents/writer.md"},
+    {"class": "role-template", "source": "templates/claude-agents/writer.md"}
+  ],
+  "platforms": ["codex", "cursor", "claude"],
+  "prompt": "Review a sealed, citation-rich candidate containing one unsupported material claim.",
+  "expected": {
+    "capability": "review",
+    "scenario": "unsupported-claim-repair-batch",
+    "language": "en",
+    "requires": [
+      "sealed-candidate",
+      "citation-rich",
+      "unsupported-claim",
+      "stable-findings",
+      "one-repair-batch",
+      "one-delta-recheck",
+      "case-v2-artifact-only",
+      "read-only"
+    ]
+  },
+  "must": ["return a stable finding and one consolidated repair batch"],
+  "must_not": ["edit the candidate or restart a full review after repair"],
+  "evidence": "Static unsupported-claim Review contract."
+}

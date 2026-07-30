@@ -7,14 +7,15 @@ generic Execute skill, cross-skill behavior load, or shared behavior reference.
 
 ## Working Conventions
 
-- Use Collaborate for natural dialogue, brainstorming, grill/stress-test, or an
+- Use Collaborate for natural dialogue, brainstorming, stress-testing, or an
   unsettled consequential choice; Explore for bounded local evidence; Research
   for external/current evidence; Debug for an unknown cause; Plan only after an
   accepted Collaborate handoff; Review for independent acceptance; Goal for
   explicit persistence; Init for one project; and Update for global refreshes.
-- Collaborate selects dialogue, brainstorm, or grill from the goal and evidence;
-  grill always proceeds global -> boundary -> detail, batches only independent
-  material questions, and keeps dependent questions serial.
+- Collaborate selects dialogue or brainstorm from the goal and evidence.
+  Challenge and adversarial search are methods inside those modes, proceed
+  global -> boundary -> detail, batch only independent material questions, and
+  keep dependent questions serial.
 - Change the owning `SKILL.md` before changing workflow behavior. Keep public
   docs outcome-focused and use direct evidence from code, logs, tests, diffs,
   and artifacts.
@@ -24,10 +25,11 @@ generic Execute skill, cross-skill behavior load, or shared behavior reference.
   not paraphrase or fill gaps in frozen facts, decisions, authority, status, or
   acceptance, and missing Writer/route/readback fails closed as unsaved.
   Code-coupled wording stays with the implementation owner.
-- Persistent memory is schema-first. Existing legacy-v1 project memory keeps its
-  current routes until explicit cutover; fresh 5.1 projects use v2 case bundles
-  under `docs/teamwork/cases/`. Update/install alone never migrates, rewrites,
-  deletes, or cold-archives project documents.
+- Normal workflow memory uses only v2 case bundles under
+  `docs/teamwork/cases/`. Legacy-v1 memory and old grill/Discussion/Design
+  records are read-only Init/Update migration inputs, never normal write routes.
+  Migration requires an exact authorized project root and transaction readback;
+  install/update alone never implies that a project was migrated.
 - Change the canonical owner, reuse existing patterns, write the smallest
   complete logic, and verify the real changed path in proportion to risk.
   Each Worker self-verifies its slice. Independent Plan or code Review runs only
@@ -78,7 +80,8 @@ generic Execute skill, cross-skill behavior load, or shared behavior reference.
 
 - Project label (local routing only): `Teamwork`.
 - Read `docs/teamwork/index.json` first before choosing Teamwork memory routes.
-- For Collaborate dialogue, brainstorm, grill, and accepted-decision checkpoints, legacy-v1 alone uses `docs/teamwork/collaborate/current.md` through `collaborate-inspect`, `collaborate-schema`, and `collaborate-apply`; never mirror them into ordinary memory, legacy Discussion/Design, or a report.
-- For ordinary durable memory, read `docs/teamwork/README.md` after the index, then the referenced artifact. Keep volatile progress in its actual artifact.
+- Normal Teamwork workflow writes use case-v2 only; legacy-v1 and old collaboration modes are migration inputs, not runtime routes.
+- For Collaborate dialogue, brainstorm, and challenge checkpoints, use the selected v2 case manifest and `live/collaborate.md`; accepted decisions use `decision.md`. Route both through `case-inspect`, `case-schema`, and `case-apply`; never mirror them into ordinary memory, legacy Discussion/Design, or a report.
+- For ordinary durable memory, follow the relevant case manifest. Keep volatile progress in its actual artifact.
 - CodeGraph: this project has a local `.codegraph/` index.
 <!-- TEAMWORK_PROJECT_END -->

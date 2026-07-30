@@ -12,18 +12,27 @@ Root supplies a sanitized public question when project context informs it.
 ## Root Handoff
 
 Before any Research method step, Root's first role action after the sanitized
-brief MUST be Researcher dispatch. Root MUST NOT browse, read research-probe
-files, or execute research. In Codex, call `spawn_agent` with
+brief MUST be Researcher dispatch. This role mapping is exact:
+Research -> Researcher. Root MUST NOT browse, read research-probe files, or
+execute research. In Codex, call `spawn_agent` with
 `agent_type="teamwork_researcher"` and `fork_turns="none"`. In Cursor and Claude
 Code, dispatch Researcher via the host mechanism before browsing. If dispatch is
-unavailable, stop. Root MUST NOT call `wait_agent` until `spawn_agent` returns a
-non-empty live agent id. Empty spawn evidence, unavailable spawn, or wait without
-a live agent is STOP: unsupported role boundary.
+unavailable or fresh isolation cannot be verified when required, stop
+`capability-blocked`; Root has no named-method fallback. Root MUST NOT call
+`wait_agent` until `spawn_agent` returns a non-empty live agent id. Empty spawn
+evidence, unavailable spawn, or wait without a live agent is STOP: unsupported
+role boundary.
 
 Researcher never asks the user. Before dispatch, Root may seek brief steering
 only when cost, scope, or consequence materially benefits and the answer is not
 discoverable from supplied evidence. Open steering stays a natural host turn;
 bounded steering follows the host-native question surface.
+
+Default to one Researcher. Additional fan-out remains conditional and must fit
+the host's observed capacity: daily work stays within cap4; use five to eight
+total children only for explicit adversarial/release work and only when the host
+supports it. Every Researcher receives a bounded sanitized packet and never asks
+the user, expands authority, or delegates again.
 
 ## Choose Depth
 
@@ -61,6 +70,12 @@ advanced method for this Skill, not another workflow stage.
    would not change the decision. If evidence is insufficient, return only the
    next decision-relevant discriminator.
 
+Maintain visible monotonic state throughout: `claim_map`, `active_gap`, `wave`,
+`evidence_delta`, `contradiction`, `not_found`, and `coverage_stop`. Each wave
+must either close a mapped claim, record a not-found gap, surface a
+decision-changing contradiction, or justify the coverage stop; do not average
+contradictions away or repeat unchanged searches as progress.
+
 Browse whenever freshness, precise attribution, or a referenced external source
 matters. Do not browse merely to re-check stable common knowledge unless the user
 asks for sources. Never send private source code, logs, credentials, personal
@@ -68,30 +83,25 @@ data, or proprietary artifacts to a public service.
 
 Research does not authorize account changes, messages, purchases, uploads, or
 publication. In an initialized writable project, each terminal cited answer
-defaults to a research artifact unless the user says `no files`, `off-record`,
-`read-only`, `no writes`, or equivalent. Freeze the terminal cited answer before
-persistence. Researcher returns a bounded packet: purpose/audience,
-facts/sources, citations, frozen decision/status, style/structure, artifact
-kind/consumer, and preserve/forbid. Writer routes from observed schema:
-`case-inspect` first; case-v2 uses exact `case_id`/alias or creates from a
-frozen seed/task_key, then `case-schema <research-add> -> case-apply ->
-case-inspect/readback`; legacy-v1 uses `discussion-transaction.py
-artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply`.
-The transaction derives the destination and registers the ordinary index or case
-manifest/claim heads. Writer may rewrite expression but must not research,
-invent, or alter facts, citations, authority, status, decisions, or acceptance.
-Writer is disposable; Root may continue only answer-invariant delivery work and
-must join before claiming saved or durable. Interruption before apply means
-unsaved unless surviving evidence permits a new frozen packet. Missing project
-memory, Writer, brief, authority, consumer, route, or transaction blocks only
-persistence: deliver the answer and report it unsaved/blocked. No Researcher,
-Root, or Worker fallback writes it. Mixed v1/v2, unknown, stale, ambiguous case,
-missing seed/task_key, or partially migrated state fails closed before any write.
-
-After the primary Researcher handoff, additional fan-out remains conditional:
-use it only for separable source classes, required public/private isolation, or
-one bounded verification of a consequential disputed claim. A normal comparison
-keeps one adaptive Researcher and one synthesis owner.
+defaults to a case-v2 research artifact unless the user says `no files`,
+`off-record`, `read-only`, `no writes`, or equivalent. Freeze the terminal cited
+answer before persistence. Researcher returns a bounded packet:
+purpose/audience, facts/sources, citations, frozen decision/status,
+style/structure, artifact kind/consumer, monotonic state, and preserve/forbid.
+Writer routes from observed schema: `case-inspect` first; case-v2 uses exact
+`case_id`/alias or creates from a frozen seed/task_key, then
+`case-schema <research-add> -> case-apply -> case-inspect/readback`. The
+transaction derives the destination and registers the case manifest/claim heads.
+Writer may rewrite expression but must not research, invent, or alter facts,
+citations, authority, status, decisions, or acceptance. Writer is disposable;
+Root may continue only answer-invariant delivery work and must join before
+claiming saved or durable. Interruption before case apply means unsaved unless
+surviving evidence permits a new frozen packet. Missing project memory, Writer,
+brief, authority, consumer, route, or transaction blocks only persistence:
+deliver the answer and report it unsaved/blocked. No Researcher, Root, or
+Worker fallback writes it. Legacy-v1, mixed v1/v2, unknown, stale, ambiguous
+case, missing seed/task_key, or partially migrated state fails closed before any
+write.
 
 Lead with the supported conclusion. Include source census, material-claim
 coverage, citations, freshness, contradictions or rejected-source rationale,

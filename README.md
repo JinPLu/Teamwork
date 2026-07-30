@@ -91,7 +91,7 @@ Cursor 还需要运行 `./install.sh cursor-policy-copy`，再把内容粘贴到
 
 | 你当前缺少 | 使用 | 一句话说明 |
 | --- | --- | --- |
-| 可接受的方向 | 💬 `$teamwork-collaborate` | 讨论、brainstorm、grill、压力测试，或在产品、架构、流程、API 方向未定时逐步收敛。 |
+| 可接受的方向 | 💬 `$teamwork-collaborate` | dialogue、brainstorm、压力测试，或在产品、架构、流程、API 方向未定时逐步收敛；challenge/adversarial 是内部方法，不是公开模式。 |
 | 外部或当前事实 | 🔎 `$teamwork-research` | 查官方资料、论文、市场与生态信息，做多源比较或给出引用。 |
 | 本地只读证据 | 🗂️ `$teamwork-explore` | 梳理代码、配置、日志、测试、历史或 artifact，但不修改项目。 |
 | 已知失败的根因 | 🐞 `$teamwork-debug` | 从真实失败出发，复现并区分假设，再确认安全修复边界。 |
@@ -182,13 +182,15 @@ Review 可以作为明确的独立验收门；Goal 可以包住任何需要持�
 
 Teamwork 不是总控层，也不会把每件小事升级成 workflow。它补充宿主能力，不替代 Codex、Cursor 或 Claude Code 自己的工具、权限和执行路径。
 
+Research、Explore、Debug、Plan 和 Review 必须由对应 owning leaf 承接；宿主缺少该能力时会报告 capability-blocked，而不是由 Root 或其他角色伪装完成。Collaborate 和 Goal 由 Root 拥有。默认只派发 1 个 child，日常上限为 4；5-8 个 child 只用于显式 adversarial 或 release 且宿主支持的场景。
+
 ## 🗃️ 文档与安全边界
 
 - 在已初始化且可写的项目中，命名 Teamwork workflow 默认会保存值得复用的检查点或结果；一次性说明、小修改和普通本地工作不会强制造文档。
 - 明确写出 `no files`、off-record、read-only 或 no-write，可以覆盖默认持久化。
 - Research、Collaborate、Plan、诊断阶段的 Debug 和 Review 不会自动授权代码修改或外部效果；接受计划也不等于授权执行。
-- 新初始化项目使用 v2 case bundle，把同一事项的讨论、证据、计划、复查、Goal 和结果组织在 `docs/teamwork/cases/` 下。已有 legacy-v1 项目的 Collaborate 继续使用 `docs/teamwork/collaborate/current.md` 单文件记录，并保留专用 Goal 路由和承接其他持久化产物的 generic artifact transaction。
-- `cutover` 必须明确授权且只能单向进行；安装或更新 Teamwork 不会迁移、改写或删除已有项目文档。
+- v6 normal runtime 只使用 v2 case bundle，把同一事项的讨论、证据、计划、复查、Goal 和结果组织在 `docs/teamwork/cases/` 下。legacy-v1、旧 grill、Discussion 和 Design 记录只作为 Init/Update 语义迁移输入，不是兼容运行模式。
+- Init/Update 的 project-root 迁移必须精确授权且只能执行一次；安装或更新 Teamwork 本身不代表任意项目已经迁移。只有针对精确 project-root 的 Init/Update transaction readback 成功后，才能声称该项目迁移完成，并保留 cold archive / restore drill 边界。
 - Teamwork 也不会删除无法证明由它所有的配置。
 
 更完整的持久化、agent profile、adversarial Collaborate 和平台限制，请查看 [Codex](CODEX.md)、[Cursor](CURSOR.md)、[Claude Code](CLAUDE.md) 与 [项目结构](docs/architecture.md)。

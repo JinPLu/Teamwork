@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -92,6 +93,197 @@ THREE_QUESTION_PARAMS = {
         },
     ],
 }
+
+
+CASE_CLI = ROOT / "scripts" / "discussion-transaction.py"
+UPDATED_AT = "2026-07-30T00:00:00+00:00"
+
+
+def write_empty_case_v2_project(root: Path) -> None:
+    memory = root / "docs" / "teamwork"
+    memory.mkdir(parents=True, exist_ok=True)
+    (memory / "index.json").write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "project": {
+                    "name": "Teamwork",
+                    "root": ".",
+                    "description": "Case-v2 app probe fixture.",
+                },
+                "active_cases": [],
+                "claim_heads": {},
+                "aliases": {},
+                "recent_cases": [],
+                "migration": None,
+            },
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def case_cli_json(project: Path, *args: str) -> dict[str, object]:
+    result = subprocess.run(
+        [sys.executable, str(CASE_CLI), *args],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+        timeout=10,
+    )
+    if result.returncode != 0:
+        raise AssertionError(result.stderr or result.stdout)
+    payload = json.loads(result.stdout)
+    if not isinstance(payload, dict):
+        raise AssertionError("case CLI did not return an object")
+    return payload
+
+
+def case_inspect(project: Path) -> dict[str, object]:
+    return case_cli_json(project, "case-inspect", "--project-root", str(project))
+
+
+def case_schema(operation: str) -> dict[str, object]:
+    return case_cli_json(Path("."), "case-schema", operation)
+
+
+def case_apply(project: Path, request: dict[str, object]) -> dict[str, object]:
+    return case_cli_json(
+        project,
+        "case-apply",
+        "--project-root",
+        str(project),
+        "--request-json",
+        json.dumps(request),
+    )
+
+
+def case_request(
+    project: Path,
+    operation: str,
+    case: dict[str, object] | None = None,
+    **extra: object,
+) -> dict[str, object]:
+    request = case_schema(operation)
+    request["expected_revision"] = case_inspect(project)["revision"]
+    request["updated_at"] = UPDATED_AT
+    if case is not None:
+        request["case_id"] = case["case_id"]
+        request["expected_manifest_revision"] = case["manifest_revision"]
+    request.update(extra)
+    return request
+
+
+def write_case_v2_collaborate_fixture(
+    root: Path,
+    *,
+    include_decision: bool = False,
+) -> dict[str, object]:
+    write_empty_case_v2_project(root)
+    case = case_apply(
+        root,
+        case_request(
+            root,
+            "create",
+            case_seed="1" * 64,
+            title="Case V2 Collaborate",
+            task_key="case-v2-collaborate",
+            aliases=["case-v2-collaborate"],
+            initial_phase="collaborating",
+        ),
+    )
+    case = case_apply(
+        root,
+        case_request(
+            root,
+            "collaborate-upsert",
+            case,
+            source_digest="2" * 64,
+            body="## Collaborate\n\n- Case-v2 checkpoint.",
+        ),
+    )
+    if include_decision:
+        case = case_apply(
+            root,
+            case_request(
+                root,
+                "accept-decision",
+                case,
+                source_digest="3" * 64,
+                body="## Decision\n\n- Accepted case-v2 decision.",
+            ),
+        )
+    # Force the same canonical readback the app probe consumes.
+    inspected = case_inspect(root)
+    self_case = next(
+        row
+        for row in inspected["active_cases"]  # type: ignore[index]
+        if isinstance(row, dict) and row.get("state", {}).get("case_id") == case["case_id"]
+    )
+    return {"case": case, "readback": self_case}
+
+
+def read_json(path: Path) -> dict[str, object]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise AssertionError(f"{path} did not contain an object")
+    return payload
+
+
+def write_json(path: Path, payload: dict[str, object]) -> None:
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def root_index_path(root: Path) -> Path:
+    return root / "docs" / "teamwork" / "index.json"
+
+
+def manifest_path(root: Path, case_id: str) -> Path:
+    return root / "docs" / "teamwork" / "cases" / case_id / "manifest.json"
+
+
+def collaborate_artifact_path(root: Path, readback: dict[str, object]) -> Path:
+    state = readback["state"]
+    if not isinstance(state, dict):
+        raise AssertionError("readback state missing")
+    artifacts = state["artifacts"]
+    if not isinstance(artifacts, dict):
+        raise AssertionError("readback artifacts missing")
+    for row in artifacts.values():
+        if (
+            isinstance(row, dict)
+            and row.get("role") == "collaborate"
+            and isinstance(row.get("path"), str)
+        ):
+            return root / row["path"]
+    raise AssertionError("collaborate artifact missing")
+
+
+def mutate_index_active_case(root: Path, **fields: object) -> None:
+    index = read_json(root_index_path(root))
+    active = index["active_cases"]
+    if not isinstance(active, list) or not active or not isinstance(active[0], dict):
+        raise AssertionError("active case missing")
+    active[0].update(fields)
+    write_json(root_index_path(root), index)
+
+
+def mutate_manifest_artifact(root: Path, case_id: str, **fields: object) -> None:
+    path = manifest_path(root, case_id)
+    manifest = read_json(path)
+    artifacts = manifest["artifacts"]
+    if not isinstance(artifacts, dict):
+        raise AssertionError("manifest artifacts missing")
+    for row in artifacts.values():
+        if isinstance(row, dict) and row.get("role") == "collaborate":
+            row.update(fields)
+            write_json(path, manifest)
+            return
+    raise AssertionError("collaborate artifact missing")
 
 
 def fake_server_source(params: dict[str, object] = VALID_PARAMS) -> str:
@@ -206,7 +398,7 @@ class RequestValidationTests(unittest.TestCase):
         self.assertTrue(any("description" in error for error in errors))
         self.assertTrue(any("unique" in error for error in errors))
 
-    def test_grill_bound_rejects_multiple_questions_in_one_request(self) -> None:
+    def test_challenge_bound_rejects_multiple_questions_in_one_request(self) -> None:
         invalid = json.loads(json.dumps(VALID_PARAMS))
         second = json.loads(json.dumps(VALID_PARAMS["questions"][0]))
         second["id"] = "host-key-2"
@@ -276,8 +468,8 @@ class OfflineLifecycleTests(unittest.TestCase):
                 "collaborate_bounded_native_request",
                 "open_brainstorm_prose_question",
                 "collaborate_checkpoint_persistence",
-                "explicit-grill-independent-batch",
-                "explicit-grill-dependent-sequence",
+                "explicit-challenge-independent-batch",
+                "explicit-challenge-dependent-sequence",
             },
         )
         self.assertEqual(
@@ -299,11 +491,11 @@ class OfflineLifecycleTests(unittest.TestCase):
             ]
         )
         self.assertEqual(
-            SCENARIOS["explicit-grill-independent-batch"]["max_questions_per_request"],
+            SCENARIOS["explicit-challenge-independent-batch"]["max_questions_per_request"],
             3,
         )
-        self.assertEqual(SCENARIOS["explicit-grill-dependent-sequence"]["expected_requests"], 3)
-        self.assertEqual(len(SCENARIOS["explicit-grill-dependent-sequence"]["prompts"]), 3)
+        self.assertEqual(SCENARIOS["explicit-challenge-dependent-sequence"]["expected_requests"], 3)
+        self.assertEqual(len(SCENARIOS["explicit-challenge-dependent-sequence"]["prompts"]), 3)
         rendered = json.dumps(SCENARIOS)
         self.assertNotIn("mounted", rendered)
         self.assertNotIn("oracle", rendered)
@@ -352,22 +544,20 @@ class OfflineLifecycleTests(unittest.TestCase):
         self.assertNotIn("Collaborate checkpoint", instructions)
         self.assertNotIn("request_user_input", instructions)
 
-    def test_checkpoint_probe_requires_canonical_v1_and_no_generic_duplicate(
+    def test_checkpoint_probe_requires_case_v2_route_and_no_duplicate(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)
-            current = root / "docs" / "teamwork" / "collaborate" / "current.md"
-            current.parent.mkdir(parents=True)
-            current.write_text(
-                "Artifact Type: collaborate\n"
-                "Schema Version: 1\n"
-                '```json\n{"schema_version": 1}\n```\n',
-                encoding="utf-8",
-            )
+            fixture = write_case_v2_collaborate_fixture(root, include_decision=True)
+            readback = fixture["readback"]
+            self.assertIsInstance(readback, dict)
             self.assertEqual(len(collaborate_checkpoint_digest(root)), 64)
             self.assertEqual(forbidden_generic_collaborate_artifacts(root), [])
 
+            retired = root / "docs" / "teamwork" / "collaborate" / "current.md"
+            retired.parent.mkdir(parents=True)
+            retired.write_text("Artifact Type: collaborate\n", encoding="utf-8")
             duplicate = (
                 root
                 / "docs"
@@ -382,6 +572,7 @@ class OfflineLifecycleTests(unittest.TestCase):
             self.assertEqual(
                 forbidden_generic_collaborate_artifacts(root),
                 [
+                    "docs/teamwork/collaborate/current.md",
                     "docs/teamwork/workflows/conclusion/results/duplicate.md"
                 ],
             )
@@ -389,7 +580,7 @@ class OfflineLifecycleTests(unittest.TestCase):
     def test_checkpoint_probe_rejects_missing_or_legacy_record(self) -> None:
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)
-            with self.assertRaisesRegex(ProtocolError, "was not created"):
+            with self.assertRaisesRegex(ProtocolError, "case-inspect failed"):
                 collaborate_checkpoint_digest(root)
             current = root / "docs" / "teamwork" / "collaborate" / "current.md"
             current.parent.mkdir(parents=True)
@@ -398,7 +589,86 @@ class OfflineLifecycleTests(unittest.TestCase):
                 '```json\n{"schema_version": 2}\n```\n',
                 encoding="utf-8",
             )
-            with self.assertRaisesRegex(ProtocolError, "canonical v1"):
+            (root / "docs" / "teamwork" / "index.json").write_text(
+                json.dumps({"schema_version": 2, "active_cases": [], "recent_cases": []}) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ProtocolError, "case-inspect failed"):
+                collaborate_checkpoint_digest(root)
+
+    def test_checkpoint_probe_uses_case_inspect_manifest_revision_readback(self) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            write_case_v2_collaborate_fixture(root)
+            mutate_index_active_case(root, manifest_revision="0" * 64)
+            with self.assertRaisesRegex(ProtocolError, "case-inspect failed"):
+                collaborate_checkpoint_digest(root)
+
+    def test_checkpoint_probe_rejects_noncanonical_manifest_paths(self) -> None:
+        for field in ("/tmp/outside-manifest.json", "../outside-manifest.json"):
+            with self.subTest(field=field):
+                with tempfile.TemporaryDirectory() as name:
+                    root = Path(name)
+                    write_case_v2_collaborate_fixture(root)
+                    outside = root.parent / "outside-manifest.json"
+                    outside.write_text('{"outside": true}\n', encoding="utf-8")
+                    mutate_index_active_case(root, manifest_path=field)
+                    with self.assertRaisesRegex(ProtocolError, "case-inspect failed"):
+                        collaborate_checkpoint_digest(root)
+
+    def test_checkpoint_probe_rejects_symlink_manifest_readback(self) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            fixture = write_case_v2_collaborate_fixture(root)
+            case = fixture["case"]
+            case_id = str(case["case_id"])
+            path = manifest_path(root, case_id)
+            outside = root.parent / "outside-valid-manifest.json"
+            outside.write_bytes(path.read_bytes())
+            path.unlink()
+            os.symlink(outside, path)
+            with self.assertRaisesRegex(ProtocolError, "case-inspect failed"):
+                collaborate_checkpoint_digest(root)
+
+    def test_checkpoint_probe_rejects_unsafe_artifact_paths_before_reading_outside(self) -> None:
+        for field in ("/tmp/outside-collaborate.md", "../outside-collaborate.md"):
+            with self.subTest(field=field):
+                with tempfile.TemporaryDirectory() as name:
+                    root = Path(name)
+                    fixture = write_case_v2_collaborate_fixture(root)
+                    case = fixture["case"]
+                    mutate_manifest_artifact(root, str(case["case_id"]), path=field)
+                    with self.assertRaisesRegex(ProtocolError, "case-inspect failed"):
+                        collaborate_checkpoint_digest(root)
+
+    def test_checkpoint_probe_rejects_symlink_artifact_without_following_it(self) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            fixture = write_case_v2_collaborate_fixture(root)
+            readback = fixture["readback"]
+            if not isinstance(readback, dict):
+                raise AssertionError("readback missing")
+            artifact = collaborate_artifact_path(root, readback)
+            outside = root.parent / "outside-collaborate.md"
+            outside.write_bytes(artifact.read_bytes())
+            artifact.unlink()
+            os.symlink(outside, artifact)
+            with self.assertRaisesRegex(ProtocolError, "escapes|non-symlink"):
+                collaborate_checkpoint_digest(root)
+
+    def test_checkpoint_probe_rejects_artifact_digest_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            fixture = write_case_v2_collaborate_fixture(root)
+            readback = fixture["readback"]
+            if not isinstance(readback, dict):
+                raise AssertionError("readback missing")
+            artifact = collaborate_artifact_path(root, readback)
+            artifact.write_text(
+                artifact.read_text(encoding="utf-8") + "\nTampered bytes.\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ProtocolError, "digest does not match"):
                 collaborate_checkpoint_digest(root)
 
     def test_native_request_resolution_and_completion_pass(self) -> None:
@@ -461,9 +731,9 @@ class OfflineLifecycleTests(unittest.TestCase):
         self.assertIn("duplicated", observed["blocker"])
         self.assertTrue(observed["text_question_observed"])
 
-    def test_independent_grill_batch_accepts_three_native_questions(self) -> None:
+    def test_independent_challenge_batch_accepts_three_native_questions(self) -> None:
         result = self.run_probe(
-            scenario="explicit-grill-independent-batch",
+            scenario="explicit-challenge-independent-batch",
             params=THREE_QUESTION_PARAMS,
         )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -475,9 +745,9 @@ class OfflineLifecycleTests(unittest.TestCase):
         self.assertEqual(observed["returned_answer_keys"], observed["observed_question_keys"])
         self.assertEqual(observed["resolved_request_count"], 1)
 
-    def test_dependent_grill_sequence_uses_three_turns_on_one_thread(self) -> None:
+    def test_dependent_challenge_sequence_uses_three_turns_on_one_thread(self) -> None:
         result = self.run_probe(
-            scenario="explicit-grill-dependent-sequence",
+            scenario="explicit-challenge-dependent-sequence",
             mode="dependent",
             params=THREE_QUESTION_PARAMS,
         )

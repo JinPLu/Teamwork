@@ -253,6 +253,20 @@ class SemanticSourceMutationTests(unittest.TestCase):
             with self.subTest(skill=skill):
                 self.assert_concept_removal_rejected(skill, label)
 
+    def test_debug_hypothesis_state_machine_is_protected(self) -> None:
+        for label in (
+            "frozen failure signature",
+            "ranked hypothesis ledger",
+            "hypothesis before probes",
+            "prediction and falsifier mapping",
+            "one discriminating experiment",
+            "rejected hypotheses",
+            "new failure split",
+            "no review before cause",
+        ):
+            with self.subTest(label=label):
+                self.assert_concept_removal_rejected("teamwork-debug", label)
+
 
 class CapabilityCaseMutationTests(unittest.TestCase):
     @classmethod
@@ -278,7 +292,7 @@ class CapabilityCaseMutationTests(unittest.TestCase):
         self.fail(f"missing fixture {capability}/{scenario}/{language}")
 
     def test_dev_coverage_is_mutation_sensitive_without_case_id_checks(self) -> None:
-        key = ("design", "activation", "zh")
+        key = ("collaborate", "brainstorm", "zh")
         mutated = [
             case
             for case in self.cases
@@ -293,7 +307,7 @@ class CapabilityCaseMutationTests(unittest.TestCase):
             _validate_coverage(mutated)
 
     def test_release_coverage_is_mutation_sensitive(self) -> None:
-        key = ("grill", "persistence-boundary", "en")
+        key = ("collaborate", "persistence-boundary", "en")
         mutated = [
             case
             for case in self.cases
@@ -314,19 +328,19 @@ class CapabilityCaseMutationTests(unittest.TestCase):
             self.validate_mutated_case(data)
 
     def test_natural_question_first_cannot_smuggle_save_invocation(self) -> None:
-        data = self.case("grill", "natural-question-first", "en")
+        data = self.case("collaborate", "dialogue", "en")
         data["prompt"] += " $teamwork-collaborate"
         with self.assertRaisesRegex(EvalError, "must not use \\$teamwork-collaborate"):
             self.validate_mutated_case(data)
 
     def test_explicit_save_requires_explicit_skill_invocation(self) -> None:
-        data = self.case("grill", "explicit-save", "en")
+        data = self.case("collaborate", "explicit-save", "en")
         data["prompt"] = "Save this collaboration."
         with self.assertRaisesRegex(EvalError, "must explicitly invoke \\$teamwork-collaborate"):
             self.validate_mutated_case(data)
 
     def test_no_implementation_needs_an_observable_negative_control(self) -> None:
-        data = self.case("design", "activation", "en")
+        data = self.case("collaborate", "brainstorm", "en")
         data["must_not"] = ["change the topic"]
         with self.assertRaisesRegex(EvalError, "observable negative control"):
             self.validate_mutated_case(data)

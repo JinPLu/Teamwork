@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "5.1.0",
+  "version": "6.0.0",
   "description": "Codex-first collaboration skills, with Cursor and Claude Code adapters, for Collaborate, case-bundle workflow documents, research, local evidence, debugging, planning, review, setup, updates, and long-running goals.",
   "author": {
     "name": "JinPLu",
@@ -27,7 +27,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Nine focused skills for Collaborate, durable results, research, debugging, review, setup, and goals.",
-    "longDescription": "Teamwork adds nine focused collaboration skills for one Collaborate workflow covering adaptive dialogue, brainstorming, pressure-testing, and accepted direction convergence; cited external research; read-only local evidence; unknown-cause debugging; executable planning; read-only review; project initialization; global refresh; and long-running convergence. A low-cost Writer turns frozen workflow state into reusable case-bundle documents through controlled persistence routes and fails closed when route or readback is unavailable. Teamwork 5.1 keeps existing legacy-v1 project memory compatible until explicit cutover, while fresh projects use v2 case bundles. Routine local inspection and authorized implementation stay with Codex's native workflow; no router, Execute skill, retired public Design/Discuss surface, or alias is required. You choose scope and authorize changes; Codex remains in control of tools and permissions.",
+    "longDescription": "Teamwork adds nine focused collaboration skills for adaptive dialogue and brainstorming; cited external research; read-only local evidence; hypothesis-first debugging; executable planning; independent review; project initialization; global refresh; and persistent goals. Named methods use their owning agent role and return capability-blocked when that role is unavailable, while tiny reads, ordinary explanations, simple commands, authorized implementation, and integration stay on Codex's native fast path. Durable workflow state uses case-v2 bundles only. Init and Update can semantically migrate an explicitly authorized legacy project root into case-v2 with cold-archive recovery evidence. A low-cost Writer persists frozen workflow state through controlled transactions. You choose scope and authorize effects; Codex remains in control of tools and permissions.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [

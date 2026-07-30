@@ -13,6 +13,7 @@ import argparse
 import base64
 import contextlib
 import fcntl
+import fnmatch
 import hashlib
 import html
 import json
@@ -21,6 +22,7 @@ import re
 import secrets
 import stat
 import sys
+import tempfile
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path, PurePosixPath
@@ -140,6 +142,7 @@ MIGRATION_ID_RE = re.compile(r"^m-[0-9a-f]{64}$")
 MIGRATION_KIND = "case-migration"
 MIGRATION_PREFIXES = (
     ".teamwork/",
+    INDEX_PATH,
 )
 MIGRATION_RUNTIME_ROOT = ".teamwork/runtime"
 MIGRATION_ARCHIVE_ROOT = ".teamwork/cold-archive/v1"
@@ -2679,7 +2682,7 @@ def _index_entry(kind: str, path: str, state: dict[str, object], *, active: bool
     }
 
 
-def _validate_entry(entry: object, position: int) -> dict[str, object]:
+def _validate_entry(entry: object, position: int, *, migration: bool = False) -> dict[str, object]:
     if not isinstance(entry, dict):
         fail(f"entries[{position}] must be an object")
     result = dict(entry)
@@ -2687,7 +2690,10 @@ def _validate_entry(entry: object, position: int) -> dict[str, object]:
         if key not in result:
             fail(f"entries[{position}] is missing {key}")
     require_text(result["topic"], f"entries[{position}].topic")
-    if result["kind"] not in {"result", "progress", "design", "decision", "plan", "report", "research", "runbook"}:
+    allowed_kinds = {"result", "progress", "design", "decision", "plan", "report", "research", "runbook"}
+    if migration:
+        allowed_kinds.add("discussion")
+    if result["kind"] not in allowed_kinds:
         fail(f"entries[{position}].kind is invalid")
     require_text(result["title"], f"entries[{position}].title")
     if result["status"] not in {"active", "historical", "superseded", "blocked", "candidate", "accepted"}:
@@ -2705,7 +2711,7 @@ def _validate_entry(entry: object, position: int) -> dict[str, object]:
     return result
 
 
-def parse_index(text: str) -> dict[str, object]:
+def parse_index(text: str, *, migration: bool = False) -> dict[str, object]:
     index = _decode_json(text, "Teamwork index")
     if not isinstance(index, dict) or index.get("schema_version") != 1:
         fail("Teamwork index schema_version must be 1")
@@ -2721,6 +2727,8 @@ def parse_index(text: str) -> dict[str, object]:
     if not isinstance(active, dict):
         fail("Teamwork index active must be an object")
     allowed = {"current", "collaborate", "design", "plan", "progress", "report", "results"}
+    if migration:
+        allowed.add("discussion")
     unknown = set(active) - allowed
     if unknown:
         if "discussion" in unknown:
@@ -2733,12 +2741,15 @@ def parse_index(text: str) -> dict[str, object]:
     if not isinstance(active.get("results"), list):
         fail("active.results must be an array")
     require_text_list(active["results"], "active.results")
-    for pointer in ("design", "plan", "progress", "report"):
+    for pointer in ("design", "plan", "progress", "report", *(("discussion",) if migration else ())):
         value = active.get(pointer)
         if value is not None:
             active[pointer] = checked_relative(value, f"active.{pointer}")
             if active[pointer].startswith("docs/teamwork/discussion/"):
-                fail(f"active.{pointer} cannot point at Discussion state")
+                if pointer != "discussion":
+                    fail(f"active.{pointer} cannot point at Discussion state")
+            elif pointer == "discussion":
+                fail("active.discussion must point inside docs/teamwork/discussion/")
     collaborate = active.get("collaborate")
     if collaborate is not None:
         active["collaborate"] = checked_relative(collaborate, "active.collaborate")
@@ -2747,12 +2758,15 @@ def parse_index(text: str) -> dict[str, object]:
     raw_entries = index.get("entries")
     if not isinstance(raw_entries, list) or not raw_entries:
         fail("Teamwork index entries must be a non-empty array")
-    entries = [_validate_entry(item, position) for position, item in enumerate(raw_entries)]
+    entries = [_validate_entry(item, position, migration=migration) for position, item in enumerate(raw_entries)]
     index = dict(index)
     index["active"] = active
     index["entries"] = entries
     _normalize_legacy_workflow_report_slot(index)
-    _validate_pointer_metadata(index)
+    if migration:
+        _validate_migration_pointer_metadata(index)
+    else:
+        _validate_pointer_metadata(index)
     return index
 
 
@@ -2856,6 +2870,50 @@ def _validate_pointer_metadata(index: dict[str, object]) -> None:
         if raw_collaborate in used:
             fail("one artifact path cannot own more than one active pointer")
         used.add(raw_collaborate)
+    _validate_workflow_pointer_metadata(index, used)
+
+
+def _validate_migration_pointer_metadata(index: dict[str, object]) -> None:
+    """Validate explicit legacy pointers without enforcing current-runtime uniqueness.
+
+    Older released indexes may retain several eligible current Plan rows or a
+    migration-only Discussion pointer.  An exact active pointer still selects
+    one source unambiguously for semantic conversion; normal runtime continues
+    to reject these shapes through ``_validate_pointer_metadata``.
+    """
+
+    active = index["active"]
+    entries = index["entries"]
+    assert isinstance(active, dict) and isinstance(entries, list)
+    used: set[str] = set()
+    for pointer in ("design", "plan", "progress", "collaborate", "discussion"):
+        raw = active.get(pointer)
+        if raw is None:
+            continue
+        assert isinstance(raw, str)
+        if pointer == "discussion":
+            matching = [
+                entry
+                for entry in entries
+                if isinstance(entry, dict)
+                and entry.get("path") == raw
+                and entry.get("kind") == "discussion"
+                and _eligible(entry)
+            ]
+        else:
+            matching = [
+                entry
+                for entry in entries
+                if isinstance(entry, dict)
+                and entry.get("path") == raw
+                and _pointer_eligible(pointer, entry)
+                and _pointer_shape(pointer, raw, entry)
+            ]
+        if len(matching) != 1:
+            fail(f"active.{pointer} has no unique migration source")
+        if raw in used:
+            fail("one artifact path cannot own more than one migration pointer")
+        used.add(raw)
     _validate_workflow_pointer_metadata(index, used)
 
 
@@ -4485,7 +4543,7 @@ def normalize_collaborate_state(value: object) -> dict[str, object]:
     }:
         fail("Collaborate status and acceptance are inconsistent")
     mode = value.get("mode", "dialogue")
-    if mode not in {"dialogue", "brainstorm", "grill"}:
+    if mode not in {"dialogue", "brainstorm"}:
         fail("Collaborate mode is invalid")
     superseded_by = value.get("superseded_by")
     if superseded_by is not None:
@@ -4543,14 +4601,12 @@ def _validate_collaborate_relations(state: dict[str, object]) -> None:
         fail("current_batch must contain at most three unique ids")
     if state["mode"] == "dialogue" and len(batch) > 1:
         fail("dialogue current_batch may contain at most one id")
-    source = frontier if state["mode"] == "grill" else questions
-    wrong = questions if state["mode"] == "grill" else frontier
     for item_id in batch:
-        if item_id in wrong:
-            fail("current_batch references the wrong mode collection")
-        if item_id not in source:
+        if item_id in frontier:
+            fail("current_batch references the retired Collaborate frontier collection")
+        if item_id not in questions:
             fail("current_batch references an unknown id")
-        if source[item_id]["status"] != "open":
+        if questions[item_id]["status"] != "open":
             fail("current_batch references a non-open record")
     if state["status"] in {"accepted", "blocked", "closed", "superseded"} and batch:
         fail("terminal Collaborate states cannot retain current_batch")
@@ -4823,7 +4879,7 @@ def _map_discussion_to_collaborate(state: dict[str, object]) -> dict[str, object
             "_material": bool(still_open),
         }
     if state["schema_version"] == 2 or state.get("mode") == "grill":
-        frontier: list[dict[str, str]] = []
+        questions: list[dict[str, str]] = []
         open_items: list[str] = []
         tensions: list[str] = []
         settled: list[str] = []
@@ -4834,19 +4890,25 @@ def _map_discussion_to_collaborate(state: dict[str, object]) -> dict[str, object
                 tensions.append(f"{item['id']}: {item['largest_downside']}")
             elif status == "closed":
                 settled.append(f"{item['id']}: {item['title']}")
-            frontier.append({
-                "id": f"discussion-frontier-{item['id']}",
-                "title": str(item["title"]),
-                "status": "open" if status in {"open", "current"} else "settled" if status == "closed" else "rejected",
-                "rationale": f"prompt: {item['prompt']}; why_critical: {item['why_critical']}; largest_downside: {item['largest_downside']}; closure_signal: {item['closure_signal']}",
+            answer = ""
+            resolution = item.get("resolution")
+            if status == "closed" and isinstance(resolution, dict):
+                answer = f"Selected: {resolution.get('option_id')}"
+            elif status == "rejected" and isinstance(resolution, dict):
+                answer = f"Rejected: {resolution.get('reason')}"
+            questions.append({
+                "id": f"discussion-question-{item['id']}",
+                "prompt": f"{item['prompt']} Why critical: {item['why_critical']} Largest downside: {item['largest_downside']} Closure signal: {item['closure_signal']}",
+                "answer": answer,
+                "status": "open" if status in {"open", "current"} else "answered" if status == "closed" else "skipped",
             })
         synthesis = list(state.get("synthesis", [])) or [item for item in (state["current_branch"], state["convergence"]) if str(item).strip()]
         return {
-            "title": state["title"], "slug": state["slug"], "goal": state["goal"], "mode": "grill",
+            "title": state["title"], "slug": state["slug"], "goal": state["goal"], "mode": "brainstorm",
             "synthesis": synthesis, "tensions": tensions, "settled": _merge_unique(settled, state.get("settled", [])),
             "open_items": open_items, "blockers": state["blockers"], "key_evidence": state["key_evidence"],
-            "return_path": state["return_path"], "questions": [], "frontier": frontier,
-            "current_batch": [f"discussion-frontier-{item}" for item in state["current_batch"]],
+            "return_path": state["return_path"], "questions": questions, "frontier": [],
+            "current_batch": [f"discussion-question-{item}" for item in state["current_batch"]],
             "_material": bool(open_items) or bool(state["current_batch"]),
         }
     questions: list[dict[str, str]] = []
@@ -5593,9 +5655,15 @@ def validate_case_manifest(value: object) -> dict[str, object]:
         references.append({"case_id": _case_id(raw.get("case_id")), "claim_id": _claim_id(raw.get("claim_id")), "artifact_id": _artifact_id(raw.get("artifact_id")), "digest": _hex64(raw.get("digest"), "reference digest")})
     sources: list[dict[str, object]] = []
     for position, raw in enumerate(value["migration_sources"]):
-        if not isinstance(raw, dict) or set(raw) != {"source_path", "source_digest", "classification", "migration_id"}:
+        if not isinstance(raw, dict) or set(raw) != {"source_path", "source_digest", "classification", "migration_id", "artifact_id"}:
             fail(f"manifest migration_sources[{position}] has an unsupported schema")
-        sources.append({"source_path": checked_relative(raw.get("source_path"), "migration source path"), "source_digest": _hex64(raw.get("source_digest"), "migration source_digest"), "classification": require_slug(raw.get("classification"), "migration source classification"), "migration_id": _migration_id(raw.get("migration_id"))})
+        sources.append({
+            "source_path": checked_relative(raw.get("source_path"), "migration source path"),
+            "source_digest": _hex64(raw.get("source_digest"), "migration source_digest"),
+            "classification": require_slug(raw.get("classification"), "migration source classification"),
+            "migration_id": _migration_id(raw.get("migration_id")),
+            "artifact_id": _artifact_id(raw.get("artifact_id")),
+        })
     for name, rows, key in (("history", history, "artifact_id"), ("references", references, "digest"), ("migration_sources", sources, "source_path")):
         ids = [str(row[key]) for row in rows]
         if len(ids) != len(set(ids)):
@@ -5737,7 +5805,7 @@ def empty_case_index(project_name: str = "Teamwork") -> dict[str, object]:
     })
 
 
-def detect_teamwork_memory_schema(root: Path) -> str:
+def detect_teamwork_memory_schema(root: Path, *, migration: bool = False) -> str:
     text = safe_read_text(root, INDEX_PATH, optional=True)
     if text is None:
         fail("Teamwork memory is not initialized")
@@ -5749,7 +5817,9 @@ def detect_teamwork_memory_schema(root: Path) -> str:
     if v1_keys and v2_keys:
         fail("hybrid v1/v2 Teamwork memory state detected")
     if value.get("schema_version") == 1 and v1_keys:
-        parse_index(text)
+        if not migration:
+            fail("legacy-v1 Teamwork memory is migration input only; normal runtime requires case-v2 memory")
+        parse_index(text, migration=migration)
         return "legacy-v1"
     if value.get("schema_version") == 2 and v2_keys:
         validate_case_index(value)
@@ -6200,7 +6270,7 @@ def apply_case(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
             elif operation in {"collaborate-upsert", "accept-decision", "evidence-add", "research-add", "debug-add", "init-result", "update-result", "native-result", "plan-upsert", "plan-review-add", "review-add", "code-review-add", "result-add", "goal-acquire", "goal-update"}:
                 allowed = {
                     "collaborate-upsert": CASE_ACTIVE_PHASES,
-                    "accept-decision": {"collaborating"},
+                    "accept-decision": {"collaborating", "planned"},
                     "evidence-add": {"collecting", "planned", "executing", "reviewing"},
                     "research-add": {"collecting", "planned", "executing", "reviewing"},
                     "debug-add": {"collecting", "planned", "executing", "reviewing"},
@@ -6400,6 +6470,706 @@ def read_migration_json(root: Path, migration_id: str, name: str, *, optional: b
     return value
 
 
+def _candidate_digest_bytes(logical_path: str, data: bytes) -> bytes:
+    if logical_path == INDEX_PATH:
+        value = _decode_json(data.decode("utf-8"), "candidate index")
+        if not isinstance(value, dict):
+            fail("candidate index must be an object", category="INDETERMINATE")
+        value = validate_case_index(value)
+        migration = value.get("migration")
+        if isinstance(migration, dict):
+            migration = dict(migration)
+            migration["candidate_digest"] = "0" * 64
+            migration["phase"] = "normalized"
+            migration["report_digest"] = "0" * 64
+            value = dict(value)
+            value["migration"] = migration
+        return canonical_json_bytes(value)
+    if logical_path.endswith("/coverage.json"):
+        value = _decode_json(data.decode("utf-8"), "candidate coverage")
+        if not isinstance(value, dict):
+            fail("candidate coverage must be an object", category="INDETERMINATE")
+        if "candidate_digest" in value:
+            value = dict(value)
+            value["candidate_digest"] = "0" * 64
+        return canonical_json_bytes(value)
+    return data
+
+
+def candidate_tree_digest_from_outputs(migration_id: str, outputs: dict[str, Output]) -> str:
+    candidate_prefix = f"{migration_runtime_dir(migration_id)}/candidate/docs-teamwork/"
+    coverage_path = migration_runtime_path(migration_id, "coverage.json")
+    rows: list[dict[str, object]] = []
+    for path, output in outputs.items():
+        if output.data is None:
+            continue
+        if path.startswith(candidate_prefix):
+            logical = "docs/teamwork/" + path.removeprefix(candidate_prefix)
+        elif path == coverage_path:
+            logical = coverage_path
+        else:
+            continue
+        rows.append({"path": logical, "sha256": hashlib.sha256(_candidate_digest_bytes(logical, output.data)).hexdigest()})
+    rows = sorted(rows, key=lambda row: str(row["path"]))
+    return case_digest("candidate-tree-complete", rows)
+
+
+def _candidate_tree_file_rows(root: Path, migration_id: str, tree_relative: str) -> list[dict[str, object]]:
+    base = _safe_dir(root, tree_relative)
+    assert base is not None
+    rows: list[dict[str, object]] = []
+    for path in sorted(base.rglob("*"), key=lambda item: item.relative_to(base).as_posix()):
+        relative_tail = path.relative_to(base).as_posix()
+        info = path.lstat()
+        if stat.S_ISLNK(info.st_mode):
+            fail("candidate tree must not contain symlinks", category="INDETERMINATE")
+        if stat.S_ISDIR(info.st_mode):
+            continue
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            fail("candidate tree contains an unsafe file", category="INDETERMINATE")
+        data = path.read_bytes()
+        rows.append({"path": f"docs/teamwork/{relative_tail}", "sha256": hashlib.sha256(_candidate_digest_bytes(f"docs/teamwork/{relative_tail}", data)).hexdigest()})
+    coverage_relative = migration_runtime_path(migration_id, "coverage.json")
+    coverage_data = safe_read_bytes(root, coverage_relative)
+    assert coverage_data is not None
+    rows.append({"path": coverage_relative, "sha256": hashlib.sha256(_candidate_digest_bytes(coverage_relative, coverage_data)).hexdigest()})
+    return sorted(rows, key=lambda row: str(row["path"]))
+
+
+def candidate_tree_digest(root: Path, migration_id: str, tree_relative: str) -> str:
+    return case_digest("candidate-tree-complete", _candidate_tree_file_rows(root, migration_id, tree_relative))
+
+
+def verify_candidate_tree(root: Path, migration_id: str, tree_relative: str, expected_digest_raw: object) -> None:
+    expected_digest = _hex64(expected_digest_raw, "candidate_digest")
+    if candidate_tree_digest(root, migration_id, tree_relative) != expected_digest:
+        fail("candidate tree digest mismatch", category="INDETERMINATE")
+    index_path = f"{tree_relative}/index.json" if tree_relative != "docs/teamwork" else INDEX_PATH
+    index = _read_json_relative(root, index_path, "candidate index")
+    validate_case_index(index)
+    coverage = read_migration_json(root, migration_id, "coverage.json")
+    assert coverage is not None
+    if coverage.get("candidate_digest") != expected_digest:
+        fail("candidate coverage digest mismatch", category="INDETERMINATE")
+    coverage_rows = coverage.get("coverage_rows")
+    if not isinstance(coverage_rows, list):
+        fail("candidate coverage rows are malformed", category="INDETERMINATE")
+    coverage_by_source: dict[str, dict[str, object]] = {}
+    for row in coverage_rows:
+        if not isinstance(row, dict) or row.get("derived_terminal_result"):
+            continue
+        source_path = checked_relative(row.get("source_path"), "coverage source path")
+        coverage_by_source[source_path] = row
+        artifact_path = checked_relative(row.get("artifact_path"), "coverage artifact path")
+        artifact_data = safe_read_bytes(root, artifact_path if tree_relative == "docs/teamwork" else f"{tree_relative}/{artifact_path.removeprefix('docs/teamwork/')}")
+        if artifact_data is None:
+            fail("candidate coverage artifact is missing", category="INDETERMINATE")
+    case_rows = list(index.get("active_cases", [])) + list(index.get("recent_cases", []))
+    for case_row in case_rows:
+        if not isinstance(case_row, dict):
+            fail("candidate index case row is malformed", category="INDETERMINATE")
+        manifest_path = checked_relative(case_row.get("manifest_path"), "candidate manifest path")
+        manifest_relative = manifest_path if tree_relative == "docs/teamwork" else f"{tree_relative}/{manifest_path.removeprefix('docs/teamwork/')}"
+        manifest = _read_json_relative(root, manifest_relative, "candidate manifest")
+        manifest = validate_case_manifest(manifest)
+        artifacts = manifest["artifacts"]
+        assert isinstance(artifacts, dict)
+        for artifact_id, artifact in artifacts.items():
+            assert isinstance(artifact, dict)
+            artifact_path = str(artifact["path"])
+            artifact_relative = artifact_path if tree_relative == "docs/teamwork" else f"{tree_relative}/{artifact_path.removeprefix('docs/teamwork/')}"
+            artifact_data = safe_read_bytes(root, artifact_relative)
+            if artifact_data is None or hashlib.sha256(canonical_text_bytes(artifact_data.decode("utf-8"))).hexdigest() != artifact["byte_digest"]:
+                fail("candidate manifest artifact digest mismatch", category="INDETERMINATE")
+        for source in manifest["migration_sources"]:
+            assert isinstance(source, dict)
+            coverage_row = coverage_by_source.get(str(source["source_path"]))
+            if coverage_row is None or coverage_row.get("artifact_id") != source.get("artifact_id"):
+                fail("candidate migration source coverage mismatch", category="INDETERMINATE")
+
+
+MIGRATION_PHASE_RANK = {
+    "collaborating": 0,
+    "collecting": 1,
+    "planned": 2,
+    "executing": 3,
+    "reviewing": 4,
+}
+MIGRATION_ACTIVE_PHASE_BY_SLOT = {
+    "collaborate": "collaborating",
+    "discussion": "collaborating",
+    "design": "collecting",
+    "plan": "planned",
+    "progress": "executing",
+    "goal": "executing",
+    "current": "executing",
+    "report": "reviewing",
+    "results": "reviewing",
+}
+MIGRATION_PHASE_BY_KIND = {
+    "collaborate": "collaborating",
+    "discussion": "collaborating",
+    "decision": "collaborating",
+    "design": "collecting",
+    "research": "collecting",
+    "plan": "planned",
+    "goal": "executing",
+    "progress": "executing",
+    "init": "executing",
+    "update": "executing",
+    "execution": "executing",
+    "result": "executing",
+    "debug": "reviewing",
+    "review": "reviewing",
+    "report": "reviewing",
+}
+MIGRATION_TERMINAL_STATUSES = {"historical", "superseded", "accepted"}
+MIGRATION_SOURCE_MAX_BYTES = 256 * 1024
+
+
+def _allowed_archive_only_binary_path(path: str) -> bool:
+    pure = PurePosixPath(checked_relative(path, "archive-only binary path"))
+    if pure.as_posix() == "docs/teamwork/.DS_Store":
+        return True
+    name = pure.name
+    return (
+        len(pure.parts) >= 4
+        and pure.parts[:3] == ("docs", "teamwork", "reports")
+        and (fnmatch.fnmatchcase(name, "candidate*.index") or name == "real-index.preimage")
+    )
+
+
+def _slugify_legacy(value: str, label: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    slug = re.sub(r"[^a-z0-9]+", "-", normalized.lower()).strip("-")
+    if not slug:
+        fail(f"{label} cannot be mapped to a stable slug")
+    if len(slug) > 120:
+        slug = slug[:120].strip("-")
+    return require_slug(slug, label)
+
+
+def _legacy_updated_at(index: dict[str, object], sources: list[dict[str, object]]) -> str:
+    dates = [str(source["updated"]) for source in sources if isinstance(source.get("updated"), str) and DATE_RE.fullmatch(str(source["updated"]))]
+    if not dates and isinstance(index.get("last_updated"), str) and DATE_RE.fullmatch(str(index["last_updated"])):
+        dates = [str(index["last_updated"])]
+    day = max(dates) if dates else "1970-01-01"
+    return f"{day}T00:00:00Z"
+
+
+def _legacy_source_text(data: bytes, path: str) -> str:
+    if _allowed_archive_only_binary_path(path):
+        return ""
+    if len(data) > MIGRATION_SOURCE_MAX_BYTES:
+        fail(f"legacy migration source exceeds maximum mappable size: {path}")
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        fail(f"legacy migration cannot map non-UTF-8 source: {path}: {exc}")
+    if "\x00" in text:
+        fail(f"legacy migration cannot map NUL-containing source: {path}")
+    return text
+
+
+def _legacy_entry_kind(entry: dict[str, object] | None, path: str) -> str:
+    if entry is not None and isinstance(entry.get("kind"), str):
+        kind = str(entry["kind"])
+    else:
+        kind = ""
+    if "collaborate/" in path:
+        if kind == "decision" or entry is not None and entry.get("status") == "accepted":
+            return "decision"
+        return "collaborate"
+    if kind == "goal" or GOAL_PATH_RE.fullmatch(path) is not None:
+        return "goal"
+    if "/plans/" in path or kind == "plan":
+        return "plan"
+    if "/research/" in path or kind == "research":
+        return "research"
+    if "/workflows/debug/" in path:
+        return "debug"
+    if "/workflows/review/" in path:
+        return "review"
+    if "/workflows/init/" in path:
+        return "init"
+    if "/workflows/update/" in path:
+        return "update"
+    if "/workflows/execution/" in path or "/workflows/conclusion/" in path:
+        return "result"
+    if kind in MIGRATION_PHASE_BY_KIND:
+        return kind
+    if path.endswith("/index.json"):
+        return "index"
+    if path.endswith("/README.md"):
+        return "runbook"
+    return "result"
+
+
+def _case_kind_for_legacy(classification: str) -> str:
+    if classification == "collaborate":
+        return "collaborate"
+    if classification == "decision":
+        return "decision"
+    if classification == "plan":
+        return "plan"
+    if classification == "goal":
+        return "goal"
+    if classification == "research":
+        return "research"
+    if classification == "debug":
+        return "debug"
+    if classification == "review":
+        return "review"
+    if classification == "init":
+        return "init"
+    if classification == "update":
+        return "update"
+    if classification in {"report", "result", "progress", "execution"}:
+        return "result"
+    return "evidence"
+
+
+def _legacy_decision_id(text: str) -> str | None:
+    for pattern in (r"^Decision ID:\s*([a-z0-9]+(?:-[a-z0-9]+)*)\s*$", r'"decision_id"\s*:\s*"([a-z0-9]+(?:-[a-z0-9]+)*)"'):
+        match = re.search(pattern, text, flags=re.MULTILINE)
+        if match is not None:
+            return require_slug(match.group(1), "legacy decision_id")
+    return None
+
+
+def _legacy_active_slots(index: dict[str, object]) -> dict[str, list[str]]:
+    active = index.get("active")
+    if not isinstance(active, dict):
+        fail("legacy active state is malformed")
+    result: dict[str, list[str]] = {}
+    for slot, value in active.items():
+        if slot == "results":
+            if not isinstance(value, list):
+                fail("legacy active.results is malformed")
+        elif isinstance(value, str):
+            result.setdefault(checked_relative(value, f"active.{slot} path"), []).append(str(slot))
+        elif value is not None:
+            fail(f"legacy active.{slot} is malformed")
+    return result
+
+
+def _legacy_retrieval_paths(index: dict[str, object]) -> set[str]:
+    active = index.get("active")
+    if not isinstance(active, dict):
+        fail("legacy active state is malformed")
+    raw = active.get("results", [])
+    if not isinstance(raw, list):
+        fail("legacy active.results is malformed")
+    return {checked_relative(item, "active.results path") for item in raw}
+
+
+def _legacy_group_key(source: dict[str, object]) -> str:
+    decision_id = source.get("decision_id")
+    if isinstance(decision_id, str):
+        return decision_id
+    topics = source.get("topics")
+    if isinstance(topics, list):
+        for topic in topics:
+            if isinstance(topic, str) and SLUG_RE.fullmatch(topic) is not None:
+                return topic
+    active_slots = source.get("active_slots")
+    if isinstance(active_slots, list) and active_slots:
+        return require_slug(f"legacy-active-{active_slots[0]}", "legacy active slot")
+    stem = PurePosixPath(str(source["path"])).stem
+    return _slugify_legacy(stem, "legacy filename stem")
+
+
+def _aggregate_legacy_phase(sources: list[dict[str, object]]) -> str:
+    pointer_votes: list[str] = []
+    for source in sources:
+        for slot in source.get("active_slots", []):
+            phase = MIGRATION_ACTIVE_PHASE_BY_SLOT.get(str(slot))
+            if phase is not None:
+                pointer_votes.append(phase)
+    if pointer_votes:
+        return max(pointer_votes, key=lambda phase: MIGRATION_PHASE_RANK[phase])
+    nonterminal: list[str] = []
+    terminal = 0
+    for source in sources:
+        status = str(source.get("status", ""))
+        classification = str(source["classification"])
+        if classification == "archive-only-binary":
+            terminal += 1
+            continue
+        if source.get("retrieval_only") is True and not source.get("active_slots"):
+            terminal += 1
+            continue
+        if status in MIGRATION_TERMINAL_STATUSES or source.get("currentness") == "historical":
+            terminal += 1
+            continue
+        phase = MIGRATION_PHASE_BY_KIND.get(classification)
+        if phase is None:
+            fail("legacy migration found an unmapped nonterminal source combination")
+        nonterminal.append(phase)
+    if nonterminal:
+        return max(nonterminal, key=lambda phase: MIGRATION_PHASE_RANK[phase])
+    if terminal == len(sources):
+        return "closed"
+    fail("legacy migration could not aggregate a deterministic phase")
+
+
+def _legacy_body(source: dict[str, object]) -> str:
+    text = str(source["text"]).rstrip()
+    classification = str(source["classification"])
+    if classification == "archive-only-binary":
+        return "\n".join([
+            "## Archived Binary Source",
+            "",
+            f"- Path: `{source['path']}`",
+            f"- Legacy type: `archive-only-binary`",
+            f"- Legacy SHA-256: `{source['sha256']}`",
+            f"- Original mode: `{source['mode']}`",
+            f"- Original size: `{source['size']}` bytes",
+            "",
+            "Original bytes are preserved only in the cold archive.",
+            "",
+        ])
+    lines = [
+        f"## Legacy Source",
+        "",
+        f"- Path: `{source['path']}`",
+        f"- Legacy type: `{classification}`",
+        f"- Legacy SHA-256: `{source['sha256']}`",
+    ]
+    if classification == "collaborate" and re.search(r"\bgrill\b", text, flags=re.IGNORECASE):
+        lines.extend([
+            "- Migrated mode: `brainstorm`",
+            "- Challenge evidence: preserved from the legacy grill checkpoint.",
+            "- Questions: preserved in the source excerpt below.",
+        ])
+    lines.extend(["", "## Preserved Text", "", "```text", text, "```"])
+    return "\n".join(lines) + "\n"
+
+
+def _artifact_role(kind: str) -> tuple[str, str]:
+    if kind in CASE_EVIDENCE_KINDS:
+        return "evidence", kind
+    if kind in {"review", "review-delta"}:
+        return "review", kind
+    if kind.startswith("history-"):
+        return "history", kind.removeprefix("history-")
+    return kind, kind
+
+
+def _add_migrated_artifact(
+    manifest: dict[str, object],
+    outputs: dict[str, Output],
+    *,
+    source: dict[str, object],
+    title: str,
+    updated_at: str,
+) -> tuple[dict[str, object], dict[str, object]]:
+    case_id = str(manifest["case_id"])
+    source_digest = str(source["sha256"])
+    kind = _case_kind_for_legacy(str(source["classification"]))
+    rendered = render_case_artifact(kind, title, _legacy_body(source), source_digest=source_digest, updated_at=updated_at)
+    role, subtype = _artifact_role(kind)
+    envelope = {
+        "schema_version": 1,
+        "role": role,
+        "subtype": subtype,
+        "case_id": case_id,
+        "claim_ids": [],
+        "consumer": "teamwork-migration",
+        "source_revision": source_digest,
+        "immutable": True,
+    }
+    artifact_id = artifact_id_for_case(kind, envelope, rendered)
+    used_paths = {str(row["path"]) for row in manifest["artifacts"].values()}
+    if kind == "review":
+        path = f"{case_base(case_id)}/reviews/{source_digest}.md"
+    else:
+        path = derive_case_artifact_path(case_id, kind, artifact_id)
+    if path in used_paths or path in outputs:
+        path = f"{case_base(case_id)}/evidence/{artifact_id}.md"
+        kind = "evidence"
+    digest = artifact_digest(path, rendered)
+    manifest = _case_add_artifact(
+        manifest,
+        kind=kind,
+        path=path,
+        artifact_id=artifact_id,
+        digest=digest,
+        updated_at=updated_at,
+        source_revision=source_digest,
+        consumer="teamwork-migration",
+    )
+    outputs[path] = Output(rendered.encode("utf-8"))
+    return manifest, {
+        "source_path": source["path"],
+        "source_digest": source_digest,
+        "classification": source["classification"],
+        "artifact_id": artifact_id,
+        "artifact_path": path,
+        "artifact_digest": digest,
+        "case_id": case_id,
+    }
+
+
+def _legacy_sources_from_baseline(root: Path, baseline: dict[str, object]) -> tuple[dict[str, object], list[dict[str, object]]]:
+    index_text = safe_read_text(root, INDEX_PATH)
+    assert index_text is not None
+    index = parse_index(index_text, migration=True)
+    rows = _validate_baseline_payload(baseline)["paths"]
+    entries_by_path: dict[str, list[dict[str, object]]] = {}
+    for entry in index.get("entries", []):
+        if isinstance(entry, dict):
+            entries_by_path.setdefault(checked_relative(entry.get("path"), "legacy entry path"), []).append(entry)
+    active_by_path = _legacy_active_slots(index)
+    retrieval_paths = _legacy_retrieval_paths(index)
+    sources: list[dict[str, object]] = []
+    seen_sha_paths: set[tuple[str, str]] = set()
+    for row in rows:
+        path = str(row["path"])
+        data = _assert_current_file_matches_baseline(root, row)
+        text = _legacy_source_text(data, path)
+        digest = hashlib.sha256(data).hexdigest()
+        key = (path, digest)
+        if key in seen_sha_paths:
+            fail("legacy migration source collision detected")
+        seen_sha_paths.add(key)
+        entries = entries_by_path.get(path, [])
+        primary = entries[0] if entries else None
+        classification = _legacy_entry_kind(primary, path)
+        topics = sorted({str(entry["topic"]) for entry in entries if isinstance(entry.get("topic"), str) and SLUG_RE.fullmatch(str(entry["topic"])) is not None})
+        active_slots = sorted(active_by_path.get(path, []))
+        source = {
+            "path": path,
+            "sha256": digest,
+            "mode": row["mode"],
+            "size": row["size"],
+            "text": text,
+            "classification": "archive-only-binary" if text == "" and _allowed_archive_only_binary_path(path) else classification,
+            "topics": topics,
+            "active_slots": active_slots,
+            "retrieval_only": path in retrieval_paths,
+            "status": primary.get("status") if primary is not None else "historical",
+            "currentness": primary.get("currentness") if primary is not None else "historical",
+            "updated": primary.get("updated") if primary is not None else index.get("last_updated"),
+            "decision_id": _legacy_decision_id(text),
+        }
+        source["group_key"] = _legacy_group_key(source)
+        sources.append(source)
+    dangling = sorted(set(entries_by_path) - {str(row["path"]) for row in rows})
+    if dangling:
+        fail(f"legacy migration found dangling index entries outside baseline: {', '.join(dangling[:3])}")
+    return index, sorted(sources, key=lambda item: str(item["path"]))
+
+
+def build_migration_candidate_tree(root: Path, migration_id: str, state: dict[str, object], baseline: dict[str, object]) -> tuple[dict[str, object], list[dict[str, object]], dict[str, Output], dict[str, object]]:
+    index, sources = _legacy_sources_from_baseline(root, baseline)
+    project = index.get("project") if isinstance(index.get("project"), dict) else {}
+    project_name = str(project.get("name", "Teamwork"))
+    candidate = empty_case_index(project_name)
+    candidate["project"] = {
+        "name": require_text(project.get("name", project_name), "project.name", maximum=200),
+        "root": ".",
+        "description": require_text(project.get("description", "Local Teamwork case-bundle index for this project."), "project.description", maximum=1000),
+    }
+    groups: dict[str, list[dict[str, object]]] = {}
+    for source in sources:
+        groups.setdefault(str(source["group_key"]), []).append(source)
+    outputs: dict[str, Output] = {}
+    manifests: list[dict[str, object]] = []
+    coverage_rows: list[dict[str, object]] = []
+    alias_candidates: dict[str, dict[str, object]] = {}
+    aliases_seen: set[str] = set()
+    for group_key in sorted(groups):
+        group_sources = sorted(groups[group_key], key=lambda item: str(item["path"]))
+        alias = require_slug(group_key, "migration alias")
+        if alias in aliases_seen:
+            fail("legacy migration alias collision detected")
+        aliases_seen.add(alias)
+        seed = case_digest(
+            "legacy-migration-case-seed",
+            {
+                "migration_id": migration_id,
+                "group_key": group_key,
+                "sources": [{"path": item["path"], "sha256": item["sha256"]} for item in group_sources],
+            },
+        )
+        case_id = case_id_from_seed(seed)
+        phase = _aggregate_legacy_phase(group_sources)
+        updated_at = _legacy_updated_at(index, group_sources)
+        title = group_key.replace("-", " ").title()
+        manifest = validate_case_manifest({
+            "schema_version": 1,
+            "case_id": case_id,
+            "case_seed_b64": base64.b64encode(bytes.fromhex(seed)).decode("ascii"),
+            "created_at": updated_at,
+            "closed_at": updated_at if phase == "closed" else None,
+            "status": phase,
+            "claims": {},
+            "artifacts": {},
+            "history": [],
+            "references": [],
+            "runtime": {
+                "active_route": case_manifest_path(case_id),
+                "state_revision": case_digest("case-runtime", {"case_id": case_id, "phase": phase, "at": updated_at, "migration_id": migration_id}),
+            },
+            "migration_sources": [],
+        })
+        artifact_kinds: set[str] = set()
+        group_coverage_rows: list[dict[str, object]] = []
+        for source in group_sources:
+            manifest, coverage = _add_migrated_artifact(manifest, outputs, source=source, title=title, updated_at=updated_at)
+            artifact_kinds.add(str(manifest["artifacts"][coverage["artifact_id"]]["role"]))
+            group_coverage_rows.append(coverage)
+            coverage_rows.append(coverage)
+            if source["classification"] == "goal" and set(source.get("active_slots", [])) & {"progress", "goal"}:
+                claim_seed = case_digest(
+                    "legacy-migration-claim-seed",
+                    {
+                        "migration_id": migration_id,
+                        "case_id": case_id,
+                        "source_path": source["path"],
+                        "artifact_id": coverage["artifact_id"],
+                    },
+                )
+                claim_id = claim_id_from_seed(claim_seed)
+                descriptor_digest = case_digest("claim-descriptor", {"case_id": case_id, "claim_id": claim_id, "owner": "teamwork-migration"})
+                claim = {
+                    "descriptor_version": 1,
+                    "descriptor_digest": descriptor_digest,
+                    "status": "active",
+                    "acquired_at": updated_at,
+                    "released_at": None,
+                    "head_artifact_id": coverage["artifact_id"],
+                    "head_digest": coverage["artifact_digest"],
+                }
+                manifest = dict(manifest)
+                manifest["claims"] = {**manifest["claims"], claim_id: claim}
+                claim_revision = case_digest("claim-revision", {"case_id": case_id, "claim_id": claim_id, "artifact_digest": coverage["artifact_digest"]})
+                candidate["claim_heads"][claim_id] = {
+                    "case_id": case_id,
+                    "artifact_id": coverage["artifact_id"],
+                    "artifact_digest": coverage["artifact_digest"],
+                    "claim_revision": claim_revision,
+                    "status": "active",
+                }
+        if phase == "closed" and "result" not in artifact_kinds:
+            source = group_sources[-1]
+            result_source = dict(source)
+            result_source["classification"] = "result"
+            manifest, coverage = _add_migrated_artifact(manifest, outputs, source=result_source, title=title, updated_at=updated_at)
+            coverage["derived_terminal_result"] = True
+            coverage_rows.append(coverage)
+        manifest = dict(manifest)
+        manifest["migration_sources"] = [
+            {
+                "source_path": row["source_path"],
+                "source_digest": row["source_digest"],
+                "classification": _slugify_legacy(str(row["classification"]), "migration source classification"),
+                "migration_id": migration_id,
+                "artifact_id": row["artifact_id"],
+            }
+            for row in group_coverage_rows
+        ]
+        manifest = validate_case_manifest(manifest)
+        manifests.append(manifest)
+        manifest_revision = case_manifest_revision(manifest)
+        if phase == "closed":
+            result_artifacts = [(artifact_id, row) for artifact_id, row in manifest["artifacts"].items() if row["role"] == "result"]
+            result_artifact_id, result_artifact = sorted(result_artifacts, key=lambda item: str(item[1]["created_at"]))[-1]
+            candidate["recent_cases"].append({
+                "case_id": case_id,
+                "manifest_path": case_manifest_path(case_id),
+                "closed_at": updated_at,
+                "result_artifact_id": result_artifact_id,
+                "result_digest": result_artifact["byte_digest"],
+            })
+        else:
+            candidate["active_cases"].append({
+                "case_id": case_id,
+                "manifest_path": case_manifest_path(case_id),
+                "manifest_revision": manifest_revision,
+                "phase": phase,
+                "task_key": alias,
+            })
+        alias_candidates[alias] = {
+            "target_type": "case",
+            "target_id": case_id,
+            "manifest_path": case_manifest_path(case_id),
+            "manifest_revision": manifest_revision,
+        }
+    candidate["recent_cases"] = sorted(candidate["recent_cases"], key=lambda row: (str(row["closed_at"]), str(row["case_id"])), reverse=True)[:CASE_CAPS["recent_cases"]]
+    hot_case_ids = {
+        str(row["case_id"])
+        for row in [*candidate["active_cases"], *candidate["recent_cases"]]
+        if isinstance(row, dict)
+    }
+    candidate["aliases"] = {
+        alias: row
+        for alias, row in sorted(alias_candidates.items())
+        if str(row["target_id"]) in hot_case_ids
+    }
+    candidate["migration"] = {
+        "migration_id": migration_id,
+        "phase": "candidate_validated",
+        "journal_path": migration_runtime_path(migration_id, "journal.json"),
+        "baseline_digest": state["baseline_digest"],
+        "report_digest": case_digest("restore-report", "pending"),
+        "candidate_digest": "0" * 64,
+        "archive_manifest_digest": state["archive_manifest_digest"],
+    }
+    artifact_outputs = dict(outputs)
+    _write_case_index_and_manifest_outputs(candidate, manifests, outputs)
+    candidate_prefix = f"{migration_runtime_dir(migration_id)}/candidate/docs-teamwork/"
+    candidate_outputs = {candidate_prefix + path.removeprefix("docs/teamwork/"): output for path, output in outputs.items()}
+    coverage_paths = {str(row["source_path"]) for row in coverage_rows if not row.get("derived_terminal_result")}
+    baseline_paths = {str(row["path"]) for row in _validate_baseline_payload(baseline)["paths"]}
+    if coverage_paths != baseline_paths:
+        fail("legacy migration coverage does not exactly match baseline paths")
+    coverage_report = {
+        "schema_version": 1,
+        "migration_id": migration_id,
+        "baseline_digest": state["baseline_digest"],
+        "candidate_digest": "0" * 64,
+        "baseline_paths": sorted(baseline_paths),
+        "coverage_rows": sorted(coverage_rows, key=lambda row: (str(row["source_path"]), str(row.get("derived_terminal_result", False)))),
+        "unsafe": [],
+        "unmapped": [],
+        "encoding": [],
+        "size": [],
+        "collision": [],
+        "dangling": [],
+    }
+    candidate_outputs[migration_runtime_path(migration_id, "coverage.json")] = migration_json_output(coverage_report)
+    candidate_digest = candidate_tree_digest_from_outputs(migration_id, candidate_outputs)
+    candidate["migration"]["candidate_digest"] = candidate_digest
+    coverage_report["candidate_digest"] = candidate_digest
+    outputs = dict(artifact_outputs)
+    _write_case_index_and_manifest_outputs(candidate, manifests, outputs)
+    candidate_outputs = {candidate_prefix + path.removeprefix("docs/teamwork/"): output for path, output in outputs.items()}
+    candidate_outputs[migration_runtime_path(migration_id, "coverage.json")] = migration_json_output(coverage_report)
+    return candidate, manifests, candidate_outputs, coverage_report
+
+
+def validate_candidate_outputs_readonly(migration_id: str, candidate_outputs: dict[str, Output]) -> dict[str, object]:
+    candidate_prefix = f"{migration_runtime_dir(migration_id)}/candidate/docs-teamwork/"
+    with tempfile.TemporaryDirectory(prefix=f"teamwork-migration-preflight-{migration_id}-") as temporary:
+        validation_root = Path(temporary)
+        materialized = 0
+        for path, output in candidate_outputs.items():
+            if output.data is None or not path.startswith(candidate_prefix):
+                continue
+            logical = "docs/teamwork/" + path.removeprefix(candidate_prefix)
+            checked_relative(logical, "candidate validation path")
+            target = validation_root.joinpath(*PurePosixPath(logical).parts)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(output.data)
+            os.chmod(target, output.mode)
+            materialized += 1
+        if materialized == 0:
+            fail("candidate validation tree is empty", category="INDETERMINATE")
+        return validate_case_v2_tree_readonly(validation_root)
+
+
 def _validate_baseline_payload(value: object) -> dict[str, object]:
     if not isinstance(value, dict) or set(value) != {"schema_version", "paths", "baseline_digest"}:
         fail("migration baseline has an unsupported schema")
@@ -6502,7 +7272,7 @@ def _validate_archive_manifest(value: object, state: dict[str, object], baseline
 
 
 def export_v1_baseline(root: Path) -> dict[str, object]:
-    if detect_teamwork_memory_schema(root) != "legacy-v1":
+    if detect_teamwork_memory_schema(root, migration=True) != "legacy-v1":
         fail("migration baseline export requires legacy-v1 memory")
     base = root / "docs/teamwork"
     rows: list[dict[str, object]] = []
@@ -6515,8 +7285,119 @@ def export_v1_baseline(root: Path) -> dict[str, object]:
             data = safe_read_bytes(root, relative)
             assert data is not None
             rows.append({"path": relative, "sha256": hashlib.sha256(data).hexdigest(), "mode": stat.S_IMODE(info.st_mode), "size": len(data)})
+    rows = sorted(rows, key=lambda row: str(row["path"]))
     digest = case_digest("migration-baseline", rows)
     return {"schema_version": 1, "paths": rows, "baseline_digest": digest}
+
+
+def validate_case_v2_tree_readonly(root: Path) -> dict[str, object]:
+    index_text = safe_read_text(root, INDEX_PATH)
+    assert index_text is not None
+    index = validate_case_index(_decode_json(index_text, "case index"))
+    manifests: dict[str, dict[str, object]] = {}
+    for collection in ("active_cases", "recent_cases"):
+        rows = index[collection]
+        assert isinstance(rows, list)
+        for row in rows:
+            assert isinstance(row, dict)
+            case_id = str(row["case_id"])
+            manifest_text = safe_read_text(root, str(row["manifest_path"]))
+            assert manifest_text is not None
+            manifest = validate_case_manifest(_decode_json(manifest_text, "case manifest"))
+            revision = case_manifest_revision(manifest)
+            if collection == "active_cases" and revision != row["manifest_revision"]:
+                fail("case-v2 preflight active manifest revision mismatch")
+            if collection == "recent_cases" and manifest["status"] != "closed":
+                fail("case-v2 preflight recent manifest must be closed")
+            artifacts = manifest["artifacts"]
+            assert isinstance(artifacts, dict)
+            for artifact_id, artifact in artifacts.items():
+                assert isinstance(artifact, dict)
+                artifact_text = safe_read_text(root, str(artifact["path"]))
+                assert artifact_text is not None
+                if artifact_digest(str(artifact["path"]), artifact_text) != artifact["byte_digest"]:
+                    fail("case-v2 preflight artifact digest mismatch")
+                if str(artifact_id) != _artifact_id(artifact_id):
+                    fail("case-v2 preflight artifact id mismatch")
+            manifests[case_id] = manifest
+    aliases = index["aliases"]
+    assert isinstance(aliases, dict)
+    for alias, row in aliases.items():
+        assert isinstance(row, dict)
+        manifest = manifests.get(str(row["target_id"]))
+        if manifest is None or case_manifest_revision(manifest) != row["manifest_revision"]:
+            fail(f"case-v2 preflight alias target is invalid: {alias}")
+    claim_heads = index["claim_heads"]
+    assert isinstance(claim_heads, dict)
+    for claim_id, head in claim_heads.items():
+        assert isinstance(head, dict)
+        manifest = manifests.get(str(head["case_id"]))
+        if manifest is None:
+            fail("case-v2 preflight claim head case is missing")
+        claims = manifest["claims"]
+        artifacts = manifest["artifacts"]
+        assert isinstance(claims, dict) and isinstance(artifacts, dict)
+        claim = claims.get(claim_id)
+        artifact = artifacts.get(str(head["artifact_id"]))
+        if not isinstance(claim, dict) or not isinstance(artifact, dict):
+            fail("case-v2 preflight claim head target is missing")
+        if claim["head_artifact_id"] != head["artifact_id"] or claim["head_digest"] != head["artifact_digest"] or artifact["byte_digest"] != head["artifact_digest"]:
+            fail("case-v2 preflight claim head digest mismatch")
+    return index
+
+
+def migration_preflight(root: Path) -> dict[str, object]:
+    mode = detect_teamwork_memory_schema(root, migration=True)
+    if mode != "legacy-v1":
+        index = validate_case_v2_tree_readonly(root) if mode == "case-v2" else None
+        migration = None if index is None else index["migration"]
+        return {"schema_version": 1, "mode": mode, "ok": mode == "case-v2", "blocking": [], "migration": migration}
+    baseline = export_v1_baseline(root)
+    seed = case_digest("legacy-migration-seed", {"baseline_digest": baseline["baseline_digest"]})
+    migration_id = migration_id_from_seed(seed)
+    state = {
+        "schema_version": 1,
+        "migration_id": migration_id,
+        "phase": "archive_durable",
+        "baseline_digest": baseline["baseline_digest"],
+        "archive_manifest_digest": "0" * 64,
+        "candidate_digest": None,
+        "report_digest": None,
+        "restore_drill": None,
+        "cleanup": None,
+    }
+    candidate, manifests, candidate_outputs, coverage = build_migration_candidate_tree(root, migration_id, state, baseline)
+    validate_candidate_outputs_readonly(migration_id, candidate_outputs)
+    recognized = [
+        {
+            "path": row["source_path"],
+            "sha256": row["source_digest"],
+            "classification": row["classification"],
+            "artifact_id": row["artifact_id"],
+            "artifact_path": row["artifact_path"],
+            "case_id": row["case_id"],
+        }
+        for row in coverage["coverage_rows"]
+        if isinstance(row, dict) and row.get("classification") == "archive-only-binary" and not row.get("derived_terminal_result")
+    ]
+    return {
+        "schema_version": 1,
+        "mode": "legacy-v1",
+        "ok": True,
+        "migration_id": migration_id,
+        "baseline_digest": baseline["baseline_digest"],
+        "baseline_paths": len(baseline["paths"]),
+        "recognized_archive_only_binary": recognized,
+        "blocking": [],
+        "shape": {
+            "groups": len(manifests),
+            "manifests": len(manifests),
+            "active_cases": len(candidate["active_cases"]),
+            "recent_cases": len(candidate["recent_cases"]),
+            "aliases": len(candidate["aliases"]),
+        },
+        "candidate_digest": coverage["candidate_digest"],
+    }
 
 
 def migration_schema(operation: str) -> dict[str, object]:
@@ -6679,6 +7560,16 @@ def _load_cutover_journal(root: Path, migration_id: str) -> dict[str, object] | 
     journal = _read_json_relative(root, relative, "cutover journal")
     if journal.get("schema_version") != 1 or journal.get("migration_id") != migration_id:
         fail("cutover journal schema mismatch", category="INDETERMINATE")
+    expected_paths = {
+        "old_tree": "docs/teamwork",
+        "renamed_old_tree": migration_runtime_path(migration_id, "renamed-old/docs-teamwork"),
+        "candidate_tree": migration_runtime_path(migration_id, "candidate/docs-teamwork"),
+        "new_tree": "docs/teamwork",
+    }
+    for field, expected in expected_paths.items():
+        actual = journal.get(field)
+        if actual != expected:
+            fail(f"cutover journal {field} does not match migration-owned path", category="INDETERMINATE")
     return journal
 
 
@@ -6687,19 +7578,25 @@ def _store_cutover_journal(root: Path, migration_id: str, journal: dict[str, obj
 
 
 def _validate_installed_candidate(root: Path, migration_id: str, state: dict[str, object]) -> dict[str, object]:
+    report_digest = _hex64(state.get("report_digest"), "migration restore report digest")
+    report = read_migration_json(root, migration_id, "restore-drill/report.json")
+    if case_digest("restore-report", report) != report_digest:
+        fail("restore report digest does not match runtime state", category="INDETERMINATE")
+    verify_candidate_tree(root, migration_id, "docs/teamwork", state["candidate_digest"])
     index = _read_json_relative(root, "docs/teamwork/index.json", "installed v2 index")
     index["migration"] = {
         "migration_id": migration_id,
         "phase": "committed",
         "journal_path": migration_runtime_path(migration_id, "journal.json"),
         "baseline_digest": state["baseline_digest"],
-        "report_digest": case_digest("restore-report", state.get("restore_drill")),
+        "report_digest": report_digest,
         "candidate_digest": state["candidate_digest"],
         "archive_manifest_digest": state["archive_manifest_digest"],
     }
     validate_case_index(index)
     _write_json_relative(root, "docs/teamwork/index.json", index)
     detect_teamwork_memory_schema(root)
+    verify_candidate_tree(root, migration_id, "docs/teamwork", state["candidate_digest"])
     return index
 
 
@@ -6761,10 +7658,11 @@ def perform_cutover(root: Path, migration_id: str, state: dict[str, object]) -> 
     old_rel = "docs/teamwork"
     renamed_rel = migration_runtime_path(migration_id, "renamed-old/docs-teamwork")
     new_rel = "docs/teamwork"
-    _safe_dir(root, candidate_rel)
-    _safe_dir(root, old_rel)
     if _load_cutover_journal(root, migration_id) is not None:
         return _recover_migration_unlocked(root, migration_id)
+    _safe_dir(root, candidate_rel)
+    _safe_dir(root, old_rel)
+    verify_candidate_tree(root, migration_id, candidate_rel, state["candidate_digest"])
     journal = {
         "schema_version": 1,
         "migration_id": migration_id,
@@ -6786,6 +7684,7 @@ def perform_cutover(root: Path, migration_id: str, state: dict[str, object]) -> 
     _store_cutover_journal(root, migration_id, journal)
     migration_failpoint("after-new-tree-installed")
     _validate_installed_candidate(root, migration_id, state)
+    migration_failpoint("after-installed-index-validated-before-journal")
     journal["phase"] = "committed"
     _store_cutover_journal(root, migration_id, journal)
     state["phase"] = "committed"
@@ -6876,25 +7775,19 @@ def _apply_migration_locked(root: Path, request: dict[str, object]) -> dict[str,
             elif operation == "prepare-candidate":
                 if phase != "archive_durable":
                     fail("candidate preparation requires archive_durable")
-                candidate = empty_case_index("Teamwork")
-                candidate["migration"] = {
-                    "migration_id": migration_id,
-                    "phase": "candidate_validated",
-                    "journal_path": migration_runtime_path(migration_id, "journal.json"),
-                    "baseline_digest": state["baseline_digest"],
-                    "report_digest": case_digest("restore-report", "pending"),
-                    "candidate_digest": "0" * 64,
-                    "archive_manifest_digest": state["archive_manifest_digest"],
-                }
-                candidate_digest = case_digest("candidate-tree", candidate)
-                candidate["migration"]["candidate_digest"] = candidate_digest
+                baseline = read_migration_json(root, migration_id, "baseline.json")
+                assert baseline is not None
+                baseline = _validate_baseline_payload(baseline)
+                _, _, candidate_outputs, coverage = build_migration_candidate_tree(root, migration_id, state, baseline)
+                candidate_digest = str(coverage["candidate_digest"])
                 state["phase"] = "candidate_validated"
                 state["candidate_digest"] = candidate_digest
-                outputs[migration_runtime_path(migration_id, "candidate/docs-teamwork/index.json")] = migration_json_output(candidate)
+                outputs.update(candidate_outputs)
                 outputs[migration_runtime_path(migration_id, "journal.json")] = migration_json_output(state)
             elif operation == "restore-drill":
                 if phase != "candidate_validated":
                     fail("restore drill requires candidate_validated")
+                verify_candidate_tree(root, migration_id, migration_runtime_path(migration_id, "candidate/docs-teamwork"), state["candidate_digest"])
                 baseline = read_migration_json(root, migration_id, "baseline.json")
                 assert baseline is not None
                 baseline = _validate_baseline_payload(baseline)
@@ -6932,6 +7825,15 @@ def _apply_migration_locked(root: Path, request: dict[str, object]) -> dict[str,
                     fail("cleanup requires committed migration state")
                 state["phase"] = "cleanup_complete"
                 state["cleanup"] = "complete"
+                installed_index = _read_json_relative(root, INDEX_PATH, "installed v2 index")
+                if installed_index.get("schema_version") == 2 and isinstance(installed_index.get("migration"), dict):
+                    migration = dict(installed_index["migration"])
+                    if migration.get("migration_id") != migration_id:
+                        fail("cleanup migration_id does not match installed index")
+                    migration["phase"] = "cleanup_complete"
+                    installed_index = dict(installed_index)
+                    installed_index["migration"] = migration
+                    outputs[INDEX_PATH] = Output(serialize_case_index(installed_index).encode("utf-8"))
                 outputs[migration_runtime_path(migration_id, "journal.json")] = migration_json_output(state)
         for path in outputs:
             ensure_directory(root, PurePosixPath(path).parent.as_posix(), created=created)
@@ -6959,15 +7861,13 @@ def _print(value: object) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("inspect", "design-inspect", "goal-inspect", "artifact-inspect", "collaborate-inspect", "case-inspect", "artifact-index-validate"):
+    for name in ("case-inspect", "migration-preflight"):
         child = sub.add_parser(name)
         child.add_argument("--project-root", required=True)
-    child = sub.add_parser("schema")
-    child.add_argument("operation")
-    for name in ("design-schema", "goal-schema", "artifact-schema", "collaborate-schema", "case-schema", "migration-schema"):
+    for name in ("case-schema", "migration-schema"):
         child = sub.add_parser(name)
         child.add_argument("operation")
-    for name in ("apply", "design-apply", "goal-apply", "artifact-apply", "collaborate-apply", "case-apply", "migration-request", "migration-apply"):
+    for name in ("case-apply", "migration-request", "migration-apply"):
         child = sub.add_parser(name)
         child.add_argument("--project-root", required=True)
         group = child.add_mutually_exclusive_group(required=True)
@@ -6976,10 +7876,6 @@ def build_parser() -> argparse.ArgumentParser:
     child = sub.add_parser("migration-recover")
     child.add_argument("--project-root", required=True)
     child.add_argument("--migration-id", required=True)
-    child = sub.add_parser("design-render")
-    child.add_argument("--state-json", required=True)
-    child = sub.add_parser("design-validate")
-    child.add_argument("--artifact", required=True)
     return parser
 
 
@@ -6987,62 +7883,26 @@ def main(argv: list[str] | None = None) -> int:
     arguments = build_parser().parse_args(argv)
     try:
         command = arguments.command
-        if command in {"schema", "apply", "design-schema", "design-apply"}:
-            fail("legacy lifecycle retired; use collaborate-*")
-        if command == "goal-schema":
-            _print(goal_schema(arguments.operation))
-        elif command == "artifact-schema":
-            _print(workflow_schema(arguments.operation))
-        elif command == "collaborate-schema":
-            _print(collaborate_schema(arguments.operation))
-        elif command == "case-schema":
+        if command == "case-schema":
             _print(case_schema(arguments.operation))
         elif command == "migration-schema":
             _print(migration_schema(arguments.operation))
-        elif command == "design-render":
-            print(render_design_artifact(_decode_json(arguments.state_json, "Design state")), end="")
-        elif command == "design-validate":
-            path = Path(os.path.abspath(arguments.artifact))
-            try:
-                info = path.lstat()
-                if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode):
-                    fail("Design artifact input must be a regular non-symlink file")
-                text = path.read_text(encoding="utf-8")
-            except OSError as exc:
-                fail(f"cannot read Design artifact input: {exc}")
-            _print({"valid": True, "state": validate_design_artifact(text)})
         else:
             root = checked_project_root(arguments.project_root)
-            if command == "inspect":
-                _print(inspect_discussion(root))
-            elif command == "design-inspect":
-                _print(inspect_design(root))
-            elif command == "goal-inspect":
-                _print(inspect_goal(root))
-            elif command == "artifact-inspect":
-                _print(inspect_workflow_artifacts(root))
-            elif command == "collaborate-inspect":
-                _print(inspect_collaborate(root))
-            elif command == "case-inspect":
+            if command == "case-inspect":
                 _print(inspect_cases(root))
-            elif command == "artifact-index-validate":
-                _print(artifact_index_validate(root))
+            elif command == "migration-preflight":
+                _print(migration_preflight(root))
             elif command == "migration-recover":
                 _print(recover_migration(root, arguments.migration_id))
             else:
                 request = read_request(arguments.request, arguments.request_json)
-                if command == "goal-apply":
-                    _print(apply_goal(root, request))
-                elif command == "artifact-apply":
-                    _print(apply_workflow_artifact(root, request))
-                elif command == "case-apply":
+                if command == "case-apply":
                     _print(apply_case(root, request))
                 elif command == "migration-request":
                     _print(construct_migration_request(root, request))
-                elif command == "migration-apply":
-                    _print(apply_migration(root, request))
                 else:
-                    _print(apply_collaborate(root, request))
+                    _print(apply_migration(root, request))
     except TransactionError as exc:
         print(json.dumps({"ok": False, "category": exc.category, "message": str(exc)}, ensure_ascii=False), file=sys.stderr)
         return 2

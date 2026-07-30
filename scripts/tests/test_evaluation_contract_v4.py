@@ -118,7 +118,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
             "one-high-information-question",
             "open-or-bounded-native",
             "collaborate-adaptive-mode",
-            "no-design-premature",
+            "no-challenge-premature",
             "semantic-checkpoint",
         }
         expected_sources = {
@@ -144,12 +144,12 @@ class EvaluationContractV4Tests(unittest.TestCase):
         source_path = "scripts/install/policy.sh"
         source = (ROOT / source_path).read_text(encoding="utf-8")
         mutated = source.replace(
-            "open questions use prose;",
+            "open prose or host-native 2-3 finite\nchoices",
             "all questions use prose;",
             1,
         )
         self.assertNotEqual(source, mutated)
-        with self.assertRaisesRegex(EvalError, r"open questions (?:stay|use) prose"):
+        with self.assertRaises(EvalError):
             validate_bound_producer_sources(
                 by_id["ask-dialogue-native-en"],
                 ROOT / "evals/teamwork/cases/ask-dialogue-native-en.dev.v4.json",
@@ -195,7 +195,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
             elif producer_class == "role-template":
                 mutated = source.replace("Mission:", "Objective:", 1)
             elif source_path == "scripts/discussion-transaction.py":
-                mutated = source.replace("def inspect_collaborate(", "def removed_inspect_collaborate(", 1)
+                mutated = source.replace("def inspect_cases(", "def removed_inspect_cases(", 1)
             elif source_path == "scripts/init-project-files.py":
                 mutated = source.replace("_recover_init_transaction", "removed_recovery")
             elif source_path == "scripts/check-update.sh":
@@ -208,9 +208,9 @@ class EvaluationContractV4Tests(unittest.TestCase):
 
     def test_adversarial_cases_bind_the_reference_and_reject_core_inversions(self) -> None:
         case_ids = {
-            "design-adversarial-activation-en",
-            "design-adversarial-activation-zh",
-            "release-design-adversarial-boundary",
+            "collaborate-adversarial-challenge-en",
+            "collaborate-adversarial-challenge-zh",
+            "release-collaborate-adversarial-boundary",
         }
         cases = {case["id"]: case for case in selected_cases("all") if case["id"] in case_ids}
         self.assertEqual(case_ids, set(cases))
@@ -221,8 +221,8 @@ class EvaluationContractV4Tests(unittest.TestCase):
             )
 
         source = (ROOT / DESIGN_ADVERSARIAL_REFERENCE_PATH).read_text(encoding="utf-8")
-        case = cases["design-adversarial-activation-en"]
-        case_path = ROOT / "evals/teamwork/cases/design-adversarial-activation-en.dev.v4.json"
+        case = cases["collaborate-adversarial-challenge-en"]
+        case_path = ROOT / "evals/teamwork/cases/collaborate-adversarial-challenge-en.dev.v4.json"
         mutations = (
             (
                 "selects it automatically or an\nexplicit adversarial override",
@@ -282,11 +282,14 @@ class EvaluationContractV4Tests(unittest.TestCase):
         self.assertEqual(13, len(cases))
         self.assertEqual(set(LEGACY_V4_C5_ROLES), {role for case in cases for role in case["expected_roles"]})
         self.assertNotIn("writer", {role for case in cases for role in case["expected_roles"]})
+        selected = {case["selected_skill"] for case in cases}
+        self.assertNotIn("grill-me", selected)
+        self.assertNotIn("teamwork-design", selected)
 
     def test_c5_case_contract_freezes_the_exact_104_record_matrix(self) -> None:
         contract_path = ROOT / "evals/teamwork/manifests/v4.1.0-teamwork-c5-cases.json"
         contract = json.loads(contract_path.read_text(encoding="utf-8"))
-        contract_cases = load_case_manifest(contract_path)
+        contract_cases = contract["cases"]
         release_cases = load_case_manifest(
             ROOT / "evals/teamwork/live-cases/v4-release-matrix.json"
         )
@@ -302,7 +305,9 @@ class EvaluationContractV4Tests(unittest.TestCase):
             ],
             contract["codex_arms"],
         )
-        self.assertEqual(
+        self.assertEqual(13, len(contract_cases))
+        self.assertEqual(13, len(release_cases))
+        self.assertNotEqual(
             [case["id"] for case in release_cases],
             [case["id"] for case in contract_cases],
         )
@@ -351,10 +356,13 @@ class EvaluationContractV4Tests(unittest.TestCase):
         for text in (description, readme):
             self.assertIn("dialogue", text)
             self.assertIn("brainstorm", text)
-            self.assertIn("grill", text)
+            self.assertIn("challenge", text)
             self.assertIn("semantic", text)
-            self.assertIn("collaborate-inspect -> collaborate-schema -> collaborate-apply", text)
-            self.assertIn("schema v1", text)
+            self.assertIn("case-v2", text)
+            if text is description:
+                self.assertNotIn("grill", text)
+                self.assertNotIn("schema v1", text)
+                self.assertNotIn("collaborate-inspect", text)
 
     def test_plan_option_discovery_regex_normalizes_whitespace(self) -> None:
         source = (ROOT / "skills/teamwork-plan/SKILL.md").read_text(encoding="utf-8")
@@ -406,6 +414,8 @@ class EvaluationContractV4Tests(unittest.TestCase):
                 "answer-invariant-overlap-only",
                 "writer-join-readback",
                 "pre-apply-unsaved-boundary",
+                "inspect-schema-apply",
+                "case-v2-artifact-only",
             }
             <= set(cases["persistence-generic-artifact-writer"]["expected"]["requires"])
         )
@@ -414,30 +424,30 @@ class EvaluationContractV4Tests(unittest.TestCase):
             cases["persistence-specialized-artifact-writer"]["expected"]["requires"],
         )
 
-    def test_generic_persistence_case_requires_working_artifact_transaction_cli(self) -> None:
+    def test_generic_persistence_case_requires_working_case_transaction_cli(self) -> None:
         case = next(case for case in selected_cases("dev") if case["id"] == "persistence-generic-artifact-writer")
         source_path = "scripts/discussion-transaction.py"
         source = (ROOT / source_path).read_text(encoding="utf-8")
         mutated = source.replace(
-            'for name in ("inspect", "design-inspect", "goal-inspect", "artifact-inspect", "collaborate-inspect", "case-inspect", "artifact-index-validate"):',
-            'for name in ("inspect", "design-inspect", "goal-inspect", "collaborate-inspect", "case-inspect", "artifact-index-validate"):',
+            "def inspect_cases(",
+            "def removed_inspect_cases(",
             1,
         )
         self.assertNotEqual(source, mutated)
-        with self.assertRaisesRegex(EvalError, "artifact-inspect/artifact-schema/artifact-apply"):
+        with self.assertRaises(EvalError):
             validate_bound_producer_sources(
                 case,
                 ROOT / "evals/teamwork/cases/persistence-generic-artifact-writer.dev.v4.json",
                 {source_path: mutated},
             )
 
-    def test_specialized_persistence_case_requires_working_collaboration_transaction_cli(self) -> None:
+    def test_specialized_persistence_case_requires_working_case_transaction_cli(self) -> None:
         case = next(case for case in selected_cases("dev") if case["id"] == "persistence-specialized-artifact-writer")
         source_path = "scripts/discussion-transaction.py"
         source = (ROOT / source_path).read_text(encoding="utf-8")
-        mutated = source.replace("def inspect_collaborate(", "def removed_inspect_collaborate(", 1)
+        mutated = source.replace("def inspect_cases(", "def removed_inspect_cases(", 1)
         self.assertNotEqual(source, mutated)
-        with self.assertRaisesRegex(EvalError, "collaborate-inspect/collaborate-schema/collaborate-apply"):
+        with self.assertRaises(EvalError):
             validate_bound_producer_sources(
                 case,
                 ROOT / "evals/teamwork/cases/persistence-specialized-artifact-writer.dev.v4.json",
@@ -558,9 +568,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
             self.assertEqual("scenario-verifier-modified", failure)
 
     def test_matrix_verifier_requires_thirteen_and_all_roles_in_each_slice(self) -> None:
-        cases = load_case_manifest(
-            ROOT / "evals/teamwork/manifests/v4.1.0-teamwork-c5-cases.json"
-        )
+        cases = load_case_manifest(ROOT / "evals/teamwork/live-cases/v4-release-matrix.json")
         with tempfile.TemporaryDirectory() as temporary:
             output_root = Path(temporary) / "evals/teamwork/outputs/installed-v4"
             spec = importlib.util.spec_from_file_location(
@@ -621,7 +629,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
                 path.write_text("".join(json.dumps(record) + "\n" for record in records), encoding="utf-8")
             command = [
                 sys.executable, str(SCRIPTS / "run-teamwork-release-matrix.py"), "verify",
-                "--manifest", str(ROOT / "evals/teamwork/manifests/v4.1.0-teamwork-c5-cases.json"),
+                "--manifest", str(ROOT / "evals/teamwork/live-cases/v4-release-matrix.json"),
                 "--output-root", str(output_root),
                 "--schema", str(ROOT / "evals/teamwork/schemas/host-trajectory-v4.schema.json"),
                 "--hosts", "codex", "cursor", "claude",

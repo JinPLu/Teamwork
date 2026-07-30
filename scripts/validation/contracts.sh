@@ -35,14 +35,14 @@ for readme in README.md README.en.md; do
     "$readme must explain external Research"
   semantic_doc_required '(Collaborate.{0,120}Plan|协作.{0,120}计划)' "$ROOT/$readme" \
     "$readme must distinguish Collaborate from Plan"
-  semantic_doc_required 'docs/teamwork/collaborate/current\.md' "$ROOT/$readme" \
-    "$readme must explain the one-file Collaborate record"
-  semantic_doc_required '(case bundle|case-bundle|case).{0,160}(legacy-v1|v1|旧项目|已有项目)' "$ROOT/$readme" \
-    "$readme must explain v2 case bundles and legacy-v1 compatibility"
-  semantic_doc_required '(update|install|升级|安装).{0,120}(not|never|不会|不得).{0,120}(migrate|rewrite|delete|迁移|改写|删除)' "$ROOT/$readme" \
-    "$readme must state update/install does not migrate existing docs"
-  semantic_doc_required '(cutover|cold archive|冷归档).{0,160}(explicit|one-way|明确|单向)' "$ROOT/$readme" \
-    "$readme must state cutover/cold-archive limits"
+  semantic_doc_required '(case-v2|v2 case bundle).{0,180}(legacy-v1|old grill|旧 grill).{0,180}(migration input|迁移输入)' "$ROOT/$readme" \
+    "$readme must explain case-v2-only runtime and legacy migration inputs"
+  semantic_doc_required '(installing|updating|安装|更新).{0,120}(does not mean|不代表).{0,100}(migrated|迁移)' "$ROOT/$readme" \
+    "$readme must state install/update alone is not migration evidence"
+  semantic_doc_required '(exact project root|exact-root|精确 project-root).{0,180}(transaction readback|readback)' "$ROOT/$readme" \
+    "$readme must require exact-root migration readback"
+  semantic_doc_required '(cold archive|冷归档).{0,120}(restore drill|恢复)' "$ROOT/$readme" \
+    "$readme must state cold-archive recovery limits"
   semantic_doc_required '\./install\.sh all' "$ROOT/$readme" \
     "$readme must show the complete checkout refresh"
   semantic_doc_required 'check-update\.sh --readiness' "$ROOT/$readme" \
@@ -63,10 +63,10 @@ for guide in CODEX.md CURSOR.md CLAUDE.md; do
     "$guide must document project initialization"
   semantic_doc_required 'check-update\.sh --readiness' "$ROOT/$guide" \
     "$guide must document readiness"
-  semantic_doc_required '((case bundle|case-bundle).{0,220}(legacy-v1|v1)|(legacy-v1|v1).{0,220}(case bundle|case-bundle))' "$ROOT/$guide" \
-    "$guide must explain 5.1 case-bundle compatibility"
-  semantic_doc_required '(Update/install|update/install|安装|更新).{0,140}(never|not|不会|不得).{0,120}(migrat|rewrite|delete|迁移|改写|删除)' "$ROOT/$guide" \
-    "$guide must state installation/update does not migrate project memory"
+  semantic_doc_required '(case-v2|v2 case bundle).{0,220}(legacy-v1|old grill).{0,180}(migration input|semantic migration)' "$ROOT/$guide" \
+    "$guide must explain case-v2-only runtime and legacy migration inputs"
+  semantic_doc_required '(Update/install|update/install).{0,140}(alone|does not mean).{0,120}(migrat|migration)' "$ROOT/$guide" \
+    "$guide must state installation/update alone is not migration evidence"
 done
 
 current_version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
@@ -150,10 +150,10 @@ semantic_doc_required 'Upgrade[[:space:]]+action.{0,80}Important[[:space:]]+limi
   "AGENTS.md must preserve the 4.2/4.3 action and limit paragraphs"
 semantic_doc_required 'user outcome.{0,100}maintainer-only.{0,180}internal scripts.{0,100}numeric thresholds.{0,100}test counts' "$ROOT/AGENTS.md" \
   "AGENTS.md must keep changelogs user-facing"
-semantic_doc_required 'legacy-v1.{0,140}(fresh|new|5\.1).{0,120}v2 case bundles' "$ROOT/AGENTS.md" \
-  "AGENTS.md must preserve the 5.1 legacy-v1/fresh-v2 memory boundary"
-semantic_doc_required '(Update/install|update/install).{0,120}(never|not).{0,100}(migrates|migrate|rewrites|deletes)' "$ROOT/AGENTS.md" \
-  "AGENTS.md must state update/install does not migrate project memory"
+semantic_doc_required 'Normal workflow memory.{0,120}v2 case bundles.{0,180}Legacy-v1.{0,160}migration inputs' "$ROOT/AGENTS.md" \
+  "AGENTS.md must preserve the v6 case-v2-only runtime boundary"
+semantic_doc_required 'exact authorized project root.{0,140}transaction readback.{0,140}install/update alone never implies' "$ROOT/AGENTS.md" \
+  "AGENTS.md must require exact-root migration evidence"
 
 # instruction_footprint.py is the sole owner of word and byte budgets. This file
 # keeps semantic and structural contracts without imposing a second, lower cap.

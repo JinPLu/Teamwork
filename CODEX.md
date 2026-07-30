@@ -53,32 +53,33 @@ Teamwork artifacts. A clear authorized edit or fix also stays native. Use
 `$teamwork-research` only for external, current, multi-source, or
 citation-backed research.
 
-Use `$teamwork-collaborate` for natural discussion, brainstorming, grill,
+Use `$teamwork-collaborate` for natural dialogue, brainstorming,
 stress-testing, question-before-action, or a consequential solution that is
-still open. Use `$teamwork-plan` only after controlled Collaborate records
+still open. Challenge and adversarial search are Collaborate methods, not
+public mode names. Use `$teamwork-plan` only after controlled Collaborate records
 `acceptance: accepted`. Collaborate uses Explorer only for an unresolved local
 constraint and sanitized external Research only for a named external/current
 claim that can change the choice; it never runs both by default. It compares
-2–3 real alternatives or records safe-path evidence, runs one challenge pass,
-and keeps the user-decision frontier finite. It contributes synthesis,
+2–3 real alternatives or records safe-path evidence, applies the needed
+challenge/adversarial method, and keeps the user-decision frontier finite. It contributes synthesis,
 candidate space, a decision map, or provisional recommendation before asking.
 Its controlled transaction records `acceptance: pending`, `accepted`, or
 `blocked`; persistence is not acceptance, and only `accepted` is Plan-ready.
-Legacy Discussion/Design records are read-only migration inputs. Independent
+Legacy-v1, old grill, Discussion, and Design records are Init/Update semantic migration inputs only. Independent
 Plan Review runs only on user request or a named material risk gate.
 Collaborate never implements. `$teamwork-debug` begins with a real failure and reproduction;
 `$teamwork-review` does not edit the candidate and returns `ACCEPT`, `REVISE`, or `BLOCKED`;
 `$teamwork-goal` persists an explicit objective, success signal, scope, budget,
 and attempts before it iterates.
 
-Collaborate selects `dialogue`, `brainstorm`, or `grill` from the requested
+Collaborate selects `dialogue` or `brainstorm` from the requested
 outcome and evidence, and never asks the user to name a mode. Open questions
 stay in prose.
 Only a genuine finite decision with two or three mutually exclusive options
 uses Codex's native `request_user_input` surface when the host exposes it. The
 live app-server probe selects Plan collaboration mode for bounded scenarios
 because that preset exposes the native tool; open brainstorm stays in Default
-mode and prose. Grill strictly publishes and follows the complete global ->
+mode and prose. Sustained pressure-testing follows the complete global ->
 boundary -> detail map, places at most three independent decisions in one native
 batch, serializes dependent decisions, and applies one semantic Collaborate
 update after each answered batch before opening a dependent one.
@@ -87,20 +88,25 @@ In an initialized writable project, named Teamwork workflows persist reusable
 checkpoints and results by default; `no files`, off-record, read-only, or
 no-write overrides that default. One-shot explanations, casual fact questions,
 and tiny native work create no standalone artifact. Collaborate and Goal
-use specialized transactions. Research, Debug, Plan, Plan Review, Review,
-mutating Init/Update, and a terminal execution handoff with an explicit consumer
-and no active Goal use the generic artifact transaction. An active Goal owns
-execution progress and suppresses duplicate execution artifacts. Explore creates
-no standalone report; its evidence is folded into the consuming artifact or
-answer.
+use case-v2 transactions. Research, Debug, Plan, Plan Review, Review, mutating
+Init/Update, and a terminal execution handoff with an explicit consumer and no
+active Goal write their selected case artifact. An active Goal owns execution
+progress and suppresses duplicate execution artifacts. Explore creates no
+standalone report; its evidence is folded into the consuming artifact or answer.
 
-Teamwork 5.1 resolves schema before routing. Existing project memory remains
-legacy-v1 and keeps the current sinks until explicit cutover. Fresh initialized
-projects use v2 case bundles under `docs/teamwork/cases/c-<64hex>/`, where
+Teamwork 6.0 is a hard cut for normal runtime: runtime writes use v2 case
+bundles under `docs/teamwork/cases/c-<64hex>/`, where
 Collaborate, Plan, Research, Debug, Review, Goal, and execution results attach
-to one case. Update/install alone never migrates, rewrites, or deletes existing
-`docs/teamwork`; cutover is a separate one-way operation with cold-archive and
-restore-drill gates.
+to one case. legacy-v1 is not a compatible runtime mode. Init/Update may read
+legacy-v1 and old grill/Discussion/Design records only as semantic migration
+input during an exact one-time project-root migration. Update/install alone
+never claims to migrate, rewrite, or delete existing `docs/teamwork`; the
+cold-archive and restore-drill gates remain.
+
+Research, Explore, Debug, Plan, and Review require their owning leaf. If the
+host cannot provide that capability, the workflow returns capability-blocked
+instead of falling back to Root or another role. Collaborate and Goal remain
+Root-owned.
 
 Collaborate chooses its search strategy from the request and evidence. It uses
 the internal read-only Designer for direction selection, a frozen-hypothesis
@@ -130,11 +136,10 @@ owns native Plan mode, tools, browser and MCP access, permissions, agent
 coordination, and the final response. Sustained Collaborate intent plus a
 substantive synthesis, candidate space, or decision map and an unresolved
 question or unaccepted direction defaults to one semantic checkpoint after
-reading `docs/teamwork/index.json`: v2 writes the selected case manifest and
-`live/collaborate.md` through case transactions, while legacy-v1 alone maintains
-`docs/teamwork/collaborate/current.md` through Collaborate transactions. Frozen
-legacy Discussion and Design records stay readable only as migration inputs and
-migrate only on a real semantic mutation. Unchanged state is a no-op.
+reading `docs/teamwork/index.json`: v6 writes the selected case manifest and
+`live/collaborate.md` through case transactions. Frozen legacy-v1, old grill,
+Discussion, and Design records stay readable only as Init/Update migration
+inputs. Unchanged state is a no-op.
 Collaborate never stores a transcript or substitutes a report/conclusion; `no
 files`, off-record, read-only, or no-write wins.
 
@@ -143,8 +148,11 @@ files`, off-record, read-only, or no-write wins.
 Full setup installs nine roles: Researcher, Explorer, Debugger, Designer,
 Planner, Worker, Writer, Plan Reviewer, and Reviewer. Codex uses them only when
 separate context, standalone document writing, or genuinely independent work is
-worthwhile; the main task remains responsible for scope and integration. No
-subagent is required for routine local inspection or implementation. Writer uses
+worthwhile; the main task remains responsible for scope and integration. The
+default dispatch is one child, the everyday ceiling is four, and five to eight
+children are reserved for explicit adversarial or release work when the host
+supports them. No subagent is required for routine local inspection or
+implementation. Writer uses
 a simple model and a frozen bounded brief for standalone project/product docs,
 README/guide/architecture docs, change and release notes, and Teamwork runtime
 artifacts. It may draft, organize, summarize, translate, and polish,
@@ -180,11 +188,13 @@ handle the roles where that profile permits it:
 ./install.sh codex --profile cost-first
 ```
 
-`./install.sh --help` lists supported targets and profiles. v5 removes retired public names `$grill-me`, `$teamwork-discuss`, and `$teamwork-design`; use `$teamwork-collaborate` instead, with no alias. Migration removes only exact
+`./install.sh --help` lists supported targets and profiles. v6 keeps retired
+public names `$grill-me`, `$teamwork-discuss`, and `$teamwork-design`
+unavailable; use `$teamwork-collaborate` instead, with no alias. Migration removes only exact
 Teamwork-owned legacy Grill/Discuss/Design/Router/Execute and legacy-role
 files. Modified or unmarked copies are preserved and stop automatic replacement.
-v5.1 keeps legacy-v1 project memory compatible while fresh projects use v2 case
-bundles; no install or update performs live cutover.
+legacy-v1 project memory is migration input only; no install or update performs
+or claims live cutover.
 Readiness confirms installed configuration, not that Codex will spawn a
 particular agent for a natural-language request. Subagents do not send Teamwork
 completion or permission notifications.

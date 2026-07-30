@@ -8,10 +8,13 @@ description: Use when a request or active workflow needs direct evidence about l
 Answer one local evidence question without changing the project. Explore is
 local-only and read-only; it does not browse the web, edit files, run destructive
 commands, create a standalone artifact, ask users directly, or turn an
-investigation into implementation. Collaborate owns natural dialogue,
-brainstorming, grilling, and decision convergence, but it may hand Root a
-bounded local-evidence question for Explore. Focused reads needed for already
-authorized implementation stay native.
+investigation into implementation. The role mapping is exact:
+Explore -> Explorer. If Explorer is unavailable or required isolation cannot be
+verified, return `capability-blocked`; Root must not perform a named-method
+fallback. Collaborate owns natural dialogue, brainstorming, stress-testing, and
+decision convergence, but it may hand Root a bounded local-evidence question
+for Explore. Focused reads needed for already authorized implementation stay
+native.
 
 ## Method
 
@@ -38,7 +41,10 @@ callers, definitions, or history), separable from the current task, or benefits
 from CodeGraph-first inspection. Ordinary single-file reads, configuration lookups,
 and reads that enable an already-scoped authorized change stay native.
 
-Ordinary focused reads performed to complete an already authorized change do not
-activate Explore. If the remaining question is external/current, unknown-cause
-runtime diagnosis, an unsettled design choice, or a requested mutation, report
-that boundary without performing the other work.
+Native fast path remains outside Explore: tiny/discoverable local reads,
+ordinary explanations, simple commands, integration, and clear authorized
+implementation are handled directly by the active owner. Ordinary focused reads
+performed to complete an already authorized change do not activate Explore. If
+the remaining question is external/current, unknown-cause runtime diagnosis, an
+unsettled decision, or a requested mutation, report that boundary without
+performing the other work.

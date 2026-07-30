@@ -1,18 +1,22 @@
 ---
 name: teamwork-plan
-description: Use when the user asks for an implementation plan, task breakdown, checklist, roadmap, or handoff, when an accepted Collaborate decision is ready to become executable work, or when a host requires that plan; do not use to brainstorm, grill, settle product/architecture choices, research external facts, diagnose failures, review a candidate, or execute changes.
+description: Use when the user asks for an implementation plan, task breakdown, checklist, roadmap, or handoff, when an accepted Collaborate decision is ready to become executable work, or when a host requires that plan; do not use to brainstorm, stress-test, settle product/architecture choices, research external facts, diagnose failures, review a candidate, or execute changes.
 ---
 
 # Teamwork Plan
 
 Translate an already selected direction into work that can be executed without
-redesign. Every Plan invocation defaults to a durable Plan in an initialized
-writable project unless the user says `no files`, `off-record`, `read-only`, `no
-writes`, or equivalent. Planner produces an execution-ready Plan packet only;
-Writer saves or rewrites it. Do not redesign or implement. Collaborate owns
-dialogue, brainstorming, grilling, and decision convergence; Plan activates only
+redesign. The role mapping is exact: Plan -> Planner, and Plan Review -> Plan
+Reviewer only for user request or named material risk gate. Every Plan
+invocation defaults to a durable case-v2 Plan in an initialized writable project
+unless the user says `no files`, `off-record`, `read-only`, `no writes`, or
+equivalent. Planner produces an execution-ready Plan packet only; Writer saves
+or rewrites it. Do not redesign or implement. Collaborate owns dialogue,
+brainstorming, stress-testing, and decision convergence; Plan activates only
 after the material direction has been selected and, when required, accepted
-through Collaborate.
+through Collaborate. If the mandatory Planner role or required Plan Reviewer
+is unavailable or isolation cannot be verified, return `capability-blocked`;
+Root must not perform a named-method fallback.
 
 ## Readiness
 
@@ -25,19 +29,14 @@ other leaf roles return proposed questions or blockers to Root. Answers do not
 expand authority.
 
 When a prior Teamwork Collaborate decision is claimed, require the controlled
-schema-specific Collaborate readback returned by its transaction. The handoff
-must freeze schema, path, accepted decision identity, revision, and acceptance
-evidence. First inspect schema. In case-v2, run `case-inspect`, read the
-selected case manifest, and confirm the accepted decision artifact, case path,
-manifest revision, no open blockers/frontier, and acceptance evidence match the
-handoff. In legacy-v1, run
-`discussion-transaction.py collaborate-inspect --project-root <project>` and
-confirm `active.path == docs/teamwork/collaborate/current.md`,
-`active.acceptance == accepted`, the exact accepted path, decision id, revision,
-Collaborate-scoped revision, semantic digest, lineage digest, `current_batch ==
-[]`, no open items/blockers/question/frontier, and `adversarial.status` is
-`not_run` or `pass`. Pending or blocked Collaborate records are durable but
-never Plan-ready. Legacy Design, Discussion, conversational recommendations,
+case-v2 Collaborate readback returned by its transaction. The handoff must
+freeze schema, case path, accepted decision identity, decision revision,
+manifest revision, digests, and acceptance evidence. First inspect schema. In
+case-v2, run `case-inspect`, read the selected case manifest, and confirm the
+accepted decision artifact, case path, manifest revision, no open
+blockers/frontier, and acceptance evidence match the handoff. Legacy-v1,
+pending, or blocked Collaborate records are durable/migration inputs but never
+Plan-ready. Legacy Design, Discussion, conversational recommendations,
 adversarial audit results, hand-written files, generic artifacts, or failed
 transactions are not Plan-ready and must not be promoted by Planner.
 
@@ -70,6 +69,12 @@ direction or criteria; required authority or source values are absent; a
 protected boundary cannot be verified; or the planned owner is not the real
 owner. Do not add a confirmation turn when no decision remains.
 
+Maintain visible monotonic Plan state: `decision_revision`, `dependencies`,
+`proof_targets`, `blockers`, and `stops`. A Plan revision may only advance when
+the selected decision revision is unchanged or a new accepted decision readback
+is supplied, dependencies are resolved from evidence rather than invention, and
+proof targets/stops remain directly observable.
+
 Independent Plan Review runs only when the user requests it or a named material
 risk gate requires it. When invoked, the reviewer freezes the selected direction,
 scope, criteria, protected boundaries, candidate Plan, and direct local evidence;
@@ -84,23 +89,21 @@ as independently accepted.
 Every Plan is a completion artifact. Freeze a bounded Plan packet:
 purpose/audience, facts/sources, frozen decision/status, style/structure,
 artifact kind/consumer, preserve/forbid, direction, scope, steps, dependencies,
-proof, and stops. Dispatch one low-cost Writer; Root may do only
+proof targets, blockers, and stops. Dispatch one low-cost Writer; Root may do only
 answer-invariant handoff work while Writer runs and must join and read back
 before claiming the Plan is saved or durable. Writer routes from observed schema:
-`case-inspect` first; in v2 case-bundle projects, case-v2 uses exact
+`case-inspect` first; in case-v2 projects, Writer uses exact
 `case_id`/alias or creates from a frozen seed/task_key, then
-`case-schema <plan-upsert> -> case-apply -> case-inspect/readback`; legacy-v1
-uses `artifact-inspect -> artifact-schema <create|update|supersede> ->
-artifact-apply`. The transaction derives the destination and registers the
-ordinary index or case manifest/claim heads.
+`case-schema <plan-upsert> -> case-apply -> case-inspect/readback`. The
+transaction derives the destination and registers the case manifest/claim heads.
 Writer is disposable compute and the transaction owns destination,
 compare-and-swap, journal recovery, atomic apply, and readback. If interrupted
-before generic artifact apply or case apply begins, there is no durable claim;
+before case apply begins, there is no durable claim;
 recover only from surviving workflow evidence or report unsaved. Writer may polish expression but not
 research, invent, or alter facts, authority, status, proof, decisions, or
 acceptance. Missing project memory, Writer, brief, authority, consumer, route,
 or transaction blocks only persistence: return the Plan and report it
 unsaved/blocked. No Planner, Root, or Worker fallback writes it. Plan approval
 does not authorize implementation, release, external effects, or destructive
-action. Mixed v1/v2, unknown, stale, ambiguous case, missing seed/task_key, or
-partially migrated state fails closed before any write.
+action. Legacy-v1, mixed v1/v2, unknown, stale, ambiguous case, missing
+seed/task_key, or partially migrated state fails closed before any write.

@@ -7,7 +7,10 @@ description: Use when the user asks to review, audit, critique, validate, or dec
 
 Issue an evidence-based `ACCEPT`, `REVISE`, or `BLOCKED` verdict. Review is
 read-only: do not edit the candidate, apply fixes, publish, or perform external
-effects even when a fix seems obvious.
+effects even when a fix seems obvious. The role mapping is exact:
+Review -> Reviewer, and Plan Review -> Plan Reviewer. If the mandatory role is
+unavailable or required fresh isolation cannot be verified, return
+`capability-blocked`; Root must not perform a named-method fallback.
 
 Each Worker self-verifies its owned slice. Do not review each Worker slice or
 code delta independently. Root integrates authorized changes and seals one stable
@@ -52,18 +55,24 @@ perform at most one bounded delta recheck per candidate, limited to stable
 findings and fix-introduced regressions. Any source change after that creates a
 new candidate; expanded scope requires a fresh review decision. Root retains final acceptance.
 
+Maintain visible monotonic Review state: `sealed_digest`, stable finding IDs,
+`verdict`, `repair_batch`, and `delta_recheck`. A finding may close only with
+direct new evidence tied to the same sealed candidate or the one allowed delta
+candidate. Reused summaries, changed scope, or missing candidate identity cannot
+weaken a blocker.
+
 Reviewer always stays read-only. In an initialized writable project, every verdict
-defaults to a review/conclusion artifact unless the user says `no files`,
+defaults to a case-v2 review artifact unless the user says `no files`,
 `off-record`, `read-only`, `no writes`, or equivalent. Freeze the terminal
 verdict before persistence. Root freezes the verdict and Reviewer returns a
 bounded packet: purpose/audience, facts/sources, frozen decision/status,
 style/structure, artifact kind/consumer, preserve/forbid, findings, evidence,
-verdict, and residual risk. Writer routes from observed schema: `case-inspect`
-first; case-v2 uses exact `case_id`/alias or creates from a frozen seed/task_key,
-then `case-schema <review-add|code-review-add|plan-review-add> -> case-apply ->
-case-inspect/readback`; legacy-v1 uses `artifact-inspect -> artifact-schema
-<create|update|supersede> -> artifact-apply`. The transaction derives the
-destination and registers the ordinary index or case manifest/claim heads.
+verdict, repair batch, delta recheck status, and residual risk. Writer routes
+from observed schema: `case-inspect` first; case-v2 uses exact `case_id`/alias
+or creates from a frozen seed/task_key, then
+`case-schema <review-add|code-review-add|plan-review-add> -> case-apply ->
+case-inspect/readback`. The transaction derives the destination and registers
+the case manifest/claim heads.
 Writer is disposable; Root may continue only answer-invariant delivery work and
 must join before claiming saved or durable. Interruption before apply means
 unsaved unless surviving evidence permits a new frozen packet. Missing project
@@ -72,9 +81,9 @@ persistence: deliver the verdict and report it unsaved/blocked. No Reviewer,
 Root, or Worker fallback writes it. Persistence does not imply Root/user
 acceptance. In v2 case-bundle projects, Review writes only transaction-derived
 case review artifacts and the single allowed delta review for the sealed
-candidate. Plan Review and code Review remain separate consumers. Mixed v1/v2,
-unknown, stale, ambiguous case, missing seed/task_key, or partially migrated
-state fails closed before any write.
+candidate. Plan Review and code Review remain separate consumers. Legacy-v1,
+mixed v1/v2, unknown, stale, ambiguous case, missing seed/task_key, or partially
+migrated state fails closed before any write.
 
 Lead with blockers ordered by severity and include precise file/line or artifact
 locations when available. If there are no findings, say so explicitly. `ACCEPT`
