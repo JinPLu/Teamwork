@@ -17,6 +17,12 @@ docs/superpowers/
 # Local Teamwork install profile
 .teamwork-profile
 
+# Host-local settings, disposable agent worktrees, and an accidental duplicate
+# of local Teamwork memory. These are not release inputs.
+.claude/settings.local.json
+.claude/worktrees/
+docs/teamwork 2/
+
 # TEAMWORK_LOCAL_START
 # Teamwork local runtime state
 .codegraph/
