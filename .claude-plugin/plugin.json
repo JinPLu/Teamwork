@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "6.1.2",
+  "version": "6.1.3",
   "description": "Claude Code adapter skills for Collaborate, case-bundle workflow documents, research, local evidence, debugging, planning, review, setup, updates, and long-running goals.",
   "author": {
     "name": "JinPLu",

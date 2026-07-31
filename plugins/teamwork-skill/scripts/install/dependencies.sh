@@ -189,7 +189,14 @@ preflight_managed_dependencies() {
 }
 
 refresh_codegraph_dependency() {
-  npm install --global "$CODEGRAPH_PACKAGE@$CODEGRAPH_VERSION"
+  local effective_codegraph
+  effective_codegraph="$(command -v codegraph 2>/dev/null || true)"
+  if [[ "$effective_codegraph" == "$HOME/.local/bin/codegraph" ]]; then
+    npm install --global --force --prefix "$HOME/.local" \
+      "$CODEGRAPH_PACKAGE@$CODEGRAPH_VERSION"
+  else
+    npm install --global "$CODEGRAPH_PACKAGE@$CODEGRAPH_VERSION"
+  fi
   if [[ "$(codegraph_readiness)" != "ready" ]]; then
     echo "CodeGraph did not reach the required version $CODEGRAPH_VERSION." >&2
     return 1

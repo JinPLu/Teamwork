@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 6.1.3 - 2026-08-01
+
+**Teamwork 6.1.3 ensures that an update changes the older CodeGraph command actually in use.**
+
+- **The effective command is updated.** When an older CodeGraph shim lives in the user's local bin directory, `$teamwork-update` now replaces that active command instead of only installing an unused newer copy.
+- **Replacement scope is precise.** Forced replacement applies only to the confirmed, same-name CodeGraph shim; other command locations continue to use the normal npm global-install path.
+- **Older environments can keep upgrading.** PATH precedence no longer makes an older CodeGraph appear unchanged during global-update readiness checks.
+- **The safety order is unchanged.** GPU Broker and Teamwork global configuration still do not refresh until CodeGraph reaches its pinned version.
+
+Upgrade action: update to 6.1.3 through the Marketplace or checkout channel you already use, then run `$teamwork-update` to refresh global setup.
+
+Important limit: forced replacement applies only when the effective command is exactly the CodeGraph shim in the user's local bin directory. Updates do not replace other tools or upgrade npm, uv, drivers, CUDA, or system software.
+
 ## 6.1.2 - 2026-08-01
 
 **Teamwork 6.1.2 fixes an early global-update stop on older CodeGraph installations.**

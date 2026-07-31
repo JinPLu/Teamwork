@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 6.1.3 - 2026-08-01
+
+**Teamwork 6.1.3 确保更新的是当前实际调用的旧版 CodeGraph。**
+
+- **实际命令得到更新。** 当旧 CodeGraph shim 位于用户本地 bin 目录时，`$teamwork-update` 现在会替换该有效命令而不是只安装一个未被调用的新副本。
+- **替换范围精确。** 强制替换只作用于已确认的同名 CodeGraph shim；其他命令位置继续使用普通的 npm 全局安装路径。
+- **旧环境可继续升级。** 旧版 CodeGraph 不再因 PATH 优先级而在全局更新的就绪检查中被误认为未更新。
+- **安全顺序不变。** CodeGraph 未达到固定版本时，GPU Broker 与 Teamwork 全局配置仍不会刷新。
+
+升级操作：通过你正在使用的 Marketplace 或 checkout 渠道更新到 6.1.3，然后运行 `$teamwork-update` 刷新全局配置。
+
+重要限制：强制替换只适用于当前命令恰好是用户本地目录中的 CodeGraph shim；更新不会替换其他工具、升级 npm/uv、驱动、CUDA 或系统软件。
+
 ## 6.1.2 - 2026-08-01
 
 **Teamwork 6.1.2 修复了旧版 CodeGraph 让全局更新过早停止的问题。**

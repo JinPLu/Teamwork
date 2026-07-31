@@ -761,13 +761,18 @@ esac
         self.write_command(
             "npm",
             """echo \"npm $*\" >> \"$TEAMWORK_TEST_LOG\"
-cat > \"$TEAMWORK_TEST_BIN/codegraph\" <<'EOF'
+target_bin=\"$TEAMWORK_TEST_BIN\"
+if [[ \"${1:-}\" == install && \"${2:-}\" == --global && \"${3:-}\" == --force && \"${4:-}\" == --prefix ]]; then
+  target_bin=\"${5}/bin\"
+fi
+mkdir -p \"$target_bin\"
+cat > \"$target_bin/codegraph\" <<'EOF'
 #!/usr/bin/env bash
 case \"${1:-}\" in
   --version|version) echo 'codegraph 1.5.0' ;;
 esac
 EOF
-chmod 755 \"$TEAMWORK_TEST_BIN/codegraph\"
+chmod 755 \"$target_bin/codegraph\"
 """,
         )
         self.write_command("uv", "echo \"uv $*\" >> \"$TEAMWORK_TEST_LOG\"\n")
@@ -808,8 +813,10 @@ esac
         )
         return env
 
-    def run_managed_update(self) -> subprocess.CompletedProcess[str]:
-        env = self.managed_update_env()
+    def run_managed_update(
+        self, env: dict[str, str] | None = None
+    ) -> subprocess.CompletedProcess[str]:
+        env = env or self.managed_update_env()
         result = subprocess.run(
             [
                 "bash",
@@ -856,6 +863,42 @@ esac
         commands = self.log.read_text(encoding="utf-8")
         self.assertIn("npm install --global @colbymchenry/codegraph@1.5.0", commands)
 
+    def legacy_codegraph_env(self) -> tuple[dict[str, str], pathlib.Path]:
+        home = self.base / "home"
+        legacy_bin = home / ".local" / "bin"
+        legacy_bin.mkdir(parents=True, exist_ok=True)
+        legacy_codegraph = legacy_bin / "codegraph"
+        legacy_codegraph.write_text(
+            "#!/usr/bin/env bash\n"
+            "case \"${1:-}\" in\n"
+            "  --version|version) echo 'codegraph 0.9.6' ;;\n"
+            "esac\n",
+            encoding="utf-8",
+        )
+        legacy_codegraph.chmod(0o755)
+        (self.bin_dir / "codegraph").unlink()
+        env = self.managed_update_env()
+        env["PATH"] = f"{legacy_bin}:{self.bin_dir}:/usr/bin:/bin:/usr/sbin:/sbin"
+        return env, legacy_codegraph
+
+    def test_update_replaces_effective_legacy_local_codegraph_shim(self) -> None:
+        env, legacy_codegraph = self.legacy_codegraph_env()
+        result = self.run_managed_update(env)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        commands = self.log.read_text(encoding="utf-8")
+        self.assertIn(
+            "npm install --global --force --prefix "
+            f"{self.base / 'home' / '.local'} @colbymchenry/codegraph@1.5.0",
+            commands,
+        )
+        version = subprocess.run(
+            [str(legacy_codegraph), "--version"],
+            text=True,
+            capture_output=True,
+            check=True,
+        ).stdout.strip()
+        self.assertEqual(version, "codegraph 1.5.0")
+
     def test_update_requires_npm_even_when_codegraph_is_present(self) -> None:
         (self.bin_dir / "npm").unlink()
         result = self.run_managed_update()
@@ -874,6 +917,26 @@ esac
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         commands = self.log.read_text(encoding="utf-8")
         self.assertIn("npm install --global @colbymchenry/codegraph@1.5.0", commands)
+        self.assertNotIn("uv tool install", commands)
+        self.assertNotIn("gpu-broker daemon install", commands)
+        self.assertFalse((self.base / "home" / ".agents").exists())
+        self.assertFalse((self.base / "home" / ".cursor").exists())
+        self.assertFalse((self.base / "home" / ".claude").exists())
+
+    def test_legacy_shim_install_failure_prevents_downstream_writes(self) -> None:
+        env, _ = self.legacy_codegraph_env()
+        self.write_command(
+            "npm",
+            "echo \"npm $*\" >> \"$TEAMWORK_TEST_LOG\"\nexit 1\n",
+        )
+        result = self.run_managed_update(env)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        commands = self.log.read_text(encoding="utf-8")
+        self.assertIn(
+            "npm install --global --force --prefix "
+            f"{self.base / 'home' / '.local'} @colbymchenry/codegraph@1.5.0",
+            commands,
+        )
         self.assertNotIn("uv tool install", commands)
         self.assertNotIn("gpu-broker daemon install", commands)
         self.assertFalse((self.base / "home" / ".agents").exists())
