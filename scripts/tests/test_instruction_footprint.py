@@ -114,6 +114,9 @@ class InstructionFootprintTests(unittest.TestCase):
     def test_real_loading_surfaces_include_project_memory_and_repository_context(self) -> None:
         self.assertTrue(
             {
+                "global_policy_codex",
+                "global_policy_cursor",
+                "global_policy_claude",
                 "project_instruction_block",
                 "repository_instructions",
                 "runtime_memory_index",
@@ -123,6 +126,16 @@ class InstructionFootprintTests(unittest.TestCase):
                 "worst_repository_root_path",
             }.issubset(COMPACTNESS_LIMITS)
         )
+
+    def test_global_policy_and_repository_instruction_word_limits_stay_slim(self) -> None:
+        for surface in (
+            "global_policy_codex",
+            "global_policy_cursor",
+            "global_policy_claude",
+        ):
+            with self.subTest(surface=surface):
+                self.assertLessEqual(COMPACTNESS_LIMITS[surface]["words"], 220)
+        self.assertLessEqual(COMPACTNESS_LIMITS["repository_instructions"]["words"], 500)
 
     def test_runtime_volume_budgets_have_one_owner(self) -> None:
         root = Path(__file__).resolve().parents[2]

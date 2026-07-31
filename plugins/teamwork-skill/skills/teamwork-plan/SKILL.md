@@ -5,105 +5,82 @@ description: Use when the user asks for an implementation plan, task breakdown, 
 
 # Teamwork Plan
 
-Translate an already selected direction into work that can be executed without
-redesign. The role mapping is exact: Plan -> Planner, and Plan Review -> Plan
-Reviewer only for user request or named material risk gate. Every Plan
-invocation defaults to a durable case-v2 Plan in an initialized writable project
-unless the user says `no files`, `off-record`, `read-only`, `no writes`, or
-equivalent. Planner produces an execution-ready Plan packet only; Writer saves
-or rewrites it. Do not redesign or implement. Collaborate owns dialogue,
-brainstorming, stress-testing, and decision convergence; Plan activates only
-after the material direction has been selected and, when required, accepted
-through Collaborate. If the mandatory Planner role or required Plan Reviewer
-is unavailable or isolation cannot be verified, return `capability-blocked`;
-Root must not perform a named-method fallback.
+Translate an already selected direction into executable work. The role mapping
+is exact: Plan -> Planner, and Plan Review -> Plan Reviewer only for user request
+or named material risk gate. Plan defaults to a durable case-v2 Plan in an
+initialized writable project unless `no files`, `off-record`, `read-only`, `no
+writes`, or equivalent applies. Planner produces the execution-ready packet;
+Writer saves it. Do not redesign or implement. If mandatory roles or required
+isolation are unavailable, return `capability-blocked`; Root must not perform a
+named-method fallback.
 
 ## Readiness
 
 Confirm outcome, chosen direction, scope, protected boundaries, and acceptance
-signals are settled. Inspect local owners, flow, interfaces, tests,
-configuration, and commands needed for concrete steps. Do not ask for
-discoverable facts or turn safe implementation details into user decisions.
-Root alone asks users through the current host's native surface; Planner and
-other leaf roles return proposed questions or blockers to Root. Answers do not
-expand authority.
+signals are settled. Inspect local owners, control flow, interfaces,
+tests/configuration, commands, and invariants needed for concrete steps. Do not
+ask for discoverable facts or turn safe implementation details into user
+decisions. Root alone asks users; leaf roles return questions/blockers, and
+answers do not expand authority.
 
-When a prior Teamwork Collaborate decision is claimed, require the controlled
-case-v2 Collaborate readback returned by its transaction. The handoff must
-freeze schema, case path, accepted decision identity, decision revision,
-manifest revision, digests, and acceptance evidence. First inspect schema. In
-case-v2, run `case-inspect`, read the selected case manifest, and confirm the
-accepted decision artifact, case path, manifest revision, no open
-blockers/frontier, and acceptance evidence match the handoff. Legacy-v1,
+When that accepted decision is claimed, require controlled case-v2
+Collaborate readback. The handoff must freeze schema, case path, accepted
+decision identity, decision revision, manifest revision, digests, and acceptance
+evidence. In case-v2, run `case-inspect`, read the selected case manifest, and
+confirm the accepted decision artifact, manifest revision, decision revision,
+case path, no open blockers/frontier, and acceptance evidence match. Legacy-v1,
 pending, or blocked Collaborate records are durable/migration inputs but never
-Plan-ready. Legacy Design, Discussion, conversational recommendations,
-adversarial audit results, hand-written files, generic artifacts, or failed
-transactions are not Plan-ready and must not be promoted by Planner.
+Plan-ready. Legacy Design, Discussion, recommendations, audits, hand-written
+files, generic artifacts, and failed transactions are not Plan-ready.
 
-If an open choice would change behavior, architecture, public contracts, data,
-permissions, migration, or scope, stop and state the exact decision needed. Do
-not compare options or hide it as an assumption. Return unresolved material
-direction to Collaborate. If a genuinely user-owned plan boundary remains after
-evidence, propose it to Root. Missing implementation details may remain
-prerequisites that block only dependent steps.
+If an open choice changes behavior, architecture, public contract, data,
+permissions, migration, or scope, stop and return the exact decision to the
+decision owner. Do not compare options or hide it as an assumption.
 
 ## Plan Shape
 
-Lead with result and scope. Produce owned, ordered actions with dependencies and
-direct proof. Each work unit identifies:
-
-- the owner or target surface;
-- the concrete change and preserved invariant;
-- dependencies and values that must come from source rather than invention;
-- the nearest direct success check;
-- any public-boundary, migration, rollout, or rollback proof that is actually
-  required.
-
-Keep steps outcome-sized: meaningful and verifiable. Name parallel tracks only
-when truly independent and give each non-overlapping ownership. Put real
-execution before optional cleanup. Use tests to prove the result, not replace an
-available real run.
-
-End with explicit stop or replan conditions: new evidence changes the selected
-direction or criteria; required authority or source values are absent; a
-protected boundary cannot be verified; or the planned owner is not the real
-owner. Do not add a confirmation turn when no decision remains.
+Lead with result and scope. Produce owned ordered actions with dependencies and
+direct proof. Each work unit names owner/target surface, concrete change,
+preserved invariant, source-derived dependencies, nearest real success check,
+and required public-boundary, migration, rollout, or rollback proof. Keep steps
+outcome-sized and verifiable; name parallel tracks only when independent and
+non-overlapping. Put required execution before optional cleanup, and use tests to
+prove rather than replace an available real path.
 
 Maintain visible monotonic Plan state: `decision_revision`, `dependencies`,
-`proof_targets`, `blockers`, and `stops`. A Plan revision may only advance when
-the selected decision revision is unchanged or a new accepted decision readback
-is supplied, dependencies are resolved from evidence rather than invention, and
-proof targets/stops remain directly observable.
+`proof_targets`, `blockers`, and `stops`. A revision advances only when the
+selected decision revision is unchanged or a new accepted decision readback is
+supplied, dependencies are evidence-derived, and proof targets/stops remain
+observable. End with stop or replan conditions: changed direction/criteria,
+missing authority or source values, unverifiable protected boundary, or wrong
+owner.
 
-Independent Plan Review runs only when the user requests it or a named material
-risk gate requires it. When invoked, the reviewer freezes the selected direction,
-scope, criteria, protected boundaries, candidate Plan, and direct local evidence;
-it returns stable `PR-*` findings and `ACCEPT`, `REVISE`, or `BLOCKED`. Combine
-its findings into one repair batch. The same reviewer may perform at most one
-bounded delta recheck for that Plan; materially expanded scope requires a fresh
-review decision. A reviewed Plan cannot pass with placeholders, ellipses, guessed
-values, unresolved alternatives, `or its replacement`, vague “handle edge cases”
-work, or redesign disguised as a step. An unreviewed Plan must not be described
-as independently accepted.
+Independent Plan Review runs only on user request or a named risk gate. It
+freezes direction, scope, criteria, protected boundaries, candidate Plan, and
+direct evidence; returns stable `PR-*` findings and `ACCEPT`, `REVISE`, or
+`BLOCKED`; permits one repair batch and at most one bounded delta recheck. A
+reviewed Plan cannot pass with placeholders, ellipses, guessed values,
+unresolved alternatives, `or its replacement`, vague "handle edge cases" work,
+or redesign disguised as a step.
 
-Every Plan is a completion artifact. Freeze a bounded Plan packet:
-purpose/audience, facts/sources, frozen decision/status, style/structure,
-artifact kind/consumer, preserve/forbid, direction, scope, steps, dependencies,
-proof targets, blockers, and stops. Dispatch one low-cost Writer; Root may do only
-answer-invariant handoff work while Writer runs and must join and read back
-before claiming the Plan is saved or durable. Writer routes from observed schema:
-`case-inspect` first; in case-v2 projects, Writer uses exact
-`case_id`/alias or creates from a frozen seed/task_key, then
-`case-schema <plan-upsert> -> case-apply -> case-inspect/readback`. The
-transaction derives the destination and registers the case manifest/claim heads.
-Writer is disposable compute and the transaction owns destination,
-compare-and-swap, journal recovery, atomic apply, and readback. If interrupted
-before case apply begins, there is no durable claim;
-recover only from surviving workflow evidence or report unsaved. Writer may polish expression but not
-research, invent, or alter facts, authority, status, proof, decisions, or
-acceptance. Missing project memory, Writer, brief, authority, consumer, route,
-or transaction blocks only persistence: return the Plan and report it
-unsaved/blocked. No Planner, Root, or Worker fallback writes it. Plan approval
-does not authorize implementation, release, external effects, or destructive
-action. Legacy-v1, mixed v1/v2, unknown, stale, ambiguous case, missing
-seed/task_key, or partially migrated state fails closed before any write.
+## Persistence
+
+Plan content and persistence are separate. Return the Plan even if completion
+artifact persistence fails, and state `unsaved/blocked`. Wait for Writer
+readback only before claiming saved/durable or before dependent work requires
+durable continuity.
+
+Freeze a bounded Plan packet: purpose/audience, facts/sources, decision/status,
+style/structure, artifact kind/consumer, preserve/forbid, direction, scope,
+steps, dependencies, proof targets, blockers, and stops. Writer routes from
+observed schema: `case-inspect` first; in case-v2 projects, use exact
+`case_id`/alias or create from a frozen seed/task_key, then `case-schema
+<plan-upsert> -> case-apply -> case-inspect/readback`. The transaction derives
+destination and registers manifest/claim heads. Writer may polish expression but
+must not research, invent, or alter facts, authority, status, proof, decisions,
+or acceptance. Missing project memory, Writer, packet, authority, consumer,
+route, or transaction blocks only persistence. No Planner, Root, or Worker
+fallback writes it. Plan approval does not authorize implementation, release,
+external effects, or destructive action. Legacy-v1, mixed v1/v2, unknown, stale,
+ambiguous case, missing seed/task_key, or partially migrated state fails closed
+before any write.

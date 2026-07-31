@@ -13,10 +13,11 @@
   },
   "id": "persistence-explore-no-artifact",
   "must": [
-    "return Explore evidence as a read-only packet for the consuming workflow brief"
+    "answer the precise local evidence question through the owning Explorer as a read-only packet for the consuming workflow brief",
+    "keep Explore evidence inside the consumer handoff rather than creating an independent durable artifact"
   ],
   "must_not": [
-    "create an Explore report, dispatch Writer for an independent Explore artifact, edit files, or implement"
+    "create an Explore report, dispatch Writer for an independent Explore artifact, edit files, implement, or run external Research for local facts"
   ],
   "platforms": [
     "codex",
@@ -45,7 +46,7 @@
       "source": "templates/claude-agents/explorer.md"
     }
   ],
-  "prompt": "Inspect the local owner for this contract and return evidence only.",
+  "prompt": "Use the owning Explorer to answer this precise local evidence question: which local owner defines this persistence contract and what evidence line proves it? Return evidence only for the consuming workflow brief.",
   "source": "synthetic",
   "split": "dev"
 }

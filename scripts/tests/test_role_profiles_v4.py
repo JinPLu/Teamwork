@@ -238,9 +238,14 @@ class RoleProfilesV4Test(unittest.TestCase):
         role_clauses = {
             "debugger": (
                 "one frozen failure signature",
+                "before inspection, probes, or fixes",
                 "rank 3-5 plausible H-* hypotheses",
+                "map every inspection, command, and probe to H-* IDs",
                 "one discriminating experiment at a time",
                 "supported, weakened, or rejected",
+                "event-flow",
+                "temporary structured log at the nearest owned boundary",
+                "Skip instrumentation only when existing evidence decides the named H-* gap",
                 "`cause-confirmed`, `fix-verified`, `blocked`, or `new-failure-split`",
                 "Do not use Review verdicts while the cause is unknown.",
             ),

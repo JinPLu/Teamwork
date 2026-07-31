@@ -5,100 +5,84 @@ description: Use when the user asks to check, install, activate, repair, or refr
 
 # Teamwork Update
 
-Check or refresh Teamwork-managed global installation surfaces. An explicit
-update or repair may additionally migrate Teamwork memory for one exact named
-project through the package transaction; never rewrite its other project context
-or inspect sibling projects. Collaborate owns natural dialogue,
-brainstorming, stress-testing, and decision convergence; Update activates only
-when the requested outcome is an actual global install, skill, agent, managed
-policy, routing, or notification refresh. The role order is exact: Explorer
-checks first; Worker runs only authorized, precisely owned refresh actions. If a
-mandatory role is unavailable or required isolation cannot be verified, return
-`capability-blocked`; Root must not perform a named-method fallback.
+Check or refresh Teamwork-managed global installation surfaces. Update is global
+only: do not perform project initialization, edit general project context, touch
+unrelated plugins/tools, or publish source. One explicitly authorized exact-root
+memory migration may run through the package transaction. Role order is Explorer
+check, then Worker for owned refresh actions. Unavailable mandatory roles or
+unverified isolation are `capability-blocked`; Root must not perform a
+named-method fallback.
 
-## Resolve The Package
+## Resolve Source
 
 Do not assume the current directory is a Teamwork checkout. From Marketplace,
-resolve the package root with package-owned `scripts/plugin-runtime-root.py`, two
-levels above this skill, then use that root's `scripts/check-update.sh` and
-`install.sh`. From a checkout, use the verified repo root. If
-`plugin-runtime-root.py` is missing, also check `$TEAMWORK_ROOT` or
-`~/.cursor/.teamwork-mcp.json`; otherwise report missing source instead of
-searching or modifying arbitrary directories.
+resolve the package root with `scripts/plugin-runtime-root.py`, two levels above
+this skill, then use that root's `scripts/check-update.sh` and `install.sh`. From
+a checkout, use the verified repo root. If
+`plugin-runtime-root.py` is missing, check `$TEAMWORK_ROOT` or
+`~/.cursor/.teamwork-mcp.json`; otherwise report missing source.
 
 ## Check Or Refresh
 
-1. Dispatch Explorer to run resolved `scripts/check-update.sh --plugin` for
-   Marketplace, or `scripts/check-update.sh` for a checkout. Freshness checks are
-   read-only and stop after an evidence-backed status report.
-2. For explicit install, activate, repair, or update, explain managed global
-   surfaces and preserve detected profile/notification choice. Follow the
-   checker's safe command; do not invent profile or destination.
-3. First activation that would add global agents, policy, routing, or
-   notifications requires explicit effect authority. An explicit request to
-   perform that activation supplies it; a request merely asking what is stale
-   does not.
-   Root alone asks users through the current host's native surface; leaf roles
-   return proposed questions or blockers to Root. Ask only for missing mutation
-   authority or unavoidable manual host action. Answers do not expand authority.
-4. Dispatch Worker only for transferable, precisely owned refresh actions.
-   Credentials, host UI, trust, notification approval, and privileged surfaces
-   remain with Root and require exact effect authority. Refresh only verified
-   Teamwork-owned files. Preserve unrelated/unknown files. If cleanup cannot
-   distinguish owned files from user content, stop and name the conflict.
-5. Dispatch Explorer to rerun the same checker with `--readiness` after changes; pass both `--plugin`
-   and `--readiness` for Marketplace. Static file freshness is not proof of live
-   host activation; report required restart, policy paste, notification review,
-   or other human action separately.
+1. Explorer runs resolved `scripts/check-update.sh --plugin` for Marketplace or
+   `scripts/check-update.sh` for checkout. Check-only is read-only and stops
+   after an evidence-backed status report.
+2. Explicit install, activate, repair, or update follows only the checker's safe
+   command and detected profile/notification choice; invent no profile,
+   destination, or owned file.
+3. First activation adding global agents, policy, routing, or notifications
+   requires explicit effect authority. Root alone asks for missing mutation
+   authority or manual action; answers do not expand authority.
+4. Worker handles only transferable Teamwork-owned refresh files. Credentials,
+   host UI, trust, notification approval, privileged surfaces, and repository
+   effects remain with Root and need exact authority. Preserve unknown/user
+   files; stop if ownership is unclear.
+5. Explorer reruns the same checker with `--readiness`; use both `--plugin` and
+   `--readiness` for Marketplace. Static freshness is not live host activation:
+   report restart, policy paste, notification review, or other manual action.
 
-A check-only Update remains read-only and conversational. After a mutating Update
-in an initialized writable project, a receipt is a case-v2 completion companion and
-defaults through Writer unless the user says `no files`, `off-record`,
-`read-only`, `no writes`, or equivalent. Freeze a bounded receipt packet:
-purpose/audience, facts/sources, frozen decision/status, style/structure,
-artifact kind/consumer, preserve/forbid, managed surfaces, freshness evidence,
-validation, and manual actions. Dispatch one low-cost Writer; Root may do only
-answer-invariant handoff work while Writer runs and must join and read back
-before claiming the receipt is saved or durable. Writer routes from observed
-schema: `case-inspect` first; case-v2 uses exact `case_id`/alias or creates from
-a frozen seed/task_key for the update receipt, then `case-schema <update-result>
--> case-apply -> case-inspect/readback`. The transaction derives the destination
-and registers the case manifest/claim heads. Writer is disposable compute and
-the transaction owns destination,
-compare-and-swap, journal recovery, atomic apply, and readback. If interrupted
-before apply begins, there is no durable claim; recover only from surviving
-workflow evidence or report unsaved. Missing project memory, Writer, brief,
-authority, consumer, route, or transaction blocks only persistence: deliver the
-receipt and report it unsaved/blocked. No Root or Worker fallback writes it.
+For notifications, trust only package-reported Teamwork hooks; never enable
+trust-all. Do not install dependencies, MCP servers, paid services, unrelated
+plugins, or credentials without separate authority. This skill does not edit
+`VERSION`, manifests, changelogs, commits, tags, or GitHub Releases, and does
+not pull or publish source without explicit repository authority.
+
+## Migration
+
 Updating or activating Teamwork does not migrate project documents by default.
-Existing legacy-v1 project memory is read-only migration input; normal Update
-receipts use only case-v2. Update may migrate a project only when Root has
-explicit authority for the current named project or an exact `--project-root`
-value; it must not scan for projects. Use the package-owned helper for that
-exact root, for example `scripts/teamwork-case-migration.py classify
---project-root <exact-project-root>` and
-`scripts/teamwork-case-migration.py request-inputs --project-root
-<exact-project-root>` before any cutover. If the accepted migration requires
-`teamwork-case-migration.py migrate --project-root <exact-project-root>` or
-`teamwork-case-migration.py resume --project-root <exact-project-root>` and the
-installed helper does not expose that phase, stop `capability-blocked` instead
-of scanning or inventing a replacement. Fresh initialized projects use v2 case
-bundles through Init. Update may report the package version and readiness, and
-a receipt case may be selected or created only through the Writer route above;
-it must not infer migration authority or touch both v1 and v2 memory trees.
-Mixed, unknown, stale, ambiguous case, missing seed/task_key, legacy-v1 without
-explicit migration authority, or partial migration fails closed before any
-write.
+Existing legacy-v1 project memory is read-only migration input. Update may
+migrate only with explicit authority for the current named project or an exact
+`--project-root` value; it must not scan for projects or touch both v1 and v2
+memory trees. Use package-owned helper commands for that root, for
+example `scripts/teamwork-case-migration.py classify --project-root
+<exact-project-root>` and `scripts/teamwork-case-migration.py request-inputs
+--project-root <exact-project-root>` before cutover. If accepted migration
+requires `teamwork-case-migration.py migrate --project-root <exact-project-root>` or `teamwork-case-migration.py resume --project-root <exact-project-root>`
+and the helper lacks that phase, stop `capability-blocked`; do not scan or
+invent a replacement. Mixed, unknown, stale, ambiguous case, missing
+seed/task_key, legacy-v1 without explicit migration authority, or partial
+migration fails closed before any write. Fresh initialized projects use case-v2
+bundles through project setup; Update does not run that setup.
 
-For notifications, trust only the specific Teamwork hooks reported by the
-package; never enable trust-all. Do not install external dependencies, MCP
-servers, paid services, unrelated plugins, or credentials without separate
-authority.
+## Receipt
 
-This skill does not edit `VERSION`, manifests, changelogs, commits, tags, or
-GitHub Releases. It does not pull or publish source without explicit repository
-authority. It never runs general project initialization or edits project
-instructions; only the exact-root migration exception above may change Teamwork
-memory, and only through the migration transaction. Finish with source and
-installed versions, profile, each managed surface's freshness, activation
-strength, manual actions, and unresolved drift.
+A mutating Update in an initialized writable project defaults to a case-v2
+completion companion unless `no files`, `off-record`, `read-only`, `no writes`,
+or equivalent applies. Core update result and persistence are separate: deliver
+source/installed status and validation even if the receipt cannot be saved, and
+report `unsaved/blocked`. Claim saved/durable only after readback; wait for
+Writer only when claiming it or when a dependent next step needs it.
+
+Freeze a receipt packet: purpose/audience, facts/sources, decision/status,
+artifact kind/consumer, preserve/forbid, managed surfaces, freshness evidence,
+validation, and manual actions. Writer routes from observed
+schema: `case-inspect` first; case-v2 uses exact `case_id`/alias or creates from
+a frozen seed/task_key, then `case-schema <update-result> -> case-apply ->
+case-inspect/readback`. The transaction derives destination and registers
+manifest/claim heads. Writer must not invent or alter facts, authority, status,
+or validation. Missing project memory, Writer, packet, authority, consumer,
+route, or transaction blocks only persistence. No Root or Worker fallback writes
+it.
+
+Finish with versions, profile, freshness, activation strength, manual actions,
+unresolved drift, migration state, and receipt state.

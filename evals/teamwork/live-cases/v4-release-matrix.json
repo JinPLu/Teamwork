@@ -252,8 +252,7 @@
       "selected_skill": "teamwork-explore",
       "required_role": "explorer",
       "expected_roles": [
-        "explorer",
-        "researcher"
+        "explorer"
       ],
       "authority": "read-only",
       "required_tools": [
@@ -268,7 +267,7 @@
         ]
       },
       "private_markers": [],
-      "prompt": "Inspect scenario/dispatch-probe.txt through the installed local Explorer path and keep local and external evidence routes distinct."
+      "prompt": "Use the installed local Explorer path to answer the precise evidence question in scenario/dispatch-probe.txt. Do not dispatch Research and do not create an independent Explore artifact."
     },
     {
       "id": "collaborate-challenge-bounded-convergence",
@@ -406,7 +405,7 @@
         ]
       },
       "private_markers": [],
-      "prompt": "Read scenario/plan-probe.txt. Use the installed Plan path only from the selected direction and route the plan through the distinct Plan Reviewer boundary."
+      "prompt": "Read scenario/plan-probe.txt. Use the installed Plan path only from the selected direction; return action owner, dependency, proof target, unresolved evidence dependency, and stop condition, then route the plan through the distinct Plan Reviewer boundary without implementation or redesign."
     },
     {
       "id": "goal-wait-compaction-resume",
@@ -428,7 +427,7 @@
         ]
       },
       "private_markers": [],
-      "prompt": "Use the explicit installed Goal path from scenario/goal-input.txt, preserve scope across a strategy change, and write the verified completion artifact to scenario/goal-result.txt."
+      "prompt": "Use the explicit installed Goal path from scenario/goal-input.txt. Preserve scope across wait/resume, record failed evidence and failure class before changing strategy, avoid repeating no-progress, and write scenario/goal-result.txt only after the verifier gives the real success signal."
     },
     {
       "id": "collaborate-case-v2-transaction",

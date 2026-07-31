@@ -187,6 +187,7 @@ Research、Explore、Debug、Plan 和 Review 必须由对应 owning leaf 承接�
 ## 🗃️ 文档与安全边界
 
 - 在已初始化且可写的项目中，命名 Teamwork workflow 默认会保存值得复用的检查点或结果；一次性说明、小修改和普通本地工作不会强制造文档。
+- 已完成的方法结果不会因为 Writer、transaction 或 readback 不可用而被吞掉，而会正常返回并明确标记为未保存；只有确实依赖持久连续性的下一步才等待 readback，也不会退回直接写文件。
 - 明确写出 `no files`、off-record、read-only 或 no-write，可以覆盖默认持久化。
 - Research、Collaborate、Plan、诊断阶段的 Debug 和 Review 不会自动授权代码修改或外部效果；接受计划也不等于授权执行。
 - v6 normal runtime 只使用 v2 case bundle，把同一事项的讨论、证据、计划、复查、Goal 和结果组织在 `docs/teamwork/cases/` 下。legacy-v1、旧 grill、Discussion 和 Design 记录只作为 Init/Update 语义迁移输入，不是兼容运行模式。

@@ -1,8 +1,20 @@
 # Runtime Diagnosis
 
-Load this reference only when existing evidence cannot distinguish the leading
-runtime hypotheses and the fixed dispatch authority permits instrumentation. Do
-not load another reference or Skill.
+Load this reference only for an unknown runtime, state, data-flow, event-flow,
+async, or UI failure when the fixed dispatch authority permits instrumentation
+and the active experiment will use a temporary probe. In that path, a temporary
+structured log is the default discriminating experiment unless existing
+evidence already decides the named hypothesis gap. Do not load another reference
+or Skill.
+
+## Runtime Log-First
+
+Choose the nearest owned boundary and add one temporary structured log for the
+active `E-*` experiment. Tag it with that `E-*` ID, record only fields needed to
+distinguish the competing `H-*` hypotheses, and capture the raw observation.
+Skip instrumentation only when existing evidence already decides that gap; state
+the skip rationale and the hypotheses it distinguishes. Do not use broad tracing,
+production exposure, sensitive values, or probes that change measured behavior.
 
 ## Frozen Probe Contract
 
@@ -29,9 +41,11 @@ state, pause with the exact action and expected observation. Resume the same
 diagnosis from the returned value; do not restart or infer it.
 
 After each probe, record the raw observation and update each named hypothesis to
-`supported`, `weakened`, or `rejected`. An inconclusive result does not justify
-a fix, a Review verdict, broader tracing, or a target change. Select a different
-discriminator or stop `blocked`.
+`supported`, `weakened`, or `rejected`. Return the experiment card, raw
+observation, hypothesis update, and cleanup proof as externally auditable Debug
+Findings. An inconclusive result does not justify a fix, a Review verdict,
+broader tracing, or a target change. Select a different discriminator or stop
+`blocked`.
 
 Remove every temporary probe, flag, log, fixture, and generated trace before
 completion, including on a blocked path when safe. Under `fix` authority only,

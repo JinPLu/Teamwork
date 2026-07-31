@@ -179,6 +179,8 @@ SKILL_CONCEPTS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
         ("hypothesis before probes", (r"hypotheses before broad.{0,100}(?:inspection|instrumentation|probe)", r"hypothes.{0,80}precede probes")),
         ("prediction and falsifier mapping", (r"observation predicted if it is true.{0,160}observation that would falsify", r"predictions.{0,80}falsifiers")),
         ("one discriminating experiment", (r"one active discriminating experiment at a time", r"one discriminating experiment at a time")),
+        ("runtime log-first experiment", (r"Runtime Log-First", r"runtime.{0,120}temporary structured log", r"structured log.{0,160}E-\*")),
+        ("instrumentation skip rationale", (r"Skip code instrumentation only when existing evidence already decides", r"skip rationale.{0,120}hypotheses it distinguishes")),
         ("discriminating hypothesis", (r"discriminat.{0,80}(?:hypothes|evidence)", r"hypotheses.{0,120}(?:distinguish|smallest observation)", r"区分.{0,50}(?:假设|证据)")),
         ("rejected hypotheses", (r"rejected hypotheses", r"supported.{0,80}weakened.{0,80}rejected")),
         ("authorized narrow fix", (r"authoriz.{0,60}(?:narrow|minimal).{0,30}fix", r"已授权.{0,50}(?:窄|最小).{0,20}修复")),

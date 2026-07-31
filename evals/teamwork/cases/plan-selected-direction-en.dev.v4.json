@@ -19,10 +19,11 @@
   },
   "id": "plan-selected-direction-en",
   "must": [
-    "translate the selected direction into owned ordered actions and direct proof"
+    "translate the selected direction into owned ordered actions with explicit dependencies, proof targets, and stop conditions",
+    "keep open evidence gaps as dependencies or blockers instead of redesigning the selected direction"
   ],
   "must_not": [
-    "compare new options, recollaborate the choice, implement, or edit files"
+    "compare new options, recollaborate the choice, redesign, implement, or edit files"
   ],
   "platforms": [
     "codex",
@@ -63,7 +64,7 @@
       "source": "templates/claude-agents/plan-reviewer.md"
     }
   ],
-  "prompt": "The queued architecture is already selected. Turn it into an implementation-ready sequence with owners, dependencies, direct checks, and stop conditions.",
+  "prompt": "The queued architecture direction is already selected. Turn that direction into an implementation-ready Plan packet with action owners, dependencies, proof targets, unresolved evidence dependencies, and stop conditions only.",
   "source": "synthetic",
   "split": "dev"
 }

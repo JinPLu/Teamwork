@@ -17,15 +17,15 @@ ENFORCED_LIMITS = {
     # These surfaces can be loaded together in real use. The complete
     # repository union and all ten full skills are telemetry only because host
     # template families are mutually exclusive and skills are loaded on demand.
-    "global_policy_codex": {"words": 430, "bytes": 3800},
-    "global_policy_cursor": {"words": 430, "bytes": 3800},
-    "global_policy_claude": {"words": 430, "bytes": 3800},
+    "global_policy_codex": {"words": 220, "bytes": 2600},
+    "global_policy_cursor": {"words": 220, "bytes": 2600},
+    "global_policy_claude": {"words": 220, "bytes": 2600},
     "max_single_skill": {"words": 1450, "bytes": 11000},
     "max_skill_bundle": {"words": 2050, "bytes": 15500},
     "max_role_template": {"words": 330, "bytes": 2900},
     "skill_discovery_catalog": {"words": 650, "bytes": 4500},
     "project_instruction_block": {"words": 220, "bytes": 1700},
-    "repository_instructions": {"words": 750, "bytes": 5500},
+    "repository_instructions": {"words": 500, "bytes": 4200},
     "runtime_memory_readme": {"words": 320, "bytes": 2300},
     "runtime_memory_index": {"words": 200, "bytes": 1800},
     "worst_static_root_path": {"words": 3450, "bytes": 27000},

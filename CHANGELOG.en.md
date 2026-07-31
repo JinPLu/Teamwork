@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 6.1.0 - 2026-07-31
+
+**Teamwork 6.1 keeps every specialized method available while making ordinary collaboration substantially lighter and less interruptive.**
+
+- **Everyday context is leaner.** The global policy now carries only authority, routing, and persistence boundaries; a skill loads its self-contained method only when the task needs it, leaving clear reads, explanations, commands, implementation, and integration on GPT's native path.
+- **Distinct methods remain visible in real work.** Debug now defaults to a minimal structured-log experiment for uncertain runtime, asynchronous, UI, event-flow, and data-flow failures when instrumentation is authorized, while Plan, Goal, and Explore have stronger stateful evidence scenarios for their own boundaries.
+- **Document persistence no longer hides a completed result.** If Writer, transaction, or readback fails after the method has produced its result, Teamwork returns that result and reports it as unsaved; only a genuinely dependent continuation waits for durable readback, with no direct-write fallback.
+- **The release gates protect both behavior and headroom.** Compact semantic contracts replace prose-shaped checks, and the installed instruction budget now has meaningful room for repository context without changing the existing performance-first or cost-first model profiles.
+
+Upgrade action: update through the existing Codex, Cursor, or Claude Code channel and start a new task so the lean global policy and refreshed skills are loaded. Existing v6 projects need no migration; Init/Update remains the one-way path for an older explicitly selected project.
+
+Important limit: smaller instruction surfaces reduce static context pressure, but Teamwork does not promise a fixed latency or price reduction. Runtime cost still depends on the selected model, effort, task, and number of worthwhile agents; static and bounded trajectory evidence does not prove equivalent automatic behavior across all hosts.
+
 ## 6.0.1 - 2026-07-31
 
 **Teamwork 6.0.1 corrects the release notes so v6's research basis, everyday collaboration model, and cost controls are easier to understand.**

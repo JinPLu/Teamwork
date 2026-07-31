@@ -19,7 +19,7 @@ docs/superpowers/
 
 # Host-local settings, disposable agent worktrees, and an accidental duplicate
 # of local Teamwork memory. These are not release inputs.
-.claude/settings.local.json
+.claude/settings.*.json
 .claude/worktrees/
 docs/teamwork 2/
 

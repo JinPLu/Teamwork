@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "6.0.1",
+  "version": "6.1.0",
   "description": "Claude Code adapter skills for Collaborate, case-bundle workflow documents, research, local evidence, debugging, planning, review, setup, updates, and long-running goals.",
   "author": {
     "name": "JinPLu",
@@ -27,7 +27,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Nine focused skills for Collaborate, durable results, research, debugging, review, setup, and goals.",
-    "longDescription": "Teamwork adds nine focused collaboration skills for adaptive dialogue and brainstorming; cited external research; read-only local evidence; hypothesis-first debugging; executable planning; independent review; project initialization; global refresh; and persistent goals. Named methods use their owning agent role and return capability-blocked when that role is unavailable, while tiny reads, ordinary explanations, simple commands, authorized implementation, and integration stay on Claude Code's native fast path. Durable workflow state uses case-v2 bundles only. Init and Update can semantically migrate an explicitly authorized legacy project root into case-v2 with cold-archive recovery evidence. A low-cost Writer persists frozen workflow state through controlled transactions. You choose scope and authorize effects; Claude Code remains in control of tools and permissions.",
+    "longDescription": "Teamwork adds nine focused collaboration skills for adaptive dialogue and brainstorming; cited external research; read-only local evidence; hypothesis-first debugging; executable planning; independent review; project initialization; global refresh; and persistent goals. A lean global policy keeps ordinary work on Claude Code's native fast path, while each selected skill loads its own method and owning agent role. Unavailable mandatory roles return capability-blocked. Durable workflow state uses case-v2 bundles only; a completed method still returns its result when Writer persistence fails, clearly marked unsaved, while dependent continuity waits for transaction readback. Init and Update can semantically migrate one explicitly authorized legacy project root into case-v2. You choose scope and authorize effects; Claude Code remains in control of tools and permissions.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [

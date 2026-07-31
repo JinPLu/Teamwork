@@ -310,7 +310,10 @@ teamwork_markdown_agent_file_is_recognized() {
   local agent="$2"
   [[ -f "$path" ]] \
     && grep -Fqx "name: $agent" "$path" \
-    && grep -Eq '^You are the Teamwork .+ leaf role\.$' "$path" \
+    && {
+      grep -Eq '^You are the Teamwork .+ leaf role\.$' "$path" \
+        || { [[ "$agent" == "debugger" ]] && grep -Fqx 'You are Teamwork Debugger.' "$path"; }
+    } \
     && grep -Fq 'Do not spawn or delegate.' "$path"
 }
 

@@ -24,10 +24,11 @@
   "must": [
     "freeze the terminal workflow packet, overlap only answer-invariant delivery while Writer runs, and claim saved or durable only after Writer joins and transaction readback completes",
     "persist terminal Research, Debug, Plan, Review, mutating Init, or mutating Update artifacts only through case-inspect -> case-schema <operation> -> case-apply/readback with Writer and transaction-derived destination registration",
-    "in v2 projects, route generic workflow artifacts only into transaction-derived case evidence, plan, review, result, or receipt sinks"
+    "in v2 projects, route generic workflow artifacts only into transaction-derived case evidence, plan, review, result, or receipt sinks",
+    "if Writer, transaction, or readback is unavailable or fails, still return the core workflow result and explicitly mark it unsaved"
   ],
   "must_not": [
-    "claim durability before case-apply readback, hand-author artifact paths, bypass the case manifest or root index registration, fall back to Root or Worker writes, implement, infer release authority, or write one request to both legacy-v1 and v2 case-bundle trees"
+    "claim durability before case-apply readback, hand-author artifact paths, bypass the case manifest or root index registration, fall back to Root or Worker writes after Writer or transaction failure, implement, infer release authority, or write one request to both legacy-v1 and v2 case-bundle trees"
   ],
   "platforms": [
     "codex",

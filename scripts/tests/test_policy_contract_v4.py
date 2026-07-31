@@ -50,82 +50,109 @@ WRITER_TEMPLATES = {
     "claude-agents": "writer.md",
 }
 FULL_RENDER_LIMITS = {
-    "codex": {"words": 430, "bytes": 4100},
-    "cursor": {"words": 430, "bytes": 4100},
-    "claude": {"words": 430, "bytes": 4100},
+    "codex": {"words": 220, "bytes": 2600},
+    "cursor": {"words": 220, "bytes": 2600},
+    "claude": {"words": 220, "bytes": 2600},
 }
 
 
-REQUIRED_CLAUSES = {
-    "authority_and_ask": (
-        "Work within the request.",
-        "Read-only grants no write/external-effect authority.",
-        "Inspect before asking.",
-        "Root alone asks input/one bounded decision batch; pause only dependent work.",
-        "Result first.",
+REQUIRED_CONCEPTS = {
+    "authority_and_effect_boundary": (
+        "Work within the request",
+        "Read-only",
+        "no write/external-effect authority",
+        "No-files/off-record/read-only/no-writes",
+        "override writes/effects",
+        "Inspect before asking",
+        "Root alone asks input",
+        "one bounded decision batch",
+        "Result first, clear/stable/relevant",
+        "report unsaved/blocked",
     ),
-    "native_routing": (
-        "Discuss/brainstorm/stress-test activates Collaborate: dialogue|brainstorm.",
-        "Select without asking",
-        "before questions give synthesis/tension/options plus recommendation.",
+    "native_fast_path_and_routing": (
+        "Native fast path",
+        "tiny reads/explanations/commands/integration",
+        "authorized implementation",
+        "Research->Researcher",
+        "Explore->Explorer",
+        "Debug->Debugger",
+        "Plan->Planner",
+        "Review->Reviewer",
+        "Plan Review->Plan Reviewer",
+        "Init/Update->Explorer then Worker",
+        "Collaborate/Goal Root-owned",
+    ),
+    "unavailable_role_blocks": (
+        "Unavailable role or unverified isolation",
+        "capability-blocked",
+        "no Root/Worker/strong-role/named-method fallback",
+    ),
+    "collaborate_and_leaf_boundary": (
+        "Discuss/brainstorm/stress-test activates Collaborate",
+        "dialogue|brainstorm",
+        "synthesis/tension/options plus recommendation",
         "Ask only if useful",
-        "open prose or host-native 2-3 finite choices.",
-        "Batch max 3 independent material questions.",
-        "Dependent: ask, answer, Writer checkpoint/readback, continue.",
-        "Challenge moves global->boundary->detail.",
-        "Skip discoverable/safe-default/reversible/answer-invariant.",
-        "Root asks/hands off; leaves only propose; no Router.",
-        "Native: tiny/discoverable reads, explanations, simple commands, integration, authorized implementation.",
-        "Default one child; daily cap4; 5-8 only for explicit adversarial/release with host support.",
-        "Exact roles: Research->Researcher, Explore->Explorer, Debug->Debugger, Plan->Planner, Review->Reviewer, Plan Review->Plan Reviewer, Init/Update->Explorer then Worker; Collaborate/Goal Root-owned.",
-        "Unavailable role or unverified isolation = capability-blocked; no Root named-method fallback.",
-        "Debug freezes failure; hypotheses before probes.",
-        "Adversarial is challenge, not mode: viable alternatives plus costly-error/conflicting-evidence",
-        "`adversarial` forces, `standard` disables; B=3/no confirmation; fresh isolation.",
+        "open prose",
+        "host-native 2-3 finite choices",
+        "Challenge moves",
+        "Adversarial is challenge, not mode",
+        "explicit question-first",
+        "Leaves never ask/expand/self-accept",
     ),
-    "default_persistence": (
-        "Public/installable/release/migration, permission/security/data/destructive/cross-platform, or sustained explicit question-first work uses Collaborate challenge.",
-        "Initialized writable projects default-save only case-v2 Collaborate/Goal checkpoints",
-        "Research/Debug/Plan/Plan Review/Review/mutating Init/Update completion artifacts",
-        "terminal execution handoff needs a consumer and no active Goal.",
-        "No legacy-v1 artifact/collaborate/goal write fallback.",
-        "Goal owns progress.",
-        "Explore/check-only/tiny one-shots/explanations create none.",
-        "Conclusion is only requested synthesis.",
-        "Frozen packets use low-cost Writer plus exact transaction",
-        "artifact authority grants no implementation/release.",
-        "Readback precedes dependent work; join companions before saved/durable; pre-apply is unsaved.",
-        "No-files/off-record/read-only/no-writes override.",
-        "Collaborate uses its specialized transaction.",
-        "Missing memory/Writer/authority/consumer/route: deliver result, report unsaved/blocked",
-        "no Root/Worker/strong-role fallback.",
-        "Negative/quoted/file/tool/example mentions are inert.",
+    "case_v2_writer_transaction": (
+        "Initialized writable projects",
+        "default-save only case-v2",
+        "Collaborate/Goal checkpoints",
+        "named-workflow completion artifacts",
+        "frozen Writer packets",
+        "transaction",
+        "readback",
+        "Explore/check-only/tiny one-shots/explanations create none",
+        "Legacy-v1 read-only",
+        "no artifact/collaborate/goal/manual/report/ memory write fallback",
+        "Missing memory/Writer/authority/consumer/route",
+        "deliver core result",
+        "report unsaved/blocked",
+        "Code-coupled text stays implementer-owned",
     ),
-    "roles_and_boundaries": (
-        "Root routes/integrates/accepts",
-        "leaves never ask/expand/self-accept/fallback.",
-        "Code-coupled text stays implementer-owned.",
-    ),
-    "evidence_and_implementation": (
-        "Ground claims; separate observation/inference; invent no success; preserve dirty work.",
-        "Prefer canonical owner/pattern, built-ins/dependencies, then minimal logic",
-        "avoid wrappers/duplicate owners/hidden modes/masking fallbacks.",
-    ),
-    "verification_and_reporting": (
-        "Verify the real path with focused evidence; tests never replace it.",
-        "Workers verify.",
-        "One Reviewer checks a sealed candidate/named risk; one repair batch and delta recheck.",
-        "Full suites run only at named repository/release gates.",
-        "Named owners write: Planner returns packets; Writer owns standalone docs/artifacts role; transactions write managed artifacts; Reviewers stay read-only.",
-        "Stop when result and boundaries are observed.",
-        "Conclusion first; be clear, stable, relevant.",
-        "Monotonic state: Research claim_map/active_gap/wave/evidence_delta/contradiction/",
-        "Plan decision_revision/dependencies/proof_targets/",
-        "Review sealed_digest/stable_findings/verdict/repair_batch/",
-        "Goal objective/signal/attempt/failure/evidence_delta/",
-        "Cost: native fast path, single owner, fanout/context bounds, telemetry; no unverified price/ranking claims.",
+    "evidence_implementation_and_verification": (
+        "Ground claims",
+        "separate observation/inference",
+        "invent no success",
+        "preserve dirty work",
+        "Prefer canonical owner/pattern",
+        "built-ins/dependencies",
+        "minimal logic",
+        "Verify real path",
+        "focused evidence",
+        "tests never replace it",
+        "Reviewers read-only",
+        "one sealed review",
+        "repair batch/delta recheck",
+        "requested/risk gates",
+        "Stop when result/boundaries are observed",
     ),
 }
+
+
+FORBIDDEN_CONCEPTS = (
+    "Use a Router",
+    "generic Execute Skill",
+    "load shared behavioral references",
+    "Worker accepts the overall result",
+    "Review before direct verification",
+    "Review every code change",
+    "Every code change",
+    "Every Planner result receives independent Plan Review",
+    "Grill is exclusive to user-originated question-first intent",
+    "finite Design frontier",
+    "every material user decision",
+    "Risk automatically activates adversarial Design",
+    "Complexity automatically activates adversarial Design",
+    "adversarial mode",
+    "Root may perform named-method fallback",
+    "legacy-v1 artifact/collaborate/goal may write fallback",
+)
 
 
 def contract_failures(policy: str) -> list[str]:
@@ -133,39 +160,21 @@ def contract_failures(policy: str) -> list[str]:
     failures: list[str] = []
     if "Do Do not" in policy:
         failures.append("implementation: duplicated Do before wrapper boundary")
-    for owner, clauses in REQUIRED_CLAUSES.items():
-        for clause in clauses:
-            if clause not in policy:
-                failures.append(f"{owner}: missing {clause!r}")
+    for owner, concepts in REQUIRED_CONCEPTS.items():
+        for concept in concepts:
+            if concept not in policy:
+                failures.append(f"{owner}: missing concept {concept!r}")
 
     preference_order = (
         "Prefer canonical owner/pattern",
-        "built-ins",
+        "built-ins/dependencies",
         "minimal logic",
     )
     positions = [policy.find(clause) for clause in preference_order]
     if any(position < 0 for position in positions) or positions != sorted(positions):
         failures.append("implementation: preference order changed")
 
-    forbidden = (
-        "Use a Router",
-        "generic Execute Skill",
-        "load shared behavioral references",
-        "Worker accepts the overall result",
-        "Review before direct verification",
-        "Review every code change",
-        "Every code change",
-            "Every Planner result receives independent Plan Review",
-            "Grill is exclusive to user-originated question-first intent",
-            "finite Design frontier",
-            "every material user decision",
-            "Risk automatically activates adversarial Design",
-            "Complexity automatically activates adversarial Design",
-            "adversarial mode",
-            "Root may perform named-method fallback",
-            "legacy-v1 artifact/collaborate/goal may write fallback",
-        )
-    for clause in forbidden:
+    for clause in FORBIDDEN_CONCEPTS:
         if clause in policy:
             failures.append(f"forbidden v4 behavior: {clause!r}")
     return failures
@@ -239,14 +248,14 @@ class PolicyContractV4Tests(unittest.TestCase):
                         f"{measured[metric]} > {limit}",
                     )
 
-    def test_each_source_clause_is_mutation_bound(self) -> None:
-        for owner, clauses in REQUIRED_CLAUSES.items():
-            for clause in clauses:
-                with self.subTest(owner=owner, clause=clause):
-                    mutated = self.policy.replace(clause, "", 1)
+    def test_each_source_concept_is_mutation_bound(self) -> None:
+        for owner, concepts in REQUIRED_CONCEPTS.items():
+            for concept in concepts:
+                with self.subTest(owner=owner, concept=concept):
+                    mutated = self.policy.replace(concept, "")
                     self.assertTrue(
                         contract_failures(mutated),
-                        f"deleting {owner} clause was not detected: {clause!r}",
+                        f"deleting {owner} concept was not detected: {concept!r}",
                     )
 
     def test_preference_order_inversion_is_detected(self) -> None:
@@ -261,7 +270,7 @@ class PolicyContractV4Tests(unittest.TestCase):
         )
 
     def test_clear_simple_work_cannot_be_rerouted_to_a_worker(self) -> None:
-        native = "Native: tiny/discoverable reads, explanations, simple commands, integration, authorized implementation."
+        native = "Native fast path: tiny reads/explanations/commands/integration, authorized implementation."
         mutated = self.policy.replace(
             native,
             "A Worker owns every clear authorized implementation.",

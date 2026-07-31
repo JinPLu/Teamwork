@@ -62,6 +62,17 @@ which hypotheses each possible result supports or rejects. Every command, probe,
 Explorer question, Research question, or human observation must name the active
 `H-*` evidence gap. No hypothesis mapping means no probe.
 
+### Runtime Log-First
+
+For an unknown runtime, state, data-flow, event-flow, async, or UI failure under
+`instrument` or `fix` authority, make the default active experiment a temporary
+structured log at the nearest owned boundary. Give the experiment a stable
+`E-*` ID, log only the fields needed to distinguish the leading hypotheses, and
+preserve its raw result. Skip code instrumentation only when existing evidence already decides
+a named `H-*` gap; state that evidence and the hypotheses it distinguishes.
+Under `observe`, never add logs: use existing evidence or return `blocked` with
+the exact missing discriminator.
+
 After the observation, update the ledger exactly once: `supported`, `weakened`,
 or `rejected`, with direct evidence. The live set must shrink, the causal
 boundary must move, or the next experiment must change. Two consecutive
@@ -73,13 +84,15 @@ with the missing discriminator instead of expanding the search.
 1. Capture the actual failing command or interaction, environment, expected and
    observed result, and first relevant error. Reproduce when safe; do not swap in
    a synthetic target.
-2. Trace from failing boundary to current owner. Inspect local source,
-   configuration, tests, logs, runtime state, and recent changes before asking.
-   Treat summaries as leads, not proof.
-3. Apply the Hypothesis Gate, then run only the smallest observation that
-   distinguishes the leaders. Change one variable at a time. Add temporary
-   instrumentation only under `instrument` or `fix` authority and only when
-   current evidence cannot decide the next action. Load
+2. Apply the Hypothesis Gate. Freeze the ranked `H-*` ledger and select the
+   active evidence gap before further inspection, instrumentation, or repair.
+3. Trace from the failing boundary to the current owner only through that named
+   `H-*` gap. Map every source/configuration/test/log/runtime inspection and
+   command to it, then run the smallest observation that distinguishes the
+   leaders. Treat summaries as leads, not proof, and change one variable at a
+   time. For an eligible runtime failure under `instrument` or `fix` authority,
+   use the Runtime Log-First experiment unless decisive existing evidence
+   already distinguishes the named hypotheses; record any skip rationale. Load
    `references/runtime-diagnosis.md` only for that instrumented runtime path.
 4. Update supported and rejected hypotheses. Confirm a cause only when the
    observation discriminates it from the remaining leaders and locates the
@@ -124,6 +137,9 @@ Debug Findings
 - Expected / Observed / First Error:
 - Ranked Hypotheses:
 - Active Discriminating Experiment:
+- Experiment Card / Instrumentation Decision:
+- Raw Observation:
+- Hypothesis Update:
 - Evidence:
 - Supported Cause:
 - Rejected Hypotheses:
@@ -162,5 +178,7 @@ diagnosis grants no new effect authority. If the safe fix would change accepted
 behavior, contracts, data, permissions, or scope, stop and name that decision.
 
 Finish with the cause and direct evidence, the exact fix if authorized, the real
-rerun result, and any specific remaining blocker. Stop as soon as the requested
-path works or no safe evidence-backed next action remains.
+rerun result, and any specific remaining blocker. The experiment card, raw
+observation, hypothesis update, and probe cleanup are externally auditable work
+state, never implicit reasoning. Stop as soon as the requested path works or no
+safe evidence-backed next action remains.

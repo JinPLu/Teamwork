@@ -191,6 +191,7 @@ reserved for explicit adversarial or release work when the host supports them.
 ## 🗃️ Persistence and safety boundaries
 
 - In an initialized writable project, named Teamwork workflows save reusable checkpoints or results by default. One-shot explanations, small edits, and ordinary local work do not force a document.
+- A completed method result is returned even if Writer, transaction, or readback is unavailable, with persistence reported honestly as unsaved. Only a next step that actually depends on durable continuity waits for readback; there is no direct-write fallback.
 - Explicit `no files`, off-record, read-only, or no-write instructions override default persistence.
 - Research, Collaborate, Plan, diagnostic Debug, and Review do not automatically authorize code edits or external effects. Accepting a plan does not authorize execution.
 - v6 normal runtime uses only v2 case bundles to keep one matter's collaboration, evidence, plan, review, Goal, and result under `docs/teamwork/cases/`. legacy-v1, old grill, Discussion, and Design records are Init/Update semantic migration inputs only, not a compatible runtime mode.

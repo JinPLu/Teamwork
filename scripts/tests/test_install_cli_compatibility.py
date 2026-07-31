@@ -403,6 +403,24 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         self.assertIn('name = "teamwork_writer"', codex_writer)
         self.assertIn("Do not spawn or delegate.", codex_writer)
 
+    def test_all_install_can_refresh_owned_debugger_agents(self) -> None:
+        home = self.base / "all-install-debugger-idempotent"
+        first = self.run_install("all", home=home)
+        self.assertEqual(first.returncode, 0, first.stdout.decode())
+
+        second = self.run_install("all", home=home)
+        self.assertEqual(second.returncode, 0, second.stdout.decode())
+
+        for relative in (
+            ".cursor/agents/debugger.md",
+            ".claude/agents/debugger.md",
+        ):
+            with self.subTest(agent=relative):
+                rendered = (home / relative).read_text(encoding="utf-8")
+                self.assertIn("name: debugger\n", rendered)
+                self.assertIn("You are Teamwork Debugger.", rendered)
+                self.assertIn("Do not spawn or delegate.", rendered)
+
     def test_owned_skill_content_drift_is_refreshed(self) -> None:
         home = self.base / "drifted-home"
         installed = self.run_install("--no-codex-routing", "codex", home=home)

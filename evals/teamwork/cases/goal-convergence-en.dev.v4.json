@@ -17,7 +17,8 @@
   },
   "id": "goal-convergence-en",
   "must": [
-    "preserve scope, change strategy after failed evidence, and stop only on the real success signal"
+    "preserve scope from the explicit entry, record failed evidence and failure class before changing strategy, then stop only on the real success signal",
+    "avoid repeating an attempt that produced no progress or no new evidence"
   ],
   "must_not": [
     "invent new authority, repeat a no-progress attempt, or mark completion from narration"
@@ -53,7 +54,7 @@
       "source": "scripts/discussion-transaction.py"
     }
   ],
-  "prompt": "Keep working until the named regression test passes, without changing the accepted scope.",
+  "prompt": "Keep working from the explicit Goal entry until the named regression test passes. Preserve scope, classify the failed evidence, record the strategy delta before retrying, and mark complete only after the real success signal.",
   "source": "trajectory",
   "split": "dev"
 }

@@ -18,10 +18,11 @@
   "id": "persistence-specialized-artifact-writer",
   "must": [
     "persist specialized Collaborate or Goal lifecycle checkpoints through their managed case-schema <collaborate-upsert> -> case-apply/readback route with Writer as caller, transaction as filesystem writer, and readback before any durable claim",
-    "in v2 projects, route specialized checkpoints only to transaction-derived case live collaborate, decision, or live goal slots"
+    "in v2 projects, route specialized checkpoints only to transaction-derived case live collaborate, decision, or live goal slots",
+    "if Writer, transaction, or readback is unavailable or fails, still return the core Collaborate or Goal result and explicitly mark it unsaved"
   ],
   "must_not": [
-    "save specialized artifacts through generic workflow artifacts, hand-author Markdown or indexes, restore a public Collaborate/legacy-v1 discussion route, implement, infer release authority, or write one request to both legacy-v1 and v2 case-bundle trees"
+    "save specialized artifacts through generic workflow artifacts, hand-author Markdown or indexes, restore a public Collaborate/legacy-v1 discussion route, fall back to Root or Worker writes after Writer or transaction failure, implement, infer release authority, or write one request to both legacy-v1 and v2 case-bundle trees"
   ],
   "platforms": [
     "codex",

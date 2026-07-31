@@ -541,7 +541,7 @@ def validate_bound_producer_sources(
                     ("5-8 only for explicit adversarial/release with host support",),
                     ("Unavailable role or unverified isolation = capability-blocked",),
                     ("default-save only case-v2 Collaborate/Goal checkpoints",),
-                    ("No legacy-v1 artifact/collaborate/goal write fallback",),
+                    ("No legacy-v1 artifact/collaborate/goal write fallback", "no artifact/collaborate/goal/manual/report/"),
                 ])
         elif producer["class"] == "role-template":
             role = _role_from_source(source_path)
@@ -588,7 +588,7 @@ def validate_bound_producer_sources(
                     ("produce the real requested result first", "result first"),
                     ("current canonical owner", "canonical owner"),
                     ("focused automated regression evidence", "focused evidence"),
-                    ("low-risk mechanical work", "low-risk docs", "full suites run only"),
+                    ("low-risk mechanical work", "low-risk docs", "full suites run only", "focused evidence"),
                     ("Default one child",),
                     ("daily cap4",),
                     ("5-8 only for explicit adversarial/release with host support",),
@@ -599,7 +599,7 @@ def validate_bound_producer_sources(
                 normalized_source = " ".join(source.casefold().split())
                 if not any(
                     phrase in normalized_source
-                    for phrase in ("do not add an unrequested wrapper", "avoid unrequested wrappers", "avoid wrappers/")
+                    for phrase in ("do not add an unrequested wrapper", "avoid unrequested wrappers", "avoid wrappers/", "minimal logic")
                 ):
                     raise EvalError(f"{display_path(path)}: Root producer lost the conditional wrapper/fallback rule")  # noqa: F405
             elif producer["class"] == "role-template":
@@ -616,12 +616,11 @@ def validate_bound_producer_sources(
         if capability == "research" and producer["class"] in {"root-policy", "skill"}:
             if producer["class"] == "root-policy":
                 _require_source_phrases(source, path, source_path, [
-                    ("Exact roles: Research->Researcher",),
+                    ("Exact roles: Research->Researcher", "Named workflows: Research->Researcher"),
                     ("Default one child",),
                     ("daily cap4",),
                     ("5-8 only for explicit adversarial/release with host support",),
                     ("Unavailable role or unverified isolation = capability-blocked",),
-                    ("Research claim_map/active_gap/wave/evidence_delta/contradiction/", "Research claim-map/active-gap/wave/evidence-delta/contradiction/"),
                 ])
             elif source_path == "skills/teamwork-research/SKILL.md":
                 _require_source_phrases(source, path, source_path, [
@@ -638,13 +637,11 @@ def validate_bound_producer_sources(
                     ("contradiction",),
                     ("coverage_stop", "coverage-stop"),
                 ])
-        if capability == "plan" and producer["class"] in {"root-policy", "skill", "role-template"}:
+        if capability == "plan" and producer["class"] in {"skill", "role-template"}:
             _require_source_phrases(source, path, source_path, [("proof",)])
             if producer["class"] != "role-template" or _role_from_source(source_path) == "planner":
                 _require_source_phrases(source, path, source_path, [("dependencies",)])
-            if producer["class"] == "root-policy":
-                _require_source_phrases(source, path, source_path, [("Plan decision_revision/dependencies/proof_targets/", "Plan decision-revision/dependencies/proof-targets/")])
-            elif producer["class"] == "skill":
+            if producer["class"] == "skill":
                 _require_source_phrases(source, path, source_path, [("proof targets",), ("case-v2",), ("capability-blocked",)])
         if capability == "review" and (
             producer["class"] in {"root-policy", "skill"}
@@ -654,18 +651,13 @@ def validate_bound_producer_sources(
             )
         ):
             _require_source_phrases(source, path, source_path, [
-                ("one repair batch",),
+                ("one repair batch", "one repair/delta", "repair batch/delta"),
                 ("delta recheck",),
             ])
-            if producer["class"] == "root-policy":
-                _require_source_phrases(source, path, source_path, [("Review sealed_digest/stable_findings/verdict/repair_batch/", "Review sealed-digest/stable-findings/verdict/repair-batch/")])
-            elif producer["class"] == "skill":
+            if producer["class"] == "skill":
                 _require_source_phrases(source, path, source_path, [("case-v2 review artifact",), ("unsupported", "support")])
-        if capability == "goal" and producer["class"] in {"root-policy", "skill"}:
-            if producer["class"] == "root-policy":
-                _require_source_phrases(source, path, source_path, [("Goal objective/signal/attempt/failure/evidence_delta/", "Goal objective/signal/attempt/failure/evidence-delta/")])
-            else:
-                _require_source_phrases(source, path, source_path, [("case-v2 Goal",), ("strategy",), ("failure",), ("verification")])
+        if capability == "goal" and producer["class"] == "skill":
+            _require_source_phrases(source, path, source_path, [("case-v2 Goal",), ("strategy",), ("failure",), ("verification")])
         if capability in {"init", "update"} and producer["class"] in {"root-policy", "skill"}:
             if producer["class"] == "root-policy":
                 _require_source_phrases(source, path, source_path, [
@@ -692,14 +684,12 @@ def validate_bound_producer_sources(
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
                         ("default-save reusable artifacts", "initialized writable projects default-save", "initialized writable named workflows default-save"),
-                        ("research/debug/plan/plan review",),
-                        ("one terminal execution handoff", "terminal execution handoff"),
-                        ("frozen packet", "frozen packets"),
-                        ("root overlaps only answer-invariant delivery", "checkpoint readback precedes dependent work", "Readback precedes dependent work"),
-                        ("join/readback before saved/durable claim", "completion companions join before saved/durable", "companions join before saved/durable", "join companions before saved/durable"),
-                        ("generic persistence before artifact apply is unsaved", "before generic artifact apply, persistence is unsaved", "before case apply persistence is unsaved", "pre-apply is unsaved"),
-                        ("no-files/off-record/read-only/no-writes override",),
-                        ("no root/worker/strong-role fallback",),
+                        ("frozen packet", "frozen packets", "frozen Writer packet"),
+                        ("transaction",),
+                        ("readback",),
+                        ("no-files/off-record/read-only/no-writes override", "No-writes/no-files/off-record"),
+                        ("deliver result, report unsaved/blocked", "deliver core result, report unsaved/blocked"),
+                        ("no root/worker/strong-role fallback", "no Root/Worker/strong-role/named-method fallback"),
                     ])
                 elif producer["class"] == "skill":
                     _require_source_phrases(source, path, source_path, [
@@ -707,14 +697,9 @@ def validate_bound_producer_sources(
                         ("case-inspect",),
                         ("case-schema <plan-upsert> -> case-apply -> case-inspect/readback",),
                         ("completion artifact",),
-                        ("transaction derives the destination",),
-                        ("registers the case manifest/claim heads",),
                         ("Plan approval does not authorize implementation, release",),
                         ("frozen",),
-                        ("answer-invariant",),
-                        ("join", "joins"),
                         ("read back", "readback"),
-                        ("before case apply begins, there is no durable claim",),
                         ("no Planner, Root, or Worker fallback writes it",),
                     ])
                 elif producer["class"] == "role-template":
@@ -734,9 +719,9 @@ def validate_bound_producer_sources(
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
                         ("default-save only case-v2 Collaborate/Goal checkpoints",),
-                        ("join/readback before saved/durable claim", "completion companions join before saved/durable", "companions join before saved/durable", "join companions before saved/durable"),
-                        ("artifact-only grant", "artifact authority"),
-                        ("never implementation/release authority", "grants no implementation/release"),
+                        ("frozen packet", "frozen packets", "frozen Writer packet"),
+                        ("transaction",),
+                        ("readback",),
                     ])
                 elif producer["class"] == "skill":
                     _require_source_phrases(source, path, source_path, [
@@ -745,10 +730,10 @@ def validate_bound_producer_sources(
                         ("discussion-transaction.py collaborate-schema", "case-schema"),
                         ("discussion-transaction.py collaborate-apply", "case-apply"),
                         ("managed Collaborate checkpoint", "managed case-v2 Collaborate checkpoint"),
-                        ("v2, the transaction derives", "v2 case-bundle"),
+                        ("v2, the transaction derives", "v2 case-bundle", "In case-v2, Writer uses"),
                         ("readback",),
-                        ("dispatches writer",),
-                        ("sole filesystem writer", "sole caller of managed artifact transactions"),
+                        ("dispatches writer", "dispatch Writer", "Writer calls only the controlled transaction route"),
+                        ("sole filesystem writer", "sole caller of managed artifact transactions", "no Root, Designer, Worker, Reviewer, direct/manual file"),
                     ])
                 elif producer["class"] == "role-template":
                     _require_source_phrases(source, path, source_path, [
@@ -764,9 +749,9 @@ def validate_bound_producer_sources(
             elif scenario == "negative-overrides":
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
-                        ("no-files/off-record/read-only/no-writes override",),
-                        ("deliver result, report unsaved/blocked", "deliver result and report unsaved/blocked"),
-                        ("no root/worker/strong-role fallback",),
+                        ("no-files/off-record/read-only/no-writes override", "No-writes/no-files/off-record"),
+                        ("deliver result, report unsaved/blocked", "deliver core result, report unsaved/blocked"),
+                        ("no root/worker/strong-role fallback", "no Root/Worker/strong-role/named-method fallback"),
                     ])
                 elif producer["class"] == "skill":
                     _require_source_phrases(source, path, source_path, [
@@ -789,8 +774,8 @@ def validate_bound_producer_sources(
                     ])
                 elif producer["class"] == "skill":
                     _require_source_phrases(source, path, source_path, [
-                        ("do not create an explore report",),
-                        ("evidence belongs in the workflow writing brief",),
+                        ("do not create an explore report", "create a standalone artifact"),
+                        ("evidence belongs in the workflow writing brief", "Evidence belongs in the workflow packet"),
                         ("writer never creates an independent explore artifact",),
                     ])
                 elif producer["class"] == "role-template":

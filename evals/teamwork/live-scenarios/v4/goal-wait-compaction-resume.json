@@ -3,10 +3,10 @@
   "case_id": "goal-wait-compaction-resume",
   "private_paths": [],
   "files": [
-    {"path":"scenario/goal-input.txt","content":"Keep the explicit goal scope while changing strategy after a wait/resume boundary.\n"},
-    {"path":"scenario/goal-state.json","content":"{\"status\":\"active\",\"strategy_delta\":\"\"}\n"},
+    {"path":"scenario/goal-input.txt","content":"Goal entry: keep the explicit scope while changing strategy after a wait/resume boundary.\nObjective: produce scenario/goal-result.txt with EVIDENCE_GOAL_SUCCESS_V4 only after verification succeeds.\nSignal: python3 scenario/verify.py passes.\nFirst attempt must record failed evidence and a failure_class before any retry.\nDo not repeat a no-progress attempt.\n"},
+    {"path":"scenario/goal-state.json","content":"{\"objective\":\"produce verified goal result\",\"signal\":\"python3 scenario/verify.py passes\",\"status\":\"active\",\"strategy_delta\":\"\",\"attempts\":[]}\n"},
     {"path":"scenario/goal-result.txt","content":"PENDING\n"},
-    {"path":"scenario/verify.py","content":"import json\nfrom pathlib import Path\nstate = json.loads(Path('scenario/goal-state.json').read_text())\nassert state['status'] == 'completed'\nassert isinstance(state['strategy_delta'], str) and state['strategy_delta']\nassert 'EVIDENCE_GOAL_SUCCESS_V4' in Path('scenario/goal-result.txt').read_text()\n"}
+    {"path":"scenario/verify.py","content":"import json\nfrom pathlib import Path\nstate = json.loads(Path('scenario/goal-state.json').read_text())\nattempts = state.get('attempts')\nassert state.get('objective') == 'produce verified goal result'\nassert state.get('signal') == 'python3 scenario/verify.py passes'\nassert state.get('status') == 'completed'\nassert isinstance(state.get('strategy_delta'), str) and state['strategy_delta'].strip()\nassert isinstance(attempts, list) and len(attempts) >= 2\nfirst = attempts[0]\nsecond = attempts[1]\nassert first.get('status') == 'failed'\nassert isinstance(first.get('evidence_delta'), str) and first['evidence_delta'].strip()\nassert isinstance(first.get('failure_class'), str) and first['failure_class'].strip()\nassert 'no-progress' in first['failure_class'] or 'no progress' in first['failure_class']\nassert second.get('status') == 'succeeded'\nassert second.get('strategy') != first.get('strategy')\nassert second.get('success_signal') == 'EVIDENCE_GOAL_SUCCESS_V4'\nassert 'EVIDENCE_GOAL_SUCCESS_V4' in Path('scenario/goal-result.txt').read_text()\n"}
   ],
   "verification": {"argv":["python3","scenario/verify.py"],"immutable_paths":["scenario/verify.py"]}
 }

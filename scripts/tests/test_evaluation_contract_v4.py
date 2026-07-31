@@ -143,10 +143,11 @@ class EvaluationContractV4Tests(unittest.TestCase):
 
         source_path = "scripts/install/policy.sh"
         source = (ROOT / source_path).read_text(encoding="utf-8")
-        mutated = source.replace(
-            "open prose or host-native 2-3 finite\nchoices",
+        mutated = re.sub(
+            r"open prose or host-native 2-3 finite\s+choices",
             "all questions use prose;",
-            1,
+            source,
+            count=1,
         )
         self.assertNotEqual(source, mutated)
         with self.assertRaises(EvalError):
@@ -259,7 +260,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
         case = next(case for case in selected_cases("dev") if case["id"] == "native-quality-accepted-fallback")
         source_path = "scripts/install/policy.sh"
         source = (ROOT / source_path).read_text(encoding="utf-8")
-        mutated = source.replace("avoid wrappers/", "allow universal wrappers/", 1)
+        mutated = source.replace("minimal logic", "allow universal wrappers", 1)
         self.assertNotEqual(source, mutated)
         with self.assertRaisesRegex(EvalError, "conditional wrapper/fallback"):
             validate_bound_producer_sources(case, ROOT / "evals/teamwork/cases/native-quality-accepted-fallback.dev.v4.json", {source_path: mutated})
@@ -366,7 +367,10 @@ class EvaluationContractV4Tests(unittest.TestCase):
 
     def test_plan_option_discovery_regex_normalizes_whitespace(self) -> None:
         source = (ROOT / "skills/teamwork-plan/SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("Do\nnot compare options or hide it as an assumption.", source)
+        self.assertIn(
+            "Do not compare options or hide it as an assumption.",
+            " ".join(source.split()),
+        )
         validate_skill_source_contract("teamwork-plan", source)
 
         mutated = source + "\nPlanner may compare options and alternatives.\n"

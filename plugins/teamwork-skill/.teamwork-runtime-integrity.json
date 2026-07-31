@@ -2,7 +2,7 @@
   "files": {
     ".codex-plugin/plugin.json": {
       "mode": "0644",
-      "sha256": "0677745ca65ae30f4fc49f8aae2d0b5eb233767cef3e13c0b2a9d6b3efc88eb1"
+      "sha256": "028fb671ce3482ea66b53a2ebf9e0a8e991bd3dfb8145184b10a5d5a4df76b5b"
     },
     ".teamwork-plugin-runtime": {
       "mode": "0644",
@@ -10,7 +10,7 @@
     },
     "VERSION": {
       "mode": "0644",
-      "sha256": "cf3701cb2416e87a99c0e77dbd0518fc4fc27e390f025c024e6ed1c389c928e0"
+      "sha256": "0fd114b03452dc32b26bcb9f1094cb19bf4e3a477cd04cfe91f4a87e19fac5c1"
     },
     "evals/teamwork/ledgers/v4-capability-migration.jsonl": {
       "mode": "0644",
@@ -66,11 +66,11 @@
     },
     "scripts/install/policy.sh": {
       "mode": "0644",
-      "sha256": "078704146ee0554d4a29705655552a3b5734dd905dae78aa930e2f8fb0ecf95a"
+      "sha256": "d3e5ea987ba46e1c5c9cc224b0980806286ee5cc41c94fbde854defd844ef8bd"
     },
     "scripts/install/profiles.sh": {
       "mode": "0644",
-      "sha256": "e31899053deef8d58d10ee4cb07f87fb729bffde9a95ffaea8558540166fa097"
+      "sha256": "67a81bbdc674f29d536145e2217aa1a9daaf28474aa796f0732e2de4342ead25"
     },
     "scripts/install/targets.sh": {
       "mode": "0644",
@@ -106,7 +106,7 @@
     },
     "skills/teamwork-collaborate/SKILL.md": {
       "mode": "0644",
-      "sha256": "8fe20360bec7f5bf9d66f3b0a468d371e835b430d605873cb9a531ea004bce0e"
+      "sha256": "9db5520b31db0f32c57def040a8db5eb4b9c241c3fe6d8ef1f7bd401a745e4ed"
     },
     "skills/teamwork-collaborate/references/adversarial-search.md": {
       "mode": "0644",
@@ -114,31 +114,31 @@
     },
     "skills/teamwork-debug/SKILL.md": {
       "mode": "0644",
-      "sha256": "7aaf19850a93bdcc595e2efb4462305db4c0c662a3e17b04fba84a73f5631c87"
+      "sha256": "6b2715f30bbab343eed8565e18238935707505a41a1c95757423385da94de7c4"
     },
     "skills/teamwork-debug/references/runtime-diagnosis.md": {
       "mode": "0644",
-      "sha256": "c4e7f1cae71b63408b3dcc8fecf36cd88b45bca36eb002065f4002764e08295b"
+      "sha256": "0eb833c5af30be368fa98f8b69ea5baf897e5024d88ac5acbd8b117af30d645e"
     },
     "skills/teamwork-explore/SKILL.md": {
       "mode": "0644",
-      "sha256": "b07ebfd845b774f04459d907202f120e8d64e9c165b34eff78b73008a5e338ca"
+      "sha256": "5e9a734714dc784513282d1053a9d1e1ad0956b0132384e8d30a129b277472b2"
     },
     "skills/teamwork-goal/SKILL.md": {
       "mode": "0644",
-      "sha256": "ee0701c878d76f179e79639e129a6392f27e7ebed516845c2e9586bbe4ece43f"
+      "sha256": "d28b0372d3b7c89a1ff6be892853a2dd77565d3ce9def19de44732809c9c724b"
     },
     "skills/teamwork-init/SKILL.md": {
       "mode": "0644",
-      "sha256": "0f5c13b968af6a3564a87be91a01a1067f4ab81dc15df57ab025599d2a073a79"
+      "sha256": "60137bf06d9a7b565cb3ca63c40ebbcdccbeeb91054c2e2343bb1f4cf1814ade"
     },
     "skills/teamwork-plan/SKILL.md": {
       "mode": "0644",
-      "sha256": "53d400f6faa44f73a6b7e1ac68f80a837752f92a096bac9542efaeea7babaa23"
+      "sha256": "3cc3a73f3db6791b39a45ddc73ef516dc54b1815ef44f4bfe1ae5785b79fe583"
     },
     "skills/teamwork-research/SKILL.md": {
       "mode": "0644",
-      "sha256": "6a71338acae8a2c254b0586fa06c87b8b91fcdeb800c93c6b3506b43b8b8d846"
+      "sha256": "8436424568eba5f0e14b62615b719f641f8ca33d4b5fdc13b30a955848117801"
     },
     "skills/teamwork-research/references/deep-research.md": {
       "mode": "0644",
@@ -146,7 +146,7 @@
     },
     "skills/teamwork-review/SKILL.md": {
       "mode": "0644",
-      "sha256": "b5871d9fc2bc74cb32279b3e6830c0eb4b75acc1d1e4469a2b63f11ecd9e1ebf"
+      "sha256": "ef51fdc7dbb6eeadea2da8bd4176fa63df67c8433753c7ed8584bb6e734b1308"
     },
     "skills/teamwork-review/references/strict-review.md": {
       "mode": "0644",
@@ -154,11 +154,11 @@
     },
     "skills/teamwork-update/SKILL.md": {
       "mode": "0644",
-      "sha256": "7c1b8f441bbdd38821df97fcf2b5cc870c68a7cafdab5a2b59a793d43eb9867e"
+      "sha256": "7d3775f6ecea894b074fe117aab00c34716360dd9b6a2a6ef383ee35f5454328"
     },
     "templates/claude-agents/debugger.md": {
       "mode": "0644",
-      "sha256": "dc23e368a26a0d4aa0da31a91c97841ac78a381519cdc70d8ba0c2c499b20aac"
+      "sha256": "b78b3be529bc5be053dc20d3b33c321791aa4b1ddaa3b01453a949b1eaba2da3"
     },
     "templates/claude-agents/designer.md": {
       "mode": "0644",
@@ -194,7 +194,7 @@
     },
     "templates/codex-agents/teamwork-debugger.toml": {
       "mode": "0644",
-      "sha256": "1688bc1b6cc307dd417381e68803aba148715fe4bb8c6e6b7b8932694f547356"
+      "sha256": "a637d1a046658ab1e86495b611f1cea581c0214ded79c7b4fc42319779df3b1c"
     },
     "templates/codex-agents/teamwork-designer.toml": {
       "mode": "0644",
@@ -230,7 +230,7 @@
     },
     "templates/cursor-agents/debugger.md": {
       "mode": "0644",
-      "sha256": "dba6230f952accede8eb4484250848096ab142a686064960d8105eb34ae11767"
+      "sha256": "9cdea7ff8a568e7637ef4e8afcdd4671bd00b655cd86760641b502dc44b86eda"
     },
     "templates/cursor-agents/designer.md": {
       "mode": "0644",
@@ -289,8 +289,8 @@
       "sha256": "dc2700b7e267a81a56723ab6ac6312eff524e9d78bf3bcf273982bcfe264f758"
     }
   },
-  "manifest_sha256": "0677745ca65ae30f4fc49f8aae2d0b5eb233767cef3e13c0b2a9d6b3efc88eb1",
+  "manifest_sha256": "028fb671ce3482ea66b53a2ebf9e0a8e991bd3dfb8145184b10a5d5a4df76b5b",
   "marker": "TEAMWORK_CODEX_PLUGIN_RUNTIME=1",
   "schema_version": 1,
-  "version": "6.0.1"
+  "version": "6.1.0"
 }

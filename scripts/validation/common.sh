@@ -123,19 +123,19 @@ check_lean_policy() {
     "inspect before asking::inspect.{0,50}(before|prior to).{0,30}ask" \
     "bounded user-owned batch::root alone asks.{0,80}bounded decision batch" \
     "dependent work only::pause only dependent work" \
-    "local-native boundary::native:.{0,160}(tiny|discoverable).{0,160}authorized implementation" \
-    "external Research boundary::exact roles:.{0,80}research.?->.?researcher" \
+    "local-native boundary::native.{0,40}(tiny|discoverable).{0,160}authorized implementation" \
+    "external Research boundary::(exact roles|named workflows):.{0,80}research.?->.?researcher" \
     "Collaborate ownership::collaborate.{0,140}(dialogue|brainstorm|grill|decision)" \
     "Plan ownership::plan.?->.?planner" \
-    "sustained Collaborate persistence::sustained.{0,120}Collaborate.{0,120}(checkpoint|default.save)" \
+    "sustained Collaborate persistence::default.save.{0,120}Collaborate.{0,120}checkpoint" \
     "negative persistence override::no.files/off.record/read.only/no.writes override" \
     "evidence discipline::(separate observation/inference|distinguish observation from inference)" \
     "real-path verification::verify.{0,80}real path" \
     "support checks not delivery::tests.{0,100}(never replace|support delivery)" \
     "economic delegation::default one child.{0,80}daily cap4" \
     "root question ownership::(root owns user questions|root alone asks)" \
-    "conclusion-first replies::conclusion first" \
-    "reader-centered result::conclusion first.{0,80}(clear|stable|relevant)" \
+    "conclusion-first replies::(conclusion|result) first" \
+    "reader-centered result::(conclusion|result) first.{0,80}(clear|stable|relevant)" \
     "explicit logic::clear" \
     "stable terminology::stable" \
     "relevance gate::relevant"; do

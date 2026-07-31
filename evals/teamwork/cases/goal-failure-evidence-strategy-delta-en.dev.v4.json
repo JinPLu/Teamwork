@@ -13,7 +13,7 @@
     {"class": "role-template", "source": "templates/claude-agents/writer.md"}
   ],
   "platforms": ["codex", "cursor", "claude"],
-  "prompt": "Keep working until the named test passes; the first attempt produces no new evidence.",
+  "prompt": "Keep working until the named test passes. Start from the Goal entry objective and signal, record the first failed attempt evidence and failure class, choose a strategy delta before retrying, and stop only after the real success signal.",
   "expected": {
     "capability": "goal",
     "scenario": "failure-evidence-strategy-delta",
@@ -30,7 +30,12 @@
       "no-narrative-success-upgrade"
     ]
   },
-  "must": ["classify the failure and change strategy before the next attempt"],
-  "must_not": ["repeat a no-progress attempt or narrate success without the real signal"],
+  "must": [
+    "show entry, failed evidence, failure class, strategy delta, and real success signal in monotonic order",
+    "classify the failure and change strategy before the next attempt"
+  ],
+  "must_not": [
+    "repeat a no-progress attempt, leave the strategy unchanged after failed evidence, or narrate success without the real signal"
+  ],
   "evidence": "Static trajectory contract for monotonic Goal attempts."
 }

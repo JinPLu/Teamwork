@@ -178,9 +178,20 @@ class SkillTopologyV4Test(unittest.TestCase):
                     "Hypothesis Gate",
                     "rank three to five plausible hypotheses",
                     "one active discriminating experiment at a time",
+                    "Runtime Log-First",
+                    "event-flow",
+                    "temporary structured log",
+                    "Skip code instrumentation only when existing evidence already decides",
                     "`new-failure-split`",
                     "Do not invoke Reviewer",
                 ),
+            )
+            causal_loop = text.split("## Causal Loop", 1)[1]
+            self.assert_in_order(
+                causal_loop,
+                "Capture the actual failing",
+                "Apply the Hypothesis Gate",
+                "Trace from the failing boundary",
             )
             return
         if skill == "teamwork-review":
@@ -254,7 +265,17 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assert_in_order(text, "research brief", "source census", "claim ledger", "contradictions")
             return
         if (skill, reference) == ("teamwork-debug", "runtime-diagnosis.md"):
-            self.assert_has_fragments(text, ("fixed dispatch authority", "human-only", "Remove every temporary"))
+            self.assert_has_fragments(
+                text,
+                (
+                    "fixed dispatch authority",
+                    "Runtime Log-First",
+                    "event-flow",
+                    "temporary structured log",
+                    "human-only",
+                    "Remove every temporary",
+                ),
+            )
             return
         if (skill, reference) == ("teamwork-review", "strict-review.md"):
             self.assert_has_fragments(text, ("correctness first", "stable `R-*`", "read-only"))
