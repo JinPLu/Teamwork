@@ -169,8 +169,8 @@ preflight_managed_dependencies() {
     echo "python3 is required to verify managed GPU Broker health." >&2
     return 1
   fi
-  if ! command -v codegraph >/dev/null 2>&1 && ! command -v npm >/dev/null 2>&1; then
-    echo "CodeGraph is missing and npm is unavailable; cannot install $CODEGRAPH_PACKAGE@$CODEGRAPH_VERSION." >&2
+  if ! command -v npm >/dev/null 2>&1; then
+    echo "npm is required to refresh managed CodeGraph $CODEGRAPH_PACKAGE@$CODEGRAPH_VERSION." >&2
     return 1
   fi
   if ! command -v uv >/dev/null 2>&1; then
@@ -189,11 +189,7 @@ preflight_managed_dependencies() {
 }
 
 refresh_codegraph_dependency() {
-  if command -v codegraph >/dev/null 2>&1; then
-    codegraph upgrade "$CODEGRAPH_VERSION"
-  else
-    npm install --global "$CODEGRAPH_PACKAGE@$CODEGRAPH_VERSION"
-  fi
+  npm install --global "$CODEGRAPH_PACKAGE@$CODEGRAPH_VERSION"
   if [[ "$(codegraph_readiness)" != "ready" ]]; then
     echo "CodeGraph did not reach the required version $CODEGRAPH_VERSION." >&2
     return 1

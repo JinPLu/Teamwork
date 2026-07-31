@@ -754,8 +754,7 @@ class ManagedUpdateTargetTests(unittest.TestCase):
         self.write_command(
             "codegraph",
             """case \"${1:-}\" in
-  --version|version) echo 'codegraph 1.5.0' ;;
-  upgrade) echo \"codegraph $*\" >> \"$TEAMWORK_TEST_LOG\" ;;
+  --version|version) echo 'codegraph 0.9.6' ;;
 esac
 """,
         )
@@ -766,7 +765,6 @@ cat > \"$TEAMWORK_TEST_BIN/codegraph\" <<'EOF'
 #!/usr/bin/env bash
 case \"${1:-}\" in
   --version|version) echo 'codegraph 1.5.0' ;;
-  upgrade) echo \"codegraph $*\" >> \"$TEAMWORK_TEST_LOG\" ;;
 esac
 EOF
 chmod 755 \"$TEAMWORK_TEST_BIN/codegraph\"
@@ -843,7 +841,8 @@ esac
         )
         self.assertTrue((self.base / "home" / ".cursor" / "mcp.json").is_file())
         commands = self.log.read_text(encoding="utf-8")
-        self.assertIn("codegraph upgrade 1.5.0", commands)
+        self.assertIn("npm install --global @colbymchenry/codegraph@1.5.0", commands)
+        self.assertNotIn("codegraph upgrade", commands)
         self.assertIn(f"uv tool install --force {self.source}", commands)
         self.assertIn(
             f"gpu-broker daemon install --source-root {self.source}", commands
@@ -856,6 +855,30 @@ esac
         self.assertTrue((self.bin_dir / "codegraph").is_file())
         commands = self.log.read_text(encoding="utf-8")
         self.assertIn("npm install --global @colbymchenry/codegraph@1.5.0", commands)
+
+    def test_update_requires_npm_even_when_codegraph_is_present(self) -> None:
+        (self.bin_dir / "npm").unlink()
+        result = self.run_managed_update()
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("npm is required to refresh managed CodeGraph", result.stderr)
+        self.assertFalse((self.base / "home" / ".agents").exists())
+        self.assertFalse((self.base / "home" / ".cursor").exists())
+        self.assertFalse((self.base / "home" / ".claude").exists())
+
+    def test_codegraph_install_failure_prevents_downstream_writes(self) -> None:
+        self.write_command(
+            "npm",
+            "echo \"npm $*\" >> \"$TEAMWORK_TEST_LOG\"\nexit 1\n",
+        )
+        result = self.run_managed_update()
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        commands = self.log.read_text(encoding="utf-8")
+        self.assertIn("npm install --global @colbymchenry/codegraph@1.5.0", commands)
+        self.assertNotIn("uv tool install", commands)
+        self.assertNotIn("gpu-broker daemon install", commands)
+        self.assertFalse((self.base / "home" / ".agents").exists())
+        self.assertFalse((self.base / "home" / ".cursor").exists())
+        self.assertFalse((self.base / "home" / ".claude").exists())
 
 
 if __name__ == "__main__":

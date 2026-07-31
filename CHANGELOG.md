@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 6.1.2 - 2026-08-01
+
+**Teamwork 6.1.2 修复了旧版 CodeGraph 让全局更新过早停止的问题。**
+
+- **旧版兼容。** 即使已安装的 CodeGraph 没有 `upgrade` 子命令，`$teamwork-update` 仍可继续完成受管更新。
+- **安装方式统一。** Teamwork 现在固定通过 npm 安装受管的 CodeGraph 版本，使缺失与已安装的情况走同一可靠路径。
+- **失败顺序可预期。** 如果 CodeGraph 安装失败，更新会在刷新 GPU Broker 或写入 Teamwork 全局配置前停止。
+- **更新范围不扩张。** 本地 GPU Broker 继续仅从已解析的 companion 来源刷新，原有的 MCP 冲突保护保持不变。
+
+升级操作：通过你正在使用的 Marketplace 或 checkout 渠道更新到 6.1.2，然后运行 `$teamwork-update` 刷新全局配置。
+
+重要限制：该修复需要 npm 能安装 Teamwork 固定的 CodeGraph 版本；无法安装时会安全停止，不会尝试升级 npm、uv、驱动、CUDA 或其他无关工具。
+
 ## 6.1.1 - 2026-08-01
 
 **Teamwork 更新现在会同步修复全局配置与所需的本地协作依赖。**

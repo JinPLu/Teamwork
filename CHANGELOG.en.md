@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 6.1.2 - 2026-08-01
+
+**Teamwork 6.1.2 fixes an early global-update stop on older CodeGraph installations.**
+
+- **Older installations are compatible.** `$teamwork-update` now continues even when an installed CodeGraph has no `upgrade` subcommand.
+- **Installation is consistent.** Teamwork always installs its managed CodeGraph version through npm, giving absent and already-installed copies the same reliable path.
+- **Failures have a clear order.** If CodeGraph installation fails, the update stops before refreshing GPU Broker or writing Teamwork global configuration.
+- **Update scope does not expand.** The local GPU Broker still refreshes only from a resolved companion source, and existing MCP conflict protection remains in place.
+
+Upgrade action: update to 6.1.2 through the Marketplace or checkout channel you already use, then run `$teamwork-update` to refresh global setup.
+
+Important limit: this fix requires npm to install Teamwork's pinned CodeGraph version. If that cannot happen, the update stops safely and does not upgrade npm, uv, drivers, CUDA, or unrelated tools.
+
 ## 6.1.1 - 2026-08-01
 
 **Teamwork updates now repair both global setup and the local collaboration dependencies they require.**
