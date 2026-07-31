@@ -4,18 +4,31 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 6.0.1 - 2026-07-31
+
+**Teamwork 6.0.1 corrects the release notes so v6's research basis, everyday collaboration model, and cost controls are easier to understand.**
+
+- **The research grounding is now part of the release story.** Hypothesis-driven debugging, evidence-gap research, and independent review are explicitly connected to work such as ReAct, Reflexion, and CRITIC, plus practices from Cursor, Claude Code, Codex, and Agent Skills, instead of being presented only as internal machinery.
+- **Everyday collaboration boundaries are clearer.** Ordinary work continues to use GPT's native capabilities directly; a specialist agent is used only when its method or independent perspective adds material value, while stress-testing remains a challenge method inside Collaborate.
+- **The effort strategy is fully explained.** The default is one focused owner with bounded context and fan-out, increasing effort only when complexity or risk warrants it; existing model profiles are unchanged, and directional runtime observations are not presented as fixed price or speed promises.
+- **The upgrade boundary is unambiguous.** Normal operation has no legacy-configuration fallback; Init/Update import old project information once only after receiving authority for the exact project, and installing new Skills does not silently migrate a project.
+
+Upgrade action: existing 6.0.0 users do not need to migrate projects again or change model profiles; update through the existing channel only if you want the corrected release guidance bundled with 6.0.1.
+
+Important limit: this release-note fix does not change the 6.0.0 Skills, dispatch behavior, migration protocol, or model selection. External papers, product designs, and CodexRadar provide design evidence or directional observations; they do not mean Teamwork measured a fixed speedup, price advantage, or model ranking.
+
 ## 6.0.0 - 2026-07-30
 
-**Teamwork 6.0 moves normal runtime to case-v2 only, so collaboration, evidence, plans, reviews, Goal state, and results live under one matter container.**
+**Teamwork 6.0 strengthens how Skills reason and collaborate while keeping everyday work on GPT's native fast path.**
 
-- **Normal runtime uses only case-v2.** New Teamwork workflows no longer treat legacy-v1 as a compatible operating mode; one case bundle owns the related Collaborate, Research, Debug, Plan, Review, Goal, and execution result records.
-- **Old records are migration inputs only.** legacy-v1 and old grill/Discussion/Design records are read only by `$teamwork-init` or `$teamwork-update` semantic migration; install, update, or ordinary runtime does not claim a successful migration.
-- **Missing capabilities block explicitly.** Research, Explore, Debug, Plan, and Review must be handled by their owning leaf, and missing support returns capability-blocked. Collaborate and Goal remain Root-owned, while tiny reads, ordinary explanations, simple commands, clear authorized implementation, and integration stay on the native host path.
-- **Concurrency and state are more visible.** The default is 1 child and the everyday ceiling is 4; 5-8 children are reserved for explicit adversarial or release work when the host supports them. Research, Plan, Review, and Goal expose monotonic status, and Debug starts from hypotheses and reproduction.
+- **Debugging, research, and review now advance through evidence.** Debug forms falsifiable hypotheses before probes; Research converges through evidence gaps and contradictions; Review stays independently critical; and Goal records failure evidence before changing strategy. These choices draw on [ReAct](https://arxiv.org/abs/2210.03629), [Reflexion](https://arxiv.org/abs/2303.11366), [CRITIC](https://arxiv.org/abs/2305.11738), Cursor Debug/Plan, Agent Skills, and Claude Code/Codex subagent practices.
+- **Skills do not take over ordinary collaboration.** GPT still handles routine reads, explanations, simple commands, and clearly authorized implementation natively. A specialist agent is used only when a method, isolated context, or independent judgment adds value. Stress-testing also remains available as a bounded challenge/adversarial method inside Collaborate.
+- **Speed, quality, and cost are balanced by task.** The default is one focused specialist with bounded parallelism and context; higher effort and wider fan-out are reserved for complex, high-risk, explicit adversarial, or release work. `performance-first` and `cost-first` keep the existing model preferences instead of rewriting routing from volatile prices or leaderboards.
+- **Old projects migrate once and do not keep a dual runtime.** Teamwork provides no legacy runtime fallback. Init/Update reads old information only inside the exact project selected by the user, validates the candidate result, and safely imports it into the new format. After migration, every workflow uses the new matter record.
 
-Upgrade action: replace prompts that still depend on `$grill-me`, `$teamwork-discuss`, `$teamwork-design`, or legacy-v1 runtime routing with `$teamwork-collaborate`, case-v2 memory, and the owning workflow. Codex Marketplace users re-add `JinPLu/Teamwork`, install `teamwork-skill@teamwork`, and run `$teamwork-update` in a new task. Checkout users run `git pull --ff-only`, `./install.sh all`, and `./scripts/check-update.sh --readiness`.
+Upgrade action: replace old `$grill-me`, `$teamwork-discuss`, or `$teamwork-design` calls with `$teamwork-collaborate`. For an old project, update Teamwork and then run Init/Update inside that project to complete the one-time migration; installing a new version alone does not mean the project was migrated.
 
-Important limit: the v6 hard cut describes the runtime boundary; installing or updating does not mean any project has migrated. A project migration may be claimed only after successful Init/Update transaction readback for the exact project root. Init/Update migration remains a one-time operation with cold archive / restore drill boundaries. Teamwork does not promise exact CodexRadar prices or rankings; `performance-first` and `cost-first` keep the existing model preference mapping.
+Important limit: the papers and product designs above support method selection, not Teamwork-specific effect-size measurements. CodexRadar is used only as dynamic, directional runtime evidence. Teamwork does not promise fixed prices, latency, or model rankings, and v6 does not change the existing model profiles.
 
 ## 5.1.0 - 2026-07-30
 

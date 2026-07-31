@@ -4,18 +4,31 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 6.0.1 - 2026-07-31
+
+**Teamwork 6.0.1 修正发布说明，让 v6 的研究依据、日常协作方式和成本控制更容易理解。**
+
+- **研究依据进入发布说明。** 假设驱动调试、按证据缺口推进研究和独立复查等能力，现在明确对应 ReAct、Reflexion、CRITIC 等研究，以及 Cursor、Claude Code、Codex 和 Agent Skills 的实践，而不是只罗列内部机制。
+- **日常协作边界更清楚。** 普通任务继续直接发挥 GPT 的原生能力；只有专门方法或独立视角能带来实质收益时才调用对应 agent，压力测试仍由 Collaborate 内的 challenge 方法承接。
+- **投入策略被完整说明。** 默认采用一个聚焦 owner、受限上下文和受限并发，只在复杂度或风险需要时提高 effort；现有模型 profile 不变，也不把方向性运行观察写成固定价格或速度承诺。
+- **升级边界不再含混。** 正常运行不保留旧配置回退；Init/Update 只在获得精确项目授权后一次性导入旧项目信息，安装新 Skill 本身不会静默迁移项目。
+
+升级操作：运行中的 6.0.0 无需重新迁移项目或调整模型 profile；需要随安装包获取更正说明的用户，按现有渠道更新到 6.0.1。
+
+重要限制：这是发布说明修复，不改变 6.0.0 的 Skill、调度、迁移协议或模型选择。外部论文、产品设计和 CodexRadar 只提供设计依据或方向性观察，不代表 Teamwork 测得了固定的速度提升、价格优势或模型排名。
+
 ## 6.0.0 - 2026-07-30
 
-**Teamwork 6.0 切到 case-v2-only 运行模型，让协作、证据、计划、复查、Goal 和结果都落在同一个事项容器里。**
+**Teamwork 6.0 强化了 Skill 思考和协作的方法，同时让日常任务继续走 GPT 原生的快速路径。**
 
-- **普通运行只使用 case-v2。** 新的 Teamwork workflow 不再把 legacy-v1 当作兼容运行模式；同一事项的 Collaborate、Research、Debug、Plan、Review、Goal 和执行结果都归入 case bundle。
-- **旧记录只用于迁移输入。** legacy-v1 和旧 grill/Discussion/Design 记录只在 `$teamwork-init` 或 `$teamwork-update` 的语义迁移中读取；安装、更新或普通运行不会声称已经迁移成功。
-- **能力缺失会明确阻塞。** Research、Explore、Debug、Plan 和 Review 必须由对应 owning leaf 承接，缺少能力时返回 capability-blocked；Collaborate 和 Goal 仍由 Root 拥有，微小读取、普通解释、简单命令、清楚授权的实现和集成继续走宿主原生路径。
-- **并发和状态更可见。** 默认只派发 1 个 child，日常上限为 4；5-8 个 child 只在显式 adversarial 或 release 且宿主支持时使用。Research、Plan、Review 和 Goal 暴露单调状态，Debug 从假设和复现开始。
+- **调试、研究和复查开始沿证据推进。** Debug 会先建立可证伪假设再运行探针；Research 围绕证据缺口和矛盾逐步收敛；Review 保持独立批评，Goal 会记录失败证据并改变策略。这些设计吸收了 [ReAct](https://arxiv.org/abs/2210.03629)、[Reflexion](https://arxiv.org/abs/2303.11366)、[CRITIC](https://arxiv.org/abs/2305.11738)、Cursor Debug/Plan、Agent Skills 与 Claude Code/Codex subagent 的实践。
+- **日常协作不会被 Skill 接管。** 普通读取、解释、简单命令和清楚授权的实现仍由 GPT 原生完成；只有需要专业方法、隔离上下文或独立判断时才启用对应 agent。压力测试也没有消失，而是作为 Collaborate 内部有边界的 challenge/adversarial 方法继续使用。
+- **速度、质量和成本按任务权衡。** 默认只使用一个专注的专业 agent，并限制并行与上下文；只有复杂、高风险、明确对抗或发布任务才提高 effort 和并发。`performance-first` 与 `cost-first` 延续原有模型偏好，不根据易变的价格或排行榜自动改写路由。
+- **旧项目一次迁移，之后不再双轨运行。** Teamwork 不保留旧版运行回退；Init/Update 会在用户指定的精确项目中读取旧信息、验证候选结果并安全导入新格式。迁移成功后，所有 workflow 只使用新的事项记录。
 
-升级操作：把仍依赖 `$grill-me`、`$teamwork-discuss`、`$teamwork-design` 或 legacy-v1 运行路由的提示词改为 `$teamwork-collaborate`、case-v2 memory 和对应 workflow。Codex Marketplace 用户重新添加 `JinPLu/Teamwork`、安装 `teamwork-skill@teamwork`，并在新任务中运行 `$teamwork-update`；checkout 用户运行 `git pull --ff-only`、`./install.sh all` 和 `./scripts/check-update.sh --readiness`。
+升级操作：把旧的 `$grill-me`、`$teamwork-discuss` 或 `$teamwork-design` 调用改为 `$teamwork-collaborate`。旧项目先更新 Teamwork，再在该项目中运行 Init/Update 完成一次性迁移；安装新版本本身不等于项目已经迁移。
 
-重要限制：v6 hard cut 描述的是运行边界；安装或更新本身不代表任意项目已经迁移。只有针对精确 project-root 的 Init/Update transaction readback 成功后，才能声称该项目迁移完成。Init/Update 迁移仍是一次性操作，并保留 cold archive / restore drill 边界；Teamwork 不承诺 CodexRadar 的精确价格或排名，`performance-first` 和 `cost-first` 只保留既有模型偏好映射。
+重要限制：上述论文和产品设计支持的是方法选择，不是 Teamwork 自身的效果量测试。CodexRadar 只作为动态、方向性的运行观察；Teamwork 不承诺固定价格、延迟或模型排名，也没有在 v6 改写既有模型 profile。
 
 ## 5.1.0 - 2026-07-30
 

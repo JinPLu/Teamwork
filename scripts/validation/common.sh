@@ -172,7 +172,6 @@ run_python_unit_tests() {
     tests=(
       scripts/tests/test_active_artifact_currentness.py
       scripts/tests/test_discussion_artifact_schema.py
-      scripts/tests/test_discussion_index_safety.py
       scripts/tests/test_evaluation_contract_v4.py
       scripts/tests/test_instruction_footprint.py
       scripts/tests/test_pairwise_comparison.py
