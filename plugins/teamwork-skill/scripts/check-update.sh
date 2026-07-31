@@ -6,6 +6,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/install/policy.sh"
 # shellcheck source=install/profiles.sh
 source "$ROOT/scripts/install/profiles.sh"
+# shellcheck source=install/dependencies.sh
+source "$ROOT/scripts/install/dependencies.sh"
 GITHUB_REPO="${TEAMWORK_GITHUB_REPO:-https://github.com/JinPLu/Teamwork}"
 READINESS=0
 FETCH_UPSTREAM=1
@@ -171,6 +173,19 @@ codex_routing_status() {
       echo "invalid"
       ;;
   esac
+}
+
+cursor_mcp_status() {
+  local output
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "unavailable"
+    return 0
+  fi
+  if output="$(python3 "$ROOT/scripts/install/configure_cursor_mcp.py" --check 2>/dev/null)"; then
+    printf '%s\n' "${output:-ready}"
+  else
+    printf '%s\n' "${output:-invalid}"
+  fi
 }
 
 skills_status() {
@@ -697,7 +712,7 @@ plugin_notification_is_ready() {
 }
 
 print_plugin_readiness() {
-  local source_version marker profile notifications catalog cache legacy agents agent_content routing policy notification
+  local source_version marker profile notifications catalog cache legacy agents agent_content routing policy notification dependency_state
   source_version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
   marker="$(plugin_marker_status)"
   profile="$(plugin_marker_field profile 2>/dev/null || echo "unknown")"
@@ -711,6 +726,7 @@ print_plugin_readiness() {
   routing="$(codex_routing_status)"
   policy="$(policy_status codex)"
   notification="$(notification_status codex)"
+  dependency_state="$(managed_dependencies_status)"
 
   local ready=yes
   local missing=()
@@ -727,6 +743,8 @@ print_plugin_readiness() {
     ready=no
     missing+=("codex-notifications")
   fi
+  [[ "$dependency_state" == "ready" || "$dependency_state" == "skipped" ]] \
+    || { ready=no; missing+=("managed-dependencies"); }
 
   local manual_actions=("restart-codex")
   if [[ "$notifications" == "enabled" && "$notification" == "review-required" ]]; then
@@ -748,6 +766,14 @@ print_plugin_readiness() {
   echo "CODEX_ROUTING=$routing"
   echo "CODEX_POLICY=$policy"
   echo "CODEX_NOTIFICATIONS=$notification"
+  echo "MANAGED_DEPENDENCIES=$dependency_state"
+  echo "CODEGRAPH_VERSION=$(codegraph_version)"
+  echo "CODEGRAPH_READY=$(codegraph_readiness)"
+  echo "GPU_BROKER_SOURCE=$(gpu_broker_source_status)"
+  echo "GPU_BROKER_TOOL=$(gpu_broker_tool_status)"
+  echo "GPU_BROKER_DAEMON=$(gpu_broker_daemon_status)"
+  echo "GPU_BROKER_LIVE=$(gpu_broker_live_status)"
+  echo "GPU_BROKER_READY=$(gpu_broker_ready_status)"
   echo "MISSING=$(IFS=,; echo "${missing[*]-}")"
   echo "HOST_ACTIVATION=manual-action-required"
   echo "MANUAL_ACTIONS=$(IFS=,; echo "${manual_actions[*]}")"
@@ -776,7 +802,7 @@ print_plugin_report() {
 }
 
 print_readiness() {
-  local source_version profile codex_v cursor_v claude_v codex_notifications
+  local source_version profile codex_v cursor_v claude_v codex_notifications dependency_state cursor_mcp
   source_version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
   profile="$(source_profile)"
   codex_v="$(read_installed_version "$HOME/.agents/skills")"
@@ -822,6 +848,11 @@ print_readiness() {
   done
 
   codex_notifications="$(notification_status codex)"
+  dependency_state="$(managed_dependencies_status)"
+  cursor_mcp="$(cursor_mcp_status)"
+  [[ "$dependency_state" == "ready" || "$dependency_state" == "skipped" ]] \
+    || { ready=no; missing+=("managed-dependencies"); }
+  [[ "$cursor_mcp" == "ready" ]] || { ready=no; missing+=("cursor-mcp"); }
   local manual_actions=("cursor-policy-paste")
   if [[ "$codex_notifications" == "review-required" ]]; then
     manual_actions+=("codex-hook-trust")
@@ -835,6 +866,15 @@ print_readiness() {
   echo "CURSOR_VERSION=$cursor_v"
   echo "CLAUDE_VERSION=$claude_v"
   echo "CODEX_NOTIFICATIONS=$codex_notifications"
+  echo "MANAGED_DEPENDENCIES=$dependency_state"
+  echo "CODEGRAPH_VERSION=$(codegraph_version)"
+  echo "CODEGRAPH_READY=$(codegraph_readiness)"
+  echo "GPU_BROKER_SOURCE=$(gpu_broker_source_status)"
+  echo "GPU_BROKER_TOOL=$(gpu_broker_tool_status)"
+  echo "GPU_BROKER_DAEMON=$(gpu_broker_daemon_status)"
+  echo "GPU_BROKER_LIVE=$(gpu_broker_live_status)"
+  echo "GPU_BROKER_READY=$(gpu_broker_ready_status)"
+  echo "CURSOR_MCP=$cursor_mcp"
   echo "CODEX_ROUTING=$(codex_routing_status)"
   echo "CLAUDE_NOTIFICATIONS=$(notification_status claude)"
   echo "CURSOR_NOTIFICATIONS=$(notification_status cursor)"
@@ -842,7 +882,7 @@ print_readiness() {
   echo "HOST_ACTIVATION=manual-action-required"
   echo "MANUAL_ACTIONS=$(IFS=,; echo "${manual_actions[*]}")"
   echo "CURSOR_POLICY_MANUAL=run ./install.sh cursor-policy-copy, then paste into Cursor Settings -> Rules -> User Rules"
-  echo "NEXT=cd \"$ROOT\" && ./install.sh all --profile $profile"
+  echo "NEXT=cd \"$ROOT\" && ./install.sh update --profile $profile"
   echo "CURSOR_POLICY=./install.sh cursor-policy-copy"
   [[ "$ready" == "yes" ]]
 }
@@ -965,11 +1005,12 @@ print_report() {
   echo
 
   echo "--- Optional substrates ---"
-  if [[ -d "$HOME/.cursor/projects" ]] && find "$HOME/.cursor/projects" -path '*/mcps/user-codegraph/tools/*.json' -print -quit 2>/dev/null | grep -q .; then
-    echo "CodeGraph MCP: configured"
-  else
-    echo "CodeGraph MCP: not detected (optional)"
-  fi
+  echo "Managed dependencies: $(managed_dependencies_status)"
+  echo "CodeGraph: $(codegraph_readiness) ($(codegraph_version))"
+  echo "GPU Broker source: $(gpu_broker_source_status)"
+  echo "GPU Broker tool: $(gpu_broker_tool_status)"
+  echo "GPU Broker daemon/live/ready: $(gpu_broker_daemon_status)/$(gpu_broker_live_status)/$(gpu_broker_ready_status)"
+  echo "Cursor MCP: $(cursor_mcp_status)"
   echo
 
   echo "--- Recommended actions ---"
@@ -978,7 +1019,7 @@ print_report() {
     echo "$action. cd \"$ROOT\" && git pull"
     ((action += 1))
   fi
-  echo "$action. cd \"$ROOT\" && ./install.sh all --profile $profile"
+  echo "$action. cd \"$ROOT\" && ./install.sh update --profile $profile"
   ((action += 1))
   echo "$action. Restart Codex after routing changes"
   if [[ "$codex_notification_s" == "review-required" ]]; then

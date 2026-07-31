@@ -4,6 +4,18 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 6.1.1 - 2026-08-01
+
+**Teamwork updates now repair both global setup and the local collaboration dependencies they require.**
+
+- **Update scope is complete.** `$teamwork-update` now refreshes Teamwork's global skills, agents, routing, policy, notifications, and Cursor MCP configuration by default.
+- **Dependencies become ready automatically.** CodeGraph moves to Teamwork's pinned version and installs when absent; the local GPU Broker companion is refreshed and checked through its daemon and health endpoints.
+- **Configuration conflicts stay safe.** Updates preserve MCP entries that Teamwork does not own; a same-name, unowned conflicting entry stops the update with an explanation.
+
+Upgrade action: run `$teamwork-update` (or `./install.sh update` from a checkout) to refresh the global installation, then follow any host-restart or Cursor User Rules paste prompt.
+
+Important limit: GPU Broker installs only from a resolved local companion source and fails closed when that source or a required runtime is unavailable. Updates do not upgrade Node, npm, uv, drivers, CUDA, or unrelated tools.
+
 ## 6.1.0 - 2026-07-31
 
 **Teamwork 6.1 keeps every specialized method available while making ordinary collaboration substantially lighter and less interruptive.**

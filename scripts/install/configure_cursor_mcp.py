@@ -148,7 +148,6 @@ def apply_config(
 ) -> dict[str, Any]:
     canonical = load_canonical_servers()
     owned = load_sidecar(home) if track_ownership else set()
-    effective_force = force or not track_ownership
     if config_path.exists():
         refuse_unsafe_path(config_path, label="mcp.json")
         current = normalize_config(load_json(config_path))
@@ -161,7 +160,11 @@ def apply_config(
 
     changed = False
     for name, definition in canonical.items():
-        if name in servers and not effective_force and name not in owned:
+        if name in servers and track_ownership and name not in owned:
+            if servers[name] != definition:
+                raise CursorMcpError(
+                    f"refusing to replace unowned MCP server {name!r}"
+                )
             continue
         if servers.get(name) == definition and (not track_ownership or name in owned):
             continue
@@ -178,6 +181,28 @@ def apply_config(
         if track_ownership:
             write_sidecar(home, owned)
     return current
+
+
+def check_config(*, config_path: Path, home: Path | None, track_ownership: bool) -> str:
+    canonical = load_canonical_servers()
+    owned = load_sidecar(home) if track_ownership else set(canonical)
+    if not config_path.exists():
+        return "missing"
+    refuse_unsafe_path(config_path, label="mcp.json")
+    current = normalize_config(load_json(config_path))
+    servers = current.get("mcpServers")
+    if not isinstance(servers, dict):
+        raise CursorMcpError("mcp.json mcpServers must be an object")
+
+    for name, definition in canonical.items():
+        actual = servers.get(name)
+        if actual is None:
+            return "missing"
+        if actual != definition:
+            return "drift" if name in owned else "unowned-drift"
+        if track_ownership and name not in owned:
+            return "unowned"
+    return "ready"
 
 
 def remove_config(*, config_path: Path, home: Path | None, track_ownership: bool) -> dict[str, Any]:
@@ -223,6 +248,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--apply", action="store_true", help="add or refresh Teamwork MCP servers")
     mode.add_argument("--remove", action="store_true", help="remove Teamwork-owned MCP servers")
+    mode.add_argument("--check", action="store_true", help="report whether Teamwork-owned MCP servers are current")
     parser.add_argument(
         "--force",
         action="store_true",
@@ -242,6 +268,14 @@ def main(argv: list[str] | None = None) -> int:
     track_ownership = args.config is None
     sidecar_home = home if track_ownership else None
     try:
+        if args.check:
+            status = check_config(
+                config_path=config_path,
+                home=sidecar_home,
+                track_ownership=track_ownership,
+            )
+            print(status)
+            return 0 if status == "ready" else 1
         if args.remove:
             remove_config(
                 config_path=config_path,

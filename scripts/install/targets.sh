@@ -245,6 +245,7 @@ install_codex() {
 install_plugin_codex_bootstrap() {
   local code_home
   code_home="$(codex_home_path)"
+  preflight_managed_dependencies
   preflight_plugin_codex_bootstrap
   preflight_legacy_codex_skills "$code_home/skills"
   if [[ -n "$PLUGIN_V342_SKILL_ROOT" ]]; then
@@ -252,6 +253,7 @@ install_plugin_codex_bootstrap() {
   elif [[ -n "$PLUGIN_V342_AGENT_PROFILE" ]]; then
     remove_v342_agent_profile codex "$code_home/agents" "$PLUGIN_V342_AGENT_PROFILE"
   fi
+  refresh_managed_dependencies
   configure_codex_routing
   install_codex_agent_set "$code_home/agents" "plugin"
   install_codex_global_policy
@@ -357,6 +359,18 @@ install_all() {
   install_claude_agent_set "$claude_agent_root" "user Claude Code"
   install_claude_global_policy
   configure_user_notifications claude
+}
+
+install_update() {
+  if plugin_activation_is_present; then
+    install_plugin_codex_bootstrap
+    install_cursor
+    install_claude
+    return 0
+  fi
+  preflight_managed_dependencies
+  refresh_managed_dependencies
+  install_all
 }
 
 init_project() {

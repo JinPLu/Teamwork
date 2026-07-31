@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
 REAL_CODEX="${TEAMWORK_REAL_CODEX:-$(command -v codex 2>/dev/null || true)}"
+# Integration validates Teamwork's file ownership in temporary homes. Managed
+# dependency refresh is covered by its own fully mocked test and must never
+# update the validator's real npm/uv installations.
+export TEAMWORK_MANAGED_DEPENDENCIES=skip
 if [[ -n "$REAL_CODEX" && ! -x "$REAL_CODEX" ]]; then
   REAL_CODEX=""
 fi
@@ -1169,7 +1173,7 @@ else
       || fail "Marketplace cache must contain Teamwork skill $skill"
   done
 
-  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
+  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
     "$cache_root/install.sh" plugin-codex-bootstrap >/dev/null
   [[ -f "$marketplace_codex_home/teamwork/plugin-activation.json" ]] \
     || fail "plugin bootstrap must write activation marker last"
@@ -1194,7 +1198,7 @@ else
 
   # A repeated bootstrap may render a different supported profile and remove
   # notifications without creating duplicate skills or hooks.
-  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
+  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
     "$cache_root/install.sh" --profile cost-first --no-notifications plugin-codex-bootstrap >/dev/null
   grep_required '^model = "gpt-5.5"$' "$marketplace_codex_home/agents/teamwork-explorer.toml" \
     "plugin bootstrap must render the requested Codex profile"
@@ -1203,7 +1207,7 @@ else
   grep_required '"profile": "cost-first"' "$marketplace_codex_home/teamwork/plugin-activation.json" \
     "activation marker must record the selected profile"
   real_codex_dir="$(dirname "$REAL_CODEX")"
-  PATH="$real_codex_dir:$PATH" HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
+  PATH="$real_codex_dir:$PATH" HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
     "$cache_root/scripts/check-update.sh" --plugin --readiness --no-fetch > "$tmp/plugin-readiness.out"
   grep_required '^MANAGED_INSTALL_READY=yes$' "$tmp/plugin-readiness.out" \
     "plugin readiness must verify the cached full Codex setup"
@@ -1219,7 +1223,7 @@ else
   "$cache_root/scripts/plugin-activation.py" write \
     --path "$marketplace_codex_home/teamwork/plugin-activation.json" \
     --version 0.0.0 --profile cost-first --notifications disabled >/dev/null
-  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
+  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
     "$cache_root/install.sh" --profile cost-first --no-notifications plugin-codex-bootstrap >/dev/null
   grep_required '"version": "'"$(tr -d '[:space:]' < "$ROOT/VERSION")"'"' \
     "$marketplace_codex_home/teamwork/plugin-activation.json" \
@@ -1246,7 +1250,7 @@ else
   unknown_plugin_codex_home="$tmp/codex-plugin-unknown-legacy"
   mkdir -p "$unknown_plugin_home/.agents/skills/teamwork-update" "$unknown_plugin_codex_home"
   printf '%s\n' 'unowned content' > "$unknown_plugin_home/.agents/skills/teamwork-update/SKILL.md"
-  if HOME="$unknown_plugin_home" CODEX_HOME="$unknown_plugin_codex_home" \
+  if HOME="$unknown_plugin_home" CODEX_HOME="$unknown_plugin_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
     "$cache_root/install.sh" --no-notifications plugin-codex-bootstrap >/dev/null 2>&1; then
     fail "plugin bootstrap must reject unknown same-name legacy skill content"
   fi
@@ -1258,7 +1262,7 @@ else
   failed_plugin_codex_home="$tmp/codex-plugin-invalid-notifications"
   mkdir -p "$failed_plugin_home" "$failed_plugin_codex_home"
   printf '%s\n' '{broken-json' > "$failed_plugin_codex_home/hooks.json"
-  if HOME="$failed_plugin_home" CODEX_HOME="$failed_plugin_codex_home" \
+  if HOME="$failed_plugin_home" CODEX_HOME="$failed_plugin_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
     "$cache_root/install.sh" plugin-codex-bootstrap >/dev/null 2>&1; then
     fail "plugin bootstrap must reject invalid notification config before mutation"
   fi
@@ -1277,7 +1281,7 @@ else
   printf '%s\n' "$(tr -d '[:space:]' < "$ROOT/VERSION")" > "$migrated_plugin_home/.agents/skills/.teamwork-version"
   printf '%s\n' performance-first > "$migrated_plugin_home/.agents/skills/.teamwork-profile"
   printf '%s\n' 'preserve unrelated content' > "$migrated_plugin_home/.agents/skills/unrelated.txt"
-  HOME="$migrated_plugin_home" CODEX_HOME="$migrated_plugin_codex_home" \
+  HOME="$migrated_plugin_home" CODEX_HOME="$migrated_plugin_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
     "$cache_root/install.sh" --no-notifications plugin-codex-bootstrap >/dev/null
   for skill in "${SKILLS[@]}"; do
     [[ ! -e "$migrated_plugin_home/.agents/skills/$skill" ]] \

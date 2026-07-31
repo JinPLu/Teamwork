@@ -1,17 +1,20 @@
 ---
 name: teamwork-update
-description: Use when the user asks to check, install, activate, repair, or refresh globally installed Teamwork skills, agents, managed policy, routing, or notifications, including an explicitly authorized migration of Teamwork memory for one exact project root during that refresh; do not use for general project-local instructions, CodeGraph context, source release publication, or unrelated plugins and tools.
+description: Use when the user asks to check, install, activate, repair, or refresh Teamwork's global setup and its declared managed dependencies (CodeGraph and a local GPU Broker companion), including an explicitly authorized migration of Teamwork memory for one exact project root during that refresh; do not use for general project-local instructions, source release publication, or unrelated tools.
 ---
 
 # Teamwork Update
 
-Check or refresh Teamwork-managed global installation surfaces. Update is global
-only: do not perform project initialization, edit general project context, touch
-unrelated plugins/tools, or publish source. One explicitly authorized exact-root
-memory migration may run through the package transaction. Role order is Explorer
-check, then Worker for owned refresh actions. Unavailable mandatory roles or
-unverified isolation are `capability-blocked`; Root must not perform a
-named-method fallback.
+Check or refresh Teamwork-managed global installation surfaces and its declared
+runtime dependencies. A mutating update has one default scope: Teamwork skills,
+agents, routing, policy, notifications, pinned CodeGraph, the local GPU Broker
+companion, Cursor MCP configuration, and verification. It is global only: do not
+perform project initialization, edit general project context, update drivers,
+CUDA, package managers, arbitrary plugins/tools, or publish source. One
+explicitly authorized exact-root memory migration may run through the package
+transaction. Role order is Explorer check, then Worker for owned refresh actions.
+Unavailable mandatory roles or unverified isolation are `capability-blocked`;
+Root must not perform a named-method fallback.
 
 ## Resolve Source
 
@@ -25,12 +28,17 @@ a checkout, use the verified repo root. If
 ## Check Or Refresh
 
 1. Explorer runs resolved `scripts/check-update.sh --plugin` for Marketplace or
-   `scripts/check-update.sh` for checkout. Check-only is read-only and stops
-   after an evidence-backed status report.
-2. Explicit install, activate, repair, or update follows only the checker's safe
-   command and detected profile/notification choice; invent no profile,
-   destination, or owned file.
-3. First activation adding global agents, policy, routing, or notifications
+   `scripts/check-update.sh` for checkout. Check-only is read-only and reports
+   the exact Teamwork, CodeGraph, GPU Broker, and MCP state.
+2. For an explicit update/install/repair request, show the compact execution
+   summary, preserve the detected profile and notification choice, then run
+   `install.sh update --profile <detected-profile>`. This installs missing
+   managed dependencies and updates present ones before MCP verification. The
+   local GPU companion source comes from `TEAMWORK_GPU_BROKER_SOURCE`, the
+   checkout sibling `../gpu-broker`, or its existing uv receipt; a missing source
+   fails closed instead of guessing a download location.
+3. First activation adding global agents, policy, routing, notifications, or
+   managed dependencies
    requires explicit effect authority. Root alone asks for missing mutation
    authority or manual action; answers do not expand authority.
 4. Worker handles only transferable Teamwork-owned refresh files. Credentials,
@@ -42,8 +50,11 @@ a checkout, use the verified repo root. If
    report restart, policy paste, notification review, or other manual action.
 
 For notifications, trust only package-reported Teamwork hooks; never enable
-trust-all. Do not install dependencies, MCP servers, paid services, unrelated
-plugins, or credentials without separate authority. This skill does not edit
+trust-all. CodeGraph is pinned to the package-declared release. GPU Broker is
+installed only from the resolved local companion and verified through its daemon
+and local health endpoints. `--no-dependencies` is an explicit opt-out, never
+the default. Do not update Node/npm/uv themselves, install paid services,
+unrelated plugins, credentials, drivers, CUDA, or remote workloads. This skill does not edit
 `VERSION`, manifests, changelogs, commits, tags, or GitHub Releases, and does
 not pull or publish source without explicit repository authority.
 

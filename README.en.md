@@ -99,7 +99,7 @@ Ask what is missing right now, not how complicated the task looks.
 | Independent acceptance | ✅ `$teamwork-review` | Check a plan, diff, artifact, or completion claim against direct evidence. |
 | Persistent progress | 🎯 `$teamwork-goal` | Keep fixing until green, monitor through completion, or work within an explicit budget. |
 | Project-level setup | 🧰 `$teamwork-init` | Initialize, audit, or repair one repository's instructions, memory, routing, and CodeGraph context. |
-| Global installation setup | 🔄 `$teamwork-update` | Check or refresh global skills, agents, policy, routing, and notifications. |
+| Global installation setup | 🔄 `$teamwork-update` | By default refresh global skills, agents, policy, routing, notifications, CodeGraph, and the local GPU Broker companion; missing managed dependencies are installed. |
 
 Natural language can activate the same methods, such as “brainstorm this with me,” “inspect local evidence without editing,” or “keep fixing until the test passes.” Skill selection is still model behavior. Name the skill when exact selection matters.
 

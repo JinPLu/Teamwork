@@ -3,12 +3,15 @@
 
 from __future__ import annotations
 
+import http.server
 import os
 import json
 import pathlib
 import shutil
+import socketserver
 import subprocess
 import tempfile
+import threading
 import unittest
 
 
@@ -115,6 +118,11 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         env.pop("TEAMWORK_CODEX_PROFILE", None)
         env.pop("TEAMWORK_NOTIFICATIONS_ACTION", None)
         env.pop("TEAMWORK_CODEX_ROUTING", None)
+        env.pop("TEAMWORK_MANAGED_DEPENDENCIES", None)
+        env.pop("TEAMWORK_CODEGRAPH_PACKAGE", None)
+        env.pop("TEAMWORK_CODEGRAPH_VERSION", None)
+        env.pop("TEAMWORK_GPU_BROKER_SOURCE", None)
+        env.pop("TEAMWORK_GPU_BROKER_URL", None)
         env["HOME"] = str(home or (self.base / "home"))
         if create_home:
             pathlib.Path(env["HOME"]).mkdir(parents=True, exist_ok=True)
@@ -242,7 +250,8 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         result = self.run_install("--help")
         output = result.stdout.decode()
         self.assertEqual(result.returncode, 0, output)
-        self.assertIn("codex|cursor|claude|all|init-project|plugin-codex-bootstrap", output)
+        self.assertIn("codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap", output)
+        self.assertIn("--dependencies|--no-dependencies", output)
         self.assertIn(
             "`--project-root` is valid only with `init-project` or `plugin-init-project`.",
             output,
@@ -378,6 +387,21 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout.decode())
         self.assertTrue((home / ".codex" / "AGENTS.md").is_file())
         self.assertTrue((home / ".claude" / "CLAUDE.md").is_file())
+
+    def test_update_fails_before_global_writes_without_local_gpu_companion(self) -> None:
+        home = self.base / "update-missing-companion"
+        result = self.run_install(
+            "--no-notifications",
+            "--no-codex-routing",
+            "update",
+            home=home,
+        )
+        output = result.stdout.decode()
+        self.assertNotEqual(result.returncode, 0, output)
+        self.assertIn("GPU Broker companion source is unavailable", output)
+        self.assertFalse((home / ".agents").exists())
+        self.assertFalse((home / ".cursor").exists())
+        self.assertFalse((home / ".claude").exists())
 
     def test_all_install_can_refresh_owned_writer_agents(self) -> None:
         home = self.base / "all-install-idempotent"
@@ -689,6 +713,149 @@ class InstallCliCompatibilityTests(unittest.TestCase):
                 self.assertFalse(
                     (home / ".agents/skills/teamwork-collaborate").exists()
                 )
+
+
+class ManagedDependencyHealthHandler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self) -> None:  # noqa: N802
+        status = self.path.rsplit("/", 1)[-1]
+        if status not in {"live", "ready"}:
+            self.send_error(404)
+            return
+        body = f'{{"status":"{status}"}}'.encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, _format: str, *_args: object) -> None:
+        return
+
+
+class ManagedUpdateTargetTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tempdir = tempfile.TemporaryDirectory()
+        self.base = pathlib.Path(self.tempdir.name)
+        self.bin_dir = self.base / "bin"
+        self.bin_dir.mkdir()
+        self.log = self.base / "commands.log"
+        self.source = self.base / "gpu-broker"
+        self.source.mkdir()
+        (self.source / "pyproject.toml").write_text(
+            "[project]\nname='gpu-broker'\n", encoding="utf-8"
+        )
+        self.server = socketserver.TCPServer(
+            ("127.0.0.1", 0), ManagedDependencyHealthHandler
+        )
+        self.thread = threading.Thread(
+            target=self.server.serve_forever, daemon=True
+        )
+        self.thread.start()
+        self.write_command(
+            "codegraph",
+            """case \"${1:-}\" in
+  --version|version) echo 'codegraph 1.5.0' ;;
+  upgrade) echo \"codegraph $*\" >> \"$TEAMWORK_TEST_LOG\" ;;
+esac
+""",
+        )
+        self.write_command(
+            "npm",
+            """echo \"npm $*\" >> \"$TEAMWORK_TEST_LOG\"
+cat > \"$TEAMWORK_TEST_BIN/codegraph\" <<'EOF'
+#!/usr/bin/env bash
+case \"${1:-}\" in
+  --version|version) echo 'codegraph 1.5.0' ;;
+  upgrade) echo \"codegraph $*\" >> \"$TEAMWORK_TEST_LOG\" ;;
+esac
+EOF
+chmod 755 \"$TEAMWORK_TEST_BIN/codegraph\"
+""",
+        )
+        self.write_command("uv", "echo \"uv $*\" >> \"$TEAMWORK_TEST_LOG\"\n")
+        self.write_command(
+            "gpu-broker",
+            """case \"${1:-}/${2:-}\" in
+  daemon/status) echo '{}' ;;
+  daemon/install) echo \"gpu-broker $*\" >> \"$TEAMWORK_TEST_LOG\" ;;
+  *) exit 2 ;;
+esac
+""",
+        )
+
+    def tearDown(self) -> None:
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=2)
+        self.tempdir.cleanup()
+
+    def write_command(self, name: str, body: str) -> None:
+        command = self.bin_dir / name
+        command.write_text(
+            "#!/usr/bin/env bash\nset -euo pipefail\n" + body,
+            encoding="utf-8",
+        )
+        command.chmod(0o755)
+
+    def managed_update_env(self) -> dict[str, str]:
+        env = os.environ.copy()
+        env["HOME"] = str(self.base / "home")
+        # Keep the test independent of a developer's globally installed CodeGraph.
+        env["PATH"] = f"{self.bin_dir}:/usr/bin:/bin:/usr/sbin:/sbin"
+        env["TEAMWORK_TEST_LOG"] = str(self.log)
+        env["TEAMWORK_TEST_BIN"] = str(self.bin_dir)
+        env["TEAMWORK_GPU_BROKER_SOURCE"] = str(self.source)
+        env["TEAMWORK_GPU_BROKER_URL"] = (
+            f"http://127.0.0.1:{self.server.server_address[1]}"
+        )
+        return env
+
+    def run_managed_update(self) -> subprocess.CompletedProcess[str]:
+        env = self.managed_update_env()
+        result = subprocess.run(
+            [
+                "bash",
+                str(REPO_ROOT / "install.sh"),
+                "--no-notifications",
+                "--no-codex-routing",
+                "update",
+            ],
+            cwd=REPO_ROOT,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        return result
+
+    def test_update_refreshes_dependencies_before_global_surfaces(self) -> None:
+        result = self.run_managed_update()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(
+            (
+                self.base
+                / "home"
+                / ".agents"
+                / "skills"
+                / "teamwork-update"
+                / "SKILL.md"
+            ).is_file()
+        )
+        self.assertTrue((self.base / "home" / ".cursor" / "mcp.json").is_file())
+        commands = self.log.read_text(encoding="utf-8")
+        self.assertIn("codegraph upgrade 1.5.0", commands)
+        self.assertIn(f"uv tool install --force {self.source}", commands)
+        self.assertIn(
+            f"gpu-broker daemon install --source-root {self.source}", commands
+        )
+
+    def test_update_installs_missing_codegraph(self) -> None:
+        (self.bin_dir / "codegraph").unlink()
+        result = self.run_managed_update()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue((self.bin_dir / "codegraph").is_file())
+        commands = self.log.read_text(encoding="utf-8")
+        self.assertIn("npm install --global @colbymchenry/codegraph@1.5.0", commands)
 
 
 if __name__ == "__main__":

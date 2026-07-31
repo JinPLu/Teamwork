@@ -2,7 +2,7 @@
   "files": {
     ".codex-plugin/plugin.json": {
       "mode": "0644",
-      "sha256": "028fb671ce3482ea66b53a2ebf9e0a8e991bd3dfb8145184b10a5d5a4df76b5b"
+      "sha256": "20a3c9c10bbc8977dafc8986df563421203d34a20339f56ecd3450b4c3a4a19e"
     },
     ".teamwork-plugin-runtime": {
       "mode": "0644",
@@ -10,7 +10,7 @@
     },
     "VERSION": {
       "mode": "0644",
-      "sha256": "0fd114b03452dc32b26bcb9f1094cb19bf4e3a477cd04cfe91f4a87e19fac5c1"
+      "sha256": "0baf36f9c3ef9d8b4833833e1d633707965c9850f69f04dd96712672b9e75cc0"
     },
     "evals/teamwork/ledgers/v4-capability-migration.jsonl": {
       "mode": "0644",
@@ -22,7 +22,7 @@
     },
     "install.sh": {
       "mode": "0755",
-      "sha256": "af969edc06c7ff5ddd9c0824f5fa36580e7a937432d248dd30c328131904ad8b"
+      "sha256": "b4e20940e763c46b5be6ce55141beb3e4966edcb74bcc880ba464c35ccb552d7"
     },
     "scripts/check-codex-routing.py": {
       "mode": "0644",
@@ -30,7 +30,7 @@
     },
     "scripts/check-update.sh": {
       "mode": "0755",
-      "sha256": "e2f0311ba91cd73b59d978bf1024e585d3b020add6d532aa70c59e8590c575c2"
+      "sha256": "51a9695579b7b735421cc653b987d82f46c867c55d3ef5562075ec57b2498cab"
     },
     "scripts/codex_routing_config.py": {
       "mode": "0644",
@@ -58,11 +58,15 @@
     },
     "scripts/install/common.sh": {
       "mode": "0644",
-      "sha256": "0c4ca6d5b6d255cb336e3b42feb41db1bb1c6d63725700571124f7072e111e76"
+      "sha256": "eddc67450f1f3aea9bfdf1eb03b38f0e58263ba12a3be7014766b863c00758cf"
     },
     "scripts/install/configure_cursor_mcp.py": {
       "mode": "0644",
-      "sha256": "5bb4c595de942ef681d45019394a8acef5de9d32282d037a4751fc8a4663ffef"
+      "sha256": "36f80c33b8f327792d5c548d95d413e9b3ce2ff0d56ce9eed411286628718549"
+    },
+    "scripts/install/dependencies.sh": {
+      "mode": "0644",
+      "sha256": "772e184f44b636be667d0f70bcc314020297861bbe1f48bce404fac56cc0739b"
     },
     "scripts/install/policy.sh": {
       "mode": "0644",
@@ -74,7 +78,7 @@
     },
     "scripts/install/targets.sh": {
       "mode": "0644",
-      "sha256": "3fe4307bd475f1e5ae2f98a42341c7fac8a2d5e98e8d8a7bbf9c492e123612ef"
+      "sha256": "7dd12be45b9d422980f1d1cb3f942462f8fb45df8718a385637cc8f6c7139e3c"
     },
     "scripts/plugin-activation.py": {
       "mode": "0755",
@@ -154,7 +158,7 @@
     },
     "skills/teamwork-update/SKILL.md": {
       "mode": "0644",
-      "sha256": "7d3775f6ecea894b074fe117aab00c34716360dd9b6a2a6ef383ee35f5454328"
+      "sha256": "a4e8fab35d94e8291e6c856a075ac83c259e1fb4ff6a966187378af404bf6a76"
     },
     "templates/claude-agents/debugger.md": {
       "mode": "0644",
@@ -289,8 +293,8 @@
       "sha256": "dc2700b7e267a81a56723ab6ac6312eff524e9d78bf3bcf273982bcfe264f758"
     }
   },
-  "manifest_sha256": "028fb671ce3482ea66b53a2ebf9e0a8e991bd3dfb8145184b10a5d5a4df76b5b",
+  "manifest_sha256": "20a3c9c10bbc8977dafc8986df563421203d34a20339f56ecd3450b4c3a4a19e",
   "marker": "TEAMWORK_CODEX_PLUGIN_RUNTIME=1",
   "schema_version": 1,
-  "version": "6.1.0"
+  "version": "6.1.1"
 }

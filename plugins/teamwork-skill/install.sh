@@ -8,6 +8,8 @@ source "$ROOT/scripts/install/common.sh"
 source "$ROOT/scripts/install/policy.sh"
 # shellcheck source=scripts/install/profiles.sh
 source "$ROOT/scripts/install/profiles.sh"
+# shellcheck source=scripts/install/dependencies.sh
+source "$ROOT/scripts/install/dependencies.sh"
 # shellcheck source=scripts/install/targets.sh
 source "$ROOT/scripts/install/targets.sh"
 
@@ -44,6 +46,14 @@ while [[ $# -gt 0 ]]; do
       CURSOR_MCP_ACTION="skip"
       shift
       ;;
+    --dependencies)
+      MANAGED_DEPENDENCIES_ACTION="apply"
+      shift
+      ;;
+    --no-dependencies)
+      MANAGED_DEPENDENCIES_ACTION="skip"
+      shift
+      ;;
     --cursor-mcp)
       TEAMWORK_INIT_CURSOR_MCP=1
       shift
@@ -75,7 +85,7 @@ while [[ $# -gt 0 ]]; do
       usage
       exit 2
       ;;
-    codex|cursor|claude|all|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy|cursor-mcp)
+    codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy|cursor-mcp)
       if [[ -n "$TARGET" ]]; then
         echo "Specify only one install target." >&2
         usage
@@ -117,7 +127,7 @@ case "$NOTIFICATIONS_ACTION" in
 esac
 
 case "${TARGET:-codex}" in
-  all|plugin-codex-bootstrap)
+  all|update|plugin-codex-bootstrap)
     if [[ "$NOTIFICATIONS_ACTION" == "preserve" ]]; then
       NOTIFICATIONS_ACTION="install"
     fi
@@ -135,7 +145,7 @@ esac
 
 if [[ "$NOTIFICATIONS_ACTION" != "preserve" ]]; then
   case "${TARGET:-codex}" in
-    codex|claude|all|init-project|plugin-codex-bootstrap|plugin-init-project)
+    codex|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project)
       ;;
     *)
       echo "Notification flags are supported only with codex, claude, all, or init-project targets." >&2
@@ -163,6 +173,9 @@ case "${TARGET:-codex}" in
     ;;
   all)
     install_all
+    ;;
+  update)
+    install_update
     ;;
   init-project)
     init_project

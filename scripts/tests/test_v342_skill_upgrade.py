@@ -204,6 +204,7 @@ class V342SkillUpgradeTests(unittest.TestCase):
         env = os.environ.copy()
         env["HOME"] = str(home)
         env["CODEX_HOME"] = str(home / ".codex")
+        env["TEAMWORK_MANAGED_DEPENDENCIES"] = "skip"
         args = ["bash", str(REPO_ROOT / "scripts/check-update.sh")]
         if readiness:
             args.append("--readiness")
@@ -224,12 +225,14 @@ class V342SkillUpgradeTests(unittest.TestCase):
         env = os.environ.copy()
         env["HOME"] = str(home)
         env["CODEX_HOME"] = str(home / ".codex")
+        env["TEAMWORK_MANAGED_DEPENDENCIES"] = "skip"
         script = f"""
 set -euo pipefail
 ROOT={str(REPO_ROOT)!r}
 source "$ROOT/scripts/install/common.sh"
 source "$ROOT/scripts/install/policy.sh"
 source "$ROOT/scripts/install/profiles.sh"
+source "$ROOT/scripts/install/dependencies.sh"
 source "$ROOT/scripts/install/targets.sh"
 teamwork_plugin_runtime_is_valid() {{ return 0; }}
 CODEX_PROFILE={profile!r}

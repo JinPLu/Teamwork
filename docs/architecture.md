@@ -297,8 +297,12 @@ points, ignore rules, and available CodeGraph context. With explicit
 `--cursor-mcp` consent they may also write project `.cursor/rules/*.mdc` and
 merge Teamwork MCP entries into project `.cursor/mcp.json`. They never refresh
 global skills, agents, policy, routing, notifications, or Cursor clipboard
-state. Global Cursor installs register `codegraph` and `gpu-broker` in
-`~/.cursor/mcp.json` by default; use `--no-mcp` to opt out.
+state. The `update` target owns the declared dependency lifecycle: it pins and
+verifies CodeGraph, refreshes the explicitly resolved local GPU Broker companion,
+then registers `codegraph` and `gpu-broker` in `~/.cursor/mcp.json`. It fails
+closed when the local companion source or required runtime is unavailable.
+`--no-mcp` skips only MCP registration; `--no-dependencies` is an explicit
+dependency opt-out.
 
 ## Instruction footprint
 

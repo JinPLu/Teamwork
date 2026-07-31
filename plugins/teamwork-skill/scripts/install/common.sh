@@ -74,9 +74,9 @@ CODEX_AGENTS=(
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] [--notifications|--no-notifications] [--codex-routing|--no-codex-routing] [--no-mcp] [--profile performance-first|cost-first] \
+  ./install.sh [--copy|--link] [--notifications|--no-notifications] [--codex-routing|--no-codex-routing] [--no-mcp] [--dependencies|--no-dependencies] [--profile performance-first|cost-first] \
     [--project-root PATH] \
-    codex|cursor|claude|all|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy|cursor-mcp
+    codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy|cursor-mcp
 
 Targets:
   codex          Install checkout-based Codex skills, agents, and policy
@@ -85,6 +85,8 @@ Targets:
   cursor         Install skills, Cursor agents, register MCP servers, and print cursor-policy guidance
   claude         Install skills, Claude agents, and Teamwork Claude global policy
   all            Install skills, all platform agents, and Codex + Claude global policy
+  update         Refresh all Teamwork global surfaces plus managed CodeGraph and
+                 GPU Broker dependencies; install missing managed dependencies
   init-project   Initialize AGENTS.md, docs/teamwork/, ignore rules, and
                  CodeGraph context for one project without changing global
                  skills, agents, policies, routing, or notifications
@@ -121,6 +123,9 @@ accepted there as compatibility no-ops.
 Cursor installs register codegraph and gpu-broker in ~/.cursor/mcp.json by
 default. Use --no-mcp to skip MCP registration; enable new servers in Cursor
 Settings -> MCP when prompted.
+`update` manages CodeGraph at the pinned Teamwork version and a local GPU Broker
+companion. Set TEAMWORK_GPU_BROKER_SOURCE when the companion is not a sibling of
+this checkout; use --no-dependencies only for an explicit opt-out.
 --no-notifications removes only Teamwork-owned handlers. Cursor notification
 installs are intentionally unsupported until their local hook contracts are
 live-verified.

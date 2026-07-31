@@ -99,7 +99,7 @@ Cursor 还需要运行 `./install.sh cursor-policy-copy`，再把内容粘贴到
 | 独立验收 | ✅ `$teamwork-review` | 复查计划、diff、artifact 或完成声明，判断证据是否真的支持结论。 |
 | 持续推进 | 🎯 `$teamwork-goal` | 你明确要求持续修到通过、修到绿、监控到完成，或按预算推进。 |
 | 项目级配置 | 🧰 `$teamwork-init` | 初始化、审计或修复一个仓库的项目说明、memory、路由和 CodeGraph 上下文。 |
-| 全局安装配置 | 🔄 `$teamwork-update` | 检查或刷新全局 skills、agents、策略、路由和通知。 |
+| 全局安装配置 | 🔄 `$teamwork-update` | 默认刷新全局 skills、agents、策略、路由、通知、CodeGraph 和本地 GPU Broker companion；缺失的受管依赖会安装。 |
 
 自然语言通常也能触发合适的方法。例如“和我一起想”“先别改，查清本地证据”“继续修到测试通过”。Skill 选择仍由模型判断；如果选择必须精确，请直接点名。
 

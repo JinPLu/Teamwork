@@ -4,6 +4,18 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 6.1.1 - 2026-08-01
+
+**Teamwork 更新现在会同步修复全局配置与所需的本地协作依赖。**
+
+- **更新范围更完整。** `$teamwork-update` 默认刷新 Teamwork 的全局 skills、agents、路由、策略、通知和 Cursor MCP 配置。
+- **依赖自动就绪。** CodeGraph 会更新到 Teamwork 固定的版本，缺失时自动安装；本地 GPU Broker companion 也会刷新并验证 daemon 与 health 状态。
+- **配置冲突更安全。** 更新会保留不属于 Teamwork 的 MCP 条目；若发现同名但未托管且内容冲突的配置，会停止并说明原因。
+
+升级操作：运行 `$teamwork-update`（checkout 用户运行 `./install.sh update`）以刷新全局安装；随后按提示重启宿主或完成 Cursor User Rules 粘贴。
+
+重要限制：GPU Broker 只能从已解析的本地 companion 来源安装；找不到来源或所需运行时会安全失败。更新不会升级 Node、npm、uv、驱动、CUDA 或其他无关工具。
+
 ## 6.1.0 - 2026-07-31
 
 **Teamwork 6.1 保留每个专门方法，同时让日常协作更轻、更少被流程打断。**

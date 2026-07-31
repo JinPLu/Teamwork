@@ -117,6 +117,23 @@ class ConfigureCursorMcpTests(unittest.TestCase):
         servers = self.load_mcp()["mcpServers"]
         self.assertEqual(servers["codegraph"]["command"], "codegraph")
 
+    def test_refuses_conflicting_unowned_teamwork_name(self) -> None:
+        self.mcp_path.write_text(
+            json.dumps({"mcpServers": {"codegraph": {"command": "other"}}}) + "\n",
+            encoding="utf-8",
+        )
+        result = self.run_helper("--apply")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("refusing to replace unowned MCP server 'codegraph'", result.stderr)
+
+    def test_check_requires_owned_current_entries(self) -> None:
+        self.assertNotEqual(self.run_helper("--check").returncode, 0)
+        apply = self.run_helper("--apply")
+        self.assertEqual(apply.returncode, 0, apply.stderr)
+        check = self.run_helper("--check")
+        self.assertEqual(check.returncode, 0, check.stderr)
+        self.assertEqual(check.stdout.strip(), "ready")
+
     def test_project_config_does_not_write_global_sidecar(self) -> None:
         project = self.home / "project"
         project.mkdir()
