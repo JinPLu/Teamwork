@@ -1,0 +1,29 @@
+{
+  "evidence": "Static zero-question readiness fixture.",
+  "expected": {
+    "capability": "ask",
+    "language": "en",
+    "requires": [
+      "direct-action",
+      "inspect-first",
+      "no-collaborate",
+      "safe-default-or-discoverable",
+      "zero-questions"
+    ],
+    "scenario": "safe-default-zero-question"
+  },
+  "id": "ask-safe-default-zero-question-en",
+  "must": [
+    "inspect discoverable state and use the safe reversible default without asking"
+  ],
+  "must_not": [
+    "ask for a preference, activate Collaborate, or pause the work"
+  ],
+  "platforms": ["codex", "cursor", "claude"],
+  "producers": [
+    {"class": "root-policy", "source": "scripts/install/policy.sh"}
+  ],
+  "prompt": "Update the local generated index; the repository already declares its canonical source and the rebuild is reversible.",
+  "source": "synthetic",
+  "split": "dev"
+}

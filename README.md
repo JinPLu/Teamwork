@@ -43,7 +43,11 @@ codex plugin add teamwork-skill@teamwork
 $teamwork-update
 ```
 
-它会先解释准备配置的 agents、路由、全局策略和通知，再等待确认。配置完成后重启 Codex；如果启用了通知，请在 `/hooks` 中分别信任 Teamwork 的 `Stop` 和 `PermissionRequest`，不要使用 trust-all。
+首次运行会询问 `performance-first` 或 `cost-first`，并分别确认是否启用受管
+CodeGraph 和本地 GPU Broker。无论是否启用这两项可选增强，skills、agents、
+路由、全局策略和通知等基础流程都会完整执行；已保存的选择会在后续更新中继承。
+配置完成后重启 Codex；如果启用了通知，请在 `/hooks` 中分别信任 Teamwork 的
+`Stop` 和 `PermissionRequest`，不要使用 trust-all。
 
 如果希望某个仓库拥有项目说明、Teamwork memory 和 CodeGraph 上下文，请在该仓库中运行：
 
@@ -73,6 +77,12 @@ cd Teamwork
 ./scripts/check-update.sh --readiness
 ```
 
+上面安装所有平台的基础能力；如需同时启用 CodeGraph 与 GPU Broker 的满血能力，
+使用 `./install.sh --dependencies all`。也可以用 `--managed-codegraph` 或
+`--managed-gpu-broker` 单独启用，选择会被后续 update 继承。这些能力开关只适用于
+负责依赖生命周期的 `codex`、`all`、`update` 和插件引导目标；其他窄目标会明确拒绝，
+避免只记录偏好却没有完成安装。
+
 也可以只安装一个平台：
 
 ```bash
@@ -99,7 +109,7 @@ Cursor 还需要运行 `./install.sh cursor-policy-copy`，再把内容粘贴到
 | 独立验收 | ✅ `$teamwork-review` | 复查计划、diff、artifact 或完成声明，判断证据是否真的支持结论。 |
 | 持续推进 | 🎯 `$teamwork-goal` | 你明确要求持续修到通过、修到绿、监控到完成，或按预算推进。 |
 | 项目级配置 | 🧰 `$teamwork-init` | 初始化、审计或修复一个仓库的项目说明、memory、路由和 CodeGraph 上下文。 |
-| 全局安装配置 | 🔄 `$teamwork-update` | 默认刷新全局 skills、agents、策略、路由、通知、CodeGraph 和本地 GPU Broker companion；缺失的受管依赖会安装。 |
+| 全局安装配置 | 🔄 `$teamwork-update` | 保证 skills、agents、策略、路由和通知等基础安装，并让你选择 performance/cost profile 及可选的 CodeGraph、GPU Broker 满血能力。 |
 
 自然语言通常也能触发合适的方法。例如“和我一起想”“先别改，查清本地证据”“继续修到测试通过”。Skill 选择仍由模型判断；如果选择必须精确，请直接点名。
 
@@ -182,6 +192,8 @@ Review 可以作为明确的独立验收门；Goal 可以包住任何需要持�
 
 Teamwork 不是总控层，也不会把每件小事升级成 workflow。它补充宿主能力，不替代 Codex、Cursor 或 Claude Code 自己的工具、权限和执行路径。
 
+请求就绪度只有一个 owner 和三种结果：Root 先检查；状态可发现或存在安全、可逆默认值时直接执行；只有一个无法发现且必须由用户提供的精确值时只问一次，并在得到答案后恢复同一 workflow；潜在偏好或未成形意图会实质改变结果时进入 Collaborate，由它先贡献判断与建议再提问。叶角色不直接问用户，也不启动 Collaborate，只向 Root 返回精确缺口或重分类信号；同一 active gap 不会跨角色或阶段重复询问。
+
 Research、Explore、Debug、Plan 和 Review 必须由对应 owning leaf 承接；宿主缺少该能力时会报告 capability-blocked，而不是由 Root 或其他角色伪装完成。Collaborate 和 Goal 由 Root 拥有。默认只派发 1 个 child，日常上限为 4；5-8 个 child 只用于显式 adversarial 或 release 且宿主支持的场景。
 
 ## 🗃️ 文档与安全边界
@@ -215,6 +227,9 @@ git pull --ff-only
 ./install.sh all
 ./scripts/check-update.sh --readiness
 ```
+
+要启用全部受管能力，改用 `./install.sh --dependencies all`；明确关闭的能力不会在
+后续更新中被当作缺失项重新安装。
 
 想收到新版本提醒，可以在 [JinPLu/Teamwork](https://github.com/JinPLu/Teamwork) 选择 **Watch → Custom → Releases**。
 

@@ -13,6 +13,7 @@ Mission: independently review one sealed integrated candidate against accepted c
 Owned scope: supplied candidate identity, integrated diff, artifacts, tests, and acceptance evidence; strictly read-only.
 Input: requirements, changed scope, sealed_digest, direct proof, and prior findings if any.
 Output: `accept`, `revise`, or `blocked`, stable finding IDs, verdict, repair_batch, delta_recheck status, residual risk, and next action.
+Readiness: never ask or invent requirements. Return one exact proof gap or ambiguity blocker with owner, scope, and closing evidence; return a material unformed direction as a reclassification signal to Root.
 Verify: inspect direct evidence; check correctness/security/regression first, then
 changed-scope maintainability/deslop, owner, flow, tests/config, invariants,
 cleanup, and absence of masking branches, wrappers, or fallbacks.

@@ -30,13 +30,13 @@ ROLE_SLUGS = (
 
 PERFORMANCE = {
     "codex": {
-        "researcher": ("gpt-5.5", "high"),
-        "explorer": ("gpt-5.5", "high"),
-        "debugger": ("gpt-5.5", "high"),
+        "researcher": ("gpt-5.6-terra", "high"),
+        "explorer": ("gpt-5.6-terra", "high"),
+        "debugger": ("gpt-5.6-sol", "high"),
         "designer": ("gpt-5.6-sol", "high"),
-        "planner": ("gpt-5.5", "high"),
-        "worker": ("gpt-5.5", "high"),
-        "writer": ("gpt-5.5", "low"),
+        "planner": ("gpt-5.6-sol", "high"),
+        "worker": ("gpt-5.6-terra", "high"),
+        "writer": ("gpt-5.6-luna", "high"),
         "plan-reviewer": ("gpt-5.6-sol", "high"),
         "reviewer": ("gpt-5.6-sol", "max"),
     },
@@ -67,14 +67,14 @@ PERFORMANCE = {
 COST = {
     "codex": {
         **PERFORMANCE["codex"],
-        "researcher": ("gpt-5.5", "medium"),
-        "explorer": ("gpt-5.5", "medium"),
-        "worker": ("gpt-5.5", "medium"),
-        "debugger": ("gpt-5.5", "medium"),
-        "designer": ("gpt-5.6-sol", "medium"),
-        "planner": ("gpt-5.5", "medium"),
-        "writer": ("gpt-5.5", "low"),
-        "plan-reviewer": ("gpt-5.6-sol", "high"),
+        "researcher": ("gpt-5.6-terra", "high"),
+        "explorer": ("gpt-5.6-luna", "high"),
+        "worker": ("gpt-5.6-luna", "xhigh"),
+        "debugger": ("gpt-5.6-terra", "high"),
+        "designer": ("gpt-5.6-terra", "high"),
+        "planner": ("gpt-5.6-terra", "high"),
+        "writer": ("gpt-5.6-luna", "high"),
+        "plan-reviewer": ("gpt-5.6-terra", "high"),
         "reviewer": ("gpt-5.6-sol", "high"),
     },
     "claude": {
@@ -238,9 +238,9 @@ class RoleProfilesV4Test(unittest.TestCase):
         role_clauses = {
             "debugger": (
                 "one frozen failure signature",
-                "before inspection, probes, or fixes",
+                "before work",
                 "rank 3-5 plausible H-* hypotheses",
-                "map every inspection, command, and probe to H-* IDs",
+                "Map each check/probe to H-*",
                 "one discriminating experiment at a time",
                 "supported, weakened, or rejected",
                 "event-flow",

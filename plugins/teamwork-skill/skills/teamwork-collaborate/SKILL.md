@@ -14,6 +14,11 @@ Internal Designer is read-only challenge/audit only; it never owns
 questions, acceptance, persistence, planning, implementation, or release. This
 skill does not authorize file changes outside its checkpoint or implementation.
 
+Collaborate exclusively owns latent preferences and unformed intent that can
+materially change the outcome. Only Root may activate it or present its
+questions. A leaf instead returns an explicit reclassification signal with the
+decision boundary it found; it never starts Collaborate or asks the user.
+
 ## Mode And Questions
 
 Select the mode from intent and evidence; do not ask the user to name it.

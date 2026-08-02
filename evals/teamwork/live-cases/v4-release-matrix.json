@@ -14,15 +14,15 @@
     "codex": {
       "performance-first": {
         "researcher": {
-          "model": "gpt-5.5",
+          "model": "gpt-5.6-terra",
           "effort": "high"
         },
         "explorer": {
-          "model": "gpt-5.5",
+          "model": "gpt-5.6-terra",
           "effort": "high"
         },
         "debugger": {
-          "model": "gpt-5.5",
+          "model": "gpt-5.6-sol",
           "effort": "high"
         },
         "designer": {
@@ -30,11 +30,11 @@
           "effort": "high"
         },
         "planner": {
-          "model": "gpt-5.5",
+          "model": "gpt-5.6-sol",
           "effort": "high"
         },
         "worker": {
-          "model": "gpt-5.5",
+          "model": "gpt-5.6-terra",
           "effort": "high"
         },
         "plan-reviewer": {
@@ -48,31 +48,31 @@
       },
       "cost-first": {
         "researcher": {
-          "model": "gpt-5.5",
-          "effort": "medium"
+          "model": "gpt-5.6-terra",
+          "effort": "high"
         },
         "explorer": {
-          "model": "gpt-5.5",
-          "effort": "medium"
+          "model": "gpt-5.6-luna",
+          "effort": "high"
         },
         "debugger": {
-          "model": "gpt-5.5",
-          "effort": "medium"
+          "model": "gpt-5.6-terra",
+          "effort": "high"
         },
         "designer": {
-          "model": "gpt-5.6-sol",
-          "effort": "medium"
+          "model": "gpt-5.6-terra",
+          "effort": "high"
         },
         "planner": {
-          "model": "gpt-5.5",
-          "effort": "medium"
+          "model": "gpt-5.6-terra",
+          "effort": "high"
         },
         "worker": {
-          "model": "gpt-5.5",
-          "effort": "medium"
+          "model": "gpt-5.6-luna",
+          "effort": "xhigh"
         },
         "plan-reviewer": {
-          "model": "gpt-5.6-sol",
+          "model": "gpt-5.6-terra",
           "effort": "high"
         },
         "reviewer": {

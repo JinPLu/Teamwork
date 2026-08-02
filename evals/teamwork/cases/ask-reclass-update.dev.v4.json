@@ -1,0 +1,15 @@
+{
+  "evidence": "Static Update readiness reclassification fixture.",
+  "expected": {"capability": "ask", "language": "en", "requires": ["reclassification-signal", "root-only-question", "same-workflow-resume"], "scenario": "reclass-update"},
+  "id": "ask-reclass-update",
+  "must": ["Root collects one exact installation value and resumes, or reclassifies a broader rollout tradeoff to Collaborate"],
+  "must_not": ["Explorer or Worker asks, valid inherited preferences are re-asked, or the answer expands authority"],
+  "platforms": ["codex", "cursor", "claude"],
+  "producers": [
+    {"class": "root-policy", "source": "scripts/install/policy.sh"},
+    {"class": "skill", "source": "skills/teamwork-update/SKILL.md"}
+  ],
+  "prompt": "Update the global install; the explicit profile and managed-capability values are missing, while rollout tradeoffs may need a product decision.",
+  "source": "synthetic",
+  "split": "dev"
+}

@@ -78,25 +78,25 @@ PLATFORM_AGENT_ROOTS = {
 }
 CODEX_PROFILE_MATRICES = {
     "performance-first": {
-        "teamwork-researcher": ("gpt-5.5", "high"),
-        "teamwork-explorer": ("gpt-5.5", "high"),
-        "teamwork-debugger": ("gpt-5.5", "high"),
+        "teamwork-researcher": ("gpt-5.6-terra", "high"),
+        "teamwork-explorer": ("gpt-5.6-terra", "high"),
+        "teamwork-debugger": ("gpt-5.6-sol", "high"),
         "teamwork-designer": ("gpt-5.6-sol", "high"),
-        "teamwork-planner": ("gpt-5.5", "high"),
-        "teamwork-worker": ("gpt-5.5", "high"),
-        "teamwork-writer": ("gpt-5.5", "low"),
+        "teamwork-planner": ("gpt-5.6-sol", "high"),
+        "teamwork-worker": ("gpt-5.6-terra", "high"),
+        "teamwork-writer": ("gpt-5.6-luna", "high"),
         "teamwork-plan-reviewer": ("gpt-5.6-sol", "high"),
         "teamwork-reviewer": ("gpt-5.6-sol", "max"),
     },
     "cost-first": {
-        "teamwork-researcher": ("gpt-5.5", "medium"),
-        "teamwork-explorer": ("gpt-5.5", "medium"),
-        "teamwork-debugger": ("gpt-5.5", "medium"),
-        "teamwork-designer": ("gpt-5.6-sol", "medium"),
-        "teamwork-planner": ("gpt-5.5", "medium"),
-        "teamwork-worker": ("gpt-5.5", "medium"),
-        "teamwork-writer": ("gpt-5.5", "low"),
-        "teamwork-plan-reviewer": ("gpt-5.6-sol", "high"),
+        "teamwork-researcher": ("gpt-5.6-terra", "high"),
+        "teamwork-explorer": ("gpt-5.6-luna", "high"),
+        "teamwork-debugger": ("gpt-5.6-terra", "high"),
+        "teamwork-designer": ("gpt-5.6-terra", "high"),
+        "teamwork-planner": ("gpt-5.6-terra", "high"),
+        "teamwork-worker": ("gpt-5.6-luna", "xhigh"),
+        "teamwork-writer": ("gpt-5.6-luna", "high"),
+        "teamwork-plan-reviewer": ("gpt-5.6-terra", "high"),
         "teamwork-reviewer": ("gpt-5.6-sol", "high"),
     },
 }
@@ -576,7 +576,10 @@ install_plugin_codex_bootstrap
         output = report.stdout
         self.assertIn("Installed profile markers (derived): performance-first", output)
         self.assertIn("Cursor explorer model: gemini-3.5-flash", output)
-        self.assertIn("Designer/Plan Reviewer=Sol/high, Reviewer=Sol/max", output)
+        self.assertIn(
+            "Debugger/Designer/Planner/Plan Reviewer=Sol/high, Reviewer=Sol/max",
+            output,
+        )
         for retired_or_alias in (
             "explore.md",
             "Judge",

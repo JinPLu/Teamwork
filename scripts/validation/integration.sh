@@ -303,6 +303,16 @@ grep_absent 'codex-skill-content' \
   "$tmp/fresh-readiness.out"
 grep_required '^MANAGED_INSTALL_READY=' "$tmp/fresh-readiness.out" \
   "readiness must distinguish managed install state"
+grep_required '^BASELINE_READY=' "$tmp/fresh-readiness.out" \
+  "readiness must expose mandatory baseline state"
+grep_required '^FULL_CAPABILITY_READY=no$' "$tmp/fresh-readiness.out" \
+  "explicit managed dependency opt-out must not claim full capability"
+grep_required '^PREFERENCES=valid$' "$tmp/fresh-readiness.out" \
+  "install must persist an owned preference receipt"
+grep_required '^MANAGED_CODEGRAPH_PREFERENCE=disabled$' "$tmp/fresh-readiness.out" \
+  "readiness must distinguish CodeGraph opt-out from missing"
+grep_required '^MANAGED_GPU_BROKER_PREFERENCE=disabled$' "$tmp/fresh-readiness.out" \
+  "readiness must distinguish GPU Broker opt-out from missing"
 grep_required '^HOST_ACTIVATION=manual-action-required$' "$tmp/fresh-readiness.out" \
   "readiness must expose remaining host-owned manual activation"
 grep_required '^MANUAL_ACTIONS=.*cursor-policy-paste' "$tmp/fresh-readiness.out" \
@@ -415,8 +425,8 @@ for agent in teamwork-researcher teamwork-explorer teamwork-debugger teamwork-de
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home/.codex/agents/$agent.toml" \
     "Codex install must render high reasoning for $agent"
 done
-grep_required '^model_reasoning_effort = "low"$' "$tmp/home/.codex/agents/teamwork-writer.toml" \
-  "Codex install must render low reasoning for teamwork-writer"
+grep_required '^model_reasoning_effort = "high"$' "$tmp/home/.codex/agents/teamwork-writer.toml" \
+  "Codex install must render high reasoning for teamwork-writer"
 for agent in teamwork-reviewer; do
   grep_required '^model_reasoning_effort = "max"$' "$tmp/home/.codex/agents/$agent.toml" \
     "Codex install must render max reasoning for $agent"
@@ -480,17 +490,17 @@ for agent in "${CODEX_AGENTS[@]}"; do
   [[ ! -L "$tmp/home-codex-agents/.codex/agents/$agent.toml" ]] \
     || fail "default Codex agent install must copy $agent"
 done
-for agent in teamwork-researcher teamwork-explorer teamwork-debugger teamwork-planner teamwork-worker; do
-  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
-    "default Codex execution-path agent must use gpt-5.5 for $agent"
+for agent in teamwork-researcher teamwork-explorer teamwork-worker; do
+  grep_required '^model = "gpt-5.6-terra"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
+    "default Codex routine-path agent must use Terra for $agent"
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
-    "default Codex execution-path agent must use high reasoning for $agent"
+    "default Codex routine-path agent must use high reasoning for $agent"
 done
-grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents/.codex/agents/teamwork-writer.toml" \
-  "default Codex writer install must use gpt-5.5"
-grep_required '^model_reasoning_effort = "low"$' "$tmp/home-codex-agents/.codex/agents/teamwork-writer.toml" \
-  "default Codex writer install must use low reasoning"
-for agent in teamwork-designer teamwork-plan-reviewer; do
+grep_required '^model = "gpt-5.6-luna"$' "$tmp/home-codex-agents/.codex/agents/teamwork-writer.toml" \
+  "default Codex writer install must use Luna"
+grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/teamwork-writer.toml" \
+  "default Codex writer install must use high reasoning"
+for agent in teamwork-debugger teamwork-designer teamwork-planner teamwork-plan-reviewer; do
   grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
     "default Codex agent install must render gpt-5.6-sol for $agent"
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
@@ -547,23 +557,23 @@ HOME="$tmp/home-codex-no-routing" "$ROOT/install.sh" --no-codex-routing codex-ag
   || fail "--no-codex-routing must preserve a missing user config"
 
 HOME="$tmp/home-codex-agents-cost" "$ROOT/install.sh" --profile cost-first codex-agents >/dev/null
-for agent in teamwork-researcher teamwork-explorer teamwork-debugger teamwork-planner teamwork-worker; do
-  grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex agent install must use gpt-5.5 for $agent"
-  grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex agent install must use medium reasoning for $agent"
+for agent in teamwork-researcher teamwork-debugger teamwork-designer teamwork-planner teamwork-plan-reviewer; do
+  grep_required '^model = "gpt-5.6-terra"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex agent install must use Terra for $agent"
+  grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex agent install must use high reasoning for $agent"
 done
-grep_required '^model = "gpt-5.5"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-writer.toml" \
-  "cost-first Codex writer install must use gpt-5.5"
-grep_required '^model_reasoning_effort = "low"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-writer.toml" \
-  "cost-first Codex writer install must use low reasoning"
-for agent in teamwork-designer; do
-  grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex agent install must use Sol for $agent"
-  grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex agent install must use medium reasoning for $agent"
+for agent in teamwork-explorer teamwork-writer; do
+  grep_required '^model = "gpt-5.6-luna"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex bounded agent install must use Luna for $agent"
+  grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex bounded agent install must use high reasoning for $agent"
 done
-for agent in teamwork-plan-reviewer teamwork-reviewer; do
+grep_required '^model = "gpt-5.6-luna"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-worker.toml" \
+  "cost-first Codex worker install must use Luna"
+grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-worker.toml" \
+  "cost-first Codex worker install must use xhigh reasoning"
+for agent in teamwork-reviewer; do
   grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
     "cost-first Codex agent install must use Sol for $agent"
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
@@ -681,6 +691,10 @@ HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no
   > "$tmp/global-only-readiness.out"
 grep_required '^INSTALL_READY=yes$' "$tmp/global-only-readiness.out" \
   "global readiness must pass after a fresh global install"
+grep_required '^BASELINE_READY=yes$' "$tmp/global-only-readiness.out" \
+  "fresh global install must prove the mandatory baseline"
+grep_required '^FULL_CAPABILITY_READY=no$' "$tmp/global-only-readiness.out" \
+  "disabled optional substrates must not claim full capability"
 grep_required '^MISSING=cursor-policy-manual$' "$tmp/global-only-readiness.out" \
   "global readiness must recognize wrapped Codex and Claude policy text"
 ! grep -q '^PROJECT_' "$tmp/global-only-readiness.out" \
@@ -1030,6 +1044,8 @@ for global_surface in \
   [[ ! -e "$global_surface" ]] \
     || fail "init-project must remain project-local and not create $global_surface"
 done
+[[ ! -e "$tmp/home-init-project/.local/state/teamwork/install-preferences.json" ]] \
+  || fail "init-project must not create or change the global install preference receipt"
 for removed_local_surface in \
   "$init_root/.agents" \
   "$init_root/.codex/agents" \
@@ -1200,7 +1216,7 @@ else
   # notifications without creating duplicate skills or hooks.
   HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
     "$cache_root/install.sh" --profile cost-first --no-notifications plugin-codex-bootstrap >/dev/null
-  grep_required '^model = "gpt-5.5"$' "$marketplace_codex_home/agents/teamwork-explorer.toml" \
+  grep_required '^model = "gpt-5.6-luna"$' "$marketplace_codex_home/agents/teamwork-explorer.toml" \
     "plugin bootstrap must render the requested Codex profile"
   [[ ! -e "$marketplace_codex_home/teamwork/notify.py" ]] \
     || fail "plugin bootstrap --no-notifications must remove only its stable notifier"
@@ -1211,6 +1227,12 @@ else
     "$cache_root/scripts/check-update.sh" --plugin --readiness --no-fetch > "$tmp/plugin-readiness.out"
   grep_required '^MANAGED_INSTALL_READY=yes$' "$tmp/plugin-readiness.out" \
     "plugin readiness must verify the cached full Codex setup"
+  grep_required '^BASELINE_READY=yes$' "$tmp/plugin-readiness.out" \
+    "plugin readiness must prove the mandatory Codex baseline"
+  grep_required '^FULL_CAPABILITY_READY=no$' "$tmp/plugin-readiness.out" \
+    "plugin readiness must preserve the explicit managed dependency opt-out"
+  grep_required '^PREFERENCES=valid$' "$tmp/plugin-readiness.out" \
+    "plugin bootstrap must share the owned install preference receipt"
   grep_required '^PLUGIN_CATALOG=enabled$' "$tmp/plugin-readiness.out" \
     "plugin readiness must inspect codex plugin list JSON"
   grep_required '^PLUGIN_CACHE=current' "$tmp/plugin-readiness.out" \

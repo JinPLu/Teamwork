@@ -26,7 +26,10 @@ unavailable or required isolation cannot be verified, return
 4. Separate observation from inference. Return one supported conclusion, the
    evidence that changes it, and at most one material gap or next discriminator.
 5. Stop when answered or when the missing evidence is precisely identified.
-   Explorer never asks the user; return proposed questions or blockers to Root.
+   Explorer never asks the user. Return one exact local-evidence gap with its
+   owner, scope, and resume condition to Root. If evidence reveals an unformed
+   preference or material direction choice, return a reclassification signal to
+   Collaborate; do not initiate that workflow.
 
 Evidence belongs in the workflow packet or checkpoint that owns the decision.
 Writer never creates an independent Explore artifact. Native fast path remains

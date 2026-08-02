@@ -18,6 +18,7 @@ import unittest
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 V342_SURFACES = REPO_ROOT / "scripts/tests/fixtures/v3.4.2-owned-surfaces.json"
 RETIRED_V5 = REPO_ROOT / "scripts/tests/fixtures/retired-teamwork-skills-v5.json"
+PREFERENCES_HELPER = REPO_ROOT / "scripts/install/preferences.py"
 EXPECTED_SKILLS = {
     "teamwork-collaborate",
     "teamwork-debug",
@@ -47,25 +48,25 @@ EXPECTED_CODEX_AGENTS = {
 }
 CODEX_PROFILE_MATRICES = {
     "performance-first": {
-        "teamwork-researcher": ("gpt-5.5", "high"),
-        "teamwork-explorer": ("gpt-5.5", "high"),
-        "teamwork-debugger": ("gpt-5.5", "high"),
+        "teamwork-researcher": ("gpt-5.6-terra", "high"),
+        "teamwork-explorer": ("gpt-5.6-terra", "high"),
+        "teamwork-debugger": ("gpt-5.6-sol", "high"),
         "teamwork-designer": ("gpt-5.6-sol", "high"),
-        "teamwork-planner": ("gpt-5.5", "high"),
-        "teamwork-worker": ("gpt-5.5", "high"),
-        "teamwork-writer": ("gpt-5.5", "low"),
+        "teamwork-planner": ("gpt-5.6-sol", "high"),
+        "teamwork-worker": ("gpt-5.6-terra", "high"),
+        "teamwork-writer": ("gpt-5.6-luna", "high"),
         "teamwork-plan-reviewer": ("gpt-5.6-sol", "high"),
         "teamwork-reviewer": ("gpt-5.6-sol", "max"),
     },
     "cost-first": {
-        "teamwork-researcher": ("gpt-5.5", "medium"),
-        "teamwork-explorer": ("gpt-5.5", "medium"),
-        "teamwork-debugger": ("gpt-5.5", "medium"),
-        "teamwork-designer": ("gpt-5.6-sol", "medium"),
-        "teamwork-planner": ("gpt-5.5", "medium"),
-        "teamwork-worker": ("gpt-5.5", "medium"),
-        "teamwork-writer": ("gpt-5.5", "low"),
-        "teamwork-plan-reviewer": ("gpt-5.6-sol", "high"),
+        "teamwork-researcher": ("gpt-5.6-terra", "high"),
+        "teamwork-explorer": ("gpt-5.6-luna", "high"),
+        "teamwork-debugger": ("gpt-5.6-terra", "high"),
+        "teamwork-designer": ("gpt-5.6-terra", "high"),
+        "teamwork-planner": ("gpt-5.6-terra", "high"),
+        "teamwork-worker": ("gpt-5.6-luna", "xhigh"),
+        "teamwork-writer": ("gpt-5.6-luna", "high"),
+        "teamwork-plan-reviewer": ("gpt-5.6-terra", "high"),
         "teamwork-reviewer": ("gpt-5.6-sol", "high"),
     },
 }
@@ -119,6 +120,8 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         env.pop("TEAMWORK_NOTIFICATIONS_ACTION", None)
         env.pop("TEAMWORK_CODEX_ROUTING", None)
         env.pop("TEAMWORK_MANAGED_DEPENDENCIES", None)
+        env.pop("TEAMWORK_MANAGED_CODEGRAPH", None)
+        env.pop("TEAMWORK_MANAGED_GPU_BROKER", None)
         env.pop("TEAMWORK_CODEGRAPH_PACKAGE", None)
         env.pop("TEAMWORK_CODEGRAPH_VERSION", None)
         env.pop("TEAMWORK_GPU_BROKER_SOURCE", None)
@@ -252,6 +255,8 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, output)
         self.assertIn("codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap", output)
         self.assertIn("--dependencies|--no-dependencies", output)
+        self.assertIn("--managed-codegraph|--no-managed-codegraph", output)
+        self.assertIn("--managed-gpu-broker|--no-managed-gpu-broker", output)
         self.assertIn(
             "`--project-root` is valid only with `init-project` or `plugin-init-project`.",
             output,
@@ -260,11 +265,11 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         self.assertNotRegex(output, r"(?m)^\s+project\s+")
         self.assertNotIn("init-project refreshes the user-level routing", output)
         self.assertIn("Project init never changes user-level routing", output)
-        self.assertIn("cost-first uses GPT-5.5/medium", output)
-        self.assertIn("Worker; GPT-5.5/low for Writer; Sol/medium for Designer;", output)
-        self.assertIn("Sol/high for Plan Reviewer and Reviewer.", output)
-        self.assertIn("Writer is fixed to the simplest model in both profiles.", output)
-        self.assertIn("Cursor and Claude Code keep their existing profile mappings.", output)
+        self.assertIn("cost-first uses Terra/high", output)
+        self.assertIn("Luna/high for Explorer and Writer;", output)
+        self.assertIn("Luna/xhigh for Worker; and Sol/high for Reviewer.", output)
+        self.assertIn("Cursor and Claude Code keep", output)
+        self.assertIn("their existing profile mappings.", output)
         self.assertNotIn("cost-first lowers only", output)
 
     def test_invalid_arguments_keep_exit_and_usage_contract(self) -> None:
@@ -278,6 +283,44 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         output = result.stdout.decode()
         self.assertEqual(result.returncode, 2, output)
         self.assertTrue(output.startswith("Specify only one install target.\n"))
+
+    def test_managed_capability_flags_are_rejected_by_non_lifecycle_targets(self) -> None:
+        targets = (
+            "cursor",
+            "claude",
+            "init-project",
+            "plugin-init-project",
+            "codex-agents",
+            "cursor-agents",
+            "claude-agents",
+            "codex-policy",
+            "cursor-policy",
+            "cursor-policy-copy",
+            "claude-policy",
+            "cursor-mcp",
+        )
+        flags = (
+            "--dependencies",
+            "--no-dependencies",
+            "--managed-codegraph",
+            "--no-managed-codegraph",
+            "--managed-gpu-broker",
+            "--no-managed-gpu-broker",
+        )
+        for target in targets:
+            for flag in flags:
+                with self.subTest(target=target, flag=flag):
+                    home = self.base / f"unsupported-{target}-{flag.removeprefix('--')}"
+                    result = self.run_install(flag, target, home=home)
+                    output = result.stdout.decode()
+                    self.assertEqual(result.returncode, 2, output)
+                    self.assertIn(
+                        "Managed capability options are supported only with codex, all, update, or plugin-codex-bootstrap targets",
+                        output,
+                    )
+                    self.assertFalse(
+                        (home / ".local/state/teamwork/install-preferences.json").exists()
+                    )
 
     def test_removed_project_routes_fail_without_local_package_writes(self) -> None:
         project = self.base / "project"
@@ -391,6 +434,7 @@ class InstallCliCompatibilityTests(unittest.TestCase):
     def test_update_fails_before_global_writes_without_local_gpu_companion(self) -> None:
         home = self.base / "update-missing-companion"
         result = self.run_install(
+            "--dependencies",
             "--no-notifications",
             "--no-codex-routing",
             "update",
@@ -715,6 +759,99 @@ class InstallCliCompatibilityTests(unittest.TestCase):
                 )
 
 
+class InstallPreferenceHelperTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tempdir = tempfile.TemporaryDirectory()
+        self.base = pathlib.Path(self.tempdir.name)
+        self.home = self.base / "home"
+        self.state_root = self.base / "state"
+        self.home.mkdir()
+        self.env = os.environ.copy()
+        self.env["HOME"] = str(self.home)
+        self.env["XDG_STATE_HOME"] = str(self.state_root)
+        self.env["CODEX_HOME"] = str(self.home / ".codex")
+        self.path = self.state_root / "teamwork" / "install-preferences.json"
+
+    def tearDown(self) -> None:
+        self.tempdir.cleanup()
+
+    def run_helper(self, *args: str) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            ["python3", str(PREFERENCES_HELPER), *args],
+            cwd=REPO_ROOT,
+            env=self.env,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+    def test_missing_preferences_are_read_only_until_recorded_and_then_inherited(self) -> None:
+        missing = self.run_helper("resolve")
+        self.assertEqual(missing.returncode, 0, missing.stderr)
+        self.assertEqual(
+            missing.stdout.strip(),
+            "performance-first\tdisabled\tdisabled\tmissing",
+        )
+        self.assertFalse(self.path.exists())
+
+        recorded = self.run_helper(
+            "resolve",
+            "--profile",
+            "cost-first",
+            "--profile-source",
+            "cli",
+            "--codegraph",
+            "enabled",
+            "--codegraph-source",
+            "cli",
+            "--record",
+        )
+        self.assertEqual(recorded.returncode, 0, recorded.stderr)
+        state = json.loads(self.path.read_text(encoding="utf-8"))
+        self.assertEqual(state["owner"], "teamwork")
+        self.assertEqual(state["desired"]["profile"]["value"], "cost-first")
+        self.assertEqual(state["desired"]["codegraph"]["value"], "enabled")
+        self.assertEqual(state["desired"]["gpu_broker"]["value"], "disabled")
+        self.assertEqual(self.path.stat().st_mode & 0o777, 0o600)
+        inherited = self.run_helper("resolve")
+        self.assertEqual(inherited.stdout.strip(), "cost-first\tenabled\tdisabled\tvalid")
+
+    def test_invalid_or_unowned_preferences_are_never_overwritten(self) -> None:
+        self.path.parent.mkdir(parents=True)
+        original = b'{"schema_version":1,"owner":"someone-else"}\n'
+        self.path.write_bytes(original)
+        result = self.run_helper("resolve", "--record")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Teamwork install preferences refused", result.stderr)
+        self.assertEqual(self.path.read_bytes(), original)
+        status = self.run_helper("status", "--field", "status")
+        self.assertEqual(status.stdout.strip(), "invalid")
+
+    def test_plugin_activation_v1_seeds_profile_but_not_capabilities(self) -> None:
+        activation = self.home / ".codex/teamwork/plugin-activation.json"
+        activation.parent.mkdir(parents=True)
+        activation.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "plugin": "teamwork-skill",
+                    "marketplace": "teamwork",
+                    "version": "6.1.3",
+                    "profile": "cost-first",
+                    "notifications": "disabled",
+                }
+            ),
+            encoding="utf-8",
+        )
+        result = self.run_helper("resolve", "--record")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        state = json.loads(self.path.read_text(encoding="utf-8"))
+        self.assertEqual(state["desired"]["profile"]["source"], "plugin-activation-v1")
+        self.assertEqual(state["desired"]["profile"]["value"], "cost-first")
+        self.assertEqual(state["desired"]["codegraph"]["value"], "disabled")
+        self.assertEqual(state["desired"]["gpu_broker"]["value"], "disabled")
+
+
 class ManagedDependencyHealthHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         status = self.path.rsplit("/", 1)[-1]
@@ -814,13 +951,17 @@ esac
         return env
 
     def run_managed_update(
-        self, env: dict[str, str] | None = None
+        self,
+        env: dict[str, str] | None = None,
+        *,
+        capability_flags: tuple[str, ...] = ("--dependencies",),
     ) -> subprocess.CompletedProcess[str]:
         env = env or self.managed_update_env()
         result = subprocess.run(
             [
                 "bash",
                 str(REPO_ROOT / "install.sh"),
+                *capability_flags,
                 "--no-notifications",
                 "--no-codex-routing",
                 "update",
@@ -832,6 +973,46 @@ esac
             check=False,
         )
         return result
+
+    def preference_state(self) -> dict[str, object]:
+        path = self.base / "home" / ".local" / "state" / "teamwork" / "install-preferences.json"
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def test_update_baseline_skips_optional_tools_and_records_opt_out(self) -> None:
+        result = self.run_managed_update(capability_flags=())
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse(self.log.exists())
+        state = self.preference_state()
+        self.assertEqual(state["desired"]["codegraph"]["value"], "disabled")
+        self.assertEqual(state["desired"]["gpu_broker"]["value"], "disabled")
+        self.assertEqual(state["receipts"]["codegraph"]["status"], "disabled")
+        self.assertEqual(state["receipts"]["gpu_broker"]["status"], "disabled")
+
+    def test_update_can_enable_codegraph_without_gpu_broker(self) -> None:
+        result = self.run_managed_update(capability_flags=("--managed-codegraph",))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        commands = self.log.read_text(encoding="utf-8")
+        self.assertIn("npm install --global @colbymchenry/codegraph@1.5.0", commands)
+        self.assertNotIn("uv tool install", commands)
+        self.assertNotIn("gpu-broker daemon install", commands)
+        state = self.preference_state()
+        self.assertEqual(state["desired"]["codegraph"]["value"], "enabled")
+        self.assertEqual(state["receipts"]["codegraph"]["status"], "ready")
+        self.assertEqual(state["desired"]["gpu_broker"]["value"], "disabled")
+
+    def test_update_can_enable_gpu_broker_without_codegraph(self) -> None:
+        result = self.run_managed_update(capability_flags=("--managed-gpu-broker",))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        commands = self.log.read_text(encoding="utf-8")
+        self.assertNotIn("npm install", commands)
+        self.assertIn(f"uv tool install --force {self.source}", commands)
+        self.assertIn(
+            f"gpu-broker daemon install --source-root {self.source}", commands
+        )
+        state = self.preference_state()
+        self.assertEqual(state["desired"]["codegraph"]["value"], "disabled")
+        self.assertEqual(state["desired"]["gpu_broker"]["value"], "enabled")
+        self.assertEqual(state["receipts"]["gpu_broker"]["status"], "ready")
 
     def test_update_refreshes_dependencies_before_global_surfaces(self) -> None:
         result = self.run_managed_update()
@@ -919,6 +1100,10 @@ esac
         self.assertIn("npm install --global @colbymchenry/codegraph@1.5.0", commands)
         self.assertNotIn("uv tool install", commands)
         self.assertNotIn("gpu-broker daemon install", commands)
+        self.assertEqual(
+            self.preference_state()["receipts"]["codegraph"]["status"],
+            "failed",
+        )
         self.assertFalse((self.base / "home" / ".agents").exists())
         self.assertFalse((self.base / "home" / ".cursor").exists())
         self.assertFalse((self.base / "home" / ".claude").exists())

@@ -48,10 +48,32 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dependencies)
       MANAGED_DEPENDENCIES_ACTION="apply"
+      MANAGED_DEPENDENCIES_SOURCE="cli"
       shift
       ;;
     --no-dependencies)
       MANAGED_DEPENDENCIES_ACTION="skip"
+      MANAGED_DEPENDENCIES_SOURCE="cli"
+      shift
+      ;;
+    --managed-codegraph)
+      MANAGED_CODEGRAPH_ACTION="enabled"
+      MANAGED_CODEGRAPH_SOURCE="cli"
+      shift
+      ;;
+    --no-managed-codegraph)
+      MANAGED_CODEGRAPH_ACTION="disabled"
+      MANAGED_CODEGRAPH_SOURCE="cli"
+      shift
+      ;;
+    --managed-gpu-broker)
+      MANAGED_GPU_BROKER_ACTION="enabled"
+      MANAGED_GPU_BROKER_SOURCE="cli"
+      shift
+      ;;
+    --no-managed-gpu-broker)
+      MANAGED_GPU_BROKER_ACTION="disabled"
+      MANAGED_GPU_BROKER_SOURCE="cli"
       shift
       ;;
     --cursor-mcp)
@@ -70,14 +92,17 @@ while [[ $# -gt 0 ]]; do
     --profile)
       [[ $# -ge 2 ]] || { echo "--profile requires a value." >&2; usage; exit 2; }
       CODEX_PROFILE="$2"
+      CODEX_PROFILE_SOURCE="cli"
       shift 2
       ;;
     --performance-first)
       CODEX_PROFILE="performance-first"
+      CODEX_PROFILE_SOURCE="cli"
       shift
       ;;
     --cost-first)
       CODEX_PROFILE="cost-first"
+      CODEX_PROFILE_SOURCE="cli"
       shift
       ;;
     project|project-codex-agents)
@@ -106,9 +131,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-validate_codex_profile
+EFFECTIVE_TARGET="${TARGET:-codex}"
+if [[ -n "$CODEX_PROFILE_SOURCE" ]]; then
+  validate_codex_profile
+fi
 
-case "${TARGET:-codex}" in
+case "$EFFECTIVE_TARGET" in
   plugin-codex-bootstrap|plugin-init-project)
     if [[ "$INSTALL_MODE" != "copy" ]]; then
       echo "Marketplace bootstrap targets require --copy so user-level Codex resources remain stable after a plugin cache update." >&2
@@ -126,7 +154,7 @@ case "$NOTIFICATIONS_ACTION" in
     ;;
 esac
 
-case "${TARGET:-codex}" in
+case "$EFFECTIVE_TARGET" in
   all|update|plugin-codex-bootstrap)
     if [[ "$NOTIFICATIONS_ACTION" == "preserve" ]]; then
       NOTIFICATIONS_ACTION="install"
@@ -144,7 +172,7 @@ case "$CODEX_ROUTING_ACTION" in
 esac
 
 if [[ "$NOTIFICATIONS_ACTION" != "preserve" ]]; then
-  case "${TARGET:-codex}" in
+  case "$EFFECTIVE_TARGET" in
     codex|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project)
       ;;
     *)
@@ -155,13 +183,35 @@ if [[ "$NOTIFICATIONS_ACTION" != "preserve" ]]; then
   esac
 fi
 
-if [[ -n "$PROJECT_ROOT" && "${TARGET:-codex}" != "init-project" && "${TARGET:-codex}" != "plugin-init-project" ]]; then
+if [[ -n "$PROJECT_ROOT" && "$EFFECTIVE_TARGET" != "init-project" && "$EFFECTIVE_TARGET" != "plugin-init-project" ]]; then
   echo "--project-root is valid only with the init-project or plugin-init-project target." >&2
   usage
   exit 2
 fi
 
-case "${TARGET:-codex}" in
+validate_preference_overrides
+if ! validate_managed_dependency_target "$EFFECTIVE_TARGET"; then
+  usage
+  exit 2
+fi
+
+case "$EFFECTIVE_TARGET" in
+  init-project|plugin-init-project)
+    CODEX_PROFILE="${CODEX_PROFILE:-performance-first}"
+    MANAGED_CODEGRAPH_ACTION="disabled"
+    MANAGED_GPU_BROKER_ACTION="disabled"
+    MANAGED_DEPENDENCIES_ACTION="skip"
+    ;;
+  codex-policy|cursor-policy|cursor-policy-copy|claude-policy|cursor-mcp)
+    resolve_install_preferences read
+    ;;
+  *)
+    resolve_install_preferences read
+    ;;
+esac
+validate_codex_profile
+
+case "$EFFECTIVE_TARGET" in
   codex)
     install_codex
     ;;

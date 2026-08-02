@@ -512,6 +512,58 @@ def validate_bound_producer_sources(
                 validate_design_adversarial_reference_contract(source)
             else:
                 validate_skill_source_contract(Path(source_path).parent.name, source)
+            if (capability, scenario) == ("ask", "latent-preference-collaborate"):
+                _require_source_phrases(source, path, source_path, [
+                    ("latent preferences and unformed intent",),
+                    ("Only Root may activate",),
+                    ("never starts Collaborate or asks",),
+                ])
+            readiness_skill_rules = {
+                "reclass-research": [
+                    ("Researcher never asks",),
+                    ("exact gap",),
+                    ("reclassification signal",),
+                ],
+                "reclass-explore": [
+                    ("Explorer never asks",),
+                    ("exact local-evidence gap",),
+                    ("reclassification signal",),
+                ],
+                "reclass-debug": [
+                    ("A leaf never asks directly",),
+                    ("returns that exact gap",),
+                    ("reclassification signal",),
+                ],
+                "reclass-plan": [
+                    ("Planner never asks users",),
+                    ("exact missing required value",),
+                    ("reclassification signal",),
+                ],
+                "reclass-review": [
+                    ("Reviewer and Plan Reviewer never ask",),
+                    ("proof gap or ambiguity blocker",),
+                    ("reclassification signal",),
+                ],
+                "reclass-goal": [
+                    ("Root alone asks once",),
+                    ("one active gap",),
+                    ("reclassified to Collaborate",),
+                ],
+                "reclass-init": [
+                    ("Explorer and Worker never ask",),
+                    ("reclassify it to Collaborate",),
+                    ("resumes the same Init workflow",),
+                ],
+                "reclass-update": [
+                    ("Explorer and Worker never ask",),
+                    ("reclassified to Collaborate",),
+                    ("resumes the same Update workflow",),
+                ],
+            }
+            if capability == "ask" and scenario in readiness_skill_rules:
+                _require_source_phrases(
+                    source, path, source_path, readiness_skill_rules[scenario]
+                )
         elif producer["class"] == "root-policy":
             _require_source_phrases(source, path, source_path, [
                 ("root alone asks",),
@@ -519,6 +571,19 @@ def validate_bound_producer_sources(
                 ("ground claims",),
                 ("preserve unrelated", "preserve dirty work"),
             ])
+            if capability == "ask" and scenario not in {
+                "discoverable-native", "required-input", "dialogue-native"
+            }:
+                _require_source_phrases(source, path, source_path, [
+                    ("Inspect before asking",),
+                    ("discoverable/safe/reversible -> act",),
+                    ("one missing user value",),
+                    ("then resume",),
+                    ("unformed intent/preference -> Collaborate",),
+                    ("Leaves return exact gap/reclassification",),
+                    ("One asker/owner/gap",),
+                    ("no repeats",),
+                ])
             if (capability, scenario) == ("ask", "dialogue-native"):
                 _require_source_phrases(source, path, source_path, [
                     ("Discuss/brainstorm/stress-test activates Collaborate",),
@@ -527,7 +592,7 @@ def validate_bound_producer_sources(
                     ("open prose", "open questions stay prose", "open questions use prose"),
                     ("host-native 2-3 finite choices", "host-native bounded surface"),
                     ("Challenge moves", "major public/installable/release/migration"),
-                    ("explicit question-first", "explicit sustained question-first"),
+                    ("explicit question-first", "explicit sustained question-first", "question-first"),
                     ("default-save only case-v2 Collaborate/Goal checkpoints",),
                 ])
             if capability == "collaborate":
@@ -538,8 +603,8 @@ def validate_bound_producer_sources(
                     ("Adversarial is challenge, not mode",),
                     ("Default one child",),
                     ("daily cap4",),
-                    ("5-8 only for explicit adversarial/release with host support",),
-                    ("Unavailable role or unverified isolation = capability-blocked",),
+                    ("5-8 only for explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host-support"),
+                    ("Unavailable role or unverified isolation = capability-blocked", "Unavailable role/isolation = capability-blocked"),
                     ("default-save only case-v2 Collaborate/Goal checkpoints",),
                     ("No legacy-v1 artifact/collaborate/goal write fallback", "no artifact/collaborate/goal/manual/report/"),
                 ])
@@ -558,6 +623,25 @@ def validate_bound_producer_sources(
                     ("transaction inspect/cas/journal/atomic apply/readback",),
                 ])
             _require_source_phrases(source, path, source_path, role_contract)
+            if capability == "ask" and role in {
+                "researcher", "explorer", "debugger", "planner", "worker",
+                "reviewer", "plan-reviewer",
+            }:
+                readiness_role_contract = [
+                    ("Readiness:",),
+                    ("never ask",),
+                    ("owner",),
+                    ("scope",),
+                    ("reclassification signal",),
+                    ("Root",),
+                ]
+                if role in {"reviewer", "plan-reviewer"}:
+                    readiness_role_contract.append(("closing evidence",))
+                else:
+                    readiness_role_contract.append(("resume condition",))
+                _require_source_phrases(
+                    source, path, source_path, readiness_role_contract
+                )
             if capability == "research" and role == "researcher":
                 _require_source_phrases(source, path, source_path, [
                     ("claim_map", "claim-map"),
@@ -591,8 +675,8 @@ def validate_bound_producer_sources(
                     ("low-risk mechanical work", "low-risk docs", "full suites run only", "focused evidence"),
                     ("Default one child",),
                     ("daily cap4",),
-                    ("5-8 only for explicit adversarial/release with host support",),
-                    ("Unavailable role or unverified isolation = capability-blocked",),
+                    ("5-8 only for explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host-support"),
+                    ("Unavailable role or unverified isolation = capability-blocked", "Unavailable role/isolation = capability-blocked"),
                     ("preserve unrelated", "preserve dirty work"),
                     ("stop when the requested result", "stop when the result", "stop when result"),
                 ])
@@ -619,8 +703,8 @@ def validate_bound_producer_sources(
                     ("Exact roles: Research->Researcher", "Named workflows: Research->Researcher"),
                     ("Default one child",),
                     ("daily cap4",),
-                    ("5-8 only for explicit adversarial/release with host support",),
-                    ("Unavailable role or unverified isolation = capability-blocked",),
+                    ("5-8 only for explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host-support"),
+                    ("Unavailable role or unverified isolation = capability-blocked", "Unavailable role/isolation = capability-blocked"),
                 ])
             elif source_path == "skills/teamwork-research/SKILL.md":
                 _require_source_phrases(source, path, source_path, [
@@ -651,8 +735,8 @@ def validate_bound_producer_sources(
             )
         ):
             _require_source_phrases(source, path, source_path, [
-                ("one repair batch", "one repair/delta", "repair batch/delta"),
-                ("delta recheck",),
+                ("one repair batch", "one repair/delta", "repair batch/delta", "repair-batch/delta-recheck"),
+                ("delta recheck", "delta-recheck"),
             ])
             if producer["class"] == "skill":
                 _require_source_phrases(source, path, source_path, [("case-v2 review artifact",), ("unsupported", "support")])
@@ -683,13 +767,13 @@ def validate_bound_producer_sources(
             elif scenario == "generic-artifact-writer":
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
-                        ("default-save reusable artifacts", "initialized writable projects default-save", "initialized writable named workflows default-save"),
+                        ("default-save reusable artifacts", "initialized writable projects default-save", "initialized writable named workflows default-save", "writable initialized projects default-save"),
                         ("frozen packet", "frozen packets", "frozen Writer packet"),
                         ("transaction",),
                         ("readback",),
                         ("no-files/off-record/read-only/no-writes override", "No-writes/no-files/off-record"),
                         ("deliver result, report unsaved/blocked", "deliver core result, report unsaved/blocked"),
-                        ("no root/worker/strong-role fallback", "no Root/Worker/strong-role/named-method fallback"),
+                        ("no root/worker/strong-role fallback", "no Root/Worker/strong-role/named-method fallback", "no role/method fallback"),
                     ])
                 elif producer["class"] == "skill":
                     _require_source_phrases(source, path, source_path, [
@@ -751,7 +835,7 @@ def validate_bound_producer_sources(
                     _require_source_phrases(source, path, source_path, [
                         ("no-files/off-record/read-only/no-writes override", "No-writes/no-files/off-record"),
                         ("deliver result, report unsaved/blocked", "deliver core result, report unsaved/blocked"),
-                        ("no root/worker/strong-role fallback", "no Root/Worker/strong-role/named-method fallback"),
+                        ("no root/worker/strong-role fallback", "no Root/Worker/strong-role/named-method fallback", "no role/method fallback"),
                     ])
                 elif producer["class"] == "skill":
                     _require_source_phrases(source, path, source_path, [

@@ -157,6 +157,60 @@ class EvaluationContractV4Tests(unittest.TestCase):
                 {source_path: mutated},
             )
 
+    def test_request_readiness_cases_bind_one_root_asker_and_leaf_handoffs(self) -> None:
+        by_id = {case["id"]: case for case in selected_cases("dev")}
+        expected_ids = {
+            "ask-safe-default-zero-question-en",
+            "ask-safe-default-zero-question-zh",
+            "ask-exact-gap-root-resume-en",
+            "ask-exact-gap-root-resume-zh",
+            "ask-latent-preference-collaborate-en",
+            "ask-latent-preference-collaborate-zh",
+            "ask-leaf-no-question",
+            "ask-dedup-one-active-gap",
+            "ask-reclass-research",
+            "ask-reclass-explore",
+            "ask-reclass-debug",
+            "ask-reclass-plan",
+            "ask-reclass-review",
+            "ask-reclass-goal",
+            "ask-reclass-init",
+            "ask-reclass-update",
+            "ask-reclass-native-worker",
+        }
+        self.assertTrue(expected_ids.issubset(by_id))
+        for case_id in expected_ids:
+            case = by_id[case_id]
+            self.assertEqual("ask", case["expected"]["capability"])
+            self.assertEqual({"codex", "cursor", "claude"}, set(case["platforms"]))
+            self.assertIn("scripts/install/policy.sh", {item["source"] for item in case["producers"]})
+
+        root_path = "scripts/install/policy.sh"
+        root_source = (ROOT / root_path).read_text(encoding="utf-8")
+        root_mutation = root_source.replace(
+            "One asker/owner/gap; no repeats.",
+            "Every stage may ask its own question.",
+            1,
+        )
+        self.assertNotEqual(root_source, root_mutation)
+        with self.assertRaises(EvalError):
+            validate_bound_producer_sources(
+                by_id["ask-dedup-one-active-gap"],
+                ROOT / "evals/teamwork/cases/ask-dedup-one-active-gap.dev.v4.json",
+                {root_path: root_mutation},
+            )
+
+        role_path = ROLE_TEMPLATE_PATHS["codex"]["worker"]
+        role_source = (ROOT / role_path).read_text(encoding="utf-8")
+        role_mutation = role_source.replace("Readiness: never ask.", "Readiness: ask directly.", 1)
+        self.assertNotEqual(role_source, role_mutation)
+        with self.assertRaises(EvalError):
+            validate_bound_producer_sources(
+                by_id["ask-reclass-native-worker"],
+                ROOT / "evals/teamwork/cases/ask-reclass-native-worker.dev.v4.json",
+                {role_path: role_mutation},
+            )
+
     def test_mutating_each_rendered_native_owner_fails_the_bound_case(self) -> None:
         case = next(case for case in selected_cases("dev") if case["id"] == "native-quality-proportional-proof")
         case_path = ROOT / "evals/teamwork/cases/native-quality-proportional-proof.dev.v4.json"
@@ -318,12 +372,12 @@ class EvaluationContractV4Tests(unittest.TestCase):
         matrix = cases[0]["role_expectations"]["codex"]
         self.assertEqual(
             {
-                "researcher": {"model": "gpt-5.5", "effort": "high"},
-                "explorer": {"model": "gpt-5.5", "effort": "high"},
-                "debugger": {"model": "gpt-5.5", "effort": "high"},
+                "researcher": {"model": "gpt-5.6-terra", "effort": "high"},
+                "explorer": {"model": "gpt-5.6-terra", "effort": "high"},
+                "debugger": {"model": "gpt-5.6-sol", "effort": "high"},
                 "designer": {"model": "gpt-5.6-sol", "effort": "high"},
-                "planner": {"model": "gpt-5.5", "effort": "high"},
-                "worker": {"model": "gpt-5.5", "effort": "high"},
+                "planner": {"model": "gpt-5.6-sol", "effort": "high"},
+                "worker": {"model": "gpt-5.6-terra", "effort": "high"},
                 "plan-reviewer": {"model": "gpt-5.6-sol", "effort": "high"},
                 "reviewer": {"model": "gpt-5.6-sol", "effort": "max"},
             },
@@ -331,13 +385,13 @@ class EvaluationContractV4Tests(unittest.TestCase):
         )
         self.assertEqual(
             {
-                "researcher": {"model": "gpt-5.5", "effort": "medium"},
-                "explorer": {"model": "gpt-5.5", "effort": "medium"},
-                "debugger": {"model": "gpt-5.5", "effort": "medium"},
-                "designer": {"model": "gpt-5.6-sol", "effort": "medium"},
-                "planner": {"model": "gpt-5.5", "effort": "medium"},
-                "worker": {"model": "gpt-5.5", "effort": "medium"},
-                "plan-reviewer": {"model": "gpt-5.6-sol", "effort": "high"},
+                "researcher": {"model": "gpt-5.6-terra", "effort": "high"},
+                "explorer": {"model": "gpt-5.6-luna", "effort": "high"},
+                "debugger": {"model": "gpt-5.6-terra", "effort": "high"},
+                "designer": {"model": "gpt-5.6-terra", "effort": "high"},
+                "planner": {"model": "gpt-5.6-terra", "effort": "high"},
+                "worker": {"model": "gpt-5.6-luna", "effort": "xhigh"},
+                "plan-reviewer": {"model": "gpt-5.6-terra", "effort": "high"},
                 "reviewer": {"model": "gpt-5.6-sol", "effort": "high"},
             },
             matrix["cost-first"],

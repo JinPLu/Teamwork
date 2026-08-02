@@ -222,6 +222,9 @@ class SkillTopologyV4Test(unittest.TestCase):
                     "migrate --project-root <exact-project-root>",
                     "resume --project-root <exact-project-root>",
                     "case-v2",
+                    "never asks for the global performance/cost profile",
+                    "never installs or configures GPU Broker",
+                    "--codegraph` or `--no-codegraph",
                 ),
             )
             return
@@ -235,6 +238,11 @@ class SkillTopologyV4Test(unittest.TestCase):
                     "migrate --project-root <exact-project-root>",
                     "resume --project-root <exact-project-root>",
                     "case-v2",
+                    "performance-first|cost-first",
+                    "--managed-codegraph|--no-managed-codegraph",
+                    "--managed-gpu-broker|--no-managed-gpu-broker",
+                    "BASELINE_READY=yes",
+                    "FULL_CAPABILITY_READY=yes",
                 ),
             )
             return
@@ -330,6 +338,42 @@ class SkillTopologyV4Test(unittest.TestCase):
         for skill in EXPECTED_SKILLS:
             with self.subTest(skill=skill):
                 self.assert_skill_contract(skill, (SKILLS / skill / "SKILL.md").read_text(encoding="utf-8"))
+
+    def test_request_readiness_has_one_root_asker_and_explicit_leaf_handoffs(self) -> None:
+        skill_fragments = {
+            "teamwork-collaborate": ("Only Root may activate", "never starts Collaborate or asks"),
+            "teamwork-research": ("Researcher never asks", "reclassification signal"),
+            "teamwork-explore": ("Explorer never asks", "reclassification signal"),
+            "teamwork-debug": ("A leaf never asks directly", "reclassification signal"),
+            "teamwork-plan": ("Planner never asks users", "reclassification signal"),
+            "teamwork-review": ("Reviewer and Plan Reviewer never ask", "reclassification signal"),
+            "teamwork-goal": ("Root alone asks once", "reclassified to Collaborate"),
+            "teamwork-init": ("Explorer and Worker never ask", "resumes the same Init workflow"),
+            "teamwork-update": ("Explorer and Worker never ask", "resumes the same Update workflow"),
+        }
+        for skill, fragments in skill_fragments.items():
+            with self.subTest(skill=skill):
+                text = normalized(SKILLS / skill / "SKILL.md")
+                self.assert_has_fragments(text, fragments)
+
+        readiness_roles = {
+            "researcher", "explorer", "debugger", "planner", "worker",
+            "reviewer", "plan-reviewer",
+        }
+        for host, directory, suffix, prefix in (
+            ("codex", ROOT / "templates/codex-agents", ".toml", "teamwork-"),
+            ("cursor", ROOT / "templates/cursor-agents", ".md", ""),
+            ("claude", ROOT / "templates/claude-agents", ".md", ""),
+        ):
+            for role in readiness_roles:
+                with self.subTest(host=host, role=role):
+                    text = normalized(directory / f"{prefix}{role}{suffix}")
+                    self.assertIn("Readiness: never ask", text)
+                    self.assertIn("reclassification signal to Root", text)
+            for role in ("designer", "writer"):
+                with self.subTest(host=host, role=role):
+                    text = normalized(directory / f"{prefix}{role}{suffix}")
+                    self.assertNotIn("Readiness:", text)
 
     def test_case_v2_writer_routes_are_explicit_and_legacy_routes_are_migration_only(self) -> None:
         contracts = {

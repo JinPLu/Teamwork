@@ -11,6 +11,11 @@ role mapping is Review -> Reviewer, and Plan Review -> Plan Reviewer. If a
 mandatory role is unavailable or fresh isolation cannot be verified, return
 `capability-blocked`; Root must not perform a named-method fallback.
 
+Reviewer and Plan Reviewer never ask the user or invent missing requirements.
+Return an exact proof gap or ambiguity blocker with owner, scope, and closing
+evidence. If the ambiguity is a material unformed direction rather than missing
+proof, return a reclassification signal to Collaborate through Root.
+
 Each Worker self-verifies its owned slice. Do not review each Worker slice
 independently. Root integrates authorized changes and seals one stable candidate
 with scope and direct evidence. Run one independent initial pass on that sealed

@@ -7,6 +7,10 @@
       "description": "External/current/multi-source research uses Research; local repository, source, configuration, test, log, runtime, and artifact inspection remains native. Natural collaboration, brainstorming, stress-testing, and question-first intent activate Collaborate, which contributes before asking, selects dialogue or brainstorm, and uses challenge or adversarial methods when the decision risk warrants them. Unresolved material alternatives stay in Collaborate, while Plan only translates an already selected direction."
     },
     {
+      "name": "request_readiness",
+      "description": "Root owns one three-way readiness decision: inspect and act without asking when the value is discoverable or a safe reversible default applies; ask once for one exact undiscoverable user-owned required value, keep one active gap, pause only dependent work, and resume the same workflow; or activate Collaborate for latent preferences and unformed intent that materially change the outcome, contributing and recommending before asking. Leaf roles never ask or activate Collaborate and return only an exact gap or an explicit reclassification signal to Root; questions are not duplicated across roles or stages."
+    },
+    {
       "name": "collaborate_challenge_quality",
       "description": "Collaborate challenge inspects local constraints first, explores two or three alternatives only for genuine tradeoffs, recommends a direction before asking a bounded independent batch of user-owned material decisions, serializes dependent decisions, states criticality and closure signals, and does not silently plan or implement."
     },

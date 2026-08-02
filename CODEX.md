@@ -20,10 +20,11 @@ $teamwork-update
 ```
 
 This is the default Codex installation path. Skills load from the plugin cache.
-On first full enablement,
-`$teamwork-update` explains the agents, agent configuration,
-Teamwork-managed global policy, notification choice, and verified legacy cleanup
-it proposes, then waits for approval. It does not copy skills to
+On first activation, `$teamwork-update` asks for the performance/cost profile
+and independently offers managed CodeGraph and the local GPU Broker. It then
+explains the agents, agent configuration, Teamwork-managed global policy,
+notification choice, and verified legacy cleanup it proposes before approval.
+The baseline completes without the optional managed capabilities. It does not copy skills to
 `~/.agents/skills` or overwrite content whose ownership is uncertain.
 
 Restart Codex after a routing change. If notifications are enabled, open
@@ -52,6 +53,14 @@ Teamwork artifacts. A clear authorized edit or fix also stays native. Use
 `$teamwork-explore` only for a distinct, read-only local evidence question; use
 `$teamwork-research` only for external, current, multi-source, or
 citation-backed research.
+
+Before asking, Root inspects discoverable state and acts on safe, reversible
+defaults. If one undiscoverable user-owned value is required, Root asks for that
+exact gap once, pauses only dependent work, and resumes the same workflow.
+Latent preferences or unformed intent that can materially change the outcome
+enter Collaborate, which contributes and recommends before asking. Leaf roles
+never ask or activate Collaborate; they return an exact gap or reclassification
+signal to Root, and the same question is not repeated across roles or stages.
 
 Use `$teamwork-collaborate` for natural dialogue, brainstorming,
 stress-testing, question-before-action, or a consequential solution that is
@@ -166,20 +175,20 @@ main-task default.
 
 Codex profiles are exact:
 
-| Profile | Researcher / Explorer / Debugger / Planner / Worker | Writer | Designer | Plan Reviewer | Reviewer |
-| --- | --- | --- | --- | --- | --- |
-| `performance-first` | `gpt-5.5` / `high` | `gpt-5.5` / `low` | `gpt-5.6-sol` / `high` | `gpt-5.6-sol` / `high` | `gpt-5.6-sol` / `max` |
-| `cost-first` | `gpt-5.5` / `medium` | `gpt-5.5` / `low` | `gpt-5.6-sol` / `medium` | `gpt-5.6-sol` / `high` | `gpt-5.6-sol` / `high` |
+| Profile | Researcher | Explorer | Debugger | Planner | Worker | Writer | Designer | Plan Reviewer | Reviewer |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `performance-first` | Terra / `high` | Terra / `high` | Sol / `high` | Sol / `high` | Terra / `high` | Luna / `high` | Sol / `high` | Sol / `high` | Sol / `max` |
+| `cost-first` | Terra / `high` | Luna / `high` | Terra / `high` | Terra / `high` | Luna / `xhigh` | Luna / `high` | Terra / `high` | Terra / `high` | Sol / `high` |
 
-The split follows role behavior: 5.5 keeps high-frequency evidence, diagnosis,
-planning, implementation, and standalone prose moving; 5.6 handles trade-off
-selection and independent acceptance, where its more conservative reasoning is
-useful rather than routine-path overhead.
+The split follows role behavior: Terra balances speed and quality for routine
+evidence and bounded implementation; Luna handles cheap, bounded, mechanically
+verifiable work; Sol owns unknown-cause diagnosis, quality-sensitive planning,
+direction selection, and final acceptance. Reviewer stays on Sol/max in
+`performance-first` until a same-case A/B supports the lower-cost xhigh candidate.
 
-On Codex 0.144, formal `spawn_agent` dispatch is only observed for `gpt-5.5`.
-Designer, Plan Reviewer, and Reviewer on `gpt-5.6-sol` may execute without
-formal agent isolation on 0.144; verify dispatch fidelity via live eval when
-Codex advances.
+Catalog readiness proves that a configured model/effort exists, not that a
+formal custom-agent dispatch preserved isolation and provenance. Run a live
+spawn canary after Codex changes, especially for Luna-backed roles.
 
 For checkout-based installs, choose `cost-first` when lower-cost models should
 handle the roles where that profile permits it:
@@ -208,8 +217,9 @@ Ask `$teamwork-init` to set up the selected repository, or use a checkout:
 ```
 
 Initialization changes only that project. It establishes Teamwork-managed
-project instructions, memory entry points, ignore rules, and CodeGraph context
-when the CLI is available. It does not refresh global skills, agents, policy,
+project instructions, memory entry points, and ignore rules, and asks whether
+to initialize local CodeGraph context when the CLI is available and no index
+exists. It never asks for the global profile or installs GPU Broker. It does not refresh global skills, agents, policy,
 routing, or notifications, and it does not install skills or agents inside the
 repository. Run `$teamwork-update` separately when the global Codex setup needs
 refreshing.
@@ -224,7 +234,10 @@ codex plugin add teamwork-skill@teamwork
 
 Then open a new task and run `$teamwork-update`. It checks the Marketplace
 catalog and cache, activation marker, agents, routing, policy, notifications,
-and verified legacy files before refreshing the managed setup. Restart Codex
+saved install preferences, optional capability readiness, and verified legacy
+files before refreshing the managed setup. Valid choices are inherited; only
+missing, invalid, explicitly reconfigured, or newly introduced choices are
+asked again. Restart Codex
 after a routing change and repeat the manual `/hooks` review when requested.
 
 ## Checkout installation
@@ -235,14 +248,19 @@ Marketplace:
 
 ```bash
 ./install.sh all
+./install.sh --dependencies all        # optional full CodeGraph + GPU Broker
 ./install.sh codex
 ./install.sh codex --profile cost-first --notifications
 ./install.sh codex --no-notifications
 ./scripts/check-update.sh --readiness
 ```
 
-Use `./install.sh all` for a full global refresh, a platform command for a
-narrower installation, and `--link` only while developing from the checkout.
+Use `./install.sh all` for the mandatory baseline on every platform,
+`./install.sh --dependencies all` for the optional full managed-capability
+setup, a platform command for a narrower installation, and `--link` only while
+developing from the checkout. Managed-capability flags are valid only with
+`codex`, `all`, `update`, and `plugin-codex-bootstrap`; narrower targets reject
+them because they do not own dependency lifecycles.
 The installer preserves unrelated configuration and stops rather than
 overwriting an unknown same-name file. If Marketplace activation already
 exists, use `$teamwork-update` instead of creating duplicate checkout skills.

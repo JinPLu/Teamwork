@@ -1,0 +1,27 @@
+{
+  "evidence": "Static one-visible-asker and deduplication fixture.",
+  "expected": {
+    "capability": "ask",
+    "language": "en",
+    "requires": [
+      "no-duplicate-question",
+      "one-active-gap",
+      "same-workflow-resume"
+    ],
+    "scenario": "dedup-one-active-gap"
+  },
+  "id": "ask-dedup-one-active-gap",
+  "must": [
+    "Root keeps one active gap, asks it once, and routes the answer back into the same workflow"
+  ],
+  "must_not": [
+    "repeat the question across Root, skill, role, stage, or resumed execution"
+  ],
+  "platforms": ["codex", "cursor", "claude"],
+  "producers": [
+    {"class": "root-policy", "source": "scripts/install/policy.sh"}
+  ],
+  "prompt": "Research and planning both report the same missing destination account identifier while independent work continues.",
+  "source": "synthetic",
+  "split": "dev"
+}

@@ -1,0 +1,18 @@
+{
+  "evidence": "Static Explore readiness reclassification fixture.",
+  "expected": {"capability": "ask", "language": "en", "requires": ["leaf-never-asks", "no-leaf-collaborate", "reclassification-signal", "root-handoff"], "scenario": "reclass-explore"},
+  "id": "ask-reclass-explore",
+  "must": ["Explorer returns an exact local-evidence gap or a material-choice reclassification signal to Root"],
+  "must_not": ["Explorer asks the user or starts Collaborate"],
+  "platforms": ["codex", "cursor", "claude"],
+  "producers": [
+    {"class": "root-policy", "source": "scripts/install/policy.sh"},
+    {"class": "skill", "source": "skills/teamwork-explore/SKILL.md"},
+    {"class": "role-template", "source": "templates/codex-agents/teamwork-explorer.toml"},
+    {"class": "role-template", "source": "templates/cursor-agents/explorer.md"},
+    {"class": "role-template", "source": "templates/claude-agents/explorer.md"}
+  ],
+  "prompt": "Local inspection exposes two ownership boundaries whose choice would materially change the requested outcome.",
+  "source": "synthetic",
+  "split": "dev"
+}

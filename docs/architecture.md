@@ -185,6 +185,13 @@ This keeps the main boundaries visible:
 
 - the host natively inspects local repositories, configuration, tests, logs,
   runtime state, and artifacts, and natively implements clear authorized work;
+- Root owns request readiness: inspect and act when state is discoverable or a
+  safe reversible default applies; ask once for one exact undiscoverable
+  user-owned required value, pause only dependent work, and resume the same
+  workflow; or enter Collaborate for latent preferences and unformed intent that
+  materially change the result. Leaves never ask or activate Collaborate. They
+  return one exact gap or an explicit reclassification signal to Root, with one
+  active gap and no duplicate question across roles or stages;
 - Explore answers a distinct local read-only evidence question; Research is only
   for external, current, multi-source, or citation-backed investigation;
 - Collaborate owns natural dialogue, brainstorming, sustained questioning,
@@ -255,17 +262,16 @@ lives in its own `SKILL.md`.
 The recommended local Codex Root configuration remains user-controlled. The
 installer configures only subagent profiles and routing; it does not set the
 Root main-task default. Codex renders the nine roles with exact profile
-mapping: performance-first uses `gpt-5.5`/`high` for Researcher, Explorer,
-Debugger, Planner, and Worker; `gpt-5.5`/`low` for Writer;
-`gpt-5.6-sol`/`high` for Designer and Plan Reviewer; and `gpt-5.6-sol`/`max`
-for Reviewer. cost-first uses `gpt-5.5`/`medium` for Researcher, Explorer,
-Debugger, Planner, and Worker; `gpt-5.5`/`low` for Writer;
-`gpt-5.6-sol`/`medium` for Designer; and `gpt-5.6-sol`/`high` for Plan Reviewer
-and Reviewer. Cursor and Claude Code templates remain host-native adapters; this
-does not promise the Codex reasoning-effort mapping on those hosts. On Codex 0.144,
-formal `spawn_agent` dispatch is only observed for `gpt-5.5`; Designer, Plan
-Reviewer, and Reviewer on `gpt-5.6-sol` may execute without formal agent isolation
-on 0.144—verify dispatch fidelity via live eval when Codex advances.
+mapping. performance-first uses Terra/high for Researcher, Explorer, and Worker;
+Luna/high for Writer; Sol/high for Debugger, Designer, Planner, and Plan
+Reviewer; and Sol/max for Reviewer. cost-first uses Terra/high for Researcher,
+Debugger, Designer, Planner, and Plan Reviewer; Luna/high for Explorer and
+Writer; Luna/xhigh for Worker; and Sol/high for Reviewer. Terra is the routine
+balance tier, Luna is limited to bounded and mechanically verifiable work, and
+Sol owns ambiguity and acceptance gates. Cursor and Claude Code templates remain
+host-native adapters; this does not promise the Codex reasoning-effort mapping
+on those hosts. Catalog readiness is not behavioral dispatch proof; run a live
+isolation/provenance canary after Codex changes, especially for Luna-backed roles.
 
 ## Dependency direction
 
@@ -297,12 +303,20 @@ points, ignore rules, and available CodeGraph context. With explicit
 `--cursor-mcp` consent they may also write project `.cursor/rules/*.mdc` and
 merge Teamwork MCP entries into project `.cursor/mcp.json`. They never refresh
 global skills, agents, policy, routing, notifications, or Cursor clipboard
-state. The `update` target owns the declared dependency lifecycle: it pins and
-verifies CodeGraph, refreshes the explicitly resolved local GPU Broker companion,
-then registers `codegraph` and `gpu-broker` in `~/.cursor/mcp.json`. It fails
-closed when the local companion source or required runtime is unavailable.
-`--no-mcp` skips only MCP registration; `--no-dependencies` is an explicit
-dependency opt-out.
+state. The `update` target always owns the Teamwork baseline and separately owns
+two optional managed capability lifecycles. Desired profile, CodeGraph, and GPU
+Broker choices live in the Teamwork-owned schema-v1 receipt at
+`${XDG_STATE_HOME:-~/.local/state}/teamwork/install-preferences.json`; desired,
+observed, and last-action state remain distinct so an opt-out is not reported as
+a failed install. CodeGraph and the explicitly resolved local GPU Broker
+companion are preflighted and refreshed independently. Shell entrypoints remain
+noninteractive: host skills ask, then pass deterministic flags. Existing Cursor
+MCP behavior remains a compatibility surface rather than a new calibration
+question. `--dependencies` enables both managed capabilities,
+`--no-dependencies` disables both, and the granular flags select either one.
+Only the `codex`, `all`, `update`, and `plugin-codex-bootstrap` lifecycle owners
+accept those overrides; narrow targets reject them before recording preferences
+or writing global surfaces.
 
 ## Instruction footprint
 

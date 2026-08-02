@@ -234,6 +234,9 @@ install_codex() {
     python3 "$ROOT/scripts/configure-codex-routing.py" \
       --dry-run --config "$(codex_home_path)/config.toml" >/dev/null
   fi
+  persist_install_preferences
+  preflight_managed_dependencies
+  refresh_managed_dependencies
   remove_v342_agent_set codex "$agent_root" "$skill_root"
   configure_codex_routing
   install_codex_skill_set
@@ -245,9 +248,10 @@ install_codex() {
 install_plugin_codex_bootstrap() {
   local code_home
   code_home="$(codex_home_path)"
-  preflight_managed_dependencies
   preflight_plugin_codex_bootstrap
   preflight_legacy_codex_skills "$code_home/skills"
+  persist_install_preferences
+  preflight_managed_dependencies
   if [[ -n "$PLUGIN_V342_SKILL_ROOT" ]]; then
     remove_v342_agent_set codex "$code_home/agents" "$PLUGIN_V342_SKILL_ROOT"
   elif [[ -n "$PLUGIN_V342_AGENT_PROFILE" ]]; then
@@ -283,6 +287,7 @@ install_cursor() {
   preflight_teamwork_skill_root "$skill_root" "Cursor skill root"
   preflight_v342_agent_set cursor "$agent_root" "$skill_root"
   preflight_agent_destination "$agent_root" md Cursor "${CURSOR_AGENTS[@]}"
+  persist_install_preferences
   remove_v342_agent_set cursor "$agent_root" "$skill_root"
   install_skill_set "$skill_root" "Cursor"
   install_cursor_agent_set "$agent_root" "user Cursor"
@@ -299,6 +304,7 @@ install_claude() {
   preflight_v342_managed_policy claude "$HOME/.claude/CLAUDE.md" "$skill_root"
   preflight_claude_global_policy
   preflight_user_notifications claude
+  persist_install_preferences
   remove_v342_agent_set claude "$agent_root" "$skill_root"
   install_skill_set "$skill_root" "Claude Code"
   install_claude_agent_set "$agent_root" "user Claude Code"
@@ -342,6 +348,9 @@ install_all() {
     python3 "$ROOT/scripts/configure-codex-routing.py" \
       --dry-run --config "$(codex_home_path)/config.toml" >/dev/null
   fi
+  persist_install_preferences
+  preflight_managed_dependencies
+  refresh_managed_dependencies
 
   remove_v342_agent_set codex "$codex_agent_root" "$codex_skill_root"
   remove_v342_agent_set cursor "$cursor_agent_root" "$cursor_skill_root"
@@ -368,8 +377,6 @@ install_update() {
     install_claude
     return 0
   fi
-  preflight_managed_dependencies
-  refresh_managed_dependencies
   install_all
 }
 
@@ -402,6 +409,7 @@ install_codex_agents_home() {
   if [[ "$V342_CODEX_AGENTS_PREFLIGHTED" != "1" ]]; then
     preflight_codex_agent_set "$agent_root"
   fi
+  persist_install_preferences
   remove_v342_agent_set codex "$agent_root" "$skill_root"
   configure_codex_routing
   install_codex_agent_set "$agent_root" "user"
@@ -412,6 +420,7 @@ install_cursor_agents_home() {
   local agent_root="$HOME/.cursor/agents"
   preflight_v342_agent_set cursor "$agent_root" "$skill_root"
   preflight_agent_destination "$agent_root" md Cursor "${CURSOR_AGENTS[@]}"
+  persist_install_preferences
   remove_v342_agent_set cursor "$agent_root" "$skill_root"
   install_cursor_agent_set "$agent_root" "user Cursor"
 }
@@ -421,6 +430,7 @@ install_claude_agents_home() {
   local agent_root="$HOME/.claude/agents"
   preflight_v342_agent_set claude "$agent_root" "$skill_root"
   preflight_agent_destination "$agent_root" md "Claude Code" "${CLAUDE_AGENTS[@]}"
+  persist_install_preferences
   remove_v342_agent_set claude "$agent_root" "$skill_root"
   install_claude_agent_set "$agent_root" "user Claude Code"
 }

@@ -43,7 +43,13 @@ Start a new Codex task and run:
 $teamwork-update
 ```
 
-It explains the agents, routing, global policy, and notifications it proposes before waiting for approval. Restart Codex when configuration finishes. If notifications are enabled, trust Teamwork's `Stop` and `PermissionRequest` handlers individually in `/hooks`; do not use trust-all.
+On first activation it asks for `performance-first` or `cost-first`, then asks
+independently whether to enable managed CodeGraph and the local GPU Broker.
+The skills, agents, routing, global policy, and notification baseline completes
+whether or not those optional capabilities are enabled; later updates inherit
+the saved choices. Restart Codex when configuration finishes. If notifications
+are enabled, trust Teamwork's `Stop` and `PermissionRequest` handlers
+individually in `/hooks`; do not use trust-all.
 
 To add project instructions, Teamwork memory, and CodeGraph context to a repository, run this from that repository:
 
@@ -73,6 +79,13 @@ cd Teamwork
 ./scripts/check-update.sh --readiness
 ```
 
+That installs the baseline on every host. Use `./install.sh --dependencies all`
+for the full CodeGraph plus GPU Broker setup, or enable either capability with
+`--managed-codegraph` or `--managed-gpu-broker`. Later updates inherit the choice.
+Capability flags are accepted only by `codex`, `all`, `update`, and plugin
+bootstrap, which own the dependency lifecycle; narrower targets reject them
+instead of recording a choice they did not install.
+
 Install one host when preferred:
 
 ```bash
@@ -99,7 +112,7 @@ Ask what is missing right now, not how complicated the task looks.
 | Independent acceptance | ✅ `$teamwork-review` | Check a plan, diff, artifact, or completion claim against direct evidence. |
 | Persistent progress | 🎯 `$teamwork-goal` | Keep fixing until green, monitor through completion, or work within an explicit budget. |
 | Project-level setup | 🧰 `$teamwork-init` | Initialize, audit, or repair one repository's instructions, memory, routing, and CodeGraph context. |
-| Global installation setup | 🔄 `$teamwork-update` | By default refresh global skills, agents, policy, routing, notifications, CodeGraph, and the local GPU Broker companion; missing managed dependencies are installed. |
+| Global installation setup | 🔄 `$teamwork-update` | Completes the skills, agents, policy, routing, and notification baseline, then lets you choose a performance/cost profile and optional managed CodeGraph/GPU Broker capabilities. |
 
 Natural language can activate the same methods, such as “brainstorm this with me,” “inspect local evidence without editing,” or “keep fixing until the test passes.” Skill selection is still model behavior. Name the skill when exact selection matters.
 
@@ -182,6 +195,14 @@ Use $teamwork-goal to keep fixing until the named check passes. Stop only for a 
 
 Teamwork is not a control layer and does not turn every small request into a workflow. It supplements the host instead of replacing Codex, Cursor, or Claude Code tools, permissions, and execution paths.
 
+Request readiness has one owner and three outcomes. Root inspects first and acts
+without asking when state is discoverable or a safe reversible default applies;
+asks once for one exact undiscoverable user-owned value and then resumes the same
+workflow; or enters Collaborate when latent preferences or unformed intent can
+materially change the result. Leaf roles never ask or start Collaborate. They
+return an exact gap or reclassification signal to Root, and one active gap is
+never duplicated across roles or stages.
+
 Research, Explore, Debug, Plan, and Review must be handled by their owning leaf.
 If the host lacks that capability, Teamwork reports capability-blocked instead
 of letting Root or another role simulate it. Collaborate and Goal are Root-owned.
@@ -219,6 +240,10 @@ git pull --ff-only
 ./install.sh all
 ./scripts/check-update.sh --readiness
 ```
+
+Use `./install.sh --dependencies all` to enable every managed capability.
+Explicit opt-outs remain opt-outs on later updates instead of being treated as
+missing dependencies.
 
 For release notifications, open [JinPLu/Teamwork](https://github.com/JinPLu/Teamwork) and choose **Watch → Custom → Releases**.
 

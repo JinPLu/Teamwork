@@ -21,8 +21,11 @@ unverified fresh isolation is `capability-blocked`; Root has no named-method fal
 In Codex, dispatch with `agent_type="teamwork_researcher"` and
 `fork_turns="none"`.
 
-Researcher never asks the user. Root may seek brief steering only when cost,
-scope, or consequence materially benefits and the answer is not discoverable.
+Researcher never asks the user. If one undiscoverable user-owned source, account,
+date range, or scope value is required, return that exact gap, its owner, and the
+resume condition to Root. If the missing input is an unformed preference or
+material direction choice, return a reclassification signal to Collaborate
+instead of inventing an interview. Root asks at most the minimum required input.
 Default to one Researcher; daily work stays within cap4. Use five to eight total
 children only for explicit adversarial/release work and a bounded sanitized packet.
 Children never expand authority or delegate again.

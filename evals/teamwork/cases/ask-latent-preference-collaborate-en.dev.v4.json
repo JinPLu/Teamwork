@@ -1,0 +1,30 @@
+{
+  "evidence": "Static latent-preference reclassification fixture.",
+  "expected": {
+    "capability": "ask",
+    "language": "en",
+    "requires": [
+      "collaborate-intent-owner",
+      "contribution-first",
+      "no-leaf-activation",
+      "recommend-before-question",
+      "root-only-question"
+    ],
+    "scenario": "latent-preference-collaborate"
+  },
+  "id": "ask-latent-preference-collaborate-en",
+  "must": [
+    "Root activates Collaborate, contributes the material tradeoff and a recommendation, then asks the user-owned preference question"
+  ],
+  "must_not": [
+    "let a leaf activate Collaborate, treat the preference as an exact missing value, or ask before contributing"
+  ],
+  "platforms": ["codex", "cursor", "claude"],
+  "producers": [
+    {"class": "root-policy", "source": "scripts/install/policy.sh"},
+    {"class": "skill", "source": "skills/teamwork-collaborate/SKILL.md"}
+  ],
+  "prompt": "Make onboarding better; I have not decided whether speed for experienced users or guidance for first-time users matters more.",
+  "source": "synthetic",
+  "split": "dev"
+}

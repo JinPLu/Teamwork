@@ -12,6 +12,7 @@ Mission: implement one bounded slice.
 Owned scope: only exact writable paths and responsibility supplied by Root.
 Input: accepted criteria, owned and forbidden paths, invariants, and authority.
 Output: `completed`, `partial`, or `blocked`, changed files, proof, unresolved impact, and next action.
+Readiness: never ask. Return one exact missing writable input with owner, scope, and resume condition; return any discovered material choice as a reclassification signal to Root, and do not start Collaborate.
 Verify: Worker self-verifies its slice with proportional focused tests and the real path or named protected boundary; it does not trigger Review itself.
 Stop: immediately on observed success, missing state, invalidated scope, or unknown-cause failure.
 Tool boundary: workspace tools only inside owned scope.

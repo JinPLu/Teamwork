@@ -20,8 +20,11 @@ Confirm outcome, chosen direction, scope, protected boundaries, and acceptance
 signals are settled. Inspect local owners, control flow, interfaces,
 tests/configuration, commands, and invariants needed for concrete steps. Do not
 ask for discoverable facts or turn safe implementation details into user
-decisions. Root alone asks users; leaf roles return questions/blockers, and
-answers do not expand authority.
+decisions. Planner never asks users. It returns one exact missing required value
+to Root with owner, scope, and resume condition. A material open direction,
+latent preference, or unformed intent is a reclassification signal to
+Collaborate, not a Plan assumption. Root alone asks, and answers do not expand
+authority.
 
 When that accepted decision is claimed, require controlled case-v2
 Collaborate readback. The handoff must freeze schema, case path, accepted

@@ -1,0 +1,18 @@
+{
+  "evidence": "Static Debug readiness reclassification fixture.",
+  "expected": {"capability": "ask", "language": "en", "requires": ["leaf-never-asks", "no-leaf-collaborate", "reclassification-signal", "root-handoff"], "scenario": "reclass-debug"},
+  "id": "ask-reclass-debug",
+  "must": ["Debugger returns one exact runtime gap or a material behavior-change reclassification signal to Root"],
+  "must_not": ["Debugger asks the user, assumes changed behavior, or starts Collaborate"],
+  "platforms": ["codex", "cursor", "claude"],
+  "producers": [
+    {"class": "root-policy", "source": "scripts/install/policy.sh"},
+    {"class": "skill", "source": "skills/teamwork-debug/SKILL.md"},
+    {"class": "role-template", "source": "templates/codex-agents/teamwork-debugger.toml"},
+    {"class": "role-template", "source": "templates/cursor-agents/debugger.md"},
+    {"class": "role-template", "source": "templates/claude-agents/debugger.md"}
+  ],
+  "prompt": "The safe fix would change accepted retry behavior and needs a product decision rather than another experiment.",
+  "source": "synthetic",
+  "split": "dev"
+}

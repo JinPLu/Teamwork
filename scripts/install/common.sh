@@ -1,5 +1,9 @@
 INSTALL_MODE="${TEAMWORK_INSTALL_MODE:-copy}"
-CODEX_PROFILE="${TEAMWORK_CODEX_PROFILE:-performance-first}"
+CODEX_PROFILE="${TEAMWORK_CODEX_PROFILE:-}"
+CODEX_PROFILE_SOURCE=""
+if [[ -n "${TEAMWORK_CODEX_PROFILE:-}" ]]; then
+  CODEX_PROFILE_SOURCE="env"
+fi
 NOTIFICATIONS_ACTION="${TEAMWORK_NOTIFICATIONS_ACTION:-preserve}"
 CODEX_ROUTING_ACTION="${TEAMWORK_CODEX_ROUTING:-configure}"
 CURSOR_MCP_ACTION="${TEAMWORK_CURSOR_MCP_ACTION:-apply}"
@@ -74,7 +78,7 @@ CODEX_AGENTS=(
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] [--notifications|--no-notifications] [--codex-routing|--no-codex-routing] [--no-mcp] [--dependencies|--no-dependencies] [--profile performance-first|cost-first] \
+  ./install.sh [--copy|--link] [--notifications|--no-notifications] [--codex-routing|--no-codex-routing] [--no-mcp] [--dependencies|--no-dependencies] [--managed-codegraph|--no-managed-codegraph] [--managed-gpu-broker|--no-managed-gpu-broker] [--profile performance-first|cost-first] \
     [--project-root PATH] \
     codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy|cursor-mcp
 
@@ -123,9 +127,13 @@ accepted there as compatibility no-ops.
 Cursor installs register codegraph and gpu-broker in ~/.cursor/mcp.json by
 default. Use --no-mcp to skip MCP registration; enable new servers in Cursor
 Settings -> MCP when prompted.
-`update` manages CodeGraph at the pinned Teamwork version and a local GPU Broker
-companion. Set TEAMWORK_GPU_BROKER_SOURCE when the companion is not a sibling of
-this checkout; use --no-dependencies only for an explicit opt-out.
+The mandatory install baseline does not require CodeGraph or GPU Broker. Enable
+either managed capability explicitly with --managed-codegraph or
+--managed-gpu-broker; --dependencies enables both and --no-dependencies disables
+both. These capability options are supported only by codex, all, update, and
+plugin-codex-bootstrap, the targets that own dependency lifecycles. Set
+TEAMWORK_GPU_BROKER_SOURCE when the enabled companion is not a sibling of this
+checkout. Choices are recorded and inherited by later updates.
 --no-notifications removes only Teamwork-owned handlers. Cursor notification
 installs are intentionally unsupported until their local hook contracts are
 live-verified.
@@ -136,13 +144,14 @@ roles. Use --no-codex-routing only when another owner manages that feature.
 Project init never changes user-level routing; run a Codex global install or
 codex-agents separately when that surface needs refresh.
 
-Profile defaults to performance-first on all platforms. On Codex, performance-first
-uses GPT-5.5/high for Researcher, Explorer, Debugger, Planner, and Worker;
-GPT-5.5/low for Writer; Sol/high for Designer and Plan Reviewer; and Sol/max for Reviewer. On Codex,
-cost-first uses GPT-5.5/medium for Researcher, Explorer, Debugger, Planner, and
-Worker; GPT-5.5/low for Writer; Sol/medium for Designer;
-and Sol/high for Plan Reviewer and Reviewer. Cursor and Claude Code keep their existing profile mappings.
-Writer is fixed to the simplest model in both profiles.
+Profile inherits the recorded choice and otherwise defaults to performance-first.
+On Codex, performance-first
+uses Terra/high for Researcher, Explorer, and Worker; Luna/high for Writer;
+Sol/high for Debugger, Designer, Planner, and Plan Reviewer; and Sol/max for
+Reviewer. On Codex, cost-first uses Terra/high for Researcher, Debugger,
+Designer, Planner, and Plan Reviewer; Luna/high for Explorer and Writer;
+Luna/xhigh for Worker; and Sol/high for Reviewer. Cursor and Claude Code keep
+their existing profile mappings.
 USAGE
 }
 

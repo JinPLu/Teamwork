@@ -15,9 +15,12 @@ unverified isolation are `capability-blocked`, with no named-method fallback.
 
 Record objective, real success signal, scope, protected boundaries, invariants,
 user budget, hard stops, and authority. Inspect discoverable state first; ask
-only for a missing user-owned value that prevents safe progress. Root alone asks;
-leaf roles return questions/blockers. Answers do not expand authority, and
-budgets are never invented.
+only for one exact missing user-owned value that prevents safe progress. Root
+alone asks once, records one active gap, and resumes the same Goal when the value
+returns; independent safe work continues. Leaf roles return the exact gap and
+never ask. An unformed objective or material preference is reclassified to
+Collaborate before Goal commitment. Answers do not expand authority, and budgets
+are never invented.
 
 If `no files`, `off-record`, `read-only`, `no writes`, or equivalent conflicts
 with every available durable mechanism, fail closed before promising continuity.

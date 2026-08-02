@@ -1,0 +1,29 @@
+{
+  "evidence": "静态精确缺口 Root 归属用例。",
+  "expected": {
+    "capability": "ask",
+    "language": "zh",
+    "requires": [
+      "independent-work-continues",
+      "one-active-gap",
+      "one-exact-gap",
+      "root-only-question",
+      "same-workflow-resume"
+    ],
+    "scenario": "exact-gap-root-resume"
+  },
+  "id": "ask-exact-gap-root-resume-zh",
+  "must": [
+    "仅由 Root 一次询问无法发现的目标账号标识，只暂停依赖分支，并在得到答案后恢复同一工作流"
+  ],
+  "must_not": [
+    "让叶角色提问、展开泛化访谈、重复缺口或重启工作流"
+  ],
+  "platforms": ["codex", "cursor", "claude"],
+  "producers": [
+    {"class": "root-policy", "source": "scripts/install/policy.sh"}
+  ],
+  "prompt": "继续准备迁移，但目标账号标识是本地无法发现的唯一必需值。",
+  "source": "synthetic",
+  "split": "dev"
+}

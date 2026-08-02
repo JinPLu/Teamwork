@@ -172,10 +172,11 @@ or partially migrated state fails closed before any write.
 
 Ask only for the exact unavailable runtime value, access grant, or human-only
 observation needed for the next discriminating check. Debugger or another leaf
-proposes that blocker; Root presents it and the returned value resumes the same
-diagnosis. Pause with the exact action and expected return value. A question or
-diagnosis grants no new effect authority. If the safe fix would change accepted
-behavior, contracts, data, permissions, or scope, stop and name that decision.
+returns that exact gap, owner, scope, and resume condition; Root presents it once
+and the returned value resumes the same diagnosis. A leaf never asks directly.
+If the safe fix would change accepted behavior, contracts, data, permissions, or
+scope, return a reclassification signal to Collaborate rather than assuming the
+decision. A question or diagnosis grants no new effect authority.
 
 Finish with the cause and direct evidence, the exact fix if authorized, the real
 rerun result, and any specific remaining blocker. The experiment card, raw

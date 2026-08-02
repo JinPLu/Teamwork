@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 6.2.0 - 2026-08-02
+
+**Teamwork 6.2 让安装选择、提问时机和 agent 投入更贴合真实任务。**
+
+- **安装偏好一次说明、持续复用。** 首次启用或缺少有效记录时，Update 会明确收集 performance/cost profile，并分别确认是否受管 CodeGraph 与 GPU Broker；选择会保存，之后的非交互更新可直接复用，两个可选能力也会独立预检和刷新。
+- **清楚请求不再被多余提问打断。** Root 会先检查可发现状态并采用安全可逆默认值；确实缺少一个用户拥有的必需值时只问一次并恢复同一 workflow；会实质改变结果的潜在偏好或未成形意图才进入 Collaborate，由它先给判断和建议再提问。
+- **叶角色只报告缺口，不直接问用户。** Researcher、Explorer、Debugger、Planner、Worker、Reviewer 和 Plan Reviewer 在三个宿主上统一把精确缺口或重分类信号交回 Root，保证一个可见提问者、一个 active gap，并避免跨角色或阶段重复询问。
+- **模型与 effort 按角色重新投入。** `performance-first` 把高质量推理集中到 Debug、Design、Plan 和 Review，同时让 Research、Explore 与 Worker 使用 Terra；`cost-first` 让 Explore 与 Worker 使用 Luna，并保留关键 Research 与 Review 的质量门槛。实时发布矩阵仍严格保持 13 个场景、104 条记录。
+
+升级操作：通过现有 Marketplace 或 checkout 渠道更新到 6.2.0，然后运行 `$teamwork-update`；若已有有效安装偏好会直接复用，否则按一次提示选择 profile、CodeGraph 与 GPU Broker。
+
+重要限制：受管 GPU Broker 仍需要可解析的本地 companion 来源；选择不受管只代表该可选能力不由 Teamwork 安装或刷新，不影响基础 skills、agents 与策略安装。模型名称和 effort 仅用于支持对应配置的宿主，不构成固定成本、延迟或质量保证。
+
 ## 6.1.3 - 2026-08-01
 
 **Teamwork 6.1.3 确保更新的是当前实际调用的旧版 CodeGraph。**

@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 6.2.0 - 2026-08-02
+
+**Teamwork 6.2 aligns installation choices, question timing, and agent investment with the real task.**
+
+- **Installation preferences are chosen once and reused.** On first activation or when no valid record exists, Update collects the performance/cost profile and independently confirms managed CodeGraph and GPU Broker; the choices persist for later non-interactive updates, and each optional capability is preflighted and refreshed independently.
+- **Clear requests are no longer interrupted by avoidable questions.** Root inspects discoverable state and uses safe reversible defaults first; when one user-owned required value is truly missing, it asks once and resumes the same workflow; only latent preferences or unformed intent that materially change the outcome enter Collaborate, which contributes a judgment and recommendation before asking.
+- **Leaf roles report gaps instead of questioning the user.** Researcher, Explorer, Debugger, Planner, Worker, Reviewer, and Plan Reviewer now return an exact gap or reclassification signal to Root consistently across all three hosts, preserving one visible asker, one active gap, and no duplicate question across roles or stages.
+- **Model and effort investment is role-optimized.** `performance-first` concentrates stronger reasoning in Debug, Design, Plan, and Review while Research, Explore, and Worker use Terra; `cost-first` moves Explore and Worker to Luna while retaining quality gates for critical Research and Review. The live release matrix remains frozen at 13 scenarios and 104 records.
+
+Upgrade action: update to 6.2.0 through the existing Marketplace or checkout channel, then run `$teamwork-update`; valid saved installation preferences are reused, otherwise one prompt collects the profile, CodeGraph, and GPU Broker choices.
+
+Important limit: managed GPU Broker still requires a resolvable local companion source. Choosing unmanaged means only that Teamwork will not install or refresh that optional capability; baseline skills, agents, and policy still install. Model names and effort apply only on hosts that support the corresponding configuration and do not guarantee fixed cost, latency, or quality.
+
 ## 6.1.3 - 2026-08-01
 
 **Teamwork 6.1.3 ensures that an update changes the older CodeGraph command actually in use.**

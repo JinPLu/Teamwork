@@ -1,0 +1,30 @@
+{
+  "evidence": "静态潜在偏好重分类用例。",
+  "expected": {
+    "capability": "ask",
+    "language": "zh",
+    "requires": [
+      "collaborate-intent-owner",
+      "contribution-first",
+      "no-leaf-activation",
+      "recommend-before-question",
+      "root-only-question"
+    ],
+    "scenario": "latent-preference-collaborate"
+  },
+  "id": "ask-latent-preference-collaborate-zh",
+  "must": [
+    "由 Root 启动 Collaborate，先说明关键权衡和建议，再询问用户拥有的偏好"
+  ],
+  "must_not": [
+    "让叶角色启动 Collaborate、把偏好当作精确缺失值，或先提问后贡献"
+  ],
+  "platforms": ["codex", "cursor", "claude"],
+  "producers": [
+    {"class": "root-policy", "source": "scripts/install/policy.sh"},
+    {"class": "skill", "source": "skills/teamwork-collaborate/SKILL.md"}
+  ],
+  "prompt": "把入门体验做好，但我还没决定更重视熟练用户速度还是新用户引导。",
+  "source": "synthetic",
+  "split": "dev"
+}

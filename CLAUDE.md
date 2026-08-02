@@ -60,6 +60,15 @@ finite. It contributes
 synthesis, candidate space, a decision map, or provisional recommendation before
 asking. Its controlled transaction records `acceptance: pending`, `accepted`, or
 `blocked`; persistence is not acceptance, and only `accepted` is Plan-ready.
+
+Before asking, Root inspects discoverable state and acts on safe, reversible
+defaults. If one undiscoverable user-owned value is required, Root asks for that
+exact gap once, pauses only dependent work, and resumes the same workflow.
+Latent preferences or unformed intent that can materially change the outcome
+enter Collaborate, which contributes and recommends before asking. Leaf roles
+never ask or activate Collaborate; they return an exact gap or reclassification
+signal to Root, and the same question is not repeated across roles or stages.
+
 Legacy-v1, old grill, Discussion, and Design records are Init/Update semantic
 migration inputs only. Independent
 Plan Review runs only on user request or a named material risk gate. It does not

@@ -63,6 +63,15 @@ Use `teamwork-explore` for a distinct read-only local evidence question and
 `teamwork-research` only for external, current, multi-source, or citation-backed
 research. Use `teamwork-collaborate` for natural discussion, brainstorming,
 stress-testing, question-before-action, or an unsettled consequential solution.
+
+Before asking, Root inspects discoverable state and acts on safe, reversible
+defaults. If one undiscoverable user-owned value is required, Root asks for that
+exact gap once, pauses only dependent work, and resumes the same workflow.
+Latent preferences or unformed intent that can materially change the outcome
+enter Collaborate, which contributes and recommends before asking. Leaf roles
+never ask or activate Collaborate; they return an exact gap or reclassification
+signal to Root, and the same question is not repeated across roles or stages.
+
 Challenge and adversarial search are Collaborate methods, not public mode names.
 Use `teamwork-plan` only after controlled Collaborate records
 `acceptance: accepted`. Collaborate uses Explorer only for an unresolved local

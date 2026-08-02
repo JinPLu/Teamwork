@@ -21,7 +21,11 @@ authorizes only corresponding files inside the resolved project root. It does no
 authorize user-global config, host settings, credentials, plugin catalogs, global
 skills/agents, dependency installation, remote services, Git, release, or
 publication. Root alone asks for missing mutation authority or unavoidable manual
-host action; answers do not expand authority.
+host action as one exact gap, then resumes the same Init workflow. Discoverable
+state and safe reversible defaults do not trigger a question. If the audit finds
+an unformed migration, compatibility, or ownership tradeoff that materially
+changes the outcome, reclassify it to Collaborate. Explorer and Worker never ask;
+answers do not expand authority.
 
 Resolve the exact root before writing. Preserve unrelated content and managed
 blocks. If ownership is unclear and safe merging is impossible, stop with the
@@ -43,9 +47,13 @@ conflict.
    review, and Root authority all pass; no logged, partial, permissive,
    fallback, or exception path promotes candidate material.
 5. Emit the full Capability Matrix only for explicit full bootstrap.
-6. Initialize a repository-local CodeGraph index only when requested setup
-   includes it and the CLI exists; do not install external tooling or alter host
-   config without separate authority.
+6. When mutating a project whose local CodeGraph index is absent and the CLI is
+   available, Root asks only whether to initialize that project-local index and
+   passes the answer as `--codegraph` or `--no-codegraph`. Inherit an existing
+   index without asking. Init never asks for the global performance/cost profile,
+   never installs or configures GPU Broker, and never adds a Cursor calibration
+   question. Do not install external tooling or alter host config without
+   separate authority.
 7. Worker applies the smallest complete authorized mutation and preserves
    operation recovery state. If the audit finds no decision-relevant change,
    dispatch no Worker and write nothing.
