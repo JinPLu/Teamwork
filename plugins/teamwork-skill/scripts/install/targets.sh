@@ -128,11 +128,22 @@ preflight_codex_routing() {
 }
 
 preflight_plugin_codex_bootstrap() {
+  local runtime_requirement="${1:-required}"
   local code_home legacy_root activation_profile="" skill_profile=""
   code_home="$(codex_home_path)"
   legacy_root="$code_home/skills"
 
-  preflight_plugin_runtime
+  if [[ "$runtime_requirement" == "required" ]]; then
+    preflight_plugin_runtime
+  elif [[ "$runtime_requirement" == "checkout" ]]; then
+    if [[ "$(plugin_activation_status)" == "invalid" ]]; then
+      echo "Teamwork plugin activation marker is invalid or owned by another installation; refusing to update it." >&2
+      return 1
+    fi
+  else
+    echo "Unknown plugin bootstrap runtime requirement: $runtime_requirement" >&2
+    return 2
+  fi
   if plugin_activation_is_present \
     && [[ "$(plugin_activation_version)" == "3.4.2" ]]; then
     activation_profile="$(plugin_activation_profile)"
@@ -267,6 +278,27 @@ install_plugin_codex_bootstrap() {
   echo "Teamwork full Codex setup is ready. Restart Codex; if notifications are enabled, run /hooks and trust only Teamwork Stop and PermissionRequest."
 }
 
+install_checkout_plugin_codex_update() {
+  local code_home
+  code_home="$(codex_home_path)"
+  preflight_plugin_codex_bootstrap checkout
+  preflight_legacy_codex_skills "$code_home/skills"
+  persist_install_preferences
+  preflight_managed_dependencies
+  if [[ -n "$PLUGIN_V342_SKILL_ROOT" ]]; then
+    remove_v342_agent_set codex "$code_home/agents" "$PLUGIN_V342_SKILL_ROOT"
+  elif [[ -n "$PLUGIN_V342_AGENT_PROFILE" ]]; then
+    remove_v342_agent_profile codex "$code_home/agents" "$PLUGIN_V342_AGENT_PROFILE"
+  fi
+  refresh_managed_dependencies
+  configure_codex_routing
+  install_codex_agent_set "$code_home/agents" "plugin"
+  install_codex_global_policy
+  configure_user_notifications codex
+  remove_plugin_legacy_skill_copies
+  echo "Teamwork checkout update refreshed Codex plugin-managed global setup without copying duplicate skills or rewriting plugin activation."
+}
+
 configure_cursor_mcp_install() {
   if [[ "$CURSOR_MCP_ACTION" == "skip" ]]; then
     echo "Cursor MCP: skipped (--no-mcp)"
@@ -372,7 +404,11 @@ install_all() {
 
 install_update() {
   if plugin_activation_is_present; then
-    install_plugin_codex_bootstrap
+    if teamwork_plugin_runtime_is_valid; then
+      install_plugin_codex_bootstrap
+    else
+      install_checkout_plugin_codex_update
+    fi
     install_cursor
     install_claude
     return 0

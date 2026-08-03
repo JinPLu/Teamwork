@@ -2,7 +2,7 @@
   "files": {
     ".codex-plugin/plugin.json": {
       "mode": "0644",
-      "sha256": "693b251a150b3936709f0d6813dd580e0ad831651adcec40b320db71236ae84d"
+      "sha256": "7ac36e315d5c12a30f626dd265823e108d23734deb2d8fd8c56a848284868d98"
     },
     ".teamwork-plugin-runtime": {
       "mode": "0644",
@@ -10,7 +10,7 @@
     },
     "VERSION": {
       "mode": "0644",
-      "sha256": "143d44a26fb0a34265b64a4b268daa11cd45a7200d8c4b23b844cc3028cff6db"
+      "sha256": "e876c3ed077c5dc206ab8838e22bcaa4f2da98aeea2de66450c6118a09679f73"
     },
     "evals/teamwork/ledgers/v4-capability-migration.jsonl": {
       "mode": "0644",
@@ -82,7 +82,7 @@
     },
     "scripts/install/targets.sh": {
       "mode": "0644",
-      "sha256": "426bf601daf1a33d0670a6bb57642af9394e0e388365400887507fc5fba3ddc4"
+      "sha256": "92030be95500be8f9c6fd6719b1c06db68eef0f5ca6edef0d59124b379a78999"
     },
     "scripts/plugin-activation.py": {
       "mode": "0755",
@@ -297,8 +297,8 @@
       "sha256": "dc2700b7e267a81a56723ab6ac6312eff524e9d78bf3bcf273982bcfe264f758"
     }
   },
-  "manifest_sha256": "693b251a150b3936709f0d6813dd580e0ad831651adcec40b320db71236ae84d",
+  "manifest_sha256": "7ac36e315d5c12a30f626dd265823e108d23734deb2d8fd8c56a848284868d98",
   "marker": "TEAMWORK_CODEX_PLUGIN_RUNTIME=1",
   "schema_version": 1,
-  "version": "6.2.0"
+  "version": "6.2.1"
 }

@@ -93,6 +93,10 @@ class InstallCliCompatibilityTests(unittest.TestCase):
             REPO_ROOT / "scripts" / "codex_routing_config.py",
             self.fixture / "scripts" / "codex_routing_config.py",
         )
+        shutil.copy2(
+            REPO_ROOT / "scripts" / "plugin-activation.py",
+            self.fixture / "scripts" / "plugin-activation.py",
+        )
         shutil.copytree(
             REPO_ROOT / "scripts" / "install",
             self.fixture / "scripts" / "install",
@@ -446,6 +450,42 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         self.assertFalse((home / ".agents").exists())
         self.assertFalse((home / ".cursor").exists())
         self.assertFalse((home / ".claude").exists())
+
+    def test_checkout_update_with_plugin_activation_uses_checkout_safe_path(self) -> None:
+        home = self.base / "checkout-update-with-plugin-activation"
+        activation = home / ".codex/teamwork/plugin-activation.json"
+        activation.parent.mkdir(parents=True)
+        marker = {
+            "schema_version": 1,
+            "plugin": "teamwork-skill",
+            "marketplace": "teamwork",
+            "version": "6.1.3",
+            "profile": "performance-first",
+            "notifications": "enabled",
+        }
+        activation.write_text(json.dumps(marker), encoding="utf-8")
+        before = activation.read_bytes()
+
+        result = self.run_install(
+            "--profile",
+            "performance-first",
+            "--no-managed-codegraph",
+            "--no-managed-gpu-broker",
+            "--no-mcp",
+            "update",
+            home=home,
+        )
+
+        output = result.stdout.decode()
+        self.assertEqual(result.returncode, 0, output)
+        self.assertNotIn("must run from the Teamwork Marketplace runtime", output)
+        self.assertIn("checkout update refreshed Codex plugin-managed global setup", output)
+        self.assertEqual(before, activation.read_bytes())
+        self.assertFalse((home / ".agents/skills").exists())
+        self.assertTrue((home / ".codex/agents/teamwork-worker.toml").is_file())
+        self.assertTrue((home / ".codex/AGENTS.md").is_file())
+        self.assertTrue((home / ".cursor/skills/teamwork-update/SKILL.md").is_file())
+        self.assertTrue((home / ".claude/skills/teamwork-update/SKILL.md").is_file())
 
     def test_all_install_can_refresh_owned_writer_agents(self) -> None:
         home = self.base / "all-install-idempotent"

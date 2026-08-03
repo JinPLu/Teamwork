@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 6.2.1 - 2026-08-02
+
+**Teamwork 6.2.1 修复了 checkout 更新与已有 Marketplace 激活状态并存时的错误路由。**
+
+- **checkout 更新可以正常完成。** 从源码 checkout 运行 `$teamwork-update` 或 `./install.sh update` 时，即使本机已有 Codex Marketplace activation marker，也会走 checkout-safe 路径，不再误入仅允许 plugin runtime 的 bootstrap。
+- **不会复制重复的 Codex skills。** checkout-safe 路径只刷新 Codex agents、routing、policy、notifications 与已确认的受管依赖，同时继续由 Marketplace plugin 提供 Codex skills。
+- **Marketplace 边界保持严格。** `plugin-codex-bootstrap` 仍要求有效的 plugin runtime；checkout 不会重写 activation marker，非法或不属于 Teamwork 的 marker 仍会安全停止。
+- **真实失败路径已有回归保护。** 新测试固定覆盖“checkout + 已有 activation marker”，并验证 profile、CodeGraph 与 GPU Broker 的显式偏好仍按非交互路径执行。
+
+升级操作：更新到 6.2.1 后重新运行 `$teamwork-update`；checkout 用户可直接运行 `./install.sh update` 并传入或复用已记录的 profile、CodeGraph 与 GPU Broker 偏好。
+
+重要限制：checkout 更新不会替换 Marketplace plugin cache 或重写其 activation marker；要更新 Marketplace 自带的 skills，仍需通过 Codex plugin marketplace 渠道安装 6.2.1，并在新任务中运行 `$teamwork-update`。
+
 ## 6.2.0 - 2026-08-02
 
 **Teamwork 6.2 让安装选择、提问时机和 agent 投入更贴合真实任务。**

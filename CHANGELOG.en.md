@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 6.2.1 - 2026-08-02
+
+**Teamwork 6.2.1 fixes checkout updates when an existing Marketplace activation is present.**
+
+- **Checkout updates complete normally.** Running `$teamwork-update` or `./install.sh update` from a source checkout now uses a checkout-safe path when a Codex Marketplace activation marker already exists, instead of entering the plugin-runtime-only bootstrap.
+- **Duplicate Codex skills stay absent.** The checkout-safe path refreshes only Codex agents, routing, policy, notifications, and explicitly selected managed dependencies while Codex skills continue to come from the Marketplace plugin.
+- **Marketplace boundaries remain strict.** `plugin-codex-bootstrap` still requires a valid plugin runtime; a checkout does not rewrite the activation marker, and an invalid or non-Teamwork marker still fails closed.
+- **The real failure path has regression coverage.** A new test freezes the checkout-plus-activation-marker case and verifies that explicit profile, CodeGraph, and GPU Broker preferences still follow the non-interactive path.
+
+Upgrade action: update to 6.2.1 and run `$teamwork-update` again. Checkout users can run `./install.sh update` directly with explicit or recorded profile, CodeGraph, and GPU Broker preferences.
+
+Important limit: a checkout update does not replace the Marketplace plugin cache or rewrite its activation marker. Update Marketplace-provided skills through the Codex plugin marketplace channel to 6.2.1, then start a new task and run `$teamwork-update`.
+
 ## 6.2.0 - 2026-08-02
 
 **Teamwork 6.2 aligns installation choices, question timing, and agent investment with the real task.**
