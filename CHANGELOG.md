@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 6.2.2 - 2026-08-03
+
+**Teamwork 6.2.2 完成 6.2 的安装、意图识别与 agent 投入三项整体交付。**
+
+- **安装偏好和真实入口完整闭环。** 首次或缺少有效偏好记录时，完整全局安装/更新必须先获得 profile、CodeGraph 与 GPU Broker 的显式选择；已有有效记录才可无参数复用。
+- **6.2 的意图识别优化继续有效。** Root 仍先检查可发现状态并采用安全默认值，只有真正缺少用户拥有的必需值或会改变结果的偏好时才提问，叶角色继续只返回精确缺口。
+- **6.2 的 model/effort 优化继续有效。** `performance-first` 与 `cost-first` 的角色化投入矩阵保持不变，两个可选能力仍可独立选择，仅 CodeGraph、仅 GPU Broker 或全禁用组合都保留。
+- **首次、checkout 与 Marketplace 边界已回归验证。** Marketplace runtime 首次无 activation marker 时会走 plugin bootstrap，不复制重复 Codex skills；checkout 加已有合法 activation marker 继续走 checkout-safe，checkout 无 marker 继续普通 checkout 安装。
+
+升级操作：更新到 6.2.2 后重新运行 `$teamwork-update`；首次或偏好记录缺失时，显式 baseline 使用 `--profile performance-first --no-managed-codegraph --no-managed-gpu-broker`，或按需分别启用 CodeGraph/GPU Broker。
+
+重要限制：shell 安装器保持非交互，不会在命令行内追问；缺少必需偏好时会停止并提示应由 Root/Skill 收集选择后重试。checkout 更新仍不会替换 Marketplace plugin cache。
+
 ## 6.2.1 - 2026-08-02
 
 **Teamwork 6.2.1 修复了 checkout 更新与已有 Marketplace 激活状态并存时的错误路由。**

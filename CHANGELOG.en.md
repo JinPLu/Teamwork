@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 6.2.2 - 2026-08-03
+
+**Teamwork 6.2.2 completes the three-part 6.2 delivery for installation, intent handling, and agent investment.**
+
+- **Installation preferences and real entry paths now close the loop.** A first full global install or update with no valid preference record must receive explicit choices for profile, CodeGraph, and GPU Broker before it writes state; only an existing valid record can be reused without arguments.
+- **The 6.2 intent-recognition changes remain in force.** Root still checks discoverable state and safe defaults before asking, asks only for a truly missing user-owned value or outcome-changing preference, and leaf roles continue to return exact gaps instead of questioning users directly.
+- **The 6.2 model/effort changes remain in force.** The role-optimized `performance-first` and `cost-first` matrices are unchanged, and the optional capabilities remain independent so CodeGraph-only, GPU-only, and fully disabled combinations all work.
+- **First-run, checkout, and Marketplace boundaries are regression-tested.** A Marketplace runtime with no activation marker now enters plugin bootstrap without copying duplicate Codex skills; checkout plus a valid activation marker keeps using the checkout-safe path, and checkout without a marker keeps using the ordinary checkout install.
+
+Upgrade action: update to 6.2.2 and run `$teamwork-update` again. For a first run or missing preference record, use the explicit baseline `--profile performance-first --no-managed-codegraph --no-managed-gpu-broker`, or enable CodeGraph/GPU Broker independently as needed.
+
+Important limit: the shell installer remains non-interactive; when required preferences are missing, it stops and tells Root/Skill what to collect before retrying. Checkout updates still do not replace the Marketplace plugin cache.
+
 ## 6.2.1 - 2026-08-02
 
 **Teamwork 6.2.1 fixes checkout updates when an existing Marketplace activation is present.**

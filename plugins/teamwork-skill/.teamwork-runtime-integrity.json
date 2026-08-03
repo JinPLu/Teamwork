@@ -2,7 +2,7 @@
   "files": {
     ".codex-plugin/plugin.json": {
       "mode": "0644",
-      "sha256": "7ac36e315d5c12a30f626dd265823e108d23734deb2d8fd8c56a848284868d98"
+      "sha256": "c79e3570cf40ba884e8055c8952449898e7f14286e430975c4b57c62a883452f"
     },
     ".teamwork-plugin-runtime": {
       "mode": "0644",
@@ -10,7 +10,7 @@
     },
     "VERSION": {
       "mode": "0644",
-      "sha256": "e876c3ed077c5dc206ab8838e22bcaa4f2da98aeea2de66450c6118a09679f73"
+      "sha256": "a704c93aab386cdf2e2b1a296d2b544f5ada3dc015dcb0d9dfadc6f550e70143"
     },
     "evals/teamwork/ledgers/v4-capability-migration.jsonl": {
       "mode": "0644",
@@ -22,7 +22,7 @@
     },
     "install.sh": {
       "mode": "0755",
-      "sha256": "edeb4e0673e8480b194c76790560b02231bdc96bd9aef1aa5d4b9160195be1d0"
+      "sha256": "d55c66e8ca34afdaf2daf0dff81bfbb50ebcb59b928a1094769096f4ebde86b4"
     },
     "scripts/check-codex-routing.py": {
       "mode": "0644",
@@ -66,7 +66,7 @@
     },
     "scripts/install/dependencies.sh": {
       "mode": "0644",
-      "sha256": "8dd30b0b07b2838a4da1a82850e17421fb1b0f87f22778e0478435fd8b7e92e1"
+      "sha256": "84c6240b80259abec29f246ea7e7859fbd5fa270a7c5fa86b193ee76e9ff76ed"
     },
     "scripts/install/policy.sh": {
       "mode": "0644",
@@ -82,7 +82,7 @@
     },
     "scripts/install/targets.sh": {
       "mode": "0644",
-      "sha256": "92030be95500be8f9c6fd6719b1c06db68eef0f5ca6edef0d59124b379a78999"
+      "sha256": "031297eacbc393deef2bbaf5aff8b0354ccc0cd61bb0db3af6b099e94ef72b3a"
     },
     "scripts/plugin-activation.py": {
       "mode": "0755",
@@ -297,8 +297,8 @@
       "sha256": "dc2700b7e267a81a56723ab6ac6312eff524e9d78bf3bcf273982bcfe264f758"
     }
   },
-  "manifest_sha256": "7ac36e315d5c12a30f626dd265823e108d23734deb2d8fd8c56a848284868d98",
+  "manifest_sha256": "c79e3570cf40ba884e8055c8952449898e7f14286e430975c4b57c62a883452f",
   "marker": "TEAMWORK_CODEX_PLUGIN_RUNTIME=1",
   "schema_version": 1,
-  "version": "6.2.1"
+  "version": "6.2.2"
 }

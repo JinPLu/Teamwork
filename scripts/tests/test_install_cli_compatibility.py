@@ -70,6 +70,12 @@ CODEX_PROFILE_MATRICES = {
         "teamwork-reviewer": ("gpt-5.6-sol", "high"),
     },
 }
+EXPLICIT_BASELINE = (
+    "--profile",
+    "performance-first",
+    "--no-managed-codegraph",
+    "--no-managed-gpu-broker",
+)
 
 
 class InstallCliCompatibilityTests(unittest.TestCase):
@@ -141,6 +147,28 @@ class InstallCliCompatibilityTests(unittest.TestCase):
             stderr=subprocess.STDOUT,
             check=False,
         )
+
+    def run_lifecycle_install(
+        self,
+        *args: str,
+        home: pathlib.Path | None = None,
+        create_home: bool = True,
+    ) -> subprocess.CompletedProcess[bytes]:
+        return self.run_install(
+            *EXPLICIT_BASELINE,
+            *args,
+            home=home,
+            create_home=create_home,
+        )
+
+    def make_fixture_marketplace_runtime(self) -> None:
+        (self.fixture / ".teamwork-plugin-runtime").write_text(
+            "TEAMWORK_CODEX_PLUGIN_RUNTIME=1",
+            encoding="utf-8",
+        )
+        manifest_root = self.fixture / ".codex-plugin"
+        manifest_root.mkdir()
+        shutil.copy2(REPO_ROOT / ".codex-plugin" / "plugin.json", manifest_root / "plugin.json")
 
     def install_exact_v342_generic_router(self, home: pathlib.Path) -> pathlib.Path:
         fixture = json.loads(V342_SURFACES.read_text(encoding="utf-8"))
@@ -374,6 +402,25 @@ class InstallCliCompatibilityTests(unittest.TestCase):
                         f'model_reasoning_effort = "{effort}"', rendered
                     )
 
+    def test_narrow_agent_target_does_not_create_missing_capability_receipt(self) -> None:
+        home = self.base / "narrow-agent-no-receipt"
+        result = self.run_install(
+            "--profile",
+            "cost-first",
+            "--no-codex-routing",
+            "codex-agents",
+            home=home,
+        )
+        output = result.stdout.decode()
+        self.assertEqual(result.returncode, 0, output)
+        rendered = (home / ".codex/agents/teamwork-worker.toml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('model = "gpt-5.6-luna"', rendered)
+        self.assertFalse(
+            (home / ".local/state/teamwork/install-preferences.json").exists()
+        )
+
     def test_removed_profile_alias_fails_closed(self) -> None:
         result = self.run_install("--profile", "gpt56-role", "codex-agents")
         output = result.stdout.decode()
@@ -382,7 +429,7 @@ class InstallCliCompatibilityTests(unittest.TestCase):
 
     def test_user_copy_installs_keep_policy_destinations(self) -> None:
         home = self.base / "user-home"
-        result = self.run_install("--no-codex-routing", "codex", home=home)
+        result = self.run_lifecycle_install("--no-codex-routing", "codex", home=home)
         self.assertEqual(result.returncode, 0, result.stdout.decode())
         codex_policy = (home / ".codex" / "AGENTS.md").read_text()
         self.assertIn("<!-- TEAMWORK_CODEX_GLOBAL_START -->", codex_policy)
@@ -426,6 +473,8 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         result = self.run_install(
             "--profile",
             "cost-first",
+            "--no-managed-codegraph",
+            "--no-managed-gpu-broker",
             "--no-codex-routing",
             "all",
             home=home,
@@ -438,6 +487,8 @@ class InstallCliCompatibilityTests(unittest.TestCase):
     def test_update_fails_before_global_writes_without_local_gpu_companion(self) -> None:
         home = self.base / "update-missing-companion"
         result = self.run_install(
+            "--profile",
+            "performance-first",
             "--dependencies",
             "--no-notifications",
             "--no-codex-routing",
@@ -487,9 +538,43 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         self.assertTrue((home / ".cursor/skills/teamwork-update/SKILL.md").is_file())
         self.assertTrue((home / ".claude/skills/teamwork-update/SKILL.md").is_file())
 
+    def test_plugin_runtime_update_without_activation_bootstraps_without_codex_skill_copy(self) -> None:
+        self.make_fixture_marketplace_runtime()
+        home = self.base / "plugin-runtime-update-no-activation"
+        activation = home / ".codex/teamwork/plugin-activation.json"
+
+        result = self.run_install(
+            "--profile",
+            "cost-first",
+            "--no-managed-codegraph",
+            "--no-managed-gpu-broker",
+            "--no-notifications",
+            "--no-mcp",
+            "update",
+            home=home,
+        )
+
+        output = result.stdout.decode()
+        self.assertEqual(result.returncode, 0, output)
+        self.assertIn("Activated Teamwork Codex plugin", output)
+        self.assertFalse((home / ".agents/skills").exists())
+        self.assertTrue((home / ".codex/agents/teamwork-worker.toml").is_file())
+        marker = json.loads(activation.read_text(encoding="utf-8"))
+        self.assertEqual(marker["version"], (self.fixture / "VERSION").read_text(encoding="utf-8").strip())
+        self.assertEqual(marker["profile"], "cost-first")
+        self.assertEqual(marker["notifications"], "disabled")
+        state = json.loads(
+            (home / ".local/state/teamwork/install-preferences.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(state["desired"]["profile"]["value"], "cost-first")
+        self.assertEqual(state["desired"]["codegraph"]["value"], "disabled")
+        self.assertEqual(state["desired"]["gpu_broker"]["value"], "disabled")
+
     def test_all_install_can_refresh_owned_writer_agents(self) -> None:
         home = self.base / "all-install-idempotent"
-        first = self.run_install("all", home=home)
+        first = self.run_lifecycle_install("all", home=home)
         self.assertEqual(first.returncode, 0, first.stdout.decode())
 
         second = self.run_install("all", home=home)
@@ -513,7 +598,7 @@ class InstallCliCompatibilityTests(unittest.TestCase):
 
     def test_all_install_can_refresh_owned_debugger_agents(self) -> None:
         home = self.base / "all-install-debugger-idempotent"
-        first = self.run_install("all", home=home)
+        first = self.run_lifecycle_install("all", home=home)
         self.assertEqual(first.returncode, 0, first.stdout.decode())
 
         second = self.run_install("all", home=home)
@@ -531,7 +616,7 @@ class InstallCliCompatibilityTests(unittest.TestCase):
 
     def test_owned_skill_content_drift_is_refreshed(self) -> None:
         home = self.base / "drifted-home"
-        installed = self.run_install("--no-codex-routing", "codex", home=home)
+        installed = self.run_lifecycle_install("--no-codex-routing", "codex", home=home)
         self.assertEqual(installed.returncode, 0, installed.stdout.decode())
 
         skill = home / ".agents" / "skills" / "teamwork-collaborate" / "SKILL.md"
@@ -555,7 +640,7 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         notes = legacy / "notes.md"
         notes.write_text("keep me\n", encoding="utf-8")
 
-        result = self.run_install("--no-codex-routing", "codex", home=home)
+        result = self.run_lifecycle_install("--no-codex-routing", "codex", home=home)
         self.assertEqual(result.returncode, 0, result.stdout.decode())
         self.assertTrue(notes.is_file())
         self.assertTrue(
@@ -573,7 +658,10 @@ class InstallCliCompatibilityTests(unittest.TestCase):
                     else (platform,)
                 )
 
-                result = self.run_install(*args, home=home)
+                if platform == "codex":
+                    result = self.run_lifecycle_install(*args, home=home)
+                else:
+                    result = self.run_install(*args, home=home)
 
                 self.assertEqual(result.returncode, 0, result.stdout.decode())
                 self.assertFalse(skill.parent.exists())
@@ -599,7 +687,10 @@ class InstallCliCompatibilityTests(unittest.TestCase):
                     else (platform,)
                 )
 
-                result = self.run_install(*args, home=home)
+                if platform == "codex":
+                    result = self.run_lifecycle_install(*args, home=home)
+                else:
+                    result = self.run_install(*args, home=home)
 
                 self.assertNotEqual(result.returncode, 0, result.stdout.decode())
                 self.assertIn("unknown files in grill-me", result.stdout.decode())
@@ -631,7 +722,10 @@ class InstallCliCompatibilityTests(unittest.TestCase):
                     else (platform,)
                 )
 
-                result = self.run_install(*args, home=home)
+                if platform == "codex":
+                    result = self.run_lifecycle_install(*args, home=home)
+                else:
+                    result = self.run_install(*args, home=home)
 
                 self.assertNotEqual(result.returncode, 0, result.stdout.decode())
                 self.assertIn(
@@ -643,7 +737,7 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         home = self.base / "exact-legacy-router-home"
         router = self.install_exact_v342_generic_router(home)
 
-        result = self.run_install("--no-codex-routing", "codex", home=home)
+        result = self.run_lifecycle_install("--no-codex-routing", "codex", home=home)
 
         self.assertEqual(result.returncode, 0, result.stdout.decode())
         self.assertFalse(router.exists())
@@ -663,7 +757,7 @@ class InstallCliCompatibilityTests(unittest.TestCase):
                 else:
                     target.chmod(0o600)
 
-                result = self.run_install(
+                result = self.run_lifecycle_install(
                     "--no-codex-routing", "codex", home=home
                 )
 
@@ -722,7 +816,7 @@ class InstallCliCompatibilityTests(unittest.TestCase):
                 home = self.base / f"exact-retired-{retired}"
                 skill_root = self.install_retired_from_fixture(home, "codex", retired)
 
-                result = self.run_install("--no-codex-routing", "codex", home=home)
+                result = self.run_lifecycle_install("--no-codex-routing", "codex", home=home)
 
                 self.assertEqual(result.returncode, 0, result.stdout.decode())
                 self.assertFalse(skill_root.exists())
@@ -743,7 +837,7 @@ class InstallCliCompatibilityTests(unittest.TestCase):
         (root / ".teamwork-profile").write_text("performance-first\n", encoding="utf-8")
         before = skill.read_bytes()
 
-        result = self.run_install("--no-codex-routing", "codex", home=home)
+        result = self.run_lifecycle_install("--no-codex-routing", "codex", home=home)
 
         self.assertNotEqual(result.returncode, 0, result.stdout.decode())
         self.assertIn(
@@ -781,7 +875,7 @@ class InstallCliCompatibilityTests(unittest.TestCase):
                     if path.is_file()
                 }
 
-                result = self.run_install("--no-codex-routing", "codex", home=home)
+                result = self.run_lifecycle_install("--no-codex-routing", "codex", home=home)
 
                 self.assertNotEqual(result.returncode, 0, result.stdout.decode())
                 self.assertIn(f"unknown files in {retired}", result.stdout.decode())
@@ -995,12 +1089,15 @@ esac
         env: dict[str, str] | None = None,
         *,
         capability_flags: tuple[str, ...] = ("--dependencies",),
+        profile: str | None = "performance-first",
     ) -> subprocess.CompletedProcess[str]:
         env = env or self.managed_update_env()
+        profile_flags = ("--profile", profile) if profile else ()
         result = subprocess.run(
             [
                 "bash",
                 str(REPO_ROOT / "install.sh"),
+                *profile_flags,
                 *capability_flags,
                 "--no-notifications",
                 "--no-codex-routing",
@@ -1018,8 +1115,50 @@ esac
         path = self.base / "home" / ".local" / "state" / "teamwork" / "install-preferences.json"
         return json.loads(path.read_text(encoding="utf-8"))
 
-    def test_update_baseline_skips_optional_tools_and_records_opt_out(self) -> None:
+    def test_update_requires_explicit_missing_preferences_before_writes(self) -> None:
+        result = self.run_managed_update(capability_flags=(), profile=None)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("requires explicit profile", result.stderr)
+        self.assertFalse(
+            (
+                self.base
+                / "home"
+                / ".local"
+                / "state"
+                / "teamwork"
+                / "install-preferences.json"
+            ).exists()
+        )
+        self.assertFalse((self.base / "home" / ".agents").exists())
+        self.assertFalse((self.base / "home" / ".cursor").exists())
+        self.assertFalse((self.base / "home" / ".claude").exists())
+
+    def test_update_requires_explicit_capability_choices_when_profile_is_supplied(self) -> None:
         result = self.run_managed_update(capability_flags=())
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn(
+            "CodeGraph (--managed-codegraph|--no-managed-codegraph)",
+            result.stderr,
+        )
+        self.assertIn(
+            "GPU Broker (--managed-gpu-broker|--no-managed-gpu-broker)",
+            result.stderr,
+        )
+        self.assertFalse(
+            (
+                self.base
+                / "home"
+                / ".local"
+                / "state"
+                / "teamwork"
+                / "install-preferences.json"
+            ).exists()
+        )
+
+    def test_update_baseline_skips_optional_tools_and_records_opt_out(self) -> None:
+        result = self.run_managed_update(
+            capability_flags=("--no-managed-codegraph", "--no-managed-gpu-broker")
+        )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse(self.log.exists())
         state = self.preference_state()
@@ -1029,7 +1168,9 @@ esac
         self.assertEqual(state["receipts"]["gpu_broker"]["status"], "disabled")
 
     def test_update_can_enable_codegraph_without_gpu_broker(self) -> None:
-        result = self.run_managed_update(capability_flags=("--managed-codegraph",))
+        result = self.run_managed_update(
+            capability_flags=("--managed-codegraph", "--no-managed-gpu-broker")
+        )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         commands = self.log.read_text(encoding="utf-8")
         self.assertIn("npm install --global @colbymchenry/codegraph@1.5.0", commands)
@@ -1041,7 +1182,9 @@ esac
         self.assertEqual(state["desired"]["gpu_broker"]["value"], "disabled")
 
     def test_update_can_enable_gpu_broker_without_codegraph(self) -> None:
-        result = self.run_managed_update(capability_flags=("--managed-gpu-broker",))
+        result = self.run_managed_update(
+            capability_flags=("--no-managed-codegraph", "--managed-gpu-broker")
+        )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         commands = self.log.read_text(encoding="utf-8")
         self.assertNotIn("npm install", commands)
@@ -1053,6 +1196,18 @@ esac
         self.assertEqual(state["desired"]["codegraph"]["value"], "disabled")
         self.assertEqual(state["desired"]["gpu_broker"]["value"], "enabled")
         self.assertEqual(state["receipts"]["gpu_broker"]["status"], "ready")
+
+    def test_update_reuses_existing_valid_preferences_without_arguments(self) -> None:
+        recorded = self.run_managed_update(
+            capability_flags=("--no-managed-codegraph", "--no-managed-gpu-broker")
+        )
+        self.assertEqual(recorded.returncode, 0, recorded.stdout + recorded.stderr)
+        reused = self.run_managed_update(capability_flags=(), profile=None)
+        self.assertEqual(reused.returncode, 0, reused.stdout + reused.stderr)
+        state = self.preference_state()
+        self.assertEqual(state["desired"]["profile"]["value"], "performance-first")
+        self.assertEqual(state["desired"]["codegraph"]["value"], "disabled")
+        self.assertEqual(state["desired"]["gpu_broker"]["value"], "disabled")
 
     def test_update_refreshes_dependencies_before_global_surfaces(self) -> None:
         result = self.run_managed_update()

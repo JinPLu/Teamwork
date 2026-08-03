@@ -210,6 +210,7 @@ case "$EFFECTIVE_TARGET" in
     ;;
 esac
 validate_codex_profile
+require_explicit_lifecycle_preferences "$EFFECTIVE_TARGET"
 
 case "$EFFECTIVE_TARGET" in
   codex)

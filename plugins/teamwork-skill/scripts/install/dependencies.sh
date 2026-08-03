@@ -131,6 +131,57 @@ validate_managed_dependency_target() {
   fi
 }
 
+managed_dependency_lifecycle_target() {
+  case "$1" in
+    codex|all|update|plugin-codex-bootstrap)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+explicit_capability_choice_is_present() {
+  local capability="$1" source
+  case "$capability" in
+    codegraph)
+      source="$MANAGED_CODEGRAPH_SOURCE"
+      ;;
+    gpu_broker)
+      source="$MANAGED_GPU_BROKER_SOURCE"
+      ;;
+    *)
+      return 2
+      ;;
+  esac
+  [[ -n "$source" || -n "$MANAGED_DEPENDENCIES_SOURCE" ]]
+}
+
+require_explicit_lifecycle_preferences() {
+  local target="$1"
+  local missing=() missing_text
+  managed_dependency_lifecycle_target "$target" || return 0
+  [[ "$PREFERENCES_STATUS" == "missing" ]] || return 0
+
+  [[ -n "$CODEX_PROFILE_SOURCE" ]] || missing+=("profile (--profile performance-first|cost-first)")
+  explicit_capability_choice_is_present codegraph \
+    || missing+=("CodeGraph (--managed-codegraph|--no-managed-codegraph)")
+  explicit_capability_choice_is_present gpu_broker \
+    || missing+=("GPU Broker (--managed-gpu-broker|--no-managed-gpu-broker)")
+
+  if ((${#missing[@]} > 0)); then
+    missing_text="${missing[0]}"
+    for value in "${missing[@]:1}"; do
+      missing_text="$missing_text, $value"
+    done
+    printf 'Missing Teamwork install preferences; %s requires explicit %s before writing global install state.\n' \
+      "$target" "$missing_text" >&2
+    printf 'For the explicit baseline, use: --profile performance-first --no-managed-codegraph --no-managed-gpu-broker.\n' >&2
+    return 2
+  fi
+}
+
 resolve_install_preferences() {
   local record="$1" result profile codegraph gpu_broker status value source
   local args=(resolve)
@@ -165,6 +216,12 @@ resolve_install_preferences() {
 
 persist_install_preferences() {
   resolve_install_preferences record
+}
+
+persist_install_preferences_if_recorded() {
+  if [[ "$PREFERENCES_STATUS" == "valid" ]]; then
+    persist_install_preferences
+  fi
 }
 
 preference_document_status() {

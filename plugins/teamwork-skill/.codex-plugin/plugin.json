@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "6.2.1",
+  "version": "6.2.2",
   "description": "Codex-first collaboration skills, with Cursor and Claude Code adapters, for Collaborate, case-bundle workflow documents, research, local evidence, debugging, planning, review, setup, updates, and long-running goals.",
   "author": {
     "name": "JinPLu",

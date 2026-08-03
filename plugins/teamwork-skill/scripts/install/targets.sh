@@ -319,7 +319,7 @@ install_cursor() {
   preflight_teamwork_skill_root "$skill_root" "Cursor skill root"
   preflight_v342_agent_set cursor "$agent_root" "$skill_root"
   preflight_agent_destination "$agent_root" md Cursor "${CURSOR_AGENTS[@]}"
-  persist_install_preferences
+  persist_install_preferences_if_recorded
   remove_v342_agent_set cursor "$agent_root" "$skill_root"
   install_skill_set "$skill_root" "Cursor"
   install_cursor_agent_set "$agent_root" "user Cursor"
@@ -336,7 +336,7 @@ install_claude() {
   preflight_v342_managed_policy claude "$HOME/.claude/CLAUDE.md" "$skill_root"
   preflight_claude_global_policy
   preflight_user_notifications claude
-  persist_install_preferences
+  persist_install_preferences_if_recorded
   remove_v342_agent_set claude "$agent_root" "$skill_root"
   install_skill_set "$skill_root" "Claude Code"
   install_claude_agent_set "$agent_root" "user Claude Code"
@@ -403,12 +403,14 @@ install_all() {
 }
 
 install_update() {
+  if teamwork_plugin_runtime_is_valid; then
+    install_plugin_codex_bootstrap
+    install_cursor
+    install_claude
+    return 0
+  fi
   if plugin_activation_is_present; then
-    if teamwork_plugin_runtime_is_valid; then
-      install_plugin_codex_bootstrap
-    else
-      install_checkout_plugin_codex_update
-    fi
+    install_checkout_plugin_codex_update
     install_cursor
     install_claude
     return 0
@@ -445,7 +447,7 @@ install_codex_agents_home() {
   if [[ "$V342_CODEX_AGENTS_PREFLIGHTED" != "1" ]]; then
     preflight_codex_agent_set "$agent_root"
   fi
-  persist_install_preferences
+  persist_install_preferences_if_recorded
   remove_v342_agent_set codex "$agent_root" "$skill_root"
   configure_codex_routing
   install_codex_agent_set "$agent_root" "user"
@@ -456,7 +458,7 @@ install_cursor_agents_home() {
   local agent_root="$HOME/.cursor/agents"
   preflight_v342_agent_set cursor "$agent_root" "$skill_root"
   preflight_agent_destination "$agent_root" md Cursor "${CURSOR_AGENTS[@]}"
-  persist_install_preferences
+  persist_install_preferences_if_recorded
   remove_v342_agent_set cursor "$agent_root" "$skill_root"
   install_cursor_agent_set "$agent_root" "user Cursor"
 }
@@ -466,7 +468,7 @@ install_claude_agents_home() {
   local agent_root="$HOME/.claude/agents"
   preflight_v342_agent_set claude "$agent_root" "$skill_root"
   preflight_agent_destination "$agent_root" md "Claude Code" "${CLAUDE_AGENTS[@]}"
-  persist_install_preferences
+  persist_install_preferences_if_recorded
   remove_v342_agent_set claude "$agent_root" "$skill_root"
   install_claude_agent_set "$agent_root" "user Claude Code"
 }
