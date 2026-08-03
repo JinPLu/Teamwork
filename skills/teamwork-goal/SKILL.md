@@ -31,7 +31,9 @@ or an initialized project's case-v2 Goal transaction route. Writer runs
 case-v2 uses exact `case_id`/alias or creates only from a frozen seed/task_key:
 `case-schema <goal-acquire|goal-update|goal-transfer|goal-close> -> case-apply
 -> case-inspect/readback`. Goal acquire/update are permitted only while the case
-is `executing`; transfer/close follow their transaction rules. Legacy-v1,
+is `executing`; for a fresh Goal, Writer first applies `case-schema <create>`
+with `initial_phase=executing`, reads back its revisions, then applies
+`goal-acquire`. Transfer/close follow their transaction rules. Legacy-v1,
 unknown, hybrid, mixed v1/v2, stale, ambiguous case, missing seed/task_key, or
 partial migration fails closed before any write, and one request never touches
 both memory trees.

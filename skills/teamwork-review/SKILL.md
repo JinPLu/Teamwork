@@ -56,11 +56,12 @@ source changes after that create a new candidate. Root retains final acceptance.
 ## Persistence And Output
 
 Reviewer always stays read-only. In an initialized writable project, every
-terminal verdict defaults to a case-v2 review artifact unless `no files`,
-`off-record`, `read-only`, `no writes`, or equivalent applies. Verdict and
-persistence are separate: deliver the verdict even if the completion companion
-cannot be saved, and state `unsaved/blocked`. Persistence does not imply
-Root/user acceptance.
+substantive sealed review result defaults to a case-v2 review artifact: the
+initial verdict and repair batch, a blocked evidence handoff, and the allowed
+delta recheck. `no files`, `off-record`, `read-only`, `no writes`, or equivalent
+disables persistence. Verdict and persistence are separate: deliver the verdict
+even if its checkpoint or completion companion cannot be saved, and state
+`unsaved/blocked`. Persistence does not imply Root/user acceptance.
 
 Freeze the verdict packet: purpose/audience, facts/sources, decision/status,
 style/structure, artifact kind/consumer, preserve/forbid, findings, evidence,
@@ -68,7 +69,10 @@ verdict, repair batch, delta recheck status, and residual risk. Writer routes
 from observed schema: `case-inspect` first; case-v2 uses exact `case_id`/alias
 or creates from a frozen seed/task_key, then `case-schema
 <review-add|code-review-add|plan-review-add> -> case-apply ->
-case-inspect/readback`. The transaction derives destination and registers
+case-inspect/readback`. A fresh general/code Review is created with
+`initial_phase=executing`; a fresh Plan Review uses `initial_phase=planned`.
+Writer reads back the create revisions before applying the review operation.
+The transaction derives destination and registers
 manifest/claim heads. Writer must not invent or alter facts, authority, status,
 findings, verdict, or acceptance. Claim saved/durable only after readback.
 Missing project memory, Writer, packet, authority, consumer, route, or

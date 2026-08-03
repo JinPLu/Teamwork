@@ -1,0 +1,69 @@
+{
+  "evidence": "Static substantive Explore evidence persistence control.",
+  "expected": {
+    "capability": "persistence",
+    "language": "en",
+    "requires": [
+      "explore-read-only",
+      "substantive-explore-evidence",
+      "explore-evidence-add-route",
+      "tiny-check-only-no-artifact",
+      "writer-only"
+    ],
+    "scenario": "explore-artifact"
+  },
+  "id": "persistence-explore-artifact",
+  "must": [
+    "answer the precise local evidence question through the owning Explorer as a read-only frozen packet",
+    "persist a substantive reusable Explore result through Writer and the case-v2 evidence-add transaction with readback"
+  ],
+  "must_not": [
+    "persist tiny or check-only reads, let Explorer write directly, edit implementation files, use legacy memory, or bypass transaction readback"
+  ],
+  "platforms": [
+    "codex",
+    "cursor",
+    "claude"
+  ],
+  "producers": [
+    {
+      "class": "root-policy",
+      "source": "scripts/install/policy.sh"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-explore/SKILL.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/codex-agents/teamwork-explorer.toml"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/cursor-agents/explorer.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/claude-agents/explorer.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/codex-agents/teamwork-writer.toml"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/cursor-agents/writer.md"
+    },
+    {
+      "class": "role-template",
+      "source": "templates/claude-agents/writer.md"
+    },
+    {
+      "class": "artifact-engine",
+      "source": "scripts/discussion-transaction.py"
+    }
+  ],
+  "prompt": "Use the owning Explorer to answer this substantive local evidence question: which owner defines the persistence contract and what exact line proves it? Freeze the result for Writer and the case-v2 evidence-add route; do not persist tiny/check-only reads.",
+  "source": "synthetic",
+  "split": "dev"
+}

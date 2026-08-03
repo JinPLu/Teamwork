@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 6.2.3 - 2026-08-03
+
+**Teamwork 6.2.3 让有实质内容的计划、讨论、调研、诊断、审查与执行结果默认可靠落盘。**
+
+- **Writer 默认持久化覆盖完整 workflow。** 计划、Collaborate 更新、Research/Explore 证据、Debug 记录、Review 结论、Goal 进展、会产生变更的 Init/Update，以及有继续价值的执行检查点和结果，都会默认写入 case-v2 artifact。
+- **Explore 不再丢失可复用的本地证据。** 有实质内容的代码、配置、日志和测试发现会通过 `evidence-add` 保存；很小的读取、检查型任务和一次性说明仍保持轻量，不制造文件。
+- **Artifact 元数据不再被错误归类。** 每种写入操作都由 schema 固定到正确的 kind 与 `teamwork` consumer；Research、Explore、Debug 等记录保持原始语义，不匹配的覆盖请求会安全失败。
+- **新建 Goal/Review 与三宿主 agent 边界完整闭环。** 新 case 会从合法阶段开始，所有创建与写入都经过事务回读；Codex、Cursor、Claude 共享同一套九角色边界，并继续只允许 Writer 执行 workflow 持久化。
+
+升级操作：更新到 6.2.3 后运行 `$teamwork-update`，然后新建一个任务，让刷新后的策略、skills 和 agents 全部加载。
+
+重要限制：默认持久化不是逐轮聊天日志；很小的 native/check-only 任务、一次性解释，以及明确要求 `no files`、`off-record`、`read-only` 或 `no writes` 的任务仍不会落盘。已有 case-v2 项目无需迁移。
+
 ## 6.2.2 - 2026-08-03
 
 **Teamwork 6.2.2 完成 6.2 的安装、意图识别与 agent 投入三项整体交付。**

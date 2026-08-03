@@ -3,8 +3,20 @@
 REAL_CODEX="${TEAMWORK_REAL_CODEX:-$(command -v codex 2>/dev/null || true)}"
 # Integration validates Teamwork's file ownership in temporary homes. Managed
 # dependency refresh is covered by its own fully mocked test and must never
-# update the validator's real npm/uv installations.
-export TEAMWORK_MANAGED_DEPENDENCIES=skip
+# update the validator's real npm/uv installations. Effect-owning targets use
+# the explicit capability opt-out arrays below; profile-only targets receive no
+# managed-dependency option.
+TEAMWORK_PROFILE_ARGS=(--profile performance-first)
+TEAMWORK_BASELINE_ARGS=(
+  --profile performance-first
+  --no-managed-codegraph
+  --no-managed-gpu-broker
+)
+TEAMWORK_COST_BASELINE_ARGS=(
+  --profile cost-first
+  --no-managed-codegraph
+  --no-managed-gpu-broker
+)
 if [[ -n "$REAL_CODEX" && ! -x "$REAL_CODEX" ]]; then
   REAL_CODEX=""
 fi
@@ -139,7 +151,7 @@ required = {
         "joins before claiming saved/durable",
         "current frozen brief through the exact route",
         "workflow artifacts only via transactions",
-        "run case-inspect first",
+        "case-inspect first",
         "case-v2 only",
         "case-schema <operation> -> case-apply/readback",
         "legacy-v1 artifacts/collaborate/goal are read-only migration inputs, no write route",
@@ -273,7 +285,7 @@ for value in fixture["files"]:
         print(pathlib.PurePosixPath(value).name)
 PY
 )
-HOME="$tmp/home" "$ROOT/install.sh" >/dev/null
+HOME="$tmp/home" "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" >/dev/null
 [[ ! -e "$tmp/home/.fake-codex-invocations" ]] \
   || fail "Codex install must not invoke the host CLI to manage interaction capabilities"
 [[ -e "$unproven_teamwork_dir" ]] \
@@ -332,7 +344,7 @@ done
 printf '%s\n' "$(tr -d '[:space:]' < "$ROOT/VERSION")" > "$legacy_codex_root/.teamwork-version"
 printf '%s\n' performance-first > "$legacy_codex_root/.teamwork-profile"
 printf '%s\n' 'preserve unrelated skill root content' > "$legacy_codex_root/unrelated.txt"
-HOME="$legacy_codex_home" "$ROOT/install.sh" codex >/dev/null
+HOME="$legacy_codex_home" "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" codex >/dev/null
 for skill in "${SKILLS[@]}"; do
   [[ -f "$legacy_codex_home/.agents/skills/$skill/SKILL.md" ]] \
     || fail "Codex install must migrate $skill to the supported user skill root"
@@ -353,7 +365,7 @@ printf '%s\n' current > "$readonly_legacy_root/.teamwork-version"
 printf '%s\n' performance-first > "$readonly_legacy_root/.teamwork-profile"
 chmod a-w "$readonly_legacy_root"
 readonly_legacy_rc=0
-HOME="$readonly_legacy_home" "$ROOT/install.sh" --no-notifications codex >/dev/null 2>&1 \
+HOME="$readonly_legacy_home" "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" --no-notifications codex >/dev/null 2>&1 \
   || readonly_legacy_rc=$?
 chmod u+w "$readonly_legacy_root"
 if [[ "$readonly_legacy_rc" -eq 0 ]]; then
@@ -373,7 +385,7 @@ cp -R "$ROOT/skills/teamwork-collaborate" "$custom_codex_runtime/skills/teamwork
 printf '%s\n' current > "$custom_codex_runtime/skills/.teamwork-version"
 printf '%s\n' performance-first > "$custom_codex_runtime/skills/.teamwork-profile"
 HOME="$custom_codex_home" CODEX_HOME="$custom_codex_runtime" \
-  "$ROOT/install.sh" codex >/dev/null
+  "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" codex >/dev/null
 [[ -f "$custom_codex_home/.agents/skills/teamwork-collaborate/SKILL.md" ]] \
   || fail "Codex install must keep the supported skill root independent of CODEX_HOME"
 [[ ! -e "$custom_codex_runtime/skills/teamwork-collaborate" ]] \
@@ -382,7 +394,7 @@ HOME="$custom_codex_home" CODEX_HOME="$custom_codex_runtime" \
 unknown_legacy_home="$tmp/home-codex-unknown-legacy"
 mkdir -p "$unknown_legacy_home/.codex/skills"
 cp -R "$ROOT/skills/teamwork-collaborate" "$unknown_legacy_home/.codex/skills/teamwork-collaborate"
-if HOME="$unknown_legacy_home" "$ROOT/install.sh" codex >/dev/null 2>&1; then
+if HOME="$unknown_legacy_home" "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" codex >/dev/null 2>&1; then
   fail "Codex install must reject an unmarked legacy same-name skill"
 fi
 [[ -f "$unknown_legacy_home/.codex/skills/teamwork-collaborate/SKILL.md" ]] \
@@ -398,7 +410,7 @@ cp -R "$ROOT/skills/teamwork-collaborate" "$unknown_inventory_home/.codex/skills
 printf '%s\n' current > "$unknown_inventory_home/.codex/skills/.teamwork-version"
 printf '%s\n' performance-first > "$unknown_inventory_home/.codex/skills/.teamwork-profile"
 printf '%s\n' 'user file' > "$unknown_inventory_home/.codex/skills/teamwork-collaborate/notes.md"
-if HOME="$unknown_inventory_home" "$ROOT/install.sh" codex >/dev/null 2>&1; then
+if HOME="$unknown_inventory_home" "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" codex >/dev/null 2>&1; then
   fail "Codex install must reject unknown files inside a legacy Teamwork skill"
 fi
 [[ -f "$unknown_inventory_home/.codex/skills/teamwork-collaborate/notes.md" ]] \
@@ -407,7 +419,7 @@ fi
 unknown_destination_home="$tmp/home-codex-unknown-destination"
 mkdir -p "$unknown_destination_home/.agents/skills"
 cp -R "$ROOT/skills/teamwork-collaborate" "$unknown_destination_home/.agents/skills/teamwork-collaborate"
-if HOME="$unknown_destination_home" "$ROOT/install.sh" codex >/dev/null 2>&1; then
+if HOME="$unknown_destination_home" "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" codex >/dev/null 2>&1; then
   fail "Codex install must reject an unmarked same-name skill at the supported root"
 fi
 [[ -f "$unknown_destination_home/.agents/skills/teamwork-collaborate/SKILL.md" ]] \
@@ -454,7 +466,7 @@ All code runs on a remote server; the local environment only supports basic test
 Keep CodeGraph instructions.
 <!-- CODEGRAPH_END -->
 AGENTS
-HOME="$agents_preserve_home" "$ROOT/install.sh" codex >/dev/null
+HOME="$agents_preserve_home" "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" codex >/dev/null
 grep_required 'Personal rule before.' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must preserve user content"
 grep_required '<!-- CODEGRAPH_START -->' "$agents_preserve_home/.codex/AGENTS.md" \
@@ -473,7 +485,7 @@ grep_absent 'All code runs on a remote server' \
 
 codex_policy_out="$tmp/codex-policy.out"
 codex_policy_err="$tmp/codex-policy.err"
-HOME="$tmp/home-codex-policy" "$ROOT/install.sh" codex-policy \
+HOME="$tmp/home-codex-policy" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" codex-policy \
   > "$codex_policy_out" 2> "$codex_policy_err"
 [[ ! -s "$codex_policy_err" ]] \
   || fail "codex-policy target must render without shell-expansion errors"
@@ -483,7 +495,7 @@ check_lean_policy "$codex_policy_out" performance-first "codex-policy output"
 [[ ! -e "$tmp/home-codex-policy/.codex/AGENTS.md" ]] \
   || fail "codex-policy target must not write global AGENTS policy"
 
-HOME="$tmp/home-codex-agents" "$ROOT/install.sh" codex-agents >/dev/null
+HOME="$tmp/home-codex-agents" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" codex-agents >/dev/null
 for agent in "${CODEX_AGENTS[@]}"; do
   [[ -f "$tmp/home-codex-agents/.codex/agents/$agent.toml" ]] \
     || fail "Codex agent install missing $agent"
@@ -524,7 +536,7 @@ grep_absent 'multi_agent_v2' \
   "$codex_routing_config"
 python3 "$ROOT/scripts/configure-codex-routing.py" --check --config "$codex_routing_config" >/dev/null
 cp "$codex_routing_config" "$tmp/codex-routing-first.toml"
-HOME="$tmp/home-codex-agents" "$ROOT/install.sh" codex-agents >/dev/null
+HOME="$tmp/home-codex-agents" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" codex-agents >/dev/null
 cmp -s "$codex_routing_config" "$tmp/codex-routing-first.toml" \
   || fail "Codex routing migration must be byte-idempotent"
 
@@ -540,7 +552,7 @@ printf '%s\n' \
   'js_repl = false' \
   'multi_agent_v2 = false' \
   > "$legacy_routing_home/.codex/config.toml"
-HOME="$legacy_routing_home" "$ROOT/install.sh" codex-agents >/dev/null
+HOME="$legacy_routing_home" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" codex-agents >/dev/null
 grep_required '^max_depth = 2$' "$legacy_routing_home/.codex/config.toml" \
   "routing migration must preserve unrelated agents settings"
 grep_required '^max_threads = 4$' "$legacy_routing_home/.codex/config.toml" \
@@ -552,7 +564,7 @@ grep_absent 'multi_agent_v2' "routing migration must remove legacy multi_agent_v
 grep_required '^# preserve me$' "$legacy_routing_home/.codex/config.toml" \
   "routing migration must preserve unrelated comments"
 
-HOME="$tmp/home-codex-no-routing" "$ROOT/install.sh" --no-codex-routing codex-agents >/dev/null
+HOME="$tmp/home-codex-no-routing" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" --no-codex-routing codex-agents >/dev/null
 [[ ! -e "$tmp/home-codex-no-routing/.codex/config.toml" ]] \
   || fail "--no-codex-routing must preserve a missing user config"
 
@@ -580,7 +592,7 @@ for agent in teamwork-reviewer; do
     "cost-first Codex reviewer install must use high reasoning for $agent"
 done
 
-HOME="$tmp/home-codex-cost" "$ROOT/install.sh" --profile cost-first codex >/dev/null
+HOME="$tmp/home-codex-cost" "$ROOT/install.sh" "${TEAMWORK_COST_BASELINE_ARGS[@]}" codex >/dev/null
 check_lean_policy "$tmp/home-codex-cost/.codex/AGENTS.md" cost-first "cost-first Codex policy"
 
 HOME="$tmp/home-codex-policy-cost" "$ROOT/install.sh" --profile cost-first codex-policy > "$tmp/codex-policy-cost.out"
@@ -612,7 +624,7 @@ done
 
 project_update="$tmp/project-update"
 mkdir -p "$project_update"
-HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
+HOME="$tmp/home-project-update" "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" all >/dev/null
 routing_update_config="$tmp/home-project-update/.codex/config.toml"
 
 release_remote="$tmp/release-state.git"
@@ -712,7 +724,7 @@ printf '%s\n' "$removed_project_flag_output" | grep -q -- '--project was removed
 HOME="$tmp/home-invalid-profile" "$ROOT/install.sh" --profile invalid codex >/dev/null 2>&1 \
   && fail "installer must reject unsupported Codex profiles"
 
-HOME="$tmp/home-codex-agents-link" "$ROOT/install.sh" --link codex-agents >/dev/null
+HOME="$tmp/home-codex-agents-link" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" --link codex-agents >/dev/null
 for agent in "${CODEX_AGENTS[@]}"; do
   [[ -L "$tmp/home-codex-agents-link/.codex/agents/$agent.toml" ]] \
     || fail "Codex agent link install must symlink $agent"
@@ -722,17 +734,17 @@ unknown_teamwork_dir="$tmp/home-unknown/.codex/skills/teamwork"
 mkdir -p "$unknown_teamwork_dir/references"
 printf '%s\n' '---' 'name: teamwork' 'description: Use when selecting a Teamwork stage.' '---' > "$unknown_teamwork_dir/SKILL.md"
 printf '%s\n' "keep me" > "$unknown_teamwork_dir/notes.md"
-HOME="$tmp/home-unknown" "$ROOT/install.sh" >/dev/null
+HOME="$tmp/home-unknown" "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" >/dev/null
 [[ -f "$unknown_teamwork_dir/notes.md" ]] \
   || fail "Codex install must preserve unknown files in retired teamwork directory"
 
-HOME="$tmp/home-link" "$ROOT/install.sh" --link codex >/dev/null
+HOME="$tmp/home-link" "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" --link codex >/dev/null
 for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/home-link/.agents/skills/$skill" ]] || fail "link install must symlink $skill directory"
 done
 check_skill_link "$tmp/home-link/.agents/skills/teamwork-collaborate" "teamwork-collaborate" "Codex"
 
-HOME="$tmp/home-cursor" "$ROOT/install.sh" cursor >/dev/null
+HOME="$tmp/home-cursor" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" cursor >/dev/null
 for skill in "${SKILLS[@]}"; do
   [[ -f "$tmp/home-cursor/.cursor/skills/$skill/SKILL.md" ]] || fail "Cursor install missing $skill"
   [[ ! -L "$tmp/home-cursor/.cursor/skills/$skill/SKILL.md" ]] || fail "default Cursor install must copy $skill"
@@ -781,7 +793,7 @@ if servers["gpu-broker"].get("command") != "gpu-broker-mcp":
     raise SystemExit("gpu-broker MCP command mismatch")
 PY
 
-HOME="$tmp/home-cursor-no-mcp" "$ROOT/install.sh" --no-mcp cursor >/dev/null
+HOME="$tmp/home-cursor-no-mcp" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" --no-mcp cursor >/dev/null
 [[ ! -e "$tmp/home-cursor-no-mcp/.cursor/mcp.json" ]] \
   || fail "--no-mcp cursor install must not write mcp.json"
 
@@ -803,7 +815,7 @@ for name in ("codegraph", "gpu-broker"):
         raise SystemExit(f"missing Teamwork MCP server after preserve merge: {name}")
 PY
 
-HOME="$tmp/home-cursor-agents" "$ROOT/install.sh" cursor-agents >/dev/null
+HOME="$tmp/home-cursor-agents" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" cursor-agents >/dev/null
 for agent in "${CURSOR_AGENTS[@]}"; do
   [[ -f "$tmp/home-cursor-agents/.cursor/agents/$agent.md" ]] \
     || fail "Cursor agent install missing $agent"
@@ -832,7 +844,7 @@ grep_required '^model: claude-opus-4-8-thinking-high$' "$tmp/home-cursor-cost/.c
   "cost-first Cursor agent install must downshift reviewer"
 
 cursor_policy_out="$tmp/cursor-policy.out"
-HOME="$tmp/home-cursor-policy" "$ROOT/install.sh" cursor-policy > "$cursor_policy_out"
+HOME="$tmp/home-cursor-policy" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" cursor-policy > "$cursor_policy_out"
 grep_required '<!-- TEAMWORK_CURSOR_GLOBAL_START -->' "$cursor_policy_out" \
   "cursor-policy target must print Teamwork global policy start marker"
 check_lean_policy "$cursor_policy_out" performance-first "cursor-policy output"
@@ -860,7 +872,7 @@ grep_required 'Copied Teamwork Cursor global policy to clipboard.' "$cursor_poli
 [[ ! -e "$tmp/home-cursor-policy-copy/.cursor" ]] \
   || fail "cursor-policy-copy target must not write Cursor home files"
 
-HOME="$tmp/home-claude" "$ROOT/install.sh" claude >/dev/null
+HOME="$tmp/home-claude" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" claude >/dev/null
 for skill in "${SKILLS[@]}"; do
   [[ -f "$tmp/home-claude/.claude/skills/$skill/SKILL.md" ]] || fail "Claude Code install missing $skill"
   [[ ! -L "$tmp/home-claude/.claude/skills/$skill/SKILL.md" ]] || fail "default Claude Code install must copy $skill"
@@ -898,7 +910,7 @@ grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$tmp/home-claude/.claude/
 check_lean_policy "$tmp/home-claude/.claude/CLAUDE.md" performance-first "Claude global policy"
 
 claude_policy_out="$tmp/claude-policy.out"
-HOME="$tmp/home-claude-policy" "$ROOT/install.sh" claude-policy > "$claude_policy_out"
+HOME="$tmp/home-claude-policy" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" claude-policy > "$claude_policy_out"
 grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$claude_policy_out" \
   "claude-policy target must print Teamwork global policy start marker"
 check_lean_policy "$claude_policy_out" performance-first "claude-policy output"
@@ -940,7 +952,7 @@ old managed content
 Keep CodeGraph instructions.
 <!-- CODEGRAPH_END -->
 CLAUDE
-HOME="$claude_preserve_home" "$ROOT/install.sh" claude >/dev/null
+HOME="$claude_preserve_home" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" claude >/dev/null
 grep_required 'Personal rule before.' "$claude_preserve_home/.claude/CLAUDE.md" \
   "Claude global policy install must preserve user content"
 grep_required '<!-- CODEGRAPH_START -->' "$claude_preserve_home/.claude/CLAUDE.md" \
@@ -951,13 +963,13 @@ grep_absent 'old managed content' \
   "Claude global policy install must replace old managed content" \
   "$claude_preserve_home/.claude/CLAUDE.md"
 
-HOME="$tmp/home-claude-link" "$ROOT/install.sh" --link claude >/dev/null
+HOME="$tmp/home-claude-link" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" --link claude >/dev/null
 for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/home-claude-link/.claude/skills/$skill" ]] || fail "Claude Code link install must symlink $skill directory"
 done
 check_skill_link "$tmp/home-claude-link/.claude/skills/teamwork-collaborate" "teamwork-collaborate" "Claude Code"
 
-HOME="$tmp/home-claude-agents-link" "$ROOT/install.sh" --link claude-agents >/dev/null
+HOME="$tmp/home-claude-agents-link" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" --link claude-agents >/dev/null
 for agent in "${CLAUDE_AGENTS[@]}"; do
   [[ -L "$tmp/home-claude-agents-link/.claude/agents/$agent.md" ]] \
     || fail "Claude agent link install must symlink $agent.md"
@@ -965,7 +977,7 @@ done
 
 HOME="$tmp/home-invalid" "$ROOT/install.sh" gemini >/dev/null 2>&1 && fail "installer must reject unsupported targets"
 
-HOME="$tmp/home-all" "$ROOT/install.sh" --link all >/dev/null
+HOME="$tmp/home-all" "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" --link all >/dev/null
 for skill in "${SKILLS[@]}"; do
   [[ -L "$tmp/home-all/.agents/skills/$skill" ]] || fail "all install must link Codex skill $skill"
   [[ -L "$tmp/home-all/.cursor/skills/$skill" ]] || fail "all install must link Cursor skill $skill"
@@ -1141,13 +1153,13 @@ cmp -s "$invalid_index_snapshot" "$invalid_root/docs/teamwork/index.json" \
   || fail "invalid existing Teamwork memory must fail before global install writes"
 [[ ! -e "$tmp/home-init-project-invalid/.fake-codex-invocations" ]] \
   || fail "init-project must not invoke the host Codex CLI to manage interaction capabilities"
-HOME="$tmp/home-agents" "$ROOT/install.sh" --link claude-agents >/dev/null
+HOME="$tmp/home-agents" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" --link claude-agents >/dev/null
 for agent in "${CLAUDE_AGENTS[@]}"; do
   [[ -L "$tmp/home-agents/.claude/agents/$agent.md" ]] \
     || fail "claude-agents install must link $agent.md"
 done
 
-HOME="$tmp/home-cursor-agents-link" "$ROOT/install.sh" --link cursor-agents >/dev/null
+HOME="$tmp/home-cursor-agents-link" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" --link cursor-agents >/dev/null
 for agent in "${CURSOR_AGENTS[@]}"; do
   [[ -L "$tmp/home-cursor-agents-link/.cursor/agents/$agent.md" ]] \
     || fail "cursor-agents link install must symlink $agent.md"
@@ -1190,7 +1202,7 @@ else
   done
 
   HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
-    "$cache_root/install.sh" plugin-codex-bootstrap >/dev/null
+    "$cache_root/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" plugin-codex-bootstrap >/dev/null
   [[ -f "$marketplace_codex_home/teamwork/plugin-activation.json" ]] \
     || fail "plugin bootstrap must write activation marker last"
   [[ -f "$marketplace_codex_home/teamwork/notify.py" ]] \
@@ -1273,7 +1285,7 @@ else
   mkdir -p "$unknown_plugin_home/.agents/skills/teamwork-update" "$unknown_plugin_codex_home"
   printf '%s\n' 'unowned content' > "$unknown_plugin_home/.agents/skills/teamwork-update/SKILL.md"
   if HOME="$unknown_plugin_home" CODEX_HOME="$unknown_plugin_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
-    "$cache_root/install.sh" --no-notifications plugin-codex-bootstrap >/dev/null 2>&1; then
+    "$cache_root/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" --no-notifications plugin-codex-bootstrap >/dev/null 2>&1; then
     fail "plugin bootstrap must reject unknown same-name legacy skill content"
   fi
   [[ ! -e "$unknown_plugin_codex_home/config.toml" \
@@ -1285,7 +1297,7 @@ else
   mkdir -p "$failed_plugin_home" "$failed_plugin_codex_home"
   printf '%s\n' '{broken-json' > "$failed_plugin_codex_home/hooks.json"
   if HOME="$failed_plugin_home" CODEX_HOME="$failed_plugin_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
-    "$cache_root/install.sh" plugin-codex-bootstrap >/dev/null 2>&1; then
+    "$cache_root/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" plugin-codex-bootstrap >/dev/null 2>&1; then
     fail "plugin bootstrap must reject invalid notification config before mutation"
   fi
   [[ ! -e "$failed_plugin_codex_home/config.toml" \
@@ -1304,7 +1316,7 @@ else
   printf '%s\n' performance-first > "$migrated_plugin_home/.agents/skills/.teamwork-profile"
   printf '%s\n' 'preserve unrelated content' > "$migrated_plugin_home/.agents/skills/unrelated.txt"
   HOME="$migrated_plugin_home" CODEX_HOME="$migrated_plugin_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
-    "$cache_root/install.sh" --no-notifications plugin-codex-bootstrap >/dev/null
+    "$cache_root/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" --no-notifications plugin-codex-bootstrap >/dev/null
   for skill in "${SKILLS[@]}"; do
     [[ ! -e "$migrated_plugin_home/.agents/skills/$skill" ]] \
       || fail "plugin migration must remove verified legacy skill $skill"

@@ -107,11 +107,9 @@ REQUIRED_CONCEPTS = {
     ),
     "case_v2_writer_transaction": (
         "Writable initialized projects",
-        "default-save only case-v2",
-        "Collaborate/Goal checkpoints",
-        "workflow completions",
+        "default-save substantive case-v2 workflow checkpoints/results",
         "frozen Writer packet+transaction+readback",
-        "Explore/check-only/tiny one-shots/explanations create none",
+        "Only tiny-native/check-only/one-shot work is unsaved",
         "Legacy-v1 read-only",
         "no artifact/collaborate/goal/manual/report/ memory write fallback",
         "Missing memory/Writer/authority/consumer/route",

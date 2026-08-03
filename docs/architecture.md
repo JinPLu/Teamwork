@@ -81,15 +81,15 @@ The following are sinks, not package sources:
   from frozen bounded packets without paraphrasing, filling gaps, or changing
   frozen facts, citations, decisions, authority, status, or acceptance; durable workflow
   artifacts are registered only through the schema-selected transaction route.
-  In v6 normal runtime, Collaborate, Research, Debug, Plan, Plan Review,
-  Review, Goal, mutating Init/Update, and qualifying terminal execution
-  handoffs write case-v2 transactions/case artifacts. legacy-v1 is not a
+  In v6 normal runtime, substantive Collaborate, Research, Explore, Debug, Plan,
+  Plan Review, Review, Goal, mutating Init/Update, and qualifying execution
+  checkpoints/results write case-v2 transactions/case artifacts. legacy-v1 is not a
   compatible runtime mode; legacy-v1, old grill, Discussion, and Design records
   are read only as Init/Update semantic migration inputs. Active Goal owns
   execution progress and forbids a duplicate execution artifact. Ordinary completion workflows share
   `active.results` so their companions can coexist; `active.report` remains for
-  non-workflow report pointers. Explore does not create a standalone report; its
-  evidence is folded into the consuming artifact or answer.
+  non-workflow report pointers. Substantive Explore results use the case evidence
+  route; tiny or check-only local reads create no artifact.
 
   Teamwork 6.0 is a hard cut to case-v2 for normal runtime. Initialized
   projects use case-bundle memory: a case manifest under
@@ -102,17 +102,20 @@ The following are sinks, not package sources:
 - Temporary live outputs, homes, caches, logs, and build results are evidence or
   scratch state. They must not become package inputs.
 
-| Workflow | Runtime artifact |
-| --- | --- |
-| Collaborate | v2 case live collaborate and decision slots; accepted Collaborate is the public Plan gate; legacy-v1, old grill, Discussion, and Design remain Init/Update migration inputs only |
-| Research | v2 case evidence artifact with claim head and monotonic status |
-| Plan | v2 case plan slot and plan history with monotonic status |
-| Debug | v2 case evidence/result artifact; hypothesis-first diagnosis starts from failure and reproduction |
-| Plan Review / Review | v2 case review/delta artifact with monotonic status; persistence is not acceptance |
-| Goal | v2 case live goal with monotonic attempts/progress while executing |
-| Native / Worker execution | terminal execution handoff/result only with an explicit real consumer and no active Goal |
-| Mutating Init / Update | receipt; update/install alone never migrates project memory |
-| Explore | no standalone report; evidence is folded into its consumer |
+Artifact-producing schemas bind each operation to one kind and the invariant
+`consumer=teamwork`; apply rejects cross-kind or cross-consumer overrides. A
+fresh case starts in the workflow's schema-valid phase, Writer reads back its
+revisions, and only then applies the artifact operation.
+
+| Workflow | Fresh phase | Operation → artifact kind |
+| --- | --- | --- |
+| Collaborate | `collaborating` | `collaborate-upsert` → `collaborate`; `accept-decision` → `decision` |
+| Research / Explore / Debug | `collecting` | `research-add` → `research`; `evidence-add` → `evidence`; `debug-add` → `debug` |
+| Plan / Plan Review | `planned` | `plan-upsert` → `plan`; `plan-review-add` → `review` |
+| General / Code Review | `executing` | `review-add` / `code-review-add` → `review`; persistence is not acceptance |
+| Goal | `executing` | `goal-acquire` / `goal-update` → `goal`; transfer/close mutate the same claim lifecycle |
+| Native / Worker execution | `executing` | `native-result` / `result-add` → `result`, only with no active Goal |
+| Mutating Init / Update | `collecting` | `init-result` → `init`; `update-result` → `update`; installation alone never migrates project memory |
 
 ## Dialogue and persistence
 

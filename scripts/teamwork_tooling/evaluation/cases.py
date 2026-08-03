@@ -313,8 +313,16 @@ def _require_collaborate_transaction_cli(source: str, path: Path, source_path: s
 
 
 @lru_cache(maxsize=16)
-def _workflow_artifact_transaction_cli_probe(source: str) -> str | None:
-    """Exercise the generic workflow artifact case-v2 transaction route end to end."""
+def _workflow_artifact_transaction_cli_probe(source: str, operation: str = "plan-upsert") -> str | None:
+    """Exercise one schema-derived workflow artifact case-v2 route end to end."""
+
+    probes = {
+        "plan-upsert": {"phase": "planned", "kind": "plan", "role": "plan"},
+        "evidence-add": {"phase": "collecting", "kind": "evidence", "role": "evidence"},
+    }
+    probe = probes.get(operation)
+    if probe is None:
+        return f"unsupported workflow artifact probe operation: {operation}"
 
     with tempfile.TemporaryDirectory(prefix="teamwork-case-artifact-probe-") as temporary:
         root = Path(temporary)
@@ -374,10 +382,10 @@ def _workflow_artifact_transaction_cli_probe(source: str) -> str | None:
                 {
                     "expected_revision": revision,
                     "case_seed": "03" * 32,
-                    "title": "Probe workflow artifact transaction",
-                    "task_key": "probe-workflow-artifact",
-                    "aliases": ["probe-workflow-artifact"],
-                    "initial_phase": "planned",
+                    "title": f"Probe {operation} transaction",
+                    "task_key": f"probe-{operation}",
+                    "aliases": [f"probe-{operation}"],
+                    "initial_phase": probe["phase"],
                 }
             )
             applied = invoke(
@@ -398,19 +406,21 @@ def _workflow_artifact_transaction_cli_probe(source: str) -> str | None:
             if not all(isinstance(value, str) and value for value in (case_id, manifest_revision, revision)):
                 return "case-apply create did not return case and revision identifiers"
 
-            plan_schema = invoke("case-schema", "plan-upsert")
-            if plan_schema.returncode != 0:
-                return f"case-schema plan-upsert command failed: {plan_schema.stderr.strip()}"
-            plan_request = json.loads(plan_schema.stdout)
-            if not isinstance(plan_request, dict) or plan_request.get("operation") != "plan-upsert":
-                return "case-schema plan-upsert did not return the plan request skeleton"
-            plan_request.update(
+            operation_schema = invoke("case-schema", operation)
+            if operation_schema.returncode != 0:
+                return f"case-schema {operation} command failed: {operation_schema.stderr.strip()}"
+            operation_request = json.loads(operation_schema.stdout)
+            if not isinstance(operation_request, dict) or operation_request.get("operation") != operation:
+                return f"case-schema {operation} did not return the requested skeleton"
+            if operation_request.get("kind") != probe["kind"] or operation_request.get("consumer") != "teamwork":
+                return f"case-schema {operation} did not bind its canonical kind/consumer"
+            operation_request.update(
                 {
                     "expected_revision": revision,
                     "case_id": case_id,
                     "expected_manifest_revision": manifest_revision,
                     "source_digest": "04" * 32,
-                    "body": "## Plan\n\n- Direct case-v2 workflow artifact transaction probe.",
+                    "body": f"## {operation}\n\n- Direct schema-derived case-v2 workflow artifact probe.",
                 }
             )
             applied = invoke(
@@ -418,15 +428,22 @@ def _workflow_artifact_transaction_cli_probe(source: str) -> str | None:
                 "--project-root",
                 str(project),
                 "--request-json",
-                json.dumps(plan_request),
+                json.dumps(operation_request),
             )
             if applied.returncode != 0:
-                return f"case-apply plan-upsert command failed: {applied.stderr.strip()}"
+                return f"case-apply {operation} command failed: {applied.stderr.strip()}"
             result = json.loads(applied.stdout)
-            expected_path = f"docs/teamwork/cases/{case_id}/plan.md"
+            expected_path = (
+                f"docs/teamwork/cases/{case_id}/plan.md"
+                if operation == "plan-upsert"
+                else f"docs/teamwork/cases/{case_id}/evidence/"
+            )
             changed = result.get("changed_paths") if isinstance(result, dict) else None
-            if not isinstance(changed, list) or expected_path not in changed:
-                return "case-apply plan-upsert did not produce the transaction-derived case plan path"
+            if not isinstance(changed, list) or not any(
+                str(item) == expected_path if operation == "plan-upsert" else str(item).startswith(expected_path)
+                for item in changed
+            ):
+                return f"case-apply {operation} did not produce its transaction-derived path"
 
             checked = invoke("case-inspect", "--project-root", str(project))
             if checked.returncode != 0:
@@ -439,8 +456,14 @@ def _workflow_artifact_transaction_cli_probe(source: str) -> str | None:
             artifacts = manifest.get("artifacts") if isinstance(manifest, dict) else None
             if not isinstance(artifacts, dict) or not any(
                 isinstance(item, dict)
-                and item.get("path") == expected_path
-                and item.get("role") == "plan"
+                and (
+                    item.get("path") == expected_path
+                    if operation == "plan-upsert"
+                    else str(item.get("path", "")).startswith(expected_path)
+                )
+                and item.get("role") == probe["role"]
+                and item.get("subtype") == probe["kind"]
+                and item.get("consumer") == "teamwork"
                 for item in artifacts.values()
             ):
                 return "case-inspect did not recover the transaction-owned case workflow registration"
@@ -454,6 +477,14 @@ def _require_workflow_artifact_transaction_cli(source: str, path: Path, source_p
     if failure is not None:
         raise EvalError(  # noqa: F405
             f"{display_path(path)}: bound producer {source_path} lacks a working case-inspect/case-schema/case-apply workflow artifact transaction route: {failure}"
+        )
+
+
+def _require_explore_evidence_transaction_cli(source: str, path: Path, source_path: str) -> None:
+    failure = _workflow_artifact_transaction_cli_probe(source, "evidence-add")
+    if failure is not None:
+        raise EvalError(  # noqa: F405
+            f"{display_path(path)}: bound producer {source_path} lacks a working schema-derived evidence-add route: {failure}"
         )
 
 
@@ -593,7 +624,7 @@ def validate_bound_producer_sources(
                     ("host-native 2-3 finite choices", "host-native bounded surface"),
                     ("Challenge moves", "major public/installable/release/migration"),
                     ("explicit question-first", "explicit sustained question-first", "question-first"),
-                    ("default-save only case-v2 Collaborate/Goal checkpoints",),
+                    ("default-save substantive case-v2 workflow",),
                 ])
             if capability == "collaborate":
                 _require_source_phrases(source, path, source_path, [
@@ -605,7 +636,7 @@ def validate_bound_producer_sources(
                     ("daily cap4",),
                     ("5-8 only for explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host-support"),
                     ("Unavailable role or unverified isolation = capability-blocked", "Unavailable role/isolation = capability-blocked"),
-                    ("default-save only case-v2 Collaborate/Goal checkpoints",),
+                    ("default-save substantive case-v2 workflow",),
                     ("No legacy-v1 artifact/collaborate/goal write fallback", "no artifact/collaborate/goal/manual/report/"),
                 ])
         elif producer["class"] == "role-template":
@@ -656,6 +687,8 @@ def validate_bound_producer_sources(
         elif source_path == "scripts/discussion-transaction.py":
             if (capability, scenario) == ("persistence", "generic-artifact-writer"):
                 _require_workflow_artifact_transaction_cli(source, path, source_path)
+            elif (capability, scenario) == ("persistence", "explore-artifact"):
+                _require_explore_evidence_transaction_cli(source, path, source_path)
             else:
                 _require_collaborate_transaction_cli(source, path, source_path)
         elif source_path == "scripts/init-project-files.py":
@@ -802,7 +835,7 @@ def validate_bound_producer_sources(
             elif scenario == "specialized-artifact-writer":
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
-                        ("default-save only case-v2 Collaborate/Goal checkpoints",),
+                        ("default-save substantive case-v2 workflow",),
                         ("frozen packet", "frozen packets", "frozen Writer packet"),
                         ("transaction",),
                         ("readback",),
@@ -850,23 +883,30 @@ def validate_bound_producer_sources(
                         ("blocked without writing",),
                         ("required transaction gate",),
                     ])
-            elif scenario == "explore-no-artifact":
+            elif scenario == "explore-artifact":
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
-                        ("explore, check-only work, tiny one-shots", "explore/check-only/tiny one-shots"),
-                        ("create no standalone artifact", "ordinary explanations create none", "explanations create none"),
+                        ("Named workflows: Research", "Named workflows: Research->Researcher"),
+                        ("Only tiny-native/check-only/one-shot work is unsaved",),
                     ])
                 elif producer["class"] == "skill":
                     _require_source_phrases(source, path, source_path, [
-                        ("do not create an explore report", "create a standalone artifact"),
-                        ("evidence belongs in the workflow writing brief", "Evidence belongs in the workflow packet"),
-                        ("writer never creates an independent explore artifact",),
+                        ("substantive Explore result defaults to a case-v2 evidence artifact",),
+                        ("case-schema <evidence-add> -> case-apply -> case-inspect/readback",),
+                        ("Tiny/discoverable local reads, check-only commands",),
+                        ("No Explorer, Root, or Worker fallback writes it",),
                     ])
-                elif producer["class"] == "role-template":
+                elif producer["class"] == "role-template" and _role_from_source(source_path) == "explorer":
                     _require_source_phrases(source, path, source_path, [
                         ("read-only",),
                         ("write authority: none",),
                         ("standalone docs/artifacts require a bounded writing brief",),
+                    ])
+                elif producer["class"] == "role-template":
+                    _require_source_phrases(source, path, source_path, [
+                        ("Explore=evidence-add",),
+                        ("managed artifacts only through their exact case-v2 specialized transaction",),
+                        ("case-schema <operation> -> case-apply/readback",),
                     ])
             elif scenario == "code-coupled-owner":
                 if producer["class"] == "root-policy":

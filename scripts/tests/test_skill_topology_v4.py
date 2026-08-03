@@ -379,6 +379,7 @@ class SkillTopologyV4Test(unittest.TestCase):
         contracts = {
             "teamwork-collaborate": ("case-inspect", "case-schema <create|collaborate-upsert|accept-decision>", "case-apply"),
             "teamwork-research": ("case-inspect", "case-schema <research-add>", "case-apply"),
+            "teamwork-explore": ("case-inspect", "case-schema <evidence-add>", "case-apply"),
             "teamwork-debug": ("case-inspect", "case-schema <debug-add>", "case-apply"),
             "teamwork-plan": ("case-inspect", "case-schema <plan-upsert>", "case-apply"),
             "teamwork-review": ("case-inspect", "case-schema <review-add|code-review-add|plan-review-add>", "case-apply"),
@@ -400,6 +401,14 @@ class SkillTopologyV4Test(unittest.TestCase):
                 self.assertNotIn("artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply", text)
                 self.assertNotIn("collaborate-inspect -> collaborate-schema", text)
                 self.assertNotIn("goal-inspect --project-root <project>", text)
+
+        goal = " ".join((SKILLS / "teamwork-goal" / "SKILL.md").read_text(encoding="utf-8").split())
+        review = " ".join((SKILLS / "teamwork-review" / "SKILL.md").read_text(encoding="utf-8").split())
+        self.assertIn("initial_phase=executing", goal)
+        self.assertIn("reads back its revisions", goal)
+        self.assertIn("initial_phase=executing", review)
+        self.assertIn("initial_phase=planned", review)
+        self.assertIn("reads back the create revisions", review)
 
     def test_plan_readiness_schema_first_segments(self) -> None:
         text = normalized(SKILLS / "teamwork-plan" / "SKILL.md")

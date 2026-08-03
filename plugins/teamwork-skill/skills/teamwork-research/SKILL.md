@@ -71,11 +71,15 @@ are requested.
 
 ## Persistence And Output
 
-Terminal cited answers default to a case-v2 research artifact in initialized
-writable projects unless `no files`, `off-record`, `read-only`, `no writes`, or
-equivalent applies. Method result and persistence result are separate: deliver
-the supported answer even if the completion companion cannot be saved, and
-report `unsaved/blocked`.
+In initialized writable projects, substantive cited results default to case-v2
+research artifacts. Persist a meaningful checkpoint when a material evidence
+wave changes decision support, exposes a consequential contradiction or blocker,
+or must survive a cross-session handoff; persist the supported completion result.
+Tiny lookups and ordinary one-shot explanations create no artifact. `no files`,
+`off-record`, `read-only`, `no writes`, or equivalent disables persistence.
+Method result and persistence result are separate: deliver the supported answer
+even if its checkpoint or completion companion cannot be saved, and report
+`unsaved/blocked`.
 
 Freeze the cited answer packet: purpose/audience, facts/sources, citations,
 decision/status, style/structure, artifact kind/consumer, monotonic state, and

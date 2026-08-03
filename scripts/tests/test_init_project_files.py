@@ -271,8 +271,10 @@ class InitProjectFilesTests(unittest.TestCase):
                 "templates/claude-agents/writer.md",
             )
         )
-        self.assertIn("run case-inspect first", writer)
-        self.assertIn("Normal workflow sinks are case-v2 only", writer)
+        self.assertIn("case-inspect first", writer)
+        self.assertIn("case-v2 only", writer)
+        self.assertIn("Substantive: exact case_id/alias or frozen seed/task_key", writer)
+        self.assertIn("Explore=evidence-add", writer)
         self.assertIn(
             "legacy-v1 artifacts/collaborate/goal are read-only migration inputs, no write route",
             writer,

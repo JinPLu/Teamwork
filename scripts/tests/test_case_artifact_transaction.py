@@ -41,6 +41,11 @@ class CaseArtifactTransactionTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         return json.loads(result.stdout)
 
+    def schema(self, operation: str) -> dict[str, object]:
+        result = self.cli("case-schema", operation)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)
+
     def apply(self, request: dict[str, object], *, env: dict[str, str] | None = None) -> dict[str, object]:
         result = self.cli("case-apply", "--project-root", str(self.project), "--request-json", json.dumps(request), env=env)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -53,6 +58,16 @@ class CaseArtifactTransactionTests(unittest.TestCase):
             "expected_revision": self.inspect()["revision"],
             "updated_at": "2026-07-30T00:00:00+00:00",
         }
+        if case is not None:
+            request["case_id"] = case["case_id"]
+            request["expected_manifest_revision"] = case["manifest_revision"]
+        request.update(extra)
+        return request
+
+    def schema_request(self, operation: str, case: dict[str, object] | None = None, **extra: object) -> dict[str, object]:
+        request = self.schema(operation)
+        request["expected_revision"] = self.inspect()["revision"]
+        request["updated_at"] = extra.pop("updated_at", "2026-07-30T00:00:00+00:00")
         if case is not None:
             request["case_id"] = case["case_id"]
             request["expected_manifest_revision"] = case["manifest_revision"]
@@ -85,6 +100,92 @@ class CaseArtifactTransactionTests(unittest.TestCase):
             paths.append(row["path"])
         self.assertEqual(len(paths), len(set(paths)))
         return manifest
+
+    def test_schema_driven_writer_matrix_binds_operation_kind_consumer_lifecycle_and_readback(self) -> None:
+        contracts = (
+            ("collaborate-upsert", "collaborating", "collaborating", "collaborate", "collaborate", {}),
+            ("accept-decision", "collaborating", "collaborating", "decision", "decision", {}),
+            ("evidence-add", "collecting", "collecting", "evidence", "evidence", {}),
+            ("research-add", "collecting", "collecting", "research", "evidence", {}),
+            ("debug-add", "collecting", "collecting", "debug", "evidence", {}),
+            ("init-result", "collecting", "collecting", "init", "evidence", {}),
+            ("update-result", "collecting", "collecting", "update", "evidence", {}),
+            ("native-result", "executing", "executing", "result", "result", {}),
+            ("plan-upsert", "planned", "executing", "plan", "plan", {}),
+            ("plan-review-add", "planned", "planned", "review", "review", {"sealed_candidate_digest": "91" * 32}),
+            ("review-add", "executing", "reviewing", "review", "review", {"sealed_candidate_digest": "92" * 32}),
+            ("code-review-add", "executing", "reviewing", "review", "review", {"sealed_candidate_digest": "93" * 32}),
+            ("result-add", "executing", "executing", "result", "result", {}),
+            ("goal-acquire", "executing", "executing", "goal", "goal", {"claim_seed": "94" * 32, "owner": "Goal"}),
+            ("goal-update", "executing", "executing", "goal", "goal", {"claim_seed": "95" * 32, "owner": "Goal"}),
+        )
+        for index, (operation, phase, final_phase, kind, role, extra) in enumerate(contracts, start=1):
+            with self.subTest(operation=operation):
+                created = self.apply(
+                    self.schema_request(
+                        "create",
+                        case_seed=f"{index:064x}",
+                        title=f"Writer route {operation}",
+                        task_key=f"writer-route-{operation}",
+                        aliases=[],
+                        initial_phase=phase,
+                    )
+                )
+                request = self.schema_request(
+                    operation,
+                    created,
+                    source_digest=f"{index + 32:064x}",
+                    body=f"## {operation}\n\n- Schema-derived persistence route.",
+                    **extra,
+                )
+                self.assertEqual(request["kind"], kind)
+                self.assertEqual(request["consumer"], "teamwork")
+                applied = self.apply(request)
+                readback = self.active_case(str(applied["case_id"]))
+                manifest = readback["state"]
+                self.assertEqual(readback["revision"], applied["manifest_revision"])
+                self.assertEqual(manifest["status"], final_phase)
+                self.assertEqual(len(manifest["artifacts"]), 1)
+                artifact = next(iter(manifest["artifacts"].values()))
+                self.assertEqual(artifact["role"], role)
+                self.assertEqual(artifact["subtype"], kind)
+                self.assertEqual(artifact["consumer"], "teamwork")
+                self.assertTrue((self.project / artifact["path"]).is_file())
+
+    def test_schema_driven_writer_routes_reject_cross_kind_and_consumer_overrides(self) -> None:
+        created = self.apply(
+            self.schema_request(
+                "create",
+                case_seed="a1" * 32,
+                title="Writer route override rejection",
+                task_key="writer-route-override-rejection",
+                aliases=[],
+                initial_phase="collecting",
+            )
+        )
+        invalid = (
+            ("kind", "research", "evidence-add kind must be evidence"),
+            ("consumer", "external", "evidence-add consumer must be teamwork"),
+        )
+        for field, value, message in invalid:
+            with self.subTest(field=field):
+                request = self.schema_request(
+                    "evidence-add",
+                    created,
+                    source_digest="a2" * 32,
+                    body="## Evidence\n\n- Reject semantic drift.",
+                )
+                request[field] = value
+                result = self.cli(
+                    "case-apply",
+                    "--project-root",
+                    str(self.project),
+                    "--request-json",
+                    json.dumps(request),
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(message, json.loads(result.stderr)["message"])
+                self.assertEqual(self.active_case(str(created["case_id"]))["state"]["artifacts"], {})
 
     def test_case_create_plan_and_close_are_journaled_under_v2_paths(self) -> None:
         created = self.create_case(initial_phase="planned")
@@ -130,6 +231,87 @@ class CaseArtifactTransactionTests(unittest.TestCase):
         self.assertEqual(inspected["active_cases"], [])
         self.assertEqual(inspected["recent_cases"][0]["case_id"], case_id)
         self.assertRegex(inspected["recent_cases"][0]["result_artifact_id"], r"^a-[0-9a-f]{64}$")
+
+    def test_recent_case_rollover_prunes_aliases_to_hot_cases(self) -> None:
+        closed_case_ids: list[str] = []
+        for index in range(11):
+            created = self.create_case(
+                seed=f"{index + 1:064x}",
+                task_key=f"rollover-{index}",
+                initial_phase="executing",
+            )
+            completed = self.apply(
+                self.base_request(
+                    "result-add",
+                    created,
+                    updated_at=f"2026-07-30T{index:02d}:15:00+00:00",
+                    source_digest=f"{index + 101:064x}",
+                    body=f"## Result\n\n- Closed case {index}.",
+                )
+            )
+            self.apply(
+                self.base_request(
+                    "close",
+                    completed,
+                    updated_at=f"2026-07-30T{index:02d}:30:00+00:00",
+                    closed_at=f"2026-07-30T{index:02d}:30:00+00:00",
+                )
+            )
+            closed_case_ids.append(str(created["case_id"]))
+
+        inspected = self.inspect()
+        hot_case_ids = {row["case_id"] for row in inspected["recent_cases"]}
+        self.assertEqual(len(hot_case_ids), 10)
+        self.assertEqual(hot_case_ids, set(closed_case_ids[-10:]))
+        self.assertEqual(
+            {row["target_id"] for row in inspected["aliases"].values()},
+            hot_case_ids,
+        )
+        CONTRACT["validate_case_v2_tree_readonly"](self.project)
+
+    def test_create_reuses_stale_alias_from_pre_pruning_index(self) -> None:
+        prior = self.create_case(
+            seed="71" * 32,
+            task_key="reusable-stale-alias",
+            initial_phase="executing",
+        )
+        completed = self.apply(
+            self.base_request(
+                "result-add",
+                prior,
+                source_digest="72" * 32,
+                body="## Result\n\n- Pre-upgrade closed case.",
+            )
+        )
+        self.apply(
+            self.base_request(
+                "close",
+                completed,
+                updated_at="2026-07-30T02:00:00+00:00",
+                closed_at="2026-07-30T02:00:00+00:00",
+            )
+        )
+
+        stale_index = json.loads((self.memory / "index.json").read_text(encoding="utf-8"))
+        stale_index["recent_cases"] = []
+        self.assertEqual(
+            stale_index["aliases"]["reusable-stale-alias"]["target_id"],
+            prior["case_id"],
+        )
+        self.write_index(stale_index)
+
+        replacement = self.create_case(
+            seed="73" * 32,
+            task_key="reusable-stale-alias",
+            initial_phase="collecting",
+        )
+        inspected = self.inspect()
+        self.assertEqual(
+            inspected["aliases"]["reusable-stale-alias"]["target_id"],
+            replacement["case_id"],
+        )
+        self.assertNotEqual(replacement["case_id"], prior["case_id"])
+        CONTRACT["validate_case_v2_tree_readonly"](self.project)
 
     def test_legacy_v1_index_is_migration_input_only_for_runtime(self) -> None:
         v1 = {

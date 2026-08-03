@@ -35,8 +35,9 @@ for sensemaking. A native bounded batch contains at most three questions, and
 every question in that batch must be mutually independent.
 
 Dependent questions are serial: ask the question, wait for the answer, dispatch
-Writer checkpoint only when durable continuity is in scope, read back proof, and
-then continue. Completion or terminal companion persistence is separate from the
+Writer checkpoint for every substantive update, and read back proof before continuing
+only when the next step depends on durable continuity. Completion or terminal
+companion persistence is separate from the
 method result: if it fails after the core answer is ready, return the core answer
 and state `unsaved`. Two rounds with no closed decision, new discriminator, or
 changed recommendation are a no-progress blocker.

@@ -150,11 +150,14 @@ Debug Findings
 - Remaining Blocker / Next Action:
 ```
 
-In an initialized writable project, terminal cause, blocked diagnosis, or
-cross-session handoff defaults to a case-v2 debug artifact unless the user says `no
-files`, `off-record`, `read-only`, `no writes`, or equivalent; it is not a turn
-log. Freeze the bounded terminal or blocked packet before persistence. Debugger
-returns a bounded packet: purpose/audience, facts/sources, frozen
+In an initialized writable project, a supported cause, verified fix, blocked
+diagnosis, or meaningful cross-session handoff defaults to a case-v2 debug
+artifact. Persist a discriminating experiment checkpoint when it materially
+shrinks the live hypothesis set and a downstream step or handoff will consume
+it; this is not a turn log. `no files`, `off-record`, `read-only`, `no writes`,
+or equivalent disables persistence. Freeze the bounded checkpoint, terminal, or
+blocked packet before persistence. Debugger returns a bounded packet:
+purpose/audience, facts/sources, frozen
 decision/status, style/structure, artifact kind/consumer, preserve/forbid,
 failure, cause evidence, attempted fixes, blocker, and verification. Writer
 routes from observed schema: `case-inspect` first; case-v2 uses exact

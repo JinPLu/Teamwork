@@ -225,12 +225,9 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
 
     def case_writer_request(self, project: Path, operation: str, case: dict[str, Any] | None = None, **extra: Any) -> dict[str, Any]:
         inspected = self.case_inspect(project)
-        request: dict[str, Any] = {
-            "schema_version": 2,
-            "operation": operation,
-            "expected_revision": inspected["revision"],
-            "updated_at": extra.pop("updated_at", UPDATED_AT),
-        }
+        request = self.json_pkg(self.transaction_cli, "case-schema", operation)
+        request["expected_revision"] = inspected["revision"]
+        request["updated_at"] = extra.pop("updated_at", UPDATED_AT)
         if case is not None:
             request["case_id"] = case["case_id"]
             request["expected_manifest_revision"] = case["manifest_revision"]
@@ -436,6 +433,12 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
             ),
             ("update", {"phase": "collecting"}),
             (
+                "evidence-add",
+                {
+                    "body": "## Explore Evidence\n\n- Reusable local evidence packet.",
+                },
+            ),
+            (
                 "research-add",
                 {
                     "body": "## Research\n\n- Cited external evidence packet.",
@@ -544,6 +547,10 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
                 self.assertEqual(row["byte_digest"], sha256_file(artifact_path))
         roles = {row["role"] for row in manifest["artifacts"].values()}
         self.assertTrue({"collaborate", "decision", "evidence", "plan", "goal", "review", "result"} <= roles)
+        self.assertTrue({"evidence", "research", "debug", "init", "update"} <= {
+            row["subtype"] for row in manifest["artifacts"].values()
+        })
+        self.assertEqual({row["consumer"] for row in manifest["artifacts"].values()}, {"teamwork"})
         live_collaborate = [
             row for row in manifest["artifacts"].values()
             if row["path"] == f"docs/teamwork/cases/{case_id}/live/collaborate.md"

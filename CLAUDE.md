@@ -118,16 +118,15 @@ update per answered batch.
 In an initialized writable project, named Teamwork workflows persist reusable
 checkpoints and results by default; `no files`, off-record, read-only, or
 no-write overrides that default. One-shot explanations, casual fact questions,
-and tiny native work create no standalone artifact. Collaborate, Goal, Research,
-Debug, Plan, Plan Review, Review, mutating Init/Update, and a terminal execution
-handoff with an explicit consumer and no active Goal write their selected
-case-v2 artifact. An active Goal suppresses duplicate execution artifacts.
-Explore creates no standalone report; its evidence is folded into the consuming
-artifact or answer.
+and tiny native work create no standalone artifact. Substantive Collaborate,
+Goal, Research, Explore, Debug, Plan, Plan Review, Review, mutating Init/Update,
+and qualifying execution checkpoints or results write their selected case-v2
+artifact. An active Goal suppresses duplicate execution artifacts. Substantive
+Explore evidence uses the case evidence route; tiny/check-only reads remain unsaved.
 
 Teamwork 6.0 is a hard cut for normal runtime: runtime writes use v2 case
 bundles under `docs/teamwork/cases/c-<64hex>/`, where
-Collaborate, Plan, Research, Debug, Review, Goal, and execution results attach
+Collaborate, Plan, Research, Explore evidence, Debug, Review, Goal, and execution results attach
 to one case. legacy-v1 is not a compatible runtime mode. Init/Update may read
 legacy-v1 and old grill/Discussion/Design records only as semantic migration
 input during an exact one-time project-root migration. Update/install alone

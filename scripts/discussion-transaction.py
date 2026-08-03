@@ -90,7 +90,7 @@ TASK_KEY_RE = SLUG_RE
 CASE_ACTIVE_PHASES = {"collaborating", "collecting", "planned", "executing", "reviewing"}
 CASE_PHASES = {*CASE_ACTIVE_PHASES, "closed"}
 CASE_TRANSITIONS = {
-    None: {"collaborating"},
+    None: {"collaborating", "collecting", "planned", "executing"},
     "collaborating": {"collaborating", "collecting", "planned", "closed"},
     "collecting": {"collecting", "planned", "executing", "closed"},
     "planned": {"planned", "collecting", "executing", "closed"},
@@ -104,6 +104,23 @@ CASE_HISTORY_KINDS = {"plan", "decision", "result"}
 CASE_REVIEW_KINDS = {"review", "review-delta"}
 CASE_RESULT_KINDS = {"result"}
 CASE_EVIDENCE_KINDS = {"research", "debug", "init", "update", "evidence"}
+CASE_OPERATION_ARTIFACT_CONTRACTS = {
+    "collaborate-upsert": ("collaborate", "teamwork"),
+    "accept-decision": ("decision", "teamwork"),
+    "evidence-add": ("evidence", "teamwork"),
+    "research-add": ("research", "teamwork"),
+    "debug-add": ("debug", "teamwork"),
+    "init-result": ("init", "teamwork"),
+    "update-result": ("update", "teamwork"),
+    "native-result": ("result", "teamwork"),
+    "plan-upsert": ("plan", "teamwork"),
+    "plan-review-add": ("review", "teamwork"),
+    "review-add": ("review", "teamwork"),
+    "code-review-add": ("review", "teamwork"),
+    "result-add": ("result", "teamwork"),
+    "goal-acquire": ("goal", "teamwork"),
+    "goal-update": ("goal", "teamwork"),
+}
 CASE_ARTIFACT_KINDS = (
     CASE_LIVE_KINDS
     | CASE_SINGLETON_KINDS
@@ -5896,10 +5913,10 @@ def case_schema(operation: str) -> dict[str, object]:
         request["initial_phase"] = "collaborating"
     else:
         request.update({"case_id": "c-" + "0" * 64, "expected_manifest_revision": "<manifest revision from case-inspect>"})
-    if operation in {"collaborate-upsert", "accept-decision", "evidence-add", "research-add", "debug-add", "init-result", "update-result", "native-result", "plan-upsert", "plan-review-add", "review-add", "code-review-add", "result-add", "goal-acquire", "goal-update"}:
+    if operation in CASE_OPERATION_ARTIFACT_CONTRACTS:
         request.update({"source_digest": "0" * 64, "body": "Markdown body"})
-    if operation in {"evidence-add", "research-add", "debug-add"}:
-        request["kind"] = "research"
+        kind, consumer = CASE_OPERATION_ARTIFACT_CONTRACTS[operation]
+        request.update({"kind": kind, "consumer": consumer})
     if operation in {"review-add", "code-review-add", "plan-review-add"}:
         request.update({"sealed_candidate_digest": "0" * 64, "delta": False})
     if operation in {"goal-acquire", "goal-update"}:
@@ -5937,8 +5954,8 @@ def normalize_case_request(value: object) -> dict[str, object]:
             "aliases": sorted(aliases),
             "initial_phase": value.get("initial_phase", "collaborating"),
         })
-        if result["initial_phase"] not in {"collaborating", "collecting", "planned"}:
-            fail("case create initial_phase must be collaborating, collecting, or planned")
+        if result["initial_phase"] not in {"collaborating", "collecting", "planned", "executing"}:
+            fail("case create initial_phase must be collaborating, collecting, planned, or executing")
         return result
     result["case_id"] = _case_id(value.get("case_id"))
     result["expected_manifest_revision"] = _hex64(value.get("expected_manifest_revision"), "expected_manifest_revision")
@@ -5955,21 +5972,18 @@ def normalize_case_request(value: object) -> dict[str, object]:
             if phase not in CASE_PHASES:
                 fail("case phase is invalid")
             result["phase"] = phase
-    if operation in {"collaborate-upsert", "accept-decision", "evidence-add", "research-add", "debug-add", "init-result", "update-result", "native-result", "plan-upsert", "plan-review-add", "review-add", "code-review-add", "result-add", "goal-acquire", "goal-update"}:
+    if operation in CASE_OPERATION_ARTIFACT_CONTRACTS:
         result["source_digest"] = _hex64(value.get("source_digest"), "source_digest")
         result["body"] = require_markdown_body(value.get("body"), "case artifact body")
-    if operation in {"evidence-add", "research-add", "debug-add", "init-result", "update-result"}:
-        defaults = {
-            "evidence-add": "evidence",
-            "research-add": "research",
-            "debug-add": "debug",
-            "init-result": "init",
-            "update-result": "update",
-        }
-        kind = value.get("kind", defaults[str(operation)])
-        if kind not in CASE_EVIDENCE_KINDS:
-            fail("evidence kind is invalid")
+        expected_kind, expected_consumer = CASE_OPERATION_ARTIFACT_CONTRACTS[str(operation)]
+        kind = value.get("kind", expected_kind)
+        if kind != expected_kind:
+            fail(f"{operation} kind must be {expected_kind}")
+        consumer = value.get("consumer", expected_consumer)
+        if consumer != expected_consumer:
+            fail(f"{operation} consumer must be {expected_consumer}")
         result["kind"] = kind
+        result["consumer"] = consumer
     if operation in {"review-add", "code-review-add", "plan-review-add"}:
         result["sealed_candidate_digest"] = _hex64(value.get("sealed_candidate_digest"), "sealed_candidate_digest")
         result["delta"] = bool(value.get("delta", False))
@@ -5985,6 +5999,20 @@ def normalize_case_request(value: object) -> dict[str, object]:
     if operation == "close":
         result["closed_at"] = _iso(value.get("closed_at"), "closed_at")
     return result
+
+
+def _prune_case_aliases_to_hot(index: dict[str, object]) -> dict[str, object]:
+    index = dict(index)
+    hot_case_ids = {
+        str(row["case_id"])
+        for row in [*index["active_cases"], *index["recent_cases"]]
+    }
+    index["aliases"] = {
+        alias: row
+        for alias, row in index["aliases"].items()
+        if str(row["target_id"]) in hot_case_ids
+    }
+    return validate_case_index(index)
 
 
 def _set_case_phase(
@@ -6045,7 +6073,7 @@ def _set_case_phase(
             "task_key": active[matches[0]]["task_key"],
         }
     index["active_cases"] = active
-    return validate_case_index(index), manifest
+    return _prune_case_aliases_to_hot(index), manifest
 
 
 def _case_add_artifact(
@@ -6186,10 +6214,11 @@ def apply_case(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
         ensure_no_migration_intermediate(root)
         recover_transaction(root, CASE_TRANSACTION_MARKER, CASE_PREFIXES, "case")
         if detect_teamwork_memory_schema(root) != "case-v2":
-            fail("case operations require v2 case-bundle memory; legacy v1 uses existing artifact routes")
+            fail("case operations require v2 case-bundle memory; legacy v1 is migration input only and has no runtime write route")
         index_text, index = read_case_index(root)
         if request["expected_revision"] != cases_revision(root, index_text, index):
             fail("stale case expected_revision; run case-inspect again")
+        index = _prune_case_aliases_to_hot(index)
         outputs: dict[str, Output] = {}
         created: list[str] = []
         operation = str(request["operation"])
@@ -6287,18 +6316,8 @@ def apply_case(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
                 }[operation]
                 if manifest["status"] not in allowed:
                     fail(f"{operation} is not allowed while case is {manifest['status']}")
-                kind = {
-                    "collaborate-upsert": "collaborate",
-                    "accept-decision": "decision",
-                    "plan-upsert": "plan",
-                    "plan-review-add": "review",
-                    "review-add": "review",
-                    "code-review-add": "review",
-                    "result-add": "result",
-                    "native-result": "result",
-                    "goal-acquire": "goal",
-                    "goal-update": "goal",
-                }.get(operation, str(request.get("kind", "evidence")))
+                kind = str(request["kind"])
+                consumer = str(request["consumer"])
                 body = str(request["body"])
                 source_digest = str(request["source_digest"])
                 active_row = next((row for row in index["active_cases"] if row["case_id"] == case_id), None)
@@ -6308,7 +6327,7 @@ def apply_case(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
                 rendered = render_case_artifact(kind, title, body, source_digest=source_digest, updated_at=str(request["updated_at"]))
                 role = "evidence" if kind in CASE_EVIDENCE_KINDS else kind
                 subtype = kind
-                envelope = {"role": role, "subtype": subtype, "case_id": case_id, "claim_ids": [], "consumer": "teamwork", "source_revision": source_digest, "immutable": True}
+                envelope = {"role": role, "subtype": subtype, "case_id": case_id, "claim_ids": [], "consumer": consumer, "source_revision": source_digest, "immutable": True}
                 artifact_id = artifact_id_for_case(kind, envelope, rendered)
                 manifest_kind = kind
                 if operation in {"review-add", "code-review-add", "plan-review-add"}:
@@ -6331,7 +6350,7 @@ def apply_case(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
                         updated_at=str(request["updated_at"]),
                         outputs=outputs,
                     )
-                manifest = _case_add_artifact(manifest, kind=manifest_kind, path=path, artifact_id=artifact_id, digest=digest, updated_at=str(request["updated_at"]), source_revision=source_digest)
+                manifest = _case_add_artifact(manifest, kind=manifest_kind, path=path, artifact_id=artifact_id, digest=digest, updated_at=str(request["updated_at"]), source_revision=source_digest, consumer=consumer)
                 if operation == "plan-upsert":
                     index, manifest = _set_case_phase(index, manifest, "executing", str(request["updated_at"]), preserve_runtime=True)
                 elif operation == "plan-review-add":

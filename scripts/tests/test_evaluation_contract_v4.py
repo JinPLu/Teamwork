@@ -438,7 +438,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
             "persistence-generic-artifact-writer",
             "persistence-specialized-artifact-writer",
             "persistence-negative-overrides",
-            "persistence-explore-no-artifact",
+            "persistence-explore-artifact",
             "persistence-code-coupled-owner",
         }
         self.assertTrue(expected <= set(cases))
@@ -464,7 +464,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
         )
         self.assertIn(
             "skills/teamwork-explore/SKILL.md",
-            {item["source"] for item in cases["persistence-explore-no-artifact"]["producers"]},
+            {item["source"] for item in cases["persistence-explore-artifact"]["producers"]},
         )
         self.assertTrue(
             {

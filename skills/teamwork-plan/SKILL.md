@@ -68,10 +68,12 @@ or redesign disguised as a step.
 
 ## Persistence
 
-Plan content and persistence are separate. Return the Plan even if completion
-artifact persistence fails, and state `unsaved/blocked`. Wait for Writer
-readback only before claiming saved/durable or before dependent work requires
-durable continuity.
+Every execution-ready Plan and materially changed Plan revision defaults to its
+case-v2 checkpoint in an initialized writable project. Plan content and
+persistence are separate. Return the Plan even if checkpoint or completion
+artifact persistence fails, and state `unsaved/blocked`. Wait for Writer readback
+only before claiming saved/durable or before dependent work requires durable
+continuity.
 
 Freeze a bounded Plan packet: purpose/audience, facts/sources, decision/status,
 style/structure, artifact kind/consumer, preserve/forbid, direction, scope,

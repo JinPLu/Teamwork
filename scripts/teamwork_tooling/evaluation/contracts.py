@@ -376,10 +376,12 @@ CASE_PRODUCER_REQUIREMENTS = {
         ("skill", "skills/teamwork-plan/SKILL.md"),
         *role_sources("writer"),
     },
-    ("persistence", "explore-no-artifact"): {
+    ("persistence", "explore-artifact"): {
         *ROOT_POLICY_SOURCE,
         ("skill", "skills/teamwork-explore/SKILL.md"),
         *role_sources("explorer"),
+        *role_sources("writer"),
+        *COLLABORATE_TRANSACTION_SOURCE,
     },
     ("persistence", "code-coupled-owner"): {
         *ROOT_POLICY_SOURCE,
@@ -462,7 +464,7 @@ DEV_CAPABILITY_COVERAGE = {
     ("persistence", "generic-artifact-writer", "en"),
     ("persistence", "specialized-artifact-writer", "en"),
     ("persistence", "negative-overrides", "en"),
-    ("persistence", "explore-no-artifact", "en"),
+    ("persistence", "explore-artifact", "en"),
     ("persistence", "code-coupled-owner", "en"),
 }
 
@@ -923,11 +925,12 @@ CAPABILITY_REQUIREMENTS = {
         "deliver-unsaved-result",
         "no-fallback-writer",
     },
-    ("persistence", "explore-no-artifact"): {
+    ("persistence", "explore-artifact"): {
         "explore-read-only",
-        "explore-no-independent-artifact",
-        "evidence-belongs-to-consuming-brief",
-        "writer-no-independent-explore",
+        "substantive-explore-evidence",
+        "explore-evidence-add-route",
+        "tiny-check-only-no-artifact",
+        "writer-only",
     },
     ("persistence", "code-coupled-owner"): {
         "code-coupled-implementer-owned",

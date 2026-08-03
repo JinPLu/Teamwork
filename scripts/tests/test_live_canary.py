@@ -130,7 +130,15 @@ class LiveCanaryRunTests(unittest.TestCase):
         if Path(argv[0]).name == "install.sh":
             self.assertEqual(
                 argv[1:],
-                ["--copy", "--no-notifications", "--profile", "performance-first", "codex"],
+                [
+                    "--copy",
+                    "--no-notifications",
+                    "--profile",
+                    "performance-first",
+                    "--no-managed-codegraph",
+                    "--no-managed-gpu-broker",
+                    "codex",
+                ],
             )
             skills_root = Path(env["HOME"]) / ".agents" / "skills"
             (skills_root / "test").mkdir(parents=True)
@@ -525,12 +533,12 @@ class CandidateInstalledV4Tests(unittest.TestCase):
                 (
                     "performance-exact", "performance-first", "external-research-depth-privacy", "researcher", "teamwork-research",
                     "web_search", "read-only", "EVIDENCE_RESEARCH_DEPTH_V4",
-                    "gpt-5.5", "high", "gpt-5.5", "high", 0,
+                    "gpt-5.6-terra", "high", "gpt-5.6-terra", "high", 0,
                 ),
                 (
                     "performance-legacy-medium", "performance-first", "external-research-depth-privacy", "researcher", "teamwork-research",
                     "web_search", "read-only", "EVIDENCE_RESEARCH_DEPTH_V4",
-                    "gpt-5.5", "high", "gpt-5.5", "medium", 1,
+                    "gpt-5.6-terra", "high", "gpt-5.5", "medium", 1,
                 ),
                 (
                     "performance-legacy-high", "performance-first", "collaborate-challenge-bounded-convergence", "designer", "teamwork-collaborate",
@@ -540,7 +548,7 @@ class CandidateInstalledV4Tests(unittest.TestCase):
                 (
                     "cost-exact", "cost-first", "external-research-depth-privacy", "researcher", "teamwork-research",
                     "web_search", "read-only", "EVIDENCE_RESEARCH_DEPTH_V4",
-                    "gpt-5.5", "medium", "gpt-5.5", "medium", 0,
+                    "gpt-5.6-terra", "high", "gpt-5.6-terra", "high", 0,
                 ),
             )
             for (

@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 6.2.3 - 2026-08-03
+
+**Teamwork 6.2.3 makes substantive plans, discussions, research, diagnosis, reviews, and execution results persist reliably by default.**
+
+- **Writer persistence now covers the complete workflow set by default.** Plans, Collaborate updates, Research/Explore evidence, Debug records, Review conclusions, Goal progress, mutating Init/Update work, and execution checkpoints or results worth continuing all go to case-v2 artifacts.
+- **Explore no longer drops reusable local evidence.** Substantive findings from code, configuration, logs, and tests are saved through `evidence-add`; tiny reads, check-only tasks, and one-shot explanations remain lightweight and create no files.
+- **Artifact metadata is no longer misclassified.** The schema fixes every write operation to its correct kind and the `teamwork` consumer; Research, Explore, and Debug records retain their source meaning, while mismatched overrides fail closed.
+- **Fresh Goal/Review cases and three-host agent boundaries now close the loop.** New cases start in a valid phase and every create or write is transactionally read back; Codex, Cursor, and Claude share the same nine-role boundary, with Writer remaining the sole workflow persister.
+
+Upgrade action: update to 6.2.3, run `$teamwork-update`, then start a new task so the refreshed policy, skills, and agents all load.
+
+Important limit: default persistence is not turn-by-turn chat logging. Tiny native or check-only tasks, one-shot explanations, and tasks explicitly marked `no files`, `off-record`, `read-only`, or `no writes` remain unsaved. Existing case-v2 projects need no migration.
+
 ## 6.2.2 - 2026-08-03
 
 **Teamwork 6.2.2 completes the three-part 6.2 delivery for installation, intent handling, and agent investment.**

@@ -23,10 +23,11 @@ migration/security/destructive/cross-platform or question-first
 activates Collaborate. Leaves return exact gap/reclassification; never
 ask/activate/expand/self-accept. One asker/owner/gap; no repeats.
 
-Writable initialized projects default-save only case-v2 Collaborate/Goal
-checkpoints and workflow completions via frozen Writer packet+transaction+readback.
-Explore/check-only/tiny one-shots/explanations
-create none. Legacy-v1 read-only; no artifact/collaborate/goal/manual/report/
+Writable initialized projects default-save substantive case-v2 workflow
+checkpoints/results via frozen Writer packet+transaction+readback, plus qualifying
+execution. Only tiny-native/check-only/one-shot work is unsaved.
+Legacy-v1 read-only; no
+artifact/collaborate/goal/manual/report/
 memory write fallback. Missing memory/Writer/authority/consumer/route:
 deliver core result, report unsaved/blocked. Code-coupled text stays
 implementer-owned.

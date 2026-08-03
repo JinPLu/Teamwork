@@ -7,7 +7,7 @@ description: Use when a request or active workflow needs direct evidence about l
 
 Answer one bounded local evidence question. Explore is local-only and read-only:
 it does not browse the web, edit files, run destructive commands, create a
-standalone artifact, ask users directly, diagnose unknown causes, design, or
+standalone artifact directly, ask users, diagnose unknown causes, design, or
 implement. The role mapping is exact: Explore -> Explorer. If Explorer is
 unavailable or required isolation cannot be verified, return
 `capability-blocked`; Root must not perform a named-method fallback.
@@ -31,9 +31,29 @@ unavailable or required isolation cannot be verified, return
    preference or material direction choice, return a reclassification signal to
    Collaborate; do not initiate that workflow.
 
-Evidence belongs in the workflow packet or checkpoint that owns the decision.
-Writer never creates an independent Explore artifact. Native fast path remains
-outside Explore: tiny/discoverable local reads, ordinary explanations, simple
-commands, integration, and reads needed for an already authorized change stay
-with the active owner. If the remaining question is external/current, an
-unknown-cause failure, an unsettled decision, or mutation, report that boundary.
+## Persistence And Output
+
+In an initialized writable project, a substantive Explore result defaults to a
+case-v2 evidence artifact. Persist when the bounded conclusion, exact evidence
+map, blocker, or next discriminator is reusable by a downstream workflow or must
+survive a handoff. Tiny/discoverable local reads, check-only commands, ordinary
+explanations, integration, and reads needed for an already authorized change
+stay on the native fast path and create no artifact. `no files`, `off-record`,
+`read-only`, `no writes`, or equivalent disables persistence.
+
+Freeze a bounded evidence packet: purpose/audience, local question, facts and
+exact sources, observation/inference split, supported conclusion, decision or
+consumer, blocker or next discriminator, status, and preserve/forbid. Writer
+routes from observed schema: `case-inspect` first; case-v2 uses the exact
+`case_id`/alias or creates from a frozen seed/task_key, then `case-schema
+<evidence-add> -> case-apply -> case-inspect/readback`. The transaction derives
+the destination and registers the case manifest/claim heads. Writer must not
+inspect, invent, reinterpret, or alter evidence, authority, status, or the
+conclusion. Missing project memory, Writer, packet, authority, consumer, route,
+or transaction blocks only persistence: deliver the result and report
+`unsaved/blocked`. No Explorer, Root, or Worker fallback writes it. Legacy-v1,
+mixed v1/v2, unknown, stale, ambiguous case, missing seed/task_key, or partially
+migrated state fails closed before any write.
+
+If the remaining question is external/current, an unknown-cause failure, an
+unsettled decision, or mutation, report that boundary.

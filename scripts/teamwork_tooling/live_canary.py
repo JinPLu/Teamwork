@@ -331,7 +331,8 @@ def _run_command(args: argparse.Namespace) -> int:
                 raise LiveCanaryError(f"cannot copy isolated authentication: {exc}") from exc
         install_argv = [
             str(workdir / "install.sh"), "--copy", "--no-notifications",
-            "--profile", args.profile, "codex",
+            "--profile", args.profile, "--no-managed-codegraph",
+            "--no-managed-gpu-broker", "codex",
         ]
         installed = subprocess.run(
             install_argv, cwd=workdir, env=env, text=True,

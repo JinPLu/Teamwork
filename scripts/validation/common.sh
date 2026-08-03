@@ -127,7 +127,7 @@ check_lean_policy() {
     "external Research boundary::(exact roles|named workflows):.{0,80}research.?->.?researcher" \
     "Collaborate ownership::collaborate.{0,140}(dialogue|brainstorm|grill|decision)" \
     "Plan ownership::plan.?->.?planner" \
-    "sustained Collaborate persistence::default.save.{0,120}Collaborate.{0,120}checkpoint" \
+    "substantive named-workflow persistence::default.save.{0,120}case.v2 workflow.{0,120}checkpoint" \
     "negative persistence override::no.files/off.record/read.only/no.writes override" \
     "evidence discipline::(separate observation/inference|distinguish observation from inference)" \
     "real-path verification::verify.{0,80}real path" \

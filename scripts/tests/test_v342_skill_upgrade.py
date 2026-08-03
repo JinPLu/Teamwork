@@ -185,7 +185,11 @@ class V342SkillUpgradeTests(unittest.TestCase):
             args.append("--no-notifications")
         if target in {"codex", "all"} and not configure_routing:
             args.append("--no-codex-routing")
-        if profile is not None:
+        if checkout.resolve() == REPO_ROOT.resolve():
+            args.extend(("--profile", profile or "performance-first"))
+            if target in {"codex", "all", "update", "plugin-codex-bootstrap"}:
+                args.extend(("--no-managed-codegraph", "--no-managed-gpu-broker"))
+        elif profile is not None:
             args.extend(("--profile", profile))
         args.append(target)
         return subprocess.run(
