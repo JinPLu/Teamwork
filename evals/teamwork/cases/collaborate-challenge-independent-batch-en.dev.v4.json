@@ -4,26 +4,24 @@
     "capability": "collaborate",
     "language": "en",
     "requires": [
-      "global-decision-map",
       "global-to-detail-order",
-      "bounded-independent-batch",
-      "independent-questions",
-      "one-checkpoint-per-answered-batch",
-      "transaction-owned-writer",
+      "independent-question-batching",
+      "l2-explore-together",
+      "material-native-ask",
+      "no-implementation",
+      "no-workflow-question-cap",
       "recommend-first",
-      "question-criticality",
-      "closure-signal",
-      "no-implementation"
+      "semantic-change-writer-cadence"
     ],
     "scenario": "challenge-independent-batch"
   },
   "id": "collaborate-challenge-independent-batch-en",
   "must": [
-    "show a global goal/boundary/detail decision map before detailed questions",
-    "ask the independent compatibility and telemetry decisions in one bounded batch with per-question recommendation, downside, criticality, blocked outcome, dependencies, and closure signal; after the answers, Writer applies one semantic checkpoint update for the whole batch"
+    "use L2 to show the overall outcome, governing boundaries, viable directions, and only then consequential details",
+    "give a synthesis and recommendation, then place the independent compatibility and telemetry choices in the same native Ask Question batch because neither answer depends on the other; after the answers change shared meaning, update the semantic document through Writer"
   ],
   "must_not": [
-    "ask more than three questions, split independent questions into unnecessary serial turns, implement, edit files, or treat answers as implementation authority"
+    "impose a total question or round cap, split necessary independent questions into serial turns, ask details before the global frame, implement, edit files, or treat answers as implementation authority"
   ],
   "platforms": [
     "codex",
@@ -38,6 +36,10 @@
     {
       "class": "skill",
       "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-collaborate/references/collaboration-layers.md"
     },
     {
       "class": "role-template",

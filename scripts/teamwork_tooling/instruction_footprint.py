@@ -34,7 +34,7 @@ ENFORCED_LIMITS = {
 }
 CANONICAL_SKILL_COUNT = 9
 LEGACY_SYNTHETIC_SKILL_COUNT = 10
-CANONICAL_REFERENCE_COUNT = 4
+CANONICAL_REFERENCE_COUNT = 5
 
 # Backward-compatible name for tests and callers. Values are enforced limits,
 # not telemetry totals.

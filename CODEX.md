@@ -62,16 +62,19 @@ enter Collaborate, which contributes and recommends before asking. Leaf roles
 never ask or activate Collaborate; they return an exact gap or reclassification
 signal to Root, and the same question is not repeated across roles or stages.
 
-Use `$teamwork-collaborate` for natural dialogue, brainstorming,
-stress-testing, question-before-action, or a consequential solution that is
-still open. Challenge and adversarial search are Collaborate methods, not
-public mode names. Use `$teamwork-plan` only after controlled Collaborate records
+Use `$teamwork-collaborate` when the user explicitly wants to discuss, design,
+plan, brainstorm, compare, or think together; when a material downstream choice
+belongs to the user; or when unclear intent needs guided clarification. Risk,
+security, migration, publicity, and complexity are not separate triggers.
+Challenge and adversarial search are Collaborate methods, not public mode names.
+Use `$teamwork-plan` only after controlled Collaborate records
 `acceptance: accepted`. Collaborate uses Explorer only for an unresolved local
 constraint and sanitized external Research only for a named external/current
-claim that can change the choice; it never runs both by default. It compares
-2–3 real alternatives or records safe-path evidence, applies the needed
-challenge/adversarial method, and keeps the user-decision frontier finite. It contributes synthesis,
-candidate space, a decision map, or provisional recommendation before asking.
+claim that can change the choice; it never runs both by default. Research and
+Explore gather evidence and return it to the same discussion; they do not own
+the user choice. Collaborate maps knowledge-space ambiguity before asking, and
+contributes synthesis, useful options, a decision map, or provisional
+recommendation before any question that materially changes the next step.
 Its controlled transaction records `acceptance: pending`, `accepted`, or
 `blocked`; persistence is not acceptance, and only `accepted` is Plan-ready.
 Legacy-v1, old grill, Discussion, and Design records are Init/Update semantic migration inputs only. Independent
@@ -81,17 +84,15 @@ Collaborate never implements. `$teamwork-debug` begins with a real failure and r
 `$teamwork-goal` persists an explicit objective, success signal, scope, budget,
 and attempts before it iterates.
 
-Collaborate selects `dialogue` or `brainstorm` from the requested
-outcome and evidence, and never asks the user to name a mode. Open questions
-stay in prose.
-Only a genuine finite decision with two or three mutually exclusive options
-uses Codex's native `request_user_input` surface when the host exposes it. The
-live app-server probe selects Plan collaboration mode for bounded scenarios
-because that preset exposes the native tool; open brainstorm stays in Default
-mode and prose. Sustained pressure-testing follows the complete global ->
-boundary -> detail map, places at most three independent decisions in one native
-batch, serializes dependent decisions, and applies one semantic Collaborate
-update after each answered batch before opening a dependent one.
+Collaborate is one continuous adaptive discussion. It moves as needed among L1
+Understand Intent, L2 Explore Together, and L3 Challenge and Converge; these are
+not modes, skills, fixed depths, turn budgets, or mandatory phases. Use Codex's
+native `request_user_input` when a finite answer materially changes the next
+step. Independent questions can batch together, dependent questions are
+serialized with a hard wait, and there is no workflow-wide question, batch, or
+round cap. Codex's per-call maximum of three questions/options is a transport
+limit only. Explicit brainstorming, adversarial, stress-test, or subagent
+methods must execute the real method or report capability-blocked.
 
 In an initialized writable project, named Teamwork workflows persist reusable
 checkpoints and results by default; `no files`, off-record, read-only, or
@@ -142,15 +143,15 @@ recheck per candidate.
 Skill selection remains model behavior rather than a deterministic Teamwork
 router, so invoke a skill by name when exact selection is important. Codex still
 owns native Plan mode, tools, browser and MCP access, permissions, agent
-coordination, and the final response. Sustained Collaborate intent plus a
-substantive synthesis, candidate space, or decision map and an unresolved
-question or unaccepted direction defaults to one semantic checkpoint after
-reading `docs/teamwork/index.json`: v6 writes the selected case manifest and
-`live/collaborate.md` through case transactions. Frozen legacy-v1, old grill,
-Discussion, and Design records stay readable only as Init/Update migration
-inputs. Unchanged state is a no-op.
-Collaborate never stores a transcript or substitutes a report/conclusion; `no
-files`, off-record, read-only, or no-write wins.
+coordination, and the final response. For substantive Collaborate, read
+`docs/teamwork/index.json` and write the selected case manifest plus
+`live/collaborate.md` through case transactions. Writer updates one semantic
+document at the first substantive synthesis, every semantic change, and the end:
+overall picture; decided items; open discussion/evidence; and current
+recommendation or next step. Frozen legacy-v1, old grill, Discussion, and Design
+records stay readable only as Init/Update migration inputs. Unchanged state is a
+no-op. Collaborate never stores a transcript or substitutes a
+report/conclusion; `no files`, off-record, read-only, or no-write wins.
 
 ## Agents and profiles
 

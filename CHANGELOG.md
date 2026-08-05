@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 6.3.0 - 2026-08-05
+
+**Teamwork 6.3.0 让 Collaborate 更像同一场连续讨论：先判断、再提问，并把选择权清楚留给用户。**
+
+- **触发条件回到真实意图。** Collaborate 只在用户明确要讨论、设计、计划、brainstorm、比较或一起想时、后续关键选择属于用户时，或意图不清需要引导澄清时启动；风险、安全、迁移、公开发布或复杂度本身不再单独触发。
+- **L1-L3 是可来回移动的协作层。** 同一场讨论会按证据在 L1 Understand Intent、L2 Explore Together、L3 Challenge and Converge 之间调整；它们不是模式、skill、固定深度、轮数预算或必经阶段。
+- **原生 Ask 只服务真正会改变下一步的选择。** Collaborate 会先综合、给选项和建议，再在必要时使用宿主原生提问；相互独立的问题可以合并，依赖问题必须等待前一个答案，整个 workflow 没有总问题数、批次数或轮数上限。
+- **Writer 和旁路证据都回到同一讨论。** Writer 维护总体图景、已决定事项、开放讨论/证据、当前建议/下一步这四类语义记录，不写逐字稿；Research、Explore 和显式 brainstorming、adversarial、stress-test、subagent 方法会把结果带回同一场讨论，不能替用户拥有最终选择。
+
+升级操作：更新到 6.3.0 后运行 `$teamwork-update`，然后新建一个任务，让新的 Collaborate 策略、skills 和 agents 全部加载。
+
+重要限制：已经在运行的任务不会自动重载新策略；请从新任务开始验证 6.3.0 行为。Codex 单次 `request_user_input` 最多 3 个问题/选项只是宿主传输限制，不是 Teamwork 的 workflow 总上限。
+
 ## 6.2.3 - 2026-08-03
 
 **Teamwork 6.2.3 让有实质内容的计划、讨论、调研、诊断、审查与执行结果默认可靠落盘。**

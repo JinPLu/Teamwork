@@ -20,6 +20,7 @@ from teamwork_tooling.evaluation import cases as case_module
 from teamwork_tooling.evaluation.cases import selected_cases, validate_bound_producer_sources, validate_case
 from teamwork_tooling.evaluation.contracts import (
     CANONICAL_ROLES,
+    COLLABORATION_LAYERS_REFERENCE_PATH,
     DESIGN_ADVERSARIAL_REFERENCE_PATH,
     EvalError,
     ROLE_TEMPLATE_PATHS,
@@ -111,15 +112,15 @@ class EvaluationContractV4Tests(unittest.TestCase):
         for case_id in ("native-minimal-en", "native-minimal-zh"):
             self.assertEqual(expected, {item["source"] for item in by_id[case_id]["producers"]})
 
-    def test_dialogue_native_cases_bind_Collaborate_writer_and_adaptive_question_policy(self) -> None:
+    def test_dialogue_native_cases_bind_Collaborate_writer_and_native_question_policy(self) -> None:
         by_id = {case["id"]: case for case in selected_cases("dev")}
         expected_requirements = {
+            "explicit-collaboration-trigger",
             "contribution-first",
-            "one-high-information-question",
-            "open-or-bounded-native",
-            "collaborate-adaptive-mode",
-            "no-challenge-premature",
-            "semantic-checkpoint",
+            "material-native-ask",
+            "independent-question-batching",
+            "no-workflow-question-cap",
+            "semantic-change-writer-cadence",
         }
         expected_sources = {
             "scripts/install/policy.sh",
@@ -143,11 +144,10 @@ class EvaluationContractV4Tests(unittest.TestCase):
 
         source_path = "scripts/install/policy.sh"
         source = (ROOT / source_path).read_text(encoding="utf-8")
-        mutated = re.sub(
-            r"open prose or host-native 2-3 finite\s+choices",
-            "all questions use prose;",
-            source,
-            count=1,
+        mutated = source.replace(
+            "No total question/round cap",
+            "Ask at most three questions in the workflow",
+            1,
         )
         self.assertNotEqual(source, mutated)
         with self.assertRaises(EvalError):
@@ -218,7 +218,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
             source_path = producer["source"]
             source = (ROOT / source_path).read_text(encoding="utf-8")
             if producer["class"] == "root-policy":
-                mutated = re.sub(r"focused\s+evidence", "generic evidence", source, count=1)
+                mutated = re.sub(r"focused[-\s]+evidence", "generic evidence", source, count=1)
             else:
                 mutated = source.replace("proportional", "uniform").replace("Proportional", "Uniform")
             self.assertNotEqual(source, mutated, source_path)
@@ -241,6 +241,12 @@ class EvaluationContractV4Tests(unittest.TestCase):
                 mutated = source.replace(
                     "Every actual hypothesis gets exactly\n   two fresh internal Designer critics",
                     "Every actual hypothesis gets one reused internal Designer critic",
+                    1,
+                )
+            elif source_path == COLLABORATION_LAYERS_REFERENCE_PATH:
+                mutated = source.replace(
+                    "Ask directly when",
+                    "Always ask directly regardless of materiality; previously ask when",
                     1,
                 )
             elif producer_class == "root-policy":
@@ -314,7 +320,7 @@ class EvaluationContractV4Tests(unittest.TestCase):
         case = next(case for case in selected_cases("dev") if case["id"] == "native-quality-accepted-fallback")
         source_path = "scripts/install/policy.sh"
         source = (ROOT / source_path).read_text(encoding="utf-8")
-        mutated = source.replace("minimal logic", "allow universal wrappers", 1)
+        mutated = source.replace("minimal-logic", "allow-universal-wrappers", 1)
         self.assertNotEqual(source, mutated)
         with self.assertRaisesRegex(EvalError, "conditional wrapper/fallback"):
             validate_bound_producer_sources(case, ROOT / "evals/teamwork/cases/native-quality-accepted-fallback.dev.v4.json", {source_path: mutated})
@@ -397,22 +403,26 @@ class EvaluationContractV4Tests(unittest.TestCase):
             matrix["cost-first"],
         )
 
-    def test_Collaborate_public_eval_contract_covers_modes_and_semantic_persistence(self) -> None:
+    def test_Collaborate_public_eval_contract_covers_layers_native_ask_and_semantic_persistence(self) -> None:
         rubric = json.loads(
             (ROOT / "evals/teamwork/rubrics/behavioral-contracts.json").read_text(encoding="utf-8")
         )
         dimension = next(
             item
             for item in rubric["dimensions"]
-            if item["name"] == "collaborate_modes_and_persistence"
+            if item["name"] == "collaborate_layers_and_persistence"
         )
         description = dimension["description"].casefold()
         readme = (ROOT / "evals/teamwork/README.md").read_text(encoding="utf-8").casefold()
         for text in (description, readme):
-            self.assertIn("dialogue", text)
-            self.assertIn("brainstorm", text)
-            self.assertIn("challenge", text)
+            self.assertIn("three base", text)
+            self.assertIn("l1", text)
+            self.assertIn("l2", text)
+            self.assertIn("l3", text)
+            self.assertIn("native ask", text)
+            self.assertIn("risk", text)
             self.assertIn("semantic", text)
+            self.assertIn("writer", text)
             self.assertIn("case-v2", text)
             if text is description:
                 self.assertNotIn("grill", text)

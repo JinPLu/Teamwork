@@ -4,21 +4,21 @@
     "capability": "ask",
     "language": "zh",
     "requires": [
-      "collaborate-adaptive-mode",
+      "explicit-collaboration-trigger",
       "contribution-first",
-      "no-challenge-premature",
-      "one-high-information-question",
-      "open-or-bounded-native",
-      "semantic-checkpoint"
+      "independent-question-batching",
+      "material-native-ask",
+      "no-workflow-question-cap",
+      "semantic-change-writer-cadence"
     ],
     "scenario": "dialogue-native"
   },
   "id": "ask-dialogue-native-zh",
   "must": [
-    "启动 Collaborate，先给出有用的综合、张力或候选空间；在项目已初始化可写时通过 Writer 保存一份语义检查点，再最多问一个高信息量的开放文字问题或真实有界的原生问题"
+    "从明确的 brainstorming 请求启动 Collaborate，真正拓宽有意义的方案，先给出综合和建议，通过 Writer 保存实质语义变化，并用原生 Ask Question 将彼此独立的必要问题同批提出，不设置工作流级问题总上限"
   ],
   "must_not": [
-    "过早派发 Collaborate、保存逐字对话或重复报告、实施修改，或一次问多个问题"
+    "用单一答案冒充 brainstorming、把独立问题强制拆成串行回合、设置问题总上限、保存逐字稿，或实施修改"
   ],
   "platforms": [
     "codex",

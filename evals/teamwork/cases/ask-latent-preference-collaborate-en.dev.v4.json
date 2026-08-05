@@ -4,17 +4,20 @@
     "capability": "ask",
     "language": "en",
     "requires": [
-      "collaborate-intent-owner",
       "contribution-first",
+      "l1-intent-check",
+      "material-choice-trigger",
+      "material-native-ask",
       "no-leaf-activation",
       "recommend-before-question",
-      "root-only-question"
+      "root-only-question",
+      "user-owns-choice"
     ],
     "scenario": "latent-preference-collaborate"
   },
   "id": "ask-latent-preference-collaborate-en",
   "must": [
-    "Root activates Collaborate, contributes the material tradeoff and a recommendation, then asks the user-owned preference question"
+    "Root activates Collaborate for the material user-owned preference, uses L1 to explain the tradeoff and recommendation, then uses native Ask Question and waits for the user's choice"
   ],
   "must_not": [
     "let a leaf activate Collaborate, treat the preference as an exact missing value, or ask before contributing"
@@ -22,7 +25,8 @@
   "platforms": ["codex", "cursor", "claude"],
   "producers": [
     {"class": "root-policy", "source": "scripts/install/policy.sh"},
-    {"class": "skill", "source": "skills/teamwork-collaborate/SKILL.md"}
+    {"class": "skill", "source": "skills/teamwork-collaborate/SKILL.md"},
+    {"class": "skill", "source": "skills/teamwork-collaborate/references/collaboration-layers.md"}
   ],
   "prompt": "Make onboarding better; I have not decided whether speed for experienced users or guidance for first-time users matters more.",
   "source": "synthetic",

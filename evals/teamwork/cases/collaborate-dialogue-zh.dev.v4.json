@@ -4,27 +4,30 @@
     "capability": "collaborate",
     "language": "zh",
     "requires": [
-      "natural-activation",
-      "sustained-checkpoint",
-      "challenge-method-for-major-risk",
-      "recommend-first",
-      "global-decision-map",
+      "dependency-serialization",
+      "four-part-semantic-document",
       "global-to-detail-order",
-      "bounded-independent-batch",
-      "one-checkpoint-per-answered-batch",
-      "question-criticality",
-      "transaction-owned-writer",
-      "no-files-overrides",
-      "no-implementation"
+      "independent-question-batching",
+      "l1-intent-check",
+      "l2-explore-together",
+      "material-native-ask",
+      "no-forced-question-when-clear",
+      "no-implementation",
+      "no-workflow-question-cap",
+      "recommend-first",
+      "semantic-change-writer-cadence",
+      "three-base-triggers"
     ],
     "scenario": "dialogue"
   },
   "id": "collaborate-dialogue-zh",
   "must": [
-    "自然语言的持续先问请求应启动 Collaborate；重大 API 边界自动选择 collaborate 模式，并只通过 Writer 和受管 case-schema <collaborate-upsert> -> case-apply/readback 事务记录状态；先展示 goal/boundary/detail 全局决策地图，再给推荐并提出有限独立批次的关键实质问题；一个回答批次只产生一次语义检查点更新，依赖问题随后再打开，同时保留权限边界"
+    "只从三种基础原因之一激活 Collaborate；先用 L1 确认意图，意图和下一步已清楚时不做仪式性提问，再用 L2 从总体结果经过边界推进到可行方向和有后果的细节",
+    "先贡献综合、选项与推荐，再对会改变下一步的实质选择使用原生 Ask Question；独立问题同批、依赖问题串行，且没有工作流总上限",
+    "在第一次实质综合、语义变化和结束时派发 Writer，维护一份四段语义文档：整体图景、已决定、待讨论与证据、当前推荐与下一步"
   ],
   "must_not": [
-    "直接写讨论 Markdown、索引、报告或其他文件；保存逐字对话；实施、修改，或把回答当成实施授权；no files 必须覆盖任何事务"
+    "把风险当作第四种基础触发，意图与下一步已清楚时强行提问，保存逐字对话，跳过 Writer，设置总问题数或总轮次上限，实施、修改，或把回答当成实施授权"
   ],
   "platforms": [
     "codex",
@@ -39,6 +42,10 @@
     {
       "class": "skill",
       "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-collaborate/references/collaboration-layers.md"
     },
     {
       "class": "role-template",
@@ -57,7 +64,7 @@
       "source": "scripts/discussion-transaction.py"
     }
   ],
-  "prompt": "先问我，并在行动前挑战我对 API 兼容性的假设。",
+  "prompt": "行动前和我讨论 API 兼容性设计。帮我澄清真正重要的内容、挑战我的假设，并在我的选择会改变下一步时提问。",
   "source": "synthetic",
   "split": "dev"
 }

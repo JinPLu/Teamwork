@@ -101,7 +101,7 @@ Cursor 还需要运行 `./install.sh cursor-policy-copy`，再把内容粘贴到
 
 | 你当前缺少 | 使用 | 一句话说明 |
 | --- | --- | --- |
-| 可接受的方向 | 💬 `$teamwork-collaborate` | dialogue、brainstorm、压力测试，或在产品、架构、流程、API 方向未定时逐步收敛；challenge/adversarial 是内部方法，不是公开模式。 |
+| 可接受的方向 | 💬 `$teamwork-collaborate` | 讨论、brainstorm、压力测试、比较，或在产品、架构、流程、API 方向未定时逐步收敛；challenge/adversarial 是内部方法，不是公开模式。 |
 | 外部或当前事实 | 🔎 `$teamwork-research` | 查官方资料、论文、市场与生态信息，做多源比较或给出引用。 |
 | 本地只读证据 | 🗂️ `$teamwork-explore` | 梳理代码、配置、日志、测试、历史或 artifact，但不修改项目。 |
 | 已知失败的根因 | 🐞 `$teamwork-debug` | 从真实失败出发，复现并区分假设，再确认安全修复边界。 |
@@ -192,14 +192,18 @@ Review 可以作为明确的独立验收门；Goal 可以包住任何需要持�
 
 Teamwork 不是总控层，也不会把每件小事升级成 workflow。它补充宿主能力，不替代 Codex、Cursor 或 Claude Code 自己的工具、权限和执行路径。
 
-请求就绪度只有一个 owner 和三种结果：Root 先检查；状态可发现或存在安全、可逆默认值时直接执行；只有一个无法发现且必须由用户提供的精确值时只问一次，并在得到答案后恢复同一 workflow；潜在偏好或未成形意图会实质改变结果时进入 Collaborate，由它先贡献判断与建议再提问。叶角色不直接问用户，也不启动 Collaborate，只向 Root 返回精确缺口或重分类信号；同一 active gap 不会跨角色或阶段重复询问。
+请求就绪度只有一个 owner 和三种结果：Root 先检查；状态可发现或存在安全、可逆默认值时直接执行；只有一个无法发现且必须由用户提供的精确值时只问一次，并在得到答案后恢复同一 workflow；只有在用户明确要讨论、设计、计划、brainstorm、比较或一起想，后续关键选择属于用户，或意图不清需要引导澄清时才进入 Collaborate。风险、安全、迁移、公开发布和复杂度不是独立触发条件。用户缺少信息时，Teamwork 会先映射知识空间再提问，不把知识空间不清误判成意图不清。
+
+Collaborate 是同一场自适应讨论，会按需要在 L1 Understand Intent、L2 Explore Together、L3 Challenge and Converge 之间移动；这些标签不是模式、skill、固定深度、轮数预算或必经阶段。Collaborate 会先综合、给出有用选项和建议，再在答案会实质改变下一步时提问。相互独立的问题可以合并，依赖问题必须等待前一个答案，整个 workflow 没有总问题数或总轮数上限。叶角色不直接问用户，也不启动 Collaborate，只向 Root 返回精确缺口或重分类信号；同一 active gap 不会跨角色或阶段重复询问。
 
 Research、Explore、Debug、Plan 和 Review 必须由对应 owning leaf 承接；宿主缺少该能力时会报告 capability-blocked，而不是由 Root 或其他角色伪装完成。Collaborate 和 Goal 由 Root 拥有。默认只派发 1 个 child，日常上限为 4；5-8 个 child 只用于显式 adversarial 或 release 且宿主支持的场景。
+Research 和 Explore 只收集证据并回到同一场讨论，不拥有用户的最终选择。显式要求 brainstorming、adversarial、stress-test 或 subagent 方法时，要执行真实方法，或报告 capability-blocked。
 
 ## 🗃️ 文档与安全边界
 
 - 在已初始化且可写的项目中，命名 Teamwork workflow 默认会保存值得复用的检查点或结果；一次性说明、小修改和普通本地工作不会强制造文档。
 - 已完成的方法结果不会因为 Writer、transaction 或 readback 不可用而被吞掉，而会正常返回并明确标记为未保存；只有确实依赖持久连续性的下一步才等待 readback，也不会退回直接写文件。
+- Collaborate 的 Writer 记录是语义文档，不是逐字稿：总体图景、已决定事项、开放讨论/证据，以及当前建议或下一步。
 - 明确写出 `no files`、off-record、read-only 或 no-write，可以覆盖默认持久化。
 - Research、Collaborate、Plan、诊断阶段的 Debug 和 Review 不会自动授权代码修改或外部效果；接受计划也不等于授权执行。
 - v6 normal runtime 只使用 v2 case bundle，把同一事项的讨论、证据、计划、复查、Goal 和结果组织在 `docs/teamwork/cases/` 下。legacy-v1、旧 grill、Discussion 和 Design 记录只作为 Init/Update 语义迁移输入，不是兼容运行模式。

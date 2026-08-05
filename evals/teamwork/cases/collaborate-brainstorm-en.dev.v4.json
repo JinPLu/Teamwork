@@ -4,29 +4,29 @@
     "capability": "collaborate",
     "language": "en",
     "requires": [
-      "auto-gate-negative-control",
-      "bounded-independent-batch",
       "capability-blocked-no-fallback",
-      "challenge-not-mode",
-      "default-one-challenge",
       "dependency-serialization",
-      "evidence-before-strategy-freeze",
-      "genuine-tradeoffs-only",
-      "local-constraints-first",
+      "explicit-collaboration-trigger",
+      "global-to-detail-order",
+      "independent-question-batching",
+      "l2-explore-together",
+      "material-native-ask",
+      "named-brainstorm-execution",
       "no-implementation",
-      "question-criticality",
-      "read-only",
-      "recommend-first"
+      "no-workflow-question-cap",
+      "recommend-first",
+      "research-explore-return",
+      "risk-not-base-trigger"
     ],
     "scenario": "brainstorm"
   },
   "id": "collaborate-brainstorm-en",
   "must": [
-    "inspect local constraints and complete any justified initial evidence wave before freezing the search strategy or exploring genuine tradeoffs",
-    "recommend a direction before asking a bounded independent batch of user-owned material decisions, serializing dependent decisions and stating criticality"
+    "activate Collaborate from the explicit brainstorming request, establish the global outcome, use L2 to produce meaningfully different directions, and return any Research or Explore evidence to the same discussion",
+    "compare trade-offs and recommend a current direction before using native Ask Question for material choices; batch independent questions, serialize dependent questions, and continue for as many useful rounds as needed"
   ],
   "must_not": [
-    "auto-activate adversarial search merely because several options exist or risk or complexity is named, implement, edit files, or silently turn the result into an execution plan"
+    "relabel one recommendation as brainstorming, treat risk or complexity as another base activation reason, impose a total question or round cap, substitute Research or Explore for the discussion, or implement"
   ],
   "platforms": [
     "codex",
@@ -41,6 +41,10 @@
     {
       "class": "skill",
       "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-collaborate/references/collaboration-layers.md"
     },
     {
       "class": "role-template",
@@ -79,7 +83,7 @@
       "source": "templates/claude-agents/designer.md"
     }
   ],
-  "prompt": "We have not chosen whether the public API should be synchronous, queued, or hybrid. Help me settle the architecture before any coding.",
+  "prompt": "Brainstorm the synchronous, queued, and hybrid API directions with me, then help me choose what deserves deeper investigation before any coding.",
   "source": "synthetic",
   "split": "dev"
 }

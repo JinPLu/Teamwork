@@ -52,6 +52,7 @@ RETIRED_AGENT_SAMPLE = {
 }
 EXPECTED_CURRENT_REFERENCES = {
     "teamwork-collaborate/references/adversarial-search.md",
+    "teamwork-collaborate/references/collaboration-layers.md",
     "teamwork-debug/references/runtime-diagnosis.md",
     "teamwork-research/references/deep-research.md",
     "teamwork-review/references/strict-review.md",

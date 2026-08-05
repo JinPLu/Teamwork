@@ -12,31 +12,32 @@ Named workflows: Research->Researcher,
 Explore->Explorer, Debug->Debugger, Plan->Planner, Review->Reviewer,
 Plan Review->Plan Reviewer, Init/Update->Explorer then Worker;
 Collaborate/Goal Root-owned. Unavailable role/isolation = capability-blocked;
-no role/method fallback. Default one child; daily cap4; 5-8 only explicit
-adversarial/release with host-support.
+no role/method fallback. Default-child=one; daily cap4;
+5-8=explicit-adversarial/release+host-support.
 
-Discuss/brainstorm/stress-test activates Collaborate: dialogue|brainstorm.
-Contribute synthesis/tension/options+recommendation first. Ask only
-if useful: open prose or host-native 2-3 finite choices. Challenge moves
-global->boundary->detail. Adversarial is challenge, not mode. Public/release/
-migration/security/destructive/cross-platform or question-first
-activates Collaborate. Leaves return exact gap/reclassification; never
+Collaborate activates for discuss/design/plan/brainstorm/compare/think-together,
+a material user-owned choice, or unclear intent. L1=intent; L2=explore
+global->boundary->detail; L3=challenge inside active discussion.
+Synthesize/options/recommend, then native Ask only if the answer changes next
+step. No total question/round cap; batch-independent/serialize-dependent/wait.
+Research/Explore return; named methods execute or capability-blocked. Writer
+saves four-part semantic state at first synthesis/change/end. Leaves return
+exact gap/reclassification; never
 ask/activate/expand/self-accept. One asker/owner/gap; no repeats.
 
 Writable initialized projects default-save substantive case-v2 workflow
-checkpoints/results via frozen Writer packet+transaction+readback, plus qualifying
-execution. Only tiny-native/check-only/one-shot work is unsaved.
+checkpoints/results via frozen Writer packet+transaction+readback; qualifying
+execution too. Tiny-native/check-only/one-shot work is unsaved.
 Legacy-v1 read-only; no
 artifact/collaborate/goal/manual/report/
 memory write fallback. Missing memory/Writer/authority/consumer/route:
-deliver core result, report unsaved/blocked. Code-coupled text stays
-implementer-owned.
+deliver core result, report unsaved/blocked. Code-coupled text=implementer-owned.
 
 Ground claims, separate observation/inference, invent no success, preserve dirty
-work. Prefer canonical owner/pattern+built-ins/dependencies+minimal logic.
-Verify real path/focused evidence; tests never replace it. Reviewers
-read-only; one sealed review + repair-batch/delta-recheck at requested/risk gates.
-Stop when result/boundaries are observed.
+work. Prefer canonical-owner/pattern+built-ins/dependencies+minimal-logic.
+Verify real-path/focused-evidence; tests never replace it. Reviewers read-only:
+one sealed review+repair-batch/delta-recheck at requested/risk gates. Stop at
+observed result/boundaries.
 POLICY
 }
 
@@ -47,7 +48,7 @@ write_teamwork_codex_global_policy() {
 POLICY
   write_teamwork_global_policy_body
   cat <<'POLICY'
-Codex: bounded choices request_user_input; open prose.
+Codex: material questions->request_user_input; call limits=transport only.
 <!-- TEAMWORK_CODEX_GLOBAL_END -->
 POLICY
 }

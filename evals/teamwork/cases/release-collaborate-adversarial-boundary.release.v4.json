@@ -1,30 +1,29 @@
 {
-  "evidence": "Held-out static boundary for automatic adversarial Collaborate selection, explicit overrides, and durable Plan readiness.",
+  "evidence": "Held-out static boundary for the three Collaborate triggers, L3 escalation, explicit adversarial execution, and durable Plan readiness.",
   "expected": {
     "capability": "collaborate",
     "language": "en",
     "requires": [
-      "adversarial-not-mode",
+      "active-discussion-l3-escalation",
       "chat-not-plan-ready",
-      "default-collaborate-stays-lightweight",
       "durable-collaborate-transaction-required",
       "evidence-before-strategy-freeze",
-      "explicit-strategy-overrides",
+      "explicit-adversarial-execution",
       "failure-closed",
-      "input-driven-auto-selection",
       "no-implementation",
       "no-silent-transition",
-      "weak-cue-negative-control"
+      "risk-not-base-trigger",
+      "three-base-triggers"
     ],
     "scenario": "adversarial-boundary"
   },
   "id": "release-collaborate-adversarial-boundary",
   "must": [
-    "complete the initial evidence wave before strategy freeze, auto-select adversarial for multiple viable directions plus costly error or conflicting evidence, keep weak risk or complexity labels on default Collaborate, and honor adversarial and standard overrides under the same owner",
-    "require successful dual closure, explicit user acceptance, and the controlled durable Collaborate transaction before Plan can use the result"
+    "activate only from explicit collaboration, a material user-owned choice, or unclear intent; once discussion is active, conflicting evidence or hard-to-reverse consequences may escalate it to L3, while risk or complexity alone remains a negative control",
+    "execute an explicitly requested adversarial method after the evidence wave, fail closed if the method cannot run, and require user acceptance plus the controlled durable Collaborate transaction before Plan can use the result"
   ],
   "must_not": [
-    "require special command words for eligible automatic selection, let weak labels override the gate, ignore standard, silently downgrade failed isolation, treat a chat recommendation as Plan-ready, implement, or enter Plan"
+    "treat risk, security, migration, publicity, or complexity as a fourth base trigger, merely describe a requested adversarial method, silently downgrade failed isolation, treat a chat recommendation as Plan-ready, implement, or enter Plan"
   ],
   "platforms": [
     "codex",
@@ -39,6 +38,10 @@
     {
       "class": "skill",
       "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-collaborate/references/collaboration-layers.md"
     },
     {
       "class": "skill",
@@ -73,7 +76,7 @@
       "source": "templates/claude-agents/planner.md"
     }
   ],
-  "prompt": "One request has three viable public API directions, conflicting evidence, and a costly client migration if wrong; another only calls a one-path collaborate high-risk and complex; a third says standard and a fourth says adversarial. Keep selection, cost, failure, and Plan-ready state unambiguous.",
+  "prompt": "One user asks to discuss three public API directions with conflicting evidence and costly migration consequences; another only labels a clear one-path task high-risk and complex; a third explicitly asks for an adversarial stress test. Keep activation, L3 escalation, execution failure, and Plan-ready state unambiguous.",
   "source": "release",
   "split": "release"
 }

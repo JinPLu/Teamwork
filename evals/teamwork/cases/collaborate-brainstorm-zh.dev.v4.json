@@ -4,29 +4,29 @@
     "capability": "collaborate",
     "language": "zh",
     "requires": [
-      "auto-gate-negative-control",
-      "bounded-independent-batch",
       "capability-blocked-no-fallback",
-      "challenge-not-mode",
-      "default-one-challenge",
       "dependency-serialization",
-      "evidence-before-strategy-freeze",
-      "genuine-tradeoffs-only",
-      "local-constraints-first",
+      "explicit-collaboration-trigger",
+      "global-to-detail-order",
+      "independent-question-batching",
+      "l2-explore-together",
+      "material-native-ask",
+      "named-brainstorm-execution",
       "no-implementation",
-      "question-criticality",
-      "read-only",
-      "recommend-first"
+      "no-workflow-question-cap",
+      "recommend-first",
+      "research-explore-return",
+      "risk-not-base-trigger"
     ],
     "scenario": "brainstorm"
   },
   "id": "collaborate-brainstorm-zh",
   "must": [
-    "先检查本地约束并完成有理由的初始证据波，再冻结搜索策略，只为真实取舍提出方案，并先给推荐",
-    "提出有限独立批次的用户拥有实质决定，依赖决定必须串行，并说明关键性"
+    "从明确的 brainstorming 请求激活 Collaborate，先确定全局目标，再用 L2 产生真正不同的方向，并把 Research 或 Explore 的证据交回同一讨论",
+    "比较取舍并先给当前推荐，再用原生 Ask Question 询问实质选择；独立问题同批、依赖问题串行，并按需要持续任意有价值的轮次"
   ],
   "must_not": [
-    "仅因存在多个选项或出现风险、复杂度字样就自动激活 adversarial 搜索、实施、修改文件或悄悄转成执行计划"
+    "把单一推荐改名为 brainstorming，把风险或复杂度当成额外基础触发，设置总问题数或总轮次上限，用 Research 或 Explore 取代讨论，或实施"
   ],
   "platforms": [
     "codex",
@@ -41,6 +41,10 @@
     {
       "class": "skill",
       "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-collaborate/references/collaboration-layers.md"
     },
     {
       "class": "role-template",
@@ -79,7 +83,7 @@
       "source": "templates/claude-agents/designer.md"
     }
   ],
-  "prompt": "公开 API 还没有确定要同步、排队还是混合模式。请在写代码前帮我收敛架构。",
+  "prompt": "和我一起 brainstorm 公开 API 的同步、排队与混合方向，再帮我选择哪些方向值得在写代码前深入调查。",
   "source": "synthetic",
   "split": "dev"
 }

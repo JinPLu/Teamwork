@@ -104,7 +104,7 @@ Ask what is missing right now, not how complicated the task looks.
 
 | What you are missing | Use | What it does |
 | --- | --- | --- |
-| An acceptable direction | 💬 `$teamwork-collaborate` | Dialogue, brainstorm, stress-test, or converge on an unsettled product, architecture, workflow, or API direction; challenge/adversarial is an internal method, not a public mode. |
+| An acceptable direction | 💬 `$teamwork-collaborate` | Discuss, brainstorm, stress-test, compare, or converge on an unsettled product, architecture, workflow, or API direction; challenge/adversarial is an internal method, not a public mode. |
 | External or current facts | 🔎 `$teamwork-research` | Read official sources, papers, market, or ecosystem evidence; compare multiple sources or provide citations. |
 | Read-only local evidence | 🗂️ `$teamwork-explore` | Inspect code, config, logs, tests, history, or artifacts without changing the project. |
 | The cause of a real failure | 🐞 `$teamwork-debug` | Reproduce the failure, discriminate among hypotheses, and establish a safe repair boundary. |
@@ -198,21 +198,37 @@ Teamwork is not a control layer and does not turn every small request into a wor
 Request readiness has one owner and three outcomes. Root inspects first and acts
 without asking when state is discoverable or a safe reversible default applies;
 asks once for one exact undiscoverable user-owned value and then resumes the same
-workflow; or enters Collaborate when latent preferences or unformed intent can
-materially change the result. Leaf roles never ask or start Collaborate. They
-return an exact gap or reclassification signal to Root, and one active gap is
-never duplicated across roles or stages.
+workflow; or enters Collaborate only when the user explicitly asks to discuss,
+design, plan, brainstorm, compare, or think together, a material downstream
+choice belongs to the user, or unclear intent needs guided clarification. Risk,
+security, migration, publicity, and complexity are not separate triggers. When
+the user lacks information, Teamwork maps the knowledge space before asking
+instead of treating knowledge ambiguity as intent ambiguity.
+
+Collaborate is one adaptive discussion. It moves as needed among L1 Understand
+Intent, L2 Explore Together, and L3 Challenge and Converge; those labels are not
+modes, skills, fixed depths, turn budgets, or mandatory phases. It synthesizes,
+offers useful options, and recommends before asking when the answer materially
+changes the next step. Independent questions can batch together, dependent
+questions wait for the earlier answer, and there is no workflow-wide question or
+round cap. Leaf roles never ask or start Collaborate. They return an exact gap
+or reclassification signal to Root, and one active gap is never duplicated across
+roles or stages.
 
 Research, Explore, Debug, Plan, and Review must be handled by their owning leaf.
 If the host lacks that capability, Teamwork reports capability-blocked instead
 of letting Root or another role simulate it. Collaborate and Goal are Root-owned.
 The default dispatch is 1 child and the everyday ceiling is 4; 5-8 children are
 reserved for explicit adversarial or release work when the host supports them.
+Research and Explore gather evidence and return it to the same discussion; they
+do not own the user choice. Explicit brainstorming, adversarial, stress-test, or
+subagent requests execute the real method or report capability-blocked.
 
 ## 🗃️ Persistence and safety boundaries
 
 - In an initialized writable project, named Teamwork workflows save reusable checkpoints or results by default. One-shot explanations, small edits, and ordinary local work do not force a document.
 - A completed method result is returned even if Writer, transaction, or readback is unavailable, with persistence reported honestly as unsaved. Only a next step that actually depends on durable continuity waits for readback; there is no direct-write fallback.
+- Collaborate Writer records are semantic, not transcripts: overall picture, decided items, open discussion/evidence, and the current recommendation or next step.
 - Explicit `no files`, off-record, read-only, or no-write instructions override default persistence.
 - Research, Collaborate, Plan, diagnostic Debug, and Review do not automatically authorize code edits or external effects. Accepting a plan does not authorize execution.
 - v6 normal runtime uses only v2 case bundles to keep one matter's collaboration, evidence, plan, review, Goal, and result under `docs/teamwork/cases/`. legacy-v1, old grill, Discussion, and Design records are Init/Update semantic migration inputs only, not a compatible runtime mode.

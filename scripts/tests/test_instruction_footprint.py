@@ -37,7 +37,7 @@ class InstructionFootprintTests(unittest.TestCase):
                     "bytes": 999999,
                     "surfaces": 10,
                     "max_skill_words": 999999,
-                    "behavior_references": 4,
+                    "behavior_references": 5,
                     "cross_skill_loads": 0,
                     "dependency_cycles": 0,
                 },
@@ -55,7 +55,7 @@ class InstructionFootprintTests(unittest.TestCase):
                     "bytes": 1,
                     "surfaces": 10,
                     "max_skill_words": 1,
-                    "behavior_references": 4,
+                    "behavior_references": 5,
                     "cross_skill_loads": 0,
                     "dependency_cycles": 0,
                 },
@@ -82,7 +82,7 @@ class InstructionFootprintTests(unittest.TestCase):
                 "skills": {
                     "surfaces": 10,
                     "max_skill_words": 999999,
-                    "behavior_references": 4,
+                    "behavior_references": 5,
                     "cross_skill_loads": 0,
                     "dependency_cycles": 0,
                 }
@@ -107,7 +107,7 @@ class InstructionFootprintTests(unittest.TestCase):
             compactness_failures(result),
             [
                 "canonical skill inventory must contain 10 skills: 9",
-                "canonical reference inventory must contain 4 references: 0",
+                "canonical reference inventory must contain 5 references: 0",
             ],
         )
 

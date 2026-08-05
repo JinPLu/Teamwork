@@ -4,27 +4,30 @@
     "capability": "collaborate",
     "language": "en",
     "requires": [
-      "natural-activation",
-      "sustained-checkpoint",
-      "challenge-method-for-major-risk",
-      "recommend-first",
-      "global-decision-map",
+      "dependency-serialization",
+      "four-part-semantic-document",
       "global-to-detail-order",
-      "bounded-independent-batch",
-      "one-checkpoint-per-answered-batch",
-      "question-criticality",
-      "transaction-owned-writer",
-      "no-files-overrides",
-      "no-implementation"
+      "independent-question-batching",
+      "l1-intent-check",
+      "l2-explore-together",
+      "material-native-ask",
+      "no-forced-question-when-clear",
+      "no-implementation",
+      "no-workflow-question-cap",
+      "recommend-first",
+      "semantic-change-writer-cadence",
+      "three-base-triggers"
     ],
     "scenario": "dialogue"
   },
   "id": "collaborate-dialogue-en",
   "must": [
-    "activate Collaborate from the natural sustained question-first request, use the challenge method for the major API boundary, record state only through Writer and the managed case-inspect -> case-schema <collaborate-upsert> -> case-apply/readback transaction, then show a global goal/boundary/detail decision map and give a recommendation before a bounded independent batch of critical material questions; one answered batch becomes one semantic checkpoint update before dependent questions open, while authority remains unchanged"
+    "activate Collaborate from exactly one of the three base reasons, use L1 to confirm intent without a ritual question when already clear, then use L2 to move from the overall outcome through boundaries to viable directions and consequential details",
+    "contribute a synthesis, options, and recommendation before using native Ask Question for a material next-step choice; batch independent questions and serialize dependent ones without a workflow-wide cap",
+    "dispatch Writer at the first substantive synthesis and after semantic changes or closure to maintain one four-part document: overall picture, decided, open discussion and evidence, and current recommendation and next step"
   ],
   "must_not": [
-    "directly write collaboration Markdown, an index, a report, or another file; persist a transcript; implement, edit, or treat an answer as implementation authority; no files must override any transaction"
+    "activate from risk as a fourth reason, force a question after intent and next step are clear, persist a transcript, skip Writer, impose a total question or round limit, implement, edit, or treat an answer as implementation authority"
   ],
   "platforms": [
     "codex",
@@ -39,6 +42,10 @@
     {
       "class": "skill",
       "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-collaborate/references/collaboration-layers.md"
     },
     {
       "class": "role-template",
@@ -57,7 +64,7 @@
       "source": "scripts/discussion-transaction.py"
     }
   ],
-  "prompt": "Ask me first and challenge my API compatibility assumptions before we act.",
+  "prompt": "Discuss the API compatibility design with me before we act. Help me clarify what matters, challenge my assumptions, and ask when my choice changes the next step.",
   "source": "synthetic",
   "split": "dev"
 }

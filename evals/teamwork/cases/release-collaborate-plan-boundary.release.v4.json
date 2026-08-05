@@ -4,6 +4,7 @@
     "capability": "collaborate",
     "language": "en",
     "requires": [
+      "explicit-plan-collaboration-trigger",
       "no-implementation",
       "no-silent-transition",
       "selected-direction-uses-plan",
@@ -13,7 +14,7 @@
   },
   "id": "release-collaborate-plan-boundary",
   "must": [
-    "use Collaborate for unresolved material options and Plan only for the selected direction"
+    "treat a request to plan or design together as an explicit Collaborate trigger while material options remain unresolved, but route an already accepted direction that only needs ordered implementation actions to Plan"
   ],
   "must_not": [
     "silently transition between capabilities, implement, or edit files"
@@ -31,6 +32,10 @@
     {
       "class": "skill",
       "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-collaborate/references/collaboration-layers.md"
     },
     {
       "class": "skill",
@@ -73,7 +78,7 @@
       "source": "templates/claude-agents/plan-reviewer.md"
     }
   ],
-  "prompt": "One request has unresolved architecture tradeoffs; another already chose a direction and only needs ordered actions. Keep their owners distinct.",
+  "prompt": "One user says 'plan the architecture with me' while material tradeoffs remain unresolved; another says 'the design is accepted—write the implementation plan.' Keep their owners distinct.",
   "source": "release",
   "split": "release"
 }

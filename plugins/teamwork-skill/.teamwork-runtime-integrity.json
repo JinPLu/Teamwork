@@ -2,7 +2,7 @@
   "files": {
     ".codex-plugin/plugin.json": {
       "mode": "0644",
-      "sha256": "32cacfd621f6d5cc12e45bdaf2dcb2aa1dc84a92ef3b839e86b41038a2a6cc05"
+      "sha256": "732cf69fae2d5ebecefaaeb8dbdb263625aede8fe1ef47e6bcddcada0dafe7bd"
     },
     ".teamwork-plugin-runtime": {
       "mode": "0644",
@@ -10,7 +10,7 @@
     },
     "VERSION": {
       "mode": "0644",
-      "sha256": "c55a2ec9b9d5ca78f4281349ef612925879d134e8c7f983e3b13d5a887a723d9"
+      "sha256": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8"
     },
     "evals/teamwork/ledgers/v4-capability-migration.jsonl": {
       "mode": "0644",
@@ -70,7 +70,7 @@
     },
     "scripts/install/policy.sh": {
       "mode": "0644",
-      "sha256": "370c98c0fae62c396bf0e196d4df31dcd52343ee9a2cb934c89878616ba50838"
+      "sha256": "b805e8e8641f7c9b3c3351f11e682098ea2479ed82c50e81e321ad125eb04c7b"
     },
     "scripts/install/preferences.py": {
       "mode": "0644",
@@ -114,11 +114,19 @@
     },
     "skills/teamwork-collaborate/SKILL.md": {
       "mode": "0644",
-      "sha256": "40a01fac234261823836daac5423a4e69aac7db37e36ce9bc559cef9873f9f47"
+      "sha256": "8ecbd1518572d2417599fb61a23c52f5a48f0e45beffe7679ee7632d367995e3"
+    },
+    "skills/teamwork-collaborate/agents/openai.yaml": {
+      "mode": "0644",
+      "sha256": "a39ccf05bc1b51d692d14f647de478ca2f2af766f6b3cd6006027e210a8aad8a"
     },
     "skills/teamwork-collaborate/references/adversarial-search.md": {
       "mode": "0644",
       "sha256": "06741288f47b5ce9b353ea60b60948e1a79c014d42d1958b324b5bbdbba3af1e"
+    },
+    "skills/teamwork-collaborate/references/collaboration-layers.md": {
+      "mode": "0644",
+      "sha256": "d42e678bfd08c68dc813695e8a8da5ea250dfbdfc297d77f6cb690841af8e9cf"
     },
     "skills/teamwork-debug/SKILL.md": {
       "mode": "0644",
@@ -297,8 +305,8 @@
       "sha256": "dc2700b7e267a81a56723ab6ac6312eff524e9d78bf3bcf273982bcfe264f758"
     }
   },
-  "manifest_sha256": "32cacfd621f6d5cc12e45bdaf2dcb2aa1dc84a92ef3b839e86b41038a2a6cc05",
+  "manifest_sha256": "732cf69fae2d5ebecefaaeb8dbdb263625aede8fe1ef47e6bcddcada0dafe7bd",
   "marker": "TEAMWORK_CODEX_PLUGIN_RUNTIME=1",
   "schema_version": 1,
-  "version": "6.2.3"
+  "version": "6.3.0"
 }

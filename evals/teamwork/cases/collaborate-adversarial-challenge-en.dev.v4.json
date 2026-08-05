@@ -4,31 +4,33 @@
     "capability": "collaborate",
     "language": "en",
     "requires": [
-      "adversarial-not-mode",
       "automatic-default-budget",
       "capability-blocked-no-fallback",
       "chat-not-plan-ready",
       "dual-pass-required",
       "dynamic-taxonomy-ledger",
       "evidence-before-strategy-freeze",
+      "explicit-adversarial-execution",
       "failure-closed",
-      "input-driven-auto-selection",
+      "l3-challenge-and-converge",
       "material-revision-new-trial",
       "no-implementation",
       "read-only",
+      "risk-not-base-trigger",
       "two-fresh-critics-per-hypothesis",
       "two-fresh-final-auditors",
+      "user-owns-final-choice",
       "visible-strategy-reason"
     ],
     "scenario": "adversarial-challenge"
   },
   "id": "collaborate-adversarial-challenge-en",
   "must": [
-    "complete the justified initial evidence wave, then auto-select adversarial search from the decision signals, state the reason and default B=3 envelope, and dispatch without a confirmation round",
-    "give every actual hypothesis two fresh isolated critics, count a material revision as a new trial, and require two new final auditors to pass"
+    "activate Collaborate from the explicit stress-test request, enter L3, complete the justified evidence wave, state the strategy reason and default B=3 envelope, and execute the real adversarial method",
+    "give every actual hypothesis two fresh isolated critics, count a material revision as a new trial, require two new final auditors to pass, then return the evidence and recommendation while leaving the final material choice to the user"
   ],
   "must_not": [
-    "require command words or a supplied budget, activate from risk or complexity labels alone, reuse a critic, exceed the budget, claim Plan readiness from chat, implement, or write a durable Collaborate after incomplete closure"
+    "treat risk as a fourth base trigger, merely describe an adversarial method, reuse a critic, exceed the budget, choose the final material direction for the user, claim Plan readiness from chat, implement, or write a durable Collaborate after incomplete closure"
   ],
   "platforms": [
     "codex",
@@ -43,6 +45,10 @@
     {
       "class": "skill",
       "source": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "class": "skill",
+      "source": "skills/teamwork-collaborate/references/collaboration-layers.md"
     },
     {
       "class": "skill",
@@ -61,7 +67,7 @@
       "source": "templates/claude-agents/designer.md"
     }
   ],
-  "prompt": "This public API could be synchronous, queued, or hybrid. A wrong choice forces an expensive migration on every existing client, and the latency and reliability evidence conflicts. Help me settle the architecture before coding.",
+  "prompt": "Stress-test this public API choice with independent critics before we settle it together. It could be synchronous, queued, or hybrid; a wrong choice forces an expensive migration, and the latency and reliability evidence conflicts.",
   "source": "synthetic",
   "split": "dev"
 }

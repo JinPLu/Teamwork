@@ -10,6 +10,7 @@ from typing import Iterable, Mapping
 from .contracts import (
     CANONICAL_ROLES,
     CANONICAL_SKILL_COUNT,
+    COLLABORATION_LAYERS_REFERENCE_PATH,
     DESIGN_ADVERSARIAL_REFERENCE_PATH,
     EvalError,
     RETIRED_SKILLS,
@@ -57,6 +58,41 @@ DESIGN_ADVERSARIAL_REFERENCE_CONCEPTS = (
         (
             r"budget-exhausted\s*\|\s*audit-failed\s*\|\s*freshness-unproven\s*\|\s*capability-blocked\s*\|\s*interrupted",
         ),
+    ),
+)
+
+COLLABORATION_LAYERS_REFERENCE_CONCEPTS = (
+    (
+        "intent and knowledge-space ambiguity",
+        (
+            r"Intent ambiguity.{0,700}Knowledge-space ambiguity",
+            r"goal, success criteria, preference, decision\s+ownership.{0,700}relevant\s+directions or evidence are not mapped",
+        ),
+    ),
+    ("direct ask versus map first", (r"Ask directly when.{0,800}Map first when",)),
+    (
+        "no ritual question",
+        (r"intent and next step are already clear.{0,160}without a ritual\s+question",),
+    ),
+    (
+        "native material ask",
+        (r"host-native Ask Question.{0,220}materially\s+change the next step",),
+    ),
+    (
+        "independent batching and dependent wait",
+        (r"independent questions in the same batch.{0,600}dependent questions in separate batches.{0,240}Wait",),
+    ),
+    (
+        "transport limit is not a workflow cap",
+        (r"Do not impose a workflow-wide question, batch, or round limit.{0,400}transport limit",),
+    ),
+    (
+        "global-to-detail method",
+        (r"Overall outcome.{0,700}Boundaries and criteria.{0,700}Directions and evidence.{0,700}Details",),
+    ),
+    (
+        "realistic layer scenarios",
+        (r"Broad research direction.{0,900}Unclear product preference.{0,900}Explicit co-design or brainstorming.{0,900}Dependent decisions.{0,900}Adversarial convergence",),
     ),
 )
 
@@ -147,30 +183,25 @@ SKILL_CONCEPTS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
         ("no redesign or implementation", (r"Do not redesign or\s+implement", r"(?:do not|never|no).{0,40}(?:compare options|redesign).{0,120}(?:do not|never|no).{0,30}implement", r"不.{0,30}(?:比较方案|重新设计).{0,100}不.{0,20}(?:实施|实现)")),
     ),
     "teamwork-collaborate": (
-        ("natural collaboration trigger", (r"only public Teamwork\s+skill for natural dialogue, brainstorming, sustained questioning",)),
-        ("dialogue brainstorm only", (r"`dialogue`.{0,160}`brainstorm`", r"not a third runtime mode")),
-        ("challenge not mode", (r"Stress-testing is a challenge method inside dialogue or brainstorm,\s+not a third runtime mode",)),
-        ("adversarial not mode", (r"method replaces only the challenge method", r"does not create a public Design workflow")),
-        ("capability blocked no fallback", (r"capability-blocked.{0,100}Root must not perform a named-method fallback",)),
-        ("case-v2 only", (r"managed case-v2 Collaborate checkpoint", r"legacy-v1.{0,120}fails closed")),
-        ("unresolved material choice trigger", (r"decision convergence", r"meaningful alternatives", r"material frontier")),
-        ("genuine alternatives only", (r"(?:two|2).{0,20}(?:three|3).{0,100}(?:meaningful|mutually exclusive|genuine).{0,60}(?:alternatives|options|choices)",)),
-        ("recommendation before question", (r"before every question.{0,120}provisional recommendation", r"recommendation.{0,120}before.{0,80}(?:question|asking)")),
-        ("bounded independent batch", (r"native bounded batch contains at most three questions", r"batch.{0,100}mutually independent")),
-        ("dependency serialization", (r"dependent questions are serial", r"never\s+batch dependent questions")),
-        ("question criticality", (r"why the answer is critical", r"what it blocks", r"observable\s+closing condition")),
-        ("automatic adversarial gate", (r"at least two viable directions remain.{0,160}(?:costly|irreversible).*conflicting evidence",)),
-        ("strategy overrides", (r"explicitly requests adversarial search",)),
-        ("adaptive checkpoint threshold", (r"sustained semantic Collaborate state.{0,120}managed case-v2 Collaborate checkpoint", r"first substantive.{0,120}(?:dialogue|brainstorm).{0,120}defaults to a managed case-v2")),
-        ("transaction-owned writer", (r"case-inspect.{0,240}case-schema.{0,240}case-apply", r"Writer calls\s+only the controlled transaction route")),
-        ("initialized writable prerequisite", (r"(?:initialized|initialised).{0,80}writable", r"已初始化.{0,60}可写")),
-        ("no-files override", (r"no files.{0,180}(?:overrides?|wins|no write)", r"(?:不要文件|不落盘|no files).{0,120}(?:优先|不写|覆盖)")),
-        ("global decision map", (r"global decision map", r"whole decision map", r"current critical path", r"goal.{0,40}boundary.{0,40}detail")),
-        ("global-to-detail order", (r"global\s*->\s*boundary\s*->\s*detail", r"whole decision map.{0,120}current batch")),
-        ("one update per answered batch", (r"ask the question, wait for the answer, dispatch\s+Writer checkpoint",)),
-        ("Collaborate acceptance state", (r"Acceptance requires closure evidence", r"active\.acceptance\s+==\s+accepted")),
-        ("Plan boundary", (r"settled direction becomes Plan-ready only through an accepted\s+Collaborate state", r"Planner may proceed.{0,180}accepted readback")),
-        ("no implementation authority", (r"authorize no implementation", r"(?:never|does not|no).{0,60}(?:implement|implementation authority)", r"不.{0,30}(?:实施|实现|授权实现)")),
+        ("explicit collaboration trigger", (r"wants to discuss, design, plan, brainstorm, compare options, or think something through",)),
+        ("material user-owned choice trigger", (r"material choice belongs\s+to the user",)),
+        ("unclear intent trigger", (r"intent is unclear and needs guided clarification",)),
+        ("intent check without ritual question", (r"Begin with a brief intent check.{0,100}do not force\s+a question",)),
+        ("recommendation before question", (r"synthesis, useful options, and a recommendation before asking",)),
+        ("native ask materiality", (r"host-native Ask Question.{0,100}materially\s+change the next step",)),
+        ("unlimited questions and rounds", (r"Do not impose a total question or round limit",)),
+        ("independent question batch", (r"Ask independent questions together",)),
+        ("dependent question hard wait", (r"Ask dependent questions after the earlier\s+answer.{0,80}wait before continuing dependent work",)),
+        ("user owns material choice", (r"Never decide a material user-owned choice",)),
+        ("L1 understand intent", (r"L1\s+—\s+Understand Intent",)),
+        ("L2 explore together", (r"L2\s+—\s+Explore Together",)),
+        ("L3 challenge and converge", (r"L3\s+—\s+Challenge and Converge",)),
+        ("layers are movable not budgets", (r"Move between layers.{0,120}Do not use layer number as a\s+question, turn, or agent budget",)),
+        ("research and explore return", (r"Research and Explore gather evidence, then return it to the same\s+discussion",)),
+        ("named methods execute", (r"Honor explicit requests for brainstorming, adversarial discussion,\s+stress-testing, or subagents.{0,100}Execute the real method",)),
+        ("writer semantic cadence", (r"Dispatch Writer at the first substantive synthesis.{0,240}ending changes the shared state",)),
+        ("four-part semantic document", (r"overall picture; decided; open\s+discussion and evidence; current recommendation and next step",)),
+        ("semantic not transcript", (r"Save meaning, not a transcript.{0,80}Never write the checkpoint directly",)),
     ),
     "teamwork-debug": (
         ("actual failure first", (r"actual.{0,40}(?:failure|failing)", r"真实.{0,30}(?:失败|报错)")),
@@ -249,11 +280,34 @@ def validate_skill_source_contract(skill: str, source_text: str) -> None:
                 r"\b(?:generate|brainstorm|compare).{0,60}(?:alternatives|options)",
             ),
         )
+    elif skill == "teamwork-collaborate":
+        normalized_source = " ".join(source_text.split())
+        _forbid_concept(
+            path,
+            normalized_source,
+            "risk category independently activates Collaborate",
+            (
+                r"(?:public|release|migration|security|destructive|cross-platform).{0,100}(?:activates?|triggers?).{0,40}Collaborate",
+                r"Collaborate.{0,80}(?:activates?|triggers?).{0,100}(?:public|release|migration|security|destructive|cross-platform)",
+            ),
+        )
+        _forbid_concept(
+            path,
+            normalized_source,
+            "fixed workflow question or round cap",
+            (r"(?:at most|maximum|no more than)\s+(?:three|3).{0,60}(?:questions|rounds|batches)",),
+        )
 
 
 def validate_design_adversarial_reference_contract(source_text: str) -> None:
     path = DESIGN_ADVERSARIAL_REFERENCE_PATH
     for label, patterns in DESIGN_ADVERSARIAL_REFERENCE_CONCEPTS:
+        _require_concept(path, source_text, label, patterns)
+
+
+def validate_collaboration_layers_reference_contract(source_text: str) -> None:
+    path = COLLABORATION_LAYERS_REFERENCE_PATH
+    for label, patterns in COLLABORATION_LAYERS_REFERENCE_CONCEPTS:
         _require_concept(path, source_text, label, patterns)
 
 
@@ -309,12 +363,13 @@ def validate_skill_topology(root: Path = ROOT) -> dict[str, object]:
         "skills/teamwork-research/references/deep-research.md",
         "skills/teamwork-debug/references/runtime-diagnosis.md",
         "skills/teamwork-collaborate/references/adversarial-search.md",
+        "skills/teamwork-collaborate/references/collaboration-layers.md",
         "skills/teamwork-review/references/strict-review.md",
     }
     unexpected_refs = sorted(set(behavior_refs) - allowed_refs)
     if unexpected_refs:
         raise EvalError(
-            "skills/: only the four named one-level advanced references are allowed: "
+            "skills/: only the five named one-level advanced references are allowed: "
             + ", ".join(unexpected_refs)
         )
     skill_scripts = sorted(

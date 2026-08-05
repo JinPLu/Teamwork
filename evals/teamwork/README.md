@@ -20,13 +20,14 @@ The cases are organized by capability metadata rather than hard-coded case IDs.
 The dev matrix keeps bilingual coverage for:
 
 - external Research and the local-evidence Native negative control;
-- Collaborate challenge activation, input-driven adversarial method selection,
-  selected-direction Plan, and their ownership boundaries;
-- adaptive Collaborate activation for dialogue and brainstorm, with challenge
-  methods when risk warrants them, a useful
-  contribution first and at most one open prose or genuinely bounded native
-  question;
-- semantic Collaborate persistence through Writer and the managed case-v2
+- exactly three base Collaborate triggers, L1 intent clarification, L2 joint
+  exploration, L3 challenge inside an active discussion, and the
+  selected-direction Plan boundary; risk categories are not another trigger;
+- contribution and recommendation before native Ask Question, with independent
+  questions batched, dependent questions serialized and waited on, and no
+  workflow-wide question or round cap;
+- four-part semantic Collaborate persistence through Writer at the first
+  substantive synthesis, each semantic change, and the end, using the case-v2
   `case-inspect -> case-schema -> case-apply` transaction, with legacy-v1
   artifacts treated only as read-only migration inputs and no transcript or
   report substitute;
@@ -34,11 +35,10 @@ The dev matrix keeps bilingual coverage for:
   monotonic verification, permission/privacy, and cross-platform host ownership.
 
 The release split is deliberately small but non-empty. It holds out four public
-boundaries: external Research versus local Native inspection, unresolved
-Collaborate options versus selected-direction Plan, automatic adversarial
-Collaborate challenge versus weak-cue or explicit-standard default Collaborate
-and chat-only recommendations, and adaptive
-Collaborate persistence versus one-shot and no-files controls. Release cases are never
+boundaries: external Research versus local Native inspection; unresolved
+Collaborate options versus selected-direction Plan; the three base triggers and
+L3 adversarial execution versus risk-only cues and chat-only recommendations;
+and semantic Collaborate persistence versus one-shot and no-files controls. Release cases are never
 optimizer inputs.
 
 The deterministic runner does not execute Codex, Cursor, or Claude Code and does
@@ -51,20 +51,23 @@ removing or inverting a protected boundary makes the harness fail.
 The active harness no longer protects the retired router, generic Execute skill,
 an exact reference inventory, shared behavioral-reference prose, staged packet
 terminology, transaction-helper anchors, multi-file collaboration lifecycle, or
-fixed source sentences. Each public skill owns its behavior in one
-`SKILL.md`; topology validation rejects behavioral references, skill-local
-behavior scripts, cross-skill loading, dependency cycles, and retired skill
-names.
+fixed source sentences. Each public skill owns its behavior in one `SKILL.md`;
+Collaborate may directly link its single layer/scenario reference and unchanged
+adversarial-method reference. Topology validation rejects extra behavioral
+references, skill-local behavior scripts, cross-skill loading, dependency
+cycles, and retired skill names.
 
 Mechanical safety tests for ordinary memory/index handling remain separate from
-behavior activation. Natural collaboration and brainstorming activate
-Collaborate: answer with synthesis, tension, candidate space, or a decision map
-first, select dialogue or brainstorm from intent, apply challenge or adversarial
-methods only when warranted, then ask at most one useful open prose or genuinely
-bounded native question. App-server probes select Plan collaboration mode for
-bounded native requests and Default for open prose. Sustained collaboration with
-a substantive synthesis and unresolved question defaults to one semantic
-Collaborate checkpoint through Writer and the managed case-v2
+behavior activation. Collaborate has three base triggers: the user explicitly
+asks to discuss, design, plan, brainstorm, compare, or think together; a
+material choice belongs to the user; or intent needs guided clarification. Risk
+alone is not a trigger. One discussion moves between L1 Understand Intent, L2
+Explore Together, and L3 Challenge and Converge. It contributes synthesis,
+options, and a recommendation before native Ask Question; batches necessary
+independent questions, serializes and waits on dependent questions, and has no
+workflow-wide question or round cap. Writer maintains one four-part semantic
+document at the first substantive synthesis, each semantic change, and the end
+through the managed case-v2
 `case-inspect -> case-schema -> case-apply` transaction in a named, initialized
 writable project. Legacy-v1 records are read-only migration inputs with no
 write fallback, no transcript or report is substituted, `no files` overrides

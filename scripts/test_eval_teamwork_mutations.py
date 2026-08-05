@@ -130,7 +130,7 @@ class TopologyMutationTests(unittest.TestCase):
             reference = root / "skills/teamwork-collaborate/references/options.md"
             reference.parent.mkdir(parents=True, exist_ok=True)
             reference.write_text("hidden behavior\n", encoding="utf-8")
-            with self.assertRaisesRegex(EvalError, "only the four named one-level advanced references are allowed"):
+            with self.assertRaisesRegex(EvalError, "only the five named one-level advanced references are allowed"):
                 validate_skill_topology(root)
 
     def test_skill_local_behavior_script_is_rejected(self) -> None:
@@ -200,16 +200,27 @@ class SemanticSourceMutationTests(unittest.TestCase):
         with self.assertRaisesRegex(EvalError, "local repository inspection activates Research"):
             validate_skill_source_contract("teamwork-research", mutated)
 
-    def test_design_activation_and_tradeoff_boundaries_are_protected(self) -> None:
-        self.assert_concept_removal_rejected("teamwork-collaborate", "unresolved material choice trigger")
-        self.assert_concept_removal_rejected("teamwork-collaborate", "genuine alternatives only")
+    def test_collaborate_three_activation_triggers_are_protected(self) -> None:
+        self.assert_concept_removal_rejected("teamwork-collaborate", "explicit collaboration trigger")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "material user-owned choice trigger")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "unclear intent trigger")
 
-    def test_design_question_and_plan_boundaries_are_protected(self) -> None:
-        self.assert_concept_removal_rejected("teamwork-collaborate", "bounded independent batch")
-        self.assert_concept_removal_rejected("teamwork-collaborate", "dependency serialization")
-        self.assert_concept_removal_rejected("teamwork-collaborate", "question criticality")
-        self.assert_concept_removal_rejected("teamwork-collaborate", "transaction-owned writer")
-        self.assert_concept_removal_rejected("teamwork-collaborate", "Plan boundary")
+    def test_collaborate_questions_layers_and_writer_are_protected(self) -> None:
+        for label in (
+            "intent check without ritual question",
+            "native ask materiality",
+            "unlimited questions and rounds",
+            "independent question batch",
+            "dependent question hard wait",
+            "L1 understand intent",
+            "L2 explore together",
+            "L3 challenge and converge",
+            "layers are movable not budgets",
+            "writer semantic cadence",
+            "four-part semantic document",
+            "semantic not transcript",
+        ):
+            self.assert_concept_removal_rejected("teamwork-collaborate", label)
 
     def test_plan_selected_direction_and_no_redesign_are_protected(self) -> None:
         self.assert_concept_removal_rejected("teamwork-plan", "selected direction prerequisite")
@@ -220,27 +231,34 @@ class SemanticSourceMutationTests(unittest.TestCase):
         with self.assertRaisesRegex(EvalError, "Plan owns option discovery"):
             validate_skill_source_contract("teamwork-plan", mutated)
 
-    def test_Collaborate_trigger_and_checkpoint_threshold_are_protected(self) -> None:
-        self.assert_concept_removal_rejected("teamwork-collaborate", "natural collaboration trigger")
-        self.assert_concept_removal_rejected("teamwork-collaborate", "adaptive checkpoint threshold")
+    def test_collaborate_research_return_and_named_methods_are_protected(self) -> None:
+        self.assert_concept_removal_rejected("teamwork-collaborate", "research and explore return")
+        self.assert_concept_removal_rejected("teamwork-collaborate", "named methods execute")
 
-    def test_Collaborate_transaction_writer_and_no_files_override_are_protected(self) -> None:
-        self.assert_concept_removal_rejected("teamwork-collaborate", "transaction-owned writer")
-        self.assert_concept_removal_rejected("teamwork-collaborate", "initialized writable prerequisite")
-        self.assert_concept_removal_rejected("teamwork-collaborate", "no-files override")
-        self.assert_concept_removal_rejected("teamwork-collaborate", "global decision map")
-        self.assert_concept_removal_rejected("teamwork-collaborate", "bounded independent batch")
-        self.assert_concept_removal_rejected("teamwork-collaborate", "dependency serialization")
-        self.assert_concept_removal_rejected("teamwork-collaborate", "question criticality")
+    def test_collaborate_user_choice_and_recommendation_are_protected(self) -> None:
+        self.assert_concept_removal_rejected("teamwork-collaborate", "user owns material choice")
         self.assert_concept_removal_rejected("teamwork-collaborate", "recommendation before question")
 
-    def test_nonimplementation_boundary_is_protected_across_cognitive_skills(self) -> None:
-        for skill, label in (
-            ("teamwork-plan", "no redesign or implementation"),
-            ("teamwork-collaborate", "no implementation authority"),
+    def test_collaborate_rejects_fourth_risk_trigger_and_fixed_question_cap(self) -> None:
+        for mutation, label in (
+            (
+                "\nSecurity or migration risk automatically activates Collaborate.\n",
+                "risk category independently activates Collaborate",
+            ),
+            (
+                "\nAsk at most three questions in the workflow.\n",
+                "fixed workflow question or round cap",
+            ),
         ):
-            with self.subTest(skill=skill):
-                self.assert_concept_removal_rejected(skill, label)
+            with self.subTest(label=label):
+                with self.assertRaisesRegex(EvalError, re.escape(label)):
+                    validate_skill_source_contract(
+                        "teamwork-collaborate",
+                        self.sources["teamwork-collaborate"] + mutation,
+                    )
+
+    def test_plan_nonimplementation_boundary_is_protected(self) -> None:
+        self.assert_concept_removal_rejected("teamwork-plan", "no redesign or implementation")
 
     def test_remaining_capability_owners_keep_their_distinct_contracts(self) -> None:
         for skill, label in (

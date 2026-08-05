@@ -111,6 +111,12 @@ DESIGN_ADVERSARIAL_REFERENCE_PATH = (
 DESIGN_ADVERSARIAL_REFERENCE_SOURCE = {
     ("skill", DESIGN_ADVERSARIAL_REFERENCE_PATH)
 }
+COLLABORATION_LAYERS_REFERENCE_PATH = (
+    "skills/teamwork-collaborate/references/collaboration-layers.md"
+)
+COLLABORATION_LAYERS_REFERENCE_SOURCE = {
+    ("skill", COLLABORATION_LAYERS_REFERENCE_PATH)
+}
 COLLABORATE_TRANSACTION_SOURCE = {("artifact-engine", "scripts/discussion-transaction.py")}
 INIT_ENGINE_SOURCE = {("artifact-engine", "scripts/init-project-files.py")}
 UPDATE_INSTALLER_SOURCE = {("installer", "scripts/check-update.sh")}
@@ -120,6 +126,7 @@ CASE_PRODUCER_REQUIREMENTS = {
     ("collaborate", "brainstorm"): {
         *ROOT_POLICY_SOURCE,
         ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *COLLABORATION_LAYERS_REFERENCE_SOURCE,
         *role_sources("explorer"),
         *role_sources("researcher"),
         *role_sources("designer"),
@@ -127,6 +134,7 @@ CASE_PRODUCER_REQUIREMENTS = {
     ("collaborate", "adversarial-challenge"): {
         *ROOT_POLICY_SOURCE,
         ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *COLLABORATION_LAYERS_REFERENCE_SOURCE,
         *DESIGN_ADVERSARIAL_REFERENCE_SOURCE,
         *role_sources("designer"),
     },
@@ -149,18 +157,21 @@ CASE_PRODUCER_REQUIREMENTS = {
     ("collaborate", "dialogue"): {
         *ROOT_POLICY_SOURCE,
         ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *COLLABORATION_LAYERS_REFERENCE_SOURCE,
         *role_sources("writer"),
         *COLLABORATE_TRANSACTION_SOURCE,
     },
     ("collaborate", "challenge-independent-batch"): {
         *ROOT_POLICY_SOURCE,
         ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *COLLABORATION_LAYERS_REFERENCE_SOURCE,
         *role_sources("writer"),
         *COLLABORATE_TRANSACTION_SOURCE,
     },
     ("collaborate", "challenge-dependent-sequence"): {
         *ROOT_POLICY_SOURCE,
         ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *COLLABORATION_LAYERS_REFERENCE_SOURCE,
         *role_sources("writer"),
         *COLLABORATE_TRANSACTION_SOURCE,
     },
@@ -255,6 +266,7 @@ CASE_PRODUCER_REQUIREMENTS = {
     ("ask", "latent-preference-collaborate"): {
         *ROOT_POLICY_SOURCE,
         ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *COLLABORATION_LAYERS_REFERENCE_SOURCE,
     },
     ("ask", "leaf-no-question"): {
         *ROOT_POLICY_SOURCE,
@@ -336,6 +348,7 @@ CASE_PRODUCER_REQUIREMENTS = {
     ("collaborate", "plan-boundary"): {
         *ROOT_POLICY_SOURCE,
         ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *COLLABORATION_LAYERS_REFERENCE_SOURCE,
         ("skill", "skills/teamwork-plan/SKILL.md"),
         *role_sources("designer"),
         *role_sources("planner"),
@@ -344,6 +357,7 @@ CASE_PRODUCER_REQUIREMENTS = {
     ("collaborate", "adversarial-boundary"): {
         *ROOT_POLICY_SOURCE,
         ("skill", "skills/teamwork-collaborate/SKILL.md"),
+        *COLLABORATION_LAYERS_REFERENCE_SOURCE,
         *DESIGN_ADVERSARIAL_REFERENCE_SOURCE,
         ("skill", "skills/teamwork-plan/SKILL.md"),
         *role_sources("designer"),
@@ -477,24 +491,26 @@ RELEASE_CAPABILITY_COVERAGE = {
 
 CAPABILITY_REQUIREMENTS = {
     ("collaborate", "brainstorm"): {
-        "local-constraints-first",
-        "evidence-before-strategy-freeze",
-        "genuine-tradeoffs-only",
+        "explicit-collaboration-trigger",
+        "l2-explore-together",
+        "global-to-detail-order",
+        "named-brainstorm-execution",
+        "research-explore-return",
         "recommend-first",
-        "default-one-challenge",
-        "auto-gate-negative-control",
-        "challenge-not-mode",
-        "bounded-independent-batch",
+        "material-native-ask",
+        "independent-question-batching",
         "dependency-serialization",
-        "question-criticality",
+        "no-workflow-question-cap",
+        "risk-not-base-trigger",
         "capability-blocked-no-fallback",
-        "read-only",
         "no-implementation",
     },
     ("collaborate", "adversarial-challenge"): {
-        "input-driven-auto-selection",
+        "l3-challenge-and-converge",
+        "explicit-adversarial-execution",
+        "risk-not-base-trigger",
+        "user-owns-final-choice",
         "evidence-before-strategy-freeze",
-        "adversarial-not-mode",
         "automatic-default-budget",
         "visible-strategy-reason",
         "dynamic-taxonomy-ledger",
@@ -545,40 +561,39 @@ CAPABILITY_REQUIREMENTS = {
         "no-implementation",
     },
     ("collaborate", "dialogue"): {
-        "natural-activation",
-        "sustained-checkpoint",
+        "three-base-triggers",
+        "l1-intent-check",
+        "l2-explore-together",
+        "no-forced-question-when-clear",
         "recommend-first",
-        "global-decision-map",
+        "material-native-ask",
         "global-to-detail-order",
-        "bounded-independent-batch",
-        "one-checkpoint-per-answered-batch",
-        "question-criticality",
-        "transaction-owned-writer",
-        "no-files-overrides",
+        "independent-question-batching",
+        "dependency-serialization",
+        "no-workflow-question-cap",
+        "four-part-semantic-document",
+        "semantic-change-writer-cadence",
         "no-implementation",
     },
     ("collaborate", "challenge-independent-batch"): {
-        "global-decision-map",
+        "l2-explore-together",
         "global-to-detail-order",
-        "bounded-independent-batch",
-        "independent-questions",
-        "one-checkpoint-per-answered-batch",
-        "transaction-owned-writer",
+        "independent-question-batching",
+        "no-workflow-question-cap",
+        "semantic-change-writer-cadence",
         "recommend-first",
-        "question-criticality",
-        "closure-signal",
+        "material-native-ask",
         "no-implementation",
     },
     ("collaborate", "challenge-dependent-sequence"): {
-        "global-decision-map",
+        "l2-explore-together",
         "global-to-detail-order",
         "dependency-serialization",
-        "one-batch-per-turn",
-        "one-checkpoint-per-answered-batch",
-        "transaction-owned-writer",
+        "dependent-hard-wait",
+        "no-workflow-question-cap",
+        "semantic-change-writer-cadence",
         "recommend-first",
-        "question-criticality",
-        "closure-signal",
+        "material-native-ask",
         "no-implementation",
     },
     ("collaborate", "explicit-save"): {
@@ -731,12 +746,12 @@ CAPABILITY_REQUIREMENTS = {
         "no-enactment",
     },
     ("ask", "dialogue-native"): {
+        "explicit-collaboration-trigger",
         "contribution-first",
-        "one-high-information-question",
-        "open-or-bounded-native",
-        "collaborate-adaptive-mode",
-        "no-challenge-premature",
-        "semantic-checkpoint",
+        "material-native-ask",
+        "independent-question-batching",
+        "no-workflow-question-cap",
+        "semantic-change-writer-cadence",
     },
     ("ask", "safe-default-zero-question"): {
         "inspect-first",
@@ -753,9 +768,12 @@ CAPABILITY_REQUIREMENTS = {
         "independent-work-continues",
     },
     ("ask", "latent-preference-collaborate"): {
-        "collaborate-intent-owner",
+        "material-choice-trigger",
+        "l1-intent-check",
         "contribution-first",
         "recommend-before-question",
+        "material-native-ask",
+        "user-owns-choice",
         "root-only-question",
         "no-leaf-activation",
     },
@@ -852,18 +870,18 @@ CAPABILITY_REQUIREMENTS = {
         "read-only",
     },
     ("collaborate", "plan-boundary"): {
+        "explicit-plan-collaboration-trigger",
         "unresolved-options-use-collaborate",
         "selected-direction-uses-plan",
         "no-silent-transition",
         "no-implementation",
     },
     ("collaborate", "adversarial-boundary"): {
-        "input-driven-auto-selection",
+        "three-base-triggers",
+        "active-discussion-l3-escalation",
+        "explicit-adversarial-execution",
+        "risk-not-base-trigger",
         "evidence-before-strategy-freeze",
-        "weak-cue-negative-control",
-        "explicit-strategy-overrides",
-        "default-collaborate-stays-lightweight",
-        "adversarial-not-mode",
         "chat-not-plan-ready",
         "durable-collaborate-transaction-required",
         "failure-closed",
@@ -872,8 +890,8 @@ CAPABILITY_REQUIREMENTS = {
     },
     ("collaborate", "persistence-boundary"): {
         "one-shot-no-write",
-        "sustained-checkpoint",
-        "challenge-method-for-major-risk",
+        "semantic-change-writer-cadence",
+        "four-part-semantic-document",
         "explicit-save-authorizes-transaction",
         "managed-transaction-only",
         "initialized-writable-project",

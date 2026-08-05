@@ -21,10 +21,14 @@ EXPECTED_SKILLS = {
 }
 
 EXPECTED_REFERENCES = {
-    "teamwork-collaborate": "adversarial-search.md",
-    "teamwork-debug": "runtime-diagnosis.md",
-    "teamwork-research": "deep-research.md",
-    "teamwork-review": "strict-review.md",
+    "teamwork-collaborate": {"adversarial-search.md", "collaboration-layers.md"},
+    "teamwork-debug": {"runtime-diagnosis.md"},
+    "teamwork-research": {"deep-research.md"},
+    "teamwork-review": {"strict-review.md"},
+}
+
+EXPECTED_AGENT_METADATA = {
+    "teamwork-collaborate": "agents/openai.yaml",
 }
 
 RETIRED_PUBLIC_SKILLS = {
@@ -85,48 +89,31 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assert_has_fragments(
                 text,
                 (
-                    "only public Teamwork skill for natural dialogue, brainstorming",
-                    "replaces the retired public Discuss, Design, and Grill skill sources",
-                    "without aliases or compatibility public surfaces",
-                    "do not ask the user to name it",
-                    "Before every question",
-                    "provisional recommendation",
-                    "A native bounded batch contains at most three questions",
-                    "Dependent questions are serial",
-                    "global -> boundary -> detail",
-                    "Stress-testing is a challenge method inside dialogue or brainstorm, not a third runtime mode",
-                    "why the answer is critical",
-                    "what it blocks",
-                    "observable closing condition",
-                    "at least two viable directions remain",
-                    "costly or irreversible error or conflicting evidence",
-                    "Acceptance requires closure evidence",
-                    "`recommendation` is nonempty",
-                    "`acceptance_evidence` is nonempty",
-                    "sustained semantic Collaborate state defaults to a managed case-v2 Collaborate checkpoint",
-                    "Writer calls only the controlled transaction route",
-                    "`discussion-transaction.py case-inspect --project-root <project>`",
-                    "case-inspect -> case-schema <create|collaborate-upsert|accept-decision> -> case-apply -> case-inspect/readback",
-                    "managed case-v2 Collaborate checkpoint",
-                    "Legacy Discussion, Design, Collaborate, artifact, and Goal files are read-only migration inputs only",
-                    "Legacy write lifecycle commands are retired",
-                    "Plan Gate",
-                    "semantic digest",
-                    "lineage digest",
-                    "Pending or blocked Collaborate records are durable but not Plan-ready",
-                    "authorize file changes outside its checkpoint",
+                    "wants to discuss, design, plan, brainstorm, compare options, or think something through",
+                    "material choice belongs to the user",
+                    "intent is unclear and needs guided clarification",
+                    "brief intent check",
+                    "do not force a question",
+                    "synthesis, useful options, and a recommendation before asking",
+                    "host-native Ask Question",
+                    "Do not impose a total question or round limit",
+                    "Ask independent questions together",
+                    "Ask dependent questions after the earlier answer",
+                    "wait before continuing dependent work",
+                    "L1 — Understand Intent",
+                    "L2 — Explore Together",
+                    "L3 — Challenge and Converge",
+                    "Move between layers",
+                    "Do not use layer number as a question, turn, or agent budget",
+                    "Research and Explore gather evidence, then return it to the same discussion",
+                    "Execute the real method or report it unavailable",
+                    "Dispatch Writer at the first substantive synthesis",
+                    "overall picture; decided; open discussion and evidence; current recommendation and next step",
+                    "Save meaning, not a transcript",
                 ),
             )
-            self.assert_in_order(
-                text,
-                "discussion-transaction.py case-inspect --project-root <project>",
-                "case-inspect -> case-schema <create|collaborate-upsert|accept-decision>",
-                "case-apply -> case-inspect/readback",
-            )
-            for override in NEGATIVE_ARTIFACT_OVERRIDES:
-                self.assertIn(override, text)
-            self.assertNotIn("discussion-transaction.py schema <create|update|close|replace|supersede>", text)
-            self.assertNotIn("discussion-transaction.py design-apply", text)
+            self.assertNotIn("Public/release/migration/security/destructive/cross-platform", text)
+            self.assertNotIn("A native bounded batch contains at most three questions", text)
             return
         if skill == "teamwork-plan":
             self.assert_has_fragments(
@@ -269,6 +256,25 @@ class SkillTopologyV4Test(unittest.TestCase):
                 ),
             )
             return
+        if (skill, reference) == ("teamwork-collaborate", "collaboration-layers.md"):
+            self.assert_has_fragments(
+                text,
+                (
+                    "Intent ambiguity",
+                    "Knowledge-space ambiguity",
+                    "Ask directly when",
+                    "Map first when",
+                    "host-native Ask Question",
+                    "transport limit",
+                    "Overall outcome",
+                    "Boundaries and criteria",
+                    "Directions and evidence",
+                    "Broad research direction",
+                    "Dependent decisions",
+                    "Adversarial convergence",
+                ),
+            )
+            return
         if (skill, reference) == ("teamwork-research", "deep-research.md"):
             self.assert_in_order(text, "research brief", "source census", "claim ledger", "contradictions")
             return
@@ -298,7 +304,12 @@ class SkillTopologyV4Test(unittest.TestCase):
         expected_files = {SKILLS / name / "SKILL.md" for name in EXPECTED_SKILLS}
         expected_files.update(
             SKILLS / skill / "references" / reference
-            for skill, reference in EXPECTED_REFERENCES.items()
+            for skill, references in EXPECTED_REFERENCES.items()
+            for reference in references
+        )
+        expected_files.update(
+            SKILLS / skill / relative
+            for skill, relative in EXPECTED_AGENT_METADATA.items()
         )
         actual_files = {path for path in SKILLS.rglob("*") if path.is_file()}
         self.assertEqual(expected_files, actual_files)
@@ -311,20 +322,30 @@ class SkillTopologyV4Test(unittest.TestCase):
             self.assertEqual(skill, metadata["name"], path)
             self.assertTrue(metadata["description"].startswith("Use when"), path)
 
-    def test_only_advanced_owners_load_their_one_reference(self) -> None:
+    def test_only_advanced_owners_load_their_own_references(self) -> None:
         for skill in EXPECTED_SKILLS:
             path = SKILLS / skill / "SKILL.md"
             text = path.read_text(encoding="utf-8")
             references = set(re.findall(r"references/([a-z0-9-]+\.md)", text))
-            expected = {EXPECTED_REFERENCES[skill]} if skill in EXPECTED_REFERENCES else set()
+            expected = EXPECTED_REFERENCES.get(skill, set())
             self.assertEqual(expected, references, path)
 
-        for skill, reference in EXPECTED_REFERENCES.items():
-            path = SKILLS / skill / "references" / reference
-            text = path.read_text(encoding="utf-8")
-            self.assertNotRegex(text, r"references/[a-z0-9-]+\.md", path)
-            for other_skill in EXPECTED_SKILLS - {skill}:
-                self.assertNotIn(other_skill, text, path)
+        for skill, references in EXPECTED_REFERENCES.items():
+            for reference in references:
+                path = SKILLS / skill / "references" / reference
+                text = path.read_text(encoding="utf-8")
+                self.assertNotRegex(text, r"references/[a-z0-9-]+\.md", path)
+                for other_skill in EXPECTED_SKILLS - {skill}:
+                    self.assertNotIn(other_skill, text, path)
+
+    def test_collaborate_openai_metadata_matches_skill(self) -> None:
+        path = SKILLS / "teamwork-collaborate" / "agents" / "openai.yaml"
+        text = path.read_text(encoding="utf-8")
+        self.assertIn('display_name: "Teamwork Collaborate"', text)
+        match = re.search(r'short_description: "([^"]+)"', text)
+        self.assertIsNotNone(match)
+        self.assertTrue(25 <= len(match.group(1)) <= 64)
+        self.assertIn('$teamwork-collaborate', text)
 
     def test_no_skill_invokes_another_or_restores_retired_aliases(self) -> None:
         for skill in EXPECTED_SKILLS:
@@ -341,7 +362,7 @@ class SkillTopologyV4Test(unittest.TestCase):
 
     def test_request_readiness_has_one_root_asker_and_explicit_leaf_handoffs(self) -> None:
         skill_fragments = {
-            "teamwork-collaborate": ("Only Root may activate", "never starts Collaborate or asks"),
+            "teamwork-collaborate": ("host-native Ask Question", "Never decide a material user-owned choice"),
             "teamwork-research": ("Researcher never asks", "reclassification signal"),
             "teamwork-explore": ("Explorer never asks", "reclassification signal"),
             "teamwork-debug": ("A leaf never asks directly", "reclassification signal"),
@@ -377,7 +398,6 @@ class SkillTopologyV4Test(unittest.TestCase):
 
     def test_case_v2_writer_routes_are_explicit_and_legacy_routes_are_migration_only(self) -> None:
         contracts = {
-            "teamwork-collaborate": ("case-inspect", "case-schema <create|collaborate-upsert|accept-decision>", "case-apply"),
             "teamwork-research": ("case-inspect", "case-schema <research-add>", "case-apply"),
             "teamwork-explore": ("case-inspect", "case-schema <evidence-add>", "case-apply"),
             "teamwork-debug": ("case-inspect", "case-schema <debug-add>", "case-apply"),
@@ -401,6 +421,11 @@ class SkillTopologyV4Test(unittest.TestCase):
                 self.assertNotIn("artifact-inspect -> artifact-schema <create|update|supersede> -> artifact-apply", text)
                 self.assertNotIn("collaborate-inspect -> collaborate-schema", text)
                 self.assertNotIn("goal-inspect --project-root <project>", text)
+
+        collaborate = " ".join((SKILLS / "teamwork-collaborate" / "SKILL.md").read_text(encoding="utf-8").split())
+        self.assertIn("Dispatch Writer at the first substantive synthesis", collaborate)
+        self.assertIn("Never write the checkpoint directly", collaborate)
+        self.assertNotIn("case-schema", collaborate)
 
         goal = " ".join((SKILLS / "teamwork-goal" / "SKILL.md").read_text(encoding="utf-8").split())
         review = " ".join((SKILLS / "teamwork-review" / "SKILL.md").read_text(encoding="utf-8").split())
@@ -443,11 +468,13 @@ class SkillTopologyV4Test(unittest.TestCase):
     def test_collaborate_and_plan_gate_inversions_are_rejected(self) -> None:
         mutations = {
             "teamwork-collaborate": (
-                ("do not ask the user to name it", "ask the user to name it"),
-                ("A native bounded batch contains at most three questions", "A native bounded batch contains any number of questions"),
-                ("Dependent questions are serial", "Dependent questions may be batched"),
-                ("Acceptance requires closure evidence", "Acceptance does not require closure evidence"),
-                ("Writer calls only the controlled transaction route", "Writer may use any route"),
+                ("do not force a question", "force a question"),
+                ("Do not impose a total question or round limit", "Impose a total question and round limit"),
+                ("Ask independent questions together", "Ask independent questions one at a time"),
+                ("Ask dependent questions after the earlier answer", "Ask dependent questions in the same batch"),
+                ("Move between layers as the discussion changes", "Move through layers once in fixed order"),
+                ("Execute the real method or report it unavailable", "Describe the method without executing it"),
+                ("Save meaning, not a transcript", "Save the transcript"),
             ),
             "teamwork-plan": (
                 ("accepted Collaborate decision", "accepted Design decision"),
@@ -481,13 +508,14 @@ class SkillTopologyV4Test(unittest.TestCase):
                     self.assert_advanced_reference_contract("teamwork-collaborate", "adversarial-search.md", mutated)
 
     def test_advanced_references_preserve_their_named_contracts(self) -> None:
-        for skill, reference in EXPECTED_REFERENCES.items():
-            with self.subTest(skill=skill, reference=reference):
-                self.assert_advanced_reference_contract(
-                    skill,
-                    reference,
-                    (SKILLS / skill / "references" / reference).read_text(encoding="utf-8"),
-                )
+        for skill, references in EXPECTED_REFERENCES.items():
+            for reference in references:
+                with self.subTest(skill=skill, reference=reference):
+                    self.assert_advanced_reference_contract(
+                        skill,
+                        reference,
+                        (SKILLS / skill / "references" / reference).read_text(encoding="utf-8"),
+                    )
 
 
 if __name__ == "__main__":

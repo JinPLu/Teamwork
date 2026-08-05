@@ -34,13 +34,23 @@ personal information.
    read-only local evidence question belongs to `teamwork-explore`; external,
    current, multi-source, or citation-backed evidence belongs to
    `teamwork-research`; unknown-cause failure belongs to `teamwork-debug`.
-   `teamwork-collaborate` owns natural dialogue, brainstorming, grill,
-   stress-testing, question-before-action, and unsettled consequential choices;
-   `teamwork-plan` starts only after controlled Collaborate is `accepted`.
-4. Keep Collaborate bounded: use Explorer only for an unresolved local constraint and
-   Research only for a named sanitized external/current claim that can change the
-   decision; do not run both by default. Genuine trade-offs receive 2–3
-   alternatives, and a clear safe path receives evidence and exclusions.
+   `teamwork-collaborate` activates when the user explicitly wants to discuss,
+   design, plan, brainstorm, compare, or think together; when a material
+   downstream choice belongs to the user; or when unclear intent needs guided
+   clarification. Risk, security, migration, publicity, and complexity are not
+   separate triggers. `teamwork-plan` starts only after controlled Collaborate
+   is `accepted`.
+4. Keep Collaborate as one adaptive discussion. Distinguish intent ambiguity
+   from knowledge-space ambiguity and map the latter before asking the user to
+   choose a focus. Move as needed among L1 Understand Intent, L2 Explore
+   Together, and L3 Challenge and Converge; these are layers, not modes, fixed
+   depths, budgets, or mandatory phases. Contribute synthesis, useful options,
+   and a recommendation before using a host-native question whose answer can
+   materially change the next step. Batch independent questions, serialize and
+   wait on dependent questions, and impose no workflow-wide question or round
+   cap. Use Explorer only for an unresolved local constraint and Research only
+   for a named sanitized external/current claim that can change the decision;
+   return their evidence to the same discussion and do not run both by default.
    Preserve the default one-challenge path. Activate adversarial search only from
    Collaborate's automatic gate or an explicit override; after the initial
    evidence wave, freeze its trial budget before dispatch,
@@ -51,9 +61,12 @@ personal information.
    acceptance, and only `accepted` is Plan-ready. Legacy Discussion/Design
    records are read-only migration inputs. Unproven freshness or coverage
    remains `pending` or becomes `blocked`, rather than erasing the durable state.
-   Grill shows the global map first, then boundary, then detail; batches only
-   independent material questions; and serializes dependent questions.
-   Independent Plan Review runs only on
+   Explicit brainstorming, adversarial, stress-test, and subagent requests must
+   execute the real method or report capability-blocked. Writer maintains one
+   four-part semantic record—overall picture, decided items, open
+   discussion/evidence, and current recommendation or next step—at the first
+   substantive synthesis, every semantic change, and the end. Independent Plan
+   Review runs only on
    user request or a named material risk gate.
 5. Preserve result-first code work: change the canonical owner, reuse existing
    patterns/built-ins/suitable dependencies, add the smallest complete logic,
@@ -93,22 +106,22 @@ fails closed as unsaved. Code comments, docstrings, tests,
 schemas, manifests, machine config, and inline config text stay with the
 implementation owner.
 
-The public release inventory is nine skills, four skill-owned advanced
-references, and nine host roles. Cleanup can recognize only files the installer
+The public release inventory is nine skills, five skill-owned reference files,
+one Collaborate skill UI metadata file, and nine host roles. Cleanup can recognize only files the installer
 proves it owns; it does not preserve Router, Execute, public Design/Discuss, or
-legacy roles as aliases. `teamwork-collaborate` owns dialogue, brainstorm,
-grill, and accepted-direction convergence; it contributes before asking and
-chooses the mode without asking the user to name one. Sustained collaboration
-intent plus substantive synthesis, candidate space, or decision map and an
-unresolved question or unaccepted direction defaults to its sole durable
-transaction record unless a negative write override applies. Grill must preserve
-strict global -> boundary -> detail progression, at most three independent
-decisions per batch, dependent-decision serialization, and exactly one semantic
-update for an answered batch. Persistence is limited to semantic create, update,
-accept, block, close, or supersede; unchanged state is a no-op. New Collaborate
-records use schema v1, legacy Discussion/Design records remain read-only
-migration inputs, and neither a transcript nor a report/conclusion may
-substitute for Collaborate.
+legacy roles as aliases. `teamwork-collaborate` owns one continuous adaptive
+discussion across L1 Understand Intent, L2 Explore Together, and L3 Challenge
+and Converge. It contributes before asking, maps knowledge-space ambiguity
+before requesting a focus, and uses no runtime dialogue/brainstorm/grill mode.
+Independent material questions can share a native batch; dependent questions
+wait for earlier answers; host per-call limits never become workflow-wide
+question or round caps. Writer updates the four-part semantic record at the
+first substantive synthesis, every semantic change, and the end unless a
+negative write override applies. Persistence is limited to semantic create,
+update, accept, block, close, or supersede; unchanged state is a no-op. New
+Collaborate records use schema v1, legacy Discussion/Design records remain
+read-only migration inputs, and neither a transcript nor a report/conclusion
+may substitute for Collaborate.
 
 ## Changelog style
 

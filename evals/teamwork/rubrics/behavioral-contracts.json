@@ -4,23 +4,23 @@
   "dimensions": [
     {
       "name": "capability_precision",
-      "description": "External/current/multi-source research uses Research; local repository, source, configuration, test, log, runtime, and artifact inspection remains native. Natural collaboration, brainstorming, stress-testing, and question-first intent activate Collaborate, which contributes before asking, selects dialogue or brainstorm, and uses challenge or adversarial methods when the decision risk warrants them. Unresolved material alternatives stay in Collaborate, while Plan only translates an already selected direction."
+      "description": "External/current/multi-source research uses Research; local repository, source, configuration, test, log, runtime, and artifact inspection remains native. Collaborate has exactly three base triggers: an explicit request to discuss, design, plan, brainstorm, compare, or think together; a material user-owned choice; or unclear intent needing guided clarification. Risk categories are not a fourth trigger. Unresolved material alternatives stay in Collaborate, while Plan only translates an already selected direction."
     },
     {
       "name": "request_readiness",
-      "description": "Root owns one three-way readiness decision: inspect and act without asking when the value is discoverable or a safe reversible default applies; ask once for one exact undiscoverable user-owned required value, keep one active gap, pause only dependent work, and resume the same workflow; or activate Collaborate for latent preferences and unformed intent that materially change the outcome, contributing and recommending before asking. Leaf roles never ask or activate Collaborate and return only an exact gap or an explicit reclassification signal to Root; questions are not duplicated across roles or stages."
+      "description": "Root inspects and acts without asking when the value is discoverable or a safe reversible default applies; a non-Collaborate workflow asks only for its exact blocking user value and pauses only dependent work. Active Collaborate contributes synthesis, options, and a recommendation before native Ask Question whenever the answer materially changes the next step. Necessary independent questions share a batch, dependent questions are serialized with a hard wait, and no workflow-wide question or round cap applies. Leaf roles never ask or activate Collaborate and return only an exact gap or reclassification signal to Root."
     },
     {
       "name": "collaborate_challenge_quality",
-      "description": "Collaborate challenge inspects local constraints first, explores two or three alternatives only for genuine tradeoffs, recommends a direction before asking a bounded independent batch of user-owned material decisions, serializes dependent decisions, states criticality and closure signals, and does not silently plan or implement."
+      "description": "One continuous Collaborate discussion moves as needed between L1 Understand Intent, L2 Explore Together, and L3 Challenge and Converge. It works global to boundary to detail, distinguishes intent ambiguity from an unmapped knowledge space, returns Research or Explore evidence to the same discussion, recommends before asking, executes explicitly named brainstorming, adversarial, stress-test, or subagent methods, and leaves the final material choice to the user without silently planning or implementing."
     },
     {
       "name": "research_quality",
       "description": "Research uses current authoritative or primary external sources, preserves source conflicts, provides useful citations, separates fact from inference, minimizes sensitive disclosure, and stays read-only."
     },
     {
-      "name": "collaborate_modes_and_persistence",
-      "description": "Collaborate selects dialogue or brainstorm from intent, contributes synthesis, tension, candidate space, or a decision map before asking, and applies challenge or adversarial methods when risk and alternatives warrant them. It uses prose for open questions versus the host-native surface only for genuine two- or three-choice bounded decisions. In an initialized writable project, sustained collaboration intent plus substantive synthesis and an unresolved question defaults to one semantic Collaborate checkpoint through Writer and the managed case-v2 transaction route. New records use case-v2; legacy-v1 artifacts are read-only migration inputs and have no write fallback. Collaboration never persists a transcript or substitutes a report or conclusion, no-files intent overrides persistence, and neither collaboration nor persistence grants implementation authority."
+      "name": "collaborate_layers_and_persistence",
+      "description": "The three base triggers activate one L1-L3 discussion rather than a dialogue or brainstorm mode. L1 clarifies intent, L2 maps and compares directions, and L3 challenges viable directions inside an active discussion; risk alone is not a base trigger. Native Ask Question has no workflow-wide total cap: independent necessary questions are batched and dependent questions are serialized. In an initialized writable project, Writer updates one four-part semantic document at the first substantive synthesis, each semantic change, and the end through the managed case-v2 transaction route. The document stores the overall picture, decided items, open discussion and evidence, and the current recommendation and next step—not a transcript. No-files intent overrides persistence, and neither discussion nor persistence grants implementation authority."
     },
     {
       "name": "plan_readiness",

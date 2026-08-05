@@ -4,21 +4,21 @@
     "capability": "ask",
     "language": "en",
     "requires": [
-      "collaborate-adaptive-mode",
+      "explicit-collaboration-trigger",
       "contribution-first",
-      "no-challenge-premature",
-      "one-high-information-question",
-      "open-or-bounded-native",
-      "semantic-checkpoint"
+      "independent-question-batching",
+      "material-native-ask",
+      "no-workflow-question-cap",
+      "semantic-change-writer-cadence"
     ],
     "scenario": "dialogue-native"
   },
   "id": "ask-dialogue-native-en",
   "must": [
-    "activate Collaborate, respond with useful synthesis, tensions, or candidate space, persist one semantic checkpoint through Writer when initialized and writable, then ask at most one high-information open prose or truthfully bounded native question"
+    "activate Collaborate from the explicit brainstorm request, actually widen useful alternatives, give a synthesis and recommendation, persist substantive semantic changes through Writer, and use native Ask Question for all material independent questions in the same batch without a workflow-wide question limit"
   ],
   "must_not": [
-    "prematurely dispatch Collaborate, persist a transcript or duplicate report, implement, or ask multiple questions"
+    "replace brainstorming with one answer, force independent questions into serial turns, impose a total question cap, persist a transcript, or implement"
   ],
   "platforms": [
     "codex",

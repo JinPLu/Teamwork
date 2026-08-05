@@ -47,9 +47,9 @@ CONTRIBUTING.md                  contributor entrypoint
 The public capability inventory is exactly nine: `teamwork-collaborate`,
 `teamwork-debug`, `teamwork-explore`, `teamwork-goal`, `teamwork-init`,
 `teamwork-plan`, `teamwork-research`, `teamwork-review`, and
-`teamwork-update`. There are exactly four public skill-owned advanced
-references: Collaborate's adversarial-search, Debug's runtime-diagnosis,
-Research's deep-research, and Review's strict-review. Collaborate owns the
+`teamwork-update`. There are exactly five public skill-owned reference files:
+Collaborate's collaboration-layers and adversarial-search, Debug's
+runtime-diagnosis, Research's deep-research, and Review's strict-review. Collaborate owns the
 former public Design method; the Designer role remains read-only and is not a
 public skill surface.
 
@@ -142,14 +142,16 @@ Collaborate schema v1 writes the three explicit acceptance states `pending`,
 `accepted`, and `blocked`; persistence is not acceptance and only `accepted` is
 Plan-ready. Frozen legacy-v1, old grill, Discussion, and Design records stay
 readable as Init/Update migration inputs only; archives are never rewritten
-merely to upgrade schema. Collaborate uses a common lifecycle plus a
-`dialogue|brainstorm` discriminator and selects the mode from natural intent and
-evidence rather than asking for a mode name. Sustained pressure-testing follows
-the strict global -> boundary -> detail decision map, limits each current batch
-to three mutually independent decisions, and keeps dependent decisions serial.
-One answered batch is one
-semantic transaction unit: all resolutions and the next valid frontier change
-are applied together before a dependent batch opens.
+merely to upgrade schema. Collaborate uses one continuous discussion record, not
+runtime `dialogue` or `brainstorm` modes. The semantic record has four parts:
+overall picture, decided items, open discussion/evidence, and current
+recommendation or next step. Writer updates it at the first substantive
+synthesis, every semantic change, and the end; it never stores a transcript.
+Collaborate moves adaptively among L1 Understand Intent, L2 Explore Together,
+and L3 Challenge and Converge. Those layers are not skills, fixed depths, turn
+budgets, or mandatory phases. Independent questions can batch together,
+dependent questions stay serial with a hard wait, and no workflow-wide question,
+batch, or round cap is imposed.
 
 Persistence behavior is checked on real command paths. v2 probes run
 `case-inspect` → `case-schema` → `case-apply` → `case-inspect` against case
@@ -197,14 +199,22 @@ This keeps the main boundaries visible:
   active gap and no duplicate question across roles or stages;
 - Explore answers a distinct local read-only evidence question; Research is only
   for external, current, multi-source, or citation-backed investigation;
-- Collaborate owns natural dialogue, brainstorming, sustained questioning,
-  stress-testing, question-before-action, and unsettled consequential solution
-  convergence. Explorer is dispatched only for an unresolved local constraint,
-  and Research only for a named sanitized external/current claim that can change
-  the decision; neither is mandatory and they do not run together by default.
-  Internal Designer integrates only the evidence actually needed. A real
-  trade-off gets two or three alternatives; one safe path gets explicit evidence
-  and exclusions. Collaborate uses challenge/adversarial methods for
+- Collaborate activates for exactly three base triggers: the user explicitly
+  wants to discuss, design, plan, brainstorm, compare options, or think
+  something through; a material downstream choice belongs to the user; or intent
+  is unclear and needs guided clarification. Risk, security, migration,
+  publicity, and complexity are not independent triggers. Distinguish intent
+  ambiguity from knowledge-space ambiguity; map the space before asking when the
+  user lacks information. Explorer is dispatched only for an unresolved local
+  constraint, and Research only for a named sanitized external/current claim that
+  can change the decision; neither is mandatory and they do not run together by
+  default. Research and Explore gather evidence, then return it to the same
+  discussion without owning the choice. Internal Designer integrates only the
+  evidence actually needed. Collaborate contributes synthesis, useful options,
+  a recommendation, and the decision map before asking when the answer
+  materially changes the next step. Explicit brainstorming, adversarial,
+  stress-test, or subagent method requests execute the real method or report
+  capability-blocked. Collaborate uses challenge/adversarial methods for
   consequential direction work. It uses a budget-bounded hypothesis search only when multiple
   viable directions plus costly error or conflicting evidence make one challenge
   inadequate; `adversarial` forces the method and `standard` disables it. The
@@ -214,9 +224,10 @@ This keeps the main boundaries visible:
   closure leaves the controlled Collaborate state `pending` or `blocked`; it
   never produces an `accepted`, Plan-ready result. All strategies use the same
   finite user-decision frontier and controlled v2 case transaction. Persistence
-  is not acceptance, and only `accepted` may enter Plan. Sustained
-  pressure-testing shows a global map first, then boundary, then detail; batches
-  only independent material questions; and serializes dependent questions;
+  is not acceptance, and only `accepted` may enter Plan. Ask independent
+  questions together, ask dependent questions after the earlier answer, and wait
+  before continuing dependent work. Host per-call question limits are transport
+  boundaries only, not Teamwork workflow caps;
 - Plan turns an `accepted` Collaborate handoff into executable steps; independent
   Plan Review runs only on user request or a named material risk gate. Each
   Worker self-verifies its slice. After integration, a sealed candidate receives

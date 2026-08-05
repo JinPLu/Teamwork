@@ -5,22 +5,22 @@
     "language": "en",
     "requires": [
       "case-v2-artifact-only",
-      "challenge-method-for-major-risk",
       "explicit-save-authorizes-transaction",
+      "four-part-semantic-document",
       "initialized-writable-project",
       "managed-transaction-only",
       "no-files-overrides",
       "no-implementation",
       "no-legacy-write-fallback",
       "one-shot-no-write",
-      "sustained-checkpoint",
+      "semantic-change-writer-cadence",
       "transaction-owned-writer"
     ],
     "scenario": "persistence-boundary"
   },
   "id": "release-collaborate-persistence",
   "must": [
-    "keep a one-shot explanation conversation-only; sustained Collaborate and independently major-risk challenge method use only Writer plus the managed case-inspect -> case-schema <collaborate-upsert> -> case-apply/readback transaction in an initialized writable project, with new records written as case-v2 dialogue/brainstorm Collaborate state and legacy-v1 artifacts still readable only as migration inputs under transaction-owned authority"
+    "keep a tiny one-shot explanation conversation-only; every substantive Collaborate dispatches Writer at the first synthesis, each semantic change, and the end, maintaining one four-part semantic document through the managed case-inspect -> case-schema <collaborate-upsert> -> case-apply/readback transaction in an initialized writable project; legacy-v1 artifacts remain read-only migration inputs under transaction-owned authority"
   ],
   "must_not": [
     "write when no files is present, directly write collaboration Markdown or an index, implement, or infer implementation authority"
@@ -56,7 +56,7 @@
       "source": "scripts/discussion-transaction.py"
     }
   ],
-  "prompt": "Contrast a one-shot explanation with '$teamwork-collaborate and save', including sustained collaboration, major-risk challenge method, and the user's 'no files' override.",
+  "prompt": "Contrast a tiny one-shot explanation with '$teamwork-collaborate and save', including first-synthesis and semantic-change Writer cadence, the four-part discussion document, and the user's 'no files' override.",
   "source": "release",
   "split": "release"
 }

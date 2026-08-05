@@ -1,132 +1,51 @@
 ---
 name: teamwork-collaborate
-description: Use when the user wants dialogue, brainstorming, sustained questioning, stress-testing, or convergence on product, workflow, API, system, release, migration, permission, security, data, destructive, or cross-platform decisions before execution; activate aggressively from natural discussion or question-before-action intent, select dialogue or brainstorm without asking, default-persist semantic checkpoints through Writer, and do not use for external research alone, unknown-cause debugging, implementation, review, or already accepted decisions.
+description: Use when the user wants to discuss, design, plan, brainstorm, compare options, or think something through; when a material choice belongs to the user; or when the user's intent is unclear and needs guided clarification.
 ---
 
 # Teamwork Collaborate
 
-Own one collaborative decision surface. Collaborate is the only public Teamwork
-skill for natural dialogue, brainstorming, sustained questioning, stress-testing,
-and decision convergence. It replaces the retired public Discuss, Design, and
-Grill skill sources without aliases or compatibility public surfaces.
-Stress-testing is a challenge method inside dialogue or brainstorm, not a third runtime mode.
-Internal Designer is read-only challenge/audit only; it never owns
-questions, acceptance, persistence, planning, implementation, or release. This
-skill does not authorize file changes outside its checkpoint or implementation.
+Help the user form intent, explore choices, and challenge a direction before
+downstream work continues.
 
-Collaborate exclusively owns latent preferences and unformed intent that can
-materially change the outcome. Only Root may activate it or present its
-questions. A leaf instead returns an explicit reclassification signal with the
-decision boundary it found; it never starts Collaborate or asks the user.
+## Core Contract
 
-## Mode And Questions
+- Begin with a brief intent check. If the intent is already clear, do not force
+  a question.
+- Give a concise synthesis, useful options, and a recommendation before asking.
+- Use host-native Ask Question whenever the user's answer could materially
+  change the next step. Do not impose a total question or round limit.
+- Ask independent questions together. Ask dependent questions after the earlier
+  answer, and wait before continuing dependent work.
+- Never decide a material user-owned choice.
 
-Select the mode from intent and evidence; do not ask the user to name it.
+## Collaboration Layers
 
-- `dialogue`: synthesize the current decision, tension, and next judgment.
-- `brainstorm`: widen two or three meaningful alternatives, constraints, and a
-  preferred or next-best option.
+| Layer | Use when | Purpose |
+|---|---|---|
+| L1 — Understand Intent | Always check briefly; remain or return when the goal, success criteria, preference, decision owner, or research focus is unclear | Help the user understand and express what they need |
+| L2 — Explore Together | Intent is clear enough to compare directions, evidence, constraints, or designs | Move from the overall goal to options, trade-offs, boundaries, and details |
+| L3 — Challenge and Converge | The user requests adversarial work, or the discussion reveals hard-to-reverse consequences, material value conflict, or conflicting evidence | Stress-test viable directions and return the final choice to the user |
 
-Before every question, contribute first and include a provisional
-recommendation. Ask only when user-owned feedback can change the next response,
-durable state, or execution boundary. Skip discoverable, safe-default,
-reversible-detail, and answer-invariant questions. Use one open prose question
-for sensemaking. A native bounded batch contains at most three questions, and
-every question in that batch must be mutually independent.
+Move between layers as the discussion changes. Do not use layer number as a
+question, turn, or agent budget.
 
-Dependent questions are serial: ask the question, wait for the answer, dispatch
-Writer checkpoint for every substantive update, and read back proof before continuing
-only when the next step depends on durable continuity. Completion or terminal
-companion persistence is separate from the
-method result: if it fails after the core answer is ready, return the core answer
-and state `unsaved`. Two rounds with no closed decision, new discriminator, or
-changed recommendation are a no-progress blocker.
+Read `references/collaboration-layers.md` for intent guidance, question batching,
+global-to-detail discussion, layer transitions, and examples. For L3 adversarial
+work, also read `references/adversarial-search.md`.
 
-## Challenge
+## Supporting Work
 
-Challenge moves strictly `global -> boundary -> detail`.
-
-1. Global: whole decision map, current critical path, recommendation, largest
-   downside, and only boundary-setting choices.
-2. Boundary: after the global answer and any needed readback, test scope,
-   permissions, data, migration, reversibility, public contract, rollout, and
-   stop conditions.
-3. Detail: after the boundary answer and any needed readback, ask only remaining
-   decisions that change the accepted outcome or downstream boundary.
-
-For each bounded challenge question, state why the answer is critical, what it
-blocks, dependencies, recommendation, largest downside, and observable closing
-condition before asking.
-
-Use `references/adversarial-search.md` only when the user explicitly requests adversarial search,
-when at least two viable directions remain and costly or
-irreversible error or conflicting evidence makes ordinary challenge insufficient,
-or when a named risk gate requires isolation. The method replaces only the
-challenge method and does not create a public Design workflow. If required fresh
-Designer isolation is unavailable, return `capability-blocked`; Root must not perform a named-method fallback.
-
-## Acceptance
-
-Recommend one clear direction when supported; otherwise compare two or three
-meaningful alternatives by outcome, compatibility, complexity, operability,
-reversibility, migration cost, risk, and ownership.
-
-Acceptance requires closure evidence: no current batch, unanswered question,
-open frontier, material blocker, or pending/failed adversarial state;
-`active.acceptance == accepted`; `recommendation` is nonempty; and
-`acceptance_evidence` is nonempty. Pending or blocked Collaborate records are
-durable but not Plan-ready.
+- Let Research and Explore gather evidence, then return it to the same
+  discussion. They never replace user interaction or own the decision.
+- Honor explicit requests for brainstorming, adversarial discussion,
+  stress-testing, or subagents. Execute the real method or report it unavailable.
 
 ## Persistence
 
-In an initialized writable project, sustained semantic Collaborate state defaults
-to a managed case-v2 Collaborate checkpoint at the first substantive dialogue,
-brainstorm, challenge, question-before-action state, decision update, accepted
-decision, blocker, close, or supersede. Persist before a dependent question only
-when continuity depends on it, and before handing an accepted decision to Plan.
-
-Negative overrides win: `no files`, `off-record`, `read-only`, `no writes`, and
-private/no-persistence equivalents disable persistence. Continue collaboration
-and report unsaved state when it matters.
-
-Root freezes a bounded Collaborate packet: synthesis, evidence, candidate space,
-recommendation, downside, decision rule, closure evidence, open
-questions/frontier, blockers, return path, and preserve/forbid.
-Writer calls only the controlled transaction route;
-it must not research, invent, reinterpret, or alter facts, authority, status, or
-acceptance. Missing memory, Writer, route, authority, consumer, packet, or
-transaction blocks only durable claims unless the next step depends on durable
-continuity; there is no Root, Designer, Worker, Reviewer, direct/manual file, or
-fallback write route.
-
-Writer runs `discussion-transaction.py case-inspect --project-root <project>`.
-If schema is case-v2, use the exact `case_id`/alias from `active_cases` or create
-only from a frozen seed/task_key, title, and aliases; legacy-v1, mixed v1/v2,
-unknown, stale, ambiguous, missing seed, or partial migration fails closed before
-any write. In case-v2, Writer uses `case-inspect -> case-schema
-<create|collaborate-upsert|accept-decision> -> case-apply ->
-case-inspect/readback`. Map checkpoints to `collaborate-upsert`, accepted
-decisions to `accept-decision`, and phase/meta only to `update`. Claim durable
-state only after readback returns case path, manifest revision, semantic digest
-or decision digest, lineage digest, and changed paths. Safe
-transaction failure grants no Markdown, index, journal, marker, legacy, or
-manual retry; `INDETERMINATE` pauses.
-
-The transaction-derived checkpoint content is `live/collaborate.md`; accepted
-decisions use `decision.md`.
-
-Legacy Discussion, Design, Collaborate, artifact, and Goal files are read-only
-migration inputs only. Legacy write lifecycle commands are retired.
-
-## Plan Gate And Handoff
-
-A settled direction becomes Plan-ready only through accepted Collaborate state.
-Planner may proceed only from case-v2 accepted readback: it confirms the selected
-case manifest, accepted decision artifact, case path, manifest revision,
-decision revision, semantic digest, lineage digest if present, digests,
-acceptance evidence, and no open blockers/frontier. Generic Plan, Review,
-result registration, legacy Design, conversational recommendation, adversarial
-audit, hand-written file, or failed transaction cannot substitute.
-
-Return a compact typed handoff with the packet fields, checkpoint
-path/revision/digests, persistence disposition, blockers, and next workflow.
+- Dispatch Writer at the first substantive synthesis and whenever a user answer,
+  evidence return, layer change, decision, open question, recommendation, or
+  ending changes the shared state.
+- Give Writer one semantic document with: overall picture; decided; open
+  discussion and evidence; current recommendation and next step.
+- Save meaning, not a transcript. Never write the checkpoint directly.

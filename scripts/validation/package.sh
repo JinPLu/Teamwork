@@ -129,12 +129,18 @@ done
 expected_reference_inventory="$(printf '%s\n' \
   'skills/teamwork-debug/references/runtime-diagnosis.md' \
   'skills/teamwork-collaborate/references/adversarial-search.md' \
+  'skills/teamwork-collaborate/references/collaboration-layers.md' \
   'skills/teamwork-research/references/deep-research.md' \
   'skills/teamwork-review/references/strict-review.md' | sort)"
 actual_reference_inventory="$(find "$ROOT/skills" -type f -path '*/references/*' \
   | sed "s#^$ROOT/##" | sort)"
 [[ "$actual_reference_inventory" == "$expected_reference_inventory" ]] \
-  || fail "skills must contain exactly the four public reference files"
+  || fail "skills must contain exactly the five public reference files"
+expected_skill_agent_inventory='skills/teamwork-collaborate/agents/openai.yaml'
+actual_skill_agent_inventory="$(find "$ROOT/skills" -type f -path '*/agents/*' \
+  | sed "s#^$ROOT/##" | sort)"
+[[ "$actual_skill_agent_inventory" == "$expected_skill_agent_inventory" ]] \
+  || fail "skills must contain exactly the Collaborate UI metadata"
 if find "$ROOT/skills" -mindepth 2 -type d -name scripts \
   -exec sh -c 'find "$1" -type f -print -quit' _ {} \; | grep -q .; then
   fail "skills must not contain skill-local scripts"
@@ -426,6 +432,7 @@ if actual_skills != expected_skills:
 expected_references = {
     "teamwork-debug/references/runtime-diagnosis.md",
     "teamwork-collaborate/references/adversarial-search.md",
+    "teamwork-collaborate/references/collaboration-layers.md",
     "teamwork-research/references/deep-research.md",
     "teamwork-review/references/strict-review.md",
 }
@@ -440,7 +447,20 @@ bundle_references = {
     if path.is_file() and path.parent.name == "references"
 }
 if source_references != expected_references or bundle_references != expected_references:
-    raise SystemExit("FAIL: source and Marketplace bundle must contain exactly four public references")
+    raise SystemExit("FAIL: source and Marketplace bundle must contain exactly five public references")
+expected_agent_metadata = {"teamwork-collaborate/agents/openai.yaml"}
+source_agent_metadata = {
+    path.relative_to(root / "skills").as_posix()
+    for path in (root / "skills").rglob("*")
+    if path.is_file() and path.parent.name == "agents"
+}
+bundle_agent_metadata = {
+    path.relative_to(bundle / "skills").as_posix()
+    for path in (bundle / "skills").rglob("*")
+    if path.is_file() and path.parent.name == "agents"
+}
+if source_agent_metadata != expected_agent_metadata or bundle_agent_metadata != expected_agent_metadata:
+    raise SystemExit("FAIL: source and Marketplace bundle must contain Collaborate UI metadata")
 expected_roles = {
     "codex-agents": {
         "teamwork-debugger.toml", "teamwork-designer.toml", "teamwork-explorer.toml",

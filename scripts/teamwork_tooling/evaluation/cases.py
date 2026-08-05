@@ -13,6 +13,7 @@ from typing import Any
 
 from .contracts import *  # noqa: F403
 from .sources import (
+    validate_collaboration_layers_reference_contract,
     validate_design_adversarial_reference_contract,
     validate_semantic_sources,
     validate_skill_source_contract,
@@ -541,13 +542,19 @@ def validate_bound_producer_sources(
         if producer["class"] == "skill":
             if source_path == DESIGN_ADVERSARIAL_REFERENCE_PATH:  # noqa: F405
                 validate_design_adversarial_reference_contract(source)
+            elif source_path == COLLABORATION_LAYERS_REFERENCE_PATH:  # noqa: F405
+                validate_collaboration_layers_reference_contract(source)
             else:
                 validate_skill_source_contract(Path(source_path).parent.name, source)
-            if (capability, scenario) == ("ask", "latent-preference-collaborate"):
+            if (
+                (capability, scenario) == ("ask", "latent-preference-collaborate")
+                and source_path == "skills/teamwork-collaborate/SKILL.md"
+            ):
                 _require_source_phrases(source, path, source_path, [
-                    ("latent preferences and unformed intent",),
-                    ("Only Root may activate",),
-                    ("never starts Collaborate or asks",),
+                    ("material choice belongs to the user",),
+                    ("intent is unclear and needs guided clarification",),
+                    ("synthesis, useful options, and a recommendation before asking",),
+                    ("host-native Ask Question",),
                 ])
             readiness_skill_rules = {
                 "reclass-research": [
@@ -617,24 +624,30 @@ def validate_bound_producer_sources(
                 ])
             if (capability, scenario) == ("ask", "dialogue-native"):
                 _require_source_phrases(source, path, source_path, [
-                    ("Discuss/brainstorm/stress-test activates Collaborate",),
-                    ("synthesis/tension/options plus", "contributes synthesis/tension/candidate space first", "contribute synthesis/tension/candidate-space/recommendation", "contribute synthesis/tension/options"),
-                    ("one high-information question", "one useful question", "Ask only if feedback helps", "Ask only if useful"),
-                    ("open prose", "open questions stay prose", "open questions use prose"),
-                    ("host-native 2-3 finite choices", "host-native bounded surface"),
-                    ("Challenge moves", "major public/installable/release/migration"),
-                    ("explicit question-first", "explicit sustained question-first", "question-first"),
+                    ("Collaborate activates for discuss/design/plan/brainstorm/compare/think-together",),
+                    ("material user-owned",),
+                    ("unclear intent",),
+                    ("Synthesize/options/recommend",),
+                    ("native Ask",),
+                    ("No total question/round cap",),
+                    ("batch-independent/serialize-dependent/wait",),
                     ("default-save substantive case-v2 workflow",),
                 ])
             if capability == "collaborate":
                 _require_source_phrases(source, path, source_path, [
-                    ("Discuss/brainstorm/stress-test activates Collaborate",),
-                    ("dialogue|brainstorm",),
-                    ("Challenge moves",),
-                    ("Adversarial is challenge, not mode",),
-                    ("Default one child",),
+                    ("Collaborate activates for discuss/design/plan/brainstorm/compare/think-together",),
+                    ("material user-owned",),
+                    ("unclear intent",),
+                    ("L1=intent",),
+                    ("L2=explore",),
+                    ("L3=challenge",),
+                    ("No total question/round cap",),
+                    ("Research/Explore return",),
+                    ("named methods execute",),
+                    ("saves four-part semantic state",),
+                    ("Default one child", "Default-child=one"),
                     ("daily cap4",),
-                    ("5-8 only for explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host-support"),
+                    ("5-8 only for explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host-support", "5-8=explicit-adversarial/release+host-support"),
                     ("Unavailable role or unverified isolation = capability-blocked", "Unavailable role/isolation = capability-blocked"),
                     ("default-save substantive case-v2 workflow",),
                     ("No legacy-v1 artifact/collaborate/goal write fallback", "no artifact/collaborate/goal/manual/report/"),
@@ -703,20 +716,20 @@ def validate_bound_producer_sources(
             if producer["class"] == "root-policy":
                 _require_source_phrases(source, path, source_path, [
                     ("produce the real requested result first", "result first"),
-                    ("current canonical owner", "canonical owner"),
-                    ("focused automated regression evidence", "focused evidence"),
-                    ("low-risk mechanical work", "low-risk docs", "full suites run only", "focused evidence"),
-                    ("Default one child",),
+                    ("current canonical owner", "canonical owner", "canonical-owner"),
+                    ("focused automated regression evidence", "focused evidence", "focused-evidence"),
+                    ("low-risk mechanical work", "low-risk docs", "full suites run only", "focused evidence", "focused-evidence"),
+                    ("Default one child", "Default-child=one"),
                     ("daily cap4",),
-                    ("5-8 only for explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host-support"),
+                    ("5-8 only for explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host-support", "5-8=explicit-adversarial/release+host-support"),
                     ("Unavailable role or unverified isolation = capability-blocked", "Unavailable role/isolation = capability-blocked"),
                     ("preserve unrelated", "preserve dirty work"),
-                    ("stop when the requested result", "stop when the result", "stop when result"),
+                    ("stop when the requested result", "stop when the result", "stop when result", "stop at observed result"),
                 ])
                 normalized_source = " ".join(source.casefold().split())
                 if not any(
                     phrase in normalized_source
-                    for phrase in ("do not add an unrequested wrapper", "avoid unrequested wrappers", "avoid wrappers/", "minimal logic")
+                    for phrase in ("do not add an unrequested wrapper", "avoid unrequested wrappers", "avoid wrappers/", "minimal logic", "minimal-logic")
                 ):
                     raise EvalError(f"{display_path(path)}: Root producer lost the conditional wrapper/fallback rule")  # noqa: F405
             elif producer["class"] == "role-template":
@@ -734,9 +747,9 @@ def validate_bound_producer_sources(
             if producer["class"] == "root-policy":
                 _require_source_phrases(source, path, source_path, [
                     ("Exact roles: Research->Researcher", "Named workflows: Research->Researcher"),
-                    ("Default one child",),
+                    ("Default one child", "Default-child=one"),
                     ("daily cap4",),
-                    ("5-8 only for explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host-support"),
+                    ("5-8 only for explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host support", "5-8 only explicit adversarial/release with host-support", "5-8=explicit-adversarial/release+host-support"),
                     ("Unavailable role or unverified isolation = capability-blocked", "Unavailable role/isolation = capability-blocked"),
                 ])
             elif source_path == "skills/teamwork-research/SKILL.md":
@@ -842,15 +855,14 @@ def validate_bound_producer_sources(
                     ])
                 elif producer["class"] == "skill":
                     _require_source_phrases(source, path, source_path, [
-                        ("maintain one Collaborate checkpoint", "canonical current path", "defaults to a managed Collaborate checkpoint", "managed case-v2 Collaborate checkpoint"),
-                        ("discussion-transaction.py collaborate-inspect", "discussion-transaction.py case-inspect"),
-                        ("discussion-transaction.py collaborate-schema", "case-schema"),
-                        ("discussion-transaction.py collaborate-apply", "case-apply"),
-                        ("managed Collaborate checkpoint", "managed case-v2 Collaborate checkpoint"),
-                        ("v2, the transaction derives", "v2 case-bundle", "In case-v2, Writer uses"),
-                        ("readback",),
-                        ("dispatches writer", "dispatch Writer", "Writer calls only the controlled transaction route"),
-                        ("sole filesystem writer", "sole caller of managed artifact transactions", "no Root, Designer, Worker, Reviewer, direct/manual file"),
+                        ("Dispatch Writer at the first substantive synthesis",),
+                        ("user answer",),
+                        ("evidence return",),
+                        ("layer change",),
+                        ("overall picture; decided; open",),
+                        ("current recommendation and next step",),
+                        ("Save meaning, not a transcript",),
+                        ("Never write the checkpoint directly",),
                     ])
                 elif producer["class"] == "role-template":
                     _require_source_phrases(source, path, source_path, [
@@ -887,7 +899,7 @@ def validate_bound_producer_sources(
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
                         ("Named workflows: Research", "Named workflows: Research->Researcher"),
-                        ("Only tiny-native/check-only/one-shot work is unsaved",),
+                        ("Only tiny-native/check-only/one-shot work is unsaved", "Tiny-native/check-only/one-shot work is unsaved"),
                     ])
                 elif producer["class"] == "skill":
                     _require_source_phrases(source, path, source_path, [
@@ -911,7 +923,7 @@ def validate_bound_producer_sources(
             elif scenario == "code-coupled-owner":
                 if producer["class"] == "root-policy":
                     _require_source_phrases(source, path, source_path, [
-                        ("code-coupled text implementer-owned", "code-coupled text stays implementer-owned"),
+                        ("code-coupled text implementer-owned", "code-coupled text stays implementer-owned", "code-coupled text=implementer-owned"),
                     ])
                 elif producer["class"] == "role-template" and _role_from_source(source_path) == "worker":
                     _require_source_phrases(source, path, source_path, [

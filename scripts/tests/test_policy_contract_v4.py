@@ -91,15 +91,19 @@ REQUIRED_CONCEPTS = {
         "no role/method fallback",
     ),
     "collaborate_and_leaf_boundary": (
-        "Discuss/brainstorm/stress-test activates Collaborate",
-        "dialogue|brainstorm",
-        "synthesis/tension/options+recommendation",
-        "Ask only if useful",
-        "open prose",
-        "host-native 2-3 finite choices",
-        "Challenge moves",
-        "Adversarial is challenge, not mode",
-        "question-first",
+        "Collaborate activates for discuss/design/plan/brainstorm/compare/think-together",
+        "material user-owned",
+        "unclear intent",
+        "L1=intent",
+        "L2=explore",
+        "L3=challenge inside active discussion",
+        "Synthesize/options/recommend",
+        "native Ask",
+        "No total question/round cap",
+        "batch-independent/serialize-dependent/wait",
+        "Research/Explore return",
+        "named methods execute",
+        "saves four-part semantic state",
         "Leaves return exact gap/reclassification",
         "never ask/activate/expand/self-accept",
         "One asker/owner/gap",
@@ -109,30 +113,29 @@ REQUIRED_CONCEPTS = {
         "Writable initialized projects",
         "default-save substantive case-v2 workflow checkpoints/results",
         "frozen Writer packet+transaction+readback",
-        "Only tiny-native/check-only/one-shot work is unsaved",
+        "Tiny-native/check-only/one-shot work is unsaved",
         "Legacy-v1 read-only",
         "no artifact/collaborate/goal/manual/report/ memory write fallback",
         "Missing memory/Writer/authority/consumer/route",
         "deliver core result",
         "report unsaved/blocked",
-        "Code-coupled text stays implementer-owned",
+        "Code-coupled text=implementer-owned",
     ),
     "evidence_implementation_and_verification": (
         "Ground claims",
         "separate observation/inference",
         "invent no success",
         "preserve dirty work",
-        "Prefer canonical owner/pattern",
+        "Prefer canonical-owner/pattern",
         "built-ins/dependencies",
-        "minimal logic",
-        "Verify real path",
-        "focused evidence",
+        "minimal-logic",
+        "Verify real-path",
+        "focused-evidence",
         "tests never replace it",
         "Reviewers read-only",
-        "one sealed review",
-        "repair-batch/delta-recheck",
+        "one sealed review+repair-batch/delta-recheck",
         "requested/risk gates",
-        "Stop when result/boundaries are observed",
+        "Stop at observed result/boundaries",
     ),
 }
 
@@ -151,6 +154,7 @@ FORBIDDEN_CONCEPTS = (
     "every material user decision",
     "Risk automatically activates adversarial Design",
     "Complexity automatically activates adversarial Design",
+    "Public/release/migration/security/destructive/cross-platform activates Collaborate",
     "adversarial mode",
     "Root may perform named-method fallback",
     "legacy-v1 artifact/collaborate/goal may write fallback",
@@ -168,9 +172,9 @@ def contract_failures(policy: str) -> list[str]:
                 failures.append(f"{owner}: missing concept {concept!r}")
 
     preference_order = (
-        "Prefer canonical owner/pattern",
+        "Prefer canonical-owner/pattern",
         "built-ins/dependencies",
-        "minimal logic",
+        "minimal-logic",
     )
     positions = [policy.find(clause) for clause in preference_order]
     if any(position < 0 for position in positions) or positions != sorted(positions):
@@ -229,7 +233,7 @@ class PolicyContractV4Tests(unittest.TestCase):
             with self.subTest(platform=platform):
                 self.assertEqual(contract_failures(rendered), [])
         self.assertIn(
-            "Codex: bounded choices request_user_input; open prose.",
+            "Codex: material questions->request_user_input; call limits=transport only.",
             self.platforms["codex"],
         )
         self.assertNotIn("request_user_input", self.platforms["cursor"])
@@ -261,7 +265,7 @@ class PolicyContractV4Tests(unittest.TestCase):
                     )
 
     def test_preference_order_inversion_is_detected(self) -> None:
-        canonical = "Prefer canonical owner/pattern"
+        canonical = "Prefer canonical-owner/pattern"
         minimal = "minimal logic"
         mutated = self.policy.replace(canonical, "ORDER_SENTINEL", 1)
         mutated = mutated.replace(minimal, canonical, 1)
@@ -289,6 +293,7 @@ class PolicyContractV4Tests(unittest.TestCase):
             " Worker accepts the overall result.",
             " Review before direct verification.",
             " Grill is exclusive to user-originated question-first intent.",
+            " Public/release/migration/security/destructive/cross-platform activates Collaborate.",
             " Root may perform named-method fallback.",
             " legacy-v1 artifact/collaborate/goal may write fallback.",
         ):

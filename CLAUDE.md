@@ -47,18 +47,20 @@ Claude Code natively handles local repository, configuration, test, log,
 runtime, and artifact inspection. Clear authorized implementation also stays
 native. Use `teamwork-explore` for a distinct read-only local evidence question,
 and `teamwork-research` only for external, current, multi-source, or
-citation-backed research. Use `teamwork-collaborate` for natural discussion,
-brainstorming, stress-testing, question-before-action, or an unsettled
-consequential solution. Challenge and adversarial search are Collaborate
+citation-backed research. Use `teamwork-collaborate` when the user explicitly
+wants to discuss, design, plan, brainstorm, compare, or think together; when a
+material downstream choice belongs to the user; or when unclear intent needs
+guided clarification. Risk, security, migration, publicity, and complexity are
+not separate triggers. Challenge and adversarial search are Collaborate
 methods, not public mode names. Use `teamwork-plan` only after controlled
 Collaborate records `acceptance: accepted`. Collaborate uses Explorer only for
 an unresolved local constraint and sanitized external Research only for a named
 external/current claim that can change the choice; it never runs both by
-default. It compares 2-3 real alternatives or records safe-path evidence,
-applies the needed challenge/adversarial method, and keeps the decision frontier
-finite. It contributes
-synthesis, candidate space, a decision map, or provisional recommendation before
-asking. Its controlled transaction records `acceptance: pending`, `accepted`, or
+default. Research and Explore gather evidence and return it to the same
+discussion; they do not own the user choice. Collaborate maps knowledge-space
+ambiguity before asking and contributes synthesis, useful options, a decision
+map, or provisional recommendation before any question that materially changes
+the next step. Its controlled transaction records `acceptance: pending`, `accepted`, or
 `blocked`; persistence is not acceptance, and only `accepted` is Plan-ready.
 
 Before asking, Root inspects discoverable state and acts on safe, reversible
@@ -107,13 +109,14 @@ diagnosis alone was requested; an original request that already authorizes a fix
 allows the evidenced narrow change. Approving a design or plan does not
 authorize implementation.
 
-Collaborate selects `dialogue` or `brainstorm`, contributes before
-asking, and never asks the user to name a mode. Open questions stay in prose; a
-host-native choice surface is appropriate only for a genuine finite decision
-with two or three mutually exclusive options. Sustained pressure-testing follows
-the complete global -> boundary -> detail map, batches at most three independent
-decisions, serializes dependent decisions, and applies one semantic Collaborate
-update per answered batch.
+Collaborate is one continuous adaptive discussion. It moves as needed among L1
+Understand Intent, L2 Explore Together, and L3 Challenge and Converge; these are
+not modes, skills, fixed depths, turn budgets, or mandatory phases. A
+host-native choice surface is appropriate only when a finite answer materially
+changes the next step. Independent questions can batch together, dependent
+questions are serialized with a hard wait, and there is no workflow-wide
+question, batch, or round cap. Explicit brainstorming, adversarial, stress-test,
+or subagent methods must execute the real method or report capability-blocked.
 
 In an initialized writable project, named Teamwork workflows persist reusable
 checkpoints and results by default; `no files`, off-record, read-only, or
@@ -138,14 +141,15 @@ Code cannot provide that capability, the workflow returns capability-blocked
 instead of falling back to Root or another role. Collaborate and Goal remain
 Root-owned.
 
-Sustained Collaborate intent plus a substantive synthesis, candidate space, or
-decision map and an unresolved question or unaccepted direction defaults to one
-semantic checkpoint after reading `docs/teamwork/index.json`: v6 writes the
-selected case manifest and `live/collaborate.md` through case transactions.
-Frozen legacy-v1, old grill, Discussion, and Design records remain readable
-only as Init/Update migration inputs.
-Unchanged state is a no-op. Collaborate never stores a transcript or substitutes
-a report/conclusion; `no files`, off-record, read-only, or no-write wins.
+For substantive Collaborate, read `docs/teamwork/index.json` and write the
+selected case manifest plus `live/collaborate.md` through case transactions.
+Writer updates one semantic document at the first substantive synthesis, every
+semantic change, and the end: overall picture; decided items; open
+discussion/evidence; and current recommendation or next step. Frozen legacy-v1,
+old grill, Discussion, and Design records remain readable only as Init/Update
+migration inputs. Unchanged state is a no-op. Collaborate never stores a
+transcript or substitutes a report/conclusion; `no files`, off-record,
+read-only, or no-write wins.
 
 ## Initialize a project
 

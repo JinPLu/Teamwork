@@ -257,9 +257,12 @@ class InitProjectFilesTests(unittest.TestCase):
             self.assertFalse((legacy / "AGENTS.md").exists())
 
         skill = (ROOT / "skills/teamwork-collaborate/SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("managed case-v2 Collaborate checkpoint", skill)
-        self.assertIn("case-inspect", skill)
-        self.assertIn("live/collaborate.md", skill)
+        self.assertIn("Dispatch Writer at the first substantive synthesis", skill)
+        self.assertIn("Give Writer one semantic document", skill)
+        self.assertIn("overall picture; decided; open", skill)
+        self.assertIn("Never write the checkpoint directly", skill)
+        self.assertNotIn("case-inspect", skill)
+        self.assertNotIn("live/collaborate.md", skill)
         self.assertNotIn("collaborate-inspect", skill)
         self.assertNotIn("collaborate-apply", skill)
 

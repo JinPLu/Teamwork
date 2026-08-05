@@ -130,9 +130,9 @@ check_lean_policy() {
     "substantive named-workflow persistence::default.save.{0,120}case.v2 workflow.{0,120}checkpoint" \
     "negative persistence override::no.files/off.record/read.only/no.writes override" \
     "evidence discipline::(separate observation/inference|distinguish observation from inference)" \
-    "real-path verification::verify.{0,80}real path" \
+    "real-path verification::verify.{0,80}real[- ]path" \
     "support checks not delivery::tests.{0,100}(never replace|support delivery)" \
-    "economic delegation::default one child.{0,80}daily cap4" \
+    "economic delegation::(default one child|default-child=one).{0,80}daily cap4" \
     "root question ownership::(root owns user questions|root alone asks)" \
     "conclusion-first replies::(conclusion|result) first" \
     "reader-centered result::(conclusion|result) first.{0,80}(clear|stable|relevant)" \

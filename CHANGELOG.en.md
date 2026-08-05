@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 6.3.0 - 2026-08-05
+
+**Teamwork 6.3.0 makes Collaborate behave like one continuous discussion: contribute first, ask only when needed, and keep user-owned choices with the user.**
+
+- **Activation now follows actual intent.** Collaborate starts only when the user explicitly wants to discuss, design, plan, brainstorm, compare, or think together; when a material downstream choice belongs to the user; or when unclear intent needs guided clarification. Risk, security, migration, publicity, or complexity no longer trigger Collaborate by themselves.
+- **L1-L3 are adaptive collaboration layers.** One discussion moves as needed among L1 Understand Intent, L2 Explore Together, and L3 Challenge and Converge; they are not modes, skills, fixed depths, turn budgets, or mandatory phases.
+- **Native Ask is reserved for choices that change the next step.** Collaborate synthesizes, gives useful options, and recommends before using a host-native question; independent questions can batch together, dependent questions must wait for the earlier answer, and there is no workflow-wide question, batch, or round cap.
+- **Writer and side evidence return to the same discussion.** Writer maintains one semantic record with the overall picture, decided items, open discussion/evidence, and current recommendation/next step, never a transcript; Research, Explore, and explicit brainstorming, adversarial, stress-test, or subagent methods bring results back to the same discussion without owning the final choice.
+
+Upgrade action: update to 6.3.0, run `$teamwork-update`, then start a new task so the new Collaborate policy, skills, and agents all load.
+
+Important limit: active tasks do not reload the new policy automatically; start a fresh task to exercise 6.3.0 behavior. Codex's per-call `request_user_input` limit of three questions/options is only a host transport limit, not a Teamwork workflow cap.
+
 ## 6.2.3 - 2026-08-03
 
 **Teamwork 6.2.3 makes substantive plans, discussions, research, diagnosis, reviews, and execution results persist reliably by default.**

@@ -83,8 +83,12 @@ EXPECTED_SKILLS = (
 EXPECTED_REFERENCES = (
     "skills/teamwork-debug/references/runtime-diagnosis.md",
     "skills/teamwork-collaborate/references/adversarial-search.md",
+    "skills/teamwork-collaborate/references/collaboration-layers.md",
     "skills/teamwork-research/references/deep-research.md",
     "skills/teamwork-review/references/strict-review.md",
+)
+EXPECTED_SKILL_AGENT_METADATA = (
+    "skills/teamwork-collaborate/agents/openai.yaml",
 )
 EXPECTED_ROLE_TEMPLATES = {
     "codex-agents": (
@@ -284,7 +288,16 @@ def validate_bundle(bundle: Path, root: Path) -> None:
         )
     )
     if actual_references != tuple(sorted(EXPECTED_REFERENCES)):
-        raise SystemExit("bundle must contain exactly the four public Teamwork references")
+        raise SystemExit("bundle must contain exactly the five public Teamwork references")
+    actual_agent_metadata = tuple(
+        sorted(
+            path.relative_to(bundle).as_posix()
+            for path in (bundle / "skills").rglob("*")
+            if path.is_file() and "agents" in path.relative_to(bundle).parts
+        )
+    )
+    if actual_agent_metadata != tuple(sorted(EXPECTED_SKILL_AGENT_METADATA)):
+        raise SystemExit("bundle must contain exactly the Collaborate skill UI metadata")
     for directory, expected_files in EXPECTED_ROLE_TEMPLATES.items():
         actual_files = tuple(
             sorted(path.name for path in (bundle / "templates" / directory).iterdir() if path.is_file())
