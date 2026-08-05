@@ -15,7 +15,7 @@
 
 升级操作：更新到 7.0.0 后，对精确项目根目录运行 `$teamwork-update`；它会刷新全局 surfaces，并把该项目中的全部 Teamwork 文档迁移到新格式。随后从新任务开始使用新的 Skills、Agents 与策略。
 
-重要限制：7.0.0 不提供旧设置或旧数据的运行时兼容。旧项目文档只能作为 Update 的迁移输入；没有精确项目根目录时，Update 只刷新全局 surfaces 并报告项目迁移待执行。
+重要限制：7.0.0 不提供旧设置或旧数据的运行时兼容。旧项目文档只能作为 Update 的迁移输入；没有精确项目根目录时，Update 只刷新全局 surfaces 并报告项目迁移待执行。Codex 0.144 的 JSON 流尚不暴露完整的 child-start 身份、模型和 effort，Cursor 与 Claude 的 live 证据也要求各自 CLI 在隔离 HOME 中完成认证；这些情况下 Teamwork 会明确返回 `UNSUPPORTED` 或 `FAIL`，不会用模板或 prompt 代替实际证据。
 
 ## 6.3.0 - 2026-08-05
 

@@ -15,7 +15,7 @@ This changelog records user-visible changes; implementation details belong in Gi
 
 Upgrade action: update to 7.0.0 and run `$teamwork-update` with the exact project root. It refreshes global surfaces and migrates every Teamwork document in that project. Then start a new task to load the new Skills, agents, and policy.
 
-Important limit: 7.0.0 provides no runtime compatibility for old settings or data. Older project documents are accepted only as Update migration input. Without an exact project root, Update refreshes global surfaces and reports project migration as pending.
+Important limit: 7.0.0 provides no runtime compatibility for old settings or data. Older project documents are accepted only as Update migration input. Without an exact project root, Update refreshes global surfaces and reports project migration as pending. Codex 0.144 JSON does not yet expose complete child-start identity, model, and effort, while Cursor and Claude live evidence requires their CLIs to authenticate inside an isolated HOME; Teamwork reports these paths as `UNSUPPORTED` or `FAIL` instead of substituting template or prompt claims for observed evidence.
 
 ## 6.3.0 - 2026-08-05
 
