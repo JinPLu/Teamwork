@@ -1,0 +1,4 @@
+interface:
+  display_name: "Teamwork Review"
+  short_description: "Evaluate code, documents, plans, and claims"
+  default_prompt: "Use $teamwork-review to independently evaluate this candidate against its evidence and criteria."

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run candidate-isolated Teamwork v4 trajectories through Cursor."""
+"""Run candidate-isolated Teamwork trajectories through Cursor."""
 
 from __future__ import annotations
 

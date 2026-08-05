@@ -1,4 +1,4 @@
-# Cursor installed-v4 live protocol
+# Cursor installed live protocol
 
 Run only through `run-installed-cursor-teamwork-live-eval.py` with a prepared
 candidate manifest. `cursor-agent` must resolve and report its version. The user

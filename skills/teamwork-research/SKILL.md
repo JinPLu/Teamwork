@@ -1,99 +1,53 @@
 ---
 name: teamwork-research
-description: Use when a request or active workflow depends on external sources, including current web, API, library, platform, literature, market, or ecosystem facts, multi-source comparison, source verification, or citations; do not use for local repository/source/config/test/log/runtime/artifact inspection, supplied-text explanation, clear implementation, or unknown-cause debugging.
+description: Use when a broad or deep external investigation needs multiple sources, source-class comparison, contradiction resolution, current ecosystem synthesis, or a source-grounded paper, dataset, or report; do not use for a routine lookup or single-page fact check, local project evidence, supplied-text explanation, or unknown-cause debugging.
 ---
 
 # Teamwork Research
 
-Answer an external question with decision-relevant, traceable evidence. Research
-is external-only and read-only: do not inspect private local repositories, logs,
-artifacts, credentials, sensitive data, or proprietary source, and do not
-authorize edits, account changes, messages, purchases, uploads, or publication.
-Root supplies a sanitized public brief when project context matters.
+Use Researcher as the external evidence owner. Give it a sanitized brief when
+project context matters; never expose private project material in public search.
+Use native lookup for a narrow fact or ordinary current-source check.
 
-## Handoff And Depth
+## Frame The Investigation
 
-Root's first role action after the sanitized brief MUST be Researcher dispatch.
-Research -> Researcher is exact. Root MUST NOT browse, read research-probe files,
-or execute research, and MUST NOT call `wait_agent` until dispatch returns a
-non-empty live agent id. Empty spawn evidence, unavailable dispatch, or
-unverified fresh isolation is `capability-blocked`; Root has no named-method fallback.
-In Codex, dispatch with `agent_type="teamwork_researcher"` and
-`fork_turns="none"`.
+State the decision question, intended use, scope, freshness cutoff, source and
+privacy boundaries, and the material claims that evidence must support. If an
+unformed preference determines what should be researched, return to discussion
+before broad retrieval.
 
-Researcher never asks the user. If one undiscoverable user-owned source, account,
-date range, or scope value is required, return that exact gap, its owner, and the
-resume condition to Root. If the missing input is an unformed preference or
-material direction choice, return a reclassification signal to Collaborate
-instead of inventing an interview. Root asks at most the minimum required input.
-Default to one Researcher; daily work stays within cap4. Use five to eight total
-children only for explicit adversarial/release work and a bounded sanitized packet.
-Children never expand authority or delegate again.
+## Research By Evidence Gap
 
-Choose the lightest adequate depth:
+1. Build search axes and a provisional claim map. Treat supplied URLs, papers,
+   datasets, and reports as seeds, not as automatic proof or a search boundary.
+2. Prefer primary sources: official documentation, standards, original papers,
+   first-party data, regulators, and authoritative repositories. Use secondary
+   sources for independent context or criticism.
+3. For every material claim, record the supporting source, date or version,
+   counterevidence, inference, confidence, and citation. Seek an independent
+   source class for consequential or disputed claims, or explain why one
+   authority is sufficient.
+4. Follow contradictions and record why rejected sources are unsuitable. Never
+   average disagreement into synthetic consensus or invent missing facts.
+5. Stop when each material claim has support or an explicit evidence gap and
+   further searching is unlikely to change the conclusion.
 
-- `lookup`: one canonical or official source for a stable fact, with date or
-  version checked.
-- `research`: material claim map, primary-source-first comparison, independent
-  source class when consequential, and explicit dissent/gaps.
-- `deep`: research brief, search axes, source census, claim ledger,
-  contradiction challenge, coverage audit, and decision-sufficiency stop basis.
+Load `references/deep-research.md` for broad seed expansion across several
+source classes, a material contradiction that normal research cannot resolve,
+or a formal deep-research deliverable. Split research only across genuinely
+independent evidence areas and keep one synthesis owner.
 
-Load `references/deep-research.md` only for `deep`, broad seed expansion across
-source classes, or strong material contradiction.
+Lead with the supported conclusion, then the evidence map, citations,
+freshness, contradictions, rejected-source reasons, confidence, residual gaps,
+and the basis for stopping.
 
-## Method
+## Live Document
 
-1. State decision question, freshness cutoff, source policy, privacy exclusions,
-   and material claims. Treat supplied URLs, papers, datasets, repositories, and
-   reports as seed evidence, not the boundary.
-2. Search by evidence gap. Prefer primary sources: official documentation,
-   changelogs, standards, original papers, first-party data, regulators, and
-   authoritative repositories; use secondary sources for independent context.
-3. For each material claim, record source, date/version, direct support,
-   counterevidence, inference, confidence, and citation. Consequential or
-   disputed claims need an independent source class or a reason one authority is
-   enough.
-4. Follow contradictions and rejected-source reasons. Distinguish source
-   statements, observations, and inference. Never invent missing measurements,
-   dates, or consensus.
-5. Stop when every material claim has support or explicit not-found gap and more
-   search would not change the decision.
-
-Maintain visible monotonic state: `claim_map`, `active_gap`, `wave`,
-`evidence_delta`, `contradiction`, `not_found`, and `coverage_stop`. Each wave
-must close a mapped claim, record a not-found gap, surface a decision-changing
-contradiction, or justify the stop.
-
-Browse whenever freshness, precise attribution, or referenced external sources
-matter. Do not browse merely to re-check stable common knowledge unless sources
-are requested.
-
-## Persistence And Output
-
-In initialized writable projects, substantive cited results default to case-v2
-research artifacts. Persist a meaningful checkpoint when a material evidence
-wave changes decision support, exposes a consequential contradiction or blocker,
-or must survive a cross-session handoff; persist the supported completion result.
-Tiny lookups and ordinary one-shot explanations create no artifact. `no files`,
-`off-record`, `read-only`, `no writes`, or equivalent disables persistence.
-Method result and persistence result are separate: deliver the supported answer
-even if its checkpoint or completion companion cannot be saved, and report
-`unsaved/blocked`.
-
-Freeze the cited answer packet: purpose/audience, facts/sources, citations,
-decision/status, style/structure, artifact kind/consumer, monotonic state, and
-preserve/forbid. Writer routes from observed schema: `case-inspect` first;
-case-v2 uses exact `case_id`/alias or creates from a frozen seed/task_key, then
-`case-schema <research-add> -> case-apply -> case-inspect/readback`. The
-transaction derives destination and registers manifest/claim heads. Writer may
-rewrite expression but must not research, invent, or alter facts, citations,
-authority, status, decisions, or acceptance. Claim saved/durable only after
-readback. Missing project memory, Writer, packet, authority, consumer, route, or
-transaction blocks only persistence; no Researcher, Root, or Worker fallback
-writes it. Legacy-v1, mixed v1/v2, unknown, stale, ambiguous case, missing
-seed/task_key, or partially migrated state fails closed before any write.
-
-Lead with the supported conclusion, then source census, claim coverage,
-citations, freshness, contradictions or rejected-source rationale, gaps,
-confidence, stop basis, and persistence state.
+Have Writer maintain the task's single live document with a research shape;
+reuse it rather than creating a parallel artifact. Create it when the brief or
+first reusable evidence map exists, update it only when evidence, a material
+claim, contradiction, conclusion, confidence, gap, or next search changes, and
+finalize it at the stopping point. Include the brief, search axes, sources,
+claim-to-evidence map, citations, contradictions, inferences, confidence,
+conclusion, gaps, and stop basis. Writer must not alter facts, sources, or
+confidence.

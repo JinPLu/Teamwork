@@ -1,87 +1,55 @@
 ---
 name: teamwork-review
-description: Use when the user asks to review, audit, critique, validate, or decide whether a candidate or claim is correct or complete, or when an active workflow reaches a named material risk gate requiring independent review of one sealed integrated candidate; do not use for each Worker slice, to implement fixes, write a plan, or perform ordinary evidence collection.
+description: Use when the user asks to review, audit, critique, or validate a stable code, document, plan, artifact, or claim, or when a named material risk gate requires independent evaluation; do not use to find the cause of an unknown failure, gather ordinary evidence, implement fixes, or create the initial plan.
 ---
 
 # Teamwork Review
 
-Issue an evidence-based `ACCEPT`, `REVISE`, or `BLOCKED` verdict. Review is
-read-only: do not edit, fix, publish, or perform external effects. The exact
-role mapping is Review -> Reviewer, and Plan Review -> Plan Reviewer. If a
-mandatory role is unavailable or fresh isolation cannot be verified, return
-`capability-blocked`; Root must not perform a named-method fallback.
+Use Reviewer to evaluate a stable candidate independently. Reviewer remains
+read-only and may review implementation plans as well as completed code,
+documents, artifacts, and claims.
 
-Reviewer and Plan Reviewer never ask the user or invent missing requirements.
-Return an exact proof gap or ambiguity blocker with owner, scope, and closing
-evidence. If the ambiguity is a material unformed direction rather than missing
-proof, return a reclassification signal to Collaborate through Root.
+## Establish The Candidate
 
-Each Worker self-verifies its owned slice. Do not review each Worker slice
-independently. Root integrates authorized changes and seals one stable candidate
-with scope and direct evidence. Run one independent initial pass on that sealed
-integrated candidate only for user-requested review or named material risk gate;
-a gate may review its exact protected boundary earlier only when delay would
-invalidate proof.
+Identify the candidate by the most natural stable handle: exact files and diff,
+commit, artifact path and version, document revision, or supplied text. A hash
+is optional integrity evidence, not a semantic acceptance gate. Record the
+scope, acceptance criteria, protected boundaries, and evidence needed for a
+verdict. Do not invent requirements.
 
-## Method
+## Review
 
-1. Establish candidate identity, sealed_digest, scope, acceptance criteria,
-   protected boundaries, and evidence needed for the verdict. Do not invent
-   requirements.
-2. Inspect primary evidence directly: source/diff, tests/configuration, runtime
-   output, rendered artifacts, or authoritative external sources. Summaries and
-   claimed test results are inputs, not proof.
-3. Check correctness first: acceptance criteria, security/permission boundaries,
-   data behavior, regressions, error paths, compatibility, unsupported claims,
-   and real-path evidence.
-4. Then inspect only the changed scope for cohesion and deslop: wrong owner,
-   duplicate owner, thin wrapper, dead code, speculative abstraction,
-   unnecessary compatibility mode, broad catch, masking fallback, temporary
-   residue, and stale touched comments/config. Accepted product fallbacks and
-   pre-existing debt are negative controls, not blockers.
-5. Give each finding a stable `R-*` ID and classify it once as `BLOCKER`,
-   `FOLLOW-UP`, or `SUGGESTION`; include evidence, affected criterion or user
-   impact, and smallest correction route.
+1. Inspect primary evidence directly: candidate content, source and diff,
+   tests and configuration, runtime output, rendered artifact, or authoritative
+   sources. Treat summaries and claimed results as leads rather than proof.
+2. Check the acceptance criteria and highest-impact failure modes first,
+   including permissions, security, data behavior, error paths, regressions,
+   compatibility, unsupported claims, and real-path verification when relevant.
+3. Inspect the changed scope for wrong ownership, duplication, masking
+   fallbacks, speculative abstraction, temporary residue, and stale touched
+   documentation or configuration. Do not turn unrelated pre-existing debt into
+   a blocker.
+4. Report findings by severity with precise evidence, impact or violated
+   criterion, and the smallest correction route. Separate blockers from
+   follow-ups and suggestions.
 
-Load `references/strict-review.md` only for named strict release, security,
-permission, data, destructive-risk, or public-contract gates.
+Load `references/strict-review.md` only for an explicitly named release,
+security, permission, data, destructive-risk, or public-contract gate. Missing
+required access or evidence produces `BLOCKED`; plausible but unobserved concern
+is not proof.
 
-Maintain visible monotonic Review state: `sealed_digest`, stable finding IDs,
-`verdict`, `repair_batch`, and `delta_recheck`. Failed, blocked, partial, and
-unverified findings change only with direct new evidence tied to the same sealed
-candidate or one allowed delta candidate. Combine initial blockers into one repair batch.
-The same Reviewer may perform at most one bounded delta recheck;
-source changes after that create a new candidate. Root retains final acceptance.
+Return `ACCEPT` when all material criteria are supported and no blocker remains,
+`REVISE` when correctable blockers remain, or `BLOCKED` when required evidence
+is unavailable. Recheck only the changed candidate surface needed to close
+findings; treat materially broadened work as a new candidate. Reviewer does not
+implement repairs or accept the overall task on the implementer's behalf.
 
-## Persistence And Output
+## Live Document
 
-Reviewer always stays read-only. In an initialized writable project, every
-substantive sealed review result defaults to a case-v2 review artifact: the
-initial verdict and repair batch, a blocked evidence handoff, and the allowed
-delta recheck. `no files`, `off-record`, `read-only`, `no writes`, or equivalent
-disables persistence. Verdict and persistence are separate: deliver the verdict
-even if its checkpoint or completion companion cannot be saved, and state
-`unsaved/blocked`. Persistence does not imply Root/user acceptance.
-
-Freeze the verdict packet: purpose/audience, facts/sources, decision/status,
-style/structure, artifact kind/consumer, preserve/forbid, findings, evidence,
-verdict, repair batch, delta recheck status, and residual risk. Writer routes
-from observed schema: `case-inspect` first; case-v2 uses exact `case_id`/alias
-or creates from a frozen seed/task_key, then `case-schema
-<review-add|code-review-add|plan-review-add> -> case-apply ->
-case-inspect/readback`. A fresh general/code Review is created with
-`initial_phase=executing`; a fresh Plan Review uses `initial_phase=planned`.
-Writer reads back the create revisions before applying the review operation.
-The transaction derives destination and registers
-manifest/claim heads. Writer must not invent or alter facts, authority, status,
-findings, verdict, or acceptance. Claim saved/durable only after readback.
-Missing project memory, Writer, packet, authority, consumer, route, or
-transaction blocks only persistence. No Reviewer, Root, or Worker fallback
-writes it. Legacy-v1, mixed v1/v2, unknown, stale, ambiguous case, missing
-seed/task_key, or partially migrated state fails closed before any write.
-
-Lead with blockers by severity and precise file/line or artifact location. If
-none, say so. `ACCEPT` requires support for every material criterion and no open
-blocker; `REVISE` means correctable blockers remain; `BLOCKED` means required
-evidence or access is unavailable. Reviewer never asks the user; propose missing
-user-providable evidence to Root.
+Have Writer maintain the task's single live document with a review shape; reuse
+it rather than creating a parallel artifact. Create it when the candidate and
+first reusable evidence are established, update it only when the candidate,
+evidence, finding, verdict, residual risk, or recheck result materially changes,
+and finalize it at the verdict. Include candidate identity, scope, criteria,
+evidence, findings by severity, verdict, residual risk, and any bounded recheck.
+Writer must not change findings, evidence, or acceptance.

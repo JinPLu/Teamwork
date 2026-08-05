@@ -21,9 +21,7 @@ Initialize only project-local Teamwork context:
   - Cursor MCP rules and optional project .cursor/mcp.json after explicit --cursor-mcp consent
 
 This command does not install or refresh global skills, agents, policies,
-notifications, or clipboard content. The legacy --copy, --link, --profile,
---project-only, and --no-cursor-policy-copy options are accepted as no-op
-compatibility inputs for older install entrypoints.
+notifications, or clipboard content.
 USAGE
 }
 
@@ -54,13 +52,6 @@ while [[ $# -gt 0 ]]; do
       FULL_BOOTSTRAP=1
       shift
       ;;
-    --copy|--link|--project-only|--no-cursor-policy-copy)
-      shift
-      ;;
-    --profile)
-      [[ $# -ge 2 ]] || { echo "--profile requires a value." >&2; exit 2; }
-      shift 2
-      ;;
     -h|--help)
       usage
       exit 0
@@ -84,21 +75,6 @@ project_files() {
 }
 
 PROJECT_ROOT="$(project_files print-root)"
-
-if [[ -f "$PROJECT_ROOT/docs/teamwork/index.json" ]]; then
-  migration_rc=0
-  migration_output="$(
-    python3 "$TEAMWORK_ROOT/scripts/teamwork-case-migration.py" \
-    migrate \
-    --project-root "$PROJECT_ROOT" \
-    --cutover \
-      --cleanup 2>&1
-  )" || migration_rc=$?
-  if [[ "$migration_rc" -ne 0 ]]; then
-    printf 'Teamwork project init refused: %s\n' "$migration_output" >&2
-    exit "$migration_rc"
-  fi
-fi
 
 project_files preflight
 

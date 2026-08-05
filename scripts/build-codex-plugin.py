@@ -24,14 +24,17 @@ from pathlib import Path
 PLUGIN_NAME = "teamwork-skill"
 RUNTIME_INTEGRITY_MANIFEST = ".teamwork-runtime-integrity.json"
 RUNTIME_MARKER = "TEAMWORK_CODEX_PLUGIN_RUNTIME=1\n"
+TOPOLOGY_REL = "config/teamwork-topology.json"
 MAX_DEFAULT_PROMPT_CHARS = 128
 COPY_ITEMS = (
     ("VERSION", "VERSION"),
     (".codex-plugin", ".codex-plugin"),
+    (TOPOLOGY_REL, TOPOLOGY_REL),
     ("skills", "skills"),
     ("install.sh", "install.sh"),
     ("scripts/install", "scripts/install"),
     ("scripts/check-update.sh", "scripts/check-update.sh"),
+    ("scripts/teamwork_tooling/topology.py", "scripts/teamwork_tooling/topology.py"),
     ("scripts/check-codex-routing.py", "scripts/check-codex-routing.py"),
     ("scripts/codex_routing_config.py", "scripts/codex_routing_config.py"),
     ("scripts/configure-codex-routing.py", "scripts/configure-codex-routing.py"),
@@ -46,22 +49,6 @@ COPY_ITEMS = (
     ("scripts/validate_teamwork_index.py", "scripts/validate_teamwork_index.py"),
     ("scripts/plugin-activation.py", "scripts/plugin-activation.py"),
     ("scripts/plugin-runtime-root.py", "scripts/plugin-runtime-root.py"),
-    (
-        "scripts/tests/fixtures/v3.4.2-owned-surfaces.json",
-        "scripts/tests/fixtures/v3.4.2-owned-surfaces.json",
-    ),
-    (
-        "scripts/tests/fixtures/retired-teamwork-skills-v5.json",
-        "scripts/tests/fixtures/retired-teamwork-skills-v5.json",
-    ),
-    (
-        "scripts/tests/fixtures/v5.1-case-bundle-owned-surfaces.json",
-        "scripts/tests/fixtures/v5.1-case-bundle-owned-surfaces.json",
-    ),
-    (
-        "evals/teamwork/ledgers/v4-capability-migration.jsonl",
-        "evals/teamwork/ledgers/v4-capability-migration.jsonl",
-    ),
     ("templates/codex-agents", "templates/codex-agents"),
     ("templates/cursor-agents", "templates/cursor-agents"),
     ("templates/cursor-mcp", "templates/cursor-mcp"),
@@ -69,62 +56,6 @@ COPY_ITEMS = (
     ("templates/teamwork-memory", "templates/teamwork-memory"),
     ("hooks/notify.py", "hooks/notify.py"),
 )
-EXPECTED_SKILLS = (
-    "teamwork-collaborate",
-    "teamwork-debug",
-    "teamwork-explore",
-    "teamwork-init",
-    "teamwork-goal",
-    "teamwork-research",
-    "teamwork-plan",
-    "teamwork-review",
-    "teamwork-update",
-)
-EXPECTED_REFERENCES = (
-    "skills/teamwork-debug/references/runtime-diagnosis.md",
-    "skills/teamwork-collaborate/references/adversarial-search.md",
-    "skills/teamwork-collaborate/references/collaboration-layers.md",
-    "skills/teamwork-research/references/deep-research.md",
-    "skills/teamwork-review/references/strict-review.md",
-)
-EXPECTED_SKILL_AGENT_METADATA = (
-    "skills/teamwork-collaborate/agents/openai.yaml",
-)
-EXPECTED_ROLE_TEMPLATES = {
-    "codex-agents": (
-        "teamwork-debugger.toml",
-        "teamwork-designer.toml",
-        "teamwork-explorer.toml",
-        "teamwork-plan-reviewer.toml",
-        "teamwork-planner.toml",
-        "teamwork-researcher.toml",
-        "teamwork-reviewer.toml",
-        "teamwork-worker.toml",
-        "teamwork-writer.toml",
-    ),
-    "cursor-agents": (
-        "debugger.md",
-        "designer.md",
-        "explorer.md",
-        "plan-reviewer.md",
-        "planner.md",
-        "researcher.md",
-        "reviewer.md",
-        "worker.md",
-        "writer.md",
-    ),
-    "claude-agents": (
-        "debugger.md",
-        "designer.md",
-        "explorer.md",
-        "plan-reviewer.md",
-        "planner.md",
-        "researcher.md",
-        "reviewer.md",
-        "worker.md",
-        "writer.md",
-    ),
-}
 TRANSIENT_NAMES = {"__pycache__"}
 TRANSIENT_SUFFIXES = (".pyc", ".pyo")
 RUNTIME_INTEGRITY_EXCLUDED_FILES = {RUNTIME_INTEGRITY_MANIFEST}
@@ -138,6 +69,36 @@ def parse_args() -> argparse.Namespace:
         help="fail when the tracked bundle differs from canonical sources",
     )
     return parser.parse_args()
+
+
+def load_topology(root: Path) -> dict[str, object]:
+    path = root / TOPOLOGY_REL
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"invalid topology manifest {path}: {exc}") from exc
+    if not isinstance(value, dict) or value.get("schema_version") != 1:
+        raise SystemExit("topology manifest must use schema_version 1")
+    for key in ("public_skills", "agents", "owned_references", "retired"):
+        if key not in value:
+            raise SystemExit(f"topology manifest lacks {key}")
+    return value
+
+
+def expected_bundle_surfaces(root: Path) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...], dict[str, tuple[str, ...]]]:
+    topology = load_topology(root)
+    skills = tuple(sorted(row["name"] for row in topology["public_skills"]))
+    references = tuple(sorted(topology["owned_references"]))
+    metadata = tuple(sorted(f"skills/{name}/agents/openai.yaml" for name in skills))
+    roles: dict[str, list[str]] = {"codex-agents": [], "cursor-agents": [], "claude-agents": []}
+    host_directories = {"codex": "codex-agents", "cursor": "cursor-agents", "claude": "claude-agents"}
+    for row in topology["agents"]:
+        for host, path in row["templates"].items():
+            directory = host_directories[host]
+            roles[directory].append(Path(path).name)
+    return skills, references, metadata, {
+        directory: tuple(sorted(files)) for directory, files in roles.items()
+    }
 
 
 def copy_item(source: Path, destination: Path) -> None:
@@ -230,6 +191,7 @@ def validate_marketplace(root: Path) -> None:
 
 
 def validate_source(root: Path) -> None:
+    load_topology(root)
     version = (root / "VERSION").read_text(encoding="utf-8").strip()
     for manifest_rel, label in (
         (".codex-plugin/plugin.json", "Codex"),
@@ -270,6 +232,9 @@ def build_stage(root: Path, parent: Path) -> Path:
 
 
 def validate_bundle(bundle: Path, root: Path) -> None:
+    expected_skills, expected_references, expected_metadata, expected_roles = expected_bundle_surfaces(root)
+    if load_topology(bundle) != load_topology(root):
+        raise SystemExit("bundle topology manifest drifted from canonical source")
     manifest_path = bundle / ".codex-plugin/plugin.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     source_manifest = json.loads((root / ".codex-plugin/plugin.json").read_text(encoding="utf-8"))
@@ -278,8 +243,8 @@ def validate_bundle(bundle: Path, root: Path) -> None:
     if "hooks" in manifest:
         raise SystemExit("bundle manifest must not declare hooks")
     actual_skills = tuple(sorted(path.name for path in (bundle / "skills").iterdir() if path.is_dir()))
-    if actual_skills != tuple(sorted(EXPECTED_SKILLS)):
-        raise SystemExit("bundle must contain exactly the nine public Teamwork skills")
+    if actual_skills != expected_skills:
+        raise SystemExit("bundle skill inventory differs from the topology manifest")
     actual_references = tuple(
         sorted(
             path.relative_to(bundle).as_posix()
@@ -287,8 +252,8 @@ def validate_bundle(bundle: Path, root: Path) -> None:
             if path.is_file() and "references" in path.relative_to(bundle).parts
         )
     )
-    if actual_references != tuple(sorted(EXPECTED_REFERENCES)):
-        raise SystemExit("bundle must contain exactly the five public Teamwork references")
+    if actual_references != expected_references:
+        raise SystemExit("bundle reference inventory differs from the topology manifest")
     actual_agent_metadata = tuple(
         sorted(
             path.relative_to(bundle).as_posix()
@@ -296,15 +261,15 @@ def validate_bundle(bundle: Path, root: Path) -> None:
             if path.is_file() and "agents" in path.relative_to(bundle).parts
         )
     )
-    if actual_agent_metadata != tuple(sorted(EXPECTED_SKILL_AGENT_METADATA)):
-        raise SystemExit("bundle must contain exactly the Collaborate skill UI metadata")
-    for directory, expected_files in EXPECTED_ROLE_TEMPLATES.items():
+    if actual_agent_metadata != expected_metadata:
+        raise SystemExit("bundle skill UI metadata differs from the topology manifest")
+    for directory, expected_files in expected_roles.items():
         actual_files = tuple(
             sorted(path.name for path in (bundle / "templates" / directory).iterdir() if path.is_file())
         )
         if actual_files != expected_files:
             raise SystemExit(
-                f"bundle templates/{directory} must contain exactly the nine Teamwork role templates"
+                f"bundle templates/{directory} differs from the topology manifest"
             )
     if (bundle / "hooks/hooks.json").exists():
         raise SystemExit("bundle must not carry plugin-bundled hooks/hooks.json")

@@ -162,7 +162,7 @@ require_explicit_lifecycle_preferences() {
   local target="$1"
   local missing=() missing_text
   managed_dependency_lifecycle_target "$target" || return 0
-  [[ "$PREFERENCES_STATUS" == "missing" ]] || return 0
+  [[ "$PREFERENCES_STATUS" == "missing" || "$PREFERENCES_STATUS" == "obsolete" ]] || return 0
 
   [[ -n "$CODEX_PROFILE_SOURCE" ]] || missing+=("profile (--profile performance-first|cost-first)")
   explicit_capability_choice_is_present codegraph \
@@ -175,7 +175,7 @@ require_explicit_lifecycle_preferences() {
     for value in "${missing[@]:1}"; do
       missing_text="$missing_text, $value"
     done
-    printf 'Missing Teamwork install preferences; %s requires explicit %s before writing global install state.\n' \
+    printf 'Missing or obsolete Teamwork install preferences; %s requires explicit %s before writing global install state.\n' \
       "$target" "$missing_text" >&2
     printf 'For the explicit baseline, use: --profile performance-first --no-managed-codegraph --no-managed-gpu-broker.\n' >&2
     return 2

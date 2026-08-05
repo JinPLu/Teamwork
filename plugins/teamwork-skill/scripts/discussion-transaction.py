@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Own the durable Discussion, Design, and Goal artifact transactions.
+"""Own durable Teamwork storage and the per-task Writer live document.
 
-The command intentionally has a small public surface: inspect -> schema ->
-apply.  Markdown is generated from structured state; callers never select an
-artifact filename or edit a generated artifact in place.  Every mutation is a
-recoverable, journaled transaction with exact preimages.
+Every current-format case may expose one mutable ``live.md``. Purpose-specific
+content is folded into that document while locking, stale-writer checks,
+journals, recovery, and readback remain storage implementation details. The
+``case-*`` commands operate only on current case-v3 trees for internal tooling
+and diagnostics; old schemas are accepted only by explicit migration commands.
 """
 
 from __future__ import annotations
@@ -129,8 +130,20 @@ CASE_ARTIFACT_KINDS = (
     | CASE_EVIDENCE_KINDS
     | {f"history-{kind}" for kind in CASE_HISTORY_KINDS}
 )
+CASE_LIVE_DOCUMENT_VERSION = 1
+CASE_LIVE_PURPOSES = {
+    "task", "discussion", "research", "debug", "plan", "review",
+    "goal", "init", "update", "result",
+}
+CASE_LIVE_STATUSES = {"active", "finalized"}
+CASE_LIVE_SECTIONS = (
+    "Purpose State", "Decisions", "Plan", "Evidence", "Review",
+    "Outcome", "Migration Appendix",
+)
+CASE_REPLACE_SECTIONS = {"Purpose State", "Decisions", "Plan"}
 CASE_INDEX_MAX_BYTES = 256 * 1024
 CASE_MANIFEST_MAX_BYTES = 256 * 1024
+CASE_LIVE_MAX_BYTES = 4 * 1024 * 1024
 CASE_CAPS = {
     "active_cases": 32,
     "claim_heads": 2048,
@@ -162,7 +175,6 @@ MIGRATION_PREFIXES = (
     INDEX_PATH,
 )
 MIGRATION_RUNTIME_ROOT = ".teamwork/runtime"
-MIGRATION_ARCHIVE_ROOT = ".teamwork/cold-archive/v1"
 MIGRATION_PHASES = {
     "baseline_approved",
     "archive_durable",
@@ -2196,12 +2208,6 @@ def discussion_schema(operation: str) -> dict[str, object]:
         "record": record,
         "close_status": "accepted" if operation == "close" else None,
     }
-
-
-def schema_template(lifecycle: str) -> dict[str, object]:
-    """Backward-compatible import name for the Discussion schema command."""
-
-    return discussion_schema(lifecycle)
 
 
 def _archive_path(root: Path, slug: str, updated: str) -> str:
@@ -5505,30 +5511,220 @@ def case_base(case_id: str) -> str:
     return f"docs/teamwork/cases/{_case_id(case_id)}"
 
 
+def case_live_document_path(case_id: str) -> str:
+    return f"{case_base(case_id)}/live.md"
+
+
 def derive_case_artifact_path(case_id: str, kind: str, artifact_id: str, *, delta: bool = False) -> str:
+    """Return the current Writer document path for every semantic artifact.
+
+    Explicit migration staging uses ``derive_case_source_artifact_path``
+    internally. Keeping that distinction in the storage owner prevents
+    workflow prompts from selecting an artifact tree or treating individual
+    method outputs as separate live documents.
+    """
+    del artifact_id, delta
+    if kind in CASE_ARTIFACT_KINDS and not kind.startswith("history-"):
+        return case_live_document_path(case_id)
+    if kind.startswith("history-"):
+        fail("history artifacts do not have a live document path")
+    fail("unsupported case artifact kind")
+
+
+def derive_case_source_artifact_path(case_id: str, kind: str, artifact_id: str, *, delta: bool = False) -> str:
+    """Return a temporary path used only while folding migration inputs."""
     base = case_base(case_id)
     if kind == "collaborate":
-        return f"{base}/live/collaborate.md"
+        return f"{base}/sources/collaborate/{_artifact_id(artifact_id)}.md"
     if kind == "goal":
-        return f"{base}/live/goal.md"
+        return f"{base}/sources/goal/{_artifact_id(artifact_id)}.md"
     if kind == "decision":
-        return f"{base}/decision.md"
+        return f"{base}/sources/decision/{_artifact_id(artifact_id)}.md"
     if kind == "plan":
-        return f"{base}/plan.md"
+        return f"{base}/sources/plan/{_artifact_id(artifact_id)}.md"
     if kind in CASE_EVIDENCE_KINDS:
-        return f"{base}/evidence/{_artifact_id(artifact_id)}.md"
+        return f"{base}/sources/{kind}/{_artifact_id(artifact_id)}.md"
     if kind == "result":
-        return f"{base}/results/{_artifact_id(artifact_id)}.md"
+        return f"{base}/sources/result/{_artifact_id(artifact_id)}.md"
     if kind == "review":
         review_digest = _hex64(artifact_id, "review digest")
         suffix = "-delta" if delta else ""
-        return f"{base}/reviews/{review_digest}{suffix}.md"
+        return f"{base}/sources/review/{review_digest}{suffix}.md"
     if kind.startswith("history-"):
         history_kind = kind.removeprefix("history-")
         if history_kind not in CASE_HISTORY_KINDS:
             fail("unsupported history artifact kind")
         return f"{base}/history/{history_kind}/{_artifact_id(artifact_id)}.md"
     fail("unsupported case artifact kind")
+
+
+def case_live_section(kind: str, path: str | None = None) -> str:
+    if path is not None and "/history/" in path:
+        return "Migration Appendix"
+    if kind in {"collaborate", "goal"}:
+        return "Purpose State"
+    if kind == "decision":
+        return "Decisions"
+    if kind == "plan":
+        return "Plan"
+    if kind in CASE_EVIDENCE_KINDS:
+        return "Evidence"
+    if kind in CASE_REVIEW_KINDS or kind == "review":
+        return "Review"
+    if kind == "result":
+        return "Outcome"
+    return "Migration Appendix"
+
+
+def case_live_purpose(kind: str) -> str:
+    return {
+        "collaborate": "discussion",
+        "decision": "discussion",
+        "research": "research",
+        "debug": "debug",
+        "plan": "plan",
+        "review": "review",
+        "review-delta": "review",
+        "goal": "goal",
+        "init": "init",
+        "update": "update",
+        "result": "result",
+    }.get(kind, "task")
+
+
+def case_live_artifact_kind(purpose: str, *, closed: bool, has_claims: bool) -> str:
+    if closed:
+        return "result"
+    if has_claims:
+        return "goal"
+    return {
+        "discussion": "collaborate",
+        "research": "research",
+        "debug": "debug",
+        "plan": "plan",
+        "review": "review",
+        "init": "init",
+        "update": "update",
+        "result": "result",
+    }.get(purpose, "evidence")
+
+
+_LIVE_SECTION_START_RE = re.compile(r"^<!-- TEAMWORK:SECTION (.+) -->$")
+_LIVE_SECTION_END = "<!-- /TEAMWORK:SECTION -->"
+
+
+def render_case_live_document(
+    *,
+    case_id: str,
+    title: str,
+    purpose: str,
+    status: str,
+    generation: int,
+    updated_at: str,
+    needs_resolution: bool,
+    sections: dict[str, str],
+) -> str:
+    case_id = _case_id(case_id)
+    title = require_text(title, "live document title", maximum=200)
+    if purpose not in CASE_LIVE_PURPOSES:
+        fail("live document purpose is invalid")
+    if status not in CASE_LIVE_STATUSES:
+        fail("live document status is invalid")
+    if not isinstance(generation, int) or isinstance(generation, bool) or generation < 1:
+        fail("live document generation must be a positive integer")
+    updated_at = _iso(updated_at, "live document updated_at")
+    unknown = set(sections) - set(CASE_LIVE_SECTIONS)
+    if unknown:
+        fail("live document contains unsupported sections")
+    lines = [
+        f"Teamwork Live Document: {CASE_LIVE_DOCUMENT_VERSION}",
+        f"Case ID: {case_id}",
+        f"Purpose: {purpose}",
+        f"Status: {status}",
+        f"Generation: {generation}",
+        f"Last Updated: {updated_at}",
+        f"Needs Resolution: {'yes' if needs_resolution else 'no'}",
+        "",
+        f"# {title}",
+    ]
+    for heading in CASE_LIVE_SECTIONS:
+        body = sections.get(heading)
+        if body is None or not body.strip():
+            continue
+        lines.extend([
+            "",
+            f"<!-- TEAMWORK:SECTION {heading} -->",
+            f"## {heading}",
+            "",
+            body.rstrip(),
+            _LIVE_SECTION_END,
+        ])
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def parse_case_live_document(text: str, expected_case_id: str | None = None) -> dict[str, object]:
+    text = require_markdown_body(text, "live document", maximum_bytes=CASE_LIVE_MAX_BYTES)
+    lines = text.splitlines()
+    if len(lines) < 9 or lines[0] != f"Teamwork Live Document: {CASE_LIVE_DOCUMENT_VERSION}":
+        fail("live document has an unsupported envelope")
+    fields: dict[str, str] = {}
+    for line in lines[1:7]:
+        if ": " not in line:
+            fail("live document envelope is malformed")
+        key, value = line.split(": ", 1)
+        fields[key] = value
+    if set(fields) != {"Case ID", "Purpose", "Status", "Generation", "Last Updated", "Needs Resolution"}:
+        fail("live document envelope fields are invalid")
+    case_id = _case_id(fields["Case ID"])
+    if expected_case_id is not None and case_id != _case_id(expected_case_id):
+        fail("live document case identity mismatch")
+    purpose = fields["Purpose"]
+    if purpose not in CASE_LIVE_PURPOSES:
+        fail("live document purpose is invalid")
+    status = fields["Status"]
+    if status not in CASE_LIVE_STATUSES:
+        fail("live document status is invalid")
+    try:
+        generation = int(fields["Generation"])
+    except ValueError:
+        fail("live document generation is invalid")
+    if generation < 1 or str(generation) != fields["Generation"]:
+        fail("live document generation is invalid")
+    updated_at = _iso(fields["Last Updated"], "live document updated_at")
+    if fields["Needs Resolution"] not in {"yes", "no"}:
+        fail("live document Needs Resolution must be yes or no")
+    title_line = next((line for line in lines[7:] if line.startswith("# ")), None)
+    if title_line is None:
+        fail("live document title is missing")
+    title = require_text(title_line[2:], "live document title", maximum=200)
+    sections: dict[str, str] = {}
+    position = 0
+    while position < len(lines):
+        match = _LIVE_SECTION_START_RE.fullmatch(lines[position])
+        if match is None:
+            position += 1
+            continue
+        heading = match.group(1)
+        if heading not in CASE_LIVE_SECTIONS or heading in sections:
+            fail("live document section markers are invalid")
+        if position + 2 >= len(lines) or lines[position + 1] != f"## {heading}" or lines[position + 2] != "":
+            fail("live document section heading is malformed")
+        try:
+            end = lines.index(_LIVE_SECTION_END, position + 3)
+        except ValueError:
+            fail("live document section is not closed")
+        sections[heading] = "\n".join(lines[position + 3:end]).rstrip() + "\n"
+        position = end + 1
+    return {
+        "case_id": case_id,
+        "title": title,
+        "purpose": purpose,
+        "status": status,
+        "generation": generation,
+        "updated_at": updated_at,
+        "needs_resolution": fields["Needs Resolution"] == "yes",
+        "sections": sections,
+    }
 
 
 def artifact_id_for_case(kind: str, envelope: dict[str, object], body: str) -> str:
@@ -5553,16 +5749,20 @@ def artifact_digest(path: str, body: str) -> str:
     return hashlib.sha256(canonical_text_bytes(body)).hexdigest()
 
 
-def validate_case_manifest(value: object) -> dict[str, object]:
-    expected_keys = {
+def validate_case_manifest(value: object, *, migration_read: bool = False) -> dict[str, object]:
+    base_keys = {
         "schema_version", "case_id", "case_seed_b64", "created_at", "closed_at",
         "status", "claims", "artifacts", "history", "references", "runtime",
         "migration_sources",
     }
-    if not isinstance(value, dict) or set(value) != expected_keys:
+    if not isinstance(value, dict):
         fail("v2 case manifest has an unsupported schema")
-    if value.get("schema_version") != 1:
-        fail("v2 case manifest schema_version must be 1")
+    manifest_schema = value.get("schema_version")
+    if manifest_schema == 1 and not migration_read:
+        fail("case manifest schema_version 1 requires explicit project migration")
+    expected_keys = base_keys if manifest_schema == 1 else base_keys | {"document"}
+    if manifest_schema not in ({1, 2} if migration_read else {2}) or set(value) != expected_keys:
+        fail("case manifest must use current schema_version 2 with exact fields")
     case_id = _case_id(value.get("case_id"))
     status = value.get("status")
     if status not in CASE_PHASES:
@@ -5647,6 +5847,50 @@ def validate_case_manifest(value: object) -> dict[str, object]:
             "consumer": require_text(raw.get("consumer"), "artifact consumer", maximum=200),
             "source_revision": _hex64(raw.get("source_revision"), "artifact source_revision"),
         }
+    document: dict[str, object] | None = None
+    if manifest_schema == 2:
+        raw_document = value.get("document")
+        if raw_document is not None:
+            document_fields = {
+                "path", "generation", "byte_digest", "updated_at", "title",
+                "purpose", "status", "needs_resolution", "latest_artifact_id",
+                "source_artifact_ids",
+            }
+            if not isinstance(raw_document, dict) or set(raw_document) != document_fields:
+                fail("manifest document has an unsupported schema")
+            document_path = checked_relative(raw_document.get("path"), "document.path")
+            if document_path != case_live_document_path(case_id):
+                fail("manifest document.path must be the case live.md")
+            generation = raw_document.get("generation")
+            if not isinstance(generation, int) or isinstance(generation, bool) or generation < 1:
+                fail("manifest document.generation must be a positive integer")
+            purpose = raw_document.get("purpose")
+            if purpose not in CASE_LIVE_PURPOSES:
+                fail("manifest document.purpose is invalid")
+            document_status = raw_document.get("status")
+            if document_status not in CASE_LIVE_STATUSES:
+                fail("manifest document.status is invalid")
+            source_ids_raw = raw_document.get("source_artifact_ids")
+            if not isinstance(source_ids_raw, list) or len(source_ids_raw) > CASE_CAPS["artifacts"]:
+                fail("manifest document.source_artifact_ids is invalid")
+            source_ids = [_artifact_id(item) for item in source_ids_raw]
+            if len(source_ids) != len(set(source_ids)) or any(item not in artifacts for item in source_ids):
+                fail("manifest document sources must be unique known artifacts")
+            latest_artifact_id = _artifact_id(raw_document.get("latest_artifact_id"))
+            if latest_artifact_id not in artifacts:
+                fail("manifest document.latest_artifact_id must exist in artifacts")
+            document = {
+                "path": document_path,
+                "generation": generation,
+                "byte_digest": _hex64(raw_document.get("byte_digest"), "document.byte_digest"),
+                "updated_at": _iso(raw_document.get("updated_at"), "document.updated_at"),
+                "title": require_text(raw_document.get("title"), "document.title", maximum=200),
+                "purpose": purpose,
+                "status": document_status,
+                "needs_resolution": raw_document.get("needs_resolution") if isinstance(raw_document.get("needs_resolution"), bool) else fail("manifest document.needs_resolution must be boolean"),
+                "latest_artifact_id": latest_artifact_id,
+                "source_artifact_ids": source_ids,
+            }
     history: list[dict[str, object]] = []
     for position, raw in enumerate(value["history"]):
         if not isinstance(raw, dict) or set(raw) != {"artifact_id", "role", "superseded_by", "retained_reason", "recorded_at"}:
@@ -5685,8 +5929,24 @@ def validate_case_manifest(value: object) -> dict[str, object]:
         ids = [str(row[key]) for row in rows]
         if len(ids) != len(set(ids)):
             fail(f"manifest {name} contains duplicate identifiers")
+    if manifest_schema == 2 and not migration_read:
+        if document is None:
+            if artifacts or history or references or sources:
+                fail("a current manifest without live.md must not retain artifacts")
+        else:
+            if set(artifacts) != {document["latest_artifact_id"]}:
+                fail("a current manifest may index only its live.md artifact")
+            live_row = artifacts[str(document["latest_artifact_id"])]
+            if live_row["path"] != document["path"] or live_row["byte_digest"] != document["byte_digest"]:
+                fail("the live.md artifact must match the document record")
+            if history or references:
+                fail("current manifests do not retain artifact history or references")
+            if any(source["artifact_id"] != document["latest_artifact_id"] for source in sources):
+                fail("all migration provenance must target live.md")
+            if any(claim["head_artifact_id"] != document["latest_artifact_id"] for claim in claims.values()):
+                fail("all current claim heads must target live.md")
     manifest = {
-        "schema_version": 1,
+        "schema_version": manifest_schema,
         "case_id": case_id,
         "case_seed_b64": case_seed_b64,
         "created_at": _iso(value.get("created_at"), "created_at"),
@@ -5699,6 +5959,8 @@ def validate_case_manifest(value: object) -> dict[str, object]:
         "runtime": {"active_route": active_route, "state_revision": state_revision},
         "migration_sources": sources,
     }
+    if manifest_schema == 2:
+        manifest["document"] = document
     text = json.dumps(manifest, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     if len(text.encode("utf-8")) > CASE_MANIFEST_MAX_BYTES:
         fail("case manifest exceeds maximum serialized size")
@@ -5709,8 +5971,8 @@ def validate_case_index(value: object) -> dict[str, object]:
     expected_keys = {"schema_version", "project", "active_cases", "claim_heads", "aliases", "recent_cases", "migration"}
     if not isinstance(value, dict) or set(value) != expected_keys:
         fail("v2 root index has an unsupported schema")
-    if value.get("schema_version") != 2:
-        fail("v2 root index schema_version must be 2")
+    if value.get("schema_version") != 3:
+        fail("current root index schema_version must be 3")
     project = value.get("project")
     if not isinstance(project, dict) or set(project) != {"name", "root", "description"}:
         fail("v2 root index project must be an object")
@@ -5799,16 +6061,27 @@ def validate_case_index(value: object) -> dict[str, object]:
         migration = {"phase": phase, "migration_id": _migration_id(migration_raw.get("migration_id")), "journal_path": checked_relative(migration_raw.get("journal_path"), "journal_path")}
         for key in ("baseline_digest", "report_digest", "candidate_digest", "archive_manifest_digest"):
             migration[key] = _hex64(migration_raw.get(key), key)
-    index = {"schema_version": 2, "project": project_clean, "active_cases": active_cases, "claim_heads": dict(sorted(claim_heads.items())), "aliases": dict(sorted(aliases.items())), "recent_cases": recent_cases, "migration": migration}
+    index = {"schema_version": 3, "project": project_clean, "active_cases": active_cases, "claim_heads": dict(sorted(claim_heads.items())), "aliases": dict(sorted(aliases.items())), "recent_cases": recent_cases, "migration": migration}
     text = json.dumps(index, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     if len(text.encode("utf-8")) > CASE_INDEX_MAX_BYTES:
-        fail("v2 root index exceeds maximum serialized size")
+        fail("current root index exceeds maximum serialized size")
     return index
+
+
+def validate_legacy_case_index(value: object) -> dict[str, object]:
+    """Validate schema 2 only as explicit project-migration input."""
+    if not isinstance(value, dict) or value.get("schema_version") != 2:
+        fail("legacy case index schema_version must be 2")
+    promoted = dict(value)
+    promoted["schema_version"] = 3
+    validated = validate_case_index(promoted)
+    validated["schema_version"] = 2
+    return validated
 
 
 def empty_case_index(project_name: str = "Teamwork") -> dict[str, object]:
     return validate_case_index({
-        "schema_version": 2,
+        "schema_version": 3,
         "project": {
             "name": project_name,
             "root": ".",
@@ -5832,15 +6105,20 @@ def detect_teamwork_memory_schema(root: Path, *, migration: bool = False) -> str
     v1_keys = {"last_updated", "active", "entries"}.intersection(value)
     v2_keys = {"active_cases", "claim_heads", "aliases", "recent_cases", "migration"}.intersection(value)
     if v1_keys and v2_keys:
-        fail("hybrid v1/v2 Teamwork memory state detected")
+        fail("hybrid Teamwork memory state detected")
     if value.get("schema_version") == 1 and v1_keys:
         if not migration:
-            fail("legacy-v1 Teamwork memory is migration input only; normal runtime requires case-v2 memory")
+            fail("legacy-v1 Teamwork memory requires explicit project migration")
         parse_index(text, migration=migration)
         return "legacy-v1"
     if value.get("schema_version") == 2 and v2_keys:
+        if not migration:
+            fail("case-v2 Teamwork memory requires explicit project migration")
+        validate_legacy_case_index(value)
+        return "case-v2-legacy"
+    if value.get("schema_version") == 3 and v2_keys:
         validate_case_index(value)
-        return "case-v2"
+        return "case-v3"
     fail("unknown Teamwork memory schema")
 
 
@@ -5869,8 +6147,23 @@ def read_case_manifest(root: Path, case_id: str) -> tuple[str, dict[str, object]
     return text, validate_case_manifest(_decode_json(text, "case manifest"))
 
 
+def read_legacy_case_manifest(root: Path, case_id: str) -> tuple[str, dict[str, object]]:
+    text = safe_read_text(root, case_manifest_path(case_id))
+    assert text is not None
+    return text, validate_case_manifest(_decode_json(text, "legacy case manifest"), migration_read=True)
+
+
+def legacy_case_manifest_revision(manifest: dict[str, object]) -> str:
+    stable = {
+        key: value
+        for key, value in validate_case_manifest(manifest, migration_read=True).items()
+        if key != "updated_at"
+    }
+    return case_digest("manifest-revision", stable)
+
+
 def cases_revision(root: Path, index_text: str, index: dict[str, object]) -> str:
-    parts = [b"case-v2", index_text.encode("utf-8")]
+    parts = [b"case-v3", index_text.encode("utf-8")]
     case_ids = sorted({str(item["case_id"]) for item in index["active_cases"]} | {str(item["case_id"]) for item in index["recent_cases"]})
     for case_id in case_ids:
         manifest = safe_read_bytes(root, case_manifest_path(case_id), optional=True)
@@ -5896,11 +6189,458 @@ def inspect_cases(root: Path) -> dict[str, object]:
             if revision != row["manifest_revision"]:
                 fail("active case manifest revision does not match root index")
             active_cases.append({"path": row["manifest_path"], "revision": revision, "state": manifest})
-        return {"initialized": True, "schema_mode": "case-v2", "recovered": recovered, "revision": cases_revision(root, index_text, index), "active_cases": active_cases, "claim_heads": index["claim_heads"], "aliases": index["aliases"], "recent_cases": index["recent_cases"], "migration": index["migration"]}
+        return {"initialized": True, "schema_mode": "case-v3", "recovered": recovered, "revision": cases_revision(root, index_text, index), "active_cases": active_cases, "claim_heads": index["claim_heads"], "aliases": index["aliases"], "recent_cases": index["recent_cases"], "migration": index["migration"]}
 
 
 def render_case_artifact(kind: str, title: str, body: str, *, source_digest: str, updated_at: str) -> str:
     return f"Artifact Type: case-{kind}\nLast Updated: {updated_at}\nSource Digest: {source_digest}\n\n# {title}\n\n{body.rstrip()}\n"
+
+
+def _artifact_kind_from_row(row: dict[str, object]) -> str:
+    role = str(row["role"])
+    subtype = str(row["subtype"])
+    if role in {"evidence", "review", "history"}:
+        return subtype if role != "history" else f"history-{subtype}"
+    return role
+
+
+def _fold_existing_artifacts_into_live(
+    root: Path,
+    manifest: dict[str, object],
+) -> tuple[dict[str, str], bool, list[str]]:
+    grouped: dict[str, list[tuple[str, str, str]]] = {}
+    for artifact_id, row in sorted(
+        manifest["artifacts"].items(),
+        key=lambda item: (str(item[1]["created_at"]), str(item[0])),
+    ):
+        path = str(row["path"])
+        raw = safe_read_bytes(root, path)
+        assert raw is not None
+        if hashlib.sha256(raw).hexdigest() != row["byte_digest"]:
+            fail("case artifact bytes changed before live-document fold", category="INDETERMINATE")
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            fail("case artifact is not UTF-8 and cannot be folded", category="INDETERMINATE")
+        kind = _artifact_kind_from_row(row)
+        heading = case_live_section(kind, path)
+        grouped.setdefault(heading, []).append((str(artifact_id), str(row["byte_digest"]), text))
+    sections: dict[str, str] = {}
+    needs_resolution = False
+    for heading in CASE_LIVE_SECTIONS:
+        rows = grouped.get(heading, [])
+        if not rows:
+            continue
+        distinct = {digest for _, digest, _ in rows}
+        if heading in CASE_REPLACE_SECTIONS and len(distinct) > 1:
+            needs_resolution = True
+        entries = []
+        if heading in CASE_REPLACE_SECTIONS and len(distinct) > 1:
+            entries.extend([
+                "> **Needs resolution:** multiple preserved sources disagree; no source was selected as canonical.",
+                "",
+            ])
+        for artifact_id, digest, text in rows:
+            entries.extend([
+                f"### Preserved source `{artifact_id}`",
+                "",
+                f"Byte digest: `{digest}`",
+                "",
+                text.rstrip(),
+                "",
+            ])
+        sections[heading] = "\n".join(entries).rstrip() + "\n"
+    return sections, needs_resolution, [str(item) for item in manifest["artifacts"]]
+
+
+def _read_case_live_state(
+    root: Path,
+    manifest: dict[str, object],
+    *,
+    fallback_title: str,
+) -> dict[str, object]:
+    document = manifest.get("document") if manifest.get("schema_version") == 2 else None
+    if document is None:
+        sections, needs_resolution, source_ids = _fold_existing_artifacts_into_live(root, manifest)
+        return {
+            "title": fallback_title,
+            "purpose": "task",
+            "status": "active",
+            "generation": 0,
+            "needs_resolution": needs_resolution,
+            "sections": sections,
+            "source_artifact_ids": source_ids,
+        }
+    assert isinstance(document, dict)
+    raw = safe_read_bytes(root, str(document["path"]))
+    assert raw is not None
+    if hashlib.sha256(raw).hexdigest() != document["byte_digest"]:
+        fail("live document bytes do not match the manifest", category="INDETERMINATE")
+    try:
+        state = parse_case_live_document(raw.decode("utf-8"), str(manifest["case_id"]))
+    except UnicodeDecodeError:
+        fail("live document must be UTF-8", category="INDETERMINATE")
+    for key in ("generation", "title", "purpose", "status", "needs_resolution"):
+        if state[key] != document[key]:
+            fail(f"live document {key} does not match the manifest", category="INDETERMINATE")
+    state["source_artifact_ids"] = list(document["source_artifact_ids"])
+    return state
+
+
+def _merge_case_live_section(
+    sections: dict[str, str],
+    *,
+    heading: str,
+    body: str,
+    kind: str,
+    updated_at: str,
+) -> dict[str, str]:
+    sections = dict(sections)
+    clean = body.rstrip() + "\n"
+    prior = sections.get(heading)
+    if heading in CASE_REPLACE_SECTIONS:
+        if prior is not None and prior.rstrip() == clean.rstrip():
+            fail("live document update has no material semantic change")
+        sections[heading] = clean
+        return sections
+    entry = "\n".join([
+        f"### {kind.replace('-', ' ').title()} — {updated_at}",
+        "",
+        clean.rstrip(),
+        "",
+    ]).rstrip() + "\n"
+    if prior is not None and clean.rstrip() in prior.rstrip():
+        fail("live document update has no material semantic change")
+    sections[heading] = ("" if prior is None else prior.rstrip() + "\n\n") + entry
+    return sections
+
+
+def _install_case_live_revision(
+    root: Path,
+    manifest: dict[str, object],
+    *,
+    title: str,
+    kind: str,
+    body: str,
+    source_digest: str,
+    consumer: str,
+    updated_at: str,
+    outputs: dict[str, Output],
+    finalize: bool = False,
+) -> tuple[dict[str, object], str, str]:
+    case_id = str(manifest["case_id"])
+    live_path = case_live_document_path(case_id)
+    document = manifest.get("document") if manifest.get("schema_version") == 2 else None
+    represented_live = any(str(row["path"]) == live_path for row in manifest["artifacts"].values())
+    if document is None and not represented_live and safe_read_bytes(root, live_path, optional=True) is not None:
+        fail("unmanaged live.md collision; refusing to overwrite", category="INDETERMINATE")
+    state = _read_case_live_state(root, manifest, fallback_title=title)
+    heading = case_live_section(kind)
+    sections = _merge_case_live_section(
+        state["sections"],
+        heading=heading,
+        body=body,
+        kind=kind,
+        updated_at=updated_at,
+    )
+    next_purpose = case_live_purpose(kind)
+    prior_purpose = str(state["purpose"])
+    purpose = next_purpose if prior_purpose == "task" else prior_purpose
+    if prior_purpose not in {"task", next_purpose}:
+        purpose = "task"
+    generation = int(state["generation"]) + 1
+    status = "finalized" if finalize else "active"
+    rendered = render_case_live_document(
+        case_id=case_id,
+        title=str(state["title"]),
+        purpose=purpose,
+        status=status,
+        generation=generation,
+        updated_at=updated_at,
+        needs_resolution=bool(state["needs_resolution"]),
+        sections=sections,
+    )
+    role, subtype = _artifact_role(kind)
+    envelope = {
+        "role": role,
+        "subtype": subtype,
+        "case_id": case_id,
+        "claim_ids": [],
+        "consumer": consumer,
+        "source_revision": source_digest,
+        "immutable": True,
+    }
+    artifact_id = artifact_id_for_case(kind, envelope, rendered)
+    path = live_path
+    prior_live_ids = {
+        str(prior_id)
+        for prior_id, row in manifest["artifacts"].items()
+        if str(row["path"]) == path
+    }
+    if prior_live_ids:
+        manifest = dict(manifest)
+        manifest["artifacts"] = {
+            prior_id: row
+            for prior_id, row in manifest["artifacts"].items()
+            if str(prior_id) not in prior_live_ids
+        }
+        manifest["history"] = [
+            row for row in manifest["history"]
+            if str(row["artifact_id"]) not in prior_live_ids
+        ]
+        if manifest.get("schema_version") == 2:
+            manifest["document"] = None
+        manifest = validate_case_manifest(manifest)
+    digest = artifact_digest(path, rendered)
+    manifest = _case_add_artifact(
+        manifest,
+        kind=kind,
+        path=path,
+        artifact_id=artifact_id,
+        digest=digest,
+        updated_at=updated_at,
+        source_revision=source_digest,
+        consumer=consumer,
+        allow_document_staging=True,
+    )
+    claims = {}
+    for claim_id, raw_claim in manifest["claims"].items():
+        claim = dict(raw_claim)
+        if claim["head_artifact_id"] in prior_live_ids:
+            claim["head_artifact_id"] = artifact_id
+            claim["head_digest"] = digest
+        claims[claim_id] = claim
+    manifest = dict(manifest)
+    manifest["claims"] = claims
+    manifest["schema_version"] = 2
+    manifest["document"] = {
+        "path": path,
+        "generation": generation,
+        "byte_digest": digest,
+        "updated_at": updated_at,
+        "title": str(state["title"]),
+        "purpose": purpose,
+        "status": status,
+        "needs_resolution": bool(state["needs_resolution"]),
+        "latest_artifact_id": artifact_id,
+        "source_artifact_ids": [artifact_id],
+    }
+    manifest["runtime"] = {
+        "active_route": path,
+        "state_revision": case_digest(
+            "case-runtime",
+            {"case_id": case_id, "path": path, "generation": generation, "at": updated_at},
+        ),
+    }
+    outputs[path] = Output(rendered.encode("utf-8"))
+    return validate_case_manifest(manifest), artifact_id, digest
+
+
+def _finalize_case_live_document(
+    root: Path,
+    manifest: dict[str, object],
+    *,
+    title: str,
+    updated_at: str,
+    outputs: dict[str, Output],
+) -> dict[str, object]:
+    state = _read_case_live_state(root, manifest, fallback_title=title)
+    if state["status"] == "finalized":
+        fail("live document is already finalized")
+    case_id = str(manifest["case_id"])
+    generation = int(state["generation"]) + 1
+    rendered = render_case_live_document(
+        case_id=case_id,
+        title=str(state["title"]),
+        purpose=str(state["purpose"]),
+        status="finalized",
+        generation=generation,
+        updated_at=updated_at,
+        needs_resolution=bool(state["needs_resolution"]),
+        sections=dict(state["sections"]),
+    )
+    source_digest = case_digest(
+        "live-finalize",
+        {"case_id": case_id, "generation": generation, "at": updated_at},
+    )
+    envelope = {
+        "role": "result",
+        "subtype": "result",
+        "case_id": case_id,
+        "claim_ids": [],
+        "consumer": "teamwork",
+        "source_revision": source_digest,
+        "immutable": True,
+    }
+    artifact_id = artifact_id_for_case("result", envelope, rendered)
+    path = case_live_document_path(case_id)
+    prior_live_ids = {
+        str(prior_id)
+        for prior_id, row in manifest["artifacts"].items()
+        if str(row["path"]) == path
+    }
+    manifest = dict(manifest)
+    manifest["artifacts"] = {
+        prior_id: row
+        for prior_id, row in manifest["artifacts"].items()
+        if str(prior_id) not in prior_live_ids
+    }
+    manifest["history"] = [
+        row for row in manifest["history"]
+        if str(row["artifact_id"]) not in prior_live_ids
+    ]
+    manifest["document"] = None
+    manifest = validate_case_manifest(manifest)
+    digest = artifact_digest(path, rendered)
+    manifest = _case_add_artifact(
+        manifest,
+        kind="result",
+        path=path,
+        artifact_id=artifact_id,
+        digest=digest,
+        updated_at=updated_at,
+        source_revision=source_digest,
+        consumer="teamwork",
+        allow_document_staging=True,
+    )
+    claims = {}
+    for claim_id, raw_claim in manifest["claims"].items():
+        claim = dict(raw_claim)
+        if claim["head_artifact_id"] in prior_live_ids:
+            claim["head_artifact_id"] = artifact_id
+            claim["head_digest"] = digest
+        claims[claim_id] = claim
+    manifest = dict(manifest)
+    manifest["claims"] = claims
+    manifest["schema_version"] = 2
+    manifest["document"] = {
+        "path": path,
+        "generation": generation,
+        "byte_digest": digest,
+        "updated_at": updated_at,
+        "title": str(state["title"]),
+        "purpose": str(state["purpose"]),
+        "status": "finalized",
+        "needs_resolution": bool(state["needs_resolution"]),
+        "latest_artifact_id": artifact_id,
+        "source_artifact_ids": [artifact_id],
+    }
+    manifest["runtime"] = {
+        "active_route": path,
+        "state_revision": case_digest(
+            "case-runtime",
+            {"case_id": case_id, "path": path, "generation": generation, "at": updated_at},
+        ),
+    }
+    outputs[path] = Output(rendered.encode("utf-8"))
+    return validate_case_manifest(manifest)
+
+
+def _upgrade_legacy_case_manifest(
+    root: Path,
+    manifest: dict[str, object],
+    *,
+    title: str,
+    outputs: dict[str, Output],
+) -> dict[str, object]:
+    manifest = validate_case_manifest(manifest, migration_read=True)
+    case_id = str(manifest["case_id"])
+    path = case_live_document_path(case_id)
+    represented_live = any(str(row["path"]) == path for row in manifest["artifacts"].values())
+    if safe_read_bytes(root, path, optional=True) is not None and not represented_live:
+        fail("legacy project has an unmanaged live.md collision", category="INDETERMINATE")
+    state = _read_case_live_state(root, manifest, fallback_title=title)
+    kinds = {
+        case_live_purpose(_artifact_kind_from_row(row))
+        for row in manifest["artifacts"].values()
+    }
+    kinds.discard("task")
+    purpose = next(iter(kinds)) if len(kinds) == 1 else "task"
+    updated_at = max(
+        [str(row["created_at"]) for row in manifest["artifacts"].values()]
+        or [str(manifest["created_at"])],
+    )
+    rendered = render_case_live_document(
+        case_id=case_id,
+        title=title,
+        purpose=purpose,
+        status="finalized" if manifest["status"] == "closed" else "active",
+        generation=1,
+        updated_at=updated_at,
+        needs_resolution=bool(state["needs_resolution"]),
+        sections=dict(state["sections"]),
+    )
+    source_ids = [str(item) for item in manifest["artifacts"]]
+    source_paths = {str(row["path"]) for row in manifest["artifacts"].values()}
+    source_digest = case_digest("project-upgrade-live-sources", source_ids)
+    live_kind = case_live_artifact_kind(
+        purpose,
+        closed=manifest["status"] == "closed",
+        has_claims=bool(manifest["claims"]),
+    )
+    role, subtype = _artifact_role(live_kind)
+    envelope = {
+        "role": role,
+        "subtype": subtype,
+        "case_id": case_id,
+        "claim_ids": [],
+        "consumer": "teamwork-project-upgrade",
+        "source_revision": source_digest,
+        "immutable": True,
+    }
+    artifact_id = artifact_id_for_case(live_kind, envelope, rendered)
+    digest = artifact_digest(path, rendered)
+    promoted = dict(manifest)
+    promoted["schema_version"] = 2
+    promoted["document"] = None
+    promoted["artifacts"] = {}
+    promoted["history"] = []
+    promoted["references"] = []
+    promoted["migration_sources"] = []
+    promoted = validate_case_manifest(promoted)
+    promoted = _case_add_artifact(
+        promoted,
+        kind=live_kind,
+        path=path,
+        artifact_id=artifact_id,
+        digest=digest,
+        updated_at=updated_at,
+        source_revision=source_digest,
+        consumer="teamwork-project-upgrade",
+        allow_document_staging=True,
+    )
+    promoted = dict(promoted)
+    claims = {}
+    for claim_id, raw_claim in promoted["claims"].items():
+        claim = dict(raw_claim)
+        claim["head_artifact_id"] = artifact_id
+        claim["head_digest"] = digest
+        claims[claim_id] = claim
+    promoted["claims"] = claims
+    promoted["document"] = {
+        "path": path,
+        "generation": 1,
+        "byte_digest": digest,
+        "updated_at": updated_at,
+        "title": title,
+        "purpose": purpose,
+        "status": "finalized" if promoted["status"] == "closed" else "active",
+        "needs_resolution": bool(state["needs_resolution"]),
+        "latest_artifact_id": artifact_id,
+        "source_artifact_ids": [artifact_id],
+    }
+    promoted["runtime"] = {
+        "active_route": path,
+        "state_revision": case_digest(
+            "case-runtime",
+            {"case_id": case_id, "path": path, "generation": 1, "at": updated_at},
+        ),
+    }
+    for source_path in source_paths:
+        if source_path != path:
+            outputs[source_path] = Output(None)
+    outputs[path] = Output(rendered.encode("utf-8"))
+    return validate_case_manifest(promoted)
 
 
 def case_schema(operation: str) -> dict[str, object]:
@@ -5918,7 +6658,7 @@ def case_schema(operation: str) -> dict[str, object]:
         kind, consumer = CASE_OPERATION_ARTIFACT_CONTRACTS[operation]
         request.update({"kind": kind, "consumer": consumer})
     if operation in {"review-add", "code-review-add", "plan-review-add"}:
-        request.update({"sealed_candidate_digest": "0" * 64, "delta": False})
+        request.update({"candidate_identity": "stable candidate identity", "delta": False})
     if operation in {"goal-acquire", "goal-update"}:
         request.update({"claim_seed": "<64 lowercase hex seed>", "owner": "Goal"})
     if operation == "goal-transfer":
@@ -5985,7 +6725,11 @@ def normalize_case_request(value: object) -> dict[str, object]:
         result["kind"] = kind
         result["consumer"] = consumer
     if operation in {"review-add", "code-review-add", "plan-review-add"}:
-        result["sealed_candidate_digest"] = _hex64(value.get("sealed_candidate_digest"), "sealed_candidate_digest")
+        result["candidate_identity"] = require_text(
+            value.get("candidate_identity", "current candidate"),
+            "candidate_identity",
+            maximum=1000,
+        )
         result["delta"] = bool(value.get("delta", False))
     if operation in {"goal-acquire", "goal-update"}:
         result["claim_id"] = claim_id_from_seed(value.get("claim_seed", "00" * 32))
@@ -6076,6 +6820,35 @@ def _set_case_phase(
     return _prune_case_aliases_to_hot(index), manifest
 
 
+def _sync_case_claim_heads(index: dict[str, object], manifest: dict[str, object], updated_at: str) -> dict[str, object]:
+    index = dict(index)
+    case_id = str(manifest["case_id"])
+    heads = {
+        claim_id: row
+        for claim_id, row in index["claim_heads"].items()
+        if str(row["case_id"]) != case_id
+    }
+    for claim_id, claim in manifest["claims"].items():
+        if claim["status"] != "active":
+            continue
+        artifact_id = str(claim["head_artifact_id"])
+        artifact = manifest["artifacts"].get(artifact_id)
+        if not isinstance(artifact, dict):
+            fail("active claim head is missing from the current live document")
+        heads[str(claim_id)] = {
+            "case_id": case_id,
+            "artifact_id": artifact_id,
+            "artifact_digest": artifact["byte_digest"],
+            "claim_revision": case_digest(
+                "claim-revision",
+                {"case_id": case_id, "claim_id": claim_id, "artifact_digest": artifact["byte_digest"], "at": updated_at},
+            ),
+            "status": "active",
+        }
+    index["claim_heads"] = heads
+    return validate_case_index(index)
+
+
 def _case_add_artifact(
     manifest: dict[str, object],
     *,
@@ -6086,6 +6859,7 @@ def _case_add_artifact(
     updated_at: str,
     source_revision: str,
     consumer: str = "teamwork",
+    allow_document_staging: bool = False,
 ) -> dict[str, object]:
     role = kind
     subtype = kind
@@ -6138,12 +6912,12 @@ def _case_add_artifact(
         "active_route": path,
         "state_revision": case_digest("case-runtime", {"case_id": manifest["case_id"], "path": path, "at": updated_at}),
     }
-    return validate_case_manifest(manifest)
+    return validate_case_manifest(manifest, migration_read=allow_document_staging)
 
 
-def _case_singleton_history_path(case_id: str, artifact_id: str, role: object) -> str:
+def _case_singleton_history_path(case_id: str, artifact_id: str, role: object, *, live_document: bool = False) -> str:
     role_slug = require_slug(role, "singleton artifact role")
-    segment = "live" if role_slug in CASE_LIVE_KINDS else role_slug
+    segment = "live" if live_document or role_slug in CASE_LIVE_KINDS else role_slug
     return f"{case_base(case_id)}/history/{segment}/{_artifact_id(artifact_id)}.md"
 
 
@@ -6166,7 +6940,12 @@ def _relocate_prior_singleton_artifacts(
         assert prior_bytes is not None
         if hashlib.sha256(prior_bytes).hexdigest() != row["byte_digest"]:
             fail("singleton case artifact no longer matches its immutable manifest record", category="INDETERMINATE")
-        archived_path = _case_singleton_history_path(str(manifest["case_id"]), prior_id, row["role"])
+        archived_path = _case_singleton_history_path(
+            str(manifest["case_id"]),
+            prior_id,
+            row["role"],
+            live_document=singleton_path == case_live_document_path(str(manifest["case_id"])),
+        )
         if safe_read_bytes(root, archived_path, optional=True) is not None or archived_path in outputs:
             fail("singleton case artifact history path already exists", category="INDETERMINATE")
         mode = _mode_of(root, singleton_path)
@@ -6213,8 +6992,8 @@ def apply_case(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
     with locked_memory(root):
         ensure_no_migration_intermediate(root)
         recover_transaction(root, CASE_TRANSACTION_MARKER, CASE_PREFIXES, "case")
-        if detect_teamwork_memory_schema(root) != "case-v2":
-            fail("case operations require v2 case-bundle memory; legacy v1 is migration input only and has no runtime write route")
+        if detect_teamwork_memory_schema(root) != "case-v3":
+            fail("case operations require current case-v3 memory; run explicit project migration")
         index_text, index = read_case_index(root)
         if request["expected_revision"] != cases_revision(root, index_text, index):
             fail("stale case expected_revision; run case-inspect again")
@@ -6238,7 +7017,7 @@ def apply_case(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
             initial_phase = str(request["initial_phase"])
             seed_hex = str(request["case_seed"])
             manifest = validate_case_manifest({
-                "schema_version": 1,
+                "schema_version": 2,
                 "case_id": case_id,
                 "case_seed_b64": base64.b64encode(bytes.fromhex(seed_hex)).decode("ascii"),
                 "created_at": request["updated_at"],
@@ -6253,6 +7032,7 @@ def apply_case(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
                     "state_revision": case_digest("case-runtime", {"case_id": case_id, "phase": initial_phase, "at": request["updated_at"]}),
                 },
                 "migration_sources": [],
+                "document": None,
             })
             index["active_cases"].append({"case_id": case_id, "manifest_path": case_manifest_path(case_id), "manifest_revision": case_manifest_revision(manifest), "phase": initial_phase, "task_key": request["task_key"]})
             for alias in request["aliases"]:
@@ -6324,33 +7104,20 @@ def apply_case(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
                 if active_row is None:
                     fail("case is not active in root index")
                 title = str(active_row["task_key"]).replace("-", " ").title()
-                rendered = render_case_artifact(kind, title, body, source_digest=source_digest, updated_at=str(request["updated_at"]))
-                role = "evidence" if kind in CASE_EVIDENCE_KINDS else kind
-                subtype = kind
-                envelope = {"role": role, "subtype": subtype, "case_id": case_id, "claim_ids": [], "consumer": consumer, "source_revision": source_digest, "immutable": True}
-                artifact_id = artifact_id_for_case(kind, envelope, rendered)
                 manifest_kind = kind
                 if operation in {"review-add", "code-review-add", "plan-review-add"}:
-                    review_digest = str(request["sealed_candidate_digest"])
-                    path = derive_case_artifact_path(case_id, "review", review_digest, delta=bool(request["delta"]))
-                    artifact_id = "a-" + (case_digest("review-delta-artifact-id", {"case_id": case_id, "sealed_candidate_digest": review_digest}) if request["delta"] else review_digest)
                     manifest_kind = "review-delta" if request["delta"] else "review"
-                    existing_paths = {str(row["path"]) for row in manifest["artifacts"].values()}
-                    if artifact_id in manifest["artifacts"] or path in existing_paths or safe_read_bytes(root, path, optional=True) is not None:
-                        fail("sealed-candidate review artifact already exists")
-                else:
-                    path = derive_case_artifact_path(case_id, kind, artifact_id)
-                digest = artifact_digest(path, rendered)
-                if kind in CASE_LIVE_KINDS | CASE_SINGLETON_KINDS:
-                    manifest = _relocate_prior_singleton_artifacts(
-                        root,
-                        manifest,
-                        singleton_path=path,
-                        superseded_by=artifact_id,
-                        updated_at=str(request["updated_at"]),
-                        outputs=outputs,
-                    )
-                manifest = _case_add_artifact(manifest, kind=manifest_kind, path=path, artifact_id=artifact_id, digest=digest, updated_at=str(request["updated_at"]), source_revision=source_digest, consumer=consumer)
+                manifest, artifact_id, digest = _install_case_live_revision(
+                    root,
+                    manifest,
+                    title=title,
+                    kind=manifest_kind,
+                    body=body,
+                    source_digest=source_digest,
+                    consumer=consumer,
+                    updated_at=str(request["updated_at"]),
+                    outputs=outputs,
+                )
                 if operation == "plan-upsert":
                     index, manifest = _set_case_phase(index, manifest, "executing", str(request["updated_at"]), preserve_runtime=True)
                 elif operation == "plan-review-add":
@@ -6375,25 +7142,18 @@ def apply_case(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
                     claim_revision = case_digest("claim-revision", {"case_id": case_id, "claim_id": request["claim_id"], "artifact_digest": digest})
                     index["claim_heads"][str(request["claim_id"])] = {"case_id": case_id, "artifact_id": artifact_id, "artifact_digest": digest, "claim_revision": claim_revision, "status": "active"}
                     manifest = validate_case_manifest(manifest)
-                outputs[path] = Output(rendered.encode("utf-8"))
+                index = _sync_case_claim_heads(index, manifest, str(request["updated_at"]))
                 result_manifest = manifest
             elif operation == "repair-return":
                 if manifest["status"] != "reviewing":
                     fail("repair-return requires reviewing phase")
-                repair_events = [row for row in manifest["history"] if row.get("role") == "repair-return"]
-                if repair_events:
-                    fail("only one review repair batch is allowed")
-                marker_id = artifact_id_for_case(
-                    "history-result",
-                    {"role": "history", "subtype": "result", "case_id": case_id, "claim_ids": [], "consumer": "teamwork", "source_revision": case_digest("repair-return", str(request["updated_at"])), "immutable": True},
+                index, manifest = _set_case_phase(
+                    index,
+                    manifest,
+                    "executing",
                     str(request["updated_at"]),
+                    preserve_runtime=True,
                 )
-                manifest = dict(manifest)
-                manifest["history"] = [
-                    *manifest["history"],
-                    {"artifact_id": marker_id, "role": "repair-return", "superseded_by": None, "retained_reason": "reviewed", "recorded_at": request["updated_at"]},
-                ]
-                index, manifest = _set_case_phase(index, validate_case_manifest(manifest), "executing", str(request["updated_at"]))
                 result_manifest = manifest
             elif operation == "goal-transfer":
                 new_case_id = str(request["new_case_id"])
@@ -6440,8 +7200,26 @@ def apply_case(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
                 index, manifest = _set_case_phase(index, validate_case_manifest(manifest), str(manifest["status"]), str(request["updated_at"]))
                 result_manifest = manifest
             else:
-                index, manifest = _set_case_phase(index, manifest, "closed", str(request["updated_at"]), closed_at=str(request["closed_at"]))
-                result_manifest = manifest
+                active_row = next((row for row in index["active_cases"] if row["case_id"] == case_id), None)
+                if active_row is None:
+                    fail("case is not active in root index")
+                title = str(active_row["task_key"]).replace("-", " ").title()
+                result_manifest = _finalize_case_live_document(
+                    root,
+                    manifest,
+                    title=title,
+                    updated_at=str(request["updated_at"]),
+                    outputs=outputs,
+                )
+                index, result_manifest = _set_case_phase(
+                    index,
+                    result_manifest,
+                    "closed",
+                    str(request["updated_at"]),
+                    closed_at=str(request["closed_at"]),
+                    preserve_runtime=True,
+                )
+                index = _sync_case_claim_heads(index, result_manifest, str(request["updated_at"]))
             if not outputs or case_manifest_path(case_id) not in outputs:
                 _write_case_index_and_manifest_outputs(index, [result_manifest], outputs)
         for path in outputs:
@@ -6450,7 +7228,401 @@ def apply_case(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
         apply_transaction(root, kind="case", marker=CASE_TRANSACTION_MARKER, prefixes=CASE_PREFIXES, outputs=outputs, created_directories=created)
         final_index_text, final_index = read_case_index(root)
         _, final_manifest = read_case_manifest(root, result_case_id)
-        return {"schema_mode": "case-v2", "case_id": result_case_id, "manifest_path": case_manifest_path(result_case_id), "manifest_revision": case_manifest_revision(final_manifest), "revision": cases_revision(root, final_index_text, final_index), "changed_paths": sorted(changed)}
+        return {"schema_mode": "case-v3", "case_id": result_case_id, "manifest_path": case_manifest_path(result_case_id), "manifest_revision": case_manifest_revision(final_manifest), "revision": cases_revision(root, final_index_text, final_index), "changed_paths": sorted(changed)}
+
+
+def writer_schema(operation: str) -> dict[str, object]:
+    if operation not in {"start", "update", "finalize"}:
+        fail("writer schema operation must be start, update, or finalize")
+    request: dict[str, object] = {
+        "schema_version": 1,
+        "operation": operation,
+        "updated_at": "2026-08-06T00:00:00Z",
+        "purpose": "research",
+        "section": "Evidence",
+        "body": "Reusable Markdown content",
+    }
+    if operation == "start":
+        request.update({
+            "case_seed": "<64 lowercase hex seed>",
+            "task_key": "task-key",
+            "title": "Task title",
+            "aliases": [],
+        })
+    else:
+        request.update({
+            "case_id": "c-" + "0" * 64,
+            "expected_generation": 1,
+        })
+    return request
+
+
+def normalize_writer_request(value: object) -> dict[str, object]:
+    if not isinstance(value, dict) or value.get("schema_version") != 1:
+        fail("writer request has an unsupported schema")
+    operation = value.get("operation")
+    if operation not in {"start", "update", "finalize"}:
+        fail("writer request operation is invalid")
+    purpose = value.get("purpose")
+    if purpose not in CASE_LIVE_PURPOSES - {"task"}:
+        fail("writer purpose is invalid")
+    section = value.get("section")
+    if section not in set(CASE_LIVE_SECTIONS) - {"Migration Appendix"}:
+        fail("writer section is invalid")
+    body = require_markdown_body(value.get("body"), "writer body")
+    result: dict[str, object] = {
+        "operation": operation,
+        "purpose": purpose,
+        "section": section,
+        "body": body,
+        "updated_at": _iso(value.get("updated_at"), "writer updated_at"),
+    }
+    if operation == "start":
+        aliases = require_text_list(value.get("aliases", []), "writer aliases", maximum=CASE_CAPS["aliases"])
+        for alias in aliases:
+            require_slug(alias, "writer alias")
+        result.update({
+            "case_seed": _hex64(value.get("case_seed"), "writer case_seed"),
+            "case_id": case_id_from_seed(value.get("case_seed")),
+            "task_key": _task_key(value.get("task_key")),
+            "title": require_text(value.get("title"), "writer title", maximum=200),
+            "aliases": sorted(aliases),
+        })
+    else:
+        generation = value.get("expected_generation")
+        if not isinstance(generation, int) or isinstance(generation, bool) or generation < 0:
+            fail("writer expected_generation must be a non-negative integer")
+        result.update({
+            "case_id": _case_id(value.get("case_id")),
+            "expected_generation": generation,
+        })
+    return result
+
+
+def _writer_kind(purpose: str, section: str) -> str:
+    if section == "Purpose State":
+        return "goal" if purpose == "goal" else "collaborate"
+    if section == "Decisions":
+        return "decision"
+    if section == "Plan":
+        return "plan"
+    if section == "Review":
+        return "review"
+    if section == "Outcome":
+        return "result"
+    if purpose in {"research", "debug", "init", "update"}:
+        return purpose
+    return "evidence"
+
+
+def inspect_writer_documents(root: Path) -> dict[str, object]:
+    inspected = inspect_cases(root)
+    documents = []
+    for row in inspected.get("active_cases", []):
+        manifest = row["state"]
+        document = manifest.get("document") if manifest.get("schema_version") == 2 else None
+        documents.append({
+            "case_id": manifest["case_id"],
+            "manifest_revision": row["revision"],
+            "phase": manifest["status"],
+            "document": document,
+        })
+    return {
+        "schema_mode": inspected["schema_mode"],
+        "documents": documents,
+        "recovered": inspected.get("recovered"),
+    }
+
+
+def apply_writer(root: Path, raw_request: dict[str, object]) -> dict[str, object]:
+    request = normalize_writer_request(raw_request)
+    with locked_memory(root):
+        ensure_no_migration_intermediate(root)
+        recover_transaction(root, CASE_TRANSACTION_MARKER, CASE_PREFIXES, "case")
+        if detect_teamwork_memory_schema(root) != "case-v3":
+            fail("Writer requires current case-v3 memory; run explicit project migration")
+        _, index = read_case_index(root)
+        index = _prune_case_aliases_to_hot(index)
+        outputs: dict[str, Output] = {}
+        created: list[str] = []
+        operation = str(request["operation"])
+        kind = _writer_kind(str(request["purpose"]), str(request["section"]))
+        if operation == "start":
+            case_id = str(request["case_id"])
+            if safe_read_bytes(root, case_manifest_path(case_id), optional=True) is not None:
+                fail("derived Writer case already exists")
+            if any(row["task_key"] == request["task_key"] for row in index["active_cases"]):
+                fail("active Writer task_key already exists")
+            for alias in request["aliases"]:
+                if alias in index["aliases"]:
+                    fail("Writer alias already exists")
+            phase = {
+                "research": "collecting",
+                "debug": "collecting",
+                "plan": "planned",
+                "review": "reviewing",
+            }.get(str(request["purpose"]), "executing")
+            manifest = validate_case_manifest({
+                "schema_version": 2,
+                "case_id": case_id,
+                "case_seed_b64": base64.b64encode(bytes.fromhex(str(request["case_seed"]))).decode("ascii"),
+                "created_at": request["updated_at"],
+                "closed_at": None,
+                "status": phase,
+                "claims": {},
+                "artifacts": {},
+                "history": [],
+                "references": [],
+                "runtime": {
+                    "active_route": case_manifest_path(case_id),
+                    "state_revision": case_digest("case-runtime", {"case_id": case_id, "phase": phase, "at": request["updated_at"]}),
+                },
+                "migration_sources": [],
+                "document": None,
+            })
+            manifest, _, _ = _install_case_live_revision(
+                root,
+                manifest,
+                title=str(request["title"]),
+                kind=kind,
+                body=str(request["body"]),
+                source_digest=case_digest("writer-content", str(request["body"])),
+                consumer="teamwork-writer",
+                updated_at=str(request["updated_at"]),
+                outputs=outputs,
+            )
+            index = _sync_case_claim_heads(index, manifest, str(request["updated_at"]))
+            index["active_cases"].append({
+                "case_id": case_id,
+                "manifest_path": case_manifest_path(case_id),
+                "manifest_revision": case_manifest_revision(manifest),
+                "phase": phase,
+                "task_key": request["task_key"],
+            })
+            for alias in request["aliases"]:
+                index["aliases"][str(alias)] = {
+                    "target_type": "case",
+                    "target_id": case_id,
+                    "manifest_path": case_manifest_path(case_id),
+                    "manifest_revision": case_manifest_revision(manifest),
+                }
+        else:
+            case_id = str(request["case_id"])
+            _, manifest = read_case_manifest(root, case_id)
+            active_row = next((row for row in index["active_cases"] if row["case_id"] == case_id), None)
+            if active_row is None:
+                fail("Writer case is not active")
+            document = manifest.get("document") if manifest.get("schema_version") == 2 else None
+            generation = 0 if document is None else int(document["generation"])
+            if generation != request["expected_generation"]:
+                fail("stale Writer generation; inspect the live document again")
+            title = str(active_row["task_key"]).replace("-", " ").title() if document is None else str(document["title"])
+            manifest, _, _ = _install_case_live_revision(
+                root,
+                manifest,
+                title=title,
+                kind=kind,
+                body=str(request["body"]),
+                source_digest=case_digest("writer-content", str(request["body"])),
+                consumer="teamwork-writer",
+                updated_at=str(request["updated_at"]),
+                outputs=outputs,
+                finalize=operation == "finalize",
+            )
+            index = _sync_case_claim_heads(index, manifest, str(request["updated_at"]))
+            if operation == "finalize":
+                if kind != "result":
+                    fail("Writer finalize requires the Outcome section")
+                index, manifest = _set_case_phase(
+                    index,
+                    manifest,
+                    "closed",
+                    str(request["updated_at"]),
+                    closed_at=str(request["updated_at"]),
+                    preserve_runtime=True,
+                )
+            else:
+                index, manifest = _set_case_phase(
+                    index,
+                    manifest,
+                    str(manifest["status"]),
+                    str(request["updated_at"]),
+                    preserve_runtime=True,
+                )
+        _write_case_index_and_manifest_outputs(index, [manifest], outputs)
+        for path in outputs:
+            ensure_directory(root, PurePosixPath(path).parent.as_posix(), created=created)
+        apply_transaction(
+            root,
+            kind="case",
+            marker=CASE_TRANSACTION_MARKER,
+            prefixes=CASE_PREFIXES,
+            outputs=outputs,
+            created_directories=created,
+        )
+        _, final_manifest = read_case_manifest(root, case_id)
+        final_document = final_manifest.get("document")
+        assert isinstance(final_document, dict)
+        return {
+            "schema_mode": "case-v3",
+            "case_id": case_id,
+            "path": final_document["path"],
+            "generation": final_document["generation"],
+            "status": final_document["status"],
+            "needs_resolution": final_document["needs_resolution"],
+            "changed_paths": sorted(outputs),
+        }
+
+
+def upgrade_project_documents(root: Path) -> dict[str, object]:
+    """Atomically converge every project case directory to one live.md."""
+    with locked_memory(root):
+        ensure_no_migration_intermediate(root)
+        recovered = recover_transaction(root, CASE_TRANSACTION_MARKER, CASE_PREFIXES, "case")
+        mode = detect_teamwork_memory_schema(root, migration=True)
+        if mode not in {"case-v2-legacy", "case-v3"}:
+            fail("project document upgrade requires a schema-2 case project; legacy-v1 uses the full migration command")
+        index_text = safe_read_text(root, INDEX_PATH)
+        assert index_text is not None
+        raw_index = _decode_json(index_text, "project case index")
+        source_index = (
+            validate_legacy_case_index(raw_index)
+            if mode == "case-v2-legacy"
+            else validate_case_index(raw_index)
+        )
+        index = dict(source_index)
+        index["schema_version"] = 3
+        index["migration"] = None
+        index = validate_case_index(index)
+        task_titles = {
+            str(row["case_id"]): str(row["task_key"]).replace("-", " ").title()
+            for row in source_index["active_cases"]
+        }
+        for alias, row in source_index["aliases"].items():
+            task_titles.setdefault(str(row["target_id"]), str(alias).replace("-", " ").title())
+        indexed_active = {str(row["case_id"]): row for row in source_index["active_cases"]}
+        cases_root = root / "docs/teamwork/cases"
+        case_directories: list[Path] = []
+        if cases_root.exists():
+            if not cases_root.is_dir() or cases_root.is_symlink():
+                fail("project case directory is unsafe", category="INDETERMINATE")
+            for candidate in sorted(cases_root.iterdir(), key=lambda item: item.name):
+                info = candidate.lstat()
+                if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
+                    fail("project cases may contain only case directories", category="INDETERMINATE")
+                _case_id(candidate.name)
+                case_directories.append(candidate)
+        elif any(
+            source_index[field]
+            for field in ("active_cases", "recent_cases", "aliases", "claim_heads")
+        ):
+            fail("project case directory is missing", category="INDETERMINATE")
+        seen: set[str] = set()
+        manifests: list[dict[str, object]] = []
+        outputs: dict[str, Output] = {}
+        created: list[str] = []
+        changed_cases = 0
+        for case_directory in case_directories:
+            case_id = case_directory.name
+            if case_id in seen:
+                fail("project case tree contains duplicate case identities")
+            seen.add(case_id)
+            manifest_path = case_directory / "manifest.json"
+            if not manifest_path.is_file() or manifest_path.is_symlink():
+                fail("project case directory is missing a safe manifest.json", category="INDETERMINATE")
+            manifest_text = safe_read_text(root, case_manifest_path(case_id))
+            assert manifest_text is not None
+            raw_manifest = _decode_json(manifest_text, "project case manifest")
+            current_shaped = (
+                isinstance(raw_manifest, dict)
+                and raw_manifest.get("schema_version") == 2
+                and isinstance(raw_manifest.get("document"), dict)
+                and isinstance(raw_manifest.get("artifacts"), dict)
+                and len(raw_manifest["artifacts"]) == 1
+                and raw_manifest.get("history") == []
+                and raw_manifest.get("references") == []
+            )
+            if current_shaped:
+                manifest = validate_case_manifest(raw_manifest)
+                promoted = manifest
+            else:
+                manifest = validate_case_manifest(raw_manifest, migration_read=True)
+                promoted = _upgrade_legacy_case_manifest(
+                    root,
+                    manifest,
+                    title=task_titles.get(case_id, f"Migrated Task {case_id[2:10]}"),
+                    outputs=outputs,
+                )
+                changed_cases += 1
+            if manifest["case_id"] != case_id:
+                fail("project case manifest identity mismatch")
+            active_row = indexed_active.get(case_id)
+            if (
+                mode == "case-v2-legacy"
+                and active_row is not None
+                and legacy_case_manifest_revision(manifest) != active_row["manifest_revision"]
+            ):
+                fail("legacy active case manifest revision mismatch")
+            manifests.append(promoted)
+            document = promoted.get("document")
+            if isinstance(document, dict) and case_id in indexed_active:
+                index = _sync_case_claim_heads(index, promoted, str(document["updated_at"]))
+            if promoted["status"] == "closed" and isinstance(document, dict):
+                live_id = str(promoted["document"]["latest_artifact_id"])
+                live_digest = str(promoted["document"]["byte_digest"])
+                index["recent_cases"] = [
+                    {
+                        **recent,
+                        "result_artifact_id": live_id,
+                        "result_digest": live_digest,
+                    }
+                    if recent["case_id"] == case_id else recent
+                    for recent in index["recent_cases"]
+                ]
+            for existing in sorted(case_directory.rglob("*"), key=lambda item: item.as_posix()):
+                info = existing.lstat()
+                if stat.S_ISLNK(info.st_mode):
+                    fail("project case migration refuses symlinked artifacts", category="INDETERMINATE")
+                if stat.S_ISDIR(info.st_mode):
+                    continue
+                if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                    fail("project case migration found an unsafe artifact", category="INDETERMINATE")
+                relative = existing.relative_to(root).as_posix()
+                if relative not in {case_manifest_path(case_id), case_live_document_path(case_id)}:
+                    outputs[relative] = Output(None)
+        needs_write = mode == "case-v2-legacy" or changed_cases > 0 or bool(outputs) or index != source_index
+        if not needs_write:
+            validate_case_v3_tree_readonly(root)
+            return {"mode": "case-v3", "migrated": False, "recovered": recovered, "changed_paths": []}
+        _write_case_index_and_manifest_outputs(index, manifests, outputs)
+        for path in outputs:
+            ensure_directory(root, PurePosixPath(path).parent.as_posix(), created=created)
+        apply_transaction(
+            root,
+            kind="case",
+            marker=CASE_TRANSACTION_MARKER,
+            prefixes=CASE_PREFIXES,
+            outputs=outputs,
+            created_directories=created,
+        )
+        for directory in sorted(
+            (path for path in cases_root.rglob("*") if path.is_dir()),
+            key=lambda item: len(item.parts),
+            reverse=True,
+        ):
+            try:
+                directory.rmdir()
+            except OSError:
+                pass
+        validate_case_v3_tree_readonly(root)
+        return {
+            "mode": "case-v3",
+            "migrated": True,
+            "recovered": recovered,
+            "cases": len(manifests),
+            "changed_cases": changed_cases,
+            "changed_paths": sorted(outputs),
+        }
 
 
 def migration_runtime_dir(migration_id: str) -> str:
@@ -6466,13 +7638,14 @@ def migration_runtime_path(migration_id: str, name: str) -> str:
     return f"{migration_runtime_dir(migration_id)}/{name}"
 
 
-def migration_archive_object_path(digest: str) -> str:
+def migration_archive_object_path(migration_id: str, digest: str) -> str:
+    migration_id = _migration_id(migration_id)
     digest = _hex64(digest, "archive object digest")
-    return f"{MIGRATION_ARCHIVE_ROOT}/objects/sha256/{digest[:2]}/{digest}"
+    return f"{migration_runtime_dir(migration_id)}/backup/objects/sha256/{digest[:2]}/{digest}"
 
 
 def migration_archive_manifest_path(migration_id: str) -> str:
-    return f"{MIGRATION_ARCHIVE_ROOT}/manifests/{_migration_id(migration_id)}.json"
+    return f"{migration_runtime_dir(migration_id)}/backup/manifest.json"
 
 
 def migration_json_output(value: object) -> Output:
@@ -6845,7 +8018,7 @@ def _legacy_body(source: dict[str, object]) -> str:
             f"- Original mode: `{source['mode']}`",
             f"- Original size: `{source['size']}` bytes",
             "",
-            "Original bytes are preserved only in the cold archive.",
+            "Raw bytes are available only during the verified migration transaction and are not retained afterward.",
             "",
         ])
     lines = [
@@ -6901,11 +8074,11 @@ def _add_migrated_artifact(
     artifact_id = artifact_id_for_case(kind, envelope, rendered)
     used_paths = {str(row["path"]) for row in manifest["artifacts"].values()}
     if kind == "review":
-        path = f"{case_base(case_id)}/reviews/{source_digest}.md"
+        path = derive_case_source_artifact_path(case_id, "review", source_digest)
     else:
-        path = derive_case_artifact_path(case_id, kind, artifact_id)
+        path = derive_case_source_artifact_path(case_id, kind, artifact_id)
     if path in used_paths or path in outputs:
-        path = f"{case_base(case_id)}/evidence/{artifact_id}.md"
+        path = f"{case_base(case_id)}/sources/evidence/{artifact_id}.md"
         kind = "evidence"
     digest = artifact_digest(path, rendered)
     manifest = _case_add_artifact(
@@ -6917,6 +8090,7 @@ def _add_migrated_artifact(
         updated_at=updated_at,
         source_revision=source_digest,
         consumer="teamwork-migration",
+        allow_document_staging=True,
     )
     outputs[path] = Output(rendered.encode("utf-8"))
     return manifest, {
@@ -6928,6 +8102,147 @@ def _add_migrated_artifact(
         "artifact_digest": digest,
         "case_id": case_id,
     }
+
+
+def _materialize_migrated_live_document(
+    manifest: dict[str, object],
+    outputs: dict[str, Output],
+    *,
+    title: str,
+    updated_at: str,
+) -> dict[str, object]:
+    grouped: dict[str, list[tuple[str, str, str]]] = {}
+    for artifact_id, row in sorted(
+        manifest["artifacts"].items(),
+        key=lambda item: (str(item[1]["created_at"]), str(item[0])),
+    ):
+        path = str(row["path"])
+        output = outputs.get(path)
+        if output is None or output.data is None:
+            fail("migration live-document fold is missing a source artifact", category="INDETERMINATE")
+        if hashlib.sha256(output.data).hexdigest() != row["byte_digest"]:
+            fail("migration source artifact changed before live-document fold", category="INDETERMINATE")
+        try:
+            text = output.data.decode("utf-8")
+        except UnicodeDecodeError:
+            fail("migration source artifact must be UTF-8", category="INDETERMINATE")
+        kind = _artifact_kind_from_row(row)
+        heading = case_live_section(kind, path)
+        grouped.setdefault(heading, []).append((str(artifact_id), str(row["byte_digest"]), text))
+    sections: dict[str, str] = {}
+    needs_resolution = False
+    for heading in CASE_LIVE_SECTIONS:
+        rows = grouped.get(heading, [])
+        if not rows:
+            continue
+        distinct = {digest for _, digest, _ in rows}
+        if heading in CASE_REPLACE_SECTIONS and len(distinct) > 1:
+            needs_resolution = True
+        chunks: list[str] = []
+        if heading in CASE_REPLACE_SECTIONS and len(distinct) > 1:
+            chunks.extend([
+                "> **Needs resolution:** multiple migrated sources disagree; no source was selected as canonical.",
+                "",
+            ])
+        for artifact_id, digest, text in rows:
+            chunks.extend([
+                f"### Migrated source `{artifact_id}`",
+                "",
+                f"Byte digest: `{digest}`",
+                "",
+                text.rstrip(),
+                "",
+            ])
+        sections[heading] = "\n".join(chunks).rstrip() + "\n"
+    case_id = str(manifest["case_id"])
+    purpose_candidates = {
+        case_live_purpose(_artifact_kind_from_row(row))
+        for row in manifest["artifacts"].values()
+    }
+    purpose_candidates.discard("task")
+    purpose = next(iter(purpose_candidates)) if len(purpose_candidates) == 1 else "task"
+    rendered = render_case_live_document(
+        case_id=case_id,
+        title=title,
+        purpose=purpose,
+        status="finalized" if manifest["status"] == "closed" else "active",
+        generation=1,
+        updated_at=updated_at,
+        needs_resolution=needs_resolution,
+        sections=sections,
+    )
+    source_ids = [str(item) for item in manifest["artifacts"]]
+    source_paths = {str(row["path"]) for row in manifest["artifacts"].values()}
+    source_digest = case_digest("migration-live-sources", source_ids)
+    live_kind = case_live_artifact_kind(
+        purpose,
+        closed=manifest["status"] == "closed",
+        has_claims=bool(manifest["claims"]),
+    )
+    role, subtype = _artifact_role(live_kind)
+    envelope = {
+        "role": role,
+        "subtype": subtype,
+        "case_id": case_id,
+        "claim_ids": [],
+        "consumer": "teamwork-migration",
+        "source_revision": source_digest,
+        "immutable": True,
+    }
+    artifact_id = artifact_id_for_case(live_kind, envelope, rendered)
+    path = case_live_document_path(case_id)
+    digest = artifact_digest(path, rendered)
+    manifest = dict(manifest)
+    manifest["artifacts"] = {}
+    manifest["history"] = []
+    manifest["references"] = []
+    manifest = validate_case_manifest(manifest, migration_read=True)
+    manifest = _case_add_artifact(
+        manifest,
+        kind=live_kind,
+        path=path,
+        artifact_id=artifact_id,
+        digest=digest,
+        updated_at=updated_at,
+        source_revision=source_digest,
+        consumer="teamwork-migration",
+        allow_document_staging=True,
+    )
+    manifest = dict(manifest)
+    claims = {}
+    for claim_id, raw_claim in manifest["claims"].items():
+        claim = dict(raw_claim)
+        claim["head_artifact_id"] = artifact_id
+        claim["head_digest"] = digest
+        claims[claim_id] = claim
+    manifest["claims"] = claims
+    manifest["migration_sources"] = [
+        {**row, "artifact_id": artifact_id}
+        for row in manifest["migration_sources"]
+    ]
+    manifest["document"] = {
+        "path": path,
+        "generation": 1,
+        "byte_digest": digest,
+        "updated_at": updated_at,
+        "title": title,
+        "purpose": purpose,
+        "status": "finalized" if manifest["status"] == "closed" else "active",
+        "needs_resolution": needs_resolution,
+        "latest_artifact_id": artifact_id,
+        "source_artifact_ids": [artifact_id],
+    }
+    manifest["runtime"] = {
+        "active_route": path,
+        "state_revision": case_digest(
+            "case-runtime",
+            {"case_id": case_id, "path": path, "generation": 1, "at": updated_at},
+        ),
+    }
+    for source_path in source_paths:
+        outputs.pop(source_path, None)
+    outputs[path] = Output(rendered.encode("utf-8"))
+    return validate_case_manifest(manifest)
 
 
 def _legacy_sources_from_baseline(root: Path, baseline: dict[str, object]) -> tuple[dict[str, object], list[dict[str, object]]]:
@@ -7017,7 +8332,7 @@ def build_migration_candidate_tree(root: Path, migration_id: str, state: dict[st
         updated_at = _legacy_updated_at(index, group_sources)
         title = group_key.replace("-", " ").title()
         manifest = validate_case_manifest({
-            "schema_version": 1,
+            "schema_version": 2,
             "case_id": case_id,
             "case_seed_b64": base64.b64encode(bytes.fromhex(seed)).decode("ascii"),
             "created_at": updated_at,
@@ -7032,12 +8347,11 @@ def build_migration_candidate_tree(root: Path, migration_id: str, state: dict[st
                 "state_revision": case_digest("case-runtime", {"case_id": case_id, "phase": phase, "at": updated_at, "migration_id": migration_id}),
             },
             "migration_sources": [],
+            "document": None,
         })
-        artifact_kinds: set[str] = set()
         group_coverage_rows: list[dict[str, object]] = []
         for source in group_sources:
             manifest, coverage = _add_migrated_artifact(manifest, outputs, source=source, title=title, updated_at=updated_at)
-            artifact_kinds.add(str(manifest["artifacts"][coverage["artifact_id"]]["role"]))
             group_coverage_rows.append(coverage)
             coverage_rows.append(coverage)
             if source["classification"] == "goal" and set(source.get("active_slots", [])) & {"progress", "goal"}:
@@ -7071,13 +8385,6 @@ def build_migration_candidate_tree(root: Path, migration_id: str, state: dict[st
                     "claim_revision": claim_revision,
                     "status": "active",
                 }
-        if phase == "closed" and "result" not in artifact_kinds:
-            source = group_sources[-1]
-            result_source = dict(source)
-            result_source["classification"] = "result"
-            manifest, coverage = _add_migrated_artifact(manifest, outputs, source=result_source, title=title, updated_at=updated_at)
-            coverage["derived_terminal_result"] = True
-            coverage_rows.append(coverage)
         manifest = dict(manifest)
         manifest["migration_sources"] = [
             {
@@ -7089,7 +8396,31 @@ def build_migration_candidate_tree(root: Path, migration_id: str, state: dict[st
             }
             for row in group_coverage_rows
         ]
-        manifest = validate_case_manifest(manifest)
+        manifest = validate_case_manifest(manifest, migration_read=True)
+        manifest = _materialize_migrated_live_document(
+            manifest,
+            outputs,
+            title=title,
+            updated_at=updated_at,
+        )
+        live_id = str(manifest["document"]["latest_artifact_id"])
+        live_path = str(manifest["document"]["path"])
+        live_digest = str(manifest["document"]["byte_digest"])
+        for coverage in group_coverage_rows:
+            coverage["artifact_id"] = live_id
+            coverage["artifact_path"] = live_path
+            coverage["artifact_digest"] = live_digest
+        for claim_id, head in list(candidate["claim_heads"].items()):
+            if head["case_id"] == case_id:
+                candidate["claim_heads"][claim_id] = {
+                    **head,
+                    "artifact_id": live_id,
+                    "artifact_digest": live_digest,
+                    "claim_revision": case_digest(
+                        "claim-revision",
+                        {"case_id": case_id, "claim_id": claim_id, "artifact_digest": live_digest, "at": updated_at},
+                    ),
+                }
         manifests.append(manifest)
         manifest_revision = case_manifest_revision(manifest)
         if phase == "closed":
@@ -7186,7 +8517,7 @@ def validate_candidate_outputs_readonly(migration_id: str, candidate_outputs: di
             materialized += 1
         if materialized == 0:
             fail("candidate validation tree is empty", category="INDETERMINATE")
-        return validate_case_v2_tree_readonly(validation_root)
+        return validate_case_v3_tree_readonly(validation_root)
 
 
 def _validate_baseline_payload(value: object) -> dict[str, object]:
@@ -7271,7 +8602,7 @@ def _validate_archive_manifest(value: object, state: dict[str, object], baseline
             baseline_row["sha256"] != digest
             or baseline_row["mode"] != mode
             or baseline_row["size"] != size
-            or object_path != migration_archive_object_path(digest)
+            or object_path != migration_archive_object_path(str(state["migration_id"]), digest)
         ):
             fail("archive manifest does not exactly cover the baseline", category="INDETERMINATE")
         objects.append({"source_path": source_path, "object_path": object_path, "sha256": digest, "mode": mode, "size": size})
@@ -7309,7 +8640,7 @@ def export_v1_baseline(root: Path) -> dict[str, object]:
     return {"schema_version": 1, "paths": rows, "baseline_digest": digest}
 
 
-def validate_case_v2_tree_readonly(root: Path) -> dict[str, object]:
+def validate_case_v3_tree_readonly(root: Path) -> dict[str, object]:
     index_text = safe_read_text(root, INDEX_PATH)
     assert index_text is not None
     index = validate_case_index(_decode_json(index_text, "case index"))
@@ -7325,9 +8656,9 @@ def validate_case_v2_tree_readonly(root: Path) -> dict[str, object]:
             manifest = validate_case_manifest(_decode_json(manifest_text, "case manifest"))
             revision = case_manifest_revision(manifest)
             if collection == "active_cases" and revision != row["manifest_revision"]:
-                fail("case-v2 preflight active manifest revision mismatch")
+                fail("case-v3 preflight active manifest revision mismatch")
             if collection == "recent_cases" and manifest["status"] != "closed":
-                fail("case-v2 preflight recent manifest must be closed")
+                fail("case-v3 preflight recent manifest must be closed")
             artifacts = manifest["artifacts"]
             assert isinstance(artifacts, dict)
             for artifact_id, artifact in artifacts.items():
@@ -7335,42 +8666,69 @@ def validate_case_v2_tree_readonly(root: Path) -> dict[str, object]:
                 artifact_text = safe_read_text(root, str(artifact["path"]))
                 assert artifact_text is not None
                 if artifact_digest(str(artifact["path"]), artifact_text) != artifact["byte_digest"]:
-                    fail("case-v2 preflight artifact digest mismatch")
+                    fail("case-v3 preflight artifact digest mismatch")
                 if str(artifact_id) != _artifact_id(artifact_id):
-                    fail("case-v2 preflight artifact id mismatch")
+                    fail("case-v3 preflight artifact id mismatch")
             manifests[case_id] = manifest
+    cases_root = root / "docs/teamwork/cases"
+    if cases_root.exists():
+        root_info = cases_root.lstat()
+        if stat.S_ISLNK(root_info.st_mode) or not stat.S_ISDIR(root_info.st_mode):
+            fail("case-v3 preflight cases root is unsafe")
+        for case_directory in sorted(cases_root.iterdir(), key=lambda item: item.name):
+            info = case_directory.lstat()
+            case_id = _case_id(case_directory.name)
+            if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
+                fail("case-v3 preflight case directory is unsafe")
+            if case_id not in manifests:
+                manifest_text = safe_read_text(root, case_manifest_path(case_id))
+                assert manifest_text is not None
+                manifests[case_id] = validate_case_manifest(_decode_json(manifest_text, "unindexed case manifest"))
+            manifest = manifests[case_id]
+            expected_names = {"manifest.json"}
+            if isinstance(manifest.get("document"), dict):
+                expected_names.add("live.md")
+                _read_case_live_state(root, manifest, fallback_title=str(manifest["document"]["title"]))
+            observed_names: set[str] = set()
+            for child in case_directory.iterdir():
+                child_info = child.lstat()
+                if stat.S_ISLNK(child_info.st_mode) or not stat.S_ISREG(child_info.st_mode) or child_info.st_nlink != 1:
+                    fail("case-v3 preflight case may contain only manifest.json and live.md files")
+                observed_names.add(child.name)
+            if observed_names != expected_names:
+                fail("case-v3 preflight case directory contains retired artifacts")
     aliases = index["aliases"]
     assert isinstance(aliases, dict)
     for alias, row in aliases.items():
         assert isinstance(row, dict)
         manifest = manifests.get(str(row["target_id"]))
         if manifest is None or case_manifest_revision(manifest) != row["manifest_revision"]:
-            fail(f"case-v2 preflight alias target is invalid: {alias}")
+            fail(f"case-v3 preflight alias target is invalid: {alias}")
     claim_heads = index["claim_heads"]
     assert isinstance(claim_heads, dict)
     for claim_id, head in claim_heads.items():
         assert isinstance(head, dict)
         manifest = manifests.get(str(head["case_id"]))
         if manifest is None:
-            fail("case-v2 preflight claim head case is missing")
+            fail("case-v3 preflight claim head case is missing")
         claims = manifest["claims"]
         artifacts = manifest["artifacts"]
         assert isinstance(claims, dict) and isinstance(artifacts, dict)
         claim = claims.get(claim_id)
         artifact = artifacts.get(str(head["artifact_id"]))
         if not isinstance(claim, dict) or not isinstance(artifact, dict):
-            fail("case-v2 preflight claim head target is missing")
+            fail("case-v3 preflight claim head target is missing")
         if claim["head_artifact_id"] != head["artifact_id"] or claim["head_digest"] != head["artifact_digest"] or artifact["byte_digest"] != head["artifact_digest"]:
-            fail("case-v2 preflight claim head digest mismatch")
+            fail("case-v3 preflight claim head digest mismatch")
     return index
 
 
 def migration_preflight(root: Path) -> dict[str, object]:
     mode = detect_teamwork_memory_schema(root, migration=True)
     if mode != "legacy-v1":
-        index = validate_case_v2_tree_readonly(root) if mode == "case-v2" else None
+        index = validate_case_v3_tree_readonly(root) if mode == "case-v3" else None
         migration = None if index is None else index["migration"]
-        return {"schema_version": 1, "mode": mode, "ok": mode == "case-v2", "blocking": [], "migration": migration}
+        return {"schema_version": 1, "mode": mode, "ok": mode == "case-v3", "blocking": [], "migration": migration}
     baseline = export_v1_baseline(root)
     seed = case_digest("legacy-migration-seed", {"baseline_digest": baseline["baseline_digest"]})
     migration_id = migration_id_from_seed(seed)
@@ -7775,7 +9133,7 @@ def _apply_migration_locked(root: Path, request: dict[str, object]) -> dict[str,
                     source_path = checked_relative(row.get("path"), "baseline source path")
                     data = _assert_current_file_matches_baseline(root, row)
                     digest = hashlib.sha256(data).hexdigest()
-                    object_path = migration_archive_object_path(digest)
+                    object_path = migration_archive_object_path(migration_id, digest)
                     existing = safe_read_bytes(root, object_path, optional=True)
                     if existing is not None:
                         existing_mode = _mode_of(root, object_path)
@@ -7844,25 +9202,18 @@ def _apply_migration_locked(root: Path, request: dict[str, object]) -> dict[str,
                     fail("cleanup requires committed migration state")
                 state["phase"] = "cleanup_complete"
                 state["cleanup"] = "complete"
-                installed_index = _read_json_relative(root, INDEX_PATH, "installed v2 index")
-                if installed_index.get("schema_version") == 2 and isinstance(installed_index.get("migration"), dict):
+                installed_index = _read_json_relative(root, INDEX_PATH, "installed v3 index")
+                if installed_index.get("schema_version") == 3 and isinstance(installed_index.get("migration"), dict):
                     migration = dict(installed_index["migration"])
                     if migration.get("migration_id") != migration_id:
                         fail("cleanup migration_id does not match installed index")
-                    migration["phase"] = "cleanup_complete"
                     installed_index = dict(installed_index)
-                    installed_index["migration"] = migration
+                    installed_index["migration"] = None
                     outputs[INDEX_PATH] = Output(serialize_case_index(installed_index).encode("utf-8"))
                 outputs[migration_runtime_path(migration_id, "journal.json")] = migration_json_output(state)
         for path in outputs:
             ensure_directory(root, PurePosixPath(path).parent.as_posix(), created=created)
         apply_transaction(root, kind=MIGRATION_KIND, marker=marker, prefixes=MIGRATION_PREFIXES, outputs=outputs, created_directories=created)
-        for directory in created:
-            if directory.startswith(".teamwork/cold-archive/"):
-                try:
-                    os.chmod(root.joinpath(*PurePosixPath(directory).parts), 0o755)
-                except OSError as exc:
-                    fail(f"cannot chmod cold archive directory: {exc}", category="INDETERMINATE")
         final = read_migration_json(root, migration_id, "journal.json", optional=True)
         return {"migration_id": migration_id, "phase": None if final is None else final.get("phase"), "changed_paths": sorted(outputs)}
 
@@ -7880,13 +9231,13 @@ def _print(value: object) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("case-inspect", "migration-preflight"):
+    for name in ("case-inspect", "writer-inspect", "project-upgrade", "migration-preflight"):
         child = sub.add_parser(name)
         child.add_argument("--project-root", required=True)
-    for name in ("case-schema", "migration-schema"):
+    for name in ("case-schema", "writer-schema", "migration-schema"):
         child = sub.add_parser(name)
         child.add_argument("operation")
-    for name in ("case-apply", "migration-request", "migration-apply"):
+    for name in ("case-apply", "writer-apply", "migration-request", "migration-apply"):
         child = sub.add_parser(name)
         child.add_argument("--project-root", required=True)
         group = child.add_mutually_exclusive_group(required=True)
@@ -7904,12 +9255,18 @@ def main(argv: list[str] | None = None) -> int:
         command = arguments.command
         if command == "case-schema":
             _print(case_schema(arguments.operation))
+        elif command == "writer-schema":
+            _print(writer_schema(arguments.operation))
         elif command == "migration-schema":
             _print(migration_schema(arguments.operation))
         else:
             root = checked_project_root(arguments.project_root)
             if command == "case-inspect":
                 _print(inspect_cases(root))
+            elif command == "writer-inspect":
+                _print(inspect_writer_documents(root))
+            elif command == "project-upgrade":
+                _print(upgrade_project_documents(root))
             elif command == "migration-preflight":
                 _print(migration_preflight(root))
             elif command == "migration-recover":
@@ -7918,6 +9275,8 @@ def main(argv: list[str] | None = None) -> int:
                 request = read_request(arguments.request, arguments.request_json)
                 if command == "case-apply":
                     _print(apply_case(root, request))
+                elif command == "writer-apply":
+                    _print(apply_writer(root, request))
                 elif command == "migration-request":
                     _print(construct_migration_request(root, request))
                 else:

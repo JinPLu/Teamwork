@@ -1,4 +1,4 @@
-"""CLI shared by installed-v4 host adapters."""
+"""CLI shared by installed host adapters."""
 
 from __future__ import annotations
 
@@ -6,11 +6,11 @@ import argparse
 from pathlib import Path
 from typing import Sequence
 
-from .host_matrix import CODEX_ROOT_ARMS, run_host_matrix
+from .host_matrix import run_host_matrix
 
 
 def parser_for(host: str) -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=f"Run isolated Teamwork v4 trajectories through {host}.")
+    parser = argparse.ArgumentParser(description=f"Run isolated Teamwork trajectories through {host}.")
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run")
     binary_flag = {"codex": "--codex-bin", "cursor": "--cursor-agent-bin", "claude": "--claude-bin"}[host]
@@ -24,7 +24,6 @@ def parser_for(host: str) -> argparse.ArgumentParser:
     run.add_argument("--timeout-seconds", required=True, type=int)
     run.add_argument("--only-cases", nargs="+")
     if host == "codex":
-        run.add_argument("--arm", required=True, choices=tuple(CODEX_ROOT_ARMS))
         # Root model/effort select only the parent Codex invocation. Child role
         # evidence still has to bind to the candidate's profile-rendered map.
         run.add_argument("--model", required=True)
@@ -45,7 +44,7 @@ def main(host: str, argv: Sequence[str] | None = None) -> int:
         repeats=args.repeats, timeout_seconds=args.timeout_seconds, extra={},
         only_cases=set(args.only_cases) if args.only_cases else None,
         max_trajectories=getattr(args, "max_trajectories", None),
-        arm=getattr(args, "arm", None),
+        arm=args.profile,
         parent_model=getattr(args, "model", None),
         parent_effort=getattr(args, "effort", None),
     )

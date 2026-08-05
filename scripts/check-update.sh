@@ -16,17 +16,15 @@ CODEX_HOME_DIR="${CODEX_HOME:-$HOME/.codex}"
 PLUGIN_ACTIVATION_PATH="$CODEX_HOME_DIR/teamwork/plugin-activation.json"
 STATUS_PROFILE_OVERRIDE=""
 
-SKILLS=(
-  teamwork-collaborate
-  teamwork-debug
-  teamwork-explore
-  teamwork-goal
-  teamwork-init
-  teamwork-plan
-  teamwork-research
-  teamwork-review
-  teamwork-update
-)
+TOPOLOGY_QUERY="$ROOT/scripts/teamwork_tooling/topology.py"
+python3 "$TOPOLOGY_QUERY" --root "$ROOT" skills >/dev/null || {
+  echo "Cannot load Teamwork topology: $ROOT/config/teamwork-topology.json" >&2
+  exit 1
+}
+SKILLS=()
+while IFS= read -r item; do
+  SKILLS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" skills)
 RETIRED_SKILLS=(
   grill-me
   teamwork-design
@@ -35,39 +33,29 @@ RETIRED_SKILLS=(
   teamwork-execute
   teamwork
 )
-CODEX_AGENTS=(
-  teamwork-researcher
-  teamwork-explorer
-  teamwork-debugger
-  teamwork-designer
-  teamwork-planner
-  teamwork-worker
-  teamwork-writer
-  teamwork-plan-reviewer
-  teamwork-reviewer
-)
-CURSOR_AGENTS=(
-  researcher
-  explorer
-  debugger
-  designer
-  planner
-  worker
-  writer
-  plan-reviewer
-  reviewer
-)
-CLAUDE_AGENTS=(
-  researcher
-  explorer
-  debugger
-  designer
-  planner
-  worker
-  writer
-  plan-reviewer
-  reviewer
-)
+while IFS= read -r item; do
+  RETIRED_SKILLS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" retired --kind public_skills)
+CODEX_AGENTS=()
+CURSOR_AGENTS=()
+CLAUDE_AGENTS=()
+while IFS= read -r item; do
+  CODEX_AGENTS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host codex --field stem)
+while IFS= read -r item; do
+  CURSOR_AGENTS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host cursor --field name)
+while IFS= read -r item; do
+  CLAUDE_AGENTS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host claude --field name)
+RETIRED_CODEX_AGENTS=()
+RETIRED_CURSOR_AGENTS=()
+RETIRED_CLAUDE_AGENTS=()
+while IFS= read -r item; do
+  RETIRED_CODEX_AGENTS+=("teamwork-$item")
+  RETIRED_CURSOR_AGENTS+=("$item")
+  RETIRED_CLAUDE_AGENTS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" retired --kind agents)
 
 ISSUES=0
 
@@ -279,6 +267,7 @@ agents_content_status() {
   shift 3
   local agents=("$@")
   local agent source expected tmp missing=0 drift=0 extra=0
+  local retired_agents=()
   [[ -d "$dest_root" ]] || { echo "missing"; return 0; }
   tmp="$(mktemp -d)"
   for agent in "${agents[@]}"; do
@@ -310,29 +299,16 @@ agents_content_status() {
       drift=$((drift + 1))
     fi
   done
-  while IFS= read -r agent; do
+  case "$platform" in
+    codex) retired_agents=("${RETIRED_CODEX_AGENTS[@]}") ;;
+    cursor) retired_agents=("${RETIRED_CURSOR_AGENTS[@]}") ;;
+    claude) retired_agents=("${RETIRED_CLAUDE_AGENTS[@]}") ;;
+  esac
+  for agent in "${retired_agents[@]}"; do
     if [[ -n "$agent" && ( -e "$dest_root/$agent.$ext" || -L "$dest_root/$agent.$ext" ) ]]; then
       extra=$((extra + 1))
     fi
-  done < <(python3 - "$ROOT/scripts/tests/fixtures/v3.4.2-owned-surfaces.json" "$platform" "${agents[@]}" <<'PY'
-import json
-import pathlib
-import sys
-
-fixture = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-platform = sys.argv[2]
-active = set(sys.argv[3:])
-prefix = f"managed://installed-agent/{platform}/"
-old = set()
-for row in fixture.get("deterministic_surfaces", []):
-    path = row.get("path", "")
-    if row.get("surface_class") != "profile-rendered-agent" or not path.startswith(prefix):
-        continue
-    old.add(path.rsplit("/", 1)[-1].rsplit(".", 1)[0])
-for name in sorted(old - active):
-    print(name)
-PY
-  )
+  done
   rm -rf "$tmp"
   if (( missing == 0 && drift == 0 && extra == 0 )); then
     echo "current"
@@ -452,7 +428,7 @@ installed_profile_marker_status() {
 }
 
 source_profile() {
-  local profile preference_profile
+  local preference_profile
   if [[ -n "$STATUS_PROFILE_OVERRIDE" ]]; then
     printf '%s\n' "$STATUS_PROFILE_OVERRIDE"
     return 0
@@ -464,12 +440,7 @@ source_profile() {
       return 0
       ;;
   esac
-  profile="$(installed_profile_marker_status)"
-  if [[ "$profile" == "missing" ]]; then
-    echo "performance-first"
-    return 0
-  fi
-  echo "$profile"
+  echo "performance-first"
 }
 
 upstream_version() {
@@ -1043,10 +1014,10 @@ print_report() {
 
   echo "--- Model mapping (best-effort) ---"
   echo "Cursor explorer model: $(cursor_model_sample)"
-  echo "Expected performance-first Codex: Researcher/Explorer/Worker=Terra/high, Writer=Luna/high, Debugger/Designer/Planner/Plan Reviewer=Sol/high, Reviewer=Sol/max"
-  echo "Expected cost-first Codex: Researcher/Debugger/Designer/Planner/Plan Reviewer=Terra/high, Explorer/Writer=Luna/high, Worker=Luna/xhigh, Reviewer=Sol/high"
-  echo "Expected cost-first Cursor: Researcher/Explorer=gemini-3.5-flash, Debugger/Designer/Plan Reviewer=gpt-5.6-terra-medium, Planner=gpt-5.6-luna-medium, Worker/Writer=composer-2.5-fast, Reviewer=claude-opus-4-8-thinking-high"
-  echo "Expected performance-first Cursor: Researcher=gpt-5.6-terra-medium, Explorer=gemini-3.5-flash, Debugger/Plan Reviewer=claude-opus-4-8-thinking-high, Designer=gpt-5.6-sol-medium, Planner=gpt-5.6-terra-medium, Worker/Writer=composer-2.5-fast, Reviewer=claude-fable-5-thinking-high"
+  echo "Expected performance-first Codex: Researcher/Explorer/Worker=Terra/high, Writer=Luna/high, Debugger/Challenger/Planner=Sol/high, Reviewer=Sol/max"
+  echo "Expected cost-first Codex: Researcher/Debugger/Challenger/Planner=Terra/high, Explorer/Writer=Luna/high, Worker=Luna/xhigh, Reviewer=Sol/high"
+  echo "Expected cost-first Cursor: Researcher/Explorer=gemini-3.5-flash, Debugger/Challenger=gpt-5.6-terra-medium, Planner=gpt-5.6-luna-medium, Worker/Writer=composer-2.5-fast, Reviewer=claude-opus-4-8-thinking-high"
+  echo "Expected performance-first Cursor: Researcher=gpt-5.6-terra-medium, Explorer=gemini-3.5-flash, Debugger=claude-opus-4-8-thinking-high, Challenger=gpt-5.6-sol-medium, Planner=gpt-5.6-terra-medium, Worker/Writer=composer-2.5-fast, Reviewer=claude-fable-5-thinking-high"
   echo
 
   echo "--- Optional substrates ---"

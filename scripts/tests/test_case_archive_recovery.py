@@ -95,7 +95,7 @@ class CaseArchiveRecoveryTests(unittest.TestCase):
         self.assertEqual(replay.returncode, 0, replay.stderr)
         self.assertEqual(json.loads(replay.stdout)["phase"], "archive_durable")
         self.assertFalse(marker.exists())
-        archive_manifest = self.project / f".teamwork/cold-archive/v1/manifests/{migration_id}.json"
+        archive_manifest = self.project / f".teamwork/runtime/migrations/{migration_id}/backup/manifest.json"
         self.assertTrue(archive_manifest.is_file())
 
     def test_cutover_recover_continues_after_old_tree_rename_failpoint(self) -> None:

@@ -51,6 +51,11 @@ class CaseArtifactTransactionTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         return json.loads(result.stdout)
 
+    def writer_apply(self, request: dict[str, object]) -> dict[str, object]:
+        result = self.cli("writer-apply", "--project-root", str(self.project), "--request-json", json.dumps(request))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(result.stdout)
+
     def base_request(self, operation: str, case: dict[str, object] | None = None, **extra: object) -> dict[str, object]:
         request: dict[str, object] = {
             "schema_version": 2,
@@ -101,6 +106,287 @@ class CaseArtifactTransactionTests(unittest.TestCase):
         self.assertEqual(len(paths), len(set(paths)))
         return manifest
 
+    def test_writer_api_maintains_one_live_document_with_monotonic_generation(self) -> None:
+        started = self.writer_apply({
+            "schema_version": 1,
+            "operation": "start",
+            "case_seed": "b1" * 32,
+            "task_key": "writer-live-document",
+            "title": "Writer live document",
+            "aliases": [],
+            "updated_at": "2026-08-06T00:00:00Z",
+            "purpose": "research",
+            "section": "Evidence",
+            "body": "First evidence.",
+        })
+        case_id = str(started["case_id"])
+        live_path = self.project / f"docs/teamwork/cases/{case_id}/live.md"
+        first_bytes = live_path.read_bytes()
+        self.assertEqual(started["generation"], 1)
+        self.assertIn("## Evidence", first_bytes.decode("utf-8"))
+
+        updated = self.writer_apply({
+            "schema_version": 1,
+            "operation": "update",
+            "case_id": case_id,
+            "expected_generation": 1,
+            "updated_at": "2026-08-06T01:00:00Z",
+            "purpose": "research",
+            "section": "Evidence",
+            "body": "Second evidence.",
+        })
+        self.assertEqual(updated["path"], f"docs/teamwork/cases/{case_id}/live.md")
+        self.assertEqual(updated["generation"], 2)
+        self.assertEqual(list((live_path.parent).glob("live.md")), [live_path])
+        manifest = self.assert_artifact_records_match_extant_bytes(case_id)
+        self.assertEqual(len(manifest["artifacts"]), 1)
+        self.assertEqual(manifest["history"], [])
+        self.assertNotEqual(live_path.read_bytes(), first_bytes)
+        self.assertEqual(manifest["document"]["generation"], 2)
+        validated = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts/validate_teamwork_index.py"),
+                str((self.memory / "index.json").resolve()),
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(validated.returncode, 0, validated.stderr)
+
+        stale = self.cli(
+            "writer-apply",
+            "--project-root",
+            str(self.project),
+            "--request-json",
+            json.dumps({
+                "schema_version": 1,
+                "operation": "update",
+                "case_id": case_id,
+                "expected_generation": 1,
+                "updated_at": "2026-08-06T02:00:00Z",
+                "purpose": "research",
+                "section": "Evidence",
+                "body": "Stale update.",
+            }),
+        )
+        self.assertNotEqual(stale.returncode, 0)
+        self.assertIn("stale Writer generation", stale.stderr)
+        self.assertEqual(live_path.read_text(encoding="utf-8").splitlines()[4], "Generation: 2")
+
+    def test_writer_finalize_closes_case_and_finalizes_same_live_document(self) -> None:
+        started = self.writer_apply({
+            "schema_version": 1,
+            "operation": "start",
+            "case_seed": "b2" * 32,
+            "task_key": "writer-finalize",
+            "title": "Writer finalize",
+            "aliases": [],
+            "updated_at": "2026-08-06T00:00:00Z",
+            "purpose": "goal",
+            "section": "Purpose State",
+            "body": "Goal is in progress.",
+        })
+        finalized = self.writer_apply({
+            "schema_version": 1,
+            "operation": "finalize",
+            "case_id": started["case_id"],
+            "expected_generation": 1,
+            "updated_at": "2026-08-06T03:00:00Z",
+            "purpose": "result",
+            "section": "Outcome",
+            "body": "Goal achieved with observed evidence.",
+        })
+        self.assertEqual(finalized["generation"], 2)
+        self.assertEqual(finalized["status"], "finalized")
+        inspected = self.inspect()
+        self.assertEqual(inspected["active_cases"], [])
+        self.assertEqual(inspected["recent_cases"][0]["case_id"], started["case_id"])
+        live = (self.project / finalized["path"]).read_text(encoding="utf-8")
+        self.assertIn("Status: finalized", live)
+        self.assertIn("## Outcome", live)
+
+    def test_project_upgrade_folds_conflicting_legacy_plans_and_removes_old_artifacts(self) -> None:
+        created = self.create_case(seed="b3" * 32, task_key="legacy-plan-fold", initial_phase="planned")
+        orphan = self.create_case(seed="b6" * 32, task_key="unindexed-legacy-case", initial_phase="collecting")
+        case_id = str(created["case_id"])
+        manifest_path = self.project / str(created["manifest_path"])
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["schema_version"] = 1
+        manifest.pop("document")
+        first_id = "a-" + "c1" * 32
+        second_id = "a-" + "c2" * 32
+        first_path = f"docs/teamwork/cases/{case_id}/plan.md"
+        second_path = f"docs/teamwork/cases/{case_id}/sources/plan/{second_id}.md"
+        first_bytes = b"# Plan\n\nUse route A.\n"
+        second_bytes = b"# Plan\n\nUse route B.\n"
+        for path, data in ((first_path, first_bytes), (second_path, second_bytes)):
+            target = self.project / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        manifest["artifacts"] = {
+            first_id: {
+                "role": "plan", "subtype": "plan", "path": first_path,
+                "envelope_digest": "d1" * 32,
+                "byte_digest": hashlib.sha256(first_bytes).hexdigest(),
+                "created_at": "2026-08-05T00:00:00Z", "immutable": True,
+                "consumer": "teamwork", "source_revision": "e1" * 32,
+            },
+            second_id: {
+                "role": "plan", "subtype": "plan", "path": second_path,
+                "envelope_digest": "d2" * 32,
+                "byte_digest": hashlib.sha256(second_bytes).hexdigest(),
+                "created_at": "2026-08-05T01:00:00Z", "immutable": True,
+                "consumer": "teamwork", "source_revision": "e2" * 32,
+            },
+        }
+        manifest["runtime"]["active_route"] = str(created["manifest_path"])
+        manifest = CONTRACT["validate_case_manifest"](manifest, migration_read=True)
+        manifest_path.write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+        orphan_id = str(orphan["case_id"])
+        orphan_manifest_path = self.project / str(orphan["manifest_path"])
+        orphan_manifest = json.loads(orphan_manifest_path.read_text(encoding="utf-8"))
+        orphan_manifest["schema_version"] = 1
+        orphan_manifest.pop("document")
+        orphan_artifact_id = "a-" + "c3" * 32
+        orphan_artifact_path = f"docs/teamwork/cases/{orphan_id}/evidence/{orphan_artifact_id}.md"
+        orphan_bytes = b"# Orphan evidence\n\nPreserve this unindexed case too.\n"
+        orphan_target = self.project / orphan_artifact_path
+        orphan_target.parent.mkdir(parents=True)
+        orphan_target.write_bytes(orphan_bytes)
+        orphan_manifest["artifacts"] = {
+            orphan_artifact_id: {
+                "role": "evidence", "subtype": "evidence", "path": orphan_artifact_path,
+                "envelope_digest": "d3" * 32,
+                "byte_digest": hashlib.sha256(orphan_bytes).hexdigest(),
+                "created_at": "2026-08-05T02:00:00Z", "immutable": True,
+                "consumer": "teamwork", "source_revision": "e3" * 32,
+            }
+        }
+        orphan_manifest = CONTRACT["validate_case_manifest"](orphan_manifest, migration_read=True)
+        orphan_manifest_path.write_text(
+            json.dumps(orphan_manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        index = json.loads((self.memory / "index.json").read_text(encoding="utf-8"))
+        index["schema_version"] = 2
+        revision = CONTRACT["legacy_case_manifest_revision"](manifest)
+        index["active_cases"] = [row for row in index["active_cases"] if row["case_id"] != orphan_id]
+        next(row for row in index["active_cases"] if row["case_id"] == case_id)["manifest_revision"] = revision
+        index["aliases"]["legacy-plan-fold"]["manifest_revision"] = revision
+        index["aliases"].pop("unindexed-legacy-case")
+        (self.memory / "index.json").write_text(
+            json.dumps(index, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+        upgraded = self.cli("project-upgrade", "--project-root", str(self.project))
+        self.assertEqual(upgraded.returncode, 0, upgraded.stderr)
+        payload = json.loads(upgraded.stdout)
+        self.assertTrue(payload["migrated"])
+        self.assertEqual(payload["mode"], "case-v3")
+        live_path = self.project / f"docs/teamwork/cases/{case_id}/live.md"
+        live = live_path.read_text(encoding="utf-8")
+        self.assertIn("Needs Resolution: yes", live)
+        self.assertIn("Use route A.", live)
+        self.assertIn("Use route B.", live)
+        self.assertFalse((self.project / first_path).exists())
+        self.assertFalse((self.project / second_path).exists())
+        self.assertFalse((self.project / orphan_artifact_path).exists())
+        orphan_live = self.project / f"docs/teamwork/cases/{orphan_id}/live.md"
+        self.assertIn("Preserve this unindexed case too.", orphan_live.read_text(encoding="utf-8"))
+        orphan_current = json.loads(orphan_manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(len(orphan_current["artifacts"]), 1)
+        self.assertEqual(sorted(path.name for path in orphan_manifest_path.parent.iterdir()), ["live.md", "manifest.json"])
+        current = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(list(current["artifacts"].values())[0]["path"], f"docs/teamwork/cases/{case_id}/live.md")
+        self.assertEqual(current["history"], [])
+        self.assertEqual(current["references"], [])
+        self.assertEqual(current["document"]["source_artifact_ids"], [current["document"]["latest_artifact_id"]])
+        self.assertEqual(json.loads((self.memory / "index.json").read_text(encoding="utf-8"))["schema_version"], 3)
+
+        second = self.cli("project-upgrade", "--project-root", str(self.project))
+        self.assertEqual(second.returncode, 0, second.stderr)
+        self.assertFalse(json.loads(second.stdout)["migrated"])
+
+    def test_writer_interruption_recovers_exact_prestate_before_retry(self) -> None:
+        started = self.writer_apply({
+            "schema_version": 1,
+            "operation": "start",
+            "case_seed": "b4" * 32,
+            "task_key": "writer-interruption",
+            "title": "Writer interruption",
+            "aliases": [],
+            "updated_at": "2026-08-06T00:00:00Z",
+            "purpose": "debug",
+            "section": "Evidence",
+            "body": "Initial observation.",
+        })
+        live_path = self.project / str(started["path"])
+        before = live_path.read_bytes()
+        request = {
+            "schema_version": 1,
+            "operation": "update",
+            "case_id": started["case_id"],
+            "expected_generation": 1,
+            "updated_at": "2026-08-06T01:00:00Z",
+            "purpose": "debug",
+            "section": "Evidence",
+            "body": "Discriminating observation.",
+        }
+        interrupted = self.cli(
+            "writer-apply",
+            "--project-root",
+            str(self.project),
+            "--request-json",
+            json.dumps(request),
+            env={"TEAMWORK_ARTIFACT_TRANSACTION_INTERRUPT_AFTER_BACKUP": "1"},
+        )
+        self.assertNotEqual(interrupted.returncode, 0)
+        self.assertIn("INDETERMINATE", interrupted.stderr)
+        inspected = self.cli("writer-inspect", "--project-root", str(self.project))
+        self.assertEqual(inspected.returncode, 0, inspected.stderr)
+        self.assertEqual(live_path.read_bytes(), before)
+        self.assertFalse((self.memory / ".case-transaction.json").exists())
+        retried = self.writer_apply(request)
+        self.assertEqual(retried["generation"], 2)
+
+    def test_writer_start_fails_closed_on_unmanaged_live_path_collision(self) -> None:
+        case_id = CONTRACT["case_id_from_seed"]("b5" * 32)
+        collision = self.project / f"docs/teamwork/cases/{case_id}/live.md"
+        collision.parent.mkdir(parents=True)
+        collision.write_text("user-owned bytes\n", encoding="utf-8")
+        before_index = (self.memory / "index.json").read_bytes()
+        result = self.cli(
+            "writer-apply",
+            "--project-root",
+            str(self.project),
+            "--request-json",
+            json.dumps({
+                "schema_version": 1,
+                "operation": "start",
+                "case_seed": "b5" * 32,
+                "task_key": "writer-collision",
+                "title": "Writer collision",
+                "aliases": [],
+                "updated_at": "2026-08-06T00:00:00Z",
+                "purpose": "research",
+                "section": "Evidence",
+                "body": "Must not overwrite collision.",
+            }),
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unmanaged live.md collision", result.stderr)
+        self.assertEqual(collision.read_text(encoding="utf-8"), "user-owned bytes\n")
+        self.assertEqual((self.memory / "index.json").read_bytes(), before_index)
+        self.assertFalse((collision.parent / "manifest.json").exists())
+
     def test_schema_driven_writer_matrix_binds_operation_kind_consumer_lifecycle_and_readback(self) -> None:
         contracts = (
             ("collaborate-upsert", "collaborating", "collaborating", "collaborate", "collaborate", {}),
@@ -112,9 +398,9 @@ class CaseArtifactTransactionTests(unittest.TestCase):
             ("update-result", "collecting", "collecting", "update", "evidence", {}),
             ("native-result", "executing", "executing", "result", "result", {}),
             ("plan-upsert", "planned", "executing", "plan", "plan", {}),
-            ("plan-review-add", "planned", "planned", "review", "review", {"sealed_candidate_digest": "91" * 32}),
-            ("review-add", "executing", "reviewing", "review", "review", {"sealed_candidate_digest": "92" * 32}),
-            ("code-review-add", "executing", "reviewing", "review", "review", {"sealed_candidate_digest": "93" * 32}),
+            ("plan-review-add", "planned", "planned", "review", "review", {"candidate_identity": "plan-candidate"}),
+            ("review-add", "executing", "reviewing", "review", "review", {"candidate_identity": "candidate"}),
+            ("code-review-add", "executing", "reviewing", "review", "review", {"candidate_identity": "code-candidate"}),
             ("result-add", "executing", "executing", "result", "result", {}),
             ("goal-acquire", "executing", "executing", "goal", "goal", {"claim_seed": "94" * 32, "owner": "Goal"}),
             ("goal-update", "executing", "executing", "goal", "goal", {"claim_seed": "95" * 32, "owner": "Goal"}),
@@ -202,12 +488,12 @@ class CaseArtifactTransactionTests(unittest.TestCase):
                 body="## Plan\n\n- Implement case bundle.",
             )
         )
-        plan_path = self.project / f"docs/teamwork/cases/{case_id}/plan.md"
+        plan_path = self.project / f"docs/teamwork/cases/{case_id}/live.md"
         self.assertTrue(plan_path.is_file())
-        self.assertIn("Artifact Type: case-plan", plan_path.read_text(encoding="utf-8"))
+        self.assertIn("## Plan", plan_path.read_text(encoding="utf-8"))
         manifest = json.loads((self.project / planned["manifest_path"]).read_text(encoding="utf-8"))
         self.assertEqual(manifest["status"], "executing")
-        self.assertEqual(next(iter(manifest["artifacts"].values()))["path"], f"docs/teamwork/cases/{case_id}/plan.md")
+        self.assertEqual(next(iter(manifest["artifacts"].values()))["path"], f"docs/teamwork/cases/{case_id}/live.md")
 
         executing = self.apply(
             self.base_request(
@@ -267,7 +553,7 @@ class CaseArtifactTransactionTests(unittest.TestCase):
             {row["target_id"] for row in inspected["aliases"].values()},
             hot_case_ids,
         )
-        CONTRACT["validate_case_v2_tree_readonly"](self.project)
+        CONTRACT["validate_case_v3_tree_readonly"](self.project)
 
     def test_create_reuses_stale_alias_from_pre_pruning_index(self) -> None:
         prior = self.create_case(
@@ -311,7 +597,7 @@ class CaseArtifactTransactionTests(unittest.TestCase):
             replacement["case_id"],
         )
         self.assertNotEqual(replacement["case_id"], prior["case_id"])
-        CONTRACT["validate_case_v2_tree_readonly"](self.project)
+        CONTRACT["validate_case_v3_tree_readonly"](self.project)
 
     def test_legacy_v1_index_is_migration_input_only_for_runtime(self) -> None:
         v1 = {
@@ -404,7 +690,7 @@ class CaseArtifactTransactionTests(unittest.TestCase):
         self.assertEqual(source_manifest["claims"][claim_id]["status"], "released")
         self.assertEqual(target_manifest["claims"][claim_id]["status"], "active")
 
-    def test_goal_live_updates_relocate_prior_immutable_records_to_matching_history_bytes(self) -> None:
+    def test_goal_live_updates_keep_only_the_current_live_document(self) -> None:
         created = self.create_case("33" * 32, "goal-live", initial_phase="planned")
         executing = self.apply(self.base_request("update", created, phase="executing", updated_at="2026-07-30T00:30:00+00:00"))
         acquired = self.apply(
@@ -418,7 +704,7 @@ class CaseArtifactTransactionTests(unittest.TestCase):
                 owner="Goal",
             )
         )
-        first_live = (self.project / f"docs/teamwork/cases/{acquired['case_id']}/live/goal.md").read_bytes()
+        first_live = (self.project / f"docs/teamwork/cases/{acquired['case_id']}/live.md").read_bytes()
         updated_once = self.apply(
             self.base_request(
                 "goal-update",
@@ -442,15 +728,16 @@ class CaseArtifactTransactionTests(unittest.TestCase):
             )
         )
         manifest = self.assert_artifact_records_match_extant_bytes(str(updated_twice["case_id"]))
-        live_path = f"docs/teamwork/cases/{updated_twice['case_id']}/live/goal.md"
+        live_path = f"docs/teamwork/cases/{updated_twice['case_id']}/live.md"
         self.assertEqual(manifest["runtime"]["active_route"], live_path)
         live_records = [row for row in manifest["artifacts"].values() if row["path"] == live_path]
         self.assertEqual(len(live_records), 1)
-        archived_records = [row for row in manifest["artifacts"].values() if row["path"].startswith(f"docs/teamwork/cases/{updated_twice['case_id']}/history/live/")]
-        self.assertEqual(len(archived_records), 2)
-        self.assertIn(first_live, [(self.project / row["path"]).read_bytes() for row in archived_records])
+        self.assertEqual(len(manifest["artifacts"]), 1)
+        self.assertEqual(manifest["history"], [])
+        self.assertNotEqual((self.project / live_path).read_bytes(), first_live)
+        self.assertFalse((self.project / f"docs/teamwork/cases/{updated_twice['case_id']}/history").exists())
 
-    def test_collaborate_live_upserts_relocate_prior_immutable_records_and_accept_decision_stays_separate(self) -> None:
+    def test_collaborate_and_decision_share_one_current_live_document(self) -> None:
         created = self.create_case("36" * 32, "collaborate-live", initial_phase="collaborating")
         first = self.apply(
             self.base_request(
@@ -489,15 +776,17 @@ class CaseArtifactTransactionTests(unittest.TestCase):
             )
         )
         manifest = self.assert_artifact_records_match_extant_bytes(str(accepted["case_id"]))
-        collaborate_live = f"docs/teamwork/cases/{accepted['case_id']}/live/collaborate.md"
+        collaborate_live = f"docs/teamwork/cases/{accepted['case_id']}/live.md"
         self.assertTrue((self.project / collaborate_live).is_file())
-        self.assertTrue((self.project / f"docs/teamwork/cases/{accepted['case_id']}/decision.md").is_file())
-        self.assertEqual(manifest["runtime"]["active_route"], f"docs/teamwork/cases/{accepted['case_id']}/decision.md")
+        self.assertEqual(manifest["runtime"]["active_route"], collaborate_live)
         self.assertEqual(len([row for row in manifest["artifacts"].values() if row["path"] == collaborate_live]), 1)
-        self.assertEqual(len([row for row in manifest["artifacts"].values() if row["role"] == "collaborate"]), 3)
-        self.assertEqual(len([row for row in manifest["artifacts"].values() if row["path"].startswith(f"docs/teamwork/cases/{accepted['case_id']}/history/live/")]), 2)
+        self.assertEqual(len(manifest["artifacts"]), 1)
+        self.assertEqual(manifest["history"], [])
+        live_text = (self.project / collaborate_live).read_text(encoding="utf-8")
+        self.assertIn("## Purpose State", live_text)
+        self.assertIn("## Decisions", live_text)
 
-    def test_decision_revisions_relocate_prior_singleton_record_to_matching_history_bytes(self) -> None:
+    def test_decision_revisions_keep_only_the_current_live_document(self) -> None:
         created = self.create_case("37" * 32, "decision-revision", initial_phase="collaborating")
         first = self.apply(
             self.base_request(
@@ -518,10 +807,11 @@ class CaseArtifactTransactionTests(unittest.TestCase):
             )
         )
         manifest = self.assert_artifact_records_match_extant_bytes(str(second["case_id"]))
-        decision_path = f"docs/teamwork/cases/{second['case_id']}/decision.md"
+        decision_path = f"docs/teamwork/cases/{second['case_id']}/live.md"
         self.assertEqual(manifest["runtime"]["active_route"], decision_path)
         self.assertEqual(len([row for row in manifest["artifacts"].values() if row["path"] == decision_path]), 1)
-        self.assertEqual(len([row for row in manifest["artifacts"].values() if row["path"].startswith(f"docs/teamwork/cases/{second['case_id']}/history/decision/")]), 1)
+        self.assertEqual(len(manifest["artifacts"]), 1)
+        self.assertEqual(manifest["history"], [])
 
     def test_planned_case_can_receive_an_imported_accepted_decision(self) -> None:
         created = self.create_case("39" * 32, "planned-decision-repair", initial_phase="planned")
@@ -538,10 +828,10 @@ class CaseArtifactTransactionTests(unittest.TestCase):
         self.assertEqual(manifest["status"], "planned")
         self.assertEqual(
             manifest["runtime"]["active_route"],
-            f"docs/teamwork/cases/{accepted['case_id']}/decision.md",
+            f"docs/teamwork/cases/{accepted['case_id']}/live.md",
         )
 
-    def test_plan_revisions_relocate_prior_singleton_record_to_matching_history_bytes(self) -> None:
+    def test_plan_revisions_keep_only_the_current_live_document(self) -> None:
         created = self.create_case("38" * 32, "plan-revision", initial_phase="planned")
         first = self.apply(
             self.base_request(
@@ -563,12 +853,13 @@ class CaseArtifactTransactionTests(unittest.TestCase):
             )
         )
         manifest = self.assert_artifact_records_match_extant_bytes(str(second["case_id"]))
-        plan_path = f"docs/teamwork/cases/{second['case_id']}/plan.md"
+        plan_path = f"docs/teamwork/cases/{second['case_id']}/live.md"
         self.assertEqual(manifest["runtime"]["active_route"], plan_path)
         self.assertEqual(len([row for row in manifest["artifacts"].values() if row["path"] == plan_path]), 1)
-        self.assertEqual(len([row for row in manifest["artifacts"].values() if row["path"].startswith(f"docs/teamwork/cases/{second['case_id']}/history/plan/")]), 1)
+        self.assertEqual(len(manifest["artifacts"]), 1)
+        self.assertEqual(manifest["history"], [])
 
-    def test_singleton_history_collision_and_stale_replay_do_not_overwrite_live_bytes(self) -> None:
+    def test_stale_replay_is_rejected_and_unmanaged_history_bytes_are_not_adopted(self) -> None:
         created = self.create_case("39" * 32, "singleton-collision", initial_phase="collaborating")
         first_request = self.base_request(
             "accept-decision",
@@ -578,7 +869,7 @@ class CaseArtifactTransactionTests(unittest.TestCase):
             body="## Decision\n\n- First decision.",
         )
         first = self.apply(first_request)
-        decision_path = self.project / f"docs/teamwork/cases/{first['case_id']}/decision.md"
+        decision_path = self.project / f"docs/teamwork/cases/{first['case_id']}/live.md"
         live_before = decision_path.read_bytes()
 
         stale = self.cli("case-apply", "--project-root", str(self.project), "--request-json", json.dumps(first_request))
@@ -586,8 +877,8 @@ class CaseArtifactTransactionTests(unittest.TestCase):
         self.assertEqual(decision_path.read_bytes(), live_before)
 
         manifest = json.loads((self.project / first["manifest_path"]).read_text(encoding="utf-8"))
-        prior_id = next(artifact_id for artifact_id, row in manifest["artifacts"].items() if row["path"].endswith("/decision.md"))
-        collision = self.project / f"docs/teamwork/cases/{first['case_id']}/history/decision/{prior_id}.md"
+        prior_id = next(artifact_id for artifact_id, row in manifest["artifacts"].items() if row["path"].endswith("/live.md"))
+        collision = self.project / f"docs/teamwork/cases/{first['case_id']}/history/live/{prior_id}.md"
         collision.parent.mkdir(parents=True)
         collision.write_text("collision\n", encoding="utf-8")
         second_request = self.base_request(
@@ -597,13 +888,15 @@ class CaseArtifactTransactionTests(unittest.TestCase):
             source_digest="d" * 64,
             body="## Decision\n\n- Revised decision.",
         )
-        blocked = self.cli("case-apply", "--project-root", str(self.project), "--request-json", json.dumps(second_request))
-        self.assertNotEqual(blocked.returncode, 0)
-        self.assertEqual(json.loads(blocked.stderr)["category"], "INDETERMINATE")
-        self.assertEqual(decision_path.read_bytes(), live_before)
+        applied = self.cli("case-apply", "--project-root", str(self.project), "--request-json", json.dumps(second_request))
+        self.assertEqual(applied.returncode, 0, applied.stderr)
+        self.assertNotEqual(decision_path.read_bytes(), live_before)
         self.assertEqual(collision.read_text(encoding="utf-8"), "collision\n")
+        final_manifest = json.loads((self.project / first["manifest_path"]).read_text(encoding="utf-8"))
+        self.assertEqual(len(final_manifest["artifacts"]), 1)
+        self.assertEqual(final_manifest["history"], [])
 
-    def test_sealed_candidate_review_and_delta_are_not_overwritten(self) -> None:
+    def test_review_updates_share_one_live_document_without_runtime_history(self) -> None:
         created = self.create_case("44" * 32, "review-delta", initial_phase="planned")
         executing = self.apply(self.base_request("update", created, phase="executing", updated_at="2026-07-30T00:30:00+00:00"))
         review_request = self.base_request(
@@ -611,50 +904,41 @@ class CaseArtifactTransactionTests(unittest.TestCase):
             executing,
             updated_at="2026-07-30T01:00:00+00:00",
             source_digest="4" * 64,
-            sealed_candidate_digest="5" * 64,
+            candidate_identity="candidate-at-commit-5",
             body="## Review\n\n- Accept base.",
         )
         reviewed = self.apply(review_request)
-        review_path = self.project / f"docs/teamwork/cases/{reviewed['case_id']}/reviews/{'5' * 64}.md"
+        review_path = self.project / f"docs/teamwork/cases/{reviewed['case_id']}/live.md"
         original = review_path.read_bytes()
-
-        duplicate = self.cli("case-apply", "--project-root", str(self.project), "--request-json", json.dumps({
-            **review_request,
-            "expected_revision": self.inspect()["revision"],
-            "expected_manifest_revision": reviewed["manifest_revision"],
-            "updated_at": "2026-07-30T01:10:00+00:00",
-            "body": "## Review\n\n- Attempt overwrite.",
-        }))
-        self.assertNotEqual(duplicate.returncode, 0)
-        self.assertEqual(review_path.read_bytes(), original)
-
-        delta = self.apply(self.base_request(
+        revised = self.apply(self.base_request(
             "code-review-add",
             reviewed,
-            updated_at="2026-07-30T01:20:00+00:00",
+            updated_at="2026-07-30T01:10:00+00:00",
             source_digest="6" * 64,
-            sealed_candidate_digest="5" * 64,
+            candidate_identity="candidate-at-commit-6",
+            body="## Review\n\n- Candidate has a blocking issue.",
+        ))
+        delta = self.apply(self.base_request(
+            "code-review-add",
+            revised,
+            updated_at="2026-07-30T01:20:00+00:00",
+            source_digest="7" * 64,
+            candidate_identity="candidate-at-commit-7",
             delta=True,
             body="## Review\n\n- Delta recheck.",
         ))
-        delta_path = self.project / f"docs/teamwork/cases/{reviewed['case_id']}/reviews/{'5' * 64}-delta.md"
-        delta_original = delta_path.read_bytes()
-        duplicate_delta = self.cli("case-apply", "--project-root", str(self.project), "--request-json", json.dumps({
-            "schema_version": 2,
-            "operation": "code-review-add",
-            "expected_revision": self.inspect()["revision"],
-            "case_id": delta["case_id"],
-            "expected_manifest_revision": delta["manifest_revision"],
-            "updated_at": "2026-07-30T01:30:00+00:00",
-            "source_digest": "7" * 64,
-            "sealed_candidate_digest": "5" * 64,
-            "delta": True,
-            "body": "## Review\n\n- Attempt delta overwrite.",
-        }))
-        self.assertNotEqual(duplicate_delta.returncode, 0)
-        self.assertEqual(delta_path.read_bytes(), delta_original)
+        manifest = self.assert_artifact_records_match_extant_bytes(str(delta["case_id"]))
+        live_rows = [row for row in manifest["artifacts"].values() if row["path"].endswith("/live.md")]
+        self.assertEqual(len(live_rows), 1)
+        self.assertEqual(len(manifest["artifacts"]), 1)
+        self.assertEqual(manifest["history"], [])
+        self.assertNotEqual(review_path.read_bytes(), original)
+        live_text = review_path.read_text(encoding="utf-8")
+        self.assertIn("Accept base.", live_text)
+        self.assertIn("blocking issue", live_text)
+        self.assertIn("Delta recheck.", live_text)
 
-    def test_review_delta_uses_separate_immutable_slot_without_base_review(self) -> None:
+    def test_review_delta_uses_the_same_live_document_without_base_review(self) -> None:
         created = self.create_case("45" * 32, "separate-delta", initial_phase="planned")
         executing = self.apply(self.base_request("update", created, phase="executing", updated_at="2026-07-30T00:30:00+00:00"))
         delta = self.apply(
@@ -663,15 +947,16 @@ class CaseArtifactTransactionTests(unittest.TestCase):
                 executing,
                 updated_at="2026-07-30T01:00:00+00:00",
                 source_digest="8" * 64,
-                sealed_candidate_digest="9" * 64,
+                candidate_identity="repaired-candidate",
                 delta=True,
                 body="## Review\n\n- Delta for repaired candidate.",
             )
         )
-        delta_path = self.project / f"docs/teamwork/cases/{delta['case_id']}/reviews/{'9' * 64}-delta.md"
+        delta_path = self.project / f"docs/teamwork/cases/{delta['case_id']}/live.md"
         self.assertTrue(delta_path.is_file())
-        base_path = self.project / f"docs/teamwork/cases/{delta['case_id']}/reviews/{'9' * 64}.md"
-        self.assertFalse(base_path.exists())
+        self.assertIn("Delta for repaired candidate.", delta_path.read_text(encoding="utf-8"))
+        manifest = json.loads((self.project / delta["manifest_path"]).read_text(encoding="utf-8"))
+        self.assertEqual(manifest["document"]["path"], f"docs/teamwork/cases/{delta['case_id']}/live.md")
 
     def test_operation_phase_matrix_is_not_silently_widened(self) -> None:
         cases = [
@@ -718,7 +1003,7 @@ class CaseArtifactTransactionTests(unittest.TestCase):
                                 created,
                                 updated_at="2026-07-30T00:45:00+00:00",
                                 source_digest="9" * 64,
-                                sealed_candidate_digest=f"{position + 200:064x}",
+                                candidate_identity=f"matrix-review-{position}",
                                 body="## Review\n\n- Seal.",
                             )
                         )
@@ -730,7 +1015,7 @@ class CaseArtifactTransactionTests(unittest.TestCase):
                         body="## Body\n\n- Evidence.",
                     )
                     if operation in {"review-add", "code-review-add", "plan-review-add"}:
-                        request["sealed_candidate_digest"] = f"{position + 100:064x}"
+                        request["candidate_identity"] = f"matrix-candidate-{position}"
                     result = self.cli("case-apply", "--project-root", str(self.project), "--request-json", json.dumps(request))
                     if allowed:
                         self.assertEqual(result.returncode, 0, result.stderr)

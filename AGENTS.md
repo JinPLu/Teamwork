@@ -11,16 +11,23 @@ generic Execute skill, cross-skill behavior load, or shared behavior reference.
 - Shell scripts use Bash with `set -euo pipefail`, quoted variables, and arrays;
   every `SKILL.md` frontmatter has only `name` and `description`, whose value
   starts with `Use when`.
-- Normal workflow memory uses only v2 case bundles. Legacy-v1 records are
-  migration inputs, never runtime routes. Migration requires an exact authorized project root and transaction readback; install/update alone never implies project migration.
+- Writer maintains one live document per task. Skills declare semantic content;
+  storage locking, migration, integrity, and recovery remain implementation details.
+  Older records are explicit migration inputs, never runtime read routes. Given
+  an exact project root, Update migrates every Teamwork document before normal
+  work resumes.
+- Teamwork 7.0.0 is not backward compatible with older settings or data. Update
+  is the only old-to-new migration route; after migration, only the new format
+  is available to normal readers and writers.
 
 ## Commands
 
 - Run `./scripts/validate.sh` for behavior, installation, manifest, topology,
   artifact-policy, or platform-mapping changes.
 - Use `./scripts/check-update.sh --readiness` for global-install freshness and
-  `./install.sh --help` for install targets. `init-project` changes only project
-  context; `teamwork-update` changes only global installs.
+  `./install.sh --help` for install targets. `init-project` creates current
+  project context; `teamwork-update` refreshes global installs and migrates an
+  exactly named project's Teamwork documents.
 
 ## Releases
 
@@ -28,7 +35,7 @@ generic Execute skill, cross-skill behavior load, or shared behavior reference.
   request, or repository protection requires one. `VERSION` is canonical.
 - One release unit includes VERSION, manifests, bilingual changelogs, needed
   public docs, verification, commit, `v<VERSION>` tag, GitHub Release, install
-  refresh, and applicable project initialization. Until tag and GitHub Release
+  refresh, and applicable exact-root project migration. Until tag and GitHub Release
   both exist, say `release-ready`, not released.
 - Write changelogs for users. Every release uses the 4.2/4.3-style: one short, natural summary sentence
   and one to four concise bold-led points; substantive releases normally use four.
@@ -44,10 +51,10 @@ generic Execute skill, cross-skill behavior load, or shared behavior reference.
 <!-- TEAMWORK_PROJECT_START -->
 ## Teamwork Project Instructions
 
-- Project label: `Teamwork`.
+- Project label (local routing only): `Teamwork`.
 - Read `docs/teamwork/index.json` first before choosing Teamwork memory routes.
-- Workflow writes are case-v2 only; legacy-v1 and old collaboration modes are migration inputs, not runtime routes.
-- Collaborate checkpoints use the selected v2 case manifest and `live/collaborate.md`; decisions use `decision.md`; route through `case-inspect`, `case-schema`, and `case-apply`, never ordinary memory, legacy records, or reports.
-- Durable memory follows the relevant case manifest. Volatile progress stays in its actual artifact.
+- Writer maintains one live document at `docs/teamwork/cases/<case_id>/live.md` for each task that produces reusable content.
+- Create the live document when reusable content first appears, update it only for material evidence, decision, conclusion, or next-step changes, and finalize it when the task ends.
+- Legacy-v1 memory and case manifests without a live document are migration-only inputs for Update; Init reads them only to fail closed and never migrates them.
 - CodeGraph: this project has a local `.codegraph/` index.
 <!-- TEAMWORK_PROJECT_END -->

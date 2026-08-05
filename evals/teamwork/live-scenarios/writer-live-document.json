@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "case_id": "writer-live-document",
+  "private_paths": [],
+  "files": [
+    {
+      "path": "scenario/writer-input.txt",
+      "content": "Task: choose the manifest-driven topology. Decision: use config/teamwork-topology.json as the mechanical owner. Next step: update consumers. This is a material reusable decision.\n"
+    },
+    {
+      "path": "scenario/live-document.md",
+      "content": "# Live Task Document\n\nPending reusable content.\n"
+    },
+    {
+      "path": "scenario/verify.py",
+      "content": "from pathlib import Path\ntext = Path('scenario/live-document.md').read_text()\nassert 'EVIDENCE_WRITER_LIVE_DOCUMENT_V5' in text\nassert 'teamwork-topology.json' in text\nassert 'update consumers' in text.lower()\n"
+    }
+  ],
+  "verification": {
+    "argv": ["python3", "scenario/verify.py"],
+    "immutable_paths": ["scenario/verify.py"]
+  }
+}

@@ -14,15 +14,13 @@ from pathlib import Path
 from typing import Any
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 OWNER = "teamwork"
 PROFILES = {"performance-first", "cost-first"}
 PROFILE_SOURCES = {
     "cli",
     "env",
     "recorded",
-    "plugin-activation-v1",
-    "skill-marker",
     "baseline",
 }
 CAPABILITY_SOURCES = {
@@ -41,6 +39,12 @@ RECEIPT_STATUSES = {"not-run", "ready", "disabled", "failed"}
 
 
 class PreferenceError(RuntimeError):
+    pass
+
+
+class ObsoletePreferenceError(PreferenceError):
+    """A Teamwork-owned pre-7 receipt that must not influence current settings."""
+
     pass
 
 
@@ -78,7 +82,9 @@ def validate_state(value: Any) -> dict[str, Any]:
         "preference document",
     )
     if state["schema_version"] != SCHEMA_VERSION or state["owner"] != OWNER:
-        raise PreferenceError("preference document is not an owned Teamwork schema-v1 receipt")
+        raise PreferenceError(
+            f"preference document is not an owned Teamwork schema-v{SCHEMA_VERSION} receipt"
+        )
     require_timestamp(state["updated_at"], "updated_at")
 
     desired = require_exact_keys(
@@ -159,6 +165,14 @@ def load_state(path: Path) -> dict[str, Any] | None:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise PreferenceError(f"cannot read valid Teamwork preferences at {path}: {exc}") from exc
+    if (
+        isinstance(value, dict)
+        and value.get("owner") == OWNER
+        and value.get("schema_version") == 1
+    ):
+        raise ObsoletePreferenceError(
+            "Teamwork schema-v1 preferences are obsolete and are not reused by Teamwork 7"
+        )
     return validate_state(value)
 
 
@@ -186,46 +200,6 @@ def atomic_write(path: Path, state: dict[str, Any]) -> None:
             os.close(directory_fd)
     finally:
         temporary.unlink(missing_ok=True)
-
-
-def compatible_profile_seed() -> tuple[str, str] | None:
-    code_home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))).expanduser()
-    activation = code_home / "teamwork" / "plugin-activation.json"
-    try:
-        if activation.is_file() and not activation.is_symlink():
-            value = json.loads(activation.read_text(encoding="utf-8"))
-            if (
-                isinstance(value, dict)
-                and value.get("schema_version") == 1
-                and value.get("plugin") == "teamwork-skill"
-                and value.get("marketplace") == "teamwork"
-                and value.get("profile") in PROFILES
-            ):
-                return str(value["profile"]), "plugin-activation-v1"
-    except (OSError, json.JSONDecodeError):
-        pass
-
-    marker_paths = (
-        Path.home() / ".agents" / "skills" / ".teamwork-profile",
-        Path.home() / ".cursor" / "skills" / ".teamwork-profile",
-        Path.home() / ".claude" / "skills" / ".teamwork-profile",
-    )
-    values: list[str] = []
-    for marker in marker_paths:
-        if not marker.exists():
-            continue
-        if marker.is_symlink() or not marker.is_file():
-            return None
-        try:
-            value = marker.read_text(encoding="utf-8").strip()
-        except OSError:
-            return None
-        if value not in PROFILES:
-            return None
-        values.append(value)
-    if values and len(set(values)) == 1:
-        return values[0], "skill-marker"
-    return None
 
 
 def default_observation() -> dict[str, Any]:
@@ -280,17 +254,23 @@ def new_state(
 
 def resolve(args: argparse.Namespace) -> int:
     path = preference_path()
+    original_status = "missing"
     try:
         state = load_state(path)
+    except ObsoletePreferenceError:
+        # Teamwork 7 deliberately does not translate pre-7 preference values.
+        # A recorded resolve replaces only this Teamwork-owned receipt with
+        # explicit current choices (or the documented current baseline).
+        state = None
+        original_status = "obsolete"
     except PreferenceError as exc:
         print(f"Teamwork install preferences refused: {exc}", file=sys.stderr)
         return 1
 
     changed = state is None
     if state is None:
-        seed = compatible_profile_seed()
-        profile = args.profile or (seed[0] if seed else "performance-first")
-        profile_source = args.profile_source or (seed[1] if seed else "baseline")
+        profile = args.profile or "performance-first"
+        profile_source = args.profile_source or "baseline"
         codegraph = args.codegraph or "disabled"
         codegraph_source = args.codegraph_source or "baseline"
         gpu_broker = args.gpu_broker or "disabled"
@@ -303,7 +283,6 @@ def resolve(args: argparse.Namespace) -> int:
             gpu_broker=gpu_broker,
             gpu_broker_source=gpu_broker_source,
         )
-        original_status = "missing"
     else:
         original_status = "valid"
         overrides = {
@@ -348,6 +327,17 @@ def status(args: argparse.Namespace) -> int:
     path = preference_path()
     try:
         state = load_state(path)
+    except ObsoletePreferenceError as exc:
+        if args.field == "json":
+            print(
+                json.dumps(
+                    {"status": "obsolete", "detail": str(exc), "path": str(path)},
+                    sort_keys=True,
+                )
+            )
+        else:
+            print("obsolete")
+        return 0
     except PreferenceError as exc:
         if args.field == "json":
             print(json.dumps({"status": "invalid", "detail": str(exc)}, sort_keys=True))

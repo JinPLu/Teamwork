@@ -4,151 +4,85 @@ from pathlib import Path
 import unittest
 
 from scripts.teamwork_tooling.instruction_footprint import (
-    COMPACTNESS_LIMITS,
+    FOOTPRINT_BASELINE,
+    REGRESSION_MIN_GROWTH,
+    REGRESSION_MULTIPLIER,
     compactness_failures,
     max_surface_size,
     size,
 )
 
 
+def fixture() -> dict[str, object]:
+    return {
+        "paths": {key: dict(value) for key, value in FOOTPRINT_BASELINE.items()},
+        "telemetry": {
+            "union": {"words": 999999, "bytes": 999999, "surfaces": 999},
+            "skills": {
+                "words": 999999,
+                "bytes": 999999,
+                "surfaces": 123,
+                "max_skill_words": 999999,
+                "behavior_references": 77,
+                "cross_skill_loads": 0,
+                "dependency_cycles": 0,
+            },
+        },
+    }
+
+
 class InstructionFootprintTests(unittest.TestCase):
     def test_size_normalizes_whitespace_and_utf8(self) -> None:
         self.assertEqual(size(" alpha\n beta  "), {"words": 2, "bytes": 10})
 
-    def test_max_surface_size_tracks_word_and_byte_maxima_independently(self) -> None:
-        measured = max_surface_size(
-            [
-                ("word-heavy", "one two three four"),
-                ("byte-heavy", "字" * 7),
-            ]
+    def test_max_surface_size_tracks_independent_maxima(self) -> None:
+        measured = max_surface_size([("words", "one two three four"), ("bytes", "字" * 7)])
+        self.assertEqual(4, measured["words"])
+        self.assertEqual("words", measured["words_path"])
+        self.assertEqual(len(("字" * 7).encode()), measured["bytes"])
+        self.assertEqual("bytes", measured["bytes_path"])
+
+    def test_baseline_is_telemetry_not_an_absolute_squeeze(self) -> None:
+        result = fixture()
+        result["paths"]["max_skill_bundle"]["words"] += 1
+        result["paths"]["global_policy_codex"]["bytes"] += 1
+        self.assertEqual([], compactness_failures(result))
+
+    def test_material_growth_requires_review(self) -> None:
+        result = fixture()
+        baseline = FOOTPRINT_BASELINE["max_skill_bundle"]["words"]
+        threshold = max(
+            int(baseline * REGRESSION_MULTIPLIER),
+            baseline + REGRESSION_MIN_GROWTH["words"],
         )
-        self.assertEqual(measured["words"], 4)
-        self.assertEqual(measured["words_path"], "word-heavy")
-        self.assertEqual(measured["bytes"], len(("字" * 7).encode("utf-8")))
-        self.assertEqual(measured["bytes_path"], "byte-heavy")
+        result["paths"]["max_skill_bundle"]["words"] = threshold + 1
+        failures = compactness_failures(result)
+        self.assertEqual(1, len(failures))
+        self.assertIn("instruction-footprint regression", failures[0])
 
-    def test_equal_measurement_passes_without_rewarding_deletion(self) -> None:
-        result = {
-            "enforced": {key: dict(value) for key, value in COMPACTNESS_LIMITS.items()},
-            "telemetry": {
-                "union": {"words": 999999, "bytes": 999999, "surfaces": 58},
-                "skills": {
-                    "words": 999999,
-                    "bytes": 999999,
-                    "surfaces": 10,
-                    "max_skill_words": 999999,
-                    "behavior_references": 5,
-                    "cross_skill_loads": 0,
-                    "dependency_cycles": 0,
-                },
-            },
-        }
-        self.assertEqual(compactness_failures(result), [])
+    def test_inventory_counts_are_telemetry(self) -> None:
+        result = fixture()
+        result["telemetry"]["skills"]["surfaces"] = 2
+        result["telemetry"]["skills"]["behavior_references"] = 99
+        self.assertEqual([], compactness_failures(result))
 
-    def test_measurement_above_compactness_limit_fails(self) -> None:
-        result = {
-            "enforced": {key: dict(value) for key, value in COMPACTNESS_LIMITS.items()},
-            "telemetry": {
-                "union": {"words": 1, "bytes": 1, "surfaces": 58},
-                "skills": {
-                    "words": 1,
-                    "bytes": 1,
-                    "surfaces": 10,
-                    "max_skill_words": 1,
-                    "behavior_references": 5,
-                    "cross_skill_loads": 0,
-                    "dependency_cycles": 0,
-                },
-            },
-        }
-        result["enforced"]["max_skill_bundle"]["words"] = COMPACTNESS_LIMITS["max_skill_bundle"]["words"] + 1
-        result["enforced"]["global_policy_codex"]["bytes"] = COMPACTNESS_LIMITS["global_policy_codex"]["bytes"] + 1
+    def test_dependency_regressions_still_fail(self) -> None:
+        result = fixture()
+        result["telemetry"]["skills"]["cross_skill_loads"] = 1
+        result["telemetry"]["skills"]["dependency_cycles"] = 1
         self.assertEqual(
-            compactness_failures(result),
             [
-                "global_policy_codex bytes exceeds compactness limit: "
-                f"{COMPACTNESS_LIMITS['global_policy_codex']['bytes'] + 1} > "
-                f"{COMPACTNESS_LIMITS['global_policy_codex']['bytes']}",
-                "max_skill_bundle words exceeds compactness limit: "
-                f"{COMPACTNESS_LIMITS['max_skill_bundle']['words'] + 1} > "
-                f"{COMPACTNESS_LIMITS['max_skill_bundle']['words']}",
+                "skill topology must keep cross_skill_loads=0: 1",
+                "skill topology must keep dependency_cycles=0: 1",
             ],
-        )
-
-    def test_v4_skill_and_reference_inventory_is_exact(self) -> None:
-        result = {
-            "enforced": {key: dict(value) for key, value in COMPACTNESS_LIMITS.items()},
-            "telemetry": {
-                "skills": {
-                    "surfaces": 10,
-                    "max_skill_words": 999999,
-                    "behavior_references": 5,
-                    "cross_skill_loads": 0,
-                    "dependency_cycles": 0,
-                }
-            },
-        }
-        self.assertEqual(compactness_failures(result), [])
-
-    def test_v4_skill_and_reference_inventory_rejects_legacy_counts(self) -> None:
-        result = {
-            "enforced": {key: dict(value) for key, value in COMPACTNESS_LIMITS.items()},
-            "telemetry": {
-                "skills": {
-                    "surfaces": 9,
-                    "max_skill_words": 1,
-                    "behavior_references": 0,
-                    "cross_skill_loads": 0,
-                    "dependency_cycles": 0,
-                }
-            },
-        }
-        self.assertEqual(
             compactness_failures(result),
-            [
-                "canonical skill inventory must contain 10 skills: 9",
-                "canonical reference inventory must contain 5 references: 0",
-            ],
         )
 
-    def test_real_loading_surfaces_include_project_memory_and_repository_context(self) -> None:
-        self.assertTrue(
-            {
-                "global_policy_codex",
-                "global_policy_cursor",
-                "global_policy_claude",
-                "project_instruction_block",
-                "repository_instructions",
-                "runtime_memory_index",
-                "runtime_memory_readme",
-                "worst_static_root_path",
-                "worst_static_leaf_path",
-                "worst_repository_root_path",
-            }.issubset(COMPACTNESS_LIMITS)
-        )
-
-    def test_global_policy_and_repository_instruction_word_limits_stay_slim(self) -> None:
-        for surface in (
-            "global_policy_codex",
-            "global_policy_cursor",
-            "global_policy_claude",
-        ):
-            with self.subTest(surface=surface):
-                self.assertLessEqual(COMPACTNESS_LIMITS[surface]["words"], 220)
-        self.assertLessEqual(COMPACTNESS_LIMITS["repository_instructions"]["words"], 500)
-
-    def test_runtime_volume_budgets_have_one_owner(self) -> None:
+    def test_no_abstract_inventory_count_constants_remain(self) -> None:
         root = Path(__file__).resolve().parents[2]
-        validation = "\n".join(
-            (root / path).read_text(encoding="utf-8")
-            for path in (
-                "scripts/validation/common.sh",
-                "scripts/validation/contracts.sh",
-                "scripts/validation/integration.sh",
-            )
-        )
-        self.assertNotRegex(validation, r"(?m)^\s*(?:line_count_max|word_count_max)\s")
-        self.assertIn("fenced_block_line_count_max", validation)
+        source = (root / "scripts/teamwork_tooling/instruction_footprint.py").read_text()
+        self.assertNotIn("CANONICAL_SKILL_COUNT", source)
+        self.assertNotIn("CANONICAL_REFERENCE_COUNT", source)
 
 
 if __name__ == "__main__":

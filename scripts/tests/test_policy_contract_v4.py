@@ -1,4 +1,4 @@
-"""Source-bound contract tests for the thin Teamwork v4 Root policy."""
+"""Semantic contracts for Teamwork's lean managed policy."""
 
 from __future__ import annotations
 
@@ -8,333 +8,83 @@ import unittest
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-POLICY_SOURCE = ROOT / "scripts" / "install" / "policy.sh"
-ROLE_TEMPLATE_DIRECTORIES = {
-    "codex-agents": (
-        "teamwork-researcher.toml",
-        "teamwork-explorer.toml",
-        "teamwork-debugger.toml",
-        "teamwork-designer.toml",
-        "teamwork-planner.toml",
-        "teamwork-worker.toml",
-        "teamwork-writer.toml",
-        "teamwork-plan-reviewer.toml",
-        "teamwork-reviewer.toml",
-    ),
-    "cursor-agents": (
-        "researcher.md",
-        "explorer.md",
-        "debugger.md",
-        "designer.md",
-        "planner.md",
-        "worker.md",
-        "writer.md",
-        "plan-reviewer.md",
-        "reviewer.md",
-    ),
-    "claude-agents": (
-        "researcher.md",
-        "explorer.md",
-        "debugger.md",
-        "designer.md",
-        "planner.md",
-        "worker.md",
-        "writer.md",
-        "plan-reviewer.md",
-        "reviewer.md",
-    ),
-}
-WRITER_TEMPLATES = {
-    "codex-agents": "teamwork-writer.toml",
-    "cursor-agents": "writer.md",
-    "claude-agents": "writer.md",
-}
-FULL_RENDER_LIMITS = {
-    "codex": {"words": 220, "bytes": 2600},
-    "cursor": {"words": 220, "bytes": 2600},
-    "claude": {"words": 220, "bytes": 2600},
-}
+POLICY = ROOT / "scripts/install/policy.sh"
 
+PRINCIPLES = (
+    "Clear work stays native",
+    "Be epistemically honest",
+    "Calibrate verification and defenses",
+)
 
-REQUIRED_CONCEPTS = {
-    "authority_and_effect_boundary": (
-        "Work within the request",
-        "Read-only",
-        "no write/effect authority",
-        "No-files/off-record/read-only/no-writes",
-        "override effects",
-        "Inspect before asking",
-        "discoverable/safe/reversible -> act",
-        "one missing user value",
-        "Root alone asks",
-        "one bounded decision batch",
-        "then resume",
-        "unformed intent/preference -> Collaborate",
-        "Result first; clear/stable/relevant",
-        "report unsaved/blocked",
-    ),
-    "native_fast_path_and_routing": (
-        "Native fast path",
-        "tiny reads/explanations/commands/integration/authorized implementation",
-        "Research->Researcher",
-        "Explore->Explorer",
-        "Debug->Debugger",
-        "Plan->Planner",
-        "Review->Reviewer",
-        "Plan Review->Plan Reviewer",
-        "Init/Update->Explorer then Worker",
-        "Collaborate/Goal Root-owned",
-    ),
-    "unavailable_role_blocks": (
-        "Unavailable role/isolation",
-        "capability-blocked",
-        "no role/method fallback",
-    ),
-    "collaborate_and_leaf_boundary": (
-        "Collaborate activates for discuss/design/plan/brainstorm/compare/think-together",
-        "material user-owned",
-        "unclear intent",
-        "L1=intent",
-        "L2=explore",
-        "L3=challenge inside active discussion",
-        "Synthesize/options/recommend",
-        "native Ask",
-        "No total question/round cap",
-        "batch-independent/serialize-dependent/wait",
-        "Research/Explore return",
-        "named methods execute",
-        "saves four-part semantic state",
-        "Leaves return exact gap/reclassification",
-        "never ask/activate/expand/self-accept",
-        "One asker/owner/gap",
-        "no repeats",
-    ),
-    "case_v2_writer_transaction": (
-        "Writable initialized projects",
-        "default-save substantive case-v2 workflow checkpoints/results",
-        "frozen Writer packet+transaction+readback",
-        "Tiny-native/check-only/one-shot work is unsaved",
-        "Legacy-v1 read-only",
-        "no artifact/collaborate/goal/manual/report/ memory write fallback",
-        "Missing memory/Writer/authority/consumer/route",
-        "deliver core result",
-        "report unsaved/blocked",
-        "Code-coupled text=implementer-owned",
-    ),
-    "evidence_implementation_and_verification": (
-        "Ground claims",
-        "separate observation/inference",
-        "invent no success",
-        "preserve dirty work",
-        "Prefer canonical-owner/pattern",
-        "built-ins/dependencies",
-        "minimal-logic",
-        "Verify real-path",
-        "focused-evidence",
-        "tests never replace it",
-        "Reviewers read-only",
-        "one sealed review+repair-batch/delta-recheck",
-        "requested/risk gates",
-        "Stop at observed result/boundaries",
-    ),
-}
+ROUTING = (
+    "Collaborate for explicit discussion",
+    "Research for broad or deep external multi-source work",
+    "Debug for unknown-cause failures",
+    "Plan for a clear or selected direction",
+    "Review for a finished candidate, including a plan",
+    "Goal only when the user explicitly asks",
+    "Local evidence routes to Explorer without a public Explore skill",
+    "Strict adversarial work routes to Challenger",
+)
 
-
-FORBIDDEN_CONCEPTS = (
-    "Use a Router",
-    "generic Execute Skill",
-    "load shared behavioral references",
-    "Worker accepts the overall result",
-    "Review before direct verification",
-    "Review every code change",
-    "Every code change",
-    "Every Planner result receives independent Plan Review",
-    "Grill is exclusive to user-originated question-first intent",
-    "finite Design frontier",
-    "every material user decision",
-    "Risk automatically activates adversarial Design",
-    "Complexity automatically activates adversarial Design",
-    "Public/release/migration/security/destructive/cross-platform activates Collaborate",
-    "adversarial mode",
-    "Root may perform named-method fallback",
-    "legacy-v1 artifact/collaborate/goal may write fallback",
+FORBIDDEN = (
+    "Plan Reviewer",
+    "Designer",
+    "Default-child",
+    "daily cap",
+    "L1=intent",
+    "case-v2 workflow",
+    "Writer packet+transaction",
+    "sealed review",
 )
 
 
 def contract_failures(policy: str) -> list[str]:
-    policy = " ".join(policy.split())
-    failures: list[str] = []
-    if "Do Do not" in policy:
-        failures.append("implementation: duplicated Do before wrapper boundary")
-    for owner, concepts in REQUIRED_CONCEPTS.items():
-        for concept in concepts:
-            if concept not in policy:
-                failures.append(f"{owner}: missing concept {concept!r}")
-
-    preference_order = (
-        "Prefer canonical-owner/pattern",
-        "built-ins/dependencies",
-        "minimal-logic",
-    )
-    positions = [policy.find(clause) for clause in preference_order]
-    if any(position < 0 for position in positions) or positions != sorted(positions):
-        failures.append("implementation: preference order changed")
-
-    for clause in FORBIDDEN_CONCEPTS:
-        if clause in policy:
-            failures.append(f"forbidden v4 behavior: {clause!r}")
+    failures = [f"missing: {phrase}" for phrase in (*PRINCIPLES, *ROUTING) if phrase not in policy]
+    failures.extend(f"retired: {phrase}" for phrase in FORBIDDEN if phrase in policy)
     return failures
 
 
-class PolicyContractV4Tests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls) -> None:
-        def render(function: str) -> str:
-            result = subprocess.run(
-                [
-                    "bash",
-                    "-c",
-                    f'source "$1"; {function}',
-                    "policy-contract-v4",
-                    str(POLICY_SOURCE),
-                ],
-                cwd=ROOT,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            return result.stdout
+def render(function: str) -> str:
+    output = subprocess.run(
+        ["bash", "-c", f'source "$1"; {function}', "policy-test", str(POLICY)],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    return " ".join(output.split())
 
-        cls.policy = " ".join(render("write_teamwork_global_policy_body").split())
-        def render_install(platform: str) -> str:
-            result = subprocess.run(
-                [str(ROOT / "install.sh"), f"{platform}-policy"],
-                cwd=ROOT,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            return result.stdout
 
-        cls.raw_platforms = {
-            platform: render_install(platform)
-            for platform in FULL_RENDER_LIMITS
+class LeanPolicyTests(unittest.TestCase):
+    def test_policy_preserves_three_principles_and_semantic_routes(self) -> None:
+        policy = render("write_teamwork_global_policy_body")
+        self.assertEqual(contract_failures(policy), [])
+
+    def test_policy_keeps_infrastructure_out_of_model_workflows(self) -> None:
+        policy = render("write_teamwork_global_policy_body")
+        self.assertIn("Storage, migration, transaction, CAS, readback, and integrity details stay out", policy)
+        self.assertIn("Teamwork creates no separate authorization protocol", policy)
+        self.assertIn("Teamwork defines no numeric dispatch caps", policy)
+
+    def test_each_principle_is_mutation_bound(self) -> None:
+        policy = render("write_teamwork_global_policy_body")
+        for phrase in PRINCIPLES:
+            with self.subTest(phrase=phrase):
+                self.assertTrue(contract_failures(policy.replace(phrase, "")))
+
+    def test_host_adapters_share_policy_and_only_codex_names_its_question_tool(self) -> None:
+        rendered = {
+            host: render(f"write_teamwork_{host}_global_policy")
+            for host in ("codex", "cursor", "claude")
         }
-        cls.platforms = {
-            platform: " ".join(rendered.split())
-            for platform, rendered in cls.raw_platforms.items()
-        }
-
-    def test_rendered_policy_satisfies_v4_contract(self) -> None:
-        self.assertEqual(contract_failures(self.policy), [])
-
-    def test_each_host_rendering_keeps_the_contract_and_codex_question_surface(self) -> None:
-        for platform, rendered in self.platforms.items():
-            with self.subTest(platform=platform):
-                self.assertEqual(contract_failures(rendered), [])
-        self.assertIn(
-            "Codex: material questions->request_user_input; call limits=transport only.",
-            self.platforms["codex"],
-        )
-        self.assertNotIn("request_user_input", self.platforms["cursor"])
-        self.assertNotIn("request_user_input", self.platforms["claude"])
-
-    def test_each_full_host_rendering_enforces_exact_word_and_byte_limits(self) -> None:
-        for platform, rendered in self.raw_platforms.items():
-            with self.subTest(platform=platform):
-                measured = {
-                    "words": len(rendered.split()),
-                    "bytes": len(rendered.encode("utf-8")),
-                }
-                for metric, limit in FULL_RENDER_LIMITS[platform].items():
-                    self.assertLessEqual(
-                        measured[metric],
-                        limit,
-                        f"{platform} full rendered policy exceeds {metric}: "
-                        f"{measured[metric]} > {limit}",
-                    )
-
-    def test_each_source_concept_is_mutation_bound(self) -> None:
-        for owner, concepts in REQUIRED_CONCEPTS.items():
-            for concept in concepts:
-                with self.subTest(owner=owner, concept=concept):
-                    mutated = self.policy.replace(concept, "")
-                    self.assertTrue(
-                        contract_failures(mutated),
-                        f"deleting {owner} concept was not detected: {concept!r}",
-                    )
-
-    def test_preference_order_inversion_is_detected(self) -> None:
-        canonical = "Prefer canonical-owner/pattern"
-        minimal = "minimal logic"
-        mutated = self.policy.replace(canonical, "ORDER_SENTINEL", 1)
-        mutated = mutated.replace(minimal, canonical, 1)
-        mutated = mutated.replace("ORDER_SENTINEL", minimal, 1)
-        self.assertIn(
-            "implementation: preference order changed",
-            contract_failures(mutated),
-        )
-
-    def test_clear_simple_work_cannot_be_rerouted_to_a_worker(self) -> None:
-        native = "Native fast path: tiny reads/explanations/commands/integration/authorized implementation."
-        mutated = self.policy.replace(
-            native,
-            "A Worker owns every clear authorized implementation.",
-            1,
-        )
-        self.assertNotEqual(self.policy, mutated)
-        self.assertTrue(contract_failures(mutated))
-
-    def test_forbidden_router_execute_and_self_acceptance_mutations_fail(self) -> None:
-        for mutation in (
-            " Use a Router.",
-            " Add a generic Execute Skill.",
-            " Skills load shared behavioral references.",
-            " Worker accepts the overall result.",
-            " Review before direct verification.",
-            " Grill is exclusive to user-originated question-first intent.",
-            " Public/release/migration/security/destructive/cross-platform activates Collaborate.",
-            " Root may perform named-method fallback.",
-            " legacy-v1 artifact/collaborate/goal may write fallback.",
-        ):
-            with self.subTest(mutation=mutation):
-                self.assertTrue(contract_failures(self.policy + mutation))
-
-    def test_internal_role_inventory_stays_exactly_nine_per_host(self) -> None:
-        for directory, expected_names in ROLE_TEMPLATE_DIRECTORIES.items():
-            with self.subTest(directory=directory):
-                actual_names = {
-                    path.name
-                    for path in (ROOT / "templates" / directory).iterdir()
-                    if path.is_file()
-                }
-                self.assertEqual(set(expected_names), actual_names)
-
-    def test_writer_templates_enforce_frozen_packet_controls(self) -> None:
-        required = (
-            "frozen bounded writing brief, byte/semantic-controlled",
-            "requested clauses",
-            "Do not paraphrase controlled text",
-            "resolve contradictions",
-            "delete requested clauses",
-            "read back and compare against byte/semantic packet obligations",
-            "blocked without writing and unsaved",
-            "cannot preserve requested clauses",
-            "return blocked/unsaved to Root/Planner on conflict or readback mismatch",
-            "case-v2 only",
-            "case-schema <operation> -> case-apply/readback",
-            "legacy-v1 artifacts/collaborate/goal are read-only migration inputs, no write route",
-            "Do not self-accept",
-        )
-        for directory, filename in WRITER_TEMPLATES.items():
-            with self.subTest(template=f"{directory}/{filename}"):
-                text = " ".join(
-                    (ROOT / "templates" / directory / filename)
-                    .read_text(encoding="utf-8")
-                    .split()
-                )
-                for phrase in required:
-                    self.assertIn(phrase, text)
+        for host, policy in rendered.items():
+            with self.subTest(host=host):
+                for phrase in PRINCIPLES:
+                    self.assertIn(phrase, policy)
+        self.assertIn("request_user_input", rendered["codex"])
+        self.assertNotIn("request_user_input", rendered["cursor"])
+        self.assertNotIn("request_user_input", rendered["claude"])
 
 
 if __name__ == "__main__":

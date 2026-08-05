@@ -1,35 +1,34 @@
 # Deep Research
 
-Load this reference only for a deep or broad external investigation, seed
-expansion across several source classes, or a material contradiction that the
-normal Research method cannot resolve. Do not load another reference or Skill.
+Load this reference only for broad seed expansion across several source
+classes, a material contradiction that normal research cannot resolve, or a
+formal deep-research deliverable.
 
-## Brief And Search Plan
+## Freeze The Brief
 
-Freeze the decision question, intended use, freshness cutoff, public source
-policy, privacy exclusions, material claims, search axes, and decision-sufficiency
-stop before broad retrieval. A user review of the brief is useful only when cost,
-scope, or consequence makes steering material; it is not mandatory ceremony.
+Record the decision question, intended use, freshness cutoff, public-source and
+privacy boundaries, material claims, search axes, and the condition for
+decision-sufficient evidence. Ask the user to steer the brief only when cost,
+scope, or consequence makes that choice material.
 
-Iterate by evidence gap: search, read primary sources, update claim coverage,
-identify the highest-impact unsupported or disputed claim, then search that gap.
-Split work only when source classes are truly independent, public/private evidence
-must be isolated, or a consequential disputed claim needs a bounded independent
-verifier. Keep one synthesis owner.
+Iterate by evidence gap: retrieve, read the strongest primary material, update
+claim coverage, identify the highest-impact unsupported or disputed claim, and
+search that gap next. Split work only when source classes are independent,
+public and private evidence must remain isolated, or a consequential disputed
+claim needs an independent verifier. Keep one synthesis owner.
 
-## Required Deep Output
+## Deep Deliverable
 
 Return:
 
-- the research brief and search axes;
-- a source census by source class, date/version, authority, and relevance;
-- a claim ledger mapping each material claim to direct support, counterevidence,
-  inference, confidence, and citation;
+- the brief and search axes;
+- a source census by class, authority, date or version, and relevance;
+- a claim ledger mapping each material claim to direct support,
+  counterevidence, inference, confidence, and citation;
 - contradictions, rejected sources with reasons, and explicit not-found gaps;
-- a coverage audit distinguishing source count from claim coverage;
+- a coverage audit that distinguishes source count from claim coverage;
 - the supported conclusion and residual uncertainty; and
-- the stop basis: why the evidence is decision-sufficient, or the single next
-  discriminator if it is not.
+- the stop basis or single most valuable next discriminator.
 
-Never average conflicting sources into synthetic consensus. Stop when continued
-search would add source volume without improving decision discrimination.
+Never average conflicting sources into synthetic consensus. Stop when further
+retrieval would add source volume without improving decision discrimination.

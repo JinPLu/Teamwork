@@ -1,0 +1,4 @@
+interface:
+  display_name: "Teamwork Debug"
+  short_description: "Diagnose unknown failures with causal evidence"
+  default_prompt: "Use $teamwork-debug to diagnose this failure from evidence and verify the supported result."

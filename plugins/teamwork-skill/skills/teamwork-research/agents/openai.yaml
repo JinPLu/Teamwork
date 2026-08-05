@@ -1,0 +1,4 @@
+interface:
+  display_name: "Teamwork Research"
+  short_description: "Investigate broad external questions with evidence"
+  default_prompt: "Use $teamwork-research to investigate this external question across reliable sources."

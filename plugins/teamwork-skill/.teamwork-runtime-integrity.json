@@ -2,7 +2,7 @@
   "files": {
     ".codex-plugin/plugin.json": {
       "mode": "0644",
-      "sha256": "732cf69fae2d5ebecefaaeb8dbdb263625aede8fe1ef47e6bcddcada0dafe7bd"
+      "sha256": "9e51f4f3f7f08b68a14dfc86a1aa2d415ebe11934961f4cc686c38158c183e9c"
     },
     ".teamwork-plugin-runtime": {
       "mode": "0644",
@@ -10,11 +10,11 @@
     },
     "VERSION": {
       "mode": "0644",
-      "sha256": "e33e70efdb9c35eb184b87ee7abc05ac16a925c9c36e84408999dea33a741fa8"
+      "sha256": "746472de66b936ac885ca6d6e68058242b4e909e3260c6317f3ec719f78f76cc"
     },
-    "evals/teamwork/ledgers/v4-capability-migration.jsonl": {
+    "config/teamwork-topology.json": {
       "mode": "0644",
-      "sha256": "a6cc41c29ee5f34b894ead80186db0175c25cb6c1af7ac9a59c38b307911c77d"
+      "sha256": "51bd723b5921cc93770877f5b40da603dc9b467a348266af88a42af7ac9d89aa"
     },
     "hooks/notify.py": {
       "mode": "0755",
@@ -22,15 +22,15 @@
     },
     "install.sh": {
       "mode": "0755",
-      "sha256": "d55c66e8ca34afdaf2daf0dff81bfbb50ebcb59b928a1094769096f4ebde86b4"
+      "sha256": "173cba72bface66c7fecf56b42196d7a6b5ca014866c6dc3b6f518617470afb2"
     },
     "scripts/check-codex-routing.py": {
       "mode": "0644",
-      "sha256": "194f18c117fb2be5f6925dcf95eb13fd1292fa5f738a28dccbc58aa326288e9a"
+      "sha256": "ce25d088624f3683fc16ba96289c3c8d8df2cae1ce33438012125ee787552750"
     },
     "scripts/check-update.sh": {
       "mode": "0755",
-      "sha256": "283672ae4b9229aa22b400027b4f2f09c366a165244b89f65d70f32f5b42dc00"
+      "sha256": "883e0dd5612d764a51dde538c24dccf8980fda119e9986f4a4438f75ce71d08c"
     },
     "scripts/codex_routing_config.py": {
       "mode": "0644",
@@ -46,19 +46,19 @@
     },
     "scripts/discussion-transaction.py": {
       "mode": "0755",
-      "sha256": "0c49aae38b9a0a3fba14cb3064a1783c48af20aac44dfcdc6ea4f9ae5cbde7b7"
+      "sha256": "abc3c799a0078b6866fb395e9637137ec3bbfd36cdd26bf6c42758a5b37e3c24"
     },
     "scripts/init-project-files.py": {
       "mode": "0755",
-      "sha256": "7f87ece0eac953b3bb0bd8b3c70b9bbd99f161f6d51480c0dd8d3691dba98264"
+      "sha256": "b758c5f6258340ac3675cffb72af7bf1111ca1c594fb632860a05c2850a908b8"
     },
     "scripts/init-project.sh": {
       "mode": "0755",
-      "sha256": "5223adbdc7027b6132402cbd1e2942b35f1634325b35834f8e3ffc7a3f453d76"
+      "sha256": "0efa2dbbfa395c2f0e79e9e89e16eefae04def609932ee4d56fc04dbdd42c86d"
     },
     "scripts/install/common.sh": {
       "mode": "0644",
-      "sha256": "bcc2d0c977557be9aed4108151c58f77deb1e211e44ae1d0906d5f523a358485"
+      "sha256": "25d2bd9f4753d35fa57f49a6ceeabeca23133d550a8534f32b93cd010cdfb873"
     },
     "scripts/install/configure_cursor_mcp.py": {
       "mode": "0644",
@@ -66,23 +66,23 @@
     },
     "scripts/install/dependencies.sh": {
       "mode": "0644",
-      "sha256": "84c6240b80259abec29f246ea7e7859fbd5fa270a7c5fa86b193ee76e9ff76ed"
+      "sha256": "79679dbccf77306bc3d83a0138c0dbf2f924ec6789ede57bbc82db0030f85af4"
     },
     "scripts/install/policy.sh": {
       "mode": "0644",
-      "sha256": "b805e8e8641f7c9b3c3351f11e682098ea2479ed82c50e81e321ad125eb04c7b"
+      "sha256": "5308ea3d7d84c2ab97f5f0689d2d781f2be49e7f446e4046e4f000418a10a4c7"
     },
     "scripts/install/preferences.py": {
       "mode": "0644",
-      "sha256": "5cf439e47cb75ec3808ebba87907ffd174cd16f3ac53b07f5e15955ac900ab8c"
+      "sha256": "fd53e47e851a2d041d353fded16b274718b42ce594a118072ef7ae0e63df5073"
     },
     "scripts/install/profiles.sh": {
       "mode": "0644",
-      "sha256": "d833a96b23eefb0457230eb44cdeff5453dc05dac2fef050edfdf6c25394b7bc"
+      "sha256": "058d8632c72e054afa849163d0df4ad3856f539be3ce7bf1a47853e89a8fdead"
     },
     "scripts/install/targets.sh": {
       "mode": "0644",
-      "sha256": "031297eacbc393deef2bbaf5aff8b0354ccc0cd61bb0db3af6b099e94ef72b3a"
+      "sha256": "cd09b4fe79aec3e32440ffde02f5eee495d4a0d2730b7c6fb3c933b7815a5e48"
     },
     "scripts/plugin-activation.py": {
       "mode": "0755",
@@ -94,27 +94,19 @@
     },
     "scripts/teamwork-case-migration.py": {
       "mode": "0755",
-      "sha256": "14a8714ff7addd00bc08564e424c4ca487fadfd2f59d61c2b470acc79749c302"
+      "sha256": "19b95f18ccb772f201a0a1d05cd172ec0336e2f0e964ffc97465bc000dd5e774"
     },
-    "scripts/tests/fixtures/retired-teamwork-skills-v5.json": {
+    "scripts/teamwork_tooling/topology.py": {
       "mode": "0644",
-      "sha256": "2df62061d687794f1271f6f785c6cd2ad45835d02210b2bed7d068efdacfae93"
-    },
-    "scripts/tests/fixtures/v3.4.2-owned-surfaces.json": {
-      "mode": "0644",
-      "sha256": "52cabbe9d4f1a3be8335c24477dcbbb5196c6888a76f23192916d1c6c85b2c80"
-    },
-    "scripts/tests/fixtures/v5.1-case-bundle-owned-surfaces.json": {
-      "mode": "0644",
-      "sha256": "5422fae0e29904f3ed3b5d9803225c27c1a9e103e1ce88d286559f0f45d6052c"
+      "sha256": "160d70c10532612b3b82c501eedeef97369b9bc89534b3c60356419f4289d48c"
     },
     "scripts/validate_teamwork_index.py": {
       "mode": "0755",
-      "sha256": "cdf578685e8364d79c6b3638660cf6239ed2a946723e25b6c63f5d3ad16b5856"
+      "sha256": "951a56fd291d08c74d974e3cc2d459317e26c0bded3cfa50878a54de19e40207"
     },
     "skills/teamwork-collaborate/SKILL.md": {
       "mode": "0644",
-      "sha256": "8ecbd1518572d2417599fb61a23c52f5a48f0e45beffe7679ee7632d367995e3"
+      "sha256": "d5a12e85d8d0874240700f493fcba8d33be62d141c1781c1946caf75673bb3ee"
     },
     "skills/teamwork-collaborate/agents/openai.yaml": {
       "mode": "0644",
@@ -122,163 +114,171 @@
     },
     "skills/teamwork-collaborate/references/adversarial-search.md": {
       "mode": "0644",
-      "sha256": "06741288f47b5ce9b353ea60b60948e1a79c014d42d1958b324b5bbdbba3af1e"
-    },
-    "skills/teamwork-collaborate/references/collaboration-layers.md": {
-      "mode": "0644",
-      "sha256": "d42e678bfd08c68dc813695e8a8da5ea250dfbdfc297d77f6cb690841af8e9cf"
+      "sha256": "102316b587fbc2bac39adf1d13a76370b677b797861ce5fdb620334d6f07f25a"
     },
     "skills/teamwork-debug/SKILL.md": {
       "mode": "0644",
-      "sha256": "cbcbab843555c755d0520e5c4f6cf3acdcd011a5c988a41cb56fa7649583cbdd"
+      "sha256": "61b5ea52a55db57dc69c9044132af20a76f77da0ad9f8089adf5ad7f86a9bbbb"
+    },
+    "skills/teamwork-debug/agents/openai.yaml": {
+      "mode": "0644",
+      "sha256": "b9d35e4922991360dcd480adfb65e941a5361b86c74eddca25fb08a6337a8717"
     },
     "skills/teamwork-debug/references/runtime-diagnosis.md": {
       "mode": "0644",
-      "sha256": "0eb833c5af30be368fa98f8b69ea5baf897e5024d88ac5acbd8b117af30d645e"
-    },
-    "skills/teamwork-explore/SKILL.md": {
-      "mode": "0644",
-      "sha256": "5b55c5d3630668bbaed4dd43b265755cc0bbf06d54a97f597141c8e242477c10"
+      "sha256": "40c3312fdbfc6d3ac0e21426f1cda051e934f60cace181e90c87302038f73a3c"
     },
     "skills/teamwork-goal/SKILL.md": {
       "mode": "0644",
-      "sha256": "ed9ebd4a1d435366f81ea380c03f5f565870f5970508b0f38aba1b66c9d1e6be"
+      "sha256": "253d012383bbf9a52e142de87a8aaa61f0012e30bcacfd4442a08472583e295b"
+    },
+    "skills/teamwork-goal/agents/openai.yaml": {
+      "mode": "0644",
+      "sha256": "05bfc3deca4f8ed8ed832a00f4e34683755feb4a6f8a892841fe32d67826f9b5"
     },
     "skills/teamwork-init/SKILL.md": {
       "mode": "0644",
-      "sha256": "7e9ac75382f3bb0dc7c807d3afb590ff5c93c75a4f7ab5727b5668699d428444"
+      "sha256": "b1f40285b6f85af8547c8109e4d10ce9a79b3952d8f92eadaff075e4052d64d3"
+    },
+    "skills/teamwork-init/agents/openai.yaml": {
+      "mode": "0644",
+      "sha256": "f71c9fcb750133d13f7de952b016574c3a11c4fde6292101be9a26ac6577fee9"
     },
     "skills/teamwork-plan/SKILL.md": {
       "mode": "0644",
-      "sha256": "00f4616946d18128f6c5cb678d0e5ec9d51952b4f27e05193181ff60ab29fa4a"
+      "sha256": "5ba9480c60fdcd68873f62e4a7b12c88e581831cd862cd7fd65be1062863f171"
+    },
+    "skills/teamwork-plan/agents/openai.yaml": {
+      "mode": "0644",
+      "sha256": "ce54675d5bf4743b0726421843a245f8b63a282c0a8d6b5e73c163889e749965"
     },
     "skills/teamwork-research/SKILL.md": {
       "mode": "0644",
-      "sha256": "cd8e74aba0fcc901ad2cff35c6b3ba8c4db5a2f8dda382f6ab3975f2a3129968"
+      "sha256": "14afd25db982ff72f309250a1c3d18e955b9d44d7365e5f815cfd0c139ed079c"
+    },
+    "skills/teamwork-research/agents/openai.yaml": {
+      "mode": "0644",
+      "sha256": "8caa93e09b3740e59accb3fadab16d77f1440df326a86f0c3e7402419efe3652"
     },
     "skills/teamwork-research/references/deep-research.md": {
       "mode": "0644",
-      "sha256": "47bae5c74d4c418c7a4a3582bcbe0538e4efc9e0d957bc573cd35d17b85113d2"
+      "sha256": "ba32bd557fde8aa7828a8aed8e299881444947e3a83f408492f7da39dcad6f9b"
     },
     "skills/teamwork-review/SKILL.md": {
       "mode": "0644",
-      "sha256": "37ff70b8a1b0d3adc2c09181e3e7d5de355eb85cd50e836e8cb544a659f12a0f"
+      "sha256": "8d43fe49243ebc3401a3c433626ca2b10983c55cb3f67dd88fae56475467bb25"
+    },
+    "skills/teamwork-review/agents/openai.yaml": {
+      "mode": "0644",
+      "sha256": "c5a91163a8cbbef95ee079352bcf94c837ad16e4b3c1afe0d993828862334f41"
     },
     "skills/teamwork-review/references/strict-review.md": {
       "mode": "0644",
-      "sha256": "921d17537e931d61042faea893159b32d0618a6edf74dcafc5a2d835ffe16985"
+      "sha256": "b9fc94499d3d8ef11c194bb3b1bc94cfd003ca39e9699dafdad4815b71c129be"
     },
     "skills/teamwork-update/SKILL.md": {
       "mode": "0644",
-      "sha256": "0aa2bfb9ed89a6e8888586a23373ccdb83e2c29eb0d70ab04e6559e6a38d2696"
+      "sha256": "35c2e9d34fc90053005fc8d21d2c931187279b381fef83b98234257b29800573"
+    },
+    "skills/teamwork-update/agents/openai.yaml": {
+      "mode": "0644",
+      "sha256": "79e2cda12604d004fef1b0d773229d34f2171a85217a3ce64aa2e4ce2ebd595d"
+    },
+    "templates/claude-agents/challenger.md": {
+      "mode": "0644",
+      "sha256": "18ef29c99ae43dd48199d6ff3139731368138aa35c0c68d096e5edeca3d818e0"
     },
     "templates/claude-agents/debugger.md": {
       "mode": "0644",
-      "sha256": "57e5745b7ad96d4e20f6d9186a5c5336bd93feae1d0db5ed21ac5906c9464ce7"
-    },
-    "templates/claude-agents/designer.md": {
-      "mode": "0644",
-      "sha256": "e3f90414c2a98fb44e759631de815b6213b1863db2e8bce6b9cba7d387811756"
+      "sha256": "b70e78e40a93de51ac80f667b95e4fdea9efc753b7849b76befb991b2590eaff"
     },
     "templates/claude-agents/explorer.md": {
       "mode": "0644",
-      "sha256": "2d56472b44df54d8bb5dee1d65653b0513b72f6cfe2838426b418c6260354939"
-    },
-    "templates/claude-agents/plan-reviewer.md": {
-      "mode": "0644",
-      "sha256": "05596037670c523e0a99c01c0cd5848b7cadf9474ec4786c7255aa3e28b7e5f4"
+      "sha256": "a8960110d266352af1f32b33b0076fa8f6a67cc879f4e93e6dada251edf23c82"
     },
     "templates/claude-agents/planner.md": {
       "mode": "0644",
-      "sha256": "31f9f78ccdc5b61968e3e301f75fb37fa1a0921563780ffc2521bc8602d14df8"
+      "sha256": "ea7c8e457f68a28cfbd1f08c035c5a48ce6cf90cc82d4d8124c7f4d31ab417c1"
     },
     "templates/claude-agents/researcher.md": {
       "mode": "0644",
-      "sha256": "74ed9a67b2ab0378a51f5251e62c29c23786c9ce2f7e30e0477f08280df489c8"
+      "sha256": "3013fc31c467b8002e4aa280c121054ab8516cbdbb1385513c84020356f1c4fd"
     },
     "templates/claude-agents/reviewer.md": {
       "mode": "0644",
-      "sha256": "08db683c54a41911a3056219255a8b63558f55dab21643192da8ee630cb58d1b"
+      "sha256": "d5cf4ffcf1c6996e2c8d1db36c433a8645a623d372a9cbf4859ae90c12fa39c2"
     },
     "templates/claude-agents/worker.md": {
       "mode": "0644",
-      "sha256": "ab56f4f96b44afd563417d202a7cc35f985dfe2ad99072ff0752de851f219f54"
+      "sha256": "d1153255914aad857b0fe56b86661527334be5269226b53c80745f0f68d172bd"
     },
     "templates/claude-agents/writer.md": {
       "mode": "0644",
-      "sha256": "01c649e36baadb687c67919b90710d1eb08f0f7e11aceb90e25e4430a651f9d8"
+      "sha256": "f2e8103bd02c713967993674ff72dd1f9b816a9a2634904f3eac1f5459ac6be2"
+    },
+    "templates/codex-agents/teamwork-challenger.toml": {
+      "mode": "0644",
+      "sha256": "2c9a10930a7546e8200504c2fce17eabf3467b5b8037923441e1271f2f6cf127"
     },
     "templates/codex-agents/teamwork-debugger.toml": {
       "mode": "0644",
-      "sha256": "3e131accbbe66bb7f396f93cacedab7b6acde47ccb477867b13844ca38429a05"
-    },
-    "templates/codex-agents/teamwork-designer.toml": {
-      "mode": "0644",
-      "sha256": "3f99ede32a4c8a0f2d1b8ce0b303832f12898943825003edae1aa371365440d7"
+      "sha256": "eb13e8aaddfc3d95c643f462792cc4645e00c726337496b834f337df1b4ca0c7"
     },
     "templates/codex-agents/teamwork-explorer.toml": {
       "mode": "0644",
-      "sha256": "6a0035820dd789b752178c4532c39b3ae27f47099effd89cde93ee321b05d21c"
-    },
-    "templates/codex-agents/teamwork-plan-reviewer.toml": {
-      "mode": "0644",
-      "sha256": "d6f3c5f540ab72546ad85617266cbc57dbf221bfa26fed565745a72f99e0bf85"
+      "sha256": "d471896f09875cf2c952cf53cd52b758f8c574603428bb8f812581a21f0820ce"
     },
     "templates/codex-agents/teamwork-planner.toml": {
       "mode": "0644",
-      "sha256": "d71d9a180eaebc296a39e059d96e7a9c029af953f65ba699969c76cefd59de38"
+      "sha256": "1a85a1f15528ae13fbea52e659a78dcc132f7fc31eb765281c2dec1c7e963307"
     },
     "templates/codex-agents/teamwork-researcher.toml": {
       "mode": "0644",
-      "sha256": "9f23d94a2790f373208e5d771a853ab0a0cc591c741075f444cee0e588a04fcc"
+      "sha256": "c6261b1e191f31fd7b13d7228f99d78f171bdf4cbf8366130d7b502ff5b3fb83"
     },
     "templates/codex-agents/teamwork-reviewer.toml": {
       "mode": "0644",
-      "sha256": "6f8f260290e90f65062c5568f2b9f416f0728d349c6e26fa058a2747e3a448a5"
+      "sha256": "2a584a4acc532deeab4fd8b4f2ba98f28198ae816cb2eb9347efc4c3b278d5c3"
     },
     "templates/codex-agents/teamwork-worker.toml": {
       "mode": "0644",
-      "sha256": "3710dc0b798d383056d07c91f8725aabb83b24f6268cc573d643d40ab8b47a98"
+      "sha256": "2983167757e100ae606d26f3387842ce6877d4ebb9b918e9b98f7e269deceee9"
     },
     "templates/codex-agents/teamwork-writer.toml": {
       "mode": "0644",
-      "sha256": "b620f6b8c61c9d7bd870ebb090deb27103cae162ca66e4b6589684956010ddc2"
+      "sha256": "7231ca383dc4cf139119fd7aa32946a3d93c7c70aa690b780a11ce241a8b4e8b"
+    },
+    "templates/cursor-agents/challenger.md": {
+      "mode": "0644",
+      "sha256": "921656aed54874a0ec9f3c6851162f41843b69ab0c40b1475b575cf068415579"
     },
     "templates/cursor-agents/debugger.md": {
       "mode": "0644",
-      "sha256": "08e88183f41e4effbdfd1b5e256f1f691a3aa6210135b121ec558a2e73f96ca9"
-    },
-    "templates/cursor-agents/designer.md": {
-      "mode": "0644",
-      "sha256": "7ccf851ba5ef0c348696fe2d6c9d54f5e3839537dfeecdc442cc25412721f625"
+      "sha256": "1987c3681fd3e0149fc275a3c37d5575ff1063b3fab39b2d4bc5212e61603b4a"
     },
     "templates/cursor-agents/explorer.md": {
       "mode": "0644",
-      "sha256": "2e36066848014f39541792065ebe4f5e52b856fecd9c97b06979e7c2f4c88a7d"
-    },
-    "templates/cursor-agents/plan-reviewer.md": {
-      "mode": "0644",
-      "sha256": "32a89fb0d9ac511737dcb599878dc03cc58418d6292bc8ddef464327c117c7c5"
+      "sha256": "14ff13d47cdb0ccd178c6b2298211b61737e02fddecf22f5b49d774422fe72e4"
     },
     "templates/cursor-agents/planner.md": {
       "mode": "0644",
-      "sha256": "f1e951ee363f94e0eb5cbd6d6abfbc05cb105b556f9f46d27b1ee88d3b573706"
+      "sha256": "4f16e020d8d1a23980b2da60930f0cb028d9ea022dc91e88ee3c365ded9f5e97"
     },
     "templates/cursor-agents/researcher.md": {
       "mode": "0644",
-      "sha256": "139f0df235f9bfe0c85e69424a3a04a7cc43bd478acdc030a48a9a83808fa959"
+      "sha256": "7bfac4e5986ce086ee50821cb73d08d670b06bec09a930449f19cdb9f7f9c23c"
     },
     "templates/cursor-agents/reviewer.md": {
       "mode": "0644",
-      "sha256": "82a87bea3dfc2e852f93d9d9bc38990f93d87d0358a1dd591750f045a2fb3b65"
+      "sha256": "9035c3d719b3cbec587c98444cbfdcfa0d296e6136660a65516c83b35a83a5ae"
     },
     "templates/cursor-agents/worker.md": {
       "mode": "0644",
-      "sha256": "1a9dc8f7e324cc635d2785321100ef40c8838f9467a631d3465d824692c60f0f"
+      "sha256": "f28e17654af82ce3a9422b1d3210b67822bfc2e8b420215c31904e36221837c8"
     },
     "templates/cursor-agents/writer.md": {
       "mode": "0644",
-      "sha256": "4bab608f8118c7eefed5143b14ac06b99e0e73f451bff9d34a8b813ba633f8e6"
+      "sha256": "098f21f79e6d8fff84920edbf3fae48ec080ed5d06e34131bf33eec3e64b1815"
     },
     "templates/cursor-mcp/codegraph.mdc": {
       "mode": "0644",
@@ -294,7 +294,7 @@
     },
     "templates/teamwork-memory/index.json": {
       "mode": "0644",
-      "sha256": "3620126e27efa715d6bda689d89125fc356d3c29b5c4cb8c6293027bdd3e3527"
+      "sha256": "5ade463a804fe8f656eb6acfa46871df0d34a8bf92fd7b51c9704625901864af"
     },
     "templates/teamwork-memory/teamwork-collaborate-template.md": {
       "mode": "0644",
@@ -303,10 +303,14 @@
     "templates/teamwork-memory/teamwork-design-template.md": {
       "mode": "0644",
       "sha256": "dc2700b7e267a81a56723ab6ac6312eff524e9d78bf3bcf273982bcfe264f758"
+    },
+    "templates/teamwork-memory/teamwork-live-template.md": {
+      "mode": "0644",
+      "sha256": "4675cb12f7cf0572f3959e2984d2c35ce98de1054b22d2d97c20dbe69dfe0b07"
     }
   },
-  "manifest_sha256": "732cf69fae2d5ebecefaaeb8dbdb263625aede8fe1ef47e6bcddcada0dafe7bd",
+  "manifest_sha256": "9e51f4f3f7f08b68a14dfc86a1aa2d415ebe11934961f4cc686c38158c183e9c",
   "marker": "TEAMWORK_CODEX_PLUGIN_RUNTIME=1",
   "schema_version": 1,
-  "version": "6.3.0"
+  "version": "7.0.0"
 }

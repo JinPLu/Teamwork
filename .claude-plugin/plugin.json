@@ -1,7 +1,7 @@
 {
   "name": "teamwork-skill",
-  "version": "6.3.0",
-  "description": "Claude Code adapter skills for Collaborate, case-bundle workflow documents, research, local evidence, debugging, planning, review, setup, updates, and long-running goals.",
+  "version": "7.0.0",
+  "description": "AI-native collaboration skills for direct work, discussion, deep research, debugging, planning, review, setup, updates, and persistent goals in Claude Code.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"
@@ -26,8 +26,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Teamwork",
-    "shortDescription": "Nine focused skills for Collaborate, durable results, research, debugging, review, setup, and goals.",
-    "longDescription": "Teamwork adds nine focused collaboration skills for adaptive discussion and convergence; cited external research; read-only local evidence; hypothesis-first debugging; executable planning; independent review; project initialization; global refresh; and persistent goals. A lean global policy keeps ordinary work on Claude Code's native fast path, while each selected skill loads its own method and owning agent role. Unavailable mandatory roles return capability-blocked. Durable workflow state uses case-v2 bundles only; a completed method still returns its result when Writer persistence fails, clearly marked unsaved, while dependent continuity waits for transaction readback. Init and Update can semantically migrate one explicitly authorized legacy project root into case-v2. You choose scope and authorize effects; Claude Code remains in control of tools and permissions.",
+    "shortDescription": "Focused collaboration methods that keep clear work direct.",
+    "longDescription": "Teamwork keeps clear Claude Code work native and adds focused methods only when discussion, deep external research, unknown-cause debugging, executable planning, independent review, project setup, global refresh, exact-root document migration, or persistent convergence needs them. Explorer remains an internal local-evidence role, Challenger handles strict adversarial work, Reviewer covers plan review, and Writer maintains one live document per task without exposing storage mechanics. Claude Code remains in control of tools and permissions.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -36,9 +36,9 @@
     ],
     "websiteURL": "https://github.com/JinPLu/Teamwork",
     "defaultPrompt": [
-      "Use $teamwork-collaborate to brainstorm this problem with me and ask the most useful next question.",
-      "Use $teamwork-research to investigate this current external question from primary sources with linked citations.",
-      "Use $teamwork-collaborate for an unsettled design choice with a standard challenge or bounded adversarial search."
+      "Use $teamwork-collaborate to explore this decision with me and recommend a direction.",
+      "Use $teamwork-research to investigate this external question across primary sources.",
+      "Use $teamwork-debug to diagnose this unknown-cause failure before changing it."
     ],
     "brandColor": "#2563EB"
   }

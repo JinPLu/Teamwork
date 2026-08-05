@@ -55,7 +55,7 @@ class InitProjectAbaTests(unittest.TestCase):
         memory = project / "docs/teamwork"
         memory.mkdir(parents=True, exist_ok=True)
         index = {
-            "schema_version": 2,
+            "schema_version": 3,
             "project": {
                 "name": "Fixture",
                 "root": ".",
@@ -74,7 +74,6 @@ class InitProjectAbaTests(unittest.TestCase):
             ".codegraph/\n"
             "docs/teamwork/**\n"
             ".teamwork/runtime/**\n"
-            ".teamwork/cold-archive/**\n"
             "# TEAMWORK_LOCAL_END\n",
             encoding="utf-8",
         )

@@ -7,7 +7,7 @@ codex_agent_performance_values() {
     teamwork-writer)
       printf '%s %s\n' "gpt-5.6-luna" "high"
       ;;
-    teamwork-debugger|teamwork-designer|teamwork-planner|teamwork-plan-reviewer)
+    teamwork-debugger|teamwork-challenger|teamwork-planner)
       printf '%s %s\n' "gpt-5.6-sol" "high"
       ;;
     teamwork-reviewer)
@@ -26,7 +26,7 @@ codex_agent_profile_values() {
     performance-first:*)
       codex_agent_performance_values "$agent"
       ;;
-    cost-first:teamwork-researcher|cost-first:teamwork-debugger|cost-first:teamwork-designer|cost-first:teamwork-planner|cost-first:teamwork-plan-reviewer)
+    cost-first:teamwork-researcher|cost-first:teamwork-debugger|cost-first:teamwork-challenger|cost-first:teamwork-planner)
       printf '%s %s\n' "gpt-5.6-terra" "high"
       ;;
     cost-first:teamwork-explorer|cost-first:teamwork-writer)
@@ -57,10 +57,10 @@ claude_agent_profile_values() {
     cost-first:researcher|cost-first:explorer|cost-first:worker)
       printf '%s %s\n' "haiku" "medium"
       ;;
-    performance-first:debugger|performance-first:designer|performance-first:planner|cost-first:debugger|cost-first:designer|cost-first:planner)
+    performance-first:debugger|performance-first:challenger|performance-first:planner|cost-first:debugger|cost-first:challenger|cost-first:planner)
       printf '%s %s\n' "opus" "high"
       ;;
-    performance-first:plan-reviewer|performance-first:reviewer|cost-first:plan-reviewer|cost-first:reviewer)
+    performance-first:reviewer|cost-first:reviewer)
       printf '%s %s\n' "opus" "max"
       ;;
     *)
@@ -79,10 +79,10 @@ cursor_agent_profile_values() {
     performance-first:explorer)
       printf '%s\n' "gemini-3.5-flash"
       ;;
-    performance-first:debugger|performance-first:plan-reviewer)
+    performance-first:debugger)
       printf '%s\n' "claude-opus-4-8-thinking-high"
       ;;
-    performance-first:designer)
+    performance-first:challenger)
       printf '%s\n' "gpt-5.6-sol-medium"
       ;;
     performance-first:planner)
@@ -97,7 +97,7 @@ cursor_agent_profile_values() {
     cost-first:researcher|cost-first:explorer)
       printf '%s\n' "gemini-3.5-flash"
       ;;
-    cost-first:debugger|cost-first:designer|cost-first:plan-reviewer)
+    cost-first:debugger|cost-first:challenger)
       printf '%s\n' "gpt-5.6-terra-medium"
       ;;
     cost-first:planner)
@@ -253,6 +253,7 @@ install_claude_agent_set() {
   local agent
 
   mkdir -p "$dest_root"
+  remove_retired_agent_files claude "$dest_root" "${RETIRED_CLAUDE_AGENTS[@]}"
   for agent in "${CLAUDE_AGENTS[@]}"; do
     install_claude_agent_file \
       "$ROOT/templates/claude-agents/$agent.md" \
@@ -269,6 +270,7 @@ install_cursor_agent_set() {
   local agent
 
   mkdir -p "$dest_root"
+  remove_retired_agent_files cursor "$dest_root" "${RETIRED_CURSOR_AGENTS[@]}"
   for agent in "${CURSOR_AGENTS[@]}"; do
     install_cursor_agent_file \
       "$ROOT/templates/cursor-agents/$agent.md" \
@@ -285,6 +287,7 @@ install_codex_agent_set() {
   local agent
 
   mkdir -p "$dest_root"
+  remove_retired_agent_files codex "$dest_root" "${RETIRED_CODEX_AGENTS[@]}"
   for agent in "${CODEX_AGENTS[@]}"; do
     install_codex_agent_file \
       "$ROOT/templates/codex-agents/$agent.toml" \
@@ -302,7 +305,7 @@ teamwork_codex_agent_file_is_recognized() {
   expected_name="${agent//-/_}"
   [[ -f "$path" ]] \
     && grep -q "^name = \"$expected_name\"$" "$path" \
-    && grep -q 'Do not spawn or delegate\.' "$path"
+    && grep -Eq 'You are (the )?Teamwork ' "$path"
 }
 
 teamwork_markdown_agent_file_is_recognized() {
@@ -310,22 +313,50 @@ teamwork_markdown_agent_file_is_recognized() {
   local agent="$2"
   [[ -f "$path" ]] \
     && grep -Fqx "name: $agent" "$path" \
-    && {
-      grep -Eq '^You are the Teamwork .+ leaf role\.$' "$path" \
-        || { [[ "$agent" == "debugger" ]] && grep -Fqx 'You are Teamwork Debugger.' "$path"; }
-    } \
-    && grep -Fq 'Do not spawn or delegate.' "$path"
+    && grep -Eq '^You are (the )?Teamwork ' "$path"
+}
+
+remove_retired_agent_files() {
+  local platform="$1"
+  local root="$2"
+  shift 2
+  local agent extension path marker raw_target resolved
+
+  case "$platform" in
+    codex) extension=toml ;;
+    cursor|claude) extension=md ;;
+    *) return 1 ;;
+  esac
+
+  for agent in "$@"; do
+    path="$root/$agent.$extension"
+    [[ -e "$path" || -L "$path" ]] || continue
+    if [[ -L "$path" ]]; then
+      raw_target="$(readlink "$path" 2>/dev/null || true)"
+      resolved="$(readlink -f "$path" 2>/dev/null || true)"
+      if [[ "$raw_target" == */templates/*-agents/"$agent.$extension" \
+          || "$resolved" == */templates/*-agents/"$agent.$extension" ]]; then
+        rm -f "$path"
+      fi
+      continue
+    fi
+    [[ -f "$path" ]] || continue
+    case "$agent" in
+      *designer*) marker='Teamwork Designer' ;;
+      *plan-reviewer*) marker='Teamwork Plan Reviewer' ;;
+      *) continue ;;
+    esac
+    if grep -Fq "$marker" "$path"; then
+      rm -f "$path"
+    else
+      echo "Preserved unrecognized retired agent file: $path" >&2
+    fi
+  done
 }
 
 preflight_codex_agent_set() {
   local dest_root="$1"
-  local v342_profile="${2:-}"
-  local v342_names=""
   local agent dest
-
-  if [[ -n "$v342_profile" ]]; then
-    v342_names="$(v342_agent_names codex "$v342_profile")"
-  fi
 
   if [[ -e "$dest_root" && ! -d "$dest_root" ]]; then
     echo "Codex agents path is not a directory: $dest_root" >&2
@@ -338,13 +369,6 @@ preflight_codex_agent_set() {
   for agent in "${CODEX_AGENTS[@]}"; do
     dest="$dest_root/$agent.toml"
     if [[ -e "$dest" || -L "$dest" ]]; then
-      if [[ -n "$v342_names" ]] && grep -Fqx "$agent.toml" <<< "$v342_names"; then
-        if [[ ! -f "$dest" || ! -w "$dest" ]]; then
-          echo "Codex agent $dest is not writable." >&2
-          return 1
-        fi
-        continue
-      fi
       if ! teamwork_codex_agent_file_is_recognized "$dest" "$agent"; then
         echo "Codex agent $dest is not a recognized Teamwork-owned profile; refusing to replace it." >&2
         return 1

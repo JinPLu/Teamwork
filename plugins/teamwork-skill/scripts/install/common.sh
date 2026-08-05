@@ -12,17 +12,15 @@ PKG_VERSION="unknown"
 if [[ -f "$ROOT/VERSION" ]]; then
   PKG_VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 fi
-SKILLS=(
-  teamwork-collaborate
-  teamwork-debug
-  teamwork-explore
-  teamwork-goal
-  teamwork-init
-  teamwork-plan
-  teamwork-research
-  teamwork-review
-  teamwork-update
-)
+TOPOLOGY_QUERY="$ROOT/scripts/teamwork_tooling/topology.py"
+python3 "$TOPOLOGY_QUERY" --root "$ROOT" skills >/dev/null || {
+  echo "Cannot load Teamwork topology: $ROOT/config/teamwork-topology.json" >&2
+  return 1 2>/dev/null || exit 1
+}
+SKILLS=()
+while IFS= read -r item; do
+  SKILLS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" skills)
 RETIRED_SKILLS=(
   grill-me
   teamwork-design
@@ -31,49 +29,32 @@ RETIRED_SKILLS=(
   teamwork-execute
   teamwork
 )
+while IFS= read -r item; do
+  RETIRED_SKILLS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" retired --kind public_skills)
+RETIRED_REFERENCES=()
+while IFS= read -r item; do
+  RETIRED_REFERENCES+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" retired --kind references)
 LEGACY_CODEX_ROUTER_SKILL="teamwork"
-MIGRATION_RETIRED_SKILLS=(
-  grill-me
-  teamwork-design
-  teamwork-discuss
-  using-teamwork
-  teamwork-execute
-  teamwork
-)
-RETIRED_SKILL_FIXTURE="$ROOT/scripts/tests/fixtures/retired-teamwork-skills-v5.json"
-CLAUDE_AGENTS=(
-  researcher
-  explorer
-  debugger
-  designer
-  planner
-  worker
-  writer
-  plan-reviewer
-  reviewer
-)
-CURSOR_AGENTS=(
-  researcher
-  explorer
-  debugger
-  designer
-  planner
-  worker
-  writer
-  plan-reviewer
-  reviewer
-)
-CODEX_AGENTS=(
-  teamwork-researcher
-  teamwork-explorer
-  teamwork-debugger
-  teamwork-designer
-  teamwork-planner
-  teamwork-worker
-  teamwork-writer
-  teamwork-plan-reviewer
-  teamwork-reviewer
-)
+CLAUDE_AGENTS=()
+CURSOR_AGENTS=()
+CODEX_AGENTS=()
+while IFS= read -r item; do
+  CLAUDE_AGENTS+=("$item")
+  CURSOR_AGENTS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host claude --field name)
+while IFS= read -r item; do
+  CODEX_AGENTS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host codex --field stem)
+RETIRED_CLAUDE_AGENTS=()
+RETIRED_CURSOR_AGENTS=()
+RETIRED_CODEX_AGENTS=()
+while IFS= read -r item; do
+  RETIRED_CLAUDE_AGENTS+=("$item")
+  RETIRED_CURSOR_AGENTS+=("$item")
+  RETIRED_CODEX_AGENTS+=("teamwork-$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" retired --kind agents)
 
 usage() {
   cat <<'USAGE'
@@ -90,7 +71,8 @@ Targets:
   claude         Install skills, Claude agents, and Teamwork Claude global policy
   all            Install skills, all platform agents, and Codex + Claude global policy
   update         Refresh all Teamwork global surfaces plus managed CodeGraph and
-                 GPU Broker dependencies; install missing managed dependencies
+                 GPU Broker dependencies; with --project-root, migrate every
+                 Teamwork document in that project to the current format
   init-project   Initialize AGENTS.md, docs/teamwork/, ignore rules, and
                  CodeGraph context for one project without changing global
                  skills, agents, policies, routing, or notifications
@@ -116,14 +98,14 @@ Default mode is --copy. For Codex users, install through the Marketplace plugin
 by default. Use this checkout installer for Cursor, Claude Code, local
 development, or manual Codex setups; use --link for local development when
 installs should track this checkout.
-`--project-root` is valid only with `init-project` or `plugin-init-project`.
+`--project-root` is valid with `update`, `init-project`, or `plugin-init-project`.
 
 The `all` install enables ready/permission sounds for user-level Codex and
 Claude Code by default. Direct platform installs leave notifications unchanged
 unless --notifications or --no-notifications is used. Marketplace bootstrap
 installs Codex notifications by default; use --no-notifications to opt out.
-Project init targets never change notifications; notification flags remain
-accepted there as compatibility no-ops.
+Project init targets never change notifications; notification flags are ignored
+there because project context setup has no user-level notification surface.
 Cursor installs register codegraph and gpu-broker in ~/.cursor/mcp.json by
 default. Use --no-mcp to skip MCP registration; enable new servers in Cursor
 Settings -> MCP when prompted.
@@ -147,9 +129,9 @@ codex-agents separately when that surface needs refresh.
 Profile inherits the recorded choice and otherwise defaults to performance-first.
 On Codex, performance-first
 uses Terra/high for Researcher, Explorer, and Worker; Luna/high for Writer;
-Sol/high for Debugger, Designer, Planner, and Plan Reviewer; and Sol/max for
-Reviewer. On Codex, cost-first uses Terra/high for Researcher, Debugger,
-Designer, Planner, and Plan Reviewer; Luna/high for Explorer and Writer;
+Sol/high for Debugger, Challenger, and Planner; and Sol/max for Reviewer. On
+Codex, cost-first uses Terra/high for Researcher, Debugger, Challenger, and
+Planner; Luna/high for Explorer and Writer;
 Luna/xhigh for Worker; and Sol/high for Reviewer. Cursor and Claude Code keep
 their existing profile mappings.
 USAGE
@@ -169,320 +151,12 @@ validate_codex_profile() {
 }
 
 
-V342_OWNED_SURFACES="$ROOT/scripts/tests/fixtures/v3.4.2-owned-surfaces.json"
-V342_CODEX_AGENTS_PREFLIGHTED=0
-V342_CURSOR_AGENTS_PREFLIGHTED=0
-V342_CLAUDE_AGENTS_PREFLIGHTED=0
-V342_CODEX_AGENT_NAMES=""
-V342_CURSOR_AGENT_NAMES=""
-V342_CLAUDE_AGENT_NAMES=""
-PLUGIN_V342_SKILL_ROOT=""
-PLUGIN_V342_AGENT_PROFILE=""
-
-
-preflight_v342_skill_root() {
-  local root="$1"
-  local label="$2"
-  python3 - "$V342_OWNED_SURFACES" "$root" "$label" <<'PY'
-import hashlib
-import json
-import pathlib
-import stat
-import sys
-
-fixture_path = pathlib.Path(sys.argv[1])
-root = pathlib.Path(sys.argv[2])
-label = sys.argv[3]
-try:
-    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
-except (OSError, json.JSONDecodeError) as exc:
-    print(f"Cannot load the frozen v3.4.2 ownership inventory: {exc}", file=sys.stderr)
-    raise SystemExit(1)
-if fixture.get("schema_version") != 1:
-    print("Unsupported v3.4.2 ownership inventory schema.", file=sys.stderr)
-    raise SystemExit(1)
-
-expected = {}
-for row in fixture.get("deterministic_surfaces", []):
-    path = row.get("path", "")
-    if path.startswith("skills/"):
-        expected[path.removeprefix("skills/")] = row
-if not expected:
-    print("Frozen v3.4.2 ownership inventory has no Skill entries.", file=sys.stderr)
-    raise SystemExit(1)
-
-expected_skills = {pathlib.PurePosixPath(value).parts[0] for value in expected}
-actual = {}
-for skill in expected_skills:
-    entry = root / skill
-    if not entry.is_dir() or entry.is_symlink():
-        print(f"{label} has a missing or non-directory v3.4.2 Skill: {skill}", file=sys.stderr)
-        raise SystemExit(1)
-    for path in entry.rglob("*"):
-        rel = path.relative_to(root).as_posix()
-        if path.is_dir() and not path.is_symlink():
-            continue
-        actual[rel] = path
-
-unknown = sorted(set(actual) - set(expected))
-missing = sorted(set(expected) - set(actual))
-if unknown:
-    print(f"{label} contains unknown v3.4.2 Skill content: {unknown[0]}", file=sys.stderr)
-    raise SystemExit(1)
-if missing:
-    print(f"{label} is missing frozen v3.4.2 Skill content: {missing[0]}", file=sys.stderr)
-    raise SystemExit(1)
-
-for rel, row in expected.items():
-    path = actual[rel]
-    info = path.lstat()
-    if not stat.S_ISREG(info.st_mode):
-        print(f"{label} has the wrong file type for {rel}", file=sys.stderr)
-        raise SystemExit(1)
-    mode = f"{stat.S_IMODE(info.st_mode):04o}"
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    if mode != row.get("mode") or digest != row.get("sha256"):
-        print(f"{label} has modified v3.4.2 Skill content: {rel}", file=sys.stderr)
-        raise SystemExit(1)
-
-for marker, expected_value in ((".teamwork-version", "3.4.2"), (".teamwork-profile", None)):
-    path = root / marker
-    try:
-        info = path.lstat()
-        value = path.read_text(encoding="utf-8").strip()
-    except OSError:
-        print(f"{label} is missing the v3.4.2 ownership marker {marker}", file=sys.stderr)
-        raise SystemExit(1)
-    if not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o644:
-        print(f"{label} has an invalid v3.4.2 ownership marker {marker}", file=sys.stderr)
-        raise SystemExit(1)
-    if expected_value is not None and value != expected_value:
-        print(f"{label} has an invalid v3.4.2 ownership marker {marker}", file=sys.stderr)
-        raise SystemExit(1)
-    known_profiles = {
-        row.get("profile")
-        for row in fixture.get("deterministic_surfaces", [])
-        if row.get("surface_class") == "profile-rendered-agent"
-    }
-    if marker == ".teamwork-profile" and value not in known_profiles:
-        print(f"{label} has an unsupported v3.4.2 profile: {value}", file=sys.stderr)
-        raise SystemExit(1)
-PY
-}
-
-
-v342_agent_profile() {
-  local skill_root="$1"
-  tr -d '[:space:]' < "$skill_root/.teamwork-profile"
-}
-
-
-v342_agent_flag_name() {
-  case "$1" in
-    codex) printf '%s\n' V342_CODEX_AGENTS_PREFLIGHTED ;;
-    cursor) printf '%s\n' V342_CURSOR_AGENTS_PREFLIGHTED ;;
-    claude) printf '%s\n' V342_CLAUDE_AGENTS_PREFLIGHTED ;;
-    *) return 1 ;;
-  esac
-}
-
-
-v342_agent_names_flag_name() {
-  case "$1" in
-    codex) printf '%s\n' V342_CODEX_AGENT_NAMES ;;
-    cursor) printf '%s\n' V342_CURSOR_AGENT_NAMES ;;
-    claude) printf '%s\n' V342_CLAUDE_AGENT_NAMES ;;
-    *) return 1 ;;
-  esac
-}
-
-
-v342_agent_names() {
-  local platform="$1"
-  local profile="$2"
-  python3 - "$V342_OWNED_SURFACES" "$platform" "$profile" <<'PY'
-import json
-import pathlib
-import sys
-
-fixture = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-prefix = f"managed://installed-agent/{sys.argv[2]}/{sys.argv[3]}/"
-for row in fixture.get("deterministic_surfaces", []):
-    path = row.get("path", "")
-    if row.get("surface_class") == "profile-rendered-agent" and path.startswith(prefix):
-        print(path.removeprefix(prefix))
-PY
-}
-
-
-preflight_v342_agent_set() {
-  local platform="$1"
-  local agent_root="$2"
-  local skill_root="$3"
-  local profile
-  [[ -f "$skill_root/.teamwork-version" ]] || return 0
-  [[ "$(tr -d '[:space:]' < "$skill_root/.teamwork-version")" == "3.4.2" ]] || return 0
-  profile="$(v342_agent_profile "$skill_root")"
-
-  preflight_v342_agent_profile "$platform" "$agent_root" "$profile"
-}
-
-
-preflight_v342_agent_profile() {
-  local platform="$1"
-  local agent_root="$2"
-  local profile="$3"
-  local flag names_flag
-
-  python3 - "$V342_OWNED_SURFACES" "$platform" "$profile" "$agent_root" <<'PY'
-import hashlib
-import json
-import pathlib
-import stat
-import sys
-
-fixture_path = pathlib.Path(sys.argv[1])
-platform, profile = sys.argv[2:4]
-root = pathlib.Path(sys.argv[4])
-try:
-    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
-except (OSError, json.JSONDecodeError) as exc:
-    print(f"Cannot load the frozen v3.4.2 ownership inventory: {exc}", file=sys.stderr)
-    raise SystemExit(1)
-
-prefix = f"managed://installed-agent/{platform}/{profile}/"
-expected = {
-    row["path"].removeprefix(prefix): row
-    for row in fixture.get("deterministic_surfaces", [])
-    if row.get("surface_class") == "profile-rendered-agent"
-    and row.get("path", "").startswith(prefix)
-}
-if not expected:
-    print(f"Frozen v3.4.2 inventory has no {platform}/{profile} agent profile.", file=sys.stderr)
-    raise SystemExit(1)
-for name, row in expected.items():
-    path = root / name
-    try:
-        info = path.lstat()
-    except OSError:
-        print(f"Missing frozen v3.4.2 {platform} agent: {name}", file=sys.stderr)
-        raise SystemExit(1)
-    if not stat.S_ISREG(info.st_mode):
-        print(f"Wrong file type for v3.4.2 {platform} agent: {name}", file=sys.stderr)
-        raise SystemExit(1)
-    mode = f"{stat.S_IMODE(info.st_mode):04o}"
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    if mode != row.get("mode") or digest != row.get("sha256"):
-        print(f"Modified v3.4.2 {platform} agent: {name}", file=sys.stderr)
-        raise SystemExit(1)
-PY
-
-  flag="$(v342_agent_flag_name "$platform")"
-  printf -v "$flag" '%s' 1
-  names_flag="$(v342_agent_names_flag_name "$platform")"
-  printf -v "$names_flag" '%s' "$(v342_agent_names "$platform" "$profile")"
-}
-
-
-remove_v342_agent_set() {
-  local platform="$1"
-  local agent_root="$2"
-  local skill_root="$3"
-  local flag profile
-  flag="$(v342_agent_flag_name "$platform")"
-  [[ "${!flag:-0}" == "1" ]] || return 0
-  profile="$(v342_agent_profile "$skill_root")"
-  remove_v342_agent_profile "$platform" "$agent_root" "$profile"
-}
-
-
-remove_v342_agent_profile() {
-  local platform="$1"
-  local agent_root="$2"
-  local profile="$3"
-  local flag names_flag agent
-  flag="$(v342_agent_flag_name "$platform")"
-  [[ "${!flag:-0}" == "1" ]] || return 0
-  while IFS= read -r agent; do
-    [[ -n "$agent" ]] && rm -f "$agent_root/$agent"
-  done < <(v342_agent_names "$platform" "$profile")
-  printf -v "$flag" '%s' 0
-  names_flag="$(v342_agent_names_flag_name "$platform")"
-  printf -v "$names_flag" '%s' ""
-}
-
-
-preflight_v342_managed_policy() {
-  local platform="$1"
-  local policy_file="$2"
-  local skill_root="$3"
-  [[ -f "$skill_root/.teamwork-version" ]] || return 0
-  [[ "$(tr -d '[:space:]' < "$skill_root/.teamwork-version")" == "3.4.2" ]] || return 0
-
-  preflight_v342_managed_policy_file "$platform" "$policy_file"
-}
-
-
-preflight_v342_managed_policy_file() {
-  local platform="$1"
-  local policy_file="$2"
-  python3 - "$V342_OWNED_SURFACES" "$platform" "$policy_file" <<'PY'
-import hashlib
-import json
-import pathlib
-import stat
-import sys
-
-fixture = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-platform = sys.argv[2]
-path = pathlib.Path(sys.argv[3])
-try:
-    info = path.lstat()
-    lines = path.read_bytes().splitlines(keepends=True)
-except OSError:
-    print(f"Missing frozen v3.4.2 {platform} managed policy: {path}", file=sys.stderr)
-    raise SystemExit(1)
-if not stat.S_ISREG(info.st_mode):
-    print(f"Wrong file type for v3.4.2 {platform} managed policy: {path}", file=sys.stderr)
-    raise SystemExit(1)
-
-upper = platform.upper()
-start = f"<!-- TEAMWORK_{upper}_GLOBAL_START -->".encode()
-end = f"<!-- TEAMWORK_{upper}_GLOBAL_END -->".encode()
-starts = [index for index, line in enumerate(lines) if line.rstrip(b"\r\n") == start]
-ends = [index for index, line in enumerate(lines) if line.rstrip(b"\r\n") == end]
-if len(starts) != 1 or len(ends) != 1 or starts[0] >= ends[0]:
-    print(f"Invalid v3.4.2 {platform} managed policy markers: {path}", file=sys.stderr)
-    raise SystemExit(1)
-block = b"".join(lines[starts[0] : ends[0] + 1])
-expected = next(
-    (
-        row
-        for row in fixture.get("deterministic_surfaces", [])
-        if row.get("path") == f"managed://{platform}/global-policy"
-    ),
-    None,
-)
-if expected is None or hashlib.sha256(block).hexdigest() != expected.get("sha256"):
-    print(f"Modified v3.4.2 {platform} managed policy: {path}", file=sys.stderr)
-    raise SystemExit(1)
-PY
-}
-
-
 preflight_agent_destination() {
   local root="$1"
   local extension="$2"
   local label="$3"
   shift 3
-  local agent path platform names_flag preflighted_names=""
-  case "$label" in
-    Cursor) platform=cursor ;;
-    "Claude Code") platform=claude ;;
-    *) return 1 ;;
-  esac
-  names_flag="$(v342_agent_names_flag_name "$platform")"
-  preflighted_names="${!names_flag:-}"
+  local agent path
   if [[ -e "$root" && ! -d "$root" ]]; then
     echo "$label agent path is not a directory: $root" >&2
     return 1
@@ -498,8 +172,7 @@ preflight_agent_destination() {
         echo "$label agent is not a writable regular file: $path" >&2
         return 1
       fi
-      if ! grep -Fqx "$agent.$extension" <<< "$preflighted_names" \
-          && ! teamwork_markdown_agent_file_is_recognized "$path" "$agent"; then
+      if ! teamwork_markdown_agent_file_is_recognized "$path" "$agent"; then
         echo "$label agent $path is not a recognized Teamwork-owned profile; refusing to replace it." >&2
         return 1
       fi
@@ -511,13 +184,11 @@ preflight_agent_destination() {
 teamwork_skill_entry_has_known_inventory() {
   local root="$1"
   local skill="$2"
-  local version="$3"
   local entry="$root/$skill"
-  local source="$ROOT/skills/$skill"
-  local item rel
+  local path relative retired_reference
 
   if retired_skill_is_configured "$skill"; then
-    retired_skill_copy_is_owned "$skill" "$entry"
+    teamwork_retired_skill_entry_is_owned "$root" "$skill"
     return
   fi
   if [[ -L "$entry" ]]; then
@@ -525,9 +196,15 @@ teamwork_skill_entry_has_known_inventory() {
     return
   fi
   [[ -d "$entry" ]] || return 1
-  while IFS= read -r -d '' item; do
-    rel="${item#$entry/}"
-    [[ -e "$source/$rel" || -L "$source/$rel" ]] || return 1
+  [[ ! -e "$entry/SKILL.md" ]] || teamwork_skill_entry_is_named "$root" "$skill" || return 1
+  while IFS= read -r -d '' path; do
+    relative="${path#"$entry"/}"
+    [[ ! -L "$path" ]] || return 1
+    [[ -e "$ROOT/skills/$skill/$relative" ]] && continue
+    for retired_reference in "${RETIRED_REFERENCES[@]}"; do
+      [[ "$retired_reference" == "skills/$skill/$relative" ]] && continue 2
+    done
+    return 1
   done < <(find "$entry" -mindepth 1 -print0)
 }
 
@@ -542,81 +219,24 @@ retired_skill_is_configured() {
 }
 
 
-retired_skill_copy_is_owned() {
-  local retired="$1"
-  local entry="$2"
-  python3 - "$RETIRED_SKILL_FIXTURE" "$retired" "$entry" <<'PY'
-import hashlib
-import json
-import pathlib
-import stat
-import sys
+teamwork_skill_root_has_markers() {
+  local root="$1"
+  [[ -f "$root/.teamwork-version" && -f "$root/.teamwork-profile" ]]
+}
 
-fixture_path = pathlib.Path(sys.argv[1])
-retired = sys.argv[2]
-entry = pathlib.Path(sys.argv[3])
-try:
-    fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
-except (OSError, json.JSONDecodeError) as exc:
-    print(f"Cannot load retired Skill identity fixture: {exc}", file=sys.stderr)
-    raise SystemExit(1)
-if fixture.get("schema_version") != 2:
-    print("Unsupported retired Skill identity fixture schema.", file=sys.stderr)
-    raise SystemExit(1)
-skills = fixture.get("skills")
-if not isinstance(skills, dict) or retired not in skills:
-    print(f"Retired Skill identity fixture has no key for {retired}.", file=sys.stderr)
-    raise SystemExit(1)
-manifests = skills[retired]
-if not isinstance(manifests, list) or not manifests:
-    print(f"No frozen Teamwork-owned manifest is allowed for {retired}.", file=sys.stderr)
-    raise SystemExit(1)
-try:
-    info = entry.lstat()
-except OSError:
-    raise SystemExit(1)
-if not stat.S_ISDIR(info.st_mode) or entry.is_symlink():
-    raise SystemExit(1)
+teamwork_retired_skill_entry_is_owned() {
+  local root="$1"
+  local retired="$2"
+  local entry="$root/$retired"
+  local skill_file="$entry/SKILL.md"
 
-actual = {}
-for path in entry.rglob("*"):
-    rel = path.relative_to(entry).as_posix()
-    info = path.lstat()
-    if stat.S_ISDIR(info.st_mode) and not path.is_symlink():
-        continue
-    if not stat.S_ISREG(info.st_mode):
-        raise SystemExit(1)
-    actual[rel] = {
-        "file_type": "file",
-        "mode": f"{stat.S_IMODE(info.st_mode):04o}",
-        "path": rel,
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-    }
-
-def whole_tree(rows):
-    payload = "".join(
-        f"{row['path']}\0{row['file_type']}\0{row['mode']}\0{row['sha256']}\n"
-        for row in sorted(rows, key=lambda item: item["path"].encode("utf-8"))
-    )
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
-
-for manifest in manifests:
-    files = manifest.get("files")
-    if not isinstance(files, list):
-        continue
-    expected = {row.get("path"): row for row in files if isinstance(row, dict)}
-    if set(actual) != set(expected):
-        continue
-    if all(
-        actual[rel].get("file_type") == expected[rel].get("file_type")
-        and actual[rel].get("mode") == expected[rel].get("mode")
-        and actual[rel].get("sha256") == expected[rel].get("sha256")
-        for rel in expected
-    ) and whole_tree(list(actual.values())) == manifest.get("whole_tree_sha256"):
-        raise SystemExit(0)
-
-raise SystemExit(1)
-PY
+  if [[ "$retired" == "$LEGACY_CODEX_ROUTER_SKILL" ]]; then
+    teamwork_skill_root_has_markers "$root"
+    return
+  fi
+  teamwork_skill_root_has_markers "$root" && return 0
+  [[ -f "$skill_file" ]] || return 1
+  grep -q "^name: $retired$" "$skill_file" && grep -qi "teamwork" "$skill_file"
 }
 
 remove_retired_skill() {
@@ -626,8 +246,7 @@ remove_retired_skill() {
   local link="$dest/SKILL.md"
   local raw_target resolved
 
-  if [[ -f "$dest_root/.teamwork-version" ]] \
-    && [[ "$(tr -d '[:space:]' < "$dest_root/.teamwork-version")" == "3.4.2" ]]; then
+  if teamwork_skill_root_has_markers "$dest_root"; then
     rm -rf "$dest"
     return 0
   fi
@@ -655,8 +274,10 @@ remove_retired_skill() {
 
   [[ -f "$link" ]] || return 0
   grep -q "^name: $retired$" "$link" || return 0
-  if retired_skill_copy_is_owned "$retired" "$dest"; then
+  if teamwork_retired_skill_entry_is_owned "$dest_root" "$retired"; then
     rm -rf "$dest"
+  else
+    echo "Preserved unrecognized retired Skill: $dest" >&2
   fi
 }
 
@@ -754,63 +375,6 @@ plugin_activation_is_present() {
   [[ -e "$(codex_plugin_activation_path)" || -L "$(codex_plugin_activation_path)" ]]
 }
 
-plugin_activation_profile() {
-  local path
-  path="$(codex_plugin_activation_path)"
-  python3 - "$path" <<'PY'
-import json
-import pathlib
-import sys
-
-try:
-    value = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-except (OSError, json.JSONDecodeError):
-    raise SystemExit(1)
-profile = value.get("profile")
-if not isinstance(profile, str):
-    raise SystemExit(1)
-print(profile)
-PY
-}
-
-plugin_activation_version() {
-  local path
-  path="$(codex_plugin_activation_path)"
-  python3 - "$path" <<'PY'
-import json
-import pathlib
-import sys
-
-try:
-    value = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-except (OSError, json.JSONDecodeError):
-    raise SystemExit(1)
-version = value.get("version")
-if not isinstance(version, str):
-    raise SystemExit(1)
-print(version)
-PY
-}
-
-plugin_activation_notification_setting() {
-  local path
-  path="$(codex_plugin_activation_path)"
-  python3 - "$path" <<'PY'
-import json
-import pathlib
-import sys
-
-try:
-    value = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-except (OSError, json.JSONDecodeError):
-    raise SystemExit(1)
-notifications = value.get("notifications")
-if not isinstance(notifications, str):
-    raise SystemExit(1)
-print(notifications)
-PY
-}
-
 preflight_plugin_runtime() {
   if ! teamwork_plugin_runtime_is_valid; then
     echo "plugin-codex-bootstrap must run from the Teamwork Marketplace runtime." >&2
@@ -857,23 +421,23 @@ preflight_teamwork_skill_root() {
   local skip_legacy_router="${3:-0}"
   local marker="$root/.teamwork-version"
   local profile_marker="$root/.teamwork-profile"
-  local skill version="unknown" found=0
+  local skill found=0
 
-  if [[ -f "$marker" ]]; then
-    version="$(tr -d '[:space:]' < "$marker")"
-  fi
-
-  if [[ "$version" == "3.4.2" ]]; then
-    preflight_v342_skill_root "$root" "$label"
-    return
-  fi
-
-  for skill in "${SKILLS[@]}" "${MIGRATION_RETIRED_SKILLS[@]}"; do
+  for skill in "${SKILLS[@]}" "${RETIRED_SKILLS[@]}"; do
     if [[ "$skip_legacy_router" == "1" && "$skill" == "$LEGACY_CODEX_ROUTER_SKILL" ]]; then
       continue
     fi
     if [[ -e "$root/$skill" || -L "$root/$skill" ]]; then
       found=1
+      if retired_skill_is_configured "$skill"; then
+        if teamwork_retired_skill_entry_is_owned "$root" "$skill"; then
+          if [[ -d "$root/$skill" && ! -L "$root/$skill" && ! -w "$root/$skill" ]]; then
+            echo "$label contains a non-writable retired Teamwork Skill: $skill" >&2
+            return 1
+          fi
+        fi
+        continue
+      fi
       if [[ ! -f "$marker" || ! -f "$profile_marker" ]]; then
         echo "$label contains $skill without Teamwork ownership markers; refusing to replace it." >&2
         return 1
@@ -882,8 +446,8 @@ preflight_teamwork_skill_root() {
         echo "$label contains an unrecognized $skill entry; refusing to replace it." >&2
         return 1
       fi
-      if ! teamwork_skill_entry_has_known_inventory "$root" "$skill" "$version"; then
-        echo "$label contains unknown files in $skill; refusing to replace it." >&2
+      if ! teamwork_skill_entry_has_known_inventory "$root" "$skill"; then
+        echo "$label contains an unrecognized $skill entry; refusing to replace it." >&2
         return 1
       fi
     fi
@@ -908,53 +472,9 @@ legacy_codex_router_copy_is_owned() {
 
   [[ -e "$entry" || -L "$entry" ]] || return 0
   [[ -d "$entry" && ! -L "$entry" ]] || return 1
-
-  python3 - "$V342_OWNED_SURFACES" "$entry" <<'PY'
-import hashlib
-import json
-import pathlib
-import stat
-import sys
-
-try:
-    fixture = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-except (OSError, json.JSONDecodeError):
-    raise SystemExit(1)
-entry = pathlib.Path(sys.argv[2])
-prefix = "skills/using-teamwork/"
-expected = {
-    path.removeprefix(prefix): row
-    for row in fixture.get("deterministic_surfaces", [])
-    if (path := row.get("path", "")).startswith(prefix)
-}
-actual = {
-    path.relative_to(entry).as_posix(): path
-    for path in entry.rglob("*")
-    if not path.is_dir() or path.is_symlink()
-}
-if not expected or set(actual) != set(expected):
-    raise SystemExit(1)
-
-# The legacy generic router was the v3.4.2 using-teamwork tree projected to
-# `teamwork`, with only its frontmatter name changed. Freeze that projected
-# SKILL.md digest alongside the source inventory digests.
-projected_skill_sha256 = (
-    "58fe3a16f7fe82ee788d08bd836efa33dc8785c79a8df2144a09718a71dcbeb1"
-)
-for relative, row in expected.items():
-    path = actual[relative]
-    info = path.lstat()
-    if not stat.S_ISREG(info.st_mode):
-        raise SystemExit(1)
-    expected_digest = (
-        projected_skill_sha256 if relative == "SKILL.md" else row.get("sha256")
-    )
-    if (
-        f"{stat.S_IMODE(info.st_mode):04o}" != row.get("mode")
-        or hashlib.sha256(path.read_bytes()).hexdigest() != expected_digest
-    ):
-        raise SystemExit(1)
-PY
+  # `teamwork` is a generic name. Never claim it from prose or frontmatter
+  # alone; only root-level Teamwork ownership markers authorize cleanup.
+  teamwork_skill_root_has_markers "$legacy_root"
 }
 
 preflight_owned_legacy_cleanup() {
@@ -963,7 +483,7 @@ preflight_owned_legacy_cleanup() {
   local found=0
 
   [[ -d "$legacy_root" ]] || return 0
-  for skill in "${SKILLS[@]}" "${MIGRATION_RETIRED_SKILLS[@]}" "$LEGACY_CODEX_ROUTER_SKILL"; do
+  for skill in "${SKILLS[@]}" "${RETIRED_SKILLS[@]}" "$LEGACY_CODEX_ROUTER_SKILL"; do
     entry="$legacy_root/$skill"
     if [[ "$skill" == "$LEGACY_CODEX_ROUTER_SKILL" ]] \
       && ! legacy_codex_router_copy_is_owned "$legacy_root"; then
@@ -996,7 +516,8 @@ remove_owned_legacy_codex_skills() {
   [[ -d "$legacy_root" ]] || return 0
 
   for skill in "${SKILLS[@]}"; do
-    if [[ -e "$legacy_root/$skill" || -L "$legacy_root/$skill" ]]; then
+    if [[ -e "$legacy_root/$skill" || -L "$legacy_root/$skill" ]] \
+        && teamwork_skill_entry_has_known_inventory "$legacy_root" "$skill"; then
       rm -rf "$legacy_root/$skill"
     fi
   done

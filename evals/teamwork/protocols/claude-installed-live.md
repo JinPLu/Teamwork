@@ -1,4 +1,4 @@
-# Claude Code installed-v4 live protocol
+# Claude Code installed live protocol
 
 Run only through `run-installed-claude-teamwork-live-eval.py` with a prepared
 candidate manifest. `claude` must resolve and report its version. The user uses the

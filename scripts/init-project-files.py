@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Initialize project-local Teamwork context through a recoverable FD journal.
 
-W4 owns discussion artifact interpretation, rendering, and validation.  Init
-only asks its migration planner for exact replacement bytes, journals those
-bytes with the ordinary-memory anchors, and never reimplements that format.
+Init creates or refreshes current case-v3 project context only. Legacy project
+memory is a migration-only input for Update, not an Init-time rewrite source.
 """
 
 from __future__ import annotations
@@ -15,11 +14,9 @@ import hashlib
 import json
 import os
 import re
-import runpy
 import stat
 import subprocess
 import sys
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path, PurePosixPath
@@ -31,18 +28,11 @@ import validate_teamwork_index as validator
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE_DIRECTORY = REPOSITORY_ROOT / "templates/teamwork-memory"
 CURSOR_MCP_TEMPLATE_DIR = REPOSITORY_ROOT / "templates/cursor-mcp"
-V342_OWNED_SURFACES = REPOSITORY_ROOT / "scripts/tests/fixtures/v3.4.2-owned-surfaces.json"
-V4_MIGRATION_LEDGER = REPOSITORY_ROOT / "evals/teamwork/ledgers/v4-capability-migration.jsonl"
-W4_DISCUSSION_API = REPOSITORY_ROOT / "scripts/discussion-transaction.py"
 INIT_JOURNAL = ".teamwork-init-transaction.json"
 DISCUSSION_MARKER = ".discussion-transaction.json"
 JOURNAL_SCHEMA_VERSION = 4
 CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
 HASH_RE = re.compile(r"[0-9a-f]{64}")
-DISCUSSION_CURRENT_PATH = "docs/teamwork/discussion/current.md"
-DISCUSSION_ARCHIVE_NAME_RE = re.compile(
-    r"[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md"
-)
 MANAGED_START = "<!-- TEAMWORK_PROJECT_START -->"
 MANAGED_END = "<!-- TEAMWORK_PROJECT_END -->"
 IGNORE_START = "# TEAMWORK_LOCAL_START"
@@ -110,8 +100,8 @@ def render_memory_files(today: str, label: str) -> dict[str, str]:
         index = json.loads(index_text)
     except json.JSONDecodeError as exc:
         fail(f"Teamwork memory index template is invalid JSON: {exc}")
-    if index.get("schema_version") != 2:
-        fail("fresh Teamwork memory template must use schema_version 2")
+    if index.get("schema_version") != 3:
+        fail("fresh Teamwork memory template must use schema_version 3")
     index["project"]["name"] = label
     rendered_index = json.dumps(index, indent=2, ensure_ascii=False) + "\n"
     validator.validate_index(index, Path("templates/teamwork-memory/index.json"))
@@ -129,18 +119,18 @@ def project_label(root: Path, explicit: str | None) -> str:
 
 
 def managed_agents_block(tree: "InitTree", label: str, index: dict[str, object] | None) -> str:
-    schema_version = 2 if index is None else index.get("schema_version")
-    if schema_version != 2:
+    schema_version = 3 if index is None else index.get("schema_version")
+    if schema_version != 3:
         fail(
-            "project context requires case-v2 memory; run the exact-root "
-            "Init/Update migration before write-context"
+            "project context requires current case-v3 memory; run Update with "
+            "the exact project root before write-context"
         )
     lines = [
         f"- Project label (local routing only): `{label}`.",
         "- Read `docs/teamwork/index.json` first before choosing Teamwork memory routes.",
-        "- Normal Teamwork workflow writes use case-v2 only; legacy-v1 and old collaboration modes are migration inputs, not runtime routes.",
-        "- For Collaborate dialogue, brainstorm, and challenge checkpoints, use the selected v2 case manifest and `live/collaborate.md`; accepted decisions use `decision.md`. Route both through `case-inspect`, `case-schema`, and `case-apply`; never mirror them into ordinary memory, legacy Discussion/Design, or a report.",
-        "- For ordinary durable memory, follow the relevant case manifest. Keep volatile progress in its actual artifact.",
+        "- Writer maintains one live document at `docs/teamwork/cases/<case_id>/live.md` for each task that produces reusable content.",
+        "- Create the live document when reusable content first appears, update it only for material evidence, decision, conclusion, or next-step changes, and finalize it when the task ends.",
+        "- Legacy-v1 memory and case manifests without a live document are migration-only inputs for Update; Init reads them only to fail closed and never migrates them.",
     ]
     codegraph = tree.stat("root", ".codegraph")
     if (
@@ -163,7 +153,6 @@ GITIGNORE_BLOCK = f"""{IGNORE_START}
 .codegraph/
 docs/teamwork/**
 .teamwork/runtime/**
-.teamwork/cold-archive/**
 {INIT_JOURNAL}
 .*.teamwork-init-*
 docs/teamwork/{INIT_JOURNAL}
@@ -670,204 +659,6 @@ def _require_known_managed_block(
     return (original[:start_at] + block.rstrip() + original[end_at + len(end) :]).rstrip() + "\n"
 
 
-def _load_v342_authority() -> tuple[dict[str, object], list[dict[str, object]]]:
-    try:
-        fixture = json.loads(V342_OWNED_SURFACES.read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        fail("v3.4.2 owned-surface inventory is unavailable; migration preflight is blocked")
-    except (OSError, json.JSONDecodeError) as exc:
-        fail(f"v3.4.2 owned-surface inventory is unreadable: {exc}")
-    if (
-        not isinstance(fixture, dict)
-        or fixture.get("schema_version") != 1
-        or fixture.get("tag") != "v3.4.2"
-        or not isinstance(fixture.get("deterministic_surfaces"), list)
-        or not isinstance(fixture.get("runtime_surfaces"), list)
-    ):
-        fail("v3.4.2 owned-surface inventory has an unsupported schema")
-    deterministic = fixture["deterministic_surfaces"]
-    runtime = fixture["runtime_surfaces"]
-    if not deterministic or not runtime:
-        fail("v3.4.2 owned-surface inventory is incomplete")
-    for row in deterministic:
-        if not isinstance(row, dict) or not all(
-            isinstance(row.get(key), str) and row[key]
-            for key in ("path", "file_type", "mode", "sha256")
-        ):
-            fail("v3.4.2 deterministic inventory row is malformed")
-    for row in runtime:
-        if not isinstance(row, dict) or not all(
-            isinstance(row.get(key), str) and row[key]
-            for key in ("path_pattern", "file_type", "schema", "hash_policy")
-        ):
-            fail("v3.4.2 runtime inventory row is malformed")
-    try:
-        ledger_rows = [json.loads(line) for line in V4_MIGRATION_LEDGER.read_text(encoding="utf-8").splitlines() if line]
-    except FileNotFoundError:
-        fail("v4 capability migration ledger is unavailable; migration preflight is blocked")
-    except (OSError, json.JSONDecodeError) as exc:
-        fail(f"v4 capability migration ledger is unreadable: {exc}")
-    if not ledger_rows or not all(isinstance(row, dict) for row in ledger_rows):
-        fail("v4 capability migration ledger is malformed")
-    return fixture, ledger_rows
-
-
-@dataclass(frozen=True)
-class W4RuntimeAPI:
-    discussion_planner: Callable[[str, dict[str, str]], object]
-    parse_index: Callable[[str], dict[str, object]]
-    validate_currentness: Callable[[Path, dict[str, object]], None]
-    is_eligible: Callable[[dict[str, object]], bool]
-
-
-def _load_w4_runtime_api() -> W4RuntimeAPI:
-    """Load W4's public migration and final-validation semantics."""
-
-    try:
-        info = W4_DISCUSSION_API.lstat()
-    except OSError as exc:
-        fail(f"W4 discussion migration API is unavailable: {exc}")
-    if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode):
-        fail("W4 discussion migration API must be a regular source file")
-    try:
-        exports = runpy.run_path(str(W4_DISCUSSION_API), run_name="teamwork_init_w4_api")
-    except Exception as exc:
-        fail(f"cannot load the W4 discussion migration API: {exc}")
-    planner = exports.get("plan_v342_discussion_migration")
-    parse_index = exports.get("parse_index")
-    validate_currentness = exports.get("validate_currentness")
-    is_eligible = exports.get("_eligible")
-    if not callable(planner):
-        fail("W4 discussion migration API does not provide plan_v342_discussion_migration")
-    if not callable(parse_index) or not callable(validate_currentness):
-        fail("W4 artifact API does not provide final index/currentness validation")
-    if not callable(is_eligible):
-        fail("W4 artifact API does not provide canonical currentness eligibility")
-    return W4RuntimeAPI(planner, parse_index, validate_currentness, is_eligible)
-
-
-@dataclass(frozen=True)
-class W4DiscussionMigrationPlan:
-    writes: dict[str, str]
-    deletes: tuple[str, ...]
-    active_path: str | None
-
-
-def _w4_discussion_plan(
-    index_text: str,
-    artifact_texts: dict[str, str],
-    planner: Callable[[str, dict[str, str]], object],
-) -> W4DiscussionMigrationPlan:
-    try:
-        raw_plan = planner(index_text, artifact_texts)
-    except Exception as exc:
-        fail(f"W4 discussion migration planning refused the project state: {exc}")
-    if (
-        not isinstance(raw_plan, dict)
-        or set(raw_plan) != {"schema_version", "writes", "deletes", "active_path"}
-        or raw_plan.get("schema_version") != 2
-        or not isinstance(raw_plan.get("writes"), dict)
-        or not isinstance(raw_plan.get("deletes"), list)
-    ):
-        fail("W4 discussion migration API returned a non-object change plan")
-    writes: dict[str, str] = {}
-    for path, text in raw_plan["writes"].items():
-        if not isinstance(path, str) or not isinstance(text, str):
-            fail("W4 discussion migration API returned a non-text write")
-        pure = checked_relative(path, label="W4 discussion migration write path")
-        if len(pure.parts) != 4 or pure.parts[:3] != ("docs", "teamwork", "discussion"):
-            fail("W4 discussion migration write path is outside docs/teamwork/discussion/")
-        if pure.name != "current.md" and DISCUSSION_ARCHIVE_NAME_RE.fullmatch(pure.name) is None:
-            fail("W4 discussion migration write path has an unsupported name")
-        writes[path] = text
-    deletes: list[str] = []
-    for path in raw_plan["deletes"]:
-        if not isinstance(path, str) or path in deletes or path not in artifact_texts:
-            fail("W4 discussion migration API returned an unsafe delete")
-        pure = checked_relative(path, label="W4 discussion migration delete path")
-        if len(pure.parts) != 4 or pure.parts[:3] != ("docs", "teamwork", "discussion"):
-            fail("W4 discussion migration delete path is outside docs/teamwork/discussion/")
-        if DISCUSSION_ARCHIVE_NAME_RE.fullmatch(pure.name) is None or path in writes:
-            fail("W4 discussion migration delete path conflicts with its writes")
-        deletes.append(path)
-    active_path = raw_plan["active_path"]
-    if active_path not in {None, DISCUSSION_CURRENT_PATH}:
-        fail("W4 discussion migration API returned an unsupported active path")
-    if active_path == DISCUSSION_CURRENT_PATH and active_path not in writes:
-        fail("W4 discussion migration active path is missing from writes")
-    return W4DiscussionMigrationPlan(writes, tuple(deletes), active_path)
-
-
-def _indexed_discussion_paths(index: object) -> list[tuple[str, str]]:
-    """Route indexed discussion inputs into the journal without parsing artifacts."""
-
-    if not isinstance(index, dict) or not isinstance(index.get("entries"), list):
-        fail("discussion migration index is missing its entries collection")
-    paths: list[tuple[str, str]] = []
-    seen: set[str] = set()
-    for entry in index["entries"]:
-        if not isinstance(entry, dict) or entry.get("kind") != "discussion":
-            continue
-        raw_path = entry.get("path")
-        if not isinstance(raw_path, str):
-            fail("discussion migration index entry has no string path")
-        pure = checked_relative(raw_path, label="discussion migration path")
-        if len(pure.parts) != 4 or pure.parts[:3] != ("docs", "teamwork", "discussion"):
-            fail("discussion migration path must be directly under docs/teamwork/discussion/")
-        if raw_path in seen:
-            fail("discussion migration index has duplicate artifact paths")
-        seen.add(raw_path)
-        paths.append((raw_path, pure.name))
-    return paths
-
-
-def _repair_v342_discussion_index(index: object) -> str | None:
-    """Remove v3 discussion bookkeeping after W4 has planned every artifact."""
-
-    if not isinstance(index, dict) or not isinstance(index.get("active"), dict):
-        fail("discussion migration index is missing its active collection")
-    entries = index.get("entries")
-    if not isinstance(entries, list):
-        fail("discussion migration index is missing its entries collection")
-    has_discussions = any(isinstance(entry, dict) and entry.get("kind") == "discussion" for entry in entries)
-    active = index["active"]
-    has_legacy_pointer = "discussion" in active
-    legacy_pointer = active.get("discussion")
-    if not has_discussions and not has_legacy_pointer:
-        return None
-    if legacy_pointer is not None and not isinstance(legacy_pointer, str):
-        fail("discussion migration active.discussion must be null or a string")
-    repaired = json.loads(json.dumps(index, ensure_ascii=False))
-    repaired_active = repaired["active"]
-    assert isinstance(repaired_active, dict)
-    repaired_active.pop("discussion", None)
-    repaired_entries = repaired["entries"]
-    assert isinstance(repaired_entries, list)
-    repaired["entries"] = [
-        entry for entry in repaired_entries
-        if not isinstance(entry, dict) or entry.get("kind") != "discussion"
-    ]
-    try:
-        validator.validate_index(repaired, Path("docs/teamwork/index.json"))
-    except validator.ValidationError as exc:
-        fail(f"discussion migration index repair is invalid: {exc}")
-    return json.dumps(repaired, ensure_ascii=False, indent=2) + "\n"
-
-
-def _repair_discussion_anchor(text: str, marker: str, value: str, suffix: str) -> str:
-    matches = list(re.finditer(rf"(?m)^{re.escape(marker)}[^\r\n]*$", text))
-    replacement = f"{marker} {value}{suffix}"
-    if len(matches) > 1:
-        fail(f"ordinary-memory {marker[2:-1].lower()} anchor is ambiguous")
-    if len(matches) == 1:
-        match = matches[0]
-        return text[: match.start()] + replacement + text[match.end() :]
-    # Fresh v4 ordinary-memory templates deliberately omit these old v3
-    # discussion anchors.  Only rewrite an anchor that is actually present;
-    # Init must not reintroduce a cross-boundary pointer during a no-op run.
-    return text
-
-
 def _unfinished_w4_discussion_transaction(tree: InitTree) -> bool:
     """Recognize W4's v4 journal and the former parent-directory location."""
 
@@ -1035,9 +826,9 @@ class InitTransaction:
         if version == 1:
             if not current.exists or not readme.exists:
                 fail("partial schema v1 Teamwork runtime initialization; current.md and README.md are required")
-        elif version == 2:
+        elif version in {2, 3}:
             if current.exists or readme.exists:
-                fail("hybrid schema v2 Teamwork runtime initialization; current.md and README.md are legacy v1 anchors")
+                fail("hybrid case memory initialization; current.md and README.md are legacy v1 anchors")
         else:
             fail("docs/teamwork/index.json has unsupported schema_version")
         reader = validator.SafeProjectReader(self.root)
@@ -1056,144 +847,6 @@ class InitTransaction:
                 self._guard(snapshot)
         return snapshots, value
 
-    def _discussion_migration_candidates(
-        self,
-        memory: dict[str, FdSnapshot],
-        index: dict[str, object],
-    ) -> list[tuple[str, str, str, bytes | None]]:
-        w4 = _load_w4_runtime_api()
-        index_snapshot = memory["index.json"]
-        assert index_snapshot.data is not None
-        try:
-            index_text = index_snapshot.data.decode("utf-8")
-        except UnicodeDecodeError as exc:
-            fail(f"docs/teamwork/index.json must be UTF-8: {exc}")
-        paths = _indexed_discussion_paths(index)
-        artifacts: dict[str, str] = {}
-        if paths:
-            if "discussion" not in self.tree.fds:
-                if self.tree.open_existing("teamwork", "discussion", "discussion") is None:
-                    fail("indexed discussion artifacts require docs/teamwork/discussion/")
-            for logical, name in paths:
-                snapshot = _snapshot(self.tree, "discussion", name, logical)
-                if not snapshot.exists or snapshot.data is None:
-                    fail(f"indexed discussion artifact is missing: {logical}")
-                self._guard(snapshot)
-                try:
-                    artifacts[logical] = snapshot.data.decode("utf-8")
-                except UnicodeDecodeError as exc:
-                    fail(f"indexed discussion artifact must be UTF-8: {logical}: {exc}")
-        plan = _w4_discussion_plan(index_text, artifacts, w4.discussion_planner)
-        candidates: list[tuple[str, str, str, bytes | None]] = [
-            ("discussion", PurePosixPath(path).name, path, text.encode("utf-8"))
-            for path, text in sorted(plan.writes.items())
-        ]
-        candidates.extend(
-            ("discussion", PurePosixPath(path).name, path, None)
-            for path in plan.deletes
-        )
-        repaired_index = _repair_v342_discussion_index(index)
-        candidate_index_text = index_text if repaired_index is None else repaired_index
-        try:
-            candidate_index = json.loads(candidate_index_text)
-        except json.JSONDecodeError as exc:  # pragma: no cover - the repair validates before returning
-            fail(f"cannot parse candidate Teamwork index: {exc}")
-        plan_repair = self._repair_v342_plan_currentness(candidate_index, w4)
-        if plan_repair is not None:
-            candidate_index = plan_repair
-            candidate_index_text = json.dumps(candidate_index, ensure_ascii=False, indent=2) + "\n"
-        try:
-            parsed_candidate = w4.parse_index(candidate_index_text)
-            w4.validate_currentness(self.root, parsed_candidate)
-        except Exception as exc:
-            fail(f"W4 final artifact-index validation refused the project state: {exc}")
-        if repaired_index is not None or plan_repair is not None:
-            candidates.append(
-                ("teamwork", "index.json", "docs/teamwork/index.json", candidate_index_text.encode("utf-8"))
-            )
-        current = memory["current.md"]
-        readme = memory["README.md"]
-        assert current.data is not None and readme.data is not None
-        try:
-            current_text = current.data.decode("utf-8")
-            readme_text = readme.data.decode("utf-8")
-        except UnicodeDecodeError as exc:
-            fail(f"ordinary-memory anchor file must be UTF-8: {exc}")
-        repaired_current = _repair_discussion_anchor(
-            current_text, "- Active discussion:", "none", "."
-        )
-        repaired_readme = _repair_discussion_anchor(
-            readme_text, "- Active discussion route:", "none", ""
-        )
-        if repaired_current != current_text:
-            candidates.append(("teamwork", "current.md", "docs/teamwork/current.md", repaired_current.encode("utf-8")))
-        if repaired_readme != readme_text:
-            candidates.append(("teamwork", "README.md", "docs/teamwork/README.md", repaired_readme.encode("utf-8")))
-        return candidates
-
-    def _repair_v342_plan_currentness(
-        self,
-        index: object,
-        w4: W4RuntimeAPI,
-    ) -> dict[str, object] | None:
-        if not isinstance(index, dict) or not isinstance(index.get("active"), dict):
-            fail("plan-currentness migration index is missing its active collection")
-        entries = index.get("entries")
-        if not isinstance(entries, list):
-            fail("plan-currentness migration index is missing its entries collection")
-        active = index["active"]
-        assert isinstance(active, dict)
-        eligible_positions = [
-            position
-            for position, entry in enumerate(entries)
-            if isinstance(entry, dict)
-            and entry.get("kind") == "plan"
-            and w4.is_eligible(entry)
-        ]
-        raw_plan = active.get("plan")
-        if raw_plan is None:
-            if eligible_positions:
-                fail("active.plan is null while eligible legacy Plan entries exist")
-            return None
-        if not isinstance(raw_plan, str):
-            fail("active.plan must be null or a normalized Plan path")
-        pure = checked_relative(raw_plan, label="active.plan")
-        if (
-            len(pure.parts) != 4
-            or pure.parts[:3] != ("docs", "teamwork", "plans")
-            or pure.suffix != ".md"
-            or pure.name == ".md"
-        ):
-            fail("active.plan must be directly under docs/teamwork/plans/ with a .md name")
-        matches = [
-            position
-            for position, entry in enumerate(entries)
-            if isinstance(entry, dict) and entry.get("path") == raw_plan
-        ]
-        if len(matches) != 1:
-            fail("active.plan must identify exactly one index row")
-        target_position = matches[0]
-        if target_position not in eligible_positions:
-            fail("active.plan target must be an eligible current Plan entry")
-        if "plans" not in self.tree.fds:
-            if self.tree.open_existing("teamwork", "plans", "plans") is None:
-                fail("active.plan artifact directory is missing")
-        artifact = _snapshot(self.tree, "plans", pure.name, raw_plan)
-        if not artifact.exists:
-            fail(f"active.plan artifact is missing: {raw_plan}")
-        self._guard(artifact)
-        demotions = [position for position in eligible_positions if position != target_position]
-        if not demotions:
-            return None
-        repaired = json.loads(json.dumps(index, ensure_ascii=False))
-        repaired_entries = repaired["entries"]
-        assert isinstance(repaired_entries, list)
-        for position in demotions:
-            entry = repaired_entries[position]
-            assert isinstance(entry, dict)
-            entry["currentness"] = "historical"
-        return repaired
-
     def _planned_files(self) -> list[dict[str, object]]:
         self.guards.clear()
         memory, index = self._memory_snapshots()
@@ -1205,13 +858,8 @@ class InitTransaction:
                 ("teamwork", PurePosixPath(path).name, path, text.encode("utf-8"))
                 for path, text in rendered.items()
             )
-        else:
-            if index.get("schema_version") == 1:
-                candidates.extend(self._discussion_migration_candidates(memory, index))
-            elif index.get("schema_version") == 2:
-                pass
-            else:
-                fail("docs/teamwork/index.json has unsupported schema_version")
+        elif index.get("schema_version") != 3:
+            fail("legacy Teamwork memory requires Update migration before Init can write context")
 
         agents = _snapshot(self.tree, "root", "AGENTS.md", "AGENTS.md")
         agents_text = "" if not agents.exists else _snapshot_text(agents, "AGENTS.md")
@@ -1721,23 +1369,13 @@ class InitTransaction:
             )
         finally:
             reader.close()
-        if value.get("schema_version") == 1:
-            memory = {
-                "index.json": index,
-                "current.md": _snapshot(self.tree, "teamwork", "current.md", "docs/teamwork/current.md"),
-                "README.md": _snapshot(self.tree, "teamwork", "README.md", "docs/teamwork/README.md"),
-            }
-            if not all(snapshot.exists for snapshot in memory.values()):
-                fail("schema v1 ordinary-memory anchors are missing after initialization")
-            if self._discussion_migration_candidates(memory, value):
-                fail("post-init discussion migration or anchor repair remains pending")
-        elif value.get("schema_version") == 2:
+        if value.get("schema_version") == 3:
             current = _snapshot(self.tree, "teamwork", "current.md", "docs/teamwork/current.md")
             readme = _snapshot(self.tree, "teamwork", "README.md", "docs/teamwork/README.md")
             if current.exists or readme.exists:
-                fail("schema v2 initialization must not create legacy ordinary-memory anchors")
+                fail("schema v3 initialization must not create legacy ordinary-memory anchors")
         else:
-            fail("post-init index has unsupported schema_version")
+            fail("post-init index must use schema_version 3")
         self.tree.verify()
 
 
@@ -1879,8 +1517,8 @@ def _preflight_runtime(root: Path) -> None:
             version = value.get("schema_version") if isinstance(value, dict) else None
             if version == 1 and (not current.exists or not readme.exists):
                 fail("partial schema v1 Teamwork runtime initialization; current.md and README.md are required")
-            if version == 2 and (current.exists or readme.exists):
-                fail("hybrid schema v2 Teamwork runtime initialization; current.md and README.md are legacy v1 anchors")
+            if version in {2, 3} and (current.exists or readme.exists):
+                fail("hybrid case memory initialization; current.md and README.md are legacy v1 anchors")
             reader = validator.SafeProjectReader(root)
             try:
                 validator.validate_index(
@@ -1902,21 +1540,15 @@ def preflight(root: Path) -> None:
     _preflight_runtime(root)
 
 
-def _capability_matrix() -> dict[str, object]:
-    fixture, ledger = _load_v342_authority()
-    deterministic = fixture["deterministic_surfaces"]
-    runtime = fixture["runtime_surfaces"]
-    assert isinstance(deterministic, list) and isinstance(runtime, list)
+def _bootstrap_report() -> dict[str, object]:
     return {
-        "schema_version": 1,
+        "schema_version": 3,
         "mode": "full-bootstrap",
         "sources": {
-            "v342_owned_surfaces": str(V342_OWNED_SURFACES.relative_to(REPOSITORY_ROOT)),
-            "v4_migration_ledger": str(V4_MIGRATION_LEDGER.relative_to(REPOSITORY_ROOT)),
+            "memory_template": str((TEMPLATE_DIRECTORY / "index.json").relative_to(REPOSITORY_ROOT)),
         },
-        "published_surface_counts": {"deterministic": len(deterministic), "runtime": len(runtime)},
-        "migration_ledger_rows": len(ledger),
-        "promotion": "external memory and docs-graph remain candidates without explicit Root-authorized gates",
+        "project_memory": "fresh case-v3 only",
+        "migration": "legacy project memory is handled by Update, not Init",
     }
 
 
@@ -1965,7 +1597,7 @@ def command_write_context(root: Path, args: argparse.Namespace) -> None:
         if result.returncode != 0:
             fail("Cursor MCP project configuration failed")
     if args.full_bootstrap:
-        print(json.dumps(_capability_matrix(), ensure_ascii=False, sort_keys=True))
+        print(json.dumps(_bootstrap_report(), ensure_ascii=False, sort_keys=True))
 
 
 def command_validate(root: Path, _args: argparse.Namespace) -> None:
@@ -1978,8 +1610,8 @@ def command_validate(root: Path, _args: argparse.Namespace) -> None:
         memory, index = transaction._memory_snapshots()
         if not memory or index is None:
             fail("docs/teamwork index is incomplete")
-        if index.get("schema_version") == 1 and transaction._discussion_migration_candidates(memory, index):
-            fail("W4 discussion migration or ordinary-memory anchor repair is pending")
+        if index.get("schema_version") != 3:
+            fail("legacy Teamwork memory requires Update migration before Init can validate context")
         transaction.tree.verify()
     finally:
         transaction.close()
@@ -1994,22 +1626,6 @@ def command_codegraph(root: Path, args: argparse.Namespace) -> None:
     result = subprocess.run(command, cwd=root, check=False)
     if result.returncode != 0:
         fail(f"CodeGraph separate phase failed with exit status {result.returncode}")
-
-
-def command_v342_preflight(_root: Path, _args: argparse.Namespace) -> None:
-    fixture, ledger = _load_v342_authority()
-    print(
-        json.dumps(
-            {
-                "ok": True,
-                "deterministic_surfaces": len(fixture["deterministic_surfaces"]),
-                "runtime_surfaces": len(fixture["runtime_surfaces"]),
-                "ledger_rows": len(ledger),
-                "skill_subset_authoritative": False,
-            },
-            sort_keys=True,
-        )
-    )
 
 
 def parser() -> argparse.ArgumentParser:
@@ -2028,7 +1644,6 @@ def parser() -> argparse.ArgumentParser:
     write.add_argument("--promote-candidates", action="store_true")
     write.add_argument("--root-authorized-promotion", action="store_true")
     sub.add_parser("validate")
-    sub.add_parser("v342-preflight")
     graph = sub.add_parser("codegraph")
     graph.add_argument("command", nargs=argparse.REMAINDER)
     return result
@@ -2048,8 +1663,6 @@ def main() -> int:
             command_validate(root, args)
         elif args.action == "codegraph":
             command_codegraph(root, args)
-        elif args.action == "v342-preflight":
-            command_v342_preflight(root, args)
         else:  # pragma: no cover - argparse owns the action set
             fail(f"unknown action: {args.action}")
     except (InitError, validator.ValidationError) as exc:

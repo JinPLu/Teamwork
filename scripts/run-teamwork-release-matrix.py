@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify exact, evidence-bound per-host/per-profile Teamwork v4 trajectories."""
+"""Verify exact, evidence-bound per-host/per-profile Teamwork trajectories."""
 
 from __future__ import annotations
 
@@ -12,13 +12,15 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from teamwork_tooling.evaluation.host_matrix import (  # noqa: E402
-    C5_TEMP_ROOT,
-    CODEX_ROOT_ARMS,
+    RELEASE_TEMP_ROOT,
+    HOSTS,
+    PROFILES,
     HostMatrixError,
     load_case_manifest,
     load_trajectory_schema,
     validate_record_binding,
 )
+from teamwork_tooling.evaluation.contracts import CANONICAL_ROLES  # noqa: E402
 
 
 def read_records(
@@ -58,43 +60,32 @@ def parse_args() -> argparse.Namespace:
     verify.add_argument("--schema", required=True, type=Path)
     verify.add_argument("--hosts", required=True, nargs="+")
     verify.add_argument("--profiles", required=True, nargs="+")
-    verify.add_argument("--codex-arms", nargs="+")
-    verify.add_argument("--expected-records-per-slice", type=int)
-    verify.add_argument("--expected-records-per-output", type=int)
-    verify.add_argument("--expected-total-records", type=int)
-    verify.add_argument("--required-roles-per-slice", required=True, nargs="+")
     verify.add_argument("--summary", required=True, type=Path)
     return parser.parse_args()
 
 
-def output_slices(output_root: Path, hosts: list[str], profiles: list[str], codex_arms: list[str] | None) -> list[tuple[str, str, str, Path]]:
-    slices: list[tuple[str, str, str, Path]] = []
-    for host in hosts:
-        if host == "codex" and codex_arms:
-            for arm in codex_arms:
-                config = CODEX_ROOT_ARMS.get(arm)
-                if config is None:
-                    raise HostMatrixError(f"unsupported Codex Root arm: {arm}")
-                profile = config[0]
-                slices.append((host, profile, arm, output_root / host / f"{arm}.jsonl"))
-            continue
-        for profile in profiles:
-            slices.append((host, profile, profile, output_root / host / f"{profile}.jsonl"))
-    return slices
+def output_slices(
+    output_root: Path, hosts: list[str], profiles: list[str],
+) -> list[tuple[str, str, str, Path]]:
+    return [
+        (host, profile, profile, output_root / host / f"{profile}.jsonl")
+        for host in hosts
+        for profile in profiles
+    ]
 
 
 def main() -> int:
     args = parse_args()
-    expected_output_root = C5_TEMP_ROOT / "outputs/installed-v4"
+    expected_output_root = RELEASE_TEMP_ROOT / "outputs/installed"
     expected_summary = expected_output_root / "matrix-summary.json"
     if args.output_root != expected_output_root or args.summary != expected_summary:
         raise HostMatrixError(
-            "matrix output root and summary must use the exact /tmp/teamwork-4.1.0-c5/outputs/installed-v4 paths"
+            "matrix output root and summary must use the exact /tmp/teamwork-release-matrix/outputs/installed paths"
         )
-    if "codex" in args.hosts and tuple(args.codex_arms or ()) != tuple(CODEX_ROOT_ARMS):
-        raise HostMatrixError("Codex matrix must use exactly the four declared gpt-5.5 Root arms")
-    if "codex" not in args.hosts and args.codex_arms:
-        raise HostMatrixError("Codex Root arms require the codex host")
+    if set(args.hosts) != HOSTS or len(args.hosts) != len(HOSTS):
+        raise HostMatrixError("release matrix must contain codex, cursor, and claude exactly once")
+    if set(args.profiles) != PROFILES or len(args.profiles) != len(PROFILES):
+        raise HostMatrixError("release matrix must contain every declared profile exactly once")
     manifest_path = args.manifest.resolve()
     manifest_root = manifest_path.parents[3]
     manifest_cases = load_case_manifest(manifest_path, root=manifest_root)
@@ -104,10 +95,8 @@ def main() -> int:
     failures: list[str] = []
     slices: list[dict[str, object]] = []
     total = 0
-    expected_per_output = args.expected_records_per_output or args.expected_records_per_slice
-    if expected_per_output is None:
-        raise HostMatrixError("expected record count is required")
-    for host, profile, arm, path in output_slices(output_root, args.hosts, args.profiles, args.codex_arms):
+    expected_per_output = len(cases)
+    for host, profile, arm, path in output_slices(output_root, args.hosts, args.profiles):
         try:
             records = read_records(path, host=host, profile=profile, cases=cases, schema=schema)
         except HostMatrixError as exc:
@@ -125,8 +114,8 @@ def main() -> int:
         if len(records) != expected_per_output:
             failures.append(f"{host}/{arm}: expected {expected_per_output} records, got {len(records)}")
         if len(case_ids) != len(set(case_ids)) or set(case_ids) != set(cases):
-            failures.append(f"{host}/{arm}: case coverage is not the exact thirteen-case manifest")
-        missing_roles = sorted(set(args.required_roles_per_slice) - roles)
+            failures.append(f"{host}/{arm}: case coverage differs from the case manifest")
+        missing_roles = sorted(set(CANONICAL_ROLES) - roles)
         if missing_roles:
             failures.append(f"{host}/{arm}: missing observed roles {missing_roles}")
         blockers = [record for record in records if record.get("status") != "PASS"]
@@ -138,13 +127,11 @@ def main() -> int:
             "passed": not blockers and not missing_roles and len(records) == expected_per_output
             and len(case_ids) == len(set(case_ids)) and set(case_ids) == set(cases),
         })
-    expected_total = args.expected_total_records or (
-        len(output_slices(output_root, args.hosts, args.profiles, args.codex_arms)) * expected_per_output
-    )
+    expected_total = len(output_slices(output_root, args.hosts, args.profiles)) * expected_per_output
     if total != expected_total:
         failures.append(f"matrix expected {expected_total} total records, got {total}")
     summary = {
-        "schema_version": 4, "status": "FAIL" if failures else "PASS",
+        "schema_version": 1, "status": "FAIL" if failures else "PASS",
         "total_records": total, "expected_total_records": expected_total,
         "slices": slices, "failures": failures,
     }
@@ -156,7 +143,7 @@ def main() -> int:
         for failure in failures:
             print(f"FAIL: {failure}", file=sys.stderr)
         return 1
-    print(f"OK: verified {total} Teamwork v4 host trajectories")
+    print(f"OK: verified {total} Teamwork host trajectories")
     return 0
 
 

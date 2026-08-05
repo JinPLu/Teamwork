@@ -18,12 +18,12 @@ done
 [[ -f "$ROOT/docs/architecture.md" ]] || fail "missing docs/architecture.md"
 git_known_package_file "docs/architecture.md" \
   || fail "docs/architecture.md is absent from the active validation index"
-grep_required_ci '## Canonical tree' "$ROOT/docs/architecture.md" \
-  "architecture contract must define the canonical tree"
-grep_required_ci '## Dependency direction' "$ROOT/docs/architecture.md" \
-  "architecture contract must define dependency direction"
-grep_required_ci '## Change owners' "$ROOT/docs/architecture.md" \
-  "architecture contract must define change ownership"
+grep_required_ci '## Model-facing layers' "$ROOT/docs/architecture.md" \
+  "architecture contract must define the model-facing layers"
+grep_required_ci '## Storage and migration' "$ROOT/docs/architecture.md" \
+  "architecture contract must separate storage and migration"
+grep_required_ci '## Canonical and generated surfaces' "$ROOT/docs/architecture.md" \
+  "architecture contract must define canonical owners and generated surfaces"
 
 while IFS= read -r tooling_file; do
   rel="${tooling_file#"$ROOT"/}"
@@ -37,14 +37,24 @@ if ! PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/teamwork_tooling/privacy_s
   fail "tracked privacy scan found blocked values"
 fi
 if ! PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/teamwork_tooling/instruction_footprint.py"; then
-  fail "real loaded instruction surfaces exceed compactness limits"
+  fail "instruction surfaces have an unexplained footprint regression"
 fi
+
+[[ -f "$TOPOLOGY_MANIFEST" ]] || fail "missing config/teamwork-topology.json"
+git_known_package_file "config/teamwork-topology.json" \
+  || fail "config/teamwork-topology.json is absent from the active validation index"
 
 actual_skill_dirs="$(find "$ROOT/skills" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort)"
 [[ "$(printf '%s\n' "${SKILLS[@]}")" == "$actual_skill_dirs" ]] \
   || fail "every top-level skills/ directory must contain one SKILL.md"
-[[ "${#SKILLS[@]}" -eq "$CANONICAL_SKILL_COUNT" ]] \
-  || fail "canonical skills/ inventory must discover exactly $CANONICAL_SKILL_COUNT skills"
+manifest_skills="$(python3 - "$TOPOLOGY_MANIFEST" <<'PY'
+import json, pathlib, sys
+value = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+print("\n".join(sorted(row["name"] for row in value["public_skills"])))
+PY
+)"
+[[ "$(printf '%s\n' "${SKILLS[@]}")" == "$manifest_skills" ]] \
+  || fail "canonical skills/ inventory must match config/teamwork-topology.json"
 
 for retired in "${RETIRED_SKILLS[@]}"; do
   [[ ! -d "$ROOT/skills/$retired" ]] || fail "retired skill directory still exists: skills/$retired"
@@ -79,7 +89,7 @@ git -C "$ROOT" check-ignore -q docs/teamwork/discussion/validation-probe.md \
 git -C "$ROOT" check-ignore -q docs/teamwork/collaborate/validation-probe.md \
   || fail ".gitignore must match untracked Teamwork Collaborate artifacts"
 git -C "$ROOT" check-ignore -q docs/teamwork/cases/c-0000000000000000000000000000000000000000000000000000000000000000/manifest.json \
-  || fail ".gitignore must match v2 Teamwork case memory"
+  || fail ".gitignore must match current Teamwork case memory"
 python3 - "$ROOT/.gitignore" <<'PY'
 import pathlib
 import sys
@@ -126,21 +136,26 @@ for skill in "${SKILLS[@]}"; do
 done
 
 # --- Skill topology and package runtime ---
-expected_reference_inventory="$(printf '%s\n' \
-  'skills/teamwork-debug/references/runtime-diagnosis.md' \
-  'skills/teamwork-collaborate/references/adversarial-search.md' \
-  'skills/teamwork-collaborate/references/collaboration-layers.md' \
-  'skills/teamwork-research/references/deep-research.md' \
-  'skills/teamwork-review/references/strict-review.md' | sort)"
+expected_reference_inventory="$(python3 - "$TOPOLOGY_MANIFEST" <<'PY'
+import json, pathlib, sys
+value = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+print("\n".join(sorted(value["owned_references"])))
+PY
+)"
 actual_reference_inventory="$(find "$ROOT/skills" -type f -path '*/references/*' \
   | sed "s#^$ROOT/##" | sort)"
 [[ "$actual_reference_inventory" == "$expected_reference_inventory" ]] \
-  || fail "skills must contain exactly the five public reference files"
-expected_skill_agent_inventory='skills/teamwork-collaborate/agents/openai.yaml'
+  || fail "skill references must match config/teamwork-topology.json"
+expected_skill_agent_inventory="$(python3 - "$TOPOLOGY_MANIFEST" <<'PY'
+import json, pathlib, sys
+value = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+print("\n".join(sorted(f"skills/{row['name']}/agents/openai.yaml" for row in value["public_skills"])))
+PY
+)"
 actual_skill_agent_inventory="$(find "$ROOT/skills" -type f -path '*/agents/*' \
   | sed "s#^$ROOT/##" | sort)"
 [[ "$actual_skill_agent_inventory" == "$expected_skill_agent_inventory" ]] \
-  || fail "skills must contain exactly the Collaborate UI metadata"
+  || fail "every public skill must expose one agents/openai.yaml metadata file"
 if find "$ROOT/skills" -mindepth 2 -type d -name scripts \
   -exec sh -c 'find "$1" -type f -print -quit' _ {} \; | grep -q .; then
   fail "skills must not contain skill-local scripts"
@@ -175,127 +190,81 @@ PY
 [[ -f "$ROOT/evals/teamwork/README.md" ]] || fail "missing evals/teamwork/README.md"
 git_known_package_file "evals/teamwork/README.md" \
   || fail "evals/teamwork/README.md is absent from the active validation index"
-for eval_dir in cases live-cases rubrics ledgers; do
+for eval_dir in live-cases live-scenarios rubrics ledgers; do
   [[ -d "$ROOT/evals/teamwork/$eval_dir" ]] || fail "missing evals/teamwork/$eval_dir/"
 done
 while IFS= read -r eval_file; do
   rel="${eval_file#"$ROOT"/}"
   git_known_package_file "$rel" \
     || fail "$rel is absent from the active validation index"
-done < <(find "$ROOT/evals/teamwork/cases" "$ROOT/evals/teamwork/live-cases" "$ROOT/evals/teamwork/rubrics" "$ROOT/evals/teamwork/ledgers" -type f | sort)
+done < <(find "$ROOT/evals/teamwork/live-cases" "$ROOT/evals/teamwork/live-scenarios" "$ROOT/evals/teamwork/rubrics" "$ROOT/evals/teamwork/ledgers" -type f | sort)
+[[ -f "$ROOT/evals/teamwork/routing-pairs.json" ]] || fail "missing routing-pairs.json"
+git_known_package_file "evals/teamwork/routing-pairs.json" \
+  || fail "routing-pairs.json is absent from the active validation index"
 [[ -f "$ROOT/scripts/eval-teamwork.py" ]] || fail "missing scripts/eval-teamwork.py"
 git_known_package_file "scripts/eval-teamwork.py" \
   || fail "scripts/eval-teamwork.py is absent from the active validation index"
 python3 "$ROOT/scripts/eval-teamwork.py" --split dev >/dev/null
 python3 "$ROOT/scripts/eval-teamwork.py" --split release >/dev/null
-[[ -x "$ROOT/scripts/run-teamwork-live-eval.py" ]] || fail "live eval runner must be executable"
-git_known_package_file "scripts/run-teamwork-live-eval.py" \
-  || fail "scripts/run-teamwork-live-eval.py is absent from the active validation index"
-[[ -x "$ROOT/scripts/run-installed-teamwork-live-eval.py" ]] \
-  || fail "installed live canary runner must be executable"
-git_known_package_file "scripts/run-installed-teamwork-live-eval.py" \
-  || fail "scripts/run-installed-teamwork-live-eval.py is absent from the active validation index"
-[[ -f "$ROOT/scripts/test_live_eval_runner.py" ]] || fail "missing live eval runner tests"
-git_known_package_file "scripts/test_live_eval_runner.py" \
-  || fail "scripts/test_live_eval_runner.py is absent from the active validation index"
-[[ -f "$ROOT/scripts/test_eval_teamwork_mutations.py" ]] || fail "missing grill contract mutation tests"
+[[ -x "$ROOT/scripts/run-teamwork-release-matrix.py" ]] \
+  || fail "release matrix verifier must be executable"
+git_known_package_file "scripts/run-teamwork-release-matrix.py" \
+  || fail "scripts/run-teamwork-release-matrix.py is absent from the active validation index"
+python3 "$ROOT/scripts/run-teamwork-release-matrix.py" --help >/dev/null
+for host in codex cursor claude; do
+  host_runner="scripts/run-installed-${host}-teamwork-live-eval.py"
+  [[ -x "$ROOT/$host_runner" ]] || fail "$host release-matrix runner must be executable"
+  git_known_package_file "$host_runner" \
+    || fail "$host_runner is absent from the active validation index"
+  python3 "$ROOT/$host_runner" --help >/dev/null
+done
+[[ -f "$ROOT/scripts/test_eval_teamwork_mutations.py" ]] || fail "missing routing-pair mutation tests"
 git_known_package_file "scripts/test_eval_teamwork_mutations.py" \
   || fail "scripts/test_eval_teamwork_mutations.py is absent from the active validation index"
-[[ -f "$ROOT/scripts/grill_contract.py" ]] || fail "missing shared grill contract checks"
-git_known_package_file "scripts/grill_contract.py" \
-  || fail "scripts/grill_contract.py is absent from the active validation index"
 [[ -f "$ROOT/scripts/codex_routing_config.py" ]] || fail "missing Codex routing config module"
 [[ -f "$ROOT/scripts/configure-codex-routing.py" ]] || fail "missing Codex routing config CLI"
 [[ -f "$ROOT/scripts/test_codex_routing_config.py" ]] || fail "missing Codex routing config tests"
-[[ -x "$ROOT/scripts/codex_app_server_user_input.py" ]] || fail "missing Codex app-server user-input harness"
-[[ -f "$ROOT/scripts/test_codex_app_server_user_input.py" ]] || fail "missing Codex app-server user-input tests"
-compile_python_files "$ROOT/scripts/grill_contract.py" "$ROOT/scripts/run-teamwork-live-eval.py" \
-  "$ROOT/scripts/run-installed-teamwork-live-eval.py" "$ROOT/scripts/test_live_eval_runner.py" \
+compile_python_files "$ROOT/scripts/run-teamwork-release-matrix.py" \
+  "$ROOT/scripts/run-installed-codex-teamwork-live-eval.py" \
+  "$ROOT/scripts/run-installed-cursor-teamwork-live-eval.py" \
+  "$ROOT/scripts/run-installed-claude-teamwork-live-eval.py" \
+  "$ROOT/scripts/teamwork_tooling/evaluation/host_cli.py" \
   "$ROOT/scripts/test_eval_teamwork_mutations.py" "$ROOT/scripts/codex_routing_config.py" \
-  "$ROOT/scripts/configure-codex-routing.py" "$ROOT/scripts/test_codex_routing_config.py" \
-  "$ROOT/scripts/codex_app_server_user_input.py" "$ROOT/scripts/test_codex_app_server_user_input.py"
-if is_full_validation; then
-  PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_live_eval_runner.py" >/dev/null
-else
-  validation_note "live eval runner unit tests are release-only"
-fi
+  "$ROOT/scripts/configure-codex-routing.py" "$ROOT/scripts/test_codex_routing_config.py"
 if is_full_validation; then
   PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_eval_teamwork_mutations.py" >/dev/null
 else
   validation_note "eval mutation tests are release-only"
 fi
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_routing_config.py" >/dev/null
-if is_full_validation; then
-  PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/test_codex_app_server_user_input.py" >/dev/null
-else
-  validation_note "Codex app-server user-input tests are release-only"
-fi
 run_python_unit_tests
 [[ ! -e "$ROOT/scripts/teamwork_contract.py" && ! -e "$ROOT/scripts/test_teamwork_contract.py" ]] \
   || fail "retired Task Contract validator must remain absent"
 [[ ! -e "$ROOT/scripts/teamwork_findings.py" && ! -e "$ROOT/scripts/test_teamwork_findings.py" ]] \
   || fail "retired Finding-state validator must remain absent"
-[[ "$(find "$ROOT/evals/teamwork/cases" -maxdepth 1 -type f -name '*.dev.v4.json' | wc -l | tr -d ' ')" -ge 30 ]] \
-  || fail "v4 dev eval must retain broad bilingual behavior coverage"
-[[ "$(find "$ROOT/evals/teamwork/cases" -maxdepth 1 -type f -name '*.release.v4.json' | wc -l | tr -d ' ')" -ge 3 ]] \
-  || fail "v4 release eval must cover Research, Collaborate, and Review boundaries"
+if [[ -d "$ROOT/evals/teamwork/cases" ]] \
+  && find "$ROOT/evals/teamwork/cases" -type f -print -quit | grep -q .; then
+  fail "retired per-case eval fixtures must not return to the active tree"
+fi
+for retired_eval in \
+  scripts/run-teamwork-live-eval.py \
+  scripts/run-installed-teamwork-live-eval.py \
+  scripts/grill_contract.py \
+  scripts/test_live_eval_runner.py \
+  scripts/teamwork_tooling/live_canary.py \
+  scripts/codex_app_server_user_input.py \
+  scripts/test_codex_app_server_user_input.py; do
+  [[ ! -e "$ROOT/$retired_eval" ]] || fail "retired pilot eval surface remains: $retired_eval"
+done
 while IFS= read -r active_source; do
   if grep -Eiq 'Task Contract|Contract version|Finding-state|Finding state|FINDING_STATUSES|base_review_id|corrective delta review|Replay Preflight|Stage Entry Card|truth identity|frozen card|scope delta gate' "$active_source"; then
     fail "retired workflow lifecycle term remains in ${active_source#"$ROOT"/}"
   fi
 done < <(
-  find "$ROOT/skills" "$ROOT/templates" "$ROOT/evals/teamwork/cases" "$ROOT/evals/teamwork/rubrics" \
+  find "$ROOT/skills" "$ROOT/templates" "$ROOT/evals/teamwork/live-cases" \
+    "$ROOT/evals/teamwork/live-scenarios" "$ROOT/evals/teamwork/rubrics" \
     -type f ! -name '*.pyc' ! -path '*/__pycache__/*' | sort
 )
-grep_absent 'parse_close_packet\|expected_question_ids\|expected_close\|blocked_route\|pilot_only\|activation_evidence' \
-  "active grill eval code must not restore the retired lifecycle or native-promotion schema" \
-  "$ROOT/scripts/run-teamwork-live-eval.py" "$ROOT/scripts/codex_app_server_user_input.py"
-grep_required '"category": "collaborate"' "$ROOT/evals/teamwork/live-cases/collaborate-multiturn-pilot.json" \
-  "live evals must include a Collaborate category"
-if is_full_validation; then
-  live_eval_tmp="$(mktemp -d)"
-  CLEANUP_PATHS+=("$live_eval_tmp")
-  python3 "$ROOT/scripts/run-teamwork-live-eval.py" \
-    --arm validate-dry-run \
-    --model gpt-5.6-sol \
-    --effort max \
-    --workdir "$ROOT" \
-    --output "$live_eval_tmp/output.jsonl" \
-    --cases \
-      "$ROOT/evals/teamwork/live-cases/lightweight-pilot.json" \
-      "$ROOT/evals/teamwork/live-cases/collaborate-multiturn-pilot.json" \
-    --repeats 1 \
-    --timeout-seconds 60 \
-    --dry-run >/dev/null
-  python3 "$ROOT/scripts/run-installed-teamwork-live-eval.py" run \
-    --model gpt-5.6-sol \
-    --effort max \
-    --profile performance-first \
-    --workdir "$ROOT" \
-    --cases \
-      "$ROOT/evals/teamwork/live-cases/lightweight-pilot.json" \
-      "$ROOT/evals/teamwork/live-cases/collaborate-multiturn-pilot.json" \
-    --repeats 1 \
-    --timeout-seconds 60 \
-    --max-trajectories 2 \
-    --review-dir "$live_eval_tmp/installed" \
-    --dry-run >/dev/null
-  python3 - "$live_eval_tmp/installed/install-manifest.json" <<'PY'
-import json
-import pathlib
-import sys
-
-manifest = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-if manifest.get("record_type") != "teamwork_installed_canary_manifest":
-    raise SystemExit("FAIL: installed canary dry-run manifest has the wrong record type")
-if manifest.get("dry_run") is not True or len(manifest.get("trajectories", [])) != 2:
-    raise SystemExit("FAIL: installed canary dry-run manifest has the wrong trajectory contract")
-if manifest.get("activation_evidence", {}).get("claim") != "AVAILABILITY_ONLY":
-    raise SystemExit("FAIL: installed canary dry-run exceeded availability-only evidence")
-PY
-else
-  validation_note "live eval dry-runs are release-only"
-fi
 [[ -f "$ROOT/scripts/optimize-teamwork.py" ]] || fail "missing scripts/optimize-teamwork.py"
 git_known_package_file "scripts/optimize-teamwork.py" \
   || fail "scripts/optimize-teamwork.py is absent from the active validation index"
@@ -324,15 +293,9 @@ if is_full_validation; then
   opt_ledger_tmp="$(mktemp -d)"
   CLEANUP_PATHS+=("$opt_ledger_tmp")
   printf '%s\n' \
-    '{"date":"2026-07-08","candidate_id":"optimizer-smoke-valid","kind":"skillopt-lite","provider":"offline","model":"deterministic-smoke","model_config":"offline-smoke","prompt_or_template":"skills/teamwork-collaborate/SKILL.md","owned_files":["skills/teamwork-review/SKILL.md"],"denylist":["evals/teamwork/cases/*.json"],"baseline":"evals/teamwork/README.md","treatment":"scripts/optimize-teamwork.py","gate_decision":"reject","rollback":"evals/teamwork/README.md","validation":["scripts/validate.sh"],"release_audit":"validate smoke only","reviewer":"validate.sh","decision":"rejected"}' \
+    '{"date":"2026-07-08","candidate_id":"optimizer-smoke-valid","kind":"skillopt-lite","provider":"offline","model":"deterministic-smoke","model_config":"offline-smoke","prompt_or_template":"skills/teamwork-collaborate/SKILL.md","owned_files":["skills/teamwork-review/SKILL.md"],"denylist":["evals/teamwork/routing-pairs.json","evals/teamwork/live-cases/release-matrix.json"],"baseline":"evals/teamwork/README.md","treatment":"scripts/optimize-teamwork.py","gate_decision":"reject","rollback":"evals/teamwork/README.md","validation":["scripts/validate.sh"],"release_audit":"validate smoke only","reviewer":"validate.sh","decision":"rejected"}' \
     > "$opt_ledger_tmp/valid.jsonl"
   python3 "$ROOT/scripts/eval-teamwork.py" --optimizer-ledger "$opt_ledger_tmp/valid.jsonl" >/dev/null
-  printf '%s\n' \
-    '{"date":"2026-07-08","candidate_id":"optimizer-smoke-invalid","kind":"skillopt-lite","provider":"offline","model":"deterministic-smoke","model_config":"offline-smoke","prompt_or_template":"not_applicable","owned_files":["skills/teamwork-review/SKILL.md"],"denylist":["evals/teamwork/cases/*.json"],"baseline":"evals/teamwork/README.md","treatment":"scripts/optimize-teamwork.py","gate_decision":"reject","rollback":"evals/teamwork/README.md","validation":["scripts/validate.sh"],"release_audit":"validate smoke only","reviewer":"validate.sh","decision":"rejected"}' \
-    > "$opt_ledger_tmp/invalid.jsonl"
-  if python3 "$ROOT/scripts/eval-teamwork.py" --optimizer-ledger "$opt_ledger_tmp/invalid.jsonl" >/dev/null 2>&1; then
-    fail "optimizer ledger smoke accepted placeholder evidence"
-  fi
 else
   validation_note "optimizer workspace smoke is release-only"
 fi
@@ -350,14 +313,14 @@ sed 's/"claim_heads": {}/"claim_heads": []/' \
   > "$index_pointer_tmp/invalid-claim-heads.json"
 if python3 "$ROOT/scripts/validate_teamwork_index.py" \
   "$index_pointer_tmp/invalid-claim-heads.json" >/dev/null 2>&1; then
-  fail "Teamwork index validator accepted non-object v2 claim_heads"
+  fail "Teamwork index validator accepted non-object current claim_heads"
 fi
-sed 's/"schema_version": 2/"schema_version": 3/' \
+sed 's/"schema_version": 3/"schema_version": 4/' \
   "$ROOT/templates/teamwork-memory/index.json" \
   > "$index_pointer_tmp/unknown-schema.json"
 if python3 "$ROOT/scripts/validate_teamwork_index.py" \
   "$index_pointer_tmp/unknown-schema.json" >/dev/null 2>&1; then
-  fail "Teamwork index validator accepted an unknown schema version"
+  fail "Teamwork index validator accepted a schema newer than the current schema"
 fi
 if [[ "${TEAMWORK_VALIDATE_LOCAL_MEMORY:-0}" == "1" && -f "$ROOT/docs/teamwork/index.json" ]]; then
   python3 "$ROOT/scripts/validate_teamwork_index.py" "$ROOT/docs/teamwork/index.json" >/dev/null
@@ -420,21 +383,20 @@ expected_marketplace = {
 }
 if marketplace != expected_marketplace:
     raise SystemExit("FAIL: Marketplace manifest drifted from the Teamwork contract")
-expected_skills = {
+topology = json.loads((root / "config/teamwork-topology.json").read_text())
+expected_skills = {row["name"] for row in topology["public_skills"]}
+source_skills = {
     path.name for path in (root / "skills").iterdir()
     if path.is_dir() and (path / "SKILL.md").is_file()
 }
-if len(expected_skills) != 9:
-    raise SystemExit("FAIL: canonical source inventory must discover exactly nine skills")
+if source_skills != expected_skills:
+    raise SystemExit("FAIL: canonical source inventory must match the topology manifest")
 actual_skills = {path.name for path in (bundle / "skills").iterdir() if path.is_dir()}
 if actual_skills != expected_skills:
     raise SystemExit("FAIL: Marketplace bundle skill inventory must match canonical source")
 expected_references = {
-    "teamwork-debug/references/runtime-diagnosis.md",
-    "teamwork-collaborate/references/adversarial-search.md",
-    "teamwork-collaborate/references/collaboration-layers.md",
-    "teamwork-research/references/deep-research.md",
-    "teamwork-review/references/strict-review.md",
+    pathlib.PurePosixPath(path).relative_to("skills").as_posix()
+    for path in topology["owned_references"]
 }
 source_references = {
     path.relative_to(root / "skills").as_posix()
@@ -447,8 +409,8 @@ bundle_references = {
     if path.is_file() and path.parent.name == "references"
 }
 if source_references != expected_references or bundle_references != expected_references:
-    raise SystemExit("FAIL: source and Marketplace bundle must contain exactly five public references")
-expected_agent_metadata = {"teamwork-collaborate/agents/openai.yaml"}
+    raise SystemExit("FAIL: source and Marketplace references must match the topology manifest")
+expected_agent_metadata = {f"{name}/agents/openai.yaml" for name in expected_skills}
 source_agent_metadata = {
     path.relative_to(root / "skills").as_posix()
     for path in (root / "skills").rglob("*")
@@ -460,28 +422,20 @@ bundle_agent_metadata = {
     if path.is_file() and path.parent.name == "agents"
 }
 if source_agent_metadata != expected_agent_metadata or bundle_agent_metadata != expected_agent_metadata:
-    raise SystemExit("FAIL: source and Marketplace bundle must contain Collaborate UI metadata")
-expected_roles = {
-    "codex-agents": {
-        "teamwork-debugger.toml", "teamwork-designer.toml", "teamwork-explorer.toml",
-        "teamwork-plan-reviewer.toml", "teamwork-planner.toml", "teamwork-researcher.toml",
-        "teamwork-reviewer.toml", "teamwork-worker.toml", "teamwork-writer.toml",
-    },
-    "cursor-agents": {
-        "debugger.md", "designer.md", "explorer.md", "plan-reviewer.md", "planner.md",
-        "researcher.md", "reviewer.md", "worker.md", "writer.md",
-    },
-    "claude-agents": {
-        "debugger.md", "designer.md", "explorer.md", "plan-reviewer.md", "planner.md",
-        "researcher.md", "reviewer.md", "worker.md", "writer.md",
-    },
-}
+    raise SystemExit("FAIL: source and Marketplace skill metadata must match the topology manifest")
+host_directories = {"codex": "codex-agents", "cursor": "cursor-agents", "claude": "claude-agents"}
+expected_roles = {directory: set() for directory in host_directories.values()}
+for agent in topology["agents"]:
+    for host, path in agent["templates"].items():
+        expected_roles[host_directories[host]].add(pathlib.PurePosixPath(path).name)
 for directory, expected in expected_roles.items():
     source_roles = {path.name for path in (root / "templates" / directory).iterdir() if path.is_file()}
     bundle_roles = {path.name for path in (bundle / "templates" / directory).iterdir() if path.is_file()}
     if source_roles != expected or bundle_roles != expected:
-        raise SystemExit(f"FAIL: source and Marketplace bundle must contain exactly nine {directory} roles")
+        raise SystemExit(f"FAIL: source and Marketplace {directory} roles must match the topology manifest")
 required_runtime = {
+    "config/teamwork-topology.json",
+    "scripts/teamwork_tooling/topology.py",
     "install.sh",
     "scripts/check-update.sh",
     "scripts/configure-codex-routing.py",
@@ -496,12 +450,8 @@ required_runtime = {
     "templates/claude-agents/worker.md",
     "hooks/notify.py",
     "scripts/plugin-runtime-root.py",
-    "scripts/tests/fixtures/v3.4.2-owned-surfaces.json",
-    "scripts/tests/fixtures/retired-teamwork-skills-v5.json",
-    "scripts/tests/fixtures/v5.1-case-bundle-owned-surfaces.json",
     "templates/teamwork-memory/index.json",
     "templates/teamwork-memory/teamwork-collaborate-template.md",
-    "evals/teamwork/ledgers/v4-capability-migration.jsonl",
     ".teamwork-runtime-integrity.json",
 }
 for rel in required_runtime:

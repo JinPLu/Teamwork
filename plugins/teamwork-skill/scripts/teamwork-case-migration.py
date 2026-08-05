@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inspect and orchestrate Teamwork v1 -> v2 case-bundle migration.
+"""Inspect and orchestrate legacy Teamwork memory -> current case migration.
 
 Read-only commands never mutate managed memory.  The ``migrate`` and ``resume``
 commands sequence controlled transaction phases; all managed writes, locks,
@@ -15,6 +15,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import stat
 import subprocess
 import sys
@@ -112,7 +113,9 @@ def classify(root: Path) -> dict[str, Any]:
     elif index.get("schema_version") == 1 and v1_keys:
         mode = "legacy-v1"
     elif index.get("schema_version") == 2 and v2_keys:
-        mode = "case-v2"
+        mode = "case-v2-legacy"
+    elif index.get("schema_version") == 3 and v2_keys:
+        mode = "case-v3"
     else:
         mode = "unknown"
     return {"schema_version": index.get("schema_version"), "mode": mode}
@@ -234,45 +237,134 @@ def read_journal(root: Path, migration_id: str) -> dict[str, Any]:
     return value
 
 
+def purge_completed_migration_runtime(root: Path, migration_id: str) -> None:
+    """Atomically hide, then remove, migration-only backups after verified cleanup."""
+    if MIGRATION_ID_RE.fullmatch(migration_id) is None:
+        fail("migration runtime purge requires a valid migration_id")
+    runtime_parent = root / ".teamwork/runtime"
+    source = runtime_parent / "migrations" / migration_id
+    tombstone = runtime_parent / f".completed-{migration_id}"
+    if source.is_symlink() or tombstone.is_symlink():
+        fail("migration runtime purge refuses symlinked paths")
+    if source.exists() and tombstone.exists():
+        fail("migration runtime purge found both source and tombstone")
+    if source.exists():
+        source.rename(tombstone)
+    if tombstone.exists():
+        shutil.rmtree(tombstone)
+    for directory in (runtime_parent / "migrations",):
+        try:
+            directory.rmdir()
+        except FileNotFoundError:
+            pass
+        except OSError:
+            # Shared runtime locks or another active migration keep the parent.
+            pass
+
+
+def purge_retired_migration_state(root: Path) -> dict[str, object]:
+    """Remove completed legacy migration state after current-tree readback."""
+    classification = classify(root)
+    if classification["mode"] != "case-v3":
+        fail("retired migration state may be purged only from current case-v3 memory")
+    preflight = candidate_preflight(root)
+    if preflight.get("mode") != "case-v3" or preflight.get("ok") is not True:
+        fail("retired migration state purge requires a valid current project")
+    index = load_index(root)
+    if index.get("migration") is not None:
+        fail("retired migration state purge refuses an active migration")
+
+    runtime_parent = root / ".teamwork/runtime"
+    migrations_root = runtime_parent / "migrations"
+    completed_ids: list[str] = []
+    if migrations_root.exists():
+        info = migrations_root.lstat()
+        if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
+            fail("migration runtime root is unsafe")
+        for candidate in sorted(migrations_root.iterdir(), key=lambda item: item.name):
+            candidate_info = candidate.lstat()
+            if stat.S_ISLNK(candidate_info.st_mode) or not stat.S_ISDIR(candidate_info.st_mode):
+                fail("migration runtime contains an unexpected entry")
+            migration_id = candidate.name
+            if MIGRATION_ID_RE.fullmatch(migration_id) is None:
+                fail("migration runtime contains an invalid migration directory")
+            journal = read_journal(root, migration_id)
+            if (
+                journal.get("phase") != "cleanup_complete"
+                or journal.get("cleanup") != "complete"
+                or journal.get("restore_drill") != "passed"
+            ):
+                fail("migration runtime contains non-terminal state")
+            completed_ids.append(migration_id)
+
+    for migration_id in completed_ids:
+        purge_completed_migration_runtime(root, migration_id)
+
+    archive_root = root / ".teamwork/cold-archive"
+    archive_tombstone = root / ".teamwork/.retired-cold-archive"
+    removed_archive = archive_root.exists() or archive_tombstone.exists()
+    if archive_root.is_symlink() or archive_tombstone.is_symlink():
+        fail("retired cold archive purge refuses symlinked paths")
+    if archive_root.exists() and not archive_root.is_dir():
+        fail("retired cold archive path is unsafe")
+    if archive_tombstone.exists() and not archive_tombstone.is_dir():
+        fail("retired cold archive tombstone is unsafe")
+    if archive_root.exists() and archive_tombstone.exists():
+        fail("retired cold archive purge found both source and tombstone")
+    if archive_root.exists():
+        archive_root.rename(archive_tombstone)
+    if archive_tombstone.exists():
+        shutil.rmtree(archive_tombstone)
+
+    return {
+        "purged_migration_ids": completed_ids,
+        "removed_cold_archive": removed_archive,
+    }
+
+
 def terminal_resume_state(root: Path, migration_id: str, baseline_digest: str, phase: object, steps: list[dict[str, Any]]) -> dict[str, Any]:
     classification = classify(root)
     if phase not in {"committed", "cleanup_complete"}:
         return {"mode": classification["mode"], "migration_id": migration_id, "phase": phase, "steps": steps}
-    if classification["mode"] != "case-v2":
-        fail("terminal migration readback did not produce case-v2 memory")
+    if classification["mode"] != "case-v3":
+        fail("terminal migration readback did not produce current case-v3 memory")
     preflight = candidate_preflight(root)
-    if preflight.get("mode") != "case-v2" or preflight.get("ok") is not True:
-        fail("case-v2 migration readback failed")
+    if preflight.get("mode") != "case-v3" or preflight.get("ok") is not True:
+        fail("case-v3 migration readback failed")
     index = load_index(root)
     migration = index.get("migration")
+    if phase == "cleanup_complete":
+        if migration is not None:
+            fail("cleanup-complete migration must not remain in the current index")
+        return {"mode": "case-v3", "migration_id": migration_id, "phase": "cleanup_complete", "steps": steps}
     if not isinstance(migration, dict):
-        fail("case-v2 migration readback is missing migration state")
+        fail("case-v3 migration readback is missing migration state")
     if migration.get("migration_id") != migration_id or migration.get("baseline_digest") != baseline_digest:
-        fail("case-v2 migration readback does not match runtime journal")
-    return {"mode": "case-v2", "migration_id": migration_id, "phase": migration.get("phase"), "steps": steps}
+        fail("case-v3 migration readback does not match runtime journal")
+    return {"mode": "case-v3", "migration_id": migration_id, "phase": migration.get("phase"), "steps": steps}
 
 
 def resume_migration(root: Path, migration_id: str, *, cutover: bool = False, cleanup: bool = False) -> dict[str, Any]:
     journal_path = root / ".teamwork/runtime/migrations" / migration_id / "journal.json"
-    if not journal_path.is_file() and classify(root)["mode"] == "case-v2":
+    if not journal_path.is_file() and classify(root)["mode"] == "case-v3":
         candidate_preflight(root)
         index = load_index(root)
         migration = index.get("migration")
         if migration is None or (isinstance(migration, dict) and migration.get("phase") == "cleanup_complete"):
-            return {"mode": "case-v2", "migration_id": migration_id, "phase": "already-case-v2", "steps": []}
-        fail("case-v2 migration state names a missing runtime journal")
+            return {"mode": "case-v3", "migration_id": migration_id, "phase": "already-current", "steps": []}
+        fail("case-v3 migration state names a missing runtime journal")
     journal = read_journal(root, migration_id)
     baseline_digest = str(journal.get("baseline_digest"))
     if HEX64_RE.fullmatch(baseline_digest) is None:
         fail("migration journal baseline_digest is invalid")
     index_migration: dict[str, Any] | None = None
-    if classify(root)["mode"] == "case-v2":
+    if classify(root)["mode"] == "case-v3":
         index = load_index(root)
         raw_migration = index.get("migration")
         if isinstance(raw_migration, dict):
             index_migration = raw_migration
             if index_migration.get("migration_id") != migration_id or index_migration.get("baseline_digest") != baseline_digest:
-                fail("case-v2 migration index and runtime journal do not match")
+                fail("case-v3 migration index and runtime journal do not match")
     steps: list[dict[str, Any]] = []
     while True:
         phase = journal.get("phase")
@@ -298,34 +390,43 @@ def resume_migration(root: Path, migration_id: str, *, cutover: bool = False, cl
         )
         applied = transaction_json(root, "migration-apply", request)
         steps.append({"operation": next_operation, "result": applied})
+        if next_operation == "cleanup":
+            journal = read_journal(root, migration_id)
+            terminal = terminal_resume_state(root, migration_id, baseline_digest, journal.get("phase"), steps)
+            purge_completed_migration_runtime(root, migration_id)
+            purge_retired_migration_state(root)
+            return terminal
         if next_operation == "cutover":
             if cleanup:
                 journal = read_journal(root, migration_id)
                 continue
-            return {"mode": "case-v2", "migration_id": migration_id, "phase": applied.get("phase"), "steps": steps}
+            return {"mode": "case-v3", "migration_id": migration_id, "phase": applied.get("phase"), "steps": steps}
         journal = read_journal(root, migration_id)
 
 
 def migrate(root: Path, *, cutover: bool = False, cleanup: bool = False) -> dict[str, Any]:
     classification = classify(root)
-    if classification["mode"] == "case-v2":
+    if classification["mode"] == "case-v3":
         candidate_preflight(root)
         index = load_index(root)
         migration = index.get("migration")
         if migration is None:
-            return {"mode": "case-v2", "phase": "already-case-v2", "steps": []}
+            return {"mode": "case-v3", "phase": "already-current", "steps": []}
         if isinstance(migration, dict) and migration.get("phase") == "cleanup_complete":
-            return {"mode": "case-v2", "phase": "already-case-v2", "steps": []}
+            return {"mode": "case-v3", "phase": "already-current", "steps": []}
         if isinstance(migration, dict):
             migration_id = migration.get("migration_id")
             if not isinstance(migration_id, str) or MIGRATION_ID_RE.fullmatch(migration_id) is None:
-                fail("case-v2 migration state has invalid migration_id")
+                fail("case-v3 migration state has invalid migration_id")
             if migration.get("phase") == "committed" and not cleanup:
-                return {"mode": "case-v2", "migration_id": migration_id, "phase": "committed", "steps": []}
+                return {"mode": "case-v3", "migration_id": migration_id, "phase": "committed", "steps": []}
             return resume_migration(root, migration_id, cutover=cutover, cleanup=cleanup)
-        fail("case-v2 migration state is malformed")
+        fail("case-v3 migration state is malformed")
+    if classification["mode"] == "case-v2-legacy":
+        upgraded = transaction_json(root, "project-upgrade")
+        return {"mode": "case-v3", "phase": "project-documents-upgraded", "steps": [{"operation": "project-upgrade", "result": upgraded}]}
     if classification["mode"] != "legacy-v1":
-        fail("migration requires an exact legacy-v1 or case-v2 Teamwork root")
+        fail("migration requires an exact legacy-v1, case-v2, or case-v3 Teamwork root")
     preflight = candidate_preflight(root)
     if not preflight.get("ok"):
         fail("migration preflight did not pass")
@@ -348,9 +449,35 @@ def migrate(root: Path, *, cutover: bool = False, cleanup: bool = False) -> dict
     }
 
 
+def upgrade_project(root: Path) -> dict[str, Any]:
+    """Update-owned exact-root migration to the current project document format."""
+    mode = classify(root)["mode"]
+    if mode == "case-v3":
+        upgraded = transaction_json(root, "project-upgrade")
+        retired = purge_retired_migration_state(root)
+        steps = [{"operation": "project-upgrade", "result": upgraded}]
+        if retired["purged_migration_ids"] or retired["removed_cold_archive"]:
+            steps.append({"operation": "purge-retired-migration-state", "result": retired})
+        if upgraded.get("migrated") is True or len(steps) > 1:
+            return {"mode": "case-v3", "phase": "project-documents-upgraded", "steps": steps}
+        return {"mode": "case-v3", "phase": "already-current", "steps": []}
+    if mode == "case-v2-legacy":
+        upgraded = transaction_json(root, "project-upgrade")
+        retired = purge_retired_migration_state(root)
+        steps = [{"operation": "project-upgrade", "result": upgraded}]
+        if retired["purged_migration_ids"] or retired["removed_cold_archive"]:
+            steps.append({"operation": "purge-retired-migration-state", "result": retired})
+        return {"mode": "case-v3", "phase": "project-documents-upgraded", "steps": steps}
+    if mode == "legacy-v1":
+        migrated = migrate(root, cutover=True, cleanup=True)
+        purge_retired_migration_state(root)
+        return migrated
+    fail("project upgrade requires an exact Teamwork project root")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["classify", "export", "verify", "probe", "request-inputs", "candidate-preflight", "migrate", "resume"])
+    parser.add_argument("command", choices=["classify", "export", "verify", "probe", "request-inputs", "candidate-preflight", "migrate", "resume", "upgrade-project"])
     parser.add_argument("--project-root", required=True)
     parser.add_argument("--baseline")
     parser.add_argument("--migration-id")
@@ -377,6 +504,8 @@ def main(argv: list[str] | None = None) -> int:
             payload = candidate_preflight(root)
         elif args.command == "migrate":
             payload = migrate(root, cutover=args.cutover, cleanup=args.cleanup)
+        elif args.command == "upgrade-project":
+            payload = upgrade_project(root)
         elif args.command == "resume":
             if args.migration_id is None:
                 fail("--migration-id is required for resume")

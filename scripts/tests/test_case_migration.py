@@ -16,7 +16,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ROOT / "scripts/discussion-transaction.py"
 HELPER = ROOT / "scripts/teamwork-case-migration.py"
-INIT_SH = ROOT / "scripts/init-project.sh"
 CONTRACT = runpy.run_path(str(CLI), run_name="teamwork_case_migration_contract")
 
 
@@ -283,7 +282,7 @@ class CaseMigrationTests(unittest.TestCase):
 
         archived = self.apply(self.next_request("materialize-archive", migration_id, baseline_digest))
         self.assertEqual(archived["phase"], "archive_durable")
-        archive_manifest = self.project / f".teamwork/cold-archive/v1/manifests/{migration_id}.json"
+        archive_manifest = self.project / f".teamwork/runtime/migrations/{migration_id}/backup/manifest.json"
         self.assertTrue(archive_manifest.is_file())
         manifest = json.loads(archive_manifest.read_text(encoding="utf-8"))
         self.assertGreater(len(manifest["objects"]), 0)
@@ -295,7 +294,7 @@ class CaseMigrationTests(unittest.TestCase):
         self.assertEqual(candidate["phase"], "candidate_validated")
         candidate_index_path = self.project / f".teamwork/runtime/migrations/{migration_id}/candidate/docs-teamwork/index.json"
         candidate_index = json.loads(candidate_index_path.read_text(encoding="utf-8"))
-        self.assertEqual(candidate_index["schema_version"], 2)
+        self.assertEqual(candidate_index["schema_version"], 3)
         self.assertTrue(candidate_index["active_cases"])
         self.assertNotEqual(candidate_index["migration"]["candidate_digest"], "0" * 64)
         self.assertFalse((self.project / f".teamwork/runtime/migrations/{migration_id}/candidate/docs-teamwork/current.md").exists())
@@ -327,16 +326,10 @@ class CaseMigrationTests(unittest.TestCase):
         source = next(row for row in manifest["migration_sources"] if row["source_path"] == "docs/teamwork/current.md")
         artifact_row = next(row for row in coverage["coverage_rows"] if row["source_path"] == "docs/teamwork/current.md")
         artifact_text = self.candidate_path(migration_id, artifact_row["artifact_path"]).read_text(encoding="utf-8")
-        envelope = {
-            "role": manifest["artifacts"][artifact_row["artifact_id"]]["role"],
-            "subtype": manifest["artifacts"][artifact_row["artifact_id"]]["subtype"],
-            "case_id": legacy_case["case_id"],
-            "claim_ids": [],
-            "consumer": "teamwork-migration",
-            "source_revision": source["source_digest"],
-            "immutable": True,
-        }
-        self.assertEqual(artifact_row["artifact_id"], CONTRACT["artifact_id_for_case"]("result", envelope, artifact_text))
+        self.assertEqual(source["artifact_id"], manifest["document"]["latest_artifact_id"])
+        self.assertEqual(artifact_row["artifact_id"], manifest["document"]["latest_artifact_id"])
+        self.assertEqual(artifact_row["artifact_path"], manifest["document"]["path"])
+        self.assertEqual(hashlib.sha256(artifact_text.encode("utf-8")).hexdigest(), manifest["document"]["byte_digest"])
         drill = self.apply(self.next_request("restore-drill", migration_id, baseline_digest))
         self.assertEqual(drill["phase"], "candidate_validated")
         report = self.project / f".teamwork/runtime/migrations/{migration_id}/restore-drill/report.json"
@@ -353,7 +346,7 @@ class CaseMigrationTests(unittest.TestCase):
         self.assertEqual(json.loads(cutover.stderr)["category"], "PREWRITE_SAFE")
         self.assertTrue((self.memory / "index.json").is_file())
 
-    def test_cutover_renames_old_tree_installs_candidate_and_cleanup_keeps_archive(self) -> None:
+    def test_cutover_installs_v3_and_transaction_cleanup_marks_backups_for_orchestrator_purge(self) -> None:
         approved_request = self.request("approve-baseline")
         self.apply(approved_request)
         migration_id = approved_request["migration_id"]
@@ -372,14 +365,15 @@ class CaseMigrationTests(unittest.TestCase):
         self.assertEqual(cutover["phase"], "committed")
         self.assertTrue((self.project / cutover["renamed_old_tree"]).is_dir())
         installed = json.loads((self.project / "docs/teamwork/index.json").read_text(encoding="utf-8"))
-        self.assertEqual(installed["schema_version"], 2)
+        self.assertEqual(installed["schema_version"], 3)
         self.assertEqual(installed["migration"]["phase"], "committed")
-        archive_manifest = self.project / f".teamwork/cold-archive/v1/manifests/{migration_id}.json"
+        archive_manifest = self.project / f".teamwork/runtime/migrations/{migration_id}/backup/manifest.json"
         self.assertTrue(archive_manifest.is_file())
 
         cleanup = self.apply(CONTRACT["migration_phase_request"]("cleanup", migration_id, baseline_digest))
         self.assertEqual(cleanup["phase"], "cleanup_complete")
         self.assertTrue(archive_manifest.is_file())
+        self.assertIsNone(json.loads((self.project / "docs/teamwork/index.json").read_text(encoding="utf-8"))["migration"])
 
     def test_cutover_recovers_from_prepared_journal_without_tamper(self) -> None:
         approved_request = self.request("approve-baseline")
@@ -411,7 +405,7 @@ class CaseMigrationTests(unittest.TestCase):
 
         recovered = self.apply(cutover_request)
         self.assertEqual(recovered["phase"], "committed")
-        self.assertEqual(json.loads((self.project / "docs/teamwork/index.json").read_text(encoding="utf-8"))["schema_version"], 2)
+        self.assertEqual(json.loads((self.project / "docs/teamwork/index.json").read_text(encoding="utf-8"))["schema_version"], 3)
         self.assertTrue((self.project / recovered["renamed_old_tree"]).is_dir())
 
     def test_cutover_recovery_rejects_tampered_journal_paths_without_rename(self) -> None:
@@ -459,7 +453,7 @@ class CaseMigrationTests(unittest.TestCase):
         self.assertFalse((self.project / f".teamwork/runtime/migrations/{migration_id}/renamed-old/docs-teamwork").exists())
         self.assertFalse((self.project / f".teamwork/runtime/migrations/{migration_id}/renamed-old/tampered-docs-teamwork").exists())
 
-    def test_helper_resume_can_cleanup_after_committed_case_v2_cutover(self) -> None:
+    def test_helper_resume_cleans_committed_v3_cutover_and_purges_temporary_backup(self) -> None:
         approved_request = self.request("approve-baseline")
         self.apply(approved_request)
         migration_id = approved_request["migration_id"]
@@ -475,13 +469,13 @@ class CaseMigrationTests(unittest.TestCase):
                 cutover_authority="I authorize Teamwork memory cutover",
             )
         )
-        self.assertEqual(json.loads((self.project / "docs/teamwork/index.json").read_text(encoding="utf-8"))["schema_version"], 2)
+        self.assertEqual(json.loads((self.project / "docs/teamwork/index.json").read_text(encoding="utf-8"))["schema_version"], 3)
         result = self.helper("resume", "--project-root", str(self.project), "--migration-id", migration_id, "--cleanup")
         self.assertEqual(result.returncode, 0, result.stderr)
         payload = json.loads(result.stdout)
         self.assertEqual(payload["phase"], "cleanup_complete")
-        journal = json.loads((self.project / f".teamwork/runtime/migrations/{migration_id}/journal.json").read_text(encoding="utf-8"))
-        self.assertEqual(journal["cleanup"], "complete")
+        self.assertFalse((self.project / f".teamwork/runtime/migrations/{migration_id}").exists())
+        self.assertIsNone(json.loads((self.project / "docs/teamwork/index.json").read_text(encoding="utf-8"))["migration"])
 
     def test_reused_migration_request_fails_closed(self) -> None:
         approved_request = self.request("approve-baseline")
@@ -577,7 +571,7 @@ class CaseMigrationTests(unittest.TestCase):
         self.assertIn("non-UTF-8", payload["message"])
         self.assertFalse((self.project / ".teamwork").exists())
 
-    def test_init_entrypoint_rejects_unmappable_source_before_runtime_state(self) -> None:
+    def test_update_entrypoint_rejects_unmappable_source_before_runtime_state(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT) as directory:
             project = Path(directory) / "project"
             memory = project / "docs/teamwork"
@@ -586,15 +580,9 @@ class CaseMigrationTests(unittest.TestCase):
             (memory / "current.md").write_text("# Current\n", encoding="utf-8")
             (memory / "README.md").write_text("# README\n", encoding="utf-8")
             (memory / "unknown.bin").write_bytes(b"\xff\xfeunknown")
-            result = subprocess.run(
-                [str(INIT_SH), "--project-root", str(project), "--no-codegraph"],
-                cwd=ROOT,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
+            result = self.helper("upgrade-project", "--project-root", str(project))
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("non-UTF-8", result.stderr)
+            self.assertIn("non-UTF-8", json.loads(result.stderr)["message"])
             self.assertFalse((project / ".teamwork").exists())
 
     def test_helper_migrate_rejects_malformed_partial_v2_before_already_success(self) -> None:
@@ -687,7 +675,7 @@ class CaseMigrationTests(unittest.TestCase):
         migration_id = approved_request["migration_id"]
         baseline_digest = approved_request["baseline_digest"]
         self.apply(self.next_request("materialize-archive", migration_id, baseline_digest))
-        archive_manifest = json.loads((self.project / f".teamwork/cold-archive/v1/manifests/{migration_id}.json").read_text(encoding="utf-8"))
+        archive_manifest = json.loads((self.project / f".teamwork/runtime/migrations/{migration_id}/backup/manifest.json").read_text(encoding="utf-8"))
         objects = {row["source_path"]: row for row in archive_manifest["objects"]}
         for source_path, expected_bytes, expected_mode in (
             ("docs/teamwork/.DS_Store", ds_store_bytes, 0o600),
@@ -725,9 +713,10 @@ class CaseMigrationTests(unittest.TestCase):
                 self.assertEqual(source["classification"], "archive-only-binary")
                 self.assertEqual(source["artifact_id"], row["artifact_id"])
                 self.assertEqual(manifest["artifacts"][row["artifact_id"]]["path"], row["artifact_path"])
-                self.assertEqual(manifest["artifacts"][row["artifact_id"]]["role"], "evidence")
+                self.assertEqual(manifest["artifacts"][row["artifact_id"]]["role"], "result")
+                self.assertTrue(manifest["artifacts"][row["artifact_id"]]["path"].endswith("/live.md"))
 
-    def test_init_project_entrypoint_migrates_exact_legacy_root_to_v2(self) -> None:
+    def test_update_project_entrypoint_migrates_exact_legacy_root_to_v3(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT) as directory:
             project = Path(directory) / "project"
             memory = project / "docs/teamwork"
@@ -735,29 +724,102 @@ class CaseMigrationTests(unittest.TestCase):
             (memory / "index.json").write_text(json.dumps(legacy_index(), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             (memory / "current.md").write_text("# Current\n", encoding="utf-8")
             (memory / "README.md").write_text("# README\n", encoding="utf-8")
-            result = subprocess.run(
-                [str(INIT_SH), "--project-root", str(project), "--no-codegraph"],
-                cwd=ROOT,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
+            result = self.helper("upgrade-project", "--project-root", str(project))
             self.assertEqual(result.returncode, 0, result.stderr)
             index = json.loads((project / "docs/teamwork/index.json").read_text(encoding="utf-8"))
-            self.assertEqual(index["schema_version"], 2)
-            self.assertEqual(index["migration"]["phase"], "cleanup_complete")
+            self.assertEqual(index["schema_version"], 3)
+            self.assertIsNone(index["migration"])
             self.assertFalse((project / "docs/teamwork/current.md").exists())
             self.assertFalse((project / "docs/teamwork/README.md").exists())
-            journal_paths = list((project / ".teamwork/runtime/migrations").glob("m-*/journal.json"))
-            self.assertEqual(len(journal_paths), 1)
-            journal = json.loads(journal_paths[0].read_text(encoding="utf-8"))
-            self.assertEqual(journal["cleanup"], "complete")
+            self.assertFalse((project / ".teamwork/runtime/migrations").exists())
+
+    def test_update_project_accepts_fresh_empty_v3_root_without_cases_directory(self) -> None:
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
+            project = Path(directory) / "project"
+            memory = project / "docs/teamwork"
+            memory.mkdir(parents=True)
+            index = json.loads((ROOT / "templates/teamwork-memory/index.json").read_text(encoding="utf-8"))
+            (memory / "index.json").write_text(
+                json.dumps(index, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+
+            before = tree_fingerprint(project)
+            result = self.helper("upgrade-project", "--project-root", str(project))
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout)["phase"], "already-current")
+            self.assertEqual(tree_fingerprint(project), before)
+            self.assertFalse((memory / "cases").exists())
+
+    def test_update_project_purges_completed_retired_migration_state(self) -> None:
+        migrated = self.helper("upgrade-project", "--project-root", str(self.project))
+        self.assertEqual(migrated.returncode, 0, migrated.stderr)
+        migration_id = "m-" + "a" * 64
+        runtime = self.project / ".teamwork/runtime/migrations" / migration_id
+        runtime.mkdir(parents=True)
+        (runtime / "journal.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "migration_id": migration_id,
+                    "phase": "cleanup_complete",
+                    "cleanup": "complete",
+                    "restore_drill": "passed",
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        cold_archive = self.project / ".teamwork/cold-archive/v1/objects"
+        cold_archive.mkdir(parents=True)
+        (cold_archive / "retired").write_text("retired\n", encoding="utf-8")
+
+        result = self.helper("upgrade-project", "--project-root", str(self.project))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["phase"], "project-documents-upgraded")
+        self.assertEqual(payload["steps"][-1]["operation"], "purge-retired-migration-state")
+        self.assertFalse((self.project / ".teamwork/runtime/migrations").exists())
+        self.assertFalse((self.project / ".teamwork/cold-archive").exists())
+
+    def test_update_project_refuses_nonterminal_retired_migration_state(self) -> None:
+        migrated = self.helper("upgrade-project", "--project-root", str(self.project))
+        self.assertEqual(migrated.returncode, 0, migrated.stderr)
+        migration_id = "m-" + "b" * 64
+        runtime = self.project / ".teamwork/runtime/migrations" / migration_id
+        runtime.mkdir(parents=True)
+        (runtime / "journal.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "migration_id": migration_id,
+                    "phase": "candidate_validated",
+                    "cleanup": "pending",
+                    "restore_drill": "passed",
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        before = tree_fingerprint(self.project)
+
+        result = self.helper("upgrade-project", "--project-root", str(self.project))
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("intermediate phase", result.stderr)
+        self.assertEqual(tree_fingerprint(self.project), before)
 
     def test_current_repository_read_only_preflight_accepts_recognized_auxiliary_binaries(self) -> None:
         request_inputs = self.helper("request-inputs", "--project-root", str(ROOT))
         self.assertEqual(request_inputs.returncode, 0, request_inputs.stderr)
         request_payload = json.loads(request_inputs.stdout)
-        if request_payload["classification"]["mode"] == "case-v2":
+        if request_payload["classification"]["mode"] == "case-v3":
             validation = subprocess.run(
                 [sys.executable, str(ROOT / "scripts/validate_teamwork_index.py"), str(ROOT / "docs/teamwork/index.json")],
                 cwd=ROOT,
@@ -899,8 +961,13 @@ class CaseMigrationTests(unittest.TestCase):
                     accepted_collaborate_artifact = manifest["artifacts"][source["artifact_id"]]
         self.assertEqual(preserved_sources, 184)
         self.assertIsNotNone(accepted_collaborate_artifact)
-        self.assertEqual(accepted_collaborate_artifact["role"], "decision")
-        self.assertTrue(accepted_collaborate_artifact["path"].endswith("/decision.md"))
+        self.assertEqual(accepted_collaborate_artifact["role"], "collaborate")
+        self.assertTrue(accepted_collaborate_artifact["path"].endswith("/live.md"))
+        for manifest_path in manifest_paths:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(manifest["schema_version"], 2)
+            self.assertEqual(manifest["document"]["path"], f"docs/teamwork/cases/{manifest['case_id']}/live.md")
+            self.assertTrue((manifest_path.parent / "live.md").is_file())
         with tempfile.TemporaryDirectory(dir=ROOT) as validation_directory:
             validation_root = Path(validation_directory)
             shutil.copytree(candidate_root / "docs-teamwork", validation_root / "docs/teamwork")
@@ -981,8 +1048,10 @@ class CaseMigrationTests(unittest.TestCase):
         self.assertEqual(candidate_index["claim_heads"][claim_id]["artifact_id"], claim["head_artifact_id"])
         goal_artifact = manifest["artifacts"][claim["head_artifact_id"]]
         self.assertEqual(goal_artifact["role"], "goal")
-        self.assertEqual(goal_artifact["path"], f"docs/teamwork/cases/{case_row['case_id']}/live/goal.md")
+        self.assertEqual(goal_artifact["path"], f"docs/teamwork/cases/{case_row['case_id']}/live.md")
         self.assertTrue(self.candidate_path(migration_id, goal_artifact["path"]).is_file())
+        self.assertEqual(manifest["document"]["path"], f"docs/teamwork/cases/{case_row['case_id']}/live.md")
+        self.assertTrue(self.candidate_path(migration_id, manifest["document"]["path"]).is_file())
 
     def test_candidate_tamper_fails_before_installing_legacy_cutover(self) -> None:
         for target in ("artifact", "manifest", "coverage"):
@@ -1053,18 +1122,17 @@ class CaseMigrationTests(unittest.TestCase):
         failed = self.helper("resume", "--project-root", str(self.project), "--migration-id", migration_id, "--cutover", "--cleanup", env={"TEAMWORK_MIGRATION_FAILPOINT": "after-new-tree-installed"})
         self.assertNotEqual(failed.returncode, 0)
         self.assertEqual(json.loads(failed.stderr)["message"].startswith("simulated migration failpoint"), True)
-        self.assertEqual(json.loads((self.project / "docs/teamwork/index.json").read_text(encoding="utf-8"))["schema_version"], 2)
+        self.assertEqual(json.loads((self.project / "docs/teamwork/index.json").read_text(encoding="utf-8"))["schema_version"], 3)
         recovered = self.helper("migrate", "--project-root", str(self.project), "--cutover", "--cleanup")
         self.assertEqual(recovered.returncode, 0, recovered.stderr)
         payload = json.loads(recovered.stdout)
-        self.assertEqual(payload["mode"], "case-v2")
+        self.assertEqual(payload["mode"], "case-v3")
         self.assertEqual(payload["phase"], "cleanup_complete")
         installed = json.loads((self.project / "docs/teamwork/index.json").read_text(encoding="utf-8"))
-        self.assertEqual(installed["migration"]["phase"], "cleanup_complete")
-        journal = json.loads((self.project / f".teamwork/runtime/migrations/{migration_id}/journal.json").read_text(encoding="utf-8"))
-        self.assertEqual(journal["cleanup"], "complete")
+        self.assertIsNone(installed["migration"])
+        self.assertFalse((self.project / f".teamwork/runtime/migrations/{migration_id}").exists())
 
-    def test_helper_finishes_committed_cleanup_pending_case_v2(self) -> None:
+    def test_helper_finishes_committed_cleanup_pending_case_v3(self) -> None:
         approved_request = self.request("approve-baseline")
         self.apply(approved_request)
         migration_id = approved_request["migration_id"]
@@ -1076,7 +1144,7 @@ class CaseMigrationTests(unittest.TestCase):
         self.assertEqual(cutover.returncode, 0, cutover.stderr)
         self.assertEqual(json.loads(cutover.stdout)["phase"], "committed")
         installed = json.loads((self.project / "docs/teamwork/index.json").read_text(encoding="utf-8"))
-        self.assertEqual(installed["schema_version"], 2)
+        self.assertEqual(installed["schema_version"], 3)
         self.assertEqual(installed["migration"]["phase"], "committed")
         journal = json.loads((self.project / f".teamwork/runtime/migrations/{migration_id}/journal.json").read_text(encoding="utf-8"))
         self.assertEqual(journal["cleanup"], "pending")
@@ -1084,12 +1152,11 @@ class CaseMigrationTests(unittest.TestCase):
         completed = self.helper("migrate", "--project-root", str(self.project), "--cutover", "--cleanup")
         self.assertEqual(completed.returncode, 0, completed.stderr)
         completed_payload = json.loads(completed.stdout)
-        self.assertEqual(completed_payload["mode"], "case-v2")
+        self.assertEqual(completed_payload["mode"], "case-v3")
         self.assertEqual(completed_payload["phase"], "cleanup_complete")
         installed = json.loads((self.project / "docs/teamwork/index.json").read_text(encoding="utf-8"))
-        self.assertEqual(installed["migration"]["phase"], "cleanup_complete")
-        journal = json.loads((self.project / f".teamwork/runtime/migrations/{migration_id}/journal.json").read_text(encoding="utf-8"))
-        self.assertEqual(journal["cleanup"], "complete")
+        self.assertIsNone(installed["migration"])
+        self.assertFalse((self.project / f".teamwork/runtime/migrations/{migration_id}").exists())
 
     def test_resume_cleanup_fails_if_terminal_readback_is_hybrid_without_further_mutation(self) -> None:
         approved_request = self.request("approve-baseline")
@@ -1116,7 +1183,7 @@ class CaseMigrationTests(unittest.TestCase):
         failed = self.helper("resume", "--project-root", str(self.project), "--migration-id", migration_id, "--cleanup")
 
         self.assertNotEqual(failed.returncode, 0)
-        self.assertIn("case-v2", json.loads(failed.stderr)["message"])
+        self.assertIn("journal.json", json.loads(failed.stderr)["message"])
         self.assertEqual(tree_fingerprint(self.project), before)
         self.assertEqual(list(outside.iterdir()), [])
 
@@ -1147,12 +1214,11 @@ class CaseMigrationTests(unittest.TestCase):
         recovered = self.helper("migrate", "--project-root", str(self.project), "--cutover", "--cleanup")
         self.assertEqual(recovered.returncode, 0, recovered.stderr)
         recovered_payload = json.loads(recovered.stdout)
-        self.assertEqual(recovered_payload["mode"], "case-v2")
+        self.assertEqual(recovered_payload["mode"], "case-v3")
         self.assertEqual(recovered_payload["phase"], "cleanup_complete")
         installed = json.loads((self.project / "docs/teamwork/index.json").read_text(encoding="utf-8"))
-        self.assertEqual(installed["migration"]["phase"], "cleanup_complete")
-        journal = json.loads((self.project / f".teamwork/runtime/migrations/{migration_id}/journal.json").read_text(encoding="utf-8"))
-        self.assertEqual(journal["cleanup"], "complete")
+        self.assertIsNone(installed["migration"])
+        self.assertFalse((self.project / f".teamwork/runtime/migrations/{migration_id}").exists())
 
     def test_recovery_after_new_tree_installed_tamper_fails_indeterminate_without_commit(self) -> None:
         approved_request = self.request("approve-baseline")
@@ -1217,7 +1283,7 @@ class CaseMigrationTests(unittest.TestCase):
         migration_id = approved_request["migration_id"]
         baseline_digest = approved_request["baseline_digest"]
         self.apply(self.next_request("materialize-archive", migration_id, baseline_digest))
-        manifest = json.loads((self.project / f".teamwork/cold-archive/v1/manifests/{migration_id}.json").read_text(encoding="utf-8"))
+        manifest = json.loads((self.project / f".teamwork/runtime/migrations/{migration_id}/backup/manifest.json").read_text(encoding="utf-8"))
         os.chmod(self.project / manifest["objects"][0]["object_path"], 0o600)
         self.apply(self.next_request("prepare-candidate", migration_id, baseline_digest))
         result = self.cli(

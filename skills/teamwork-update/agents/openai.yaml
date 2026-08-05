@@ -1,0 +1,4 @@
+interface:
+  display_name: "Teamwork Update"
+  short_description: "Check and refresh the global Teamwork installation"
+  default_prompt: "Use $teamwork-update to refresh this global Teamwork installation and handle exact-root project document migration."

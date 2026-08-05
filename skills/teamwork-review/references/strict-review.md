@@ -1,18 +1,23 @@
 # Strict Review
 
-Load this reference only for a named release, security, permission, data,
-destructive-risk, public-contract, or similarly accepted strict gate. Do not load
-another reference or Skill.
+Load this reference only for an explicitly named release, security, permission,
+data, destructive-risk, public-contract, or comparable high-consequence gate.
 
-Freeze the exact candidate, threat or failure boundary, acceptance criteria,
-protected invariants, direct evidence, and explicitly accepted fallbacks. Review
-correctness first: authorization, data flow, failure behavior, compatibility,
-regression, and the real-path proof required by the gate. Then apply the normal
-changed-scope cohesion and residue lens without widening into unrelated debt.
+Freeze the candidate identity, protected boundary, acceptance criteria, direct
+evidence, threat or failure model, and explicitly accepted fallbacks. Review in
+this order:
 
-For each stable `R-*` finding, state the violated criterion, direct evidence,
-user or system impact, and smallest correction route. Missing required access or
-evidence yields `BLOCKED`; a plausible but unobserved concern is not proof. A
-second independent reviewer may cover a separable high-risk lens only when the
-gate requires it; the root owner deduplicates findings. Reviewers remain
-read-only and never accept the overall task on the implementer's behalf.
+1. authorization and permission boundaries;
+2. data flow, destructive behavior, and failure handling;
+3. public contracts, compatibility, migration, and rollback;
+4. real-path proof and regression evidence; and
+5. changed-scope cohesion and temporary residue.
+
+For each finding, state the failed criterion, direct evidence, impact, and
+smallest correction route. Missing required access or evidence yields
+`BLOCKED`; a plausible but unobserved concern is not proof. Add independent
+reviewers only for separable risk lenses where independence materially improves
+the gate, and deduplicate their findings under one review owner.
+
+Reviewer stays read-only. Return the supported verdict, unresolved findings,
+residual risk, evidence gaps, and the exact proof needed to close the gate.

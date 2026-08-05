@@ -1,54 +1,39 @@
 # Runtime Diagnosis
 
-Load this reference only for an unknown runtime, state, data-flow, event-flow,
-async, or UI failure when the fixed dispatch authority permits instrumentation
-and the active experiment will use a temporary probe. In that path, a temporary
-structured log is the default discriminating experiment unless existing
-evidence already decides the named hypothesis gap. Do not load another reference
-or Skill.
+Load this reference only when an unknown runtime, state, data-flow, event-flow,
+async, or UI failure needs a temporary probe and the current operating mode
+permits instrumentation.
 
-## Runtime Log-First
+## Choose The Smallest Probe
 
-Choose the nearest owned boundary and add one temporary structured log for the
-active `E-*` experiment. Tag it with that `E-*` ID, record only fields needed to
-distinguish the competing `H-*` hypotheses, and capture the raw observation.
-Skip instrumentation only when existing evidence already decides that gap; state
-the skip rationale and the hypotheses it distinguishes. Do not use broad tracing,
-production exposure, sensitive values, or probes that change measured behavior.
+Instrument the nearest owned boundary that distinguishes the active hypotheses.
+Prefer an existing trace, debugger, metric, event inspection, or narrowly scoped
+probe. Use a temporary structured log when its fields clearly separate the
+leaders; it is optional rather than a universal first step.
 
-## Frozen Probe Contract
-
-Before adding a probe, freeze the failure signature and one active experiment:
+Freeze the experiment before changing anything:
 
 ```text
 Experiment E-*
-- Competing hypotheses: H-* vs H-*
+- Competing hypotheses:
 - Probe location:
-- If H-* is true, observe:
-- If H-* is false, observe:
-- Result that would remain inconclusive:
+- Observation predicted by each hypothesis:
+- Inconclusive result:
+- Sensitive fields to exclude:
 - Cleanup obligation:
-- Authority:
+- Operating mode:
 ```
 
-Choose the smallest reversible observation at the nearest owned boundary.
-Change one variable at a time. Do not add broad tracing, production exposure,
-sensitive-value logging, or a probe that changes the behavior being measured.
-Do not start a second experiment while the first lacks a result.
+Change one variable at a time. Avoid broad tracing, production exposure,
+sensitive-value logging, or probes that alter the behavior being measured. Do
+not start another experiment before preserving the current result.
 
-If the next observation requires a human-only UI, credential, device, or remote
-state, pause with the exact action and expected observation. Resume the same
-diagnosis from the returned value; do not restart or infer it.
+After the probe, record the raw observation and update the named hypotheses to
+`supported`, `weakened`, or `rejected`. An inconclusive result does not justify
+a fix, broader tracing, or a target change. Choose a different discriminator or
+return `blocked` with the exact missing evidence.
 
-After each probe, record the raw observation and update each named hypothesis to
-`supported`, `weakened`, or `rejected`. Return the experiment card, raw
-observation, hypothesis update, and cleanup proof as externally auditable Debug
-Findings. An inconclusive result does not justify a fix, a Review verdict,
-broader tracing, or a target change. Select a different discriminator or stop
-`blocked`.
-
-Remove every temporary probe, flag, log, fixture, and generated trace before
-completion, including on a blocked path when safe. Under `fix` authority only,
-apply the narrow causal fix and rerun the original failure path. Under `observe`
-or `instrument`, stop at the supported diagnosis and do not mutate product
-behavior.
+Remove every temporary probe, flag, fixture, log, and generated trace before
+completion, including on a blocked path when safe. Under `fix` only, apply the
+narrow causal correction and rerun the original failure path. Under `observe`
+or `instrument`, do not change product behavior.

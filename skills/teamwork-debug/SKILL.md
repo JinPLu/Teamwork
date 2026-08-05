@@ -1,188 +1,80 @@
 ---
 name: teamwork-debug
-description: Use when a request or active workflow encounters a failure, crash, flake, regression, or unexpected result whose cause is still unknown and prevents a safe fix; do not use when the cause and narrow fix are already clear, for general fact finding or design, or when the user asks only for review.
+description: Use when a failure, crash, flake, regression, or unexpected result has an unknown cause and must be diagnosed before a safe fix; do not use when the cause and narrow fix are already clear, to review a finished candidate, or for general research.
 ---
 
 # Teamwork Debug
 
-Remove the uncertainty blocking the next safe fix, then prove the result on the
-same real path. Debugging does not expand the requested scope.
+Use Debugger as the causal owner. Hold one failure signature and follow evidence
+until the cause is confirmed, the authorized fix is verified, or the next
+discriminator is unavailable. Do not widen the requested scope.
 
-Debug is a hypothesis-driven causal loop, not open-ended investigation,
-Research, or Review. One invocation owns one frozen failure signature. Root and
-every evidence role return to that same causal thread until it reaches a
-terminal state. The role mapping is exact: Debug -> Debugger. If Debugger is
-unavailable or required isolation cannot be verified, return
-`capability-blocked`; Root must not perform a named-method fallback.
+## Establish The Boundary
 
-## Fixed Authority
+Capture the actual failing command or interaction, environment and relevant
+inputs, expected result, observed result, first relevant error, and the same-path
+success signal. Do not substitute an easier target. Treat a materially different
+failure as `new-failure-split`.
 
-Root dispatches one immutable authority for the diagnosis:
+Derive the operating mode from the user request and host/tool authority:
 
-- `observe`: inspect and reproduce only;
-- `instrument`: add and remove temporary diagnostic probes, but do not change
-  product behavior;
-- `fix`: diagnose, apply only the evidenced narrow fix, clean probes, and rerun.
+- `observe`: inspect and reproduce without changing files or behavior;
+- `instrument`: add reversible diagnostic probes, then remove them;
+- `fix`: diagnose, apply the evidenced narrow fix, clean probes, and rerun.
 
-Never infer or upgrade authority from a diagnosis, user answer, or promising fix.
-If more authority is required, pause and return the exact blocked action.
+Never elevate the mode implicitly. If the next discriminating action is outside
+the available authority, return its exact requirement as the blocker.
 
-## Freeze The Failure
+## Hypothesis Loop
 
-Before diagnosis, freeze:
+1. Rank three to five plausible `H-*` hypotheses before broad inspection or
+   repair. Do not pad the set; if direct evidence already isolates one cause,
+   state that evidence and continue without invented alternatives.
+2. For each hypothesis, record why it fits, its predicted observation, what
+   would falsify it, the smallest deciding evidence, and the distinct action it
+   implies.
+3. Select one discriminating `E-*` experiment. Before running it, state how each
+   possible result changes the leading hypotheses. Map every inspection, probe,
+   lookup, or human observation to that evidence gap.
+4. Preserve the raw observation, then update each affected hypothesis to
+   `supported`, `weakened`, or `rejected`. The live set must shrink, the causal
+   boundary must move, or the next experiment must change. Otherwise stop and
+   name the missing discriminator instead of expanding the search.
+5. Confirm a cause only when evidence distinguishes it from the remaining
+   leaders and locates the first bad owned boundary. Correlation, an adjacent
+   passing test, or disappearance of a later error is not causal proof.
+6. Under `observe` or `instrument`, stop at the supported cause. Under `fix`,
+   make only the narrow causal correction, remove probes, and rerun the original
+   path. Check adjacent behavior only where a named shared or high-risk boundary
+   requires it.
 
-- the actual failing command, interaction, or runtime surface;
-- environment and relevant immutable inputs;
-- expected result, observed result, and first relevant error;
-- the observable same-path success signal;
-- protected boundaries and `observe`, `instrument`, or `fix` authority.
+Use Explorer or Researcher only to answer a named `H-*` evidence gap and return
+the result to Debugger. Do not open parallel causal owners. Load
+`references/runtime-diagnosis.md` when a runtime, state, data-flow, event-flow,
+async, or UI hypothesis needs temporary instrumentation. Structured logging is
+one optional probe, not the default for every runtime failure.
 
-This is the failure signature. Do not silently replace it with a nearby test,
-different dataset, local substitute, later error, or easier target. A materially
-different failure signature is `new-failure-split`: return it as a separate
-Debug case rather than pivoting the current diagnosis.
+## Terminal Result
 
-## Hypothesis Gate
-
-When the cause is unknown, rank three to five plausible hypotheses before broad
-inspection, instrumentation, external lookup, or repair. Do not pad the ledger
-with implausible causes; if direct evidence already isolates one cause, state it
-and proceed within authority instead of manufacturing alternatives.
-
-Each hypothesis has a stable `H-*` ID and records:
-
-- why it currently fits the failure;
-- the observation predicted if it is true;
-- the observation that would falsify it;
-- the smallest deciding evidence;
-- the different fix or next action it would imply.
-
-Select one active discriminating experiment at a time. Before running it, state
-which hypotheses each possible result supports or rejects. Every command, probe,
-Explorer question, Research question, or human observation must name the active
-`H-*` evidence gap. No hypothesis mapping means no probe.
-
-### Runtime Log-First
-
-For an unknown runtime, state, data-flow, event-flow, async, or UI failure under
-`instrument` or `fix` authority, make the default active experiment a temporary
-structured log at the nearest owned boundary. Give the experiment a stable
-`E-*` ID, log only the fields needed to distinguish the leading hypotheses, and
-preserve its raw result. Skip code instrumentation only when existing evidence already decides
-a named `H-*` gap; state that evidence and the hypotheses it distinguishes.
-Under `observe`, never add logs: use existing evidence or return `blocked` with
-the exact missing discriminator.
-
-After the observation, update the ledger exactly once: `supported`, `weakened`,
-or `rejected`, with direct evidence. The live set must shrink, the causal
-boundary must move, or the next experiment must change. Two consecutive
-observations that do none of these are a no-progress stop: return `blocked`
-with the missing discriminator instead of expanding the search.
-
-## Causal Loop
-
-1. Capture the actual failing command or interaction, environment, expected and
-   observed result, and first relevant error. Reproduce when safe; do not swap in
-   a synthetic target.
-2. Apply the Hypothesis Gate. Freeze the ranked `H-*` ledger and select the
-   active evidence gap before further inspection, instrumentation, or repair.
-3. Trace from the failing boundary to the current owner only through that named
-   `H-*` gap. Map every source/configuration/test/log/runtime inspection and
-   command to it, then run the smallest observation that distinguishes the
-   leaders. Treat summaries as leads, not proof, and change one variable at a
-   time. For an eligible runtime failure under `instrument` or `fix` authority,
-   use the Runtime Log-First experiment unless decisive existing evidence
-   already distinguishes the named hypotheses; record any skip rationale. Load
-   `references/runtime-diagnosis.md` only for that instrumented runtime path.
-4. Update supported and rejected hypotheses. Confirm a cause only when the
-   observation discriminates it from the remaining leaders and locates the
-   first bad owned boundary. Correlation, a passing adjacent test, or absence of
-   another error is not root-cause proof.
-5. Under `observe` or `instrument`, stop at the evidenced cause and make no
-   product change. Under `fix`, apply only the authorized narrow causal fix to
-   the current owner. Avoid masking wrappers,
-   silent fallbacks, broad cleanup, dependency upgrades, or unrelated refactors.
-6. Remove temporary instrumentation and rerun the same failing path. Check an
-   adjacent path only for named shared, public, security, data, or destructive-risk boundaries.
-
-Use current external documentation only when an upstream version or platform
-claim can distinguish a live hypothesis; cite that claim and keep the lookup
-narrow. Never expose private project evidence in public search.
-
-Root may dispatch one Debugger as the sole causal owner. Default to that one
-child; daily work remains within cap4. Explorer or Researcher
-may answer one named `H-*` evidence gap and must return evidence to that
-Debugger; they do not open parallel investigations or own conclusions. Do not
-invoke Reviewer, use `ACCEPT`/`REVISE`, or build acceptance gates while the
-cause is unknown. Review may occur only after Debug has sealed a cause or fix
-candidate and a user-requested or named material risk gate independently
-requires it.
-
-## Terminal States And Output
-
-Use exactly one terminal state:
+Use one terminal state:
 
 - `cause-confirmed`: direct evidence identifies the cause; no product change;
-- `fix-verified`: the authorized narrow fix passes the original same path;
-- `blocked`: the next discriminating evidence or authority is unavailable;
-- `new-failure-split`: a different failure was found and must be diagnosed
-  separately.
+- `fix-verified`: the narrow fix passes the original path;
+- `blocked`: the next discriminator, input, access, or authority is unavailable;
+- `new-failure-split`: a materially different failure needs its own diagnosis.
 
-Return a compact Debug Findings packet:
+Report the failure signature, operating mode, ranked hypotheses, active
+experiment, raw observation, hypothesis update, supported cause, rejected
+hypotheses, fix if any, same-path rerun, probe cleanup, and exact remaining
+blocker or next action.
 
-```text
-Debug Findings
-- Status / Authority:
-- Failure Signature:
-- Expected / Observed / First Error:
-- Ranked Hypotheses:
-- Active Discriminating Experiment:
-- Experiment Card / Instrumentation Decision:
-- Raw Observation:
-- Hypothesis Update:
-- Evidence:
-- Supported Cause:
-- Rejected Hypotheses:
-- Fix:
-- Same-Path Verification:
-- Probe Cleanup:
-- New Failure Splits:
-- Remaining Blocker / Next Action:
-```
+## Live Document
 
-In an initialized writable project, a supported cause, verified fix, blocked
-diagnosis, or meaningful cross-session handoff defaults to a case-v2 debug
-artifact. Persist a discriminating experiment checkpoint when it materially
-shrinks the live hypothesis set and a downstream step or handoff will consume
-it; this is not a turn log. `no files`, `off-record`, `read-only`, `no writes`,
-or equivalent disables persistence. Freeze the bounded checkpoint, terminal, or
-blocked packet before persistence. Debugger returns a bounded packet:
-purpose/audience, facts/sources, frozen
-decision/status, style/structure, artifact kind/consumer, preserve/forbid,
-failure, cause evidence, attempted fixes, blocker, and verification. Writer
-routes from observed schema: `case-inspect` first; case-v2 uses exact
-`case_id`/alias or creates from a frozen seed/task_key, then
-`case-schema <debug-add> -> case-apply -> case-inspect/readback`. The
-transaction derives the destination and registers the case manifest/claim heads.
-Writer is disposable; Root may
-continue only answer-invariant delivery work and must join before claiming saved
-or durable. Interruption before apply means unsaved unless surviving evidence
-permits a new frozen packet. Missing project memory, Writer, brief, authority,
-consumer, route, or transaction blocks only persistence: deliver the diagnosis
-and report it unsaved/blocked. No Debugger, Root, or Worker fallback writes it.
-Legacy-v1, mixed v1/v2, unknown, stale, ambiguous case, missing seed/task_key,
-or partially migrated state fails closed before any write.
-
-Ask only for the exact unavailable runtime value, access grant, or human-only
-observation needed for the next discriminating check. Debugger or another leaf
-returns that exact gap, owner, scope, and resume condition; Root presents it once
-and the returned value resumes the same diagnosis. A leaf never asks directly.
-If the safe fix would change accepted behavior, contracts, data, permissions, or
-scope, return a reclassification signal to Collaborate rather than assuming the
-decision. A question or diagnosis grants no new effect authority.
-
-Finish with the cause and direct evidence, the exact fix if authorized, the real
-rerun result, and any specific remaining blocker. The experiment card, raw
-observation, hypothesis update, and probe cleanup are externally auditable work
-state, never implicit reasoning. Stop as soon as the requested path works or no
-safe evidence-backed next action remains.
+Have Writer maintain the task's single live document with a debug shape; reuse
+it rather than creating a parallel artifact. Create it when the first reusable
+failure signature or discriminating result appears, update it only when a
+hypothesis, observation, cause, fix, verification, blocker, or next experiment
+materially changes, and finalize it at a terminal state. Include the
+failure signature, hypotheses, experiment cards, raw observations, evidence,
+cause, fix, verification, cleanup, and status. Writer must not reinterpret the
+evidence or promote a hypothesis to a confirmed cause.

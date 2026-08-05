@@ -11,7 +11,6 @@ dist/
 # them to GitHub unless a specific artifact is intentionally force-added.
 docs/teamwork/**
 .teamwork/runtime/**
-.teamwork/cold-archive/**
 docs/superpowers/
 
 # Local Teamwork install profile
@@ -28,7 +27,6 @@ docs/teamwork 2/
 .codegraph/
 docs/teamwork/**
 .teamwork/runtime/**
-.teamwork/cold-archive/**
 .teamwork-init-transaction.json
 .*.teamwork-init-*
 docs/teamwork/.teamwork-init-transaction.json

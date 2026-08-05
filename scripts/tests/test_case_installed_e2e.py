@@ -367,17 +367,17 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
                 self.assertEqual(os.readlink(alias_to_check), alias_target)
                 self.assertEqual(list(outside.iterdir()), [])
 
-    def test_fresh_init_uses_v2_index_without_legacy_current_or_readme(self) -> None:
+    def test_fresh_init_uses_v3_index_without_legacy_current_or_readme(self) -> None:
         project = self.tmp / "fresh-project"
         self.write_fresh_v2_project(project)
 
         index = json.loads((project / "docs/teamwork/index.json").read_text(encoding="utf-8"))
         self.assertEqual(set(index), {"schema_version", "project", "active_cases", "claim_heads", "aliases", "recent_cases", "migration"})
-        self.assertEqual(index["schema_version"], 2)
+        self.assertEqual(index["schema_version"], 3)
         self.assertFalse((project / "docs/teamwork/current.md").exists())
         self.assertFalse((project / "docs/teamwork/README.md").exists())
 
-    def test_fresh_v2_writer_uses_case_route_for_workflow_artifacts(self) -> None:
+    def test_fresh_v3_writer_uses_one_live_document_for_workflow_state(self) -> None:
         project = self.tmp / "fresh-v2-writer-route"
         self.write_fresh_v2_project(project, "Fresh V2 Writer Route")
 
@@ -392,7 +392,7 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
         self.assertFalse((project / "docs/teamwork/plans").exists())
 
         initial = self.case_inspect(project)
-        self.assertEqual(initial["schema_mode"], "case-v2")
+        self.assertEqual(initial["schema_mode"], "case-v3")
         self.assertEqual(initial["active_cases"], [])
         create_schema = self.json_pkg(self.transaction_cli, "case-schema", "create")
         self.assertEqual(create_schema["expected_revision"], "<revision from case-inspect>")
@@ -473,7 +473,7 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
                 "plan-review-add",
                 {
                     "body": "## Plan Review\n\n- Plan review verdict.",
-                    "sealed_candidate_digest": "71" * 32,
+                    "candidate_identity": "plan-candidate-71",
                 },
             ),
             (
@@ -502,14 +502,14 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
                 "review-add",
                 {
                     "body": "## Review\n\n- Integrated candidate verdict.",
-                    "sealed_candidate_digest": "73" * 32,
+                    "candidate_identity": "candidate-73",
                 },
             ),
             (
                 "code-review-add",
                 {
                     "body": "## Code Review\n\n- Delta candidate verdict.",
-                    "sealed_candidate_digest": "73" * 32,
+                    "candidate_identity": "candidate-73-repaired",
                     "delta": True,
                 },
             ),
@@ -530,13 +530,13 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
             else:
                 request = self.case_writer_request(project, operation, case, **fields)
             case = self.case_apply(project, request)
-            self.assertEqual(case["schema_mode"], "case-v2")
+            self.assertEqual(case["schema_mode"], "case-v3")
             self.assertEqual(case["case_id"], case_id)
             self.assertIn(f"docs/teamwork/cases/{case_id}/manifest.json", case["changed_paths"])
             expected_paths.update(case["changed_paths"])
 
         inspected = self.case_inspect(project)
-        self.assertEqual(inspected["schema_mode"], "case-v2")
+        self.assertEqual(inspected["schema_mode"], "case-v3")
         self.assertEqual(inspected["active_cases"], [])
         self.assertEqual(inspected["recent_cases"][0]["case_id"], case_id)
         manifest = json.loads((project / f"docs/teamwork/cases/{case_id}/manifest.json").read_text(encoding="utf-8"))
@@ -545,30 +545,28 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
             with self.subTest(artifact=artifact_id):
                 self.assertTrue(artifact_path.is_file(), row["path"])
                 self.assertEqual(row["byte_digest"], sha256_file(artifact_path))
-        roles = {row["role"] for row in manifest["artifacts"].values()}
-        self.assertTrue({"collaborate", "decision", "evidence", "plan", "goal", "review", "result"} <= roles)
-        self.assertTrue({"evidence", "research", "debug", "init", "update"} <= {
-            row["subtype"] for row in manifest["artifacts"].values()
-        })
+        self.assertEqual(len(manifest["artifacts"]), 1)
+        self.assertEqual({row["role"] for row in manifest["artifacts"].values()}, {"result"})
         self.assertEqual({row["consumer"] for row in manifest["artifacts"].values()}, {"teamwork"})
-        live_collaborate = [
+        live_documents = [
             row for row in manifest["artifacts"].values()
-            if row["path"] == f"docs/teamwork/cases/{case_id}/live/collaborate.md"
+            if row["path"] == f"docs/teamwork/cases/{case_id}/live.md"
         ]
-        self.assertEqual(len(live_collaborate), 1)
-        self.assertTrue([
-            row for row in manifest["artifacts"].values()
-            if row["subtype"] == "collaborate"
-            and row["path"].startswith(f"docs/teamwork/cases/{case_id}/history/live/")
-        ])
+        self.assertEqual(len(live_documents), 1)
+        self.assertEqual(manifest["history"], [])
+        self.assertFalse((project / f"docs/teamwork/cases/{case_id}/history").exists())
         self.assertTrue(manifest["claims"])
-        self.assertTrue((project / f"docs/teamwork/cases/{case_id}/plan.md").is_file())
-        self.assertTrue((project / f"docs/teamwork/cases/{case_id}/decision.md").is_file())
-        self.assertTrue((project / f"docs/teamwork/cases/{case_id}/live/collaborate.md").is_file())
-        self.assertTrue((project / f"docs/teamwork/cases/{case_id}/live/goal.md").is_file())
-        self.assertTrue((project / f"docs/teamwork/cases/{case_id}/reviews/{'73' * 32}.md").is_file())
-        self.assertTrue((project / f"docs/teamwork/cases/{case_id}/reviews/{'73' * 32}-delta.md").is_file())
-        self.assertTrue(list((project / f"docs/teamwork/cases/{case_id}/results").glob("a-*.md")))
+        live_path = project / f"docs/teamwork/cases/{case_id}/live.md"
+        self.assertTrue(live_path.is_file())
+        live_text = live_path.read_text(encoding="utf-8")
+        for section in ("Purpose State", "Decisions", "Plan", "Evidence", "Review", "Outcome"):
+            self.assertIn(f"## {section}", live_text)
+        self.assertEqual(manifest["document"]["path"], f"docs/teamwork/cases/{case_id}/live.md")
+        self.assertEqual(manifest["document"]["status"], "finalized")
+        self.assertFalse((project / f"docs/teamwork/cases/{case_id}/plan.md").exists())
+        self.assertFalse((project / f"docs/teamwork/cases/{case_id}/decision.md").exists())
+        self.assertFalse((project / f"docs/teamwork/cases/{case_id}/reviews").exists())
+        self.assertFalse((project / f"docs/teamwork/cases/{case_id}/results").exists())
         self.assertFalse((project / "docs/teamwork/plans").exists())
         self.assertFalse((project / "docs/teamwork/reports").exists())
         self.assertTrue(expected_paths)
@@ -624,7 +622,7 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
 
         archived = self.migration_apply(project, self.migration_request(project, "materialize-archive"))
         self.assertEqual(archived["phase"], "archive_durable")
-        archive_manifest_path = project / f".teamwork/cold-archive/v1/manifests/{migration_id}.json"
+        archive_manifest_path = project / f".teamwork/runtime/migrations/{migration_id}/backup/manifest.json"
         archive_manifest = json.loads(archive_manifest_path.read_text(encoding="utf-8"))
         object_by_source = {row["source_path"]: row for row in archive_manifest["objects"]}
         self.assertEqual(set(object_by_source), set(baseline_bytes))
@@ -663,7 +661,7 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
 
         recovered = self.migration_apply(project, cutover_request)
         self.assertEqual(recovered["phase"], "committed")
-        self.assertEqual(json.loads((project / "docs/teamwork/index.json").read_text(encoding="utf-8"))["schema_version"], 2)
+        self.assertEqual(json.loads((project / "docs/teamwork/index.json").read_text(encoding="utf-8"))["schema_version"], 3)
         self.assertFalse((project / "docs/teamwork/current.md").exists())
         self.assertFalse((project / "docs/teamwork/README.md").exists())
         self.assertEqual(claude_before, tree_fingerprint(project, ".claude"))
@@ -684,7 +682,7 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
         self.assertEqual(journal["cleanup"], "complete")
         self.assertEqual(claude_before, tree_fingerprint(project, ".claude"))
 
-    def test_installed_helper_migrate_reports_case_v2_cleanup_complete(self) -> None:
+    def test_installed_helper_migrate_reports_case_v3_and_purges_migration_backups(self) -> None:
         project = self.make_legacy_project("helper-terminal-mode")
 
         result = self.run_pkg(
@@ -697,11 +695,13 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
         )
         payload = json.loads(result.stdout)
 
-        self.assertEqual(payload["mode"], "case-v2")
+        self.assertEqual(payload["mode"], "case-v3")
         self.assertEqual(payload["phase"], "cleanup_complete")
         installed = json.loads((project / "docs/teamwork/index.json").read_text(encoding="utf-8"))
-        self.assertEqual(installed["schema_version"], 2)
-        self.assertEqual(installed["migration"]["phase"], "cleanup_complete")
+        self.assertEqual(installed["schema_version"], 3)
+        self.assertIsNone(installed["migration"])
+        self.assertFalse((project / ".teamwork/runtime/migrations").exists())
+        self.assertFalse((project / ".teamwork/cold-archive").exists())
 
     def test_installed_helper_resume_cleanup_rejects_hybrid_terminal_readback(self) -> None:
         project = self.make_legacy_project("helper-hybrid-terminal")
@@ -738,7 +738,7 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
         )
 
         self.assertNotEqual(failed.returncode, 0)
-        self.assertIn("case-v2", failed.stderr)
+        self.assertIn("journal.json", failed.stderr)
         self.assertEqual(tree_fingerprint(project, "."), before)
         self.assertEqual(list(outside.iterdir()), [])
 
@@ -768,7 +768,7 @@ class InstalledCaseBundleE2ETests(unittest.TestCase):
         self.migration_apply(project, self.migration_request(project, "materialize-archive"))
         self.migration_apply(project, self.migration_request(project, "prepare-candidate"))
 
-        object_path = next((project / ".teamwork/cold-archive/v1/objects/sha256").rglob("*"))
+        object_path = next((project / f".teamwork/runtime/migrations/{migration_id}/backup/objects/sha256").rglob("*"))
         while object_path.is_dir():
             object_path = next(object_path.rglob("*"))
         os.chmod(object_path, 0o644)

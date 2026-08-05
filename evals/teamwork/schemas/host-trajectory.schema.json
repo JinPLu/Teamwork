@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://teamwork.example/schemas/host-trajectory.schema.json",
+  "title": "Teamwork installed host trajectory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "host",
+    "host_version",
+    "invocation_id",
+    "arm",
+    "started_at",
+    "finished_at",
+    "case_id",
+    "profile",
+    "parent_model",
+    "parent_effort",
+    "selected_skill",
+    "role_identity",
+    "actual_model",
+    "actual_effort",
+    "dispatches",
+    "child_start_count",
+    "tool_observations",
+    "authority_observation",
+    "sanitized_input_sha256",
+    "artifact",
+    "result",
+    "exit_status",
+    "status",
+    "privacy_scan",
+    "failure_classification"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "record_type": {"const": "teamwork_host_trajectory"},
+    "host": {"enum": ["codex", "cursor", "claude"]},
+    "host_version": {"type": "string", "minLength": 1},
+    "invocation_id": {"type": "string", "minLength": 1},
+    "arm": {"type": "string", "minLength": 1},
+    "started_at": {"type": "string", "minLength": 1},
+    "finished_at": {"type": "string", "minLength": 1},
+    "case_id": {"type": "string", "minLength": 1},
+    "profile": {"enum": ["performance-first", "cost-first"]},
+    "parent_model": {"type": "string", "minLength": 1},
+    "parent_effort": {"type": "string", "minLength": 1},
+    "selected_skill": {"type": "string", "minLength": 1},
+    "role_identity": {"type": "string", "minLength": 1},
+    "actual_model": {"type": "string", "minLength": 1},
+    "actual_effort": {"type": "string", "minLength": 1},
+    "dispatches": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/dispatch"}
+    },
+    "child_start_count": {"type": "integer", "minimum": 0},
+    "tool_observations": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "authority_observation": {"type": "string", "minLength": 1},
+    "sanitized_input_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "artifact": {"$ref": "#/$defs/evidence"},
+    "result": {
+      "allOf": [
+        {"$ref": "#/$defs/evidence"},
+        {
+          "type": "object",
+          "required": ["direct_success"],
+          "properties": {"direct_success": {"type": "boolean"}}
+        }
+      ]
+    },
+    "exit_status": {"type": ["integer", "null"]},
+    "status": {"enum": ["PASS", "FAIL", "UNSUPPORTED"]},
+    "privacy_scan": {"enum": ["PASS", "FAIL", "NOT_RUN", "UNSUPPORTED"]},
+    "failure_classification": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "dispatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host",
+        "role",
+        "child_index",
+        "actual_model",
+        "actual_effort",
+        "identity",
+        "observation_source"
+      ],
+      "properties": {
+        "host": {"enum": ["codex", "cursor", "claude"]},
+        "role": {"type": "string", "minLength": 1},
+        "child_index": {"type": "integer", "minimum": 1},
+        "actual_model": {"type": "string", "minLength": 1},
+        "actual_effort": {"type": "string", "minLength": 1},
+        "identity": {"type": "string", "minLength": 1},
+        "observation_source": {"type": "string", "minLength": 1}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": ["string", "null"]},
+        "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

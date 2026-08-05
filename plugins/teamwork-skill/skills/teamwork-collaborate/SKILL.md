@@ -1,51 +1,46 @@
 ---
 name: teamwork-collaborate
-description: Use when the user wants to discuss, design, plan, brainstorm, compare options, or think something through; when a material choice belongs to the user; or when the user's intent is unclear and needs guided clarification.
+description: Use when the user explicitly wants to discuss, co-design, brainstorm, compare options, or think together, or when an unformed intent or preference would materially change the outcome; do not use for a clear execution task or merely to obtain one concrete missing parameter.
 ---
 
 # Teamwork Collaborate
 
-Help the user form intent, explore choices, and challenge a direction before
-downstream work continues.
+Help the user understand the decision, explore meaningful directions, and
+challenge assumptions before they choose. Root owns the dialogue and the user
+owns material preference decisions.
 
-## Core Contract
+## Method
 
-- Begin with a brief intent check. If the intent is already clear, do not force
-  a question.
-- Give a concise synthesis, useful options, and a recommendation before asking.
-- Use host-native Ask Question whenever the user's answer could materially
-  change the next step. Do not impose a total question or round limit.
-- Ask independent questions together. Ask dependent questions after the earlier
-  answer, and wait before continuing dependent work.
-- Never decide a material user-owned choice.
+1. Restate the emerging goal, success criteria, boundaries, and the decision at
+   hand. Skip settled points and do not begin with a ritual question.
+2. Explore meaningfully different directions from the overall outcome toward
+   the details that can still change it. Compare consequences, evidence,
+   uncertainty, and trade-offs rather than producing a flat idea list.
+3. Synthesize the current picture, offer a recommendation, and then ask only a
+   question whose answer changes the next substantive step. Batch independent
+   questions and sequence dependent ones. Do not repeat answered questions.
+4. Challenge hidden assumptions, irreversible consequences, conflicting
+   evidence, and the strongest alternative when they matter. Keep ordinary
+   challenge inside the conversation; do not turn every discussion into an
+   adversarial exercise.
+5. Converge on the user's decision, remaining uncertainty, and the next useful
+   route. Do not convert a recommendation into a user decision.
 
-## Collaboration Layers
+If the user cannot choose because the relevant evidence or local structure is
+unknown, have Researcher or Explorer map that bounded gap first. Bring the
+evidence back to the same conversation; those agents do not own the decision.
 
-| Layer | Use when | Purpose |
-|---|---|---|
-| L1 — Understand Intent | Always check briefly; remain or return when the goal, success criteria, preference, decision owner, or research focus is unclear | Help the user understand and express what they need |
-| L2 — Explore Together | Intent is clear enough to compare directions, evidence, constraints, or designs | Move from the overall goal to options, trade-offs, boundaries, and details |
-| L3 — Challenge and Converge | The user requests adversarial work, or the discussion reveals hard-to-reverse consequences, material value conflict, or conflicting evidence | Stress-test viable directions and return the final choice to the user |
+Use Challenger only when the user explicitly requests a strict adversarial
+search or independent stress test. In that case, read
+`references/adversarial-search.md` and execute the real method. Report any
+unavailable isolation or coverage honestly instead of imitating it.
 
-Move between layers as the discussion changes. Do not use layer number as a
-question, turn, or agent budget.
+## Live Document
 
-Read `references/collaboration-layers.md` for intent guidance, question batching,
-global-to-detail discussion, layer transitions, and examples. For L3 adversarial
-work, also read `references/adversarial-search.md`.
-
-## Supporting Work
-
-- Let Research and Explore gather evidence, then return it to the same
-  discussion. They never replace user interaction or own the decision.
-- Honor explicit requests for brainstorming, adversarial discussion,
-  stress-testing, or subagents. Execute the real method or report it unavailable.
-
-## Persistence
-
-- Dispatch Writer at the first substantive synthesis and whenever a user answer,
-  evidence return, layer change, decision, open question, recommendation, or
-  ending changes the shared state.
-- Give Writer one semantic document with: overall picture; decided; open
-  discussion and evidence; current recommendation and next step.
-- Save meaning, not a transcript. Never write the checkpoint directly.
+Have Writer maintain the task's single live document with a discussion shape;
+reuse it rather than creating a parallel artifact. Create it when the first
+reusable synthesis appears, update it only when evidence, options,
+recommendation, decision, open question, or next step materially changes, and
+finalize it when the discussion ends. Preserve the user's meaning rather than a
+turn-by-turn transcript. Include the goal, criteria, options and trade-offs,
+evidence, decisions, open questions, current recommendation, and next step.

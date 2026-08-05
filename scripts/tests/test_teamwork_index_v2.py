@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import runpy
 import subprocess
 import sys
@@ -17,8 +18,23 @@ CONTRACT = runpy.run_path(str(TRANSACTION), run_name="teamwork_index_v2_contract
 
 CASE_ID = "c-" + "a" * 64
 ARTIFACT_ID = "a-" + "c" * 64
-ARTIFACT_DIGEST = "d" * 64
 CLAIM_ID = "cl-" + "e" * 64
+LIVE_TEXT = f"""Teamwork Live Document: 1
+Case ID: {CASE_ID}
+Purpose: discussion
+Status: active
+Generation: 1
+Last Updated: 2026-07-30T00:00:00Z
+Needs Resolution: no
+
+# Case bundle
+<!-- TEAMWORK:SECTION Purpose State -->
+## Purpose State
+
+Current collaboration state.
+<!-- /TEAMWORK:SECTION -->
+"""
+ARTIFACT_DIGEST = hashlib.sha256(LIVE_TEXT.encode("utf-8")).hexdigest()
 
 
 class TeamworkV2IndexTests(unittest.TestCase):
@@ -37,7 +53,7 @@ class TeamworkV2IndexTests(unittest.TestCase):
     @staticmethod
     def manifest() -> dict[str, object]:
         return {
-            "schema_version": 1,
+            "schema_version": 2,
             "case_id": CASE_ID,
             "case_seed_b64": "AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=",
             "created_at": "2026-07-30T00:00:00Z",
@@ -58,7 +74,7 @@ class TeamworkV2IndexTests(unittest.TestCase):
                 ARTIFACT_ID: {
                     "role": "collaborate",
                     "subtype": "collaborate",
-                    "path": f"docs/teamwork/cases/{CASE_ID}/live/collaborate.md",
+                    "path": f"docs/teamwork/cases/{CASE_ID}/live.md",
                     "envelope_digest": "f" * 64,
                     "byte_digest": ARTIFACT_DIGEST,
                     "created_at": "2026-07-30T00:00:00Z",
@@ -70,17 +86,29 @@ class TeamworkV2IndexTests(unittest.TestCase):
             "history": [],
             "references": [],
             "runtime": {
-                "active_route": f"docs/teamwork/cases/{CASE_ID}/live/collaborate.md",
+                "active_route": f"docs/teamwork/cases/{CASE_ID}/live.md",
                 "state_revision": "8" * 64,
             },
             "migration_sources": [],
+            "document": {
+                "path": f"docs/teamwork/cases/{CASE_ID}/live.md",
+                "generation": 1,
+                "byte_digest": ARTIFACT_DIGEST,
+                "updated_at": "2026-07-30T00:00:00Z",
+                "title": "Case bundle",
+                "purpose": "discussion",
+                "status": "active",
+                "needs_resolution": False,
+                "latest_artifact_id": ARTIFACT_ID,
+                "source_artifact_ids": [ARTIFACT_ID],
+            },
         }
 
     @staticmethod
     def index() -> dict[str, object]:
         revision = CONTRACT["case_manifest_revision"](TeamworkV2IndexTests.manifest())
         return {
-            "schema_version": 2,
+            "schema_version": 3,
             "project": {
                 "name": "Fixture",
                 "root": ".",
@@ -126,6 +154,7 @@ class TeamworkV2IndexTests(unittest.TestCase):
             manifest_path = project / f"docs/teamwork/cases/{CASE_ID}/manifest.json"
             manifest_path.parent.mkdir(parents=True)
             manifest_path.write_text(json.dumps(self.manifest(), indent=2) + "\n", encoding="utf-8")
+            (manifest_path.parent / "live.md").write_text(LIVE_TEXT, encoding="utf-8")
             index_path = project / "docs/teamwork/index.json"
             index_path.write_text(json.dumps(self.index(), indent=2) + "\n", encoding="utf-8")
 
@@ -183,7 +212,7 @@ class TeamworkV2IndexTests(unittest.TestCase):
             assert isinstance(artifacts, dict)
             artifact = artifacts[ARTIFACT_ID]
             assert isinstance(artifact, dict)
-            artifact["path"] = "docs/teamwork/cases/c-" + "f" * 64 + "/live/collaborate.md"
+            artifact["path"] = "docs/teamwork/cases/c-" + "f" * 64 + "/live.md"
             path.write_text(json.dumps(data) + "\n", encoding="utf-8")
 
             result = self.run_validator(path)
@@ -208,7 +237,7 @@ class TeamworkV2IndexTests(unittest.TestCase):
             )
 
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("hybrid schema v2", result.stderr)
+            self.assertIn("hybrid case memory initialization", result.stderr)
 
 
 if __name__ == "__main__":

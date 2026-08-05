@@ -14,6 +14,7 @@ from typing import Any
 
 from codex_routing_config import RoutingConfigError
 from codex_routing_config import inspect_config
+from teamwork_tooling.topology import host_role_paths
 
 try:
     import tomllib
@@ -21,16 +22,20 @@ except ModuleNotFoundError:  # Python < 3.11 uses the narrow fallback below.
     tomllib = None  # type: ignore[assignment]
 
 
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROLE_SANDBOX = {
+    "researcher": "read-only",
+    "explorer": "read-only",
+    "debugger": "workspace-write",
+    "challenger": "read-only",
+    "planner": "read-only",
+    "reviewer": "read-only",
+    "worker": "workspace-write",
+    "writer": "workspace-write",
+}
 EXPECTED_PROFILES = {
-    "teamwork-researcher.toml": ("teamwork_researcher", "read-only"),
-    "teamwork-explorer.toml": ("teamwork_explorer", "read-only"),
-    "teamwork-worker.toml": ("teamwork_worker", "workspace-write"),
-    "teamwork-debugger.toml": ("teamwork_debugger", "workspace-write"),
-    "teamwork-designer.toml": ("teamwork_designer", "read-only"),
-    "teamwork-planner.toml": ("teamwork_planner", "read-only"),
-    "teamwork-plan-reviewer.toml": ("teamwork_plan_reviewer", "read-only"),
-    "teamwork-reviewer.toml": ("teamwork_reviewer", "read-only"),
-    "teamwork-writer.toml": ("teamwork_writer", "workspace-write"),
+    pathlib.Path(path).name: (f"teamwork_{role}", ROLE_SANDBOX[role])
+    for role, path in host_role_paths(ROOT)["codex"].items()
 }
 REQUIRED_FIELDS = {
     "name",
@@ -41,7 +46,6 @@ REQUIRED_FIELDS = {
     "model_reasoning_effort",
     "sandbox_mode",
 }
-LEAF_CONTRACT = "Do not spawn or delegate."
 NICKNAME_PATTERN = re.compile(r"^[A-Za-z0-9 _-]+$")
 PROMPT_MARKERS = {
     "global_policy": "Teamwork Codex Global Policy",
@@ -124,9 +128,6 @@ def validate_profiles(agents_dir: pathlib.Path) -> tuple[list[dict[str, Any]], i
         for field in ("description", "developer_instructions", "model", "model_reasoning_effort"):
             if not isinstance(data[field], str) or not data[field].strip():
                 raise CheckFailure(f"{filename} field {field} must be a non-empty string")
-        if LEAF_CONTRACT not in data["developer_instructions"]:
-            raise CheckFailure(f"{filename} is missing the explicit leaf-agent contract")
-
         name = data["name"]
         if name in agent_names:
             raise CheckFailure(f"duplicate agent name {name!r}: {agent_names[name]} and {path}")

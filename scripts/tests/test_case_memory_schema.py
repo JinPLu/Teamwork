@@ -27,7 +27,7 @@ class CaseMemorySchemaTests(unittest.TestCase):
 
     def manifest(self, case_id: str, *, status: str = "collaborating") -> dict[str, object]:
         return {
-            "schema_version": 1,
+            "schema_version": 2,
             "case_id": case_id,
             "case_seed_b64": "AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=",
             "created_at": "2026-07-30T00:00:00+00:00",
@@ -42,15 +42,16 @@ class CaseMemorySchemaTests(unittest.TestCase):
                 "state_revision": "0" * 64,
             },
             "migration_sources": [],
+            "document": None,
         }
 
-    def test_empty_case_index_has_exact_v2_shape_and_revision(self) -> None:
+    def test_empty_case_index_has_exact_v3_shape_and_revision(self) -> None:
         index = CONTRACT["empty_case_index"]("Teamwork")
         self.assertEqual(
             set(index),
             {"schema_version", "project", "active_cases", "claim_heads", "aliases", "recent_cases", "migration"},
         )
-        self.assertEqual(index["schema_version"], 2)
+        self.assertEqual(index["schema_version"], 3)
         text = CONTRACT["serialize_case_index"](index)
         self.assertIn('"active_cases": []', text)
 
@@ -84,7 +85,7 @@ class CaseMemorySchemaTests(unittest.TestCase):
             CONTRACT["validate_case_manifest"](manifest)
         manifest["artifacts"] = []
         manifest["extra"] = True
-        with self.assertRaisesRegex(CONTRACT["TransactionError"], "unsupported schema"):
+        with self.assertRaisesRegex(CONTRACT["TransactionError"], "schema_version"):
             CONTRACT["validate_case_manifest"](manifest)
 
     def test_case_ids_and_artifact_paths_are_deterministic_full_hashes(self) -> None:
@@ -110,10 +111,12 @@ class CaseMemorySchemaTests(unittest.TestCase):
         self.assertRegex(artifact_id, r"^a-[0-9a-f]{64}$")
         self.assertEqual(
             CONTRACT["derive_case_artifact_path"](case_id, "plan", artifact_id),
-            f"docs/teamwork/cases/{case_id}/plan.md",
+            f"docs/teamwork/cases/{case_id}/live.md",
         )
+        with self.assertRaisesRegex(CONTRACT["TransactionError"], "history artifacts"):
+            CONTRACT["derive_case_artifact_path"](case_id, "history-plan", artifact_id)
         self.assertEqual(
-            CONTRACT["derive_case_artifact_path"](case_id, "history-plan", artifact_id),
+            CONTRACT["derive_case_source_artifact_path"](case_id, "history-plan", artifact_id),
             f"docs/teamwork/cases/{case_id}/history/plan/{artifact_id}.md",
         )
 

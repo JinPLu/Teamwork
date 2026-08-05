@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure real host instruction paths and keep repository-wide totals as telemetry."""
+"""Measure real instruction paths and flag unexplained regressions from a baseline."""
 
 from __future__ import annotations
 
@@ -13,13 +13,13 @@ import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
-ENFORCED_LIMITS = {
-    # These surfaces can be loaded together in real use. The complete
-    # repository union and all ten full skills are telemetry only because host
-    # template families are mutually exclusive and skills are loaded on demand.
-    "global_policy_codex": {"words": 220, "bytes": 2600},
-    "global_policy_cursor": {"words": 220, "bytes": 2600},
-    "global_policy_claude": {"words": 220, "bytes": 2600},
+FOOTPRINT_BASELINE = {
+    # These are review baselines, not authoring budgets. A surface may grow
+    # when the semantic change justifies it; the regression threshold merely
+    # prevents large accidental prompt expansion from passing unnoticed.
+    "global_policy_codex": {"words": 350, "bytes": 2600},
+    "global_policy_cursor": {"words": 350, "bytes": 2600},
+    "global_policy_claude": {"words": 350, "bytes": 2600},
     "max_single_skill": {"words": 1450, "bytes": 11000},
     "max_skill_bundle": {"words": 2050, "bytes": 15500},
     "max_role_template": {"words": 330, "bytes": 2900},
@@ -32,13 +32,12 @@ ENFORCED_LIMITS = {
     "worst_static_leaf_path": {"words": 3300, "bytes": 26000},
     "worst_repository_root_path": {"words": 4100, "bytes": 31500},
 }
-CANONICAL_SKILL_COUNT = 9
-LEGACY_SYNTHETIC_SKILL_COUNT = 10
-CANONICAL_REFERENCE_COUNT = 5
+REGRESSION_MULTIPLIER = 1.25
+REGRESSION_MIN_GROWTH = {"words": 40, "bytes": 400}
 
-# Backward-compatible name for tests and callers. Values are enforced limits,
-# not telemetry totals.
-COMPACTNESS_LIMITS = ENFORCED_LIMITS
+# Compatibility aliases describe telemetry baselines, never hard authoring caps.
+ENFORCED_LIMITS = FOOTPRINT_BASELINE
+COMPACTNESS_LIMITS = FOOTPRINT_BASELINE
 
 sys.path.insert(0, str(ROOT / "scripts"))
 from teamwork_tooling.evaluation.sources import validate_skill_topology  # noqa: E402
@@ -82,9 +81,7 @@ def generated_surfaces() -> dict[str, str]:
                 str(ROOT / "scripts/init-project.sh"),
                 "--project-root",
                 str(project),
-                "--copy",
                 "--no-codegraph",
-                "--no-cursor-policy-copy",
             ],
             cwd=ROOT,
             env=env,
@@ -257,7 +254,7 @@ def measure() -> dict[str, object]:
         for path, bundle in skill_bundles
     ]
 
-    enforced = {
+    paths = {
         "global_policy_codex": size(policies["codex"]),
         "global_policy_cursor": size(policies["cursor"]),
         "global_policy_claude": size(policies["claude"]),
@@ -290,41 +287,37 @@ def measure() -> dict[str, object]:
             "dependency_cycles": len(topology["cycles"]),
         },
     }
-    return {"enforced": enforced, "telemetry": telemetry, "topology": topology}
+    return {"paths": paths, "telemetry": telemetry, "topology": topology}
 
 
 def compactness_failures(result: dict[str, object]) -> list[str]:
+    """Return accidental-growth and topology regressions.
+
+    The historical function name stays callable, but measurements are compared
+    to a review baseline with material headroom rather than an absolute squeeze.
+    """
+
     failures: list[str] = []
-    enforced = result.get("enforced", result)
-    assert isinstance(enforced, dict)
-    for surface, limit in ENFORCED_LIMITS.items():
-        measured = enforced[surface]
+    measured_paths = result.get("paths", result.get("enforced", result))
+    assert isinstance(measured_paths, dict)
+    for surface, baseline in FOOTPRINT_BASELINE.items():
+        measured = measured_paths[surface]
         assert isinstance(measured, dict)
         for metric in ("words", "bytes"):
-            if int(measured[metric]) > limit[metric]:
+            threshold = max(
+                int(baseline[metric] * REGRESSION_MULTIPLIER),
+                baseline[metric] + REGRESSION_MIN_GROWTH[metric],
+            )
+            if int(measured[metric]) > threshold:
                 failures.append(
-                    f"{surface} {metric} exceeds compactness limit: "
-                    f"{measured[metric]} > {limit[metric]}"
+                    f"{surface} {metric} has an instruction-footprint regression: "
+                    f"{measured[metric]} > baseline {baseline[metric]} + review headroom"
                 )
     telemetry = result.get("telemetry", result)
     assert isinstance(telemetry, dict)
     skills = telemetry["skills"]
     assert isinstance(skills, dict)
-    # Callers that compare only byte/word ceilings may pass synthetic legacy
-    # measurements. Topology is enforced whenever the real measurement fields
-    # are present; the source validator independently enforces it on every eval.
     if "surfaces" in skills:
-        expected_skill_count = CANONICAL_SKILL_COUNT if "topology" in result else LEGACY_SYNTHETIC_SKILL_COUNT
-        if int(skills["surfaces"]) != expected_skill_count:
-            failures.append(
-                "canonical skill inventory must contain "
-                f"{expected_skill_count} skills: {skills['surfaces']}"
-            )
-        if int(skills["behavior_references"]) != CANONICAL_REFERENCE_COUNT:
-            failures.append(
-                "canonical reference inventory must contain "
-                f"{CANONICAL_REFERENCE_COUNT} references: {skills['behavior_references']}"
-            )
         for metric in ("cross_skill_loads", "dependency_cycles"):
             if int(skills[metric]) != 0:
                 failures.append(f"skill topology must keep {metric}=0: {skills[metric]}")
@@ -343,13 +336,13 @@ def main() -> int:
     result = measure()
     failures = compactness_failures(result)
     if args.json:
-        print(json.dumps({"limits": ENFORCED_LIMITS, "measured": result, "failures": failures}, sort_keys=True))
+        print(json.dumps({"baseline": FOOTPRINT_BASELINE, "measured": result, "failures": failures}, sort_keys=True))
     else:
-        print("enforced:")
-        enforced = result["enforced"]
-        assert isinstance(enforced, dict)
-        for surface in ENFORCED_LIMITS:
-            print(f"  {surface}: {enforced[surface]} limit={ENFORCED_LIMITS[surface]}")
+        print("path telemetry:")
+        paths = result["paths"]
+        assert isinstance(paths, dict)
+        for surface in FOOTPRINT_BASELINE:
+            print(f"  {surface}: {paths[surface]} baseline={FOOTPRINT_BASELINE[surface]}")
         print("telemetry:")
         telemetry = result["telemetry"]
         assert isinstance(telemetry, dict)

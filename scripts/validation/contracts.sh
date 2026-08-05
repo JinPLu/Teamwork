@@ -35,14 +35,12 @@ for readme in README.md README.en.md; do
     "$readme must explain external Research"
   semantic_doc_required '(Collaborate.{0,120}Plan|协作.{0,120}计划)' "$ROOT/$readme" \
     "$readme must distinguish Collaborate from Plan"
-  semantic_doc_required '(case-v2|v2 case bundle).{0,180}(legacy-v1|old grill|旧 grill).{0,180}(migration input|迁移输入)' "$ROOT/$readme" \
-    "$readme must explain case-v2-only runtime and legacy migration inputs"
-  semantic_doc_required '(installing|updating|安装|更新).{0,120}(does not mean|不代表).{0,100}(migrated|迁移)' "$ROOT/$readme" \
-    "$readme must state install/update alone is not migration evidence"
-  semantic_doc_required '(exact project root|exact-root|精确 project-root).{0,180}(transaction readback|readback)' "$ROOT/$readme" \
-    "$readme must require exact-root migration readback"
-  semantic_doc_required '(cold archive|冷归档).{0,120}(restore drill|恢复)' "$ROOT/$readme" \
-    "$readme must state cold-archive recovery limits"
+  semantic_doc_required '(7\.0\.0|7\.0).{0,120}(not backward compatible|incompatible|不兼容)' "$ROOT/$readme" \
+    "$readme must state the v7 compatibility break"
+  semantic_doc_required '(Update|更新).{0,140}(old|legacy|旧).{0,120}(settings|data|format|设置|数据|格式).{0,160}(migrat|迁移)' "$ROOT/$readme" \
+    "$readme must make Update the old-to-new migration owner"
+  semantic_doc_required '(after|迁移.{0,20}后).{0,100}(only the new|new format only|仅.*新格式|只.*新格式)' "$ROOT/$readme" \
+    "$readme must state that migration leaves only the new runtime format"
   semantic_doc_required '\./install\.sh all' "$ROOT/$readme" \
     "$readme must show the complete checkout refresh"
   semantic_doc_required 'check-update\.sh --readiness' "$ROOT/$readme" \
@@ -63,10 +61,10 @@ for guide in CODEX.md CURSOR.md CLAUDE.md; do
     "$guide must document project initialization"
   semantic_doc_required 'check-update\.sh --readiness' "$ROOT/$guide" \
     "$guide must document readiness"
-  semantic_doc_required '(case-v2|v2 case bundle).{0,220}(legacy-v1|old grill).{0,180}(migration input|semantic migration)' "$ROOT/$guide" \
-    "$guide must explain case-v2-only runtime and legacy migration inputs"
-  semantic_doc_required '(Update/install|update/install).{0,140}(alone|does not mean).{0,120}(migrat|migration)' "$ROOT/$guide" \
-    "$guide must state installation/update alone is not migration evidence"
+  semantic_doc_required '(Update|update).{0,160}(old|legacy|pre-7).{0,140}(migrat|migration)' "$ROOT/$guide" \
+    "$guide must route pre-v7 migration through Update"
+  semantic_doc_required '(after|once).{0,100}(migrat|migration).{0,120}(only the new|new format only|no legacy runtime)' "$ROOT/$guide" \
+    "$guide must state that migrated projects run only the new format"
 done
 
 current_version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
@@ -150,10 +148,10 @@ semantic_doc_required 'Upgrade[[:space:]]+action.{0,80}Important[[:space:]]+limi
   "AGENTS.md must preserve the 4.2/4.3 action and limit paragraphs"
 semantic_doc_required 'user outcome.{0,100}maintainer-only.{0,180}internal scripts.{0,100}numeric thresholds.{0,100}test counts' "$ROOT/AGENTS.md" \
   "AGENTS.md must keep changelogs user-facing"
-semantic_doc_required 'Normal workflow memory.{0,120}v2 case bundles.{0,180}Legacy-v1.{0,160}migration inputs' "$ROOT/AGENTS.md" \
-  "AGENTS.md must preserve the v6 case-v2-only runtime boundary"
-semantic_doc_required 'exact authorized project root.{0,140}transaction readback.{0,140}install/update alone never implies' "$ROOT/AGENTS.md" \
-  "AGENTS.md must require exact-root migration evidence"
+semantic_doc_required '(7\.0\.0|v7).{0,120}(not backward compatible|incompatible|compatibility break)' "$ROOT/AGENTS.md" \
+  "AGENTS.md must preserve the v7 compatibility break"
+semantic_doc_required 'Update.{0,160}(old|legacy|pre-7).{0,140}(migrat|migration).{0,180}(only the new|new format only|no legacy runtime)' "$ROOT/AGENTS.md" \
+  "AGENTS.md must make Update the only old-to-new migration route"
 
 # instruction_footprint.py is the sole owner of word and byte budgets. This file
 # keeps semantic and structural contracts without imposing a second, lower cap.

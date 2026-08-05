@@ -7,23 +7,15 @@ done < <(
   find "$ROOT/skills" -mindepth 2 -maxdepth 2 -type f -name SKILL.md \
     -exec dirname {} \; | xargs -n1 basename | sort
 )
-CANONICAL_SKILL_COUNT=9
-RETIRED_SKILLS=(
-  grill-me
-  teamwork
-  teamwork-discuss
-  teamwork-design
-  using-teamwork
-  teamwork-execute
-  run-analyze-optimize
-  run-analyze-design
-  run-analyze-execute
-  run-analyze-review
-  run-analyze-research
-  run-analyze-plan
-  run-analyze-goal
-  run-analyze-plan-review
-  run-analyze-execution-review
+TOPOLOGY_MANIFEST="$ROOT/config/teamwork-topology.json"
+RETIRED_SKILLS=()
+while IFS= read -r skill; do
+  RETIRED_SKILLS+=("$skill")
+done < <(python3 - "$TOPOLOGY_MANIFEST" <<'PY'
+import json, pathlib, sys
+value = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+print("\n".join(sorted(value["retired"]["public_skills"])))
+PY
 )
 CLEANUP_PATHS=()
 
@@ -118,36 +110,16 @@ check_lean_policy() {
   local policy_text
   policy_text="$(tr '\n' ' ' < "$file")"
   for contract in \
-    "request scope::work within the (user.?s )?request" \
-    "read-only authority::read.only.{0,100}(authority|effect)" \
-    "inspect before asking::inspect.{0,50}(before|prior to).{0,30}ask" \
-    "bounded user-owned batch::root alone asks.{0,80}bounded decision batch" \
-    "dependent work only::pause only dependent work" \
-    "local-native boundary::native.{0,40}(tiny|discoverable).{0,160}authorized implementation" \
-    "external Research boundary::(exact roles|named workflows):.{0,80}research.?->.?researcher" \
-    "Collaborate ownership::collaborate.{0,140}(dialogue|brainstorm|grill|decision)" \
-    "Plan ownership::plan.?->.?planner" \
-    "substantive named-workflow persistence::default.save.{0,120}case.v2 workflow.{0,120}checkpoint" \
-    "negative persistence override::no.files/off.record/read.only/no.writes override" \
-    "evidence discipline::(separate observation/inference|distinguish observation from inference)" \
-    "real-path verification::verify.{0,80}real[- ]path" \
-    "support checks not delivery::tests.{0,100}(never replace|support delivery)" \
-    "economic delegation::(default one child|default-child=one).{0,80}daily cap4" \
-    "root question ownership::(root owns user questions|root alone asks)" \
-    "conclusion-first replies::(conclusion|result) first" \
-    "reader-centered result::(conclusion|result) first.{0,80}(clear|stable|relevant)" \
-    "explicit logic::clear" \
-    "stable terminology::stable" \
-    "relevance gate::relevant"; do
+    "native direct default::(clear|explicit).{0,80}(native|direct)" \
+    "epistemic honesty::(observation|observed).{0,100}(inference|unknown|completed)" \
+    "proportional verification::(calibrat|proportional|proportionate).{0,60}(verification|verify|proof).{0,120}(risk|claim)"; do
     contract_label="${contract%%::*}"
     pattern="${contract#*::}"
     printf '%s\n' "$policy_text" | grep -Eqi "$pattern" \
       || fail "$label must preserve $contract_label"
   done
-  if [[ "$label" == *Cursor* || "$label" == *Claude* ]]; then
-    ! grep -Eq 'request_user_input|Codex CLI|Codex native|every material user decision|grill ceremony|text choice card' "$file" \
-      || fail "$label must not contain Codex-native adapter wording"
-  fi
+  ! grep -Eqi 'daily cap|cap4|five to eight|5-8|L1.*L2.*L3|sealed digest' "$file" \
+    || fail "$label must not restore retired workflow ceremony"
 }
 
 git_known_package_file() {
@@ -174,7 +146,6 @@ run_python_unit_tests() {
       scripts/tests/test_discussion_artifact_schema.py
       scripts/tests/test_evaluation_contract_v4.py
       scripts/tests/test_instruction_footprint.py
-      scripts/tests/test_pairwise_comparison.py
       scripts/tests/test_policy_contract_v4.py
       scripts/tests/test_privacy_scan.py
       scripts/tests/test_semantic_review.py

@@ -24,21 +24,23 @@ CLAIM_ID_RE = re.compile(r"^cl-[0-9a-f]{64}$")
 ARTIFACT_ID_RE = re.compile(r"^a-[0-9a-f]{64}$")
 MIGRATION_ID_RE = re.compile(r"^m-[0-9a-f]{64}$")
 KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-V2_INDEX_MAX_BYTES = 262144
-V2_MANIFEST_MAX_BYTES = 262144
-V2_ACTIVE_CASES_MAX = 32
-V2_CLAIM_HEADS_MAX = 2048
-V2_ALIASES_MAX = 256
-V2_RECENT_CASES_MAX = 10
-V2_MANIFEST_CLAIMS_MAX = 256
-V2_MANIFEST_ARTIFACTS_MAX = 2048
-V2_MANIFEST_HISTORY_MAX = 1024
-V2_MANIFEST_REFS_MAX = 1024
-V2_MANIFEST_MIGRATION_SOURCES_MAX = 4096
-V2_CASE_PHASES = {"collaborating", "collecting", "planned", "executing", "reviewing"}
-V2_CASE_LIFECYCLES = {"collaborating", "collecting", "planned", "executing", "reviewing", "closed"}
-V2_CLAIM_HEAD_STATUSES = {"active"}
-V2_MIGRATION_PHASES = {
+CURRENT_INDEX_MAX_BYTES = 262144
+CURRENT_MANIFEST_MAX_BYTES = 262144
+CURRENT_ACTIVE_CASES_MAX = 32
+CURRENT_CLAIM_HEADS_MAX = 2048
+CURRENT_ALIASES_MAX = 256
+CURRENT_RECENT_CASES_MAX = 10
+CURRENT_MANIFEST_CLAIMS_MAX = 256
+CURRENT_MANIFEST_ARTIFACTS_MAX = 2048
+CURRENT_MANIFEST_HISTORY_MAX = 1024
+CURRENT_MANIFEST_REFS_MAX = 1024
+CURRENT_MANIFEST_MIGRATION_SOURCES_MAX = 4096
+CURRENT_CASE_PHASES = {"collaborating", "collecting", "planned", "executing", "reviewing"}
+CURRENT_CASE_LIFECYCLES = {"collaborating", "collecting", "planned", "executing", "reviewing", "closed"}
+CURRENT_LIVE_PURPOSES = {"task", "discussion", "research", "debug", "plan", "review", "goal", "init", "update", "result"}
+CURRENT_LIVE_STATUSES = {"active", "finalized"}
+CURRENT_CLAIM_HEAD_STATUSES = {"active"}
+CURRENT_MIGRATION_PHASES = {
     "baseline_approved",
     "archive_durable",
     "candidate_validated",
@@ -69,8 +71,8 @@ ACTIVE_STATUSES = {"active", "accepted"}
 ACTIVE_AUTHORITIES = {"canonical", "active-summary", "supporting"}
 ACTIVE_POINTER_KEYS = ("current", "design", "plan", "progress", "goal", "report")
 COLLABORATE_CURRENT_PATH = "docs/teamwork/collaborate/current.md"
-# W4 may retain a nullable compatibility slot while it owns the discussion
-# lifecycle. A non-null pointer is legacy migration input, not post-v4 truth.
+# A nullable discussion slot is accepted only while validating legacy migration
+# input. A non-null pointer is never current runtime truth.
 ALLOWED_ACTIVE_KEYS = {*ACTIVE_POINTER_KEYS, "results", "collaborate", "discussion"}
 CANONICAL_CURRENT_PATH = "docs/teamwork/current.md"
 
@@ -323,6 +325,7 @@ def case_digest(domain: str, value: object | str | bytes) -> str:
         payload = unicodedata.normalize("NFC", value.replace("\r\n", "\n").replace("\r", "\n")).encode("utf-8")
     else:
         payload = canonical_json_bytes(value)
+    # Frozen digest namespace: changing it would invalidate existing current manifests.
     return _hash(f"teamwork-case-v2:{domain}".encode("utf-8"), payload)
 
 
@@ -540,7 +543,7 @@ def validate_v1_index(
     require(isinstance(pending, list), "pending must be an array")
 
 
-def validate_v2_migration(value: object) -> None:
+def validate_current_migration(value: object) -> None:
     if value is None:
         return
     require(isinstance(value, dict), "migration must be null or an object")
@@ -556,21 +559,22 @@ def validate_v2_migration(value: object) -> None:
     }
     require(set(value) == expected, "migration has invalid fields")
     validate_migration_id(value["migration_id"], "migration.migration_id")
-    require(value["phase"] in V2_MIGRATION_PHASES, "migration.phase is invalid")
+    require(value["phase"] in CURRENT_MIGRATION_PHASES, "migration.phase is invalid")
     validate_any_relative_path(value["journal_path"], "migration.journal_path")
     for key in ("baseline_digest", "report_digest", "candidate_digest", "archive_manifest_digest"):
         validate_sha256(value[key], f"migration.{key}")
 
 
-def validate_v2_root_index(
+def validate_current_root_index(
     index: object,
     index_path: Path,
     project_reader: SafeProjectReader | None = None,
     *,
     raw_bytes: int | None = None,
+    migration_read: bool = False,
 ) -> None:
     if raw_bytes is not None:
-        require(raw_bytes <= V2_INDEX_MAX_BYTES, "v2 index exceeds 262144 bytes")
+        require(raw_bytes <= CURRENT_INDEX_MAX_BYTES, "current index exceeds 262144 bytes")
     require(isinstance(index, dict), "index root must be an object")
     assert isinstance(index, dict)
     expected = {
@@ -583,7 +587,10 @@ def validate_v2_root_index(
         "migration",
     }
     require(set(index) == expected, "v2 index top-level fields are invalid")
-    require(index["schema_version"] == 2, "schema_version must be 2")
+    require(
+        index["schema_version"] == (2 if migration_read else 3),
+        "schema_version requires explicit project migration" if migration_read else "schema_version must be 3",
+    )
     project = index["project"]
     require(isinstance(project, dict), "project must be an object")
     assert isinstance(project, dict)
@@ -598,7 +605,7 @@ def validate_v2_root_index(
     active_cases = index["active_cases"]
     require(isinstance(active_cases, list), "active_cases must be an array")
     assert isinstance(active_cases, list)
-    require(len(active_cases) <= V2_ACTIVE_CASES_MAX, "active_cases exceeds 32 records")
+    require(len(active_cases) <= CURRENT_ACTIVE_CASES_MAX, "active_cases exceeds 32 records")
     active_case_ids: set[str] = set()
     active_task_keys: set[str] = set()
     for position, row in enumerate(active_cases):
@@ -613,7 +620,7 @@ def validate_v2_root_index(
         active_case_ids.add(case_id)
         validate_case_manifest_path(row["manifest_path"], f"active_cases[{position}].manifest_path", expected_case_id=case_id)
         validate_sha256(row["manifest_revision"], f"active_cases[{position}].manifest_revision")
-        require(row["phase"] in V2_CASE_PHASES, f"active_cases[{position}].phase is invalid")
+        require(row["phase"] in CURRENT_CASE_PHASES, f"active_cases[{position}].phase is invalid")
         task_key = validate_kebab(row["task_key"], f"active_cases[{position}].task_key")
         require(task_key not in active_task_keys, "active_cases must not duplicate task_key")
         active_task_keys.add(task_key)
@@ -621,7 +628,7 @@ def validate_v2_root_index(
     claim_heads = index["claim_heads"]
     require(isinstance(claim_heads, dict), "claim_heads must be an object")
     assert isinstance(claim_heads, dict)
-    require(len(claim_heads) <= V2_CLAIM_HEADS_MAX, "claim_heads exceeds 2048 records")
+    require(len(claim_heads) <= CURRENT_CLAIM_HEADS_MAX, "claim_heads exceeds 2048 records")
     for claim_id, row in claim_heads.items():
         validate_claim_id(claim_id, f"claim_heads key {claim_id!r}")
         require(isinstance(row, dict), f"claim_heads[{claim_id}] must be an object")
@@ -634,12 +641,12 @@ def validate_v2_root_index(
         validate_artifact_id(row["artifact_id"], f"claim_heads[{claim_id}].artifact_id")
         validate_sha256(row["artifact_digest"], f"claim_heads[{claim_id}].artifact_digest")
         validate_sha256(row["claim_revision"], f"claim_heads[{claim_id}].claim_revision")
-        require(row["status"] in V2_CLAIM_HEAD_STATUSES, f"claim_heads[{claim_id}].status is invalid")
+        require(row["status"] in CURRENT_CLAIM_HEAD_STATUSES, f"claim_heads[{claim_id}].status is invalid")
 
     aliases = index["aliases"]
     require(isinstance(aliases, dict), "aliases must be an object")
     assert isinstance(aliases, dict)
-    require(len(aliases) <= V2_ALIASES_MAX, "aliases exceeds 256 records")
+    require(len(aliases) <= CURRENT_ALIASES_MAX, "aliases exceeds 256 records")
     for alias, row in aliases.items():
         validate_kebab(alias, f"aliases key {alias!r}")
         require(isinstance(row, dict), f"aliases.{alias} must be an object")
@@ -653,7 +660,7 @@ def validate_v2_root_index(
     recent_cases = index["recent_cases"]
     require(isinstance(recent_cases, list), "recent_cases must be an array")
     assert isinstance(recent_cases, list)
-    require(len(recent_cases) <= V2_RECENT_CASES_MAX, "recent_cases exceeds 10 records")
+    require(len(recent_cases) <= CURRENT_RECENT_CASES_MAX, "recent_cases exceeds 10 records")
     recent_ids: set[str] = set()
     for position, row in enumerate(recent_cases):
         require(isinstance(row, dict), f"recent_cases[{position}] must be an object")
@@ -671,7 +678,7 @@ def validate_v2_root_index(
         validate_artifact_id(row["result_artifact_id"], f"recent_cases[{position}].result_artifact_id")
         validate_sha256(row["result_digest"], f"recent_cases[{position}].result_digest")
 
-    validate_v2_migration(index["migration"])
+    validate_current_migration(index["migration"])
 
     if project_reader is not None:
         loaded_manifests: dict[str, dict[str, object]] = {}
@@ -687,13 +694,14 @@ def validate_v2_root_index(
                     manifest = json.loads(text)
                 except json.JSONDecodeError as exc:
                     fail(f"{collection}[{position}].manifest is invalid JSON: {exc}")
-                validate_v2_case_manifest(
+                validate_current_case_manifest(
                     manifest,
                     Path(manifest_path.as_posix()),
                     project_reader,
                     raw_bytes=len(text.encode("utf-8")),
                     expected_case_id=str(row["case_id"]),
                     expected_revision=str(row["manifest_revision"]) if collection == "active_cases" else None,
+                    migration_read=migration_read,
                 )
                 loaded_manifests[str(row["case_id"])] = manifest
                 if collection == "recent_cases":
@@ -705,6 +713,65 @@ def validate_v2_root_index(
                     assert isinstance(artifact, dict)
                     require(artifact.get("role") == "result", f"{collection}[{position}].result_artifact_id must be a result")
                     require(artifact.get("byte_digest") == row["result_digest"], f"{collection}[{position}].result_digest must match manifest")
+        if not migration_read:
+            cases_root = project_reader.project_root / "docs/teamwork/cases"
+            if cases_root.exists():
+                cases_info = cases_root.lstat()
+                require(
+                    stat.S_ISDIR(cases_info.st_mode)
+                    and not stat.S_ISLNK(cases_info.st_mode)
+                    and cases_info.st_dev == project_reader.root_device,
+                    "project cases root must be a same-device non-symlink directory",
+                )
+                for case_directory in sorted(cases_root.iterdir(), key=lambda item: item.name):
+                    case_info = case_directory.lstat()
+                    require(
+                        CASE_ID_RE.fullmatch(case_directory.name) is not None
+                        and stat.S_ISDIR(case_info.st_mode)
+                        and not stat.S_ISLNK(case_info.st_mode)
+                        and case_info.st_dev == project_reader.root_device,
+                        "project cases root may contain only safe case-id directories",
+                    )
+                    manifest_path = PurePosixPath(f"docs/teamwork/cases/{case_directory.name}/manifest.json")
+                    if case_directory.name not in loaded_manifests:
+                        manifest_text = project_reader.read_text(
+                            manifest_path,
+                            f"unindexed case {case_directory.name} manifest",
+                            require_single_link=True,
+                        )
+                        try:
+                            manifest = json.loads(manifest_text)
+                        except json.JSONDecodeError as exc:
+                            fail(f"unindexed case {case_directory.name} manifest is invalid JSON: {exc}")
+                        validate_current_case_manifest(
+                            manifest,
+                            Path(manifest_path.as_posix()),
+                            project_reader,
+                            raw_bytes=len(manifest_text.encode("utf-8")),
+                            expected_case_id=case_directory.name,
+                        )
+                        loaded_manifests[case_directory.name] = manifest
+                    manifest = loaded_manifests[case_directory.name]
+                    document = manifest.get("document")
+                    expected_names = {"manifest.json"}
+                    if isinstance(document, dict):
+                        expected_names.add("live.md")
+                    observed_names: set[str] = set()
+                    for child in case_directory.iterdir():
+                        child_info = child.lstat()
+                        require(
+                            stat.S_ISREG(child_info.st_mode)
+                            and not stat.S_ISLNK(child_info.st_mode)
+                            and child_info.st_dev == project_reader.root_device
+                            and child_info.st_nlink == 1,
+                            f"case {case_directory.name} may contain only manifest.json and live.md files",
+                        )
+                        observed_names.add(child.name)
+                    require(
+                        observed_names == expected_names,
+                        f"case {case_directory.name} must contain exactly manifest.json"
+                        + (" and live.md" if "live.md" in expected_names else ""),
+                    )
         for alias, row in aliases.items():
             manifest = loaded_manifests.get(str(row["target_id"]))
             require(manifest is not None, f"aliases.{alias} target must exist")
@@ -727,7 +794,7 @@ def validate_v2_root_index(
             require(artifact.get("byte_digest") == row["artifact_digest"], f"claim_heads[{claim_id}].artifact_digest must match manifest artifact")
 
 
-def validate_v2_case_manifest(
+def validate_current_case_manifest(
     manifest: object,
     manifest_path: Path,
     project_reader: SafeProjectReader | None = None,
@@ -735,12 +802,13 @@ def validate_v2_case_manifest(
     raw_bytes: int | None = None,
     expected_case_id: str | None = None,
     expected_revision: str | None = None,
+    migration_read: bool = False,
 ) -> None:
     if raw_bytes is not None:
-        require(raw_bytes <= V2_MANIFEST_MAX_BYTES, "case manifest exceeds 262144 bytes")
+        require(raw_bytes <= CURRENT_MANIFEST_MAX_BYTES, "case manifest exceeds 262144 bytes")
     require(isinstance(manifest, dict), "case manifest root must be an object")
     assert isinstance(manifest, dict)
-    expected = {
+    base_fields = {
         "schema_version",
         "case_id",
         "case_seed_b64",
@@ -754,8 +822,13 @@ def validate_v2_case_manifest(
         "runtime",
         "migration_sources",
     }
+    manifest_schema = manifest.get("schema_version")
+    expected = base_fields if manifest_schema == 1 else base_fields | {"document"}
     require(set(manifest) == expected, "case manifest top-level fields are invalid")
-    require(manifest["schema_version"] == 1, "case manifest schema_version must be 1")
+    require(
+        manifest_schema in ({1, 2} if migration_read else {2}),
+        "case manifest requires explicit project migration" if migration_read else "case manifest schema_version must be 2",
+    )
     case_id = validate_case_id(manifest["case_id"], "case_id")
     if expected_case_id is not None:
         require(case_id == expected_case_id, "case manifest case_id does not match index")
@@ -767,7 +840,7 @@ def validate_v2_case_manifest(
     except Exception as exc:
         fail(f"case_seed_b64 must be valid base64: {exc}")
     require(len(seed) == 32, "case_seed_b64 must encode exactly 32 bytes")
-    require(manifest["status"] in V2_CASE_LIFECYCLES, "status is invalid")
+    require(manifest["status"] in CURRENT_CASE_LIFECYCLES, "status is invalid")
     validate_utc_timestamp(manifest["created_at"], "created_at")
     closed_at = manifest["closed_at"]
     require(closed_at is None or isinstance(closed_at, str), "closed_at must be null or a UTC timestamp")
@@ -780,7 +853,7 @@ def validate_v2_case_manifest(
     claims = manifest["claims"]
     require(isinstance(claims, dict), "claims must be an object")
     assert isinstance(claims, dict)
-    require(len(claims) <= V2_MANIFEST_CLAIMS_MAX, "claims exceeds 256 records")
+    require(len(claims) <= CURRENT_MANIFEST_CLAIMS_MAX, "claims exceeds 256 records")
     for claim_id, row in claims.items():
         validate_claim_id(claim_id, f"claims key {claim_id!r}")
         require(isinstance(row, dict), f"claims[{claim_id}] must be an object")
@@ -801,7 +874,7 @@ def validate_v2_case_manifest(
     artifacts = manifest["artifacts"]
     require(isinstance(artifacts, dict), "artifacts must be an object")
     assert isinstance(artifacts, dict)
-    require(len(artifacts) <= V2_MANIFEST_ARTIFACTS_MAX, "artifacts exceeds 2048 records")
+    require(len(artifacts) <= CURRENT_MANIFEST_ARTIFACTS_MAX, "artifacts exceeds 2048 records")
     for artifact_id, row in artifacts.items():
         validate_artifact_id(artifact_id, f"artifacts key {artifact_id!r}")
         require(isinstance(row, dict), f"artifacts[{artifact_id}] must be an object")
@@ -820,10 +893,63 @@ def validate_v2_case_manifest(
         require(isinstance(row["consumer"], str) and row["consumer"].strip(), f"artifacts[{artifact_id}].consumer must be text")
         validate_sha256(row["source_revision"], f"artifacts[{artifact_id}].source_revision")
 
+    if manifest_schema == 2:
+        document = manifest["document"]
+        if document is not None:
+            require(isinstance(document, dict), "document must be null or an object")
+            assert isinstance(document, dict)
+            require(
+                set(document) == {
+                    "path", "generation", "byte_digest", "updated_at", "title",
+                    "purpose", "status", "needs_resolution", "latest_artifact_id",
+                    "source_artifact_ids",
+                },
+                "document has invalid fields",
+            )
+            live_path = validate_case_artifact_path(document["path"], "document.path", case_id)
+            require(
+                live_path.as_posix() == f"docs/teamwork/cases/{case_id}/live.md",
+                "document.path must be the case live.md",
+            )
+            generation = document["generation"]
+            require(
+                isinstance(generation, int) and not isinstance(generation, bool) and generation >= 1,
+                "document.generation must be a positive integer",
+            )
+            validate_sha256(document["byte_digest"], "document.byte_digest")
+            validate_utc_timestamp(document["updated_at"], "document.updated_at")
+            require(isinstance(document["title"], str) and document["title"].strip(), "document.title must be text")
+            require(document["purpose"] in CURRENT_LIVE_PURPOSES, "document.purpose is invalid")
+            require(document["status"] in CURRENT_LIVE_STATUSES, "document.status is invalid")
+            require(isinstance(document["needs_resolution"], bool), "document.needs_resolution must be boolean")
+            latest_id = validate_artifact_id(document["latest_artifact_id"], "document.latest_artifact_id")
+            require(latest_id in artifacts, "document.latest_artifact_id must exist in artifacts")
+            source_ids = document["source_artifact_ids"]
+            require(isinstance(source_ids, list), "document.source_artifact_ids must be an array")
+            assert isinstance(source_ids, list)
+            normalized_sources = [validate_artifact_id(item, "document.source_artifact_ids item") for item in source_ids]
+            require(len(normalized_sources) == len(set(normalized_sources)), "document source artifact ids must be unique")
+            require(all(item in artifacts for item in normalized_sources), "document source artifact ids must exist in artifacts")
+            if project_reader is not None:
+                live_text = project_reader.read_text(live_path, "case live document", require_single_link=True)
+                require(hashlib.sha256(live_text.encode("utf-8")).hexdigest() == document["byte_digest"], "live document digest must match manifest")
+                envelope = {
+                    line.split(": ", 1)[0]: line.split(": ", 1)[1]
+                    for line in live_text.splitlines()[:7]
+                    if ": " in line
+                }
+                require(live_text.startswith("Teamwork Live Document: 1\n"), "live document schema is invalid")
+                require(envelope.get("Case ID") == case_id, "live document case id is invalid")
+                require(envelope.get("Purpose") == document["purpose"], "live document purpose differs from manifest")
+                require(envelope.get("Status") == document["status"], "live document status differs from manifest")
+                require(envelope.get("Generation") == str(generation), "live document generation differs from manifest")
+                require(envelope.get("Last Updated") == document["updated_at"], "live document updated_at differs from manifest")
+                require(envelope.get("Needs Resolution") == ("yes" if document["needs_resolution"] else "no"), "live document resolution state differs from manifest")
+
     for collection, limit in (
-        ("history", V2_MANIFEST_HISTORY_MAX),
-        ("references", V2_MANIFEST_REFS_MAX),
-        ("migration_sources", V2_MANIFEST_MIGRATION_SOURCES_MAX),
+        ("history", CURRENT_MANIFEST_HISTORY_MAX),
+        ("references", CURRENT_MANIFEST_REFS_MAX),
+        ("migration_sources", CURRENT_MANIFEST_MIGRATION_SOURCES_MAX),
     ):
         rows = manifest[collection]
         require(isinstance(rows, list), f"{collection} must be an array")
@@ -873,6 +999,23 @@ def validate_v2_case_manifest(
         "runtime.active_route must stay inside its case",
     )
     validate_sha256(runtime["state_revision"], "runtime.state_revision")
+    if manifest_schema == 2 and not migration_read:
+        document = manifest["document"]
+        if document is None:
+            require(not artifacts and not manifest["history"] and not manifest["references"] and not manifest["migration_sources"], "a current manifest without live.md must not retain artifacts")
+        else:
+            assert isinstance(document, dict)
+            latest_id = str(document["latest_artifact_id"])
+            require(set(artifacts) == {latest_id}, "a current manifest may index only live.md")
+            latest = artifacts[latest_id]
+            require(latest["path"] == document["path"], "live.md artifact path must match document")
+            require(latest["byte_digest"] == document["byte_digest"], "live.md artifact digest must match document")
+            require(not manifest["history"] and not manifest["references"], "current manifests do not retain artifact history or references")
+            require(
+                all(row["artifact_id"] == latest_id for row in manifest["migration_sources"]),
+                "all migration provenance must target live.md",
+            )
+            require(all(claim["head_artifact_id"] == latest_id for claim in claims.values()), "all current claim heads must target live.md")
 
 
 def validate_index(
@@ -888,10 +1031,12 @@ def validate_index(
     version = index.get("schema_version")
     if version == 1:
         validate_v1_index(index, index_path, project_reader, migration_read=migration_read)
-    elif version == 2:
-        validate_v2_root_index(index, index_path, project_reader, raw_bytes=raw_bytes)
+    elif version == 2 and migration_read:
+        validate_current_root_index(index, index_path, project_reader, raw_bytes=raw_bytes, migration_read=True)
+    elif version == 3:
+        validate_current_root_index(index, index_path, project_reader, raw_bytes=raw_bytes)
     else:
-        fail("schema_version must be 1 or 2")
+        fail("schema_version must be current version 3; older versions require explicit project migration")
 
 
 def read_regular_text(path: Path, label: str) -> str:
@@ -932,7 +1077,7 @@ def validate_memory_templates(directory: Path) -> None:
     except json.JSONDecodeError as exc:
         fail(f"memory index template is invalid JSON: {exc}")
     validate_index(index, directory / "index.json", raw_bytes=len(index_text.encode("utf-8")))
-    require(index.get("schema_version") == 2, "memory index template must use schema_version 2")
+    require(index.get("schema_version") == 3, "memory index template must use schema_version 3")
     combined = index_text.casefold()
     for forbidden in (
         "discussion-transaction",
@@ -941,6 +1086,20 @@ def validate_memory_templates(directory: Path) -> None:
         "docs/teamwork/readme.md",
     ):
         require(forbidden not in combined, f"ordinary memory templates must not contain {forbidden!r}")
+    live_template = read_regular_text(directory / "teamwork-live-template.md", "Writer live document template")
+    for required in (
+        "Teamwork Live Document: 1",
+        "Case ID: {{case_id}}",
+        "Purpose: {{purpose}}",
+        "Status: {{status}}",
+        "Generation: {{generation}}",
+        "Needs Resolution: {{needs_resolution}}",
+        "{{purpose_specific_sections}}",
+    ):
+        require(required in live_template, f"Writer live document template is missing {required!r}")
+    folded = live_template.casefold()
+    for forbidden in ("case-inspect", "case-schema", "case-apply", "sha256", "transaction"):
+        require(forbidden not in folded, f"Writer live document template must hide storage mechanic {forbidden!r}")
 
 
 def canonical_project_root(index_path: Path) -> Path | None:
@@ -986,7 +1145,7 @@ def main() -> int:
         elif (case_root := canonical_case_project_root(path)) is not None:
             reader = SafeProjectReader(case_root)
             try:
-                validate_v2_case_manifest(
+                validate_current_case_manifest(
                     value,
                     path,
                     reader,

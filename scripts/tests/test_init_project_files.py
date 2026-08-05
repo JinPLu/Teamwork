@@ -170,7 +170,7 @@ class InitProjectFilesTests(unittest.TestCase):
             self.assertFalse((project / ".teamwork-init-transaction.json").exists())
             self.assertFalse((memory / ".teamwork-init-transaction.json").exists())
             index = json.loads((memory / "index.json").read_text(encoding="utf-8"))
-            self.assertEqual(index["schema_version"], 2)
+            self.assertEqual(index["schema_version"], 3)
             self.assertEqual(index["active_cases"], [])
             self.assertEqual(index["claim_heads"], {})
             self.assertEqual(index["aliases"], {})
@@ -182,15 +182,16 @@ class InitProjectFilesTests(unittest.TestCase):
                 agents_text,
             )
             self.assertIn(
-                "selected v2 case manifest",
+                "one live document",
                 agents_text,
             )
             self.assertIn(
-                "live/collaborate.md",
+                "docs/teamwork/cases/<case_id>/live.md",
                 agents_text,
             )
-            self.assertIn("accepted decisions use `decision.md`", agents_text)
-            self.assertIn("case-inspect", agents_text)
+            self.assertIn("update it only for material", agents_text)
+            self.assertIn("migration-only inputs for Update", agents_text)
+            self.assertNotIn("case-inspect", agents_text)
             self.assertNotIn("docs/teamwork/collaborate/current.md", agents_text)
             self.assertNotIn("collaborate-inspect", agents_text)
             self.assertNotIn(
@@ -200,7 +201,6 @@ class InitProjectFilesTests(unittest.TestCase):
             ignored_text = (project / ".gitignore").read_text(encoding="utf-8")
             self.assertIn("docs/teamwork/**", ignored_text)
             self.assertIn(".teamwork/runtime/**", ignored_text)
-            self.assertIn(".teamwork/cold-archive/**", ignored_text)
             self.assertEqual(self.run_files(project, "validate").returncode, 0)
 
     def test_init_project_refuses_invalid_existing_memory_before_migration_or_writes(self) -> None:
@@ -224,20 +224,21 @@ class InitProjectFilesTests(unittest.TestCase):
 
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("Teamwork project init refused", result.stderr)
-            self.assertIn("migration requires an exact legacy-v1 or case-v2 Teamwork root", result.stderr)
+            self.assertIn("older versions require explicit project migration", result.stderr)
             self.assertEqual(before, self.tree_state(project))
             self.assertFalse(home.exists())
 
-    def test_project_context_is_case_v2_only_and_legacy_requires_migration(self) -> None:
+    def test_project_context_is_case_v3_only_and_legacy_requires_migration(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             fresh = self.project(temporary)
             self.initialize(fresh, label="Fresh")
             fresh_agents = (fresh / "AGENTS.md").read_text(encoding="utf-8")
             self.assertIn("Read `docs/teamwork/index.json` first", fresh_agents)
-            self.assertIn("selected v2 case manifest", fresh_agents)
-            self.assertIn("live/collaborate.md", fresh_agents)
-            self.assertIn("accepted decisions use `decision.md`", fresh_agents)
-            self.assertIn("case-inspect", fresh_agents)
+            self.assertIn("one live document", fresh_agents)
+            self.assertIn("docs/teamwork/cases/<case_id>/live.md", fresh_agents)
+            self.assertIn("update it only for material", fresh_agents)
+            self.assertIn("migration-only inputs for Update", fresh_agents)
+            self.assertNotIn("case-inspect", fresh_agents)
             self.assertNotIn("docs/teamwork/collaborate/current.md", fresh_agents)
             self.assertNotIn("collaborate-inspect", fresh_agents)
 
@@ -253,14 +254,13 @@ class InitProjectFilesTests(unittest.TestCase):
                 "Legacy",
             )
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("requires case-v2 memory", result.stderr)
+            self.assertIn("legacy Teamwork memory requires Update migration before Init can write context", result.stderr)
             self.assertFalse((legacy / "AGENTS.md").exists())
 
         skill = (ROOT / "skills/teamwork-collaborate/SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("Dispatch Writer at the first substantive synthesis", skill)
-        self.assertIn("Give Writer one semantic document", skill)
-        self.assertIn("overall picture; decided; open", skill)
-        self.assertIn("Never write the checkpoint directly", skill)
+        self.assertIn("single live document", skill)
+        self.assertIn("reusable synthesis appears", skill)
+        self.assertIn("materially changes", skill)
         self.assertNotIn("case-inspect", skill)
         self.assertNotIn("live/collaborate.md", skill)
         self.assertNotIn("collaborate-inspect", skill)
@@ -274,14 +274,10 @@ class InitProjectFilesTests(unittest.TestCase):
                 "templates/claude-agents/writer.md",
             )
         )
-        self.assertIn("case-inspect first", writer)
-        self.assertIn("case-v2 only", writer)
-        self.assertIn("Substantive: exact case_id/alias or frozen seed/task_key", writer)
-        self.assertIn("Explore=evidence-add", writer)
-        self.assertIn(
-            "legacy-v1 artifacts/collaborate/goal are read-only migration inputs, no write route",
-            writer,
-        )
+        self.assertIn("one reader-first live document", writer)
+        self.assertIn("update it only when evidence, decisions, conclusions, or next steps materially change", writer)
+        self.assertIn("surface contradictions", writer)
+        self.assertNotIn("case-inspect", writer)
 
     def test_repository_project_block_matches_observed_schema(self) -> None:
         index = json.loads((ROOT / "docs/teamwork/index.json").read_text(encoding="utf-8"))
@@ -295,8 +291,13 @@ class InitProjectFilesTests(unittest.TestCase):
             self.assertIn("collaborate-inspect", block)
             self.assertNotIn("selected v2 case manifest", block)
         elif index["schema_version"] == 2:
-            self.assertIn("selected v2 case manifest", block)
-            self.assertIn("case-inspect", block)
+            self.assertIn("one live document", block)
+            self.assertIn("Update migration", block)
+            self.assertNotIn("case-inspect", block)
+            self.assertNotIn("docs/teamwork/collaborate/current.md", block)
+        elif index["schema_version"] == 3:
+            self.assertIn("one live document", block)
+            self.assertNotIn("case-inspect", block)
             self.assertNotIn("docs/teamwork/collaborate/current.md", block)
         else:
             self.fail(f"unsupported schema_version: {index['schema_version']!r}")
@@ -323,7 +324,7 @@ class InitProjectFilesTests(unittest.TestCase):
                 [],
             )
 
-    def test_teamwork_memory_runtime_and_cold_archive_sinks_are_git_ignored(self) -> None:
+    def test_teamwork_memory_and_temporary_runtime_sinks_are_git_ignored(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = self.project(temporary)
             result = self.run_files(
@@ -343,7 +344,6 @@ class InitProjectFilesTests(unittest.TestCase):
                     "docs/teamwork/index.json",
                     "docs/teamwork/cases/c-" + "a" * 64 + "/manifest.json",
                     ".teamwork/runtime/migration/request.json",
-                    ".teamwork/cold-archive/v1/objects/sha256/aa/" + "b" * 64,
                 ],
                 cwd=project,
                 text=True,
@@ -357,7 +357,6 @@ class InitProjectFilesTests(unittest.TestCase):
                     "docs/teamwork/index.json",
                     "docs/teamwork/cases/c-" + "a" * 64 + "/manifest.json",
                     ".teamwork/runtime/migration/request.json",
-                    ".teamwork/cold-archive/v1/objects/sha256/aa/" + "b" * 64,
                 ],
             )
 
@@ -453,7 +452,7 @@ class InitProjectFilesTests(unittest.TestCase):
             self.assertIn("init journal fields are invalid", result.stderr)
             self.assertEqual(marker.read_text(encoding="utf-8"), "{}\n")
 
-    def test_full_bootstrap_emits_matrix_only_when_explicit(self) -> None:
+    def test_full_bootstrap_emits_current_schema_report_only_when_explicit(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = self.project(temporary)
             regular = self.run_files(project, "write-context", "--today", "2026-07-19")
@@ -468,9 +467,14 @@ class InitProjectFilesTests(unittest.TestCase):
                 "--full-bootstrap",
             )
             self.assertEqual(full.returncode, 0, full.stderr)
-            matrix = json.loads(full.stdout)
-            self.assertEqual(matrix["mode"], "full-bootstrap")
-            self.assertGreater(matrix["published_surface_counts"]["deterministic"], 0)
+            report = json.loads(full.stdout)
+            self.assertEqual(report["schema_version"], 3)
+            self.assertEqual(report["mode"], "full-bootstrap")
+            self.assertEqual(report["sources"], {"memory_template": "templates/teamwork-memory/index.json"})
+            self.assertEqual(report["project_memory"], "fresh case-v3 only")
+            self.assertEqual(report["migration"], "legacy project memory is handled by Update, not Init")
+            self.assertNotIn("published_surface_counts", report)
+            self.assertNotIn("migration_ledger_rows", report)
             self.assertFalse((project / "docs/teamwork/capability-matrix.json").exists())
 
     def test_candidate_promotion_never_happens_implicitly(self) -> None:
@@ -493,17 +497,14 @@ class InitProjectFilesTests(unittest.TestCase):
             self.assertIn("explicit full bootstrap and Root authority", result.stderr)
             self.assertFalse((project / "docs").exists())
 
-    def test_v342_preflight_uses_full_owned_surface_authority_not_skill_subset(self) -> None:
+    def test_v342_preflight_action_is_removed_from_init(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             project = self.project(temporary)
 
             result = self.run_files(project, "v342-preflight")
 
-            self.assertEqual(result.returncode, 0, result.stderr)
-            report = json.loads(result.stdout)
-            self.assertGreater(report["deterministic_surfaces"], 100)
-            self.assertGreater(report["runtime_surfaces"], 1)
-            self.assertFalse(report["skill_subset_authoritative"])
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("invalid choice", result.stderr)
 
 
 if __name__ == "__main__":

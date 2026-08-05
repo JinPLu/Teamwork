@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.0.0 - 2026-08-06
+
+**Teamwork 7.0 让清晰任务保持直接，并把协作方法从流程仪式重构为简洁、按需加载的能力。**
+
+- **全局规则更少、更可信。** 普通任务不再因为复杂、重要或有风险就自动进入 workflow；Teamwork 只要求如实表达证据，并让验证强度与真实风险和结论相匹配。
+- **八个公共 Skill 各自拥有清楚边界。** Explore 改为内部只读 Agent，Designer 收敛为严格对抗专用 Challenger，Plan Reviewer 合并进 Reviewer；固定 Agent 数量、L1-L3 状态和通用 digest 仪式全部移除。
+- **Writer 回到文档维护。** 每项任务只维护一份 live 文档，在可复用内容首次出现、实质改变和结束时更新；事务、恢复、迁移与完整性留在存储实现层，不再占用模型工作上下文。
+- **发布证据改为语义优先。** topology 和 release matrix 由 manifest 驱动，测试与 hash 不再冒充内容正确性；三宿主安装后语义测试和 disposable-write 证据成为发布硬门。
+
+升级操作：更新到 7.0.0 后，对精确项目根目录运行 `$teamwork-update`；它会刷新全局 surfaces，并把该项目中的全部 Teamwork 文档迁移到新格式。随后从新任务开始使用新的 Skills、Agents 与策略。
+
+重要限制：7.0.0 不提供旧设置或旧数据的运行时兼容。旧项目文档只能作为 Update 的迁移输入；没有精确项目根目录时，Update 只刷新全局 surfaces 并报告项目迁移待执行。
+
 ## 6.3.0 - 2026-08-05
 
 **Teamwork 6.3.0 让 Collaborate 更像同一场连续讨论：先判断、再提问，并把选择权清楚留给用户。**

@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "public_skills": [
+    {
+      "name": "teamwork-collaborate",
+      "path": "skills/teamwork-collaborate/SKILL.md"
+    },
+    {
+      "name": "teamwork-debug",
+      "path": "skills/teamwork-debug/SKILL.md"
+    },
+    {
+      "name": "teamwork-goal",
+      "path": "skills/teamwork-goal/SKILL.md"
+    },
+    {
+      "name": "teamwork-init",
+      "path": "skills/teamwork-init/SKILL.md"
+    },
+    {
+      "name": "teamwork-plan",
+      "path": "skills/teamwork-plan/SKILL.md"
+    },
+    {
+      "name": "teamwork-research",
+      "path": "skills/teamwork-research/SKILL.md"
+    },
+    {
+      "name": "teamwork-review",
+      "path": "skills/teamwork-review/SKILL.md"
+    },
+    {
+      "name": "teamwork-update",
+      "path": "skills/teamwork-update/SKILL.md"
+    }
+  ],
+  "agents": [
+    {
+      "name": "challenger",
+      "templates": {
+        "codex": "templates/codex-agents/teamwork-challenger.toml",
+        "cursor": "templates/cursor-agents/challenger.md",
+        "claude": "templates/claude-agents/challenger.md"
+      }
+    },
+    {
+      "name": "debugger",
+      "templates": {
+        "codex": "templates/codex-agents/teamwork-debugger.toml",
+        "cursor": "templates/cursor-agents/debugger.md",
+        "claude": "templates/claude-agents/debugger.md"
+      }
+    },
+    {
+      "name": "explorer",
+      "templates": {
+        "codex": "templates/codex-agents/teamwork-explorer.toml",
+        "cursor": "templates/cursor-agents/explorer.md",
+        "claude": "templates/claude-agents/explorer.md"
+      }
+    },
+    {
+      "name": "planner",
+      "templates": {
+        "codex": "templates/codex-agents/teamwork-planner.toml",
+        "cursor": "templates/cursor-agents/planner.md",
+        "claude": "templates/claude-agents/planner.md"
+      }
+    },
+    {
+      "name": "researcher",
+      "templates": {
+        "codex": "templates/codex-agents/teamwork-researcher.toml",
+        "cursor": "templates/cursor-agents/researcher.md",
+        "claude": "templates/claude-agents/researcher.md"
+      }
+    },
+    {
+      "name": "reviewer",
+      "templates": {
+        "codex": "templates/codex-agents/teamwork-reviewer.toml",
+        "cursor": "templates/cursor-agents/reviewer.md",
+        "claude": "templates/claude-agents/reviewer.md"
+      }
+    },
+    {
+      "name": "worker",
+      "templates": {
+        "codex": "templates/codex-agents/teamwork-worker.toml",
+        "cursor": "templates/cursor-agents/worker.md",
+        "claude": "templates/claude-agents/worker.md"
+      }
+    },
+    {
+      "name": "writer",
+      "templates": {
+        "codex": "templates/codex-agents/teamwork-writer.toml",
+        "cursor": "templates/cursor-agents/writer.md",
+        "claude": "templates/claude-agents/writer.md"
+      }
+    }
+  ],
+  "root_owned_methods": [
+    "collaborate",
+    "goal"
+  ],
+  "owned_references": [
+    "skills/teamwork-collaborate/references/adversarial-search.md",
+    "skills/teamwork-debug/references/runtime-diagnosis.md",
+    "skills/teamwork-research/references/deep-research.md",
+    "skills/teamwork-review/references/strict-review.md"
+  ],
+  "retired": {
+    "public_skills": {
+      "grill-me": "Historical pre-Collaborate surface.",
+      "run-analyze-design": "Historical router-era surface.",
+      "run-analyze-execute": "Historical router-era surface.",
+      "run-analyze-execution-review": "Historical router-era surface.",
+      "run-analyze-goal": "Historical router-era surface.",
+      "run-analyze-optimize": "Historical router-era surface.",
+      "run-analyze-plan": "Historical router-era surface.",
+      "run-analyze-plan-review": "Historical router-era surface.",
+      "run-analyze-research": "Historical router-era surface.",
+      "run-analyze-review": "Historical router-era surface.",
+      "teamwork": "Historical router surface.",
+      "teamwork-design": "Historical design surface.",
+      "teamwork-discuss": "Historical discussion surface.",
+      "teamwork-execute": "Historical generic execution surface.",
+      "teamwork-explore": "Explorer remains an internal read-only agent.",
+      "using-teamwork": "Historical router surface."
+    },
+    "agents": {
+      "designer": "challenger",
+      "plan-reviewer": "reviewer"
+    },
+    "references": [
+      "skills/teamwork-collaborate/references/collaboration-layers.md"
+    ],
+    "allowed_path_classes": {
+      "inventory": [
+        "config/teamwork-topology.json"
+      ],
+      "update_migration": [
+        "scripts/install/",
+        "scripts/check-update.sh",
+        "scripts/teamwork-case-migration.py",
+        "scripts/tests/fixtures/"
+      ],
+      "negative_eval": [
+        "evals/teamwork/routing-pairs.json",
+        "scripts/test_eval_teamwork_mutations.py",
+        "scripts/tests/test_skill_topology_v4.py"
+      ],
+      "history": [
+        "CHANGELOG.md",
+        "CHANGELOG.en.md",
+        "evals/teamwork/migrations/",
+        "evals/teamwork/ledgers/",
+        "evals/teamwork/manifests/",
+        "evals/teamwork/reviews/",
+        "evals/teamwork/validation/"
+      ]
+    }
+  }
+}

@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.0.0 - 2026-08-06
+
+**Teamwork 7.0 keeps clear work direct and rebuilds collaboration methods as concise, on-demand capabilities instead of workflow ceremony.**
+
+- **Global rules are smaller and more credible.** Complexity, importance, or risk alone no longer activates a workflow. Teamwork asks for honest evidence statements and verification proportional to the real risk and claim.
+- **Eight public Skills have clear boundaries.** Explore becomes an internal read-only agent, Designer narrows to the strict-adversarial Challenger, and Plan Reviewer merges into Reviewer. Fixed agent counts, L1-L3 runtime state, and generic digest ceremony are removed.
+- **Writer returns to document maintenance.** Each task keeps one live document, updated when reusable content first appears, materially changes, and is finalized. Transactions, recovery, migration, and integrity stay in storage rather than model context.
+- **Release evidence becomes semantic first.** Topology and release matrices are manifest-driven; tests and hashes no longer stand in for content correctness; installed semantic and disposable-write evidence across supported hosts become release gates.
+
+Upgrade action: update to 7.0.0 and run `$teamwork-update` with the exact project root. It refreshes global surfaces and migrates every Teamwork document in that project. Then start a new task to load the new Skills, agents, and policy.
+
+Important limit: 7.0.0 provides no runtime compatibility for old settings or data. Older project documents are accepted only as Update migration input. Without an exact project root, Update refreshes global surfaces and reports project migration as pending.
+
 ## 6.3.0 - 2026-08-05
 
 **Teamwork 6.3.0 makes Collaborate behave like one continuous discussion: contribute first, ask only when needed, and keep user-owned choices with the user.**

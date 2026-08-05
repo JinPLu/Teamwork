@@ -20,38 +20,23 @@ TEAMWORK_COST_BASELINE_ARGS=(
 if [[ -n "$REAL_CODEX" && ! -x "$REAL_CODEX" ]]; then
   REAL_CODEX=""
 fi
-CODEX_AGENTS=(
-  teamwork-researcher
-  teamwork-explorer
-  teamwork-debugger
-  teamwork-designer
-  teamwork-planner
-  teamwork-worker
-  teamwork-writer
-  teamwork-plan-reviewer
-  teamwork-reviewer
-)
-CURSOR_AGENTS=(
-  researcher
-  explorer
-  debugger
-  designer
-  planner
-  worker
-  writer
-  plan-reviewer
-  reviewer
-)
-CLAUDE_AGENTS=(
-  researcher
-  explorer
-  debugger
-  designer
-  planner
-  worker
-  writer
-  plan-reviewer
-  reviewer
+CODEX_AGENTS=()
+CURSOR_AGENTS=()
+CLAUDE_AGENTS=()
+while IFS=$'\t' read -r host name; do
+  case "$host" in
+    codex) CODEX_AGENTS+=("$name") ;;
+    cursor) CURSOR_AGENTS+=("$name") ;;
+    claude) CLAUDE_AGENTS+=("$name") ;;
+  esac
+done < <(python3 - "$TOPOLOGY_MANIFEST" <<'PY'
+import json, pathlib, sys
+value = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+for row in value["agents"]:
+    for host, path in row["templates"].items():
+        stem = pathlib.PurePosixPath(path).stem
+        print(f"{host}\t{stem}")
+PY
 )
 
 # Candidate validation intentionally inherits the caller's Git index/worktree.
@@ -62,13 +47,7 @@ isolated_git() {
   env -i PATH="$PATH" HOME="${HOME:-/tmp}" TMPDIR="${TMPDIR:-/tmp}" git "$@"
 }
 
-V342_SKILL_INVENTORY_FIXTURE="scripts/tests/fixtures/v3.4.2-skill-inventory.json"
-[[ -f "$ROOT/$V342_SKILL_INVENTORY_FIXTURE" ]] \
-  || fail "missing frozen v3.4.2 skill inventory fixture"
-git_known_package_file "$V342_SKILL_INVENTORY_FIXTURE" \
-  || fail "$V342_SKILL_INVENTORY_FIXTURE is absent from the active validation index"
-
-# --- Exact v4 role templates ---
+# --- Current role templates ---
 while IFS= read -r template; do
   ! grep -q 'grill/question-first' "$template" \
     || fail "agent template must not duplicate the grill procedure: ${template#"$ROOT/"}"
@@ -79,112 +58,9 @@ grep_absent 'Shared Understanding Packet\|Native Fields\|Option Matrix\|Worker C
 grep_absent 'only lightweight commands\|Inspect additional material only\|attempt only a bounded' \
   "agent templates must not impose capability-harming universal caps" \
   "$ROOT/templates/codex-agents" "$ROOT/templates/cursor-agents" "$ROOT/templates/claude-agents"
-python3 - "$ROOT" <<'PY'
-import pathlib
-import sys
-
-root = pathlib.Path(sys.argv[1])
-roles = {
-    "researcher": [
-        root / "templates/codex-agents/teamwork-researcher.toml",
-        root / "templates/cursor-agents/researcher.md",
-        root / "templates/claude-agents/researcher.md",
-    ],
-    "explorer": [
-        root / "templates/codex-agents/teamwork-explorer.toml",
-        root / "templates/cursor-agents/explorer.md",
-        root / "templates/claude-agents/explorer.md",
-    ],
-    "debugger": [
-        root / "templates/codex-agents/teamwork-debugger.toml",
-        root / "templates/cursor-agents/debugger.md",
-        root / "templates/claude-agents/debugger.md",
-    ],
-    "designer": [
-        root / "templates/codex-agents/teamwork-designer.toml",
-        root / "templates/cursor-agents/designer.md",
-        root / "templates/claude-agents/designer.md",
-    ],
-    "worker": [
-        root / "templates/codex-agents/teamwork-worker.toml",
-        root / "templates/cursor-agents/worker.md",
-        root / "templates/claude-agents/worker.md",
-    ],
-    "writer": [
-        root / "templates/codex-agents/teamwork-writer.toml",
-        root / "templates/cursor-agents/writer.md",
-        root / "templates/claude-agents/writer.md",
-    ],
-    "planner": [
-        root / "templates/codex-agents/teamwork-planner.toml",
-        root / "templates/cursor-agents/planner.md",
-        root / "templates/claude-agents/planner.md",
-    ],
-    "plan-reviewer": [
-        root / "templates/codex-agents/teamwork-plan-reviewer.toml",
-        root / "templates/cursor-agents/plan-reviewer.md",
-        root / "templates/claude-agents/plan-reviewer.md",
-    ],
-    "reviewer": [
-        root / "templates/codex-agents/teamwork-reviewer.toml",
-        root / "templates/cursor-agents/reviewer.md",
-        root / "templates/claude-agents/reviewer.md",
-    ],
-}
-required = {
-    "researcher": ("sanitized brief", ("citations", "cited support")),
-    "explorer": ("local evidence question", "codegraph"),
-    "debugger": ("unknown failure", "immutable"),
-    "designer": ("genuine alternatives", "strictly read-only"),
-    "worker": ("exact writable paths", "proportional"),
-    "writer": (
-        "standalone document",
-        "low-cost bounded disposable leaf",
-        "bounded writing brief",
-        "reader-first",
-        "preserve meaning",
-        "persistence disposition (checkpoint/completion/none)",
-        "facts/sources/citations/decisions/authority/status/acceptance",
-        "root owns user interaction, research, decisions, authority, acceptance, dispatch/timing, and durable claims",
-        "checkpoint artifacts require successful transaction readback before dependent work",
-        "for completion companions, root freezes result before dispatch",
-        "joins before claiming saved/durable",
-        "current frozen brief through the exact route",
-        "workflow artifacts only via transactions",
-        "case-inspect first",
-        "case-v2 only",
-        "case-schema <operation> -> case-apply/readback",
-        "legacy-v1 artifacts/collaborate/goal are read-only migration inputs, no write route",
-        "transaction inspect/cas/journal/atomic apply/readback and workflow artifact",
-        "transaction-derived destination",
-        "transaction gate",
-        "registration",
-        "interruption before case-apply gives no durable claim",
-        "direct-write fallback",
-        "writer identity is not continuity state",
-        "blocked without writing",
-    ),
-    "planner": ("selected direction", "execution-ready plan"),
-    "plan-reviewer": ("accept", "revise", "blocked"),
-    "reviewer": ("accept", "revise", "blocked"),
-}
-for role, paths in roles.items():
-    if len(paths) != 3:
-        raise SystemExit(f"FAIL: {role} must have exactly one template per host")
-    for path in paths:
-        if not path.is_file():
-            raise SystemExit(f"FAIL: missing {role} template: {path}")
-        text = " ".join(path.read_text(encoding="utf-8").split()).lower()
-        for expectation in required[role]:
-            alternatives = (expectation,) if isinstance(expectation, str) else expectation
-            if not any(phrase in text for phrase in alternatives):
-                raise SystemExit(
-                    f"FAIL: {role} parity missing one of {alternatives!r}: {path}"
-                )
-if set(roles) != {
-    "researcher", "explorer", "debugger", "designer", "planner", "worker", "writer", "plan-reviewer", "reviewer"
-}:
-    raise SystemExit("FAIL: role validation must name exactly the nine v4 roles")
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$ROOT/scripts" python3 - <<'PY'
+from teamwork_tooling.evaluation.sources import validate_role_template_sources
+validate_role_template_sources()
 PY
 grep_absent 'done_with_concerns\|needs_context' \
   "agent templates must not restore retired lifecycle verdicts" \
@@ -202,8 +78,10 @@ grep_absent 'teamwork-deslop' "Teamwork must not add a separate deslop stage" "$
 [[ ! -e "$ROOT/skills/teamwork-grill" ]] || fail "question-first override must not become a peer teamwork-grill skill"
 grep_absent 'teamwork-grill)' "install skill list must not add a peer teamwork-grill skill" "$ROOT/install.sh" "$ROOT/scripts/install"
 
-grep_required 'owns only the named project' "$ROOT/skills/teamwork-init/SKILL.md" \
+grep_required 'project-local' "$ROOT/skills/teamwork-init/SKILL.md" \
   "teamwork-init must stay project-local"
+grep_required 'exact project root' "$ROOT/skills/teamwork-init/SKILL.md" \
+  "teamwork-init must bind work to an exact project root"
 grep_absent 'check-update.sh' \
   "teamwork-init must not absorb global install freshness" \
   "$ROOT/skills/teamwork-init"
@@ -222,7 +100,12 @@ grep_absent 'install_global_surfaces\|configure-notifications' \
 grep_absent 'init-project refreshes the user-level routing\|init-project to refresh global Teamwork surfaces\|teamwork-init gate' \
   "installer help must not claim that project init mutates global state" \
   "$ROOT/install.sh" "$ROOT/scripts/install/common.sh" "$ROOT/scripts/check-update.sh"
-grep_required 'trust-all' "$ROOT/skills/teamwork-update/SKILL.md" "teamwork-update must trust only exact Teamwork hooks"
+grep_required 'Teamwork.*Stop' "$ROOT/skills/teamwork-update/SKILL.md" \
+  "teamwork-update must name the Teamwork Stop hook"
+grep_required 'PermissionRequest' "$ROOT/skills/teamwork-update/SKILL.md" \
+  "teamwork-update must name the Teamwork PermissionRequest hook"
+grep_absent 'trust-all' "teamwork-update must not recommend blanket hook trust" \
+  "$ROOT/skills/teamwork-update/SKILL.md"
 
 if git -C "$ROOT" grep -n -E 'raoctl|RAO|Stop hook|/rao:|/teamwork:' \
   -- ':!scripts/validate.sh' ':!scripts/validation/**' >/tmp/teamwork-retired-grep.$$; then
@@ -271,20 +154,7 @@ export PATH="$tmp/bin:$PATH"
 unproven_teamwork_dir="$tmp/home/.codex/skills/teamwork"
 mkdir -p "$unproven_teamwork_dir/references"
 printf '%s\n' '---' 'name: teamwork' 'description: Use when selecting a Teamwork stage.' '---' > "$unproven_teamwork_dir/SKILL.md"
-while IFS= read -r ref_file; do
-  printf '%s\n' "retired $ref_file" > "$unproven_teamwork_dir/references/$ref_file"
-done < <(python3 - "$ROOT/$V342_SKILL_INVENTORY_FIXTURE" <<'PY'
-import json
-import pathlib
-import sys
-
-fixture = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-prefix = "skills/using-teamwork/references/"
-for value in fixture["files"]:
-    if value.startswith(prefix):
-        print(pathlib.PurePosixPath(value).name)
-PY
-)
+printf '%s\n' 'user-owned reference' > "$unproven_teamwork_dir/references/user-note.md"
 HOME="$tmp/home" "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" >/dev/null
 [[ ! -e "$tmp/home/.fake-codex-invocations" ]] \
   || fail "Codex install must not invoke the host CLI to manage interaction capabilities"
@@ -433,7 +303,7 @@ for agent in "${CODEX_AGENTS[@]}"; do
   [[ ! -L "$tmp/home/.codex/agents/$agent.toml" ]] \
     || fail "default Codex install must copy Codex agent $agent"
 done
-for agent in teamwork-researcher teamwork-explorer teamwork-debugger teamwork-designer teamwork-planner teamwork-worker teamwork-plan-reviewer; do
+for agent in teamwork-researcher teamwork-explorer teamwork-debugger teamwork-challenger teamwork-planner teamwork-worker; do
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home/.codex/agents/$agent.toml" \
     "Codex install must render high reasoning for $agent"
 done
@@ -512,7 +382,7 @@ grep_required '^model = "gpt-5.6-luna"$' "$tmp/home-codex-agents/.codex/agents/t
   "default Codex writer install must use Luna"
 grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/teamwork-writer.toml" \
   "default Codex writer install must use high reasoning"
-for agent in teamwork-debugger teamwork-designer teamwork-planner teamwork-plan-reviewer; do
+for agent in teamwork-debugger teamwork-challenger teamwork-planner; do
   grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
     "default Codex agent install must render gpt-5.6-sol for $agent"
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
@@ -569,7 +439,7 @@ HOME="$tmp/home-codex-no-routing" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]
   || fail "--no-codex-routing must preserve a missing user config"
 
 HOME="$tmp/home-codex-agents-cost" "$ROOT/install.sh" --profile cost-first codex-agents >/dev/null
-for agent in teamwork-researcher teamwork-debugger teamwork-designer teamwork-planner teamwork-plan-reviewer; do
+for agent in teamwork-researcher teamwork-debugger teamwork-challenger teamwork-planner; do
   grep_required '^model = "gpt-5.6-terra"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
     "cost-first Codex agent install must use Terra for $agent"
   grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
@@ -765,12 +635,10 @@ grep_required '^model: composer-2.5-fast$' "$tmp/home-cursor/.cursor/agents/writ
   "Cursor install must render composer 2.5 model for writer"
 grep_required '^model: claude-opus-4-8-thinking-high$' "$tmp/home-cursor/.cursor/agents/debugger.md" \
   "Cursor install must render opus 4.8 model for debugger"
-grep_required '^model: gpt-5.6-sol-medium$' "$tmp/home-cursor/.cursor/agents/designer.md" \
-  "Cursor install must render sol medium model for designer"
+grep_required '^model: gpt-5.6-sol-medium$' "$tmp/home-cursor/.cursor/agents/challenger.md" \
+  "Cursor install must render sol medium model for challenger"
 grep_required '^model: gpt-5.6-terra-medium$' "$tmp/home-cursor/.cursor/agents/planner.md" \
   "Cursor install must render terra medium model for planner"
-grep_required '^model: claude-opus-4-8-thinking-high$' "$tmp/home-cursor/.cursor/agents/plan-reviewer.md" \
-  "Cursor install must render opus 4.8 model for plan-reviewer"
 grep_required '^model: claude-fable-5-thinking-high$' "$tmp/home-cursor/.cursor/agents/reviewer.md" \
   "Cursor install must render fable 5 model for reviewer"
 [[ -f "$tmp/home-cursor/.cursor/mcp.json" ]] \
@@ -834,12 +702,10 @@ grep_required '^model: composer-2.5-fast$' "$tmp/home-cursor-cost/.cursor/agents
   "cost-first Cursor agent install must keep composer 2.5 model for writer"
 grep_required '^model: gpt-5.6-terra-medium$' "$tmp/home-cursor-cost/.cursor/agents/debugger.md" \
   "cost-first Cursor agent install must downshift debugger"
-grep_required '^model: gpt-5.6-terra-medium$' "$tmp/home-cursor-cost/.cursor/agents/designer.md" \
-  "cost-first Cursor agent install must downshift designer"
+grep_required '^model: gpt-5.6-terra-medium$' "$tmp/home-cursor-cost/.cursor/agents/challenger.md" \
+  "cost-first Cursor agent install must downshift challenger"
 grep_required '^model: gpt-5.6-luna-medium$' "$tmp/home-cursor-cost/.cursor/agents/planner.md" \
   "cost-first Cursor agent install must downshift planner"
-grep_required '^model: gpt-5.6-terra-medium$' "$tmp/home-cursor-cost/.cursor/agents/plan-reviewer.md" \
-  "cost-first Cursor agent install must downshift plan-reviewer"
 grep_required '^model: claude-opus-4-8-thinking-high$' "$tmp/home-cursor-cost/.cursor/agents/reviewer.md" \
   "cost-first Cursor agent install must downshift reviewer"
 
@@ -893,13 +759,13 @@ grep_required '^model: haiku$' "$tmp/home-claude/.claude/agents/writer.md" \
   "Claude install must render haiku model for writer"
 grep_required '^effort: medium$' "$tmp/home-claude/.claude/agents/writer.md" \
   "Claude install must render medium effort for writer"
-for agent in debugger designer planner; do
+for agent in debugger challenger planner; do
   grep_required '^model: opus$' "$tmp/home-claude/.claude/agents/$agent.md" \
     "Claude install must render opus model for $agent"
   grep_required '^effort: high$' "$tmp/home-claude/.claude/agents/$agent.md" \
     "Claude install must render high effort for $agent"
 done
-for agent in plan-reviewer reviewer; do
+for agent in reviewer; do
   grep_required '^model: opus$' "$tmp/home-claude/.claude/agents/$agent.md" \
     "Claude install must render opus model for $agent"
   grep_required '^effort: max$' "$tmp/home-claude/.claude/agents/$agent.md" \
@@ -928,13 +794,13 @@ grep_required '^model: haiku$' "$tmp/home-claude-cost/.claude/agents/writer.md" 
   "cost-first Claude writer install must use haiku"
 grep_required '^effort: medium$' "$tmp/home-claude-cost/.claude/agents/writer.md" \
   "cost-first Claude writer install must use medium effort"
-for agent in debugger designer planner; do
+for agent in debugger challenger planner; do
   grep_required '^model: opus$' "$tmp/home-claude-cost/.claude/agents/$agent.md" \
     "cost-first Claude agent install must keep opus model for $agent"
   grep_required '^effort: high$' "$tmp/home-claude-cost/.claude/agents/$agent.md" \
     "cost-first Claude agent install must retain high effort for $agent"
 done
-for agent in plan-reviewer reviewer; do
+for agent in reviewer; do
   grep_required '^effort: max$' "$tmp/home-claude-cost/.claude/agents/$agent.md" \
     "cost-first Claude agent install must use max effort for $agent"
 done
@@ -1012,18 +878,18 @@ HOME="$tmp/home-init-project" \
   || fail "init-project must not invoke the host CLI to manage interaction capabilities"
 grep_required '<!-- TEAMWORK_PROJECT_START -->' "$init_root/AGENTS.md" \
   "init-project must write managed AGENTS.md block"
-grep_required 'selected v2 case manifest' "$init_root/AGENTS.md" \
-  "init-project AGENTS.md block must point to Teamwork memory"
+grep_required 'one live document' "$init_root/AGENTS.md" \
+  "init-project AGENTS.md block must describe current one-live Teamwork memory"
 ! grep -q 'docs/teamwork/collaborate/current.md' "$init_root/AGENTS.md" \
-  || fail "fresh schema v2 AGENTS.md block must not require the legacy Collaborate route"
+  || fail "fresh schema v3 AGENTS.md block must not require the legacy Collaborate route"
 grep_required '# TEAMWORK_LOCAL_START' "$init_root/.gitignore" \
   "init-project must write local .gitignore block"
 grep_required '^docs/teamwork/\*\*$' "$init_root/.gitignore" \
   "init-project must ignore Teamwork case memory and workflow artifacts"
 grep_required '^\.teamwork/runtime/\*\*$' "$init_root/.gitignore" \
   "init-project must ignore Teamwork transaction runtime state"
-grep_required '^\.teamwork/cold-archive/\*\*$' "$init_root/.gitignore" \
-  "init-project must ignore Teamwork cold archives"
+! grep -q '^\.teamwork/cold-archive/\*\*$' "$init_root/.gitignore" \
+  || fail "init-project must not retain the retired permanent cold-archive route"
 [[ ! -e "$init_root/.cursor" ]] \
   || fail "default init-project must not create project .cursor surfaces"
 for removed_ignore in '^\.agents/$' '^\.codex/$' '^\.cursor/$' '^\.claude/$'; do
@@ -1032,22 +898,31 @@ for removed_ignore in '^\.agents/$' '^\.codex/$' '^\.cursor/$' '^\.claude/$'; do
 done
 python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/index.json" >/dev/null
 [[ ! -e "$init_root/docs/teamwork/current.md" ]] \
-  || fail "fresh schema v2 init-project must not write legacy current.md"
+  || fail "fresh schema v3 init-project must not write legacy current.md"
 [[ ! -e "$init_root/docs/teamwork/README.md" ]] \
-  || fail "fresh schema v2 init-project must not write the legacy runtime README"
+  || fail "fresh schema v3 init-project must not write the legacy runtime README"
 [[ ! -e "$init_root/docs/teamwork/collaborate" ]] \
   || fail "init-project must not create an empty or fake Collaborate artifact directory"
-collaborate_file="$init_root/docs/teamwork/collaborate/current.md"
-mkdir -p "$(dirname "$collaborate_file")"
-printf '%s\n' \
-  '# Saved Collaborate checkpoint' \
-  '' \
-  'This project-local file must survive init reruns without becoming an index anchor.' \
-  > "$collaborate_file"
+writer_start_result="$tmp/init-project-writer-start.json"
+python3 "$ROOT/scripts/discussion-transaction.py" writer-apply \
+  --project-root "$init_root" \
+  --request-json '{"aliases":[],"body":"Reusable evidence that must survive Init reruns.","case_seed":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","operation":"start","purpose":"research","schema_version":1,"section":"Evidence","task_key":"init-rerun-preservation","title":"Init rerun preservation","updated_at":"2026-08-06T00:00:00Z"}' \
+  > "$writer_start_result"
+live_relative="$(python3 - "$writer_start_result" <<'PY'
+import json
+import pathlib
+import sys
+
+payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+print(payload["path"])
+PY
+)"
+live_file="$init_root/$live_relative"
+[[ -f "$live_file" ]] || fail "Writer start must create the current case live document"
 init_snapshot="$tmp/init-project-snapshot"
 mkdir -p "$init_snapshot"
 cp "$init_root/docs/teamwork/index.json" "$init_snapshot/index.json"
-cp "$collaborate_file" "$init_snapshot/collaborate-current.md"
+cp "$live_file" "$init_snapshot/live.md"
 for global_surface in \
   "$tmp/home-init-project/.agents" \
   "$tmp/home-init-project/.codex" \
@@ -1097,14 +972,12 @@ HOME="$tmp/home-init-project" \
 cmp -s "$init_snapshot/index.json" "$init_root/docs/teamwork/index.json" \
   || fail "init-project rerun must preserve the existing index"
 [[ ! -e "$init_root/docs/teamwork/current.md" ]] \
-  || fail "schema v2 init-project rerun must not create legacy current.md"
+  || fail "schema v3 init-project rerun must not create legacy current.md"
 [[ ! -e "$init_root/docs/teamwork/README.md" ]] \
-  || fail "schema v2 init-project rerun must not create the legacy runtime README"
-cmp -s "$init_snapshot/collaborate-current.md" "$collaborate_file" \
-  || fail "init-project rerun must preserve Collaborate's direct checkpoint file"
+  || fail "schema v3 init-project rerun must not create the legacy runtime README"
+cmp -s "$init_snapshot/live.md" "$live_file" \
+  || fail "init-project rerun must preserve the current case live document"
 python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/index.json" >/dev/null
-! grep -q 'docs/teamwork/collaborate' "$init_root/docs/teamwork/index.json" \
-  || fail "ordinary Teamwork memory must not duplicate Collaborate's direct checkpoint pointer"
 
 global_isolation_root="$tmp/init-project-isolated"
 global_isolation_home="$tmp/home-init-project-isolated"

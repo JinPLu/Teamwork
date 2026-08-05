@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="assets/teamwork-readme-onboarding-en-v3.png" alt="Teamwork cartoon with two paths: do clear tasks directly, or use Collaborate, Research, Explore, Debug, Plan, Review, Goal, Init, and Update when a method helps; both paths finish verified" width="760">
+  <img src="assets/teamwork-readme-teaser-v7.png" alt="Teamwork: clear tasks stay direct, eight focused Skills join when a method is needed, and eight Agent roles help reach a verified result" width="860">
 </p>
 
 <h1 align="center">Teamwork</h1>
 
 <p align="center">
-  <strong>Let Codex, Cursor, and Claude Code work directly when they should, and bring in a method when the task needs one.</strong><br>
-  Teamwork provides nine on-demand skills for collaborative convergence, external research, local evidence, unknown-cause debugging, planning, review, persistent goals, project initialization, and global updates.
+  <strong>Let AI work directly when it should, and bring in a method only when the task needs one.</strong><br>
+  AI/human collaboration Skills for Codex, Cursor, and Claude Code, with less ceremony, clearer boundaries, and more credible results.
 </p>
 
 <p align="center">
@@ -20,13 +20,14 @@
   <a href="CHANGELOG.en.md">Changelog</a> ·
   <a href="CODEX.md">Codex</a> ·
   <a href="CURSOR.md">Cursor</a> ·
-  <a href="CLAUDE.md">Claude Code</a>
+  <a href="CLAUDE.md">Claude Code</a> ·
+  <a href="docs/architecture.md">Architecture</a>
 </p>
 
 ---
 
 > [!TIP]
-> **You do not need to memorize nine skills first.** Describe the outcome directly most of the time. Name a `$teamwork-*` skill only when you want exact control over the method.
+> **You do not need to memorize eight Skills.** Describe the outcome directly most of the time. Name a `$teamwork-*` Skill only when you want precise control over discussion, research, debugging, planning, or review.
 
 ## 🚀 Start in one minute
 
@@ -43,30 +44,24 @@ Start a new Codex task and run:
 $teamwork-update
 ```
 
-On first activation it asks for `performance-first` or `cost-first`, then asks
-independently whether to enable managed CodeGraph and the local GPU Broker.
-The skills, agents, routing, global policy, and notification baseline completes
-whether or not those optional capabilities are enabled; later updates inherit
-the saved choices. Restart Codex when configuration finishes. If notifications
-are enabled, trust Teamwork's `Stop` and `PermissionRequest` handlers
-individually in `/hooks`; do not use trust-all.
+The first setup lets you choose `performance-first` or `cost-first`, then decide independently whether to enable managed CodeGraph and the local GPU Broker. Skills, Agents, routing, and global policy install whether or not those optional capabilities are enabled.
 
-To add project instructions, Teamwork memory, and CodeGraph context to a repository, run this from that repository:
+Now ask for the result directly:
+
+```text
+Implement this validation change, verify the real affected path, and stop when it works.
+```
+
+When the outcome and boundary are clear, Teamwork does not manufacture a workflow first. If you want to shape the direction together, try:
+
+```text
+Use $teamwork-collaborate to compare three onboarding directions with me. Recommend first, then ask only what could change the choice.
+```
+
+To create current-format project instructions and Teamwork documents in a new repository:
 
 ```text
 Use $teamwork-init to initialize this project.
-```
-
-You can now start with a direct request:
-
-```text
-Implement this validation change directly, verify the affected path, and stop when it works.
-```
-
-Clear local work like this needs no Teamwork skill. When you want to settle the direction first, try:
-
-```text
-Use $teamwork-collaborate to work through the onboarding with me. Give me a recommendation first, then ask the most useful next question.
 ```
 
 <details>
@@ -79,13 +74,6 @@ cd Teamwork
 ./scripts/check-update.sh --readiness
 ```
 
-That installs the baseline on every host. Use `./install.sh --dependencies all`
-for the full CodeGraph plus GPU Broker setup, or enable either capability with
-`--managed-codegraph` or `--managed-gpu-broker`. Later updates inherit the choice.
-Capability flags are accepted only by `codex`, `all`, `update`, and plugin
-bootstrap, which own the dependency lifecycle; narrower targets reject them
-instead of recording a choice they did not install.
-
 Install one host when preferred:
 
 ```bash
@@ -94,27 +82,30 @@ Install one host when preferred:
 ./install.sh codex   # development or manual Codex setup only
 ```
 
-Cursor also needs `./install.sh cursor-policy-copy`, followed by a paste into **Cursor Settings → Rules → User Rules**. See the [Cursor guide](CURSOR.md) and [Claude Code guide](CLAUDE.md) for details.
+Choose the lower-cost profile with:
+
+```bash
+./install.sh all --profile cost-first
+```
+
+Cursor also needs `./install.sh cursor-policy-copy`, followed by a paste into **Cursor Settings → Rules → User Rules**. See the [Cursor guide](CURSOR.md) and [Claude Code guide](CLAUDE.md) for platform details.
 
 </details>
 
-## 🧭 Which skill should I use?
+## 🧭 Use what is missing now
 
-Ask what is missing right now, not how complicated the task looks.
-
-| What you are missing | Use | What it does |
+| What you are missing | Use | What it solves |
 | --- | --- | --- |
-| An acceptable direction | 💬 `$teamwork-collaborate` | Discuss, brainstorm, stress-test, compare, or converge on an unsettled product, architecture, workflow, or API direction; challenge/adversarial is an internal method, not a public mode. |
-| External or current facts | 🔎 `$teamwork-research` | Read official sources, papers, market, or ecosystem evidence; compare multiple sources or provide citations. |
-| Read-only local evidence | 🗂️ `$teamwork-explore` | Inspect code, config, logs, tests, history, or artifacts without changing the project. |
-| The cause of a real failure | 🐞 `$teamwork-debug` | Reproduce the failure, discriminate among hypotheses, and establish a safe repair boundary. |
-| Executable steps | 📝 `$teamwork-plan` | Turn a selected direction into owned steps with dependencies, acceptance, and stop conditions. |
-| Independent acceptance | ✅ `$teamwork-review` | Check a plan, diff, artifact, or completion claim against direct evidence. |
-| Persistent progress | 🎯 `$teamwork-goal` | Keep fixing until green, monitor through completion, or work within an explicit budget. |
-| Project-level setup | 🧰 `$teamwork-init` | Initialize, audit, or repair one repository's instructions, memory, routing, and CodeGraph context. |
-| Global installation setup | 🔄 `$teamwork-update` | Completes the skills, agents, policy, routing, and notification baseline, then lets you choose a performance/cost profile and optional managed CodeGraph/GPU Broker capabilities. |
+| An acceptable direction | 💬 `$teamwork-collaborate` | Discuss, co-design, compare, brainstorm, or help unformed intent and preferences become clear. |
+| Deep external or current evidence | 🔎 `$teamwork-research` | Research across official documentation, papers, or other reliable sources, reconcile conflicts, and return traceable conclusions. |
+| The cause of a real failure | 🐞 `$teamwork-debug` | Start from the observed failure, discriminate among hypotheses, confirm the cause, and repair the same path only when already authorized. |
+| Executable steps | 📝 `$teamwork-plan` | Turn a clear direction into owned steps with dependencies, verification, and stop conditions. |
+| Independent judgment | ✅ `$teamwork-review` | Review stable code, documents, plans, artifacts, or claims, with findings before the verdict. |
+| Persistent progress | 🎯 `$teamwork-goal` | Only when explicitly requested, continue until a real success signal passes or a genuine blocker appears. |
+| Current-format project context | 🧰 `$teamwork-init` | Initialize, audit, repair, or slim Teamwork context under one exact project root. |
+| Global refresh or old-document migration | 🔄 `$teamwork-update` | Refresh global Teamwork and, with an exact project root, migrate every older Teamwork document in that project. |
 
-Natural language can activate the same methods, such as “brainstorm this with me,” “inspect local evidence without editing,” or “keep fixing until the test passes.” Skill selection is still model behavior. Name the skill when exact selection matters.
+Local code, configuration, logs, tests, and history are gathered read-only by the internal Explorer Agent, not by a public Explore Skill. Routine web lookup stays native. Research is for external questions that genuinely need multi-source synthesis.
 
 ## 🛣️ The four most common paths
 
@@ -126,7 +117,7 @@ Change the login timeout logic directly. Verify only the related tests and real 
 
 **Path:** native host inspection → edit → verification.
 
-No Router, Execute, or other Teamwork skill is needed.
+No Router, Execute, or Agent dispatch is required first.
 
 ### 2. The direction is still open
 
@@ -134,31 +125,29 @@ No Router, Execute, or other Teamwork skill is needed.
 Use $teamwork-collaborate to compare synchronous, queued, and hybrid API designs and help me converge on an acceptable direction.
 ```
 
-**Path:** Collaborate → accepted direction → Plan when useful → native implementation.
+**Path:** Collaborate → user accepts a direction → Plan when useful → separately authorized implementation.
 
-Discussion, planning, or acceptance alone does not authorize code changes.
+Discussion, planning, and acceptance do not authorize code changes by themselves.
 
 ### 3. There is a failure, but the cause is unknown
 
 ```text
-Use $teamwork-debug to reproduce this CI failure, confirm the cause, then fix and verify the same path.
+Use $teamwork-debug to reproduce this CI failure, confirm the cause, repair it, and rerun the same path.
 ```
 
-**Path:** Debug reproduction and diagnosis → native repair → rerun the failing path.
+**Path:** Debug diagnosis → narrow repair → same-path verification.
 
 If the cause and narrow repair are already clear, fix it directly instead.
 
 ### 4. A decision depends on external facts
 
 ```text
-Use $teamwork-research to read official documentation and recent changes, then give me a sourced compatibility recommendation.
+Use $teamwork-research to read official documentation and recent changes, then give me a sourced recommendation.
 ```
 
-**Path:** Research → sourced conclusion; enter Collaborate only if multiple real directions remain.
+**Path:** Research → sourced conclusion; return to Collaborate only when a real user choice remains.
 
-Local code and log evidence belongs to Explore, not Research.
-
-Review can be added as an explicit independent acceptance gate. Goal can wrap any execution path that genuinely needs persistent progress. Neither is a default step for every task.
+Review is an optional independent acceptance gate. Goal is an explicitly requested persistence wrapper. Neither belongs in every task by default.
 
 ## 📋 Copy-ready prompts
 
@@ -166,11 +155,11 @@ Review can be added as an explicit independent acceptance gate. Goal can wrap an
 # Think together
 Use $teamwork-collaborate to brainstorm a lower-maintenance release flow with me. Synthesize the current state and real options first, then ask the most useful question.
 
-# Research external evidence
+# Research deeply
 Use $teamwork-research to read only official sources and key papers, compare the options, and provide traceable citations.
 
-# Inspect local evidence
-Use $teamwork-explore to map the authentication flow, related configuration, and tests. Tell me the real change boundary without editing files.
+# Inspect local evidence read-only
+Do not edit yet. Map the authentication flow, related configuration, and tests, then tell me the real change boundary.
 
 # Diagnose a failure
 Use $teamwork-debug to reproduce this error, discriminate among the likely causes, then fix and verify the same path once confirmed.
@@ -185,57 +174,32 @@ Use $teamwork-review to check this diff against the requirements, focusing on fa
 Use $teamwork-goal to keep fixing until the named check passes. Stop only for a genuine blocker.
 ```
 
-## 🧩 What skills, agents, and the host each own
+## 🧩 What Skills, Agents, and the host each own
 
-| Layer | Responsibility | Do new users operate it directly? |
+| Layer | Responsibility | Do you operate it directly? |
 | --- | --- | --- |
-| Native host path | Clear local inspection, edits, and verification. | Yes. Describe the outcome directly. |
-| Nine public skills | Constrain the method when a task needs one. | Optional. Name one when exact selection matters. |
-| Nine agent roles | Researcher, Explorer, Debugger, Designer, Planner, Worker, Writer, Plan Reviewer, and Reviewer for worthwhile independent work. | Usually no. The main task owns dispatch, integration, and the final response. |
+| ⚡ Native host path | Clear explanations, lookup, local inspection, edits, and verification. | Yes. Describe the outcome. |
+| 🧭 Eight public Skills | A focused method with a clear trigger and boundary. | Optional. Name one when exact selection matters. |
+| 🤝 Eight internal Agent roles | Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer. | Usually no. Root owns dispatch, integration, and user dialogue. |
 
-Teamwork is not a control layer and does not turn every small request into a workflow. It supplements the host instead of replacing Codex, Cursor, or Claude Code tools, permissions, and execution paths.
+Challenger is only for an explicit strict adversarial challenge. Reviewer covers both implementation and plan review. Teamwork defines no fixed Agent count or daily dispatch cap, and importance, complexity, or risk alone does not activate a workflow.
 
-Request readiness has one owner and three outcomes. Root inspects first and acts
-without asking when state is discoverable or a safe reversible default applies;
-asks once for one exact undiscoverable user-owned value and then resumes the same
-workflow; or enters Collaborate only when the user explicitly asks to discuss,
-design, plan, brainstorm, compare, or think together, a material downstream
-choice belongs to the user, or unclear intent needs guided clarification. Risk,
-security, migration, publicity, and complexity are not separate triggers. When
-the user lacks information, Teamwork maps the knowledge space before asking
-instead of treating knowledge ambiguity as intent ambiguity.
+## 🗃️ One task, one live document
 
-Collaborate is one adaptive discussion. It moves as needed among L1 Understand
-Intent, L2 Explore Together, and L3 Challenge and Converge; those labels are not
-modes, skills, fixed depths, turn budgets, or mandatory phases. It synthesizes,
-offers useful options, and recommends before asking when the answer materially
-changes the next step. Independent questions can batch together, dependent
-questions wait for the earlier answer, and there is no workflow-wide question or
-round cap. Leaf roles never ask or start Collaborate. They return an exact gap
-or reclassification signal to Root, and one active gap is never duplicated across
-roles or stages.
+When a task produces reusable content, Writer maintains one live document for that task. It creates the document when reusable content first appears, updates it only when evidence, decisions, conclusions, or next steps materially change, and finalizes it at the end. It is not a turn-by-turn transcript, and locks, transactions, hashes, or readback do not become model procedure.
 
-Research, Explore, Debug, Plan, and Review must be handled by their owning leaf.
-If the host lacks that capability, Teamwork reports capability-blocked instead
-of letting Root or another role simulate it. Collaborate and Goal are Root-owned.
-The default dispatch is 1 child and the everyday ceiling is 4; 5-8 children are
-reserved for explicit adversarial or release work when the host supports them.
-Research and Explore gather evidence and return it to the same discussion; they
-do not own the user choice. Explicit brainstorming, adversarial, stress-test, or
-subagent requests execute the real method or report capability-blocked.
+Codex, Cursor, Claude Code, and their permissions still control files, tools, credentials, and external effects. Teamwork creates no second authorization system. Discussing or accepting a plan does not authorize execution.
 
-## 🗃️ Persistence and safety boundaries
+> [!IMPORTANT]
+> **Teamwork 7.0.0 is not backward compatible with older settings or data.** Update is the only old-format migration path. With an exact project root, it migrates every older Teamwork document. After migration verifies, normal runtime uses only the new format and has no legacy reader.
 
-- In an initialized writable project, named Teamwork workflows save reusable checkpoints or results by default. One-shot explanations, small edits, and ordinary local work do not force a document.
-- A completed method result is returned even if Writer, transaction, or readback is unavailable, with persistence reported honestly as unsaved. Only a next step that actually depends on durable continuity waits for readback; there is no direct-write fallback.
-- Collaborate Writer records are semantic, not transcripts: overall picture, decided items, open discussion/evidence, and the current recommendation or next step.
-- Explicit `no files`, off-record, read-only, or no-write instructions override default persistence.
-- Research, Collaborate, Plan, diagnostic Debug, and Review do not automatically authorize code edits or external effects. Accepting a plan does not authorize execution.
-- v6 normal runtime uses only v2 case bundles to keep one matter's collaboration, evidence, plan, review, Goal, and result under `docs/teamwork/cases/`. legacy-v1, old grill, Discussion, and Design records are Init/Update semantic migration inputs only, not a compatible runtime mode.
-- Init/Update migration must use one exact project root and is authorized and one-time. Installing or updating Teamwork does not mean any project has migrated. A project migration may be claimed only after successful Init/Update transaction readback for that root, and keeps the cold archive / restore drill boundary.
-- Teamwork also does not remove configuration whose ownership it cannot prove.
+Refresh the global install and migrate one project:
 
-For persistence internals, agent profiles, adversarial Collaborate, and platform limits, see [Codex](CODEX.md), [Cursor](CURSOR.md), [Claude Code](CLAUDE.md), and [repository architecture](docs/architecture.md).
+```bash
+./install.sh --project-root /path/to/project update
+```
+
+Without an exact project root, Update completes the global refresh and reports `project migration pending`.
 
 ## 🔄 Updates
 
@@ -257,16 +221,12 @@ git pull --ff-only
 ./scripts/check-update.sh --readiness
 ```
 
-Use `./install.sh --dependencies all` to enable every managed capability.
-Explicit opt-outs remain opt-outs on later updates instead of being treated as
-missing dependencies.
+To receive new-version notifications, choose **Watch → Custom → Releases** on [JinPLu/Teamwork](https://github.com/JinPLu/Teamwork).
 
-For release notifications, open [JinPLu/Teamwork](https://github.com/JinPLu/Teamwork) and choose **Watch → Custom → Releases**.
-
-## 📚 Learn more
+## 📚 Keep exploring
 
 - [Changelog](CHANGELOG.en.md): user-visible changes and upgrade notes.
-- [Codex](CODEX.md), [Cursor](CURSOR.md), and [Claude Code](CLAUDE.md): platform installation, configuration, and troubleshooting.
-- [Repository architecture](docs/architecture.md): source layout, generated directories, dependency boundaries, and stable commands.
-- [Contributing](CONTRIBUTING.md): change scope and verification requirements.
+- [Codex](CODEX.md), [Cursor](CURSOR.md), and [Claude Code](CLAUDE.md): platform setup and troubleshooting.
+- [Architecture](docs/architecture.md): four model-facing layers, canonical owners, storage, and release evidence.
+- [Contributing](CONTRIBUTING.md): change conventions and validation commands.
 - [GitHub Issues](https://github.com/JinPLu/Teamwork/issues): report a problem or suggest an improvement.

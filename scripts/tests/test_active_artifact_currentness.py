@@ -184,7 +184,7 @@ class ActiveArtifactCurrentnessTests(unittest.TestCase):
             set(index),
             {"schema_version", "project", "active_cases", "claim_heads", "aliases", "recent_cases", "migration"},
         )
-        self.assertEqual(index["schema_version"], 2)
+        self.assertEqual(index["schema_version"], 3)
         self.assertEqual(index["active_cases"], [])
         self.assertEqual(index["claim_heads"], {})
         self.assertEqual(index["aliases"], {})
