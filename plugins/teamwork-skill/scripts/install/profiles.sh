@@ -305,7 +305,32 @@ teamwork_codex_agent_file_is_recognized() {
   expected_name="${agent//-/_}"
   [[ -f "$path" ]] \
     && grep -q "^name = \"$expected_name\"$" "$path" \
-    && grep -Eq 'You are (the )?Teamwork ' "$path"
+    && {
+      grep -Eq 'You are (the )?Teamwork ' "$path" \
+        || teamwork_codex_agent_file_is_official_v630_writer "$path" "$agent"
+    }
+}
+
+teamwork_codex_agent_file_is_official_v630_writer() {
+  local path="$1"
+  local agent="$2"
+  [[ "$agent" == "teamwork-writer" ]] || return 1
+  python3 - "$path" <<'PY'
+import hashlib
+import pathlib
+import stat
+import sys
+
+path = pathlib.Path(sys.argv[1])
+try:
+    info = path.lstat()
+    if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+        raise SystemExit(1)
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+except OSError:
+    raise SystemExit(1)
+raise SystemExit(0 if digest == "b620f6b8c61c9d7bd870ebb090deb27103cae162ca66e4b6589684956010ddc2" else 1)
+PY
 }
 
 teamwork_markdown_agent_file_is_recognized() {

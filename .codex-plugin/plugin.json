@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "7.0.0",
+  "version": "7.0.1",
   "description": "AI-native collaboration skills for direct work, discussion, deep research, debugging, planning, review, setup, updates, and persistent goals across Codex, Cursor, and Claude Code.",
   "author": {
     "name": "JinPLu",

@@ -2,7 +2,7 @@
   "files": {
     ".codex-plugin/plugin.json": {
       "mode": "0644",
-      "sha256": "9e51f4f3f7f08b68a14dfc86a1aa2d415ebe11934961f4cc686c38158c183e9c"
+      "sha256": "d55392bae5964bf8ed3ea2955f2a62950a31c80b2590c095b4339fd6590f10b7"
     },
     ".teamwork-plugin-runtime": {
       "mode": "0644",
@@ -10,7 +10,7 @@
     },
     "VERSION": {
       "mode": "0644",
-      "sha256": "746472de66b936ac885ca6d6e68058242b4e909e3260c6317f3ec719f78f76cc"
+      "sha256": "318630f32c0dac5c715d91aecff9c07b2ce055b792ccb015a815cb013ea80fc6"
     },
     "config/teamwork-topology.json": {
       "mode": "0644",
@@ -78,7 +78,7 @@
     },
     "scripts/install/profiles.sh": {
       "mode": "0644",
-      "sha256": "058d8632c72e054afa849163d0df4ad3856f539be3ce7bf1a47853e89a8fdead"
+      "sha256": "7802e9bf37d9c1d106980b81063a7248b3244fa19eda59397154c29cf4ed052d"
     },
     "scripts/install/targets.sh": {
       "mode": "0644",
@@ -309,8 +309,8 @@
       "sha256": "4675cb12f7cf0572f3959e2984d2c35ce98de1054b22d2d97c20dbe69dfe0b07"
     }
   },
-  "manifest_sha256": "9e51f4f3f7f08b68a14dfc86a1aa2d415ebe11934961f4cc686c38158c183e9c",
+  "manifest_sha256": "d55392bae5964bf8ed3ea2955f2a62950a31c80b2590c095b4339fd6590f10b7",
   "marker": "TEAMWORK_CODEX_PLUGIN_RUNTIME=1",
   "schema_version": 1,
-  "version": "7.0.0"
+  "version": "7.0.1"
 }

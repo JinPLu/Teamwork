@@ -14,6 +14,7 @@ import unittest
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 PREFERENCES_HELPER = REPO_ROOT / "scripts/install/preferences.py"
+V630_WRITER_FIXTURE = REPO_ROOT / "scripts/tests/fixtures/v6.3.0-teamwork-writer.toml"
 EXPLICIT_BASELINE = (
     "--profile",
     "performance-first",
@@ -270,6 +271,62 @@ class InstallCliCurrentContractTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1, output)
         self.assertIn("not a recognized Teamwork-owned profile", output)
         self.assertIn("user-owned", agent.read_text(encoding="utf-8"))
+
+    def test_official_v630_writer_agent_is_replaced(self) -> None:
+        home = self.base / "v630-writer-home"
+        agent = home / ".codex/agents/teamwork-writer.toml"
+        agent.parent.mkdir(parents=True)
+        shutil.copy2(V630_WRITER_FIXTURE, agent)
+
+        result = self.run_install("--no-codex-routing", "codex-agents", home=home)
+        output = result.stdout.decode()
+        self.assertEqual(result.returncode, 0, output)
+        self.assertEqual(
+            agent.read_text(encoding="utf-8"),
+            (REPO_ROOT / "templates/codex-agents/teamwork-writer.toml").read_text(encoding="utf-8"),
+        )
+
+    def test_update_replaces_official_v630_writer_agent(self) -> None:
+        home = self.base / "v630-writer-update-home"
+        project = self.base / "v630-writer-update-project"
+        project.mkdir()
+        init = self.run_install("--project-root", str(project), "init-project", home=home)
+        self.assertEqual(init.returncode, 0, init.stdout.decode())
+        agent = home / ".codex/agents/teamwork-writer.toml"
+        agent.parent.mkdir(parents=True)
+        shutil.copy2(V630_WRITER_FIXTURE, agent)
+
+        result = self.run_lifecycle_install(
+            "--project-root",
+            str(project),
+            "--no-codex-routing",
+            "--no-mcp",
+            "update",
+            home=home,
+        )
+        output = result.stdout.decode()
+        self.assertEqual(result.returncode, 0, output)
+        self.assertIn("global updated; project migration complete", output)
+        self.assertEqual(
+            agent.read_text(encoding="utf-8"),
+            (REPO_ROOT / "templates/codex-agents/teamwork-writer.toml").read_text(encoding="utf-8"),
+        )
+
+    def test_same_named_writer_with_legacy_marker_is_not_claimed(self) -> None:
+        home = self.base / "unowned-legacy-marker-writer-home"
+        agent = home / ".codex/agents/teamwork-writer.toml"
+        agent.parent.mkdir(parents=True)
+        original = (
+            'name = "teamwork_writer"\n'
+            'developer_instructions = "Do not spawn or delegate. user-owned"\n'
+        )
+        agent.write_text(original, encoding="utf-8")
+
+        result = self.run_install("--no-codex-routing", "codex-agents", home=home)
+        output = result.stdout.decode()
+        self.assertEqual(result.returncode, 1, output)
+        self.assertIn("not a recognized Teamwork-owned profile", output)
+        self.assertEqual(agent.read_text(encoding="utf-8"), original)
 
     def test_update_without_project_root_reports_pending_migration(self) -> None:
         home = self.base / "update-no-project"

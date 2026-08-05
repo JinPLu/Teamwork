@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.0.1 - 2026-08-06
+
+**Teamwork 7.0.1 lets existing 6.3 Codex installations upgrade cleanly without weakening protection for user files.**
+
+- **The official legacy Writer upgrades directly.** Update recognizes the published 6.3.0 Writer profile by its exact digest and replaces it with the current 7.0 profile.
+- **Same-named user files remain protected.** Only a byte-for-byte match to the official 6.3.0 asset enters the migration path; modified files, symlinks, and multiply linked files still stop safely.
+- **The real upgrade path is closed.** Global refresh plus exact-root project migration now covers 6.3.0 → 7.0.1 while keeping the new preferences, agent inventory, and case-v3 project state verifiable.
+- **Legacy preferences are still never reused silently.** 7.0.1 continues to require explicit profile, managed CodeGraph, and managed GPU Broker choices before writing the new 7.0 preference receipt.
+
+Upgrade action: update to 7.0.1 and rerun `$teamwork-update` for the exact project root.
+
+Important limit: if the legacy Writer differs from the official 6.3.0 asset, Update will not overwrite it; confirm whether to preserve, move, or explicitly replace that file first.
+
 ## 7.0.0 - 2026-08-06
 
 **Teamwork 7.0 keeps clear work direct and rebuilds collaboration methods as concise, on-demand capabilities instead of workflow ceremony.**
