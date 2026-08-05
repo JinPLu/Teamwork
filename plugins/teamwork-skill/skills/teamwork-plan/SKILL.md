@@ -44,11 +44,7 @@ input or authority, or an unverifiable protected boundary.
 
 ## Live Document
 
-Have Writer maintain the task's single live document with a plan shape; reuse it
-rather than creating a parallel artifact. Create it when the first reusable
-plan structure appears, update it only when scope, steps, ownership,
-dependencies, verification, risks, blockers, or stop conditions materially
-change, and finalize it when execution-ready. Include the goal, selected
-direction, scope, ordered work units, owners, dependencies, verification,
-risks, blockers, and replan conditions. Writer may improve organization but
-must not invent facts, change the direction, or mark the plan accepted.
+When Writer is used, include the goal, selected direction, scope, ordered work
+units, owners, dependencies, verification, risks, blockers, and replan
+conditions. Writer may improve organization but must not invent facts, change
+the direction, or mark the plan accepted.

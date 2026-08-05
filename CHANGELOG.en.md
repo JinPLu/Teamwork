@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.0.2 - 2026-08-06
+
+**Teamwork 7.0.2 restores the context boundaries missed during the 7.0 iteration so upgrades, prompts, and release evidence agree again.**
+
+- **The legacy Designer retires safely.** Update recognizes and removes the exact official 6.3.0 Designer profile while preserving same-named custom files, symlinks, and multiply linked files.
+- **Prompt ownership is singular again.** The global policy keeps only three principles and one routing hint; the eight public Skills declare only their semantic document content instead of reinjecting Writer lifecycle mechanics on every path.
+- **Final answers become separate evidence.** Codex, Cursor, and Claude retain the final user-visible output apart from tool traces; empty, generic, refusal, and marker-only answers fail without penalizing valid paraphrases or Chinese output.
+- **Semantic success requires independent review.** Deterministic checks prove only that an answer is present and specific; `installed_semantic` passes only when an independent Reviewer verdict is bound to the prompt, final output, and rubric digests, while bare `PASS` and self-review fail.
+
+Upgrade action: update to 7.0.2, rerun `$teamwork-update` for the exact project root, then restart Codex or begin a new task to load the refreshed plugin, policy, Skills, and agents.
+
+Important limit: answer specificity is not semantic scoring; real semantic correctness still requires independent Reviewer evidence. Existing Codex child-start observability and isolated Cursor/Claude authentication limits remain, and affected live slices continue to report `UNSUPPORTED` or `FAIL` instead of being replaced by static checks.
+
 ## 7.0.1 - 2026-08-06
 
 **Teamwork 7.0.1 lets existing 6.3 Codex installations upgrade cleanly without weakening protection for user files.**

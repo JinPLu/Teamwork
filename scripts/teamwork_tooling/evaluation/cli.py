@@ -12,7 +12,7 @@ from .contracts import EvalError, LEDGER_SCHEMAS, PLATFORMS, SPLITS
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Validate Teamwork eval fixtures.")
+    parser = argparse.ArgumentParser(description="Validate Teamwork structural fixtures and routing pairs.")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--split", choices=sorted(SPLITS))
     group.add_argument("--all", action="store_true", help="validate all cases")

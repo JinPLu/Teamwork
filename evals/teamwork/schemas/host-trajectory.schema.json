@@ -28,6 +28,8 @@
     "sanitized_input_sha256",
     "artifact",
     "result",
+    "agent_output",
+    "answer_specificity_success",
     "exit_status",
     "status",
     "privacy_scan",
@@ -72,6 +74,8 @@
         }
       ]
     },
+    "agent_output": {"$ref": "#/$defs/evidence"},
+    "answer_specificity_success": {"type": "boolean"},
     "exit_status": {"type": ["integer", "null"]},
     "status": {"enum": ["PASS", "FAIL", "UNSUPPORTED"]},
     "privacy_scan": {"enum": ["PASS", "FAIL", "NOT_RUN", "UNSUPPORTED"]},

@@ -14,6 +14,7 @@ import unittest
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 PREFERENCES_HELPER = REPO_ROOT / "scripts/install/preferences.py"
+V630_DESIGNER_FIXTURE = REPO_ROOT / "scripts/tests/fixtures/v6.3.0-teamwork-designer.toml"
 V630_WRITER_FIXTURE = REPO_ROOT / "scripts/tests/fixtures/v6.3.0-teamwork-writer.toml"
 EXPLICIT_BASELINE = (
     "--profile",
@@ -311,6 +312,85 @@ class InstallCliCurrentContractTests(unittest.TestCase):
             agent.read_text(encoding="utf-8"),
             (REPO_ROOT / "templates/codex-agents/teamwork-writer.toml").read_text(encoding="utf-8"),
         )
+
+    def test_official_v630_designer_agent_is_removed(self) -> None:
+        home = self.base / "v630-designer-home"
+        agent = home / ".codex/agents/teamwork-designer.toml"
+        agent.parent.mkdir(parents=True)
+        shutil.copy2(V630_DESIGNER_FIXTURE, agent)
+
+        result = self.run_install("--no-codex-routing", "codex-agents", home=home)
+        output = result.stdout.decode()
+        self.assertEqual(result.returncode, 0, output)
+        self.assertFalse(agent.exists())
+
+    def test_update_removes_official_v630_designer_agent(self) -> None:
+        home = self.base / "v630-designer-update-home"
+        project = self.base / "v630-designer-update-project"
+        project.mkdir()
+        init = self.run_install("--project-root", str(project), "init-project", home=home)
+        self.assertEqual(init.returncode, 0, init.stdout.decode())
+        agent = home / ".codex/agents/teamwork-designer.toml"
+        agent.parent.mkdir(parents=True)
+        shutil.copy2(V630_DESIGNER_FIXTURE, agent)
+
+        result = self.run_lifecycle_install(
+            "--project-root",
+            str(project),
+            "--no-codex-routing",
+            "--no-mcp",
+            "update",
+            home=home,
+        )
+        output = result.stdout.decode()
+        self.assertEqual(result.returncode, 0, output)
+        self.assertIn("global updated; project migration complete", output)
+        self.assertFalse(agent.exists())
+
+    def test_official_v630_designer_symlink_is_preserved(self) -> None:
+        home = self.base / "v630-designer-symlink-home"
+        legacy_template = home / "legacy/templates/codex-agents/teamwork-designer.toml"
+        legacy_template.parent.mkdir(parents=True)
+        shutil.copy2(V630_DESIGNER_FIXTURE, legacy_template)
+        agent = home / ".codex/agents/teamwork-designer.toml"
+        agent.parent.mkdir(parents=True)
+        agent.symlink_to(legacy_template)
+
+        result = self.run_install("--no-codex-routing", "codex-agents", home=home)
+        output = result.stdout.decode()
+        self.assertEqual(result.returncode, 0, output)
+        self.assertTrue(agent.is_symlink())
+        self.assertEqual(agent.resolve(), legacy_template)
+
+    def test_official_v630_designer_multi_hardlink_is_preserved(self) -> None:
+        home = self.base / "v630-designer-hardlink-home"
+        agent = home / ".codex/agents/teamwork-designer.toml"
+        agent.parent.mkdir(parents=True)
+        shutil.copy2(V630_DESIGNER_FIXTURE, agent)
+        peer = agent.parent / "teamwork-designer-peer.toml"
+        os.link(agent, peer)
+
+        result = self.run_install("--no-codex-routing", "codex-agents", home=home)
+        output = result.stdout.decode()
+        self.assertEqual(result.returncode, 0, output)
+        self.assertTrue(agent.exists())
+        self.assertTrue(peer.exists())
+        self.assertTrue(agent.samefile(peer))
+
+    def test_same_named_designer_with_legacy_marker_is_not_claimed(self) -> None:
+        home = self.base / "unowned-legacy-marker-designer-home"
+        agent = home / ".codex/agents/teamwork-designer.toml"
+        agent.parent.mkdir(parents=True)
+        original = (
+            'name = "teamwork_designer"\n'
+            'developer_instructions = "You are the Teamwork Designer. user-owned"\n'
+        )
+        agent.write_text(original, encoding="utf-8")
+
+        result = self.run_install("--no-codex-routing", "codex-agents", home=home)
+        output = result.stdout.decode()
+        self.assertEqual(result.returncode, 0, output)
+        self.assertEqual(agent.read_text(encoding="utf-8"), original)
 
     def test_same_named_writer_with_legacy_marker_is_not_claimed(self) -> None:
         home = self.base / "unowned-legacy-marker-writer-home"

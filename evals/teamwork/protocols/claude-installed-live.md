@@ -9,4 +9,6 @@ Capture `SubagentStart`/`SubagentStop` identity and transcript evidence when the
 host exposes it. Missing binary/authentication, unavailable hook or transcript
 evidence, unobservable actual model/effort/tool authority, privacy leakage, or no
 changed scenario artifact/non-agent trace is `UNSUPPORTED` or `FAIL`, never a
-prompt-derived pass.
+prompt-derived pass. Trace cases also retain the final agent output and require
+non-empty, specific answer evidence; semantic acceptance still requires an
+independent Reviewer verdict.

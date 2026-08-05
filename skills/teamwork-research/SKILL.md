@@ -43,11 +43,6 @@ and the basis for stopping.
 
 ## Live Document
 
-Have Writer maintain the task's single live document with a research shape;
-reuse it rather than creating a parallel artifact. Create it when the brief or
-first reusable evidence map exists, update it only when evidence, a material
-claim, contradiction, conclusion, confidence, gap, or next search changes, and
-finalize it at the stopping point. Include the brief, search axes, sources,
-claim-to-evidence map, citations, contradictions, inferences, confidence,
-conclusion, gaps, and stop basis. Writer must not alter facts, sources, or
-confidence.
+When Writer is used, include the brief, search axes, sources, claim-to-evidence
+map, citations, contradictions, inferences, confidence, conclusion, gaps, and
+stop basis. Writer must not alter facts, sources, or confidence.

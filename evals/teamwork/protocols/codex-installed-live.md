@@ -10,4 +10,6 @@ and effort. Native Root controls require no child dispatch and bind actual model
 and effort to the parent invocation while retaining their declared authority,
 tools, verifier, and real-path artifact checks. Missing observations, privacy
 leakage, or missing direct evidence is `UNSUPPORTED` or `FAIL`, never an inferred
-pass.
+pass. Trace cases also retain the final agent output and require non-empty,
+specific answer evidence; semantic acceptance still requires an independent
+Reviewer verdict.

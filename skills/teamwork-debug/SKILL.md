@@ -70,11 +70,7 @@ blocker or next action.
 
 ## Live Document
 
-Have Writer maintain the task's single live document with a debug shape; reuse
-it rather than creating a parallel artifact. Create it when the first reusable
-failure signature or discriminating result appears, update it only when a
-hypothesis, observation, cause, fix, verification, blocker, or next experiment
-materially changes, and finalize it at a terminal state. Include the
-failure signature, hypotheses, experiment cards, raw observations, evidence,
-cause, fix, verification, cleanup, and status. Writer must not reinterpret the
-evidence or promote a hypothesis to a confirmed cause.
+When Writer is used, include the failure signature, hypotheses, experiment
+cards, raw observations, evidence, cause, fix, verification, cleanup, and
+status. Writer must not reinterpret the evidence or promote a hypothesis to a
+confirmed cause.

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -18,7 +19,10 @@ from teamwork_tooling.evaluation.contracts import CANONICAL_ROLES, PUBLIC_SKILL_
 from teamwork_tooling.evaluation.host_matrix import (  # noqa: E402
     HostMatrixError,
     _case_profile_expectation_for_role,
+    _direct_scenario_evidence,
     _dispatches_bind_case,
+    evaluate_agent_output_specificity,
+    final_agent_output,
     _host_invocation_observation,
     _host_argv,
     _isolated_install_argv,
@@ -37,7 +41,186 @@ from teamwork_tooling.evaluation.host_matrix import (  # noqa: E402
 from teamwork_tooling.semantic_review import release_readiness  # noqa: E402
 
 
+def digest(value):
+    if isinstance(value, str):
+        payload = value.encode("utf-8")
+    else:
+        payload = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def installed_semantic_evidence():
+    prompt = "Use installed Review and return evidence-backed findings."
+    agent_output = "The retained final output reports an evidence-backed finding."
+    rubric = {"required": ["retained output", "independent verdict"], "verdicts": ["PASS", "FAIL"]}
+    return {
+        "status": "PASS",
+        "producer_identity": "installed-host-candidate",
+        "reviewer": {
+            "identity": "teamwork-reviewer-contract",
+            "role": "reviewer",
+            "independent": True,
+        },
+        "verdict": "PASS",
+        "prompt": prompt,
+        "agent_output": agent_output,
+        "rubric": rubric,
+        "binding": {
+            "prompt_sha256": digest(prompt),
+            "agent_output_sha256": digest(agent_output),
+            "rubric_sha256": digest(rubric),
+        },
+    }
+
+
 class SemanticEvaluationContractTests(unittest.TestCase):
+    def test_agent_output_specificity_rejects_empty_and_generic_answers(self) -> None:
+        case = {"id": "specificity-empty", "evidence": {"markers": []}}
+        self.assertEqual((False, "agent-output-empty"), evaluate_agent_output_specificity(case, " \n "))
+        self.assertEqual((False, "agent-output-non-answer"), evaluate_agent_output_specificity(case, "Done"))
+        self.assertEqual(
+            (False, "agent-output-non-answer"),
+            evaluate_agent_output_specificity(case, "Everything is done now"),
+        )
+
+    def test_agent_output_specificity_allows_paraphrase_without_configured_phrases(self) -> None:
+        case = {"id": "specificity-paraphrase", "evidence": {"markers": ["EVIDENCE_RESEARCH_DEPTH_RELEASE"]}}
+        ok, failure = evaluate_agent_output_specificity(
+            case,
+            "The answer cites authoritative public material and keeps the local canary private.",
+        )
+        self.assertTrue(ok)
+        self.assertIsNone(failure)
+
+    def test_agent_output_specificity_allows_chinese_specific_answer(self) -> None:
+        case = {"id": "specificity-chinese", "evidence": {"markers": ["EVIDENCE_RESEARCH_DEPTH_RELEASE"]}}
+        ok, failure = evaluate_agent_output_specificity(
+            case,
+            "已核对公开来源，并说明本地隐私边界保持不泄露。",
+        )
+        self.assertTrue(ok)
+        self.assertIsNone(failure)
+
+    def test_agent_output_specificity_rejects_keyword_stuffed_non_answer(self) -> None:
+        case = {"id": "specificity-keywords", "evidence": {"markers": ["EVIDENCE_RESEARCH_DEPTH_RELEASE"]}}
+        ok, failure = evaluate_agent_output_specificity(
+            case,
+            "Official source primary public source EVIDENCE_RESEARCH_DEPTH_RELEASE, but I cannot answer.",
+        )
+        self.assertFalse(ok)
+        self.assertEqual("agent-output-non-answer", failure)
+        for refusal in ("I must refuse this request.", "I can't help with that request."):
+            with self.subTest(refusal=refusal):
+                self.assertEqual(
+                    (False, "agent-output-non-answer"),
+                    evaluate_agent_output_specificity(case, refusal),
+                )
+
+    def test_agent_output_specificity_rejects_chinese_generic_and_refusal_answers(self) -> None:
+        case = {"id": "specificity-chinese-non-answer", "evidence": {"markers": []}}
+        self.assertEqual(
+            (False, "agent-output-non-answer"),
+            evaluate_agent_output_specificity(case, "好了"),
+        )
+        self.assertEqual(
+            (False, "agent-output-non-answer"),
+            evaluate_agent_output_specificity(case, "信息不足，无法回答。"),
+        )
+        self.assertEqual(
+            (False, "agent-output-non-answer"),
+            evaluate_agent_output_specificity(case, "我必须拒绝这个请求。"),
+        )
+        self.assertEqual(
+            (False, "agent-output-non-answer"),
+            evaluate_agent_output_specificity(case, "我不能帮助处理这个请求。"),
+        )
+
+    def test_final_agent_output_ignores_tool_events(self) -> None:
+        events = [
+            {"type": "user", "content": "prompt text must not be final"},
+            {"type": "tool_call", "tool_name": "bash", "content": "tool marker"},
+            {"type": "tool_result", "content": "tool output must not be final"},
+            {"type": "agent_message", "content": "first answer"},
+            {
+                "type": "item.completed",
+                "item": {"type": "agent_message", "content": [{"type": "text", "text": "final answer"}]},
+            },
+        ]
+        self.assertEqual("final answer", final_agent_output(events))
+
+    def test_final_agent_output_supports_codex_agent_message_shape(self) -> None:
+        events = [
+            {"type": "tool_result", "content": "tool output"},
+            {"type": "agent_message", "message": "Codex retained final answer."},
+        ]
+        self.assertEqual("Codex retained final answer.", final_agent_output(events))
+
+    def test_final_agent_output_supports_cursor_assistant_message_shape(self) -> None:
+        events = [
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "tool_use", "input": {"text": "ignore tool input"}},
+                        {"type": "text", "text": "Cursor retained final answer."},
+                    ],
+                },
+            },
+        ]
+        self.assertEqual("Cursor retained final answer.", final_agent_output(events))
+
+    def test_final_agent_output_supports_claude_delta_and_terminal_result_shapes(self) -> None:
+        delta_only = [
+            {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "Claude "}},
+            {"type": "content_block_delta", "delta": {"type": "text_delta", "text": "delta answer."}},
+        ]
+        self.assertEqual("Claude delta answer.", final_agent_output(delta_only))
+
+        terminal_preferred = [
+            *delta_only,
+            {"type": "result", "subtype": "success", "result": "Claude terminal full answer."},
+        ]
+        self.assertEqual("Claude terminal full answer.", final_agent_output(terminal_preferred))
+
+    def test_final_agent_output_ignores_prompt_and_tool_only_streams(self) -> None:
+        events = [
+            {"type": "user", "content": "Please answer from the scenario."},
+            {"type": "tool_call", "tool_name": "bash", "content": "cat scenario/probe.txt"},
+            {"type": "tool_result", "content": "EVIDENCE_TOOL_ONLY"},
+        ]
+        self.assertEqual("", final_agent_output(events))
+
+    def test_trace_marker_only_in_tool_events_still_needs_agent_output_specificity(self) -> None:
+        case = {
+            "id": "trace-tool-marker",
+            "evidence": {
+                "kind": "trace",
+                "artifact_path": "unused.jsonl",
+                "markers": ["TRACE_TOOL_ONLY_MARKER"],
+            },
+        }
+        events = [{"type": "tool_call", "tool_name": "bash", "content": "TRACE_TOOL_ONLY_MARKER"}]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            output = root / "records.jsonl"
+            direct, artifact, result, failure = _direct_scenario_evidence(
+                case=case,
+                scenario=root,
+                events=events,
+                output=output,
+                invocation_id="run",
+                workspace_before=None,
+            )
+        self.assertTrue(direct)
+        self.assertIsNone(failure)
+        self.assertTrue(artifact["path"].endswith("host-trace.jsonl"))
+        self.assertTrue(result["path"].endswith("scenario-result.jsonl"))
+        self.assertEqual(
+            (False, "agent-output-empty"),
+            evaluate_agent_output_specificity(case, ""),
+        )
+
     def test_codex_root_observation_binds_to_actual_invocation_argv(self) -> None:
         case = next(
             case
@@ -232,6 +415,7 @@ class SemanticEvaluationContractTests(unittest.TestCase):
                         stdout=(
                             '{"type":"tool_call","tool_name":"bash"}\n'
                             '{"type":"item.completed","marker":"SUCCESS_DIRECT_MARKER"}\n'
+                            '{"type":"agent_message","content":"SUCCESS_DIRECT_MARKER with concrete final evidence from the host run."}\n'
                         ),
                         stderr="",
                     )
@@ -277,6 +461,8 @@ class SemanticEvaluationContractTests(unittest.TestCase):
             self.assertNotIn(timeout_case["prompt"], timeout_trace)
             self.assertEqual("PASS", records[1]["status"])
             self.assertIsNone(records[1]["failure_classification"])
+            success_output = (output.parent / records[1]["agent_output"]["path"]).read_text(encoding="utf-8")
+            self.assertIn("SUCCESS_DIRECT_MARKER", success_output)
 
     def test_every_pair_has_positive_and_negative_semantics(self) -> None:
         pairs = validate_pair_manifest()
@@ -363,8 +549,10 @@ class SemanticEvaluationContractTests(unittest.TestCase):
             artifacts.mkdir()
             artifact_bytes = b"native root trace"
             result_bytes = case["evidence"]["markers"][0].encode()
+            agent_output_bytes = b"Completed the native result through the real path."
             (artifacts / "trace.txt").write_bytes(artifact_bytes)
             (artifacts / "result.txt").write_bytes(result_bytes)
+            (artifacts / "agent-output.txt").write_bytes(agent_output_bytes)
             record = {
                 "schema_version": 1,
                 "record_type": "teamwork_host_trajectory",
@@ -396,6 +584,11 @@ class SemanticEvaluationContractTests(unittest.TestCase):
                     "sha256": sha256_bytes(result_bytes),
                     "direct_success": True,
                 },
+                "agent_output": {
+                    "path": "artifacts/agent-output.txt",
+                    "sha256": sha256_bytes(agent_output_bytes),
+                },
+                "answer_specificity_success": True,
                 "exit_status": 0,
                 "status": "PASS",
                 "privacy_scan": "PASS",
@@ -441,8 +634,10 @@ class SemanticEvaluationContractTests(unittest.TestCase):
             artifacts = slice_root / "artifacts"
             artifacts.mkdir()
             marker = case["evidence"]["markers"][0].encode()
+            agent_output_bytes = b"Completed the native no-child result through the local path."
             (artifacts / "trace.txt").write_bytes(b"trace")
             (artifacts / "result.txt").write_bytes(marker)
+            (artifacts / "agent-output.txt").write_bytes(agent_output_bytes)
             record = {
                 "schema_version": 1,
                 "record_type": "teamwork_host_trajectory",
@@ -471,6 +666,11 @@ class SemanticEvaluationContractTests(unittest.TestCase):
                     "sha256": sha256_bytes(marker),
                     "direct_success": True,
                 },
+                "agent_output": {
+                    "path": "artifacts/agent-output.txt",
+                    "sha256": sha256_bytes(agent_output_bytes),
+                },
+                "answer_specificity_success": True,
                 "exit_status": 0,
                 "status": "PASS",
                 "privacy_scan": "PASS",
@@ -631,7 +831,7 @@ class SemanticEvaluationContractTests(unittest.TestCase):
     def test_not_run_required_lane_cannot_be_release_ready(self) -> None:
         result = release_readiness({
             "static": "PASS",
-            "installed_semantic": "PASS",
+            "installed_semantic": installed_semantic_evidence(),
             "disposable_write": "NOT RUN",
             "dry_run": "PASS",
         })
@@ -641,7 +841,7 @@ class SemanticEvaluationContractTests(unittest.TestCase):
     def test_all_required_lanes_pass_release_gate(self) -> None:
         result = release_readiness({
             "static": "PASS",
-            "installed_semantic": "PASS",
+            "installed_semantic": installed_semantic_evidence(),
             "disposable_write": "PASS",
         })
         self.assertEqual("release-ready", result["status"])

@@ -170,6 +170,28 @@ class RoleProfileTests(unittest.TestCase):
             self.assertFalse(recognized.exists())
             self.assertTrue(unknown.exists())
 
+    def test_codex_retired_designer_cleanup_requires_official_digest(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = pathlib.Path(raw)
+            custom = root / "teamwork-designer.toml"
+            custom.write_text(
+                'name = "teamwork_designer"\n'
+                'developer_instructions = "You are the Teamwork Designer. custom"\n',
+                encoding="utf-8",
+            )
+            command = (
+                'ROOT="$1"; source "$1/scripts/install/common.sh"; '
+                'source "$1/scripts/install/profiles.sh"; '
+                'remove_retired_agent_files codex "$2" teamwork-designer'
+            )
+            subprocess.run(
+                ["bash", "-c", command, "cleanup", str(ROOT), str(root)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            self.assertTrue(custom.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

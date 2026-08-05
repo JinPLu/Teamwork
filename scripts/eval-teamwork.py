@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate Teamwork eval fixtures without network or model dependencies."""
+"""Validate Teamwork structural fixtures without network or model dependencies."""
 
 from teamwork_tooling.evaluation.cli import main
 

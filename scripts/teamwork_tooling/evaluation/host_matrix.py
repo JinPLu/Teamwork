@@ -48,6 +48,11 @@ STRUCTURAL_EVENT_TYPES = {
     "tool_call", "tool_result", "tool_use", "assistant.tool_use", "tool.call", "tool.result",
     "item.completed", "item.started",
 }
+AGENT_MESSAGE_EVENT_TYPES = {
+    "agent_message",
+    "assistant.message",
+    "assistant_message",
+}
 CHILD_START_EVENT_TYPES = frozenset({
     "subagent.start",
     "subagent.started",
@@ -58,12 +63,18 @@ GENERIC_OBSERVATIONS = {
     "", "default", "unknown", "unobserved", "observed-model", "observed-effort",
     "host-observed", "host-default", "x", "n/a", "none", "null",
 }
+GENERIC_AGENT_OUTPUTS = {
+    "done", "completed", "complete", "fixed", "ok", "okay", "yes", "no",
+    "pass", "fail", "success", "finished", "all set", "everything is done now",
+    "all done now", "全部完成了", "都完成了", "已经完成了",
+}
 TRAJECTORY_FIELDS = {
     "schema_version", "record_type", "host", "host_version", "invocation_id",
     "arm", "started_at", "finished_at", "case_id", "profile",
     "parent_model", "parent_effort", "selected_skill", "role_identity",
     "actual_model", "actual_effort", "dispatches", "child_start_count", "tool_observations",
     "authority_observation", "sanitized_input_sha256", "artifact", "result",
+    "agent_output", "answer_specificity_success",
     "exit_status", "status", "privacy_scan", "failure_classification",
 }
 DISPATCH_FIELDS = {
@@ -1409,7 +1420,9 @@ def validate_trajectory(record: dict[str, Any], schema: dict[str, Any] | None = 
             raise HostMatrixError("PASS requires actual non-generic tool observations")
         if not record["result"]["direct_success"]:
             raise HostMatrixError("PASS requires a direct scenario success")
-        for evidence_name in ("artifact", "result"):
+        if not record["answer_specificity_success"]:
+            raise HostMatrixError("PASS requires specific final agent output")
+        for evidence_name in ("artifact", "result", "agent_output"):
             evidence = record[evidence_name]
             if not isinstance(evidence.get("path"), str) or not evidence["path"] or not isinstance(evidence.get("sha256"), str):
                 raise HostMatrixError(f"PASS requires {evidence_name} path and hash evidence")
@@ -1465,12 +1478,19 @@ def validate_record_binding(
         raise HostMatrixError("record is a FAIL/UNSUPPORTED blocker")
     artifact = _verified_evidence_path(slice_root, record["artifact"], "artifact")
     result = _verified_evidence_path(slice_root, record["result"], "result")
+    agent_output = _verified_evidence_path(slice_root, record["agent_output"], "agent_output")
     result_bytes = result.read_bytes()
     if not all(marker.encode() in result_bytes for marker in case["evidence"]["markers"]):
         raise HostMatrixError("result artifact lacks case-specific direct evidence markers")
     secrets = [marker.encode() for marker in case["private_markers"]]
-    if any(marker in artifact.read_bytes() or marker in result_bytes for marker in secrets):
+    agent_output_bytes = agent_output.read_bytes()
+    if any(marker in artifact.read_bytes() or marker in result_bytes or marker in agent_output_bytes for marker in secrets):
         raise HostMatrixError("stored trajectory evidence leaked a private marker")
+    specificity_success, _specificity_failure = evaluate_agent_output_specificity(
+        case, agent_output_bytes.decode("utf-8", errors="replace"),
+    )
+    if not specificity_success or not record["answer_specificity_success"]:
+        raise HostMatrixError("record agent output does not satisfy specificity gate")
 
 
 def _unsupported_record(
@@ -1494,6 +1514,8 @@ def _unsupported_record(
         "sanitized_input_sha256": sha256_bytes(case["prompt"].encode()),
         "artifact": {"path": None, "sha256": None},
         "result": {"path": None, "sha256": None, "direct_success": False},
+        "agent_output": {"path": None, "sha256": None},
+        "answer_specificity_success": False,
         "exit_status": None, "status": "UNSUPPORTED", "privacy_scan": "NOT_RUN",
         "failure_classification": classification,
     }
@@ -1586,11 +1608,202 @@ def _write_evidence_file(output: Path, invocation_id: str, name: str, value: byt
     return {"path": relative, "sha256": sha256_file(path)}
 
 
+def _specificity_normalize(value: str) -> str:
+    return " ".join("".join(character if character.isalnum() else " " for character in value.casefold()).split())
+
+
+def _specificity_content_units(value: str) -> int:
+    """Approximate non-empty answer substance across spaced and unspaced scripts."""
+
+    units = 0
+    for token in _specificity_normalize(value).split():
+        if any(ord(character) > 127 for character in token):
+            units += len(token)
+        else:
+            units += 1
+    return units
+
+
+def _text_chunks(value: Any) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        chunks: list[str] = []
+        for item in value:
+            chunks.extend(_text_chunks(item))
+        return chunks
+    if isinstance(value, dict):
+        chunks = []
+        for key in ("text", "content", "message", "output", "result", "final_response", "response"):
+            if key in value:
+                chunks.extend(_text_chunks(value[key]))
+        return chunks
+    return []
+
+
+def _assistant_text_chunks(value: Any) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, list):
+        chunks: list[str] = []
+        for item in value:
+            chunks.extend(_assistant_text_chunks(item))
+        return chunks
+    if isinstance(value, dict):
+        block_type = str(value.get("type", "")).casefold().replace("_", "-")
+        if block_type in {
+            "tool-use", "tool-result", "function-call", "function-call-output",
+            "input-json-delta", "thinking", "redacted-thinking",
+        }:
+            return []
+        if block_type in {"text", "output-text", "text-delta"}:
+            return [
+                child
+                for key in ("text", "content", "delta")
+                for child in _assistant_text_chunks(value.get(key))
+                if child.strip()
+            ]
+        chunks = []
+        for key in ("text", "content", "message", "delta"):
+            if key in value:
+                chunks.extend(_assistant_text_chunks(value[key]))
+        return chunks
+    return []
+
+
+def _event_payload(event: dict[str, Any]) -> dict[str, Any]:
+    item = event.get("item") if isinstance(event.get("item"), dict) else None
+    return item or event
+
+
+def _agent_message_payload(event: dict[str, Any]) -> Any | None:
+    event_type = _event_type(event)
+    if event_type in AGENT_MESSAGE_EVENT_TYPES:
+        return event
+    item = event.get("item") if isinstance(event.get("item"), dict) else None
+    if (
+        event_type == "item.completed"
+        and isinstance(item, dict)
+        and item.get("type") in AGENT_MESSAGE_EVENT_TYPES
+    ):
+        return item
+    return None
+
+
+def _assistant_message_payload(event: dict[str, Any]) -> Any | None:
+    payload = _event_payload(event)
+    event_type = _event_type(payload)
+    role = payload.get("role") or payload.get("author")
+    if event_type in {"assistant", "assistant_message", "assistant-message"}:
+        return payload
+    if event_type in {"message", "item.completed"} and role == "assistant":
+        return payload
+    message = payload.get("message") if isinstance(payload.get("message"), dict) else None
+    if message and (message.get("role") == "assistant" or event_type == "assistant"):
+        return message
+    return None
+
+
+def _assistant_delta_text(event: dict[str, Any]) -> str:
+    payload = _event_payload(event)
+    event_type = _event_type(payload).casefold().replace("_", "-")
+    if event_type not in {
+        "assistant-delta", "assistant-message-delta", "message-delta",
+        "response-output-text-delta", "content-block-delta", "text-delta",
+    }:
+        return ""
+    chunks: list[str] = []
+    for key in ("delta", "text", "content"):
+        if key in payload:
+            chunks.extend(_assistant_text_chunks(payload[key]))
+    return "".join(chunks)
+
+
+def _terminal_result_text(event: dict[str, Any]) -> str:
+    payload = _event_payload(event)
+    event_type = _event_type(payload).casefold().replace("_", "-")
+    if event_type not in {
+        "result", "turn-completed", "thread-completed", "response-completed", "run-completed",
+    }:
+        return ""
+    chunks: list[str] = []
+    for key in ("result", "final_response", "final-response", "response", "output_text", "output-text", "output"):
+        if key in payload:
+            chunks.extend(_assistant_text_chunks(payload[key]))
+    return "\n".join(chunk.strip() for chunk in chunks if chunk.strip())
+
+
+def _is_agent_output_event(event: dict[str, Any]) -> bool:
+    return (
+        _agent_message_payload(event) is not None
+        or _assistant_message_payload(event) is not None
+        or bool(_assistant_delta_text(event))
+        or bool(_terminal_result_text(event))
+    )
+
+
+def final_agent_output(events: Sequence[dict[str, Any]]) -> str:
+    """Return the last host-reported agent message, not tool output or prompts."""
+
+    messages: list[str] = []
+    delta_parts: list[str] = []
+    terminal_results: list[str] = []
+    for event in events:
+        terminal_text = _terminal_result_text(event)
+        if terminal_text:
+            terminal_results.append(terminal_text)
+            continue
+        delta_text = _assistant_delta_text(event)
+        if delta_text:
+            delta_parts.append(delta_text)
+            continue
+        payload = _assistant_message_payload(event)
+        if payload is not None:
+            text = "\n".join(chunk.strip() for chunk in _assistant_text_chunks(payload) if chunk.strip())
+            if text:
+                messages.append(text)
+            continue
+        payload = _agent_message_payload(event)
+        if payload is None:
+            continue
+        text = "\n".join(chunk.strip() for chunk in _text_chunks(payload) if chunk.strip())
+        if text:
+            messages.append(text)
+    if terminal_results:
+        return terminal_results[-1]
+    if messages:
+        return messages[-1]
+    if delta_parts:
+        return "".join(delta_parts).strip()
+    return messages[-1] if messages else ""
+
+
+def evaluate_agent_output_specificity(case: dict[str, Any], agent_output: str) -> tuple[bool, str | None]:
+    text = agent_output.strip()
+    normalized = _specificity_normalize(text)
+    if not text:
+        return False, "agent-output-empty"
+    refusal_patterns = (
+        "cannot answer", "can t answer", "unable to answer", "do not know",
+        "don t know", "not enough information", "no information", "cannot determine",
+        "must refuse", "can t help", "cannot help", "won t help", "refuse this request",
+        "无法回答", "不能回答", "不知道", "不清楚", "无法确定", "信息不足",
+        "必须拒绝", "拒绝这个请求", "拒绝该请求", "不能帮助", "无法帮助", "不能帮",
+    )
+    if any(pattern in normalized for pattern in refusal_patterns):
+        return False, "agent-output-non-answer"
+    if normalized in GENERIC_AGENT_OUTPUTS or _specificity_content_units(normalized) < 3:
+        return False, "agent-output-non-answer"
+    marker_free = normalized
+    for marker in case.get("evidence", {}).get("markers", []):
+        marker_free = marker_free.replace(_specificity_normalize(str(marker)), " ")
+    if _specificity_content_units(marker_free) < 3:
+        return False, "agent-output-marker-only"
+    return True, None
+
+
 def _non_agent_trace(events: Sequence[dict[str, Any]]) -> str:
-    filtered = [event for event in events if _event_type(event) != "agent_message" and not (
-        _event_type(event) == "item.completed" and isinstance(event.get("item"), dict)
-        and event["item"].get("type") == "agent_message"
-    )]
+    filtered = [event for event in events if not _is_agent_output_event(event)]
     return "\n".join(json.dumps(event, sort_keys=True) for event in filtered)
 
 
@@ -1843,6 +2056,13 @@ def run_host_matrix(
                         events.insert(0, invocation_observation)
                     if host_timed_out:
                         events.extend(_timeout_stream_events(completed.stdout, completed.stderr))
+                    agent_output_text = final_agent_output(events)
+                    agent_output = _write_evidence_file(
+                        output, invocation_id, "agent-output.txt", agent_output_text.encode()
+                    )
+                    answer_specificity_ok, answer_specificity_failure = evaluate_agent_output_specificity(
+                        case, agent_output_text,
+                    )
                     observations = _trajectory_observations(
                         host=host, events=events, case=case,
                     )
@@ -1863,7 +2083,7 @@ def run_host_matrix(
                         forbidden_output_markers=[codex_auth_marker] if codex_auth_marker else [],
                     )
                     output_stream = (completed.stdout + "\n" + completed.stderr).encode()
-                    for evidence in (artifact, result):
+                    for evidence in (artifact, result, agent_output):
                         evidence_path = evidence.get("path") if isinstance(evidence, dict) else None
                         if isinstance(evidence_path, str):
                             stored = _child(output.parent, evidence_path, "stored trajectory evidence")
@@ -1903,7 +2123,12 @@ def run_host_matrix(
                         role_bound and selected_skill == case["selected_skill"] and model_bound
                         and set(case["required_tools"]).issubset(tools) and authority == case["authority"]
                     )
-                    status = "PASS" if not host_timed_out and completed.returncode == 0 and direct and bound and privacy == "PASS" else "FAIL"
+                    status = (
+                        "PASS"
+                        if not host_timed_out and completed.returncode == 0
+                        and direct and answer_specificity_ok and bound and privacy == "PASS"
+                        else "FAIL"
+                    )
                     failure = None
                     if status != "PASS":
                         if host_timed_out:
@@ -1914,6 +2139,8 @@ def run_host_matrix(
                             failure = "privacy-leak"
                         elif not direct:
                             failure = direct_failure or "missing-direct-scenario-evidence"
+                        elif not answer_specificity_ok:
+                            failure = answer_specificity_failure or "agent-output-specificity-failed"
                         elif root_case and child_start_count:
                             failure = "root-child-start-observed"
                         elif not root_case and child_start_count != len(dispatches):
@@ -1934,6 +2161,8 @@ def run_host_matrix(
                         "sanitized_input_sha256": sha256_bytes(case["prompt"].encode()),
                         "artifact": artifact if artifact else {"path": None, "sha256": None},
                         "result": {**(result if result else {"path": None, "sha256": None}), "direct_success": direct},
+                        "agent_output": agent_output,
+                        "answer_specificity_success": answer_specificity_ok,
                         "exit_status": completed.returncode, "status": status, "privacy_scan": privacy,
                         "failure_classification": failure,
                     }

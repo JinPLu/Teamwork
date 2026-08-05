@@ -42,11 +42,20 @@ Release evidence is reported in four distinct lanes:
 `release-ready`. `NOT RUN`, `UNSUPPORTED`, or `FAIL` in a required lane remains a
 blocker. A passing dry run never substitutes for installed or writable evidence.
 
+The deterministic CLI validates structural fixtures and routing pairs only. It
+does not claim live answer quality.
+
 The installed release matrix is
 `live-cases/release-matrix.json`. Its cases and required roles are read from
 that manifest and the topology manifest; the verifier accepts no numeric
 expected-record flags. Native Root controls declare `required_role: root` and
 an empty role list; every other case requires observed canonical role evidence.
+Installed trace cases retain the final agent output separately from structural
+tool events. A local PASS requires direct result evidence plus non-empty,
+specific final-output evidence; this deterministic gate rejects empty, generic,
+or refusal-style answers but does not judge semantic correctness. The
+`installed_semantic` release lane can be marked `PASS` only from an independent
+Reviewer verdict over the prompt, retained agent output, and rubric.
 The three installed-host entrypoints are
 `run-installed-codex-teamwork-live-eval.py`,
 `run-installed-cursor-teamwork-live-eval.py`, and

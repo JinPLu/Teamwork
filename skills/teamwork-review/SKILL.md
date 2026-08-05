@@ -46,10 +46,6 @@ implement repairs or accept the overall task on the implementer's behalf.
 
 ## Live Document
 
-Have Writer maintain the task's single live document with a review shape; reuse
-it rather than creating a parallel artifact. Create it when the candidate and
-first reusable evidence are established, update it only when the candidate,
-evidence, finding, verdict, residual risk, or recheck result materially changes,
-and finalize it at the verdict. Include candidate identity, scope, criteria,
-evidence, findings by severity, verdict, residual risk, and any bounded recheck.
-Writer must not change findings, evidence, or acceptance.
+When Writer is used, include candidate identity, scope, criteria, evidence,
+findings by severity, verdict, residual risk, and any bounded recheck. Writer
+must not change findings, evidence, or acceptance.

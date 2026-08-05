@@ -17,14 +17,8 @@ PRINCIPLES = (
 )
 
 ROUTING = (
-    "Collaborate for explicit discussion",
-    "Research for broad or deep external multi-source work",
-    "Debug for unknown-cause failures",
-    "Plan for a clear or selected direction",
-    "Review for a finished candidate, including a plan",
-    "Goal only when the user explicitly asks",
-    "Local evidence routes to Explorer without a public Explore skill",
-    "Strict adversarial work routes to Challenger",
+    "Routing hint:",
+    "frontmatter and host route",
 )
 
 FORBIDDEN = (
@@ -36,6 +30,8 @@ FORBIDDEN = (
     "case-v2 workflow",
     "Writer packet+transaction",
     "sealed review",
+    "Storage, migration, transaction, CAS",
+    "Teamwork defines no numeric dispatch caps",
 )
 
 
@@ -57,15 +53,17 @@ def render(function: str) -> str:
 
 
 class LeanPolicyTests(unittest.TestCase):
-    def test_policy_preserves_three_principles_and_semantic_routes(self) -> None:
+    def test_policy_preserves_three_principles_and_one_routing_hint(self) -> None:
         policy = render("write_teamwork_global_policy_body")
         self.assertEqual(contract_failures(policy), [])
+        self.assertLessEqual(policy.count("Routing hint:"), 1)
 
     def test_policy_keeps_infrastructure_out_of_model_workflows(self) -> None:
         policy = render("write_teamwork_global_policy_body")
-        self.assertIn("Storage, migration, transaction, CAS, readback, and integrity details stay out", policy)
-        self.assertIn("Teamwork creates no separate authorization protocol", policy)
-        self.assertIn("Teamwork defines no numeric dispatch caps", policy)
+        self.assertNotIn("Storage, migration, transaction, CAS", policy)
+        self.assertNotIn("readback", policy)
+        self.assertNotIn("numeric dispatch", policy)
+        self.assertIn("host/tool permissions", policy)
 
     def test_each_principle_is_mutation_bound(self) -> None:
         policy = render("write_teamwork_global_policy_body")

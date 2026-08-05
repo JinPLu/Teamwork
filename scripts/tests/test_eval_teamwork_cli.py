@@ -37,7 +37,7 @@ class EvalTeamworkCliTests(unittest.TestCase):
             "--split {dev,release}",
             "--all",
             "--optimizer-ledger PATH",
-            "Validate Teamwork eval fixtures.",
+            "Validate Teamwork structural fixtures and routing pairs.",
         ):
             self.assertIn(fragment, normalized)
 

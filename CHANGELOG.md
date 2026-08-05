@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.0.2 - 2026-08-06
+
+**Teamwork 7.0.2 补回了 7.0 迭代中遗漏的上下文边界，让升级、提示词和发布证据重新一致。**
+
+- **旧 Designer 可以安全退出。** Update 会精确识别并移除官方 6.3.0 Designer profile，同时保留同名自定义文件、symlink 与多硬链接文件。
+- **提示词回到单一所有权。** 全局 policy 只保留三条原则和一条路由提示；八个公共 Skill 只声明各自的语义文档内容，Writer 生命周期不再重复注入每条路径。
+- **最终回答成为独立证据。** Codex、Cursor 与 Claude 的最终用户可见输出会和工具轨迹分开保存；空回答、敷衍、拒答与仅 marker 输出会失败，正常改写和中文回答不会被固定措辞误伤。
+- **语义通过必须有独立审查。** 确定性检查只证明回答存在且具体；`installed_semantic` 只有在独立 Reviewer 的 verdict 与 prompt、最终回答和 rubric 摘要完整绑定时才能通过，裸 `PASS` 或自审都会失败。
+
+升级操作：更新到 7.0.2 后，对精确项目根重新运行 `$teamwork-update`，然后重启 Codex 或开始一个新任务以加载刷新后的 plugin、policy、Skills 与 agents。
+
+重要限制：回答具体性检查不是语义评分；真实语义正确性仍需要独立 Reviewer 证据。Codex child-start 可观察性以及 Cursor/Claude 隔离认证限制保持不变，相关 live slice 会继续明确返回 `UNSUPPORTED` 或 `FAIL`，不会被静态检查替代。
+
 ## 7.0.1 - 2026-08-06
 
 **Teamwork 7.0.1 让现有 6.3 Codex 安装顺利升级，同时不放宽用户文件保护。**

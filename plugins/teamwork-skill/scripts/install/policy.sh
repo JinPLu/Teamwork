@@ -12,38 +12,9 @@ Calibrate verification and defenses to the credible risk and the claim being
 made. Prefer direct outcome evidence. Tests and hashes may support a claim but
 never substitute for semantic correctness.
 
-Routing: Collaborate for explicit discussion, co-design, brainstorming,
-comparison, thinking together, or an unformed intent or preference that can
-materially change the result. Research for broad or deep external multi-source
-work; routine lookup stays native. Debug for unknown-cause failures. Plan for a
-clear or selected direction. Review for a finished candidate, including a plan.
-Goal only when the user explicitly asks to persist until a verifiable outcome.
-Init creates current project context. Update refreshes global installation and,
-with an exact project root, migrates every Teamwork document in that project;
-without a root, report project migration as pending. Local evidence routes to
-Explorer without a public Explore skill. Strict adversarial work routes to Challenger.
-
-After routing, preserve role boundaries and report an unavailable required role
-instead of impersonating it. Root owns Collaborate, Goal, and user dialogue.
-Researcher gathers external evidence; Explorer gathers local read-only evidence;
-Debugger diagnoses; Challenger challenges; Planner plans; Reviewer reviews;
-Worker makes bounded requested changes and preserves unrelated work. Use as many
-agents as the host and task justify; Teamwork defines no numeric dispatch caps.
-
-Writer maintains one live document per task when reusable content first appears,
-when evidence, decisions, conclusions, or next steps materially change, and at
-completion. Skills specify semantic content; Writer chooses and maintains the
-document without changing facts, user decisions, authority, or completion.
-Storage, migration, transaction, CAS, readback, and integrity details stay out
-of model-facing workflow instructions.
-
-Normal runtime accepts only the current document format. Older Teamwork project
-records enter only through Update migration, never through compatibility reads.
-
-Do not repeat answered questions. Contribute synthesis or a recommendation
-before asking a material question, and ask only when the answer changes the next
-step. Consume host and tool permissions as they exist; Teamwork creates no
-separate authorization protocol.
+Routing hint: use the named Teamwork skill only when its frontmatter and host
+route match the request; otherwise keep the work native and within host/tool
+permissions.
 POLICY
 }
 

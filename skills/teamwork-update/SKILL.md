@@ -76,14 +76,9 @@ also does not edit source release metadata or publish a release.
 
 ## Live Document
 
-Have Writer maintain the task's single live document with an Update shape when
-the result is reusable; reuse it rather than creating a parallel artifact.
-Create it at the first substantive readiness result, update it only when the
-source, version, preferences, installed surfaces, validation, drift, project
-root, migration inventory or result, or required manual action materially
-changes, and finalize it at handoff. Include the resolved source, requested
-operation, versions, preferences, observed and changed surfaces, readiness
-evidence, optional capability state, exact project root or migration pending
-state, migration inventory and verification, unresolved drift, and manual
-actions. Writer must not report an unverified installation, activation, or
-project migration as complete.
+When Writer is used, include the resolved source, requested operation, versions,
+preferences, observed and changed surfaces, readiness evidence, optional
+capability state, exact project root or migration pending state, migration
+inventory and verification, unresolved drift, and manual actions. Writer must
+not report an unverified installation, activation, or project migration as
+complete.

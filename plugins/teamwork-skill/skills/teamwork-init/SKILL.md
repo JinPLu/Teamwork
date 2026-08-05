@@ -46,11 +46,7 @@ Teamwork-owned global surfaces to Update.
 
 ## Live Document
 
-Have Writer maintain the task's single live document with an Init shape when the
-result is reusable; reuse it rather than creating a parallel artifact. Create it
-at the first substantive finding, update it only when the observed state,
-ownership decision, proposed or applied change, validation, conflict,
-document-format state, or next action materially changes, and finalize it at
-handoff. Include the project root, inspected surfaces, findings, ownership,
-changes, validation, conflicts, document-format state, and remaining actions.
-Writer must not invent project facts or report unapplied changes as complete.
+When Writer is used, include the project root, inspected surfaces, findings,
+ownership, changes, validation, conflicts, document-format state, and remaining
+actions. Writer must not invent project facts or report unapplied changes as
+complete.

@@ -37,14 +37,9 @@ budget; or no evidence-backed strategy remains.
 
 ## Live Document
 
-Have Writer maintain the task's single live document with a Goal shape; reuse it
-rather than creating a parallel artifact. Create it when the objective and
-success signal are established, update it only when evidence, status, blocker,
-strategy, next step, or success materially changes, and finalize it on
-completion or a terminal blocker. Include the objective, success signal,
-boundaries, current status, meaningful attempts, evidence, strategy changes,
-budget or hard-stop state, blocker, and next step. Do not turn every attempt
-into an activity log.
+When Writer is used, include the objective, success signal, boundaries, current
+status, meaningful attempts, evidence, strategy changes, budget or hard-stop
+state, blocker, and next step. Do not turn every attempt into an activity log.
 
 Return the observed result first, followed by the success evidence or exact
 blocker and any remaining action.

@@ -37,10 +37,6 @@ unavailable isolation or coverage honestly instead of imitating it.
 
 ## Live Document
 
-Have Writer maintain the task's single live document with a discussion shape;
-reuse it rather than creating a parallel artifact. Create it when the first
-reusable synthesis appears, update it only when evidence, options,
-recommendation, decision, open question, or next step materially changes, and
-finalize it when the discussion ends. Preserve the user's meaning rather than a
-turn-by-turn transcript. Include the goal, criteria, options and trade-offs,
-evidence, decisions, open questions, current recommendation, and next step.
+When Writer is used, preserve the user's meaning rather than a turn-by-turn
+transcript. Include the goal, criteria, options and trade-offs, evidence,
+decisions, open questions, current recommendation, and next step.

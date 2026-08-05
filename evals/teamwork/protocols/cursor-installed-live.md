@@ -6,6 +6,7 @@ authenticates through Cursor's supported flow; the runner never copies credentia
 It installs into a disposable home and gives every case a fresh isolated scenario.
 
 Missing binary or authentication, unsupported custom-agent identity, unobservable
-actual model/effort/tool/authority, privacy leakage, or a missing changed scenario
-artifact/non-agent tool trace is a typed `UNSUPPORTED` or `FAIL`. It blocks that
-slice and is never inferred from template or prompt text.
+actual model/effort/tool/authority, privacy leakage, or missing changed scenario
+artifact/final-output evidence is a typed `UNSUPPORTED` or `FAIL`. It blocks
+that slice and is never inferred from template or prompt text. Semantic
+acceptance still requires an independent Reviewer verdict.
