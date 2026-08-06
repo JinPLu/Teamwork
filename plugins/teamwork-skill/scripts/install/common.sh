@@ -64,15 +64,22 @@ Usage:
     codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy|cursor-mcp
 
 Targets:
-  codex          Install checkout-based Codex skills, agents, and policy
+  codex          Install checkout-based Codex skills/agents and separately
+                 activate the managed Codex global policy
                  (script default target; Marketplace plugin is the default
                  Codex user install path)
-  cursor         Install skills, Cursor agents, register MCP servers, and print cursor-policy guidance
-  claude         Install skills, Claude agents, and Teamwork Claude global policy
-  all            Install skills, all platform agents, and Codex + Claude global policy
+  cursor         Compatibility/development target: install skills/agents,
+                 register MCP servers, and report the separate manual Cursor
+                 User Rules activation action
+  claude         Compatibility/development target: install skills/agents and
+                 separately activate the managed Claude global policy
+  all            Compatibility/development target: install static surfaces for
+                 all hosts, activate observable Codex/Claude policy, and
+                 report Cursor policy as partial
   update         Refresh all Teamwork global surfaces plus managed CodeGraph and
-                 GPU Broker dependencies; with --project-root, migrate every
-                 Teamwork document in that project to the current format
+                 GPU Broker dependencies; with --project-root, inventory older
+                 Teamwork documents and report the semantic migration that
+                 $teamwork-update must complete with Writer and Reviewer
   init-project   Initialize AGENTS.md, docs/teamwork/, ignore rules, and
                  CodeGraph context for one project without changing global
                  skills, agents, policies, routing, or notifications
@@ -85,34 +92,42 @@ Targets:
                  runtime (use --project-root for another repo)
   codex-agents   Install Teamwork Codex custom agents to ~/.codex/agents
                  and configure their user-level routing unless opted out
-  cursor-agents  Install Teamwork Cursor subagents to ~/.cursor/agents
-  cursor-mcp     Register Teamwork MCP servers in ~/.cursor/mcp.json
-  claude-agents  Install Teamwork Claude subagents to ~/.claude/agents
-  codex-policy   Print the Teamwork Codex global policy block for App Personalization
-  cursor-policy  Print the Teamwork Cursor global policy block for User Rules paste
+  cursor-agents  Compatibility/development: install Teamwork Cursor subagents
+                 to ~/.cursor/agents
+  cursor-mcp     Compatibility/development: register Teamwork MCP servers in
+                 ~/.cursor/mcp.json
+  claude-agents  Compatibility/development: install Teamwork Claude subagents
+                 to ~/.claude/agents
+  codex-policy   Print the canonical policy in its Codex managed wrapper
+  cursor-policy  Compatibility/development: print the Teamwork Cursor global
+                 policy block for User Rules paste
   cursor-policy-copy
-                 Copy the Teamwork Cursor global policy block to the clipboard
-  claude-policy  Print the Teamwork Claude global policy block for manual review
+                 Compatibility/development: copy the Teamwork Cursor global
+                 policy block to the clipboard
+  claude-policy  Compatibility/development: print the canonical policy in its
+                 Claude managed wrapper
 
 Default mode is --copy. For Codex users, install through the Marketplace plugin
-by default. Use this checkout installer for Cursor, Claude Code, local
-development, or manual Codex setups; use --link for local development when
-installs should track this checkout.
+by default. Teamwork 7.1 support and release qualification are Codex-only. Use
+this checkout installer for local development, manual Codex setups, or retained
+Cursor/Claude Code compatibility-adapter maintenance; use --link for local
+development when installs should track this checkout.
 `--project-root` is valid with `update`, `init-project`, or `plugin-init-project`.
 
-The `all` install enables ready/permission sounds for user-level Codex and
-Claude Code by default. Direct platform installs leave notifications unchanged
-unless --notifications or --no-notifications is used. Marketplace bootstrap
-installs Codex notifications by default; use --no-notifications to opt out.
+The compatibility/development `all` target enables ready/permission sounds for
+user-level Codex and Claude Code by default. Direct platform targets leave
+notifications unchanged unless --notifications or --no-notifications is used.
+Marketplace bootstrap installs Codex notifications by default; use
+--no-notifications to opt out.
 Project init targets never change notifications; notification flags are ignored
 there because project context setup has no user-level notification surface.
-Cursor installs register codegraph and gpu-broker in ~/.cursor/mcp.json by
-default. Use --no-mcp to skip MCP registration; enable new servers in Cursor
-Settings -> MCP when prompted.
+Cursor compatibility/development installs register codegraph and gpu-broker in
+~/.cursor/mcp.json by default. Use --no-mcp to skip MCP registration; enable
+new servers in Cursor Settings -> MCP when prompted.
 The mandatory install baseline does not require CodeGraph or GPU Broker. Enable
 either managed capability explicitly with --managed-codegraph or
 --managed-gpu-broker; --dependencies enables both and --no-dependencies disables
-both. These capability options are supported only by codex, all, update, and
+both. These capability options are accepted only by codex, all, update, and
 plugin-codex-bootstrap, the targets that own dependency lifecycles. Set
 TEAMWORK_GPU_BROKER_SOURCE when the enabled companion is not a sibling of this
 checkout. Choices are recorded and inherited by later updates.
@@ -121,8 +136,10 @@ installs are intentionally unsupported until their local hook contracts are
 live-verified.
 
 User-level Codex installs configure ~/.codex/config.toml with the stable
-multi_agent feature enabled so the runtime can select installed Teamwork agent
-roles. Use --no-codex-routing only when another owner manages that feature.
+multi_agent feature enabled alongside installed Teamwork Agent profiles. This is
+static configuration, not proof that an exact role activated in a live run.
+Other feature settings, including multi_agent_v2, are preserved and unmanaged.
+Use --no-codex-routing only when another owner manages the stable feature.
 Project init never changes user-level routing; run a Codex global install or
 codex-agents separately when that surface needs refresh.
 
@@ -133,7 +150,7 @@ Sol/high for Debugger, Challenger, and Planner; and Sol/max for Reviewer. On
 Codex, cost-first uses Terra/high for Researcher, Debugger, Challenger, and
 Planner; Luna/high for Explorer and Writer;
 Luna/xhigh for Worker; and Sol/high for Reviewer. Cursor and Claude Code keep
-their existing profile mappings.
+their existing compatibility/development profile mappings.
 USAGE
 }
 

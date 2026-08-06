@@ -305,50 +305,7 @@ teamwork_codex_agent_file_is_recognized() {
   expected_name="${agent//-/_}"
   [[ -f "$path" ]] \
     && grep -q "^name = \"$expected_name\"$" "$path" \
-    && {
-      grep -Eq 'You are (the )?Teamwork ' "$path" \
-        || teamwork_codex_agent_file_is_official_v630_writer "$path" "$agent"
-    }
-}
-
-teamwork_codex_agent_file_sha256_is() {
-  local path="$1"
-  local expected="$2"
-  python3 - "$path" "$expected" <<'PY'
-import hashlib
-import pathlib
-import stat
-import sys
-
-path = pathlib.Path(sys.argv[1])
-expected = sys.argv[2]
-try:
-    info = path.lstat()
-    if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
-        raise SystemExit(1)
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()
-except OSError:
-    raise SystemExit(1)
-raise SystemExit(0 if digest == expected else 1)
-PY
-}
-
-teamwork_codex_agent_file_is_official_v630_writer() {
-  local path="$1"
-  local agent="$2"
-  [[ "$agent" == "teamwork-writer" ]] || return 1
-  teamwork_codex_agent_file_sha256_is \
-    "$path" \
-    "b620f6b8c61c9d7bd870ebb090deb27103cae162ca66e4b6589684956010ddc2"
-}
-
-teamwork_codex_agent_file_is_official_v630_designer() {
-  local path="$1"
-  local agent="$2"
-  [[ "$agent" == "teamwork-designer" ]] || return 1
-  teamwork_codex_agent_file_sha256_is \
-    "$path" \
-    "3f99ede32a4c8a0f2d1b8ce0b303832f12898943825003edae1aa371365440d7"
+    && grep -Eq 'You are (the )?Teamwork ' "$path"
 }
 
 teamwork_markdown_agent_file_is_recognized() {
@@ -363,7 +320,7 @@ remove_retired_agent_files() {
   local platform="$1"
   local root="$2"
   shift 2
-  local agent extension path marker raw_target resolved
+  local agent extension path
 
   case "$platform" in
     codex) extension=toml ;;
@@ -374,39 +331,7 @@ remove_retired_agent_files() {
   for agent in "$@"; do
     path="$root/$agent.$extension"
     [[ -e "$path" || -L "$path" ]] || continue
-    if [[ "$platform" == "codex" && "$agent" == "teamwork-designer" ]]; then
-      if [[ -L "$path" ]]; then
-        echo "Preserved unrecognized retired agent file: $path" >&2
-        continue
-      fi
-      [[ -f "$path" ]] || continue
-      if teamwork_codex_agent_file_is_official_v630_designer "$path" "$agent"; then
-        rm -f "$path"
-      else
-        echo "Preserved unrecognized retired agent file: $path" >&2
-      fi
-      continue
-    fi
-    if [[ -L "$path" ]]; then
-      raw_target="$(readlink "$path" 2>/dev/null || true)"
-      resolved="$(readlink -f "$path" 2>/dev/null || true)"
-      if [[ "$raw_target" == */templates/*-agents/"$agent.$extension" \
-          || "$resolved" == */templates/*-agents/"$agent.$extension" ]]; then
-        rm -f "$path"
-      fi
-      continue
-    fi
-    [[ -f "$path" ]] || continue
-    case "$agent" in
-      *designer*) marker='Teamwork Designer' ;;
-      *plan-reviewer*) marker='Teamwork Plan Reviewer' ;;
-      *) continue ;;
-    esac
-    if grep -Fq "$marker" "$path"; then
-      rm -f "$path"
-    else
-      echo "Preserved unrecognized retired agent file: $path" >&2
-    fi
+    echo "Preserved retired agent conflict without current-format ownership evidence: $path" >&2
   done
 }
 

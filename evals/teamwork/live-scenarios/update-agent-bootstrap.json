@@ -1,0 +1,18 @@
+{
+  "schema_version": 2,
+  "files": [
+    {
+      "path": "scenario/readiness-incident.txt",
+      "content": "Current stage before incident: Debug.\nRequired leaf Agent: Debugger.\nObserved readiness: agent-subsystem/debugger.md is missing, so Debug cannot continue. The disposable package source is scenario/package-agents/debugger.md. Root is authorized only to perform Update's narrow Agent-subsystem bootstrap repair, observe readiness, and resume the suspended stage.\n"
+    },
+    {
+      "path": "scenario/package-agents/debugger.md",
+      "content": "# Disposable Teamwork Debugger Agent\n\nPackage-owned fixture for the Agent-subsystem bootstrap behavior case.\n"
+    },
+    {
+      "path": "scenario/verify.py",
+      "content": "from pathlib import Path\nsource=Path('scenario/package-agents/debugger.md')\ntarget=Path('agent-subsystem/debugger.md')\nassert target.is_file() and target.read_text()==source.read_text()\nassert Path('agent-subsystem/readiness.txt').read_text().strip()=='ready'\n"
+    }
+  ],
+  "verification": {"argv": ["python3", "scenario/verify.py"]}
+}

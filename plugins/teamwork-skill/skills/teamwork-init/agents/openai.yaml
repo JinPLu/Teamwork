@@ -1,4 +1,4 @@
 interface:
   display_name: "Teamwork Init"
-  short_description: "Initialize and repair project-local Teamwork setup"
-  default_prompt: "Use $teamwork-init to inspect and initialize this project's Teamwork-owned context."
+  short_description: "Initialize fresh project-local Teamwork context"
+  default_prompt: "Use $teamwork-init to create fresh current-format Teamwork context for this exact project root."

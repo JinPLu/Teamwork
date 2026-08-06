@@ -1,137 +1,115 @@
 from __future__ import annotations
 
-import importlib.util
 import json
-import os
+import importlib.util
 import shutil
-import stat
 import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-BUILD_SCRIPT = ROOT / "scripts/build-codex-plugin.py"
 CURRENT_VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
 
 
-def load_builder() -> Any:
-    spec = importlib.util.spec_from_file_location("build_codex_plugin", BUILD_SCRIPT)
+def load_bundle_builder():
+    spec = importlib.util.spec_from_file_location(
+        "teamwork_bundle_builder",
+        ROOT / "scripts/build-codex-plugin.py",
+    )
     if spec is None or spec.loader is None:
-        raise RuntimeError(f"cannot load builder from {BUILD_SCRIPT}")
+        raise RuntimeError("could not load plugin builder")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
-class RuntimeIntegrityTests(unittest.TestCase):
+class RuntimeLayoutTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.temporary = tempfile.TemporaryDirectory(prefix=".runtime-integrity-", dir=ROOT)
-        self.tmp = Path(self.temporary.name)
-        builder = load_builder()
-        self.stage = builder.build_stage(ROOT, self.tmp)
-        self.package_root = self.tmp / f"cache/teamwork/teamwork-skill/{CURRENT_VERSION}"
-        self.package_root.parent.mkdir(parents=True)
-        shutil.copytree(self.stage, self.package_root, symlinks=True)
-        shutil.rmtree(self.stage.parent)
+        self.temporary = tempfile.TemporaryDirectory()
+        self.package_root = Path(self.temporary.name) / "teamwork-skill"
+        topology = json.loads((ROOT / "config/teamwork-topology.json").read_text(encoding="utf-8"))
+        files = {
+            "VERSION",
+            "install.sh",
+            "policy/teamwork-global.md",
+            "config/teamwork-topology.json",
+            ".codex-plugin/plugin.json",
+            ".claude-plugin/plugin.json",
+            "scripts/check-update.sh",
+            "scripts/init-project-files.py",
+            "scripts/teamwork_index_v4.py",
+            "scripts/migrate-teamwork-documents.py",
+            "scripts/validate_teamwork_index.py",
+            "scripts/plugin-activation.py",
+            "scripts/plugin-runtime-root.py",
+            "hooks/notify.py",
+        }
+        files.update(row["path"] for row in topology["public_skills"])
+        for row in topology["agents"]:
+            files.update(row["templates"].values())
+        for relative in files:
+            destination = self.package_root / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(ROOT / relative, destination)
+        (self.package_root / ".teamwork-plugin-runtime").write_text(
+            "TEAMWORK_CODEX_PLUGIN_RUNTIME=1\n", encoding="utf-8"
+        )
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
 
-    @property
-    def runtime_root_cli(self) -> Path:
-        return self.package_root / "scripts/plugin-runtime-root.py"
-
-    def run_runtime_root(self, package_root: Path | None = None) -> subprocess.CompletedProcess[str]:
-        root = package_root or self.package_root
+    def run_runtime_root(self) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
-            [sys.executable, str(root / "scripts/plugin-runtime-root.py")],
-            cwd=root,
+            [sys.executable, str(self.package_root / "scripts/plugin-runtime-root.py")],
+            cwd=self.package_root,
             text=True,
             capture_output=True,
             check=False,
         )
 
-    def copy_package(self, name: str) -> Path:
-        destination = self.tmp / name / f"teamwork/teamwork-skill/{CURRENT_VERSION}"
-        destination.parent.mkdir(parents=True)
-        shutil.copytree(self.package_root, destination, symlinks=True)
-        return destination
-
-    def assert_runtime_rejected(self, package_root: Path, expected: str) -> None:
-        result = self.run_runtime_root(package_root)
-        self.assertNotEqual(result.returncode, 0, result.stdout)
-        self.assertIn(expected, result.stderr)
-
-    def integrity_files(self) -> set[str]:
-        manifest = json.loads((self.package_root / ".teamwork-runtime-integrity.json").read_text(encoding="utf-8"))
-        files = manifest.get("files")
-        self.assertIsInstance(files, dict)
-        return set(files)
-
-    def actual_package_files(self) -> set[str]:
-        actual: set[str] = set()
-        for path in self.package_root.rglob("*"):
-            rel = path.relative_to(self.package_root).as_posix()
-            if rel == ".teamwork-runtime-integrity.json":
-                continue
-            info = path.lstat()
-            if stat.S_ISDIR(info.st_mode):
-                continue
-            self.assertTrue(stat.S_ISREG(info.st_mode), rel)
-            actual.add(rel)
-        return actual
-
-    def test_runtime_integrity_manifest_covers_exact_packaged_file_inventory(self) -> None:
-        files = self.integrity_files()
-        self.assertEqual(self.actual_package_files(), files)
-        self.assertIn("skills/teamwork-collaborate/SKILL.md", files)
-        self.assertIn("templates/codex-agents/teamwork-writer.toml", files)
-        self.assertIn("templates/cursor-agents/writer.md", files)
-        self.assertIn("templates/claude-agents/writer.md", files)
-        self.assertIn("install.sh", files)
-        self.assertIn("scripts/check-update.sh", files)
-        self.assertIn("scripts/configure-codex-routing.py", files)
-        self.assertIn("scripts/plugin-activation.py", files)
-        self.assertIn("scripts/discussion-transaction.py", files)
-        self.assertIn("hooks/notify.py", files)
-        self.assertNotIn(".teamwork-runtime-integrity.json", files)
-        self.assertFalse(any(path.startswith("docs/teamwork/") for path in files))
-
+    def test_runtime_root_accepts_normal_layout_without_integrity_file(self) -> None:
+        self.assertFalse((self.package_root / ".teamwork-runtime-integrity.json").exists())
         result = self.run_runtime_root()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(Path(result.stdout.strip()).resolve(), self.package_root.resolve())
 
-    def test_runtime_root_rejects_modified_behavior_bearing_files(self) -> None:
-        cases = {
-            "skill": "skills/teamwork-collaborate/SKILL.md",
-            "writer-template": "templates/codex-agents/teamwork-writer.toml",
-            "installer": "install.sh",
-            "runtime-helper": "scripts/teamwork-case-migration.py",
-        }
-        for label, rel in cases.items():
-            with self.subTest(label=label):
-                package = self.copy_package(f"tampered-{label}")
-                path = package / rel
-                path.write_text(path.read_text(encoding="utf-8") + "\n# tamper\n", encoding="utf-8")
-                self.assert_runtime_rejected(package, f"runtime hash mismatch for {rel}")
+    def test_runtime_root_accepts_content_changes_without_content_identity_check(self) -> None:
+        policy = self.package_root / "policy/teamwork-global.md"
+        policy.write_text(policy.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+        result = self.run_runtime_root()
+        self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_runtime_root_rejects_extra_missing_and_mixed_package_files(self) -> None:
-        extra = self.copy_package("extra-behavior")
-        (extra / "scripts/unlisted-behavior.py").write_text("# unexpected behavior\n", encoding="utf-8")
-        os.chmod(extra / "scripts/unlisted-behavior.py", 0o755)
-        self.assert_runtime_rejected(extra, "integrity file inventory mismatch")
+    def test_runtime_root_rejects_missing_required_regular_file(self) -> None:
+        (self.package_root / "scripts/teamwork_index_v4.py").unlink()
+        result = self.run_runtime_root()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("missing", result.stderr)
 
-        missing = self.copy_package("missing-skill")
-        (missing / "skills/teamwork-review/SKILL.md").unlink()
-        self.assert_runtime_rejected(missing, "integrity file inventory mismatch")
+    def test_runtime_root_rejects_manifest_identity_mismatch(self) -> None:
+        manifest = self.package_root / ".codex-plugin/plugin.json"
+        value = json.loads(manifest.read_text(encoding="utf-8"))
+        value["name"] = "not-teamwork"
+        manifest.write_text(json.dumps(value), encoding="utf-8")
+        result = self.run_runtime_root()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("manifest name/version mismatch", result.stderr)
 
-        mixed = self.copy_package("mixed-root")
-        shutil.copytree(ROOT / ".claude-plugin", mixed / ".claude-plugin", symlinks=True)
-        self.assert_runtime_rejected(mixed, "integrity file inventory mismatch")
+    def test_generated_bundle_comparison_ignores_python_cache_output(self) -> None:
+        builder = load_bundle_builder()
+        with tempfile.TemporaryDirectory() as current_raw, tempfile.TemporaryDirectory() as staged_raw:
+            current = Path(current_raw)
+            staged = Path(staged_raw)
+            for root in (current, staged):
+                (root / "scripts").mkdir()
+                (root / "scripts/tool.py").write_text("print('ok')\n", encoding="utf-8")
+            cache = current / "scripts/__pycache__"
+            cache.mkdir()
+            (cache / "tool.cpython-313.pyc").write_bytes(b"runtime cache")
+            (current / "empty-local-directory").mkdir()
+            self.assertTrue(builder.bundle_matches(current, staged))
 
 
 if __name__ == "__main__":

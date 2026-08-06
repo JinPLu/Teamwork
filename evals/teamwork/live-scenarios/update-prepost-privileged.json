@@ -1,1 +1,0 @@
-{"schema_version":1,"case_id":"update-prepost-privileged","private_paths":[],"files":[{"path":"scenario/update-probe.txt","content":"Probe marker: EVIDENCE_UPDATE_READINESS_RELEASE\nGlobal refresh has pre/post readiness evidence and no project-init mutation.\n"}]}

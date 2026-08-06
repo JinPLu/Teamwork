@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only readiness checks for Teamwork Codex custom-agent routing."""
+"""Read-only static checks for Teamwork Codex custom-agent installation."""
 
 from __future__ import annotations
 
@@ -283,7 +283,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     agents_dir = args.agents_dir.expanduser().resolve()
     profiles, nickname_count = validate_profiles(agents_dir)
     report: dict[str, Any] = {
-        "status": "ok",
+        "status": "ok" if args.profiles_only else "static-ready",
         "mode": "profiles-only" if args.profiles_only else "readiness",
         "agents_dir": str(agents_dir),
         "profile_count": len(profiles),
@@ -309,11 +309,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     report["routing"] = routing.to_dict()
     if not routing.ready:
         raise CheckFailure(
-            "Codex custom-agent routing is not ready: " + "; ".join(routing.issues)
+            "Codex custom-agent static configuration is not current: "
+            + "; ".join(routing.issues)
         )
     report["spawn_selector"] = (
-        "stable multi_agent feature ready; a fresh live spawn probe remains the behavioral proof"
+        "not proved by static inspection; exact role activation requires a fresh live child-start observation"
     )
+    report["experimental_multi_agent_v2"] = routing.experimental_multi_agent_v2
     report["mutations"] = "none"
     report["model_calls"] = "none"
     return report
@@ -344,6 +346,7 @@ def print_text_report(report: dict[str, Any]) -> None:
     print(f"ROUTING_CONFIG={routing['status']}")
     print("ROUTING_FEATURE=features.multi_agent")
     print(f"SPAWN_SELECTOR={report['spawn_selector']}")
+    print(f"EXPERIMENTAL_MULTI_AGENT_V2={report['experimental_multi_agent_v2']}")
     print("MUTATIONS=none")
     print("MODEL_CALLS=none")
 
@@ -351,9 +354,10 @@ def print_text_report(report: dict[str, Any]) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Validate Teamwork Codex agent profiles and, unless --profiles-only is "
-            "used, check the local bundled model catalog and prompt loading without "
-            "calling a model or changing configuration."
+            "Validate Teamwork Codex agent profiles and static host configuration. "
+            "Unless --profiles-only is used, also check the local bundled model "
+            "catalog and prompt loading without calling a model or changing "
+            "configuration. Exact role activation remains a live behavioral claim."
         )
     )
     parser.add_argument(

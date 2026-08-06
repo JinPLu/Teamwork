@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from collections import Counter
@@ -74,20 +73,19 @@ def parse_arguments(value: Any) -> Any:
     return value
 
 
-def call_fingerprint(name: str, arguments: Any) -> str:
-    raw = json.dumps(
+def call_key(name: str, arguments: Any) -> str:
+    return json.dumps(
         {"name": name, "arguments": arguments},
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
         default=str,
-    ).encode("utf-8", errors="replace")
-    return hashlib.sha256(raw).hexdigest()
+    )
 
 
 def audit_file(path: Path, thread_id: str) -> dict[str, Any]:
     calls: Counter[str] = Counter()
-    fingerprints: Counter[str] = Counter()
+    call_keys: Counter[str] = Counter()
     fork_modes: Counter[str] = Counter()
     models: Counter[str] = Counter()
     efforts: Counter[str] = Counter()
@@ -152,7 +150,7 @@ def audit_file(path: Path, thread_id: str) -> dict[str, Any]:
                     raw_arguments = payload.get("arguments", payload.get("input"))
                     arguments = parse_arguments(raw_arguments)
                     calls[name] += 1
-                    fingerprints[call_fingerprint(name, arguments)] += 1
+                    call_keys[call_key(name, arguments)] += 1
                     if name == "spawn_agent" and isinstance(arguments, dict):
                         fork_modes[str(arguments.get("fork_turns", "unspecified"))] += 1
 
@@ -180,8 +178,8 @@ def audit_file(path: Path, thread_id: str) -> dict[str, Any]:
         "total_tokens": int(final_usage.get("total_tokens", 0) or 0),
         "context_window": last_context_window,
     }
-    duplicate_groups = sum(1 for count in fingerprints.values() if count > 1)
-    repeated_calls = sum(count - 1 for count in fingerprints.values() if count > 1)
+    duplicate_groups = sum(1 for count in call_keys.values() if count > 1)
+    repeated_calls = sum(count - 1 for count in call_keys.values() if count > 1)
     source = session_meta.get("source")
     spawn = source.get("subagent", {}).get("thread_spawn", {}) if isinstance(source, dict) else {}
 

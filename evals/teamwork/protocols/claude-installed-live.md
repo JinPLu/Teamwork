@@ -1,14 +1,15 @@
 # Claude Code installed live protocol
 
 Run only through `run-installed-claude-teamwork-live-eval.py` with a prepared
-candidate manifest. `claude` must resolve and report its version. The user uses the
+declared release case. `claude` must resolve and report its version. The user uses the
 supported authentication flow; the runner never copies credentials. It installs
 into a disposable home and gives every case a fresh isolated scenario.
 
 Capture `SubagentStart`/`SubagentStop` identity and transcript evidence when the
-host exposes it. Missing binary/authentication, unavailable hook or transcript
-evidence, unobservable actual model/effort/tool authority, privacy leakage, or no
-changed scenario artifact/non-agent trace is `UNSUPPORTED` or `FAIL`, never a
-prompt-derived pass. Trace cases also retain the final agent output and require
-non-empty, specific answer evidence; semantic acceptance still requires an
-independent Reviewer verdict.
+host exposes it. The record binds the case's requested authority and Claude
+receives it through its permission mode. Model and effort are host execution
+choices, not release-pass evidence. Missing binary/authentication, unavailable
+hook or transcript evidence, privacy leakage, or missing retained scenario or
+final-answer evidence is `UNSUPPORTED` or `FAIL`, never a prompt-derived pass.
+The local gate does not score wording or length; semantic acceptance requires
+an independent Reviewer to read the answer and retained candidate.

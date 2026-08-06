@@ -6,13 +6,13 @@
 
 <p align="center">
   <strong>让 AI 在该直接做时直接做，在真正需要方法时再调用方法。</strong><br>
-  面向 Codex、Cursor 和 Claude Code 的 AI/人类协作 Skills：更少仪式，更清楚的边界，更可信的结果。
+  面向 Codex 的 AI/人类协作 Skills：更少仪式，更清楚的边界，更可信的结果。
 </p>
 
 <p align="center">
   <a href="https://github.com/JinPLu/Teamwork/releases"><img src="https://img.shields.io/github/v/release/JinPLu/Teamwork?display_name=tag&amp;sort=semver" alt="最新 Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2563EB" alt="MIT License"></a>
-  <img src="https://img.shields.io/badge/platforms-Codex%20%C2%B7%20Cursor%20%C2%B7%20Claude%20Code-0F766E" alt="支持 Codex、Cursor 和 Claude Code">
+  <img src="https://img.shields.io/badge/supported-Codex-0F766E" alt="正式支持 Codex">
 </p>
 
 <p align="center">
@@ -44,7 +44,7 @@ codex plugin add teamwork-skill@teamwork
 $teamwork-update
 ```
 
-首次配置会让你选择 `performance-first` 或 `cost-first`，并分别决定是否启用受管 CodeGraph 与本地 GPU Broker。无论是否启用可选能力，Skills、Agents、路由和全局策略都会完整安装。
+首次配置会让你选择 `performance-first` 或 `cost-first`，并分别决定是否启用受管 CodeGraph 与本地 GPU Broker。Codex 的 Skills、Agents、路由和全局 policy managed block 会安装并回读；可选能力不改变这些基础能力。
 
 然后直接提出目标：
 
@@ -65,16 +65,18 @@ $teamwork-update
 ```
 
 <details>
-<summary><strong>Cursor、Claude Code 或开发 checkout</strong></summary>
+<summary><strong>兼容适配器与开发 checkout</strong></summary>
+
+Teamwork 7.1 的正式支持、发布证据和发布阻塞项只覆盖 Codex。Cursor 与 Claude Code 的源码适配器继续保留，供兼容性维护和本地开发使用；它们不是 release-qualified 平台，也不建议作为普通受支持安装路径。
 
 ```bash
 git clone https://github.com/JinPLu/Teamwork.git
 cd Teamwork
-./install.sh all
+./install.sh codex
 ./scripts/check-update.sh --readiness
 ```
 
-也可以只安装一个平台：
+维护兼容适配器时可以只安装对应开发目标：
 
 ```bash
 ./install.sh cursor
@@ -82,13 +84,15 @@ cd Teamwork
 ./install.sh codex   # 仅用于开发或手动 Codex setup
 ```
 
-使用较低成本配置：
+Codex 开发安装可使用较低成本配置：
 
 ```bash
-./install.sh all --profile cost-first
+./install.sh codex --profile cost-first
 ```
 
-Cursor 还需要运行 `./install.sh cursor-policy-copy`，再把内容粘贴到 **Cursor Settings → Rules → User Rules**。平台细节见 [Cursor 指南](CURSOR.md) 与 [Claude Code 指南](CLAUDE.md)。
+Cursor 兼容适配器还需要运行 `./install.sh cursor-policy-copy`，审阅后把同一份全局 policy 粘贴到 **Cursor Settings → Rules → User Rules**。Teamwork 无法观察这一步，因此 Cursor readiness 会诚实保留为 `manual action required` / partial。适配器细节见 [Cursor 指南](CURSOR.md) 与 [Claude Code 指南](CLAUDE.md)。
+
+Codex 的静态安装检查只证明 Agent profile 与稳定版 `multi_agent` 配置存在，不证明精确命名 Agent 已激活。需要 Agent 的路径必须在实时运行中观察到对应角色；当前 Codex CLI 0.144 的稳定路径若无法提供该证据，会保留 `UNSUPPORTED`，而不是冒充通过。Teamwork 不会创建、删除或启用用户的 under-development `multi_agent_v2` 设置。
 
 </details>
 
@@ -102,7 +106,7 @@ Cursor 还需要运行 `./install.sh cursor-policy-copy`，再把内容粘贴到
 | 可执行的步骤 | 📝 `$teamwork-plan` | 把已经明确的方向转成 owner、依赖、验证和停止条件清楚的计划。 |
 | 独立判断 | ✅ `$teamwork-review` | 审查稳定的代码、文档、计划、产物或结论，先给发现，再给 verdict。 |
 | 持续推进到结果 | 🎯 `$teamwork-goal` | 仅在你明确要求时，持续工作到真实成功信号通过或出现真正阻塞。 |
-| 当前格式的项目上下文 | 🧰 `$teamwork-init` | 初始化、审计、修复或瘦身一个明确项目根目录内的 Teamwork 配置。 |
+| 新项目的当前格式上下文 | 🧰 `$teamwork-init` | 只为一个明确项目根目录创建全新的 Teamwork 上下文与 schema-v4 空索引；已有安装修复或旧文档迁移交给 Update。 |
 | 全局刷新或旧文档迁移 | 🔄 `$teamwork-update` | 刷新全局 Teamwork；给出精确项目根目录时，一次性迁移其中全部旧 Teamwork 文档。 |
 
 本地代码、配置、日志、测试和历史证据由内部 Explorer Agent 只读收集，不再暴露公共 Explore Skill。普通网页事实查询保持宿主原生；Research 只用于真正需要多源综合的外部问题。
@@ -147,7 +151,7 @@ Cursor 还需要运行 `./install.sh cursor-policy-copy`，再把内容粘贴到
 
 **路径：** Research → 有来源的结论；只有仍存在真实选择时，才回到 Collaborate。
 
-Review 是按需加入的独立验收门，Goal 是显式要求的持续推进器。两者都不是每个任务的默认步骤。
+Review 是按需加入的独立验收门，Goal 是显式要求的持续推进器。普通发布使用一位独立语义 Reviewer；只有当前变更实际跨越权限/安全、不可逆用户数据、持久数据迁移或公开兼容契约时，才进入 Strict Review。两者都不是每个任务的默认步骤。
 
 ## 📋 可直接复制的提示词
 
@@ -184,22 +188,33 @@ Review 是按需加入的独立验收门，Goal 是显式要求的持续推进�
 
 Challenger 只用于明确的严格对抗挑战。Reviewer 同时审查实现与计划。Teamwork 不规定固定 Agent 数量或每日派发上限，也不会因为任务重要、复杂或有风险就自动升级流程。
 
-## 🗃️ 一项任务，一份 live document
+## 🗃️ 内容属于哪里，就写到哪里
 
-当任务产生值得复用的内容时，Writer 为这项任务维护一份 live document：首次出现可复用内容时创建，证据、决定、结论或下一步实质变化时更新，任务结束时定稿。它不是逐轮 transcript，也不会把锁、事务、hash 或 readback 写进模型工作方法。
+当任务产生值得复用的内容时，Writer 直接维护六类类型化文档，而不是把所有阶段塞进一份 live document：
 
-文件、工具、凭据与外部效果仍由 Codex、Cursor、Claude Code 及其权限控制。Teamwork 不建立第二套授权系统；讨论或接受计划也不等于授权执行。
+| 内容 | 目录 | 保留什么 |
+| --- | --- | --- |
+| 讨论与决定 | 💬 `discussions/` | 选项、权衡、已定事项与下一批真正有意义的问题 |
+| 深入调研 | 🔎 `research/` | 结论、来源全景、主张证据、矛盾、覆盖审计与停止依据 |
+| 排错 | 🐞 `debug/` | 失败边界、因果证据、修复与同路径验证 |
+| 计划 | 📝 `plans/` | 已选方向、owner、依赖、验证和停止条件 |
+| 复查 | ✅ `reviews/` | 实际候选、直接证据、发现与语义 verdict |
+| 结果 | 📌 `reports/` | Goal、Init、Update 与值得复用的执行结果 |
+
+`docs/teamwork/index.json` 用一个可读任务键关联同一任务的多个文档。Writer 只在首次出现可复用内容或语义实质改变时写入；定稿后的同范围文字/链接修正可以原位完成，新的决定、失败或候选则创建新的同类文档。Explorer 的证据进入消费它的文档，不另造旁路记录。
+
+文件、工具、凭据与外部效果仍由 Codex 及其权限控制。Cursor 与 Claude Code 兼容适配器由对应宿主权限控制。Teamwork 不建立第二套授权系统；讨论或接受计划也不等于授权执行。
 
 > [!IMPORTANT]
-> **Teamwork 7.0.0 不兼容旧设置或旧数据。** Update 是唯一旧格式迁移入口：给出精确项目根目录后，它迁移全部旧 Teamwork 文档；迁移验证完成后，正常运行只使用新格式，不保留旧 runtime reader。
+> **Teamwork 7.1 不保留旧文档格式的正常运行兼容。** Update 是唯一旧文档迁移入口：给出精确项目根目录后，Writer 按意义整理全部旧 Teamwork 文档，scripts 只处理机械步骤，独立 Reviewer 阅读实际迁移结果；接受后正常运行只使用 schema v4，不保留旧 runtime reader。有效的 Teamwork 7 安装偏好仍可复用；这次不兼容变化针对项目文档格式。
 
-刷新全局安装并迁移一个项目：
+用 CLI 刷新全局安装，并盘点一个项目是否需要语义迁移：
 
 ```bash
 ./install.sh --project-root /path/to/project update
 ```
 
-没有精确项目根目录时，Update 只完成全局刷新，并明确报告 `project migration pending`。
+这个 CLI 不代替 Writer 阅读和重组语义：发现旧格式时，它会保留项目原状、报告 inventory，并要求在宿主中运行 `$teamwork-update`，由 Writer 完成转换、Reviewer 阅读实际结果后再切换。没有精确项目根目录时，CLI 只完成全局刷新，并明确报告 `project migration pending`。
 
 ## 🔄 更新
 
@@ -217,7 +232,7 @@ Checkout：
 
 ```bash
 git pull --ff-only
-./install.sh all
+./install.sh codex
 ./scripts/check-update.sh --readiness
 ```
 
@@ -226,7 +241,8 @@ git pull --ff-only
 ## 📚 继续了解
 
 - [更新日志](CHANGELOG.md)：用户可见变化和升级说明。
-- [Codex](CODEX.md)、[Cursor](CURSOR.md)、[Claude Code](CLAUDE.md)：平台安装、配置与排错。
+- [Codex](CODEX.md)：正式支持的安装、配置与排错。
+- [Cursor](CURSOR.md)、[Claude Code](CLAUDE.md)：保留的兼容/开发适配器说明。
 - [架构](docs/architecture.md)：四层模型、canonical owners、存储与发布证据。
 - [参与贡献](CONTRIBUTING.md)：修改约定与验证命令。
 - [GitHub Issues](https://github.com/JinPLu/Teamwork/issues)：反馈问题或建议。

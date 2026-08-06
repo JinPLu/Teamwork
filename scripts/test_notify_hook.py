@@ -95,14 +95,6 @@ class NotifyHookTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, '{}\n')
 
-    def test_duplicate_event_is_deduplicated(self) -> None:
-        meta = {"type": "agent-turn-complete", "thread-id": "dedupe-test", "turn-id": "one"}
-        equivalent = {"hook_event_name": "Stop", "thread-id": "dedupe-test", "turn-id": "one"}
-        with tempfile.TemporaryDirectory() as directory, mock.patch.object(notify.tempfile, "gettempdir", return_value=directory):
-            self.assertTrue(notify.claim_once("ready", meta))
-            self.assertFalse(notify.claim_once("ready", equivalent))
-            self.assertTrue(notify.claim_once("attention", meta))
-
     def test_config_install_is_idempotent_and_preserves_unrelated_hooks(self) -> None:
         data = {
             "theme": "dark",

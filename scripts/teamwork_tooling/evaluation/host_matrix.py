@@ -1,2176 +1,840 @@
-"""Candidate-isolated installed-host trajectories for Teamwork.
+"""Run change-scoped Teamwork scenarios through installed host CLIs.
 
-This module deliberately treats a host transcript as evidence, not as a
-declaration.  A successful record therefore has three independently checkable
-things: a frozen candidate tree, an actual host/tool trace, and a case-specific
-artifact produced in a disposable scenario copied from that tree.
+Records contain observed host output and verifier outcomes. They do not seal,
+fingerprint, or infer semantic acceptance from source text.
 """
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import re
 import shutil
 import stat
 import subprocess
-import tarfile
 import tempfile
-import uuid
-from contextlib import contextmanager
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from typing import Any, Iterator, Sequence
+from typing import Any, Sequence
 
-from .contracts import CANONICAL_ROLES, PUBLIC_SKILL_PATHS
 
-SCHEMA_VERSION = 1
-HOST_TIMEOUT_EXIT_STATUS = 124
+SCHEMA_VERSION = 2
 STATUSES = {"PASS", "FAIL", "UNSUPPORTED"}
 PROFILES = {"performance-first", "cost-first"}
 HOSTS = {"codex", "cursor", "claude"}
-OBJECT_ID_RE = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")
-SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
-RELEASE_PATHS_NAME = "release-paths.json"
+SUPPORT_EXPECTATIONS = {"required", "conditional-exact-role"}
 RELEASE_CASE_PATH = "evals/teamwork/live-cases/release-matrix.json"
 RELEASE_SCHEMA_PATH = "evals/teamwork/schemas/host-trajectory.schema.json"
 RELEASE_TEMP_ROOT = Path("/tmp/teamwork-release-matrix")
-RELEASE_TEMP_MANIFEST = RELEASE_TEMP_ROOT / "manifest.json"
-CODEX_AUTH_NAME = "auth.json"
+CURSOR_AUTH_REQUIRED = (
+    "Error: Authentication required. Please run 'agent login' first, "
+    "or set CURSOR_API_KEY environment variable."
+)
 SKILL_READ_RE = re.compile(r"(?:^|[\s'\"]|/)(?:\.agents/)?skills/([A-Za-z0-9][A-Za-z0-9_-]*)/SKILL\.md")
-STRUCTURAL_EVENT_TYPES = {
-    "teamwork.invocation.started",
-    "thread.started", "thread.resumed", "thread.completed",
-    "subagent.start", "subagent.started", "subagent.stop", "subagent.completed",
-    "SubagentStart", "SubagentStop", "agent.started", "agent.completed",
-    "tool_call", "tool_result", "tool_use", "assistant.tool_use", "tool.call", "tool.result",
-    "item.completed", "item.started",
+CHILD_START_EVENT_TYPES = {
+    "subagent.start", "subagent.started", "SubagentStart", "agent.started",
 }
-AGENT_MESSAGE_EVENT_TYPES = {
-    "agent_message",
-    "assistant.message",
-    "assistant_message",
-}
-CHILD_START_EVENT_TYPES = frozenset({
-    "subagent.start",
-    "subagent.started",
-    "SubagentStart",
-    "agent.started",
-})
-GENERIC_OBSERVATIONS = {
-    "", "default", "unknown", "unobserved", "observed-model", "observed-effort",
-    "host-observed", "host-default", "x", "n/a", "none", "null",
-}
-GENERIC_AGENT_OUTPUTS = {
-    "done", "completed", "complete", "fixed", "ok", "okay", "yes", "no",
-    "pass", "fail", "success", "finished", "all set", "everything is done now",
-    "all done now", "全部完成了", "都完成了", "已经完成了",
-}
-TRAJECTORY_FIELDS = {
-    "schema_version", "record_type", "host", "host_version", "invocation_id",
-    "arm", "started_at", "finished_at", "case_id", "profile",
-    "parent_model", "parent_effort", "selected_skill", "role_identity",
-    "actual_model", "actual_effort", "dispatches", "child_start_count", "tool_observations",
-    "authority_observation", "sanitized_input_sha256", "artifact", "result",
-    "agent_output", "answer_specificity_success",
-    "exit_status", "status", "privacy_scan", "failure_classification",
-}
-DISPATCH_FIELDS = {
-    "host", "role", "child_index", "actual_model", "actual_effort",
-    "identity", "observation_source",
+CANONICAL_AGENTS = {
+    "researcher", "explorer", "debugger", "challenger", "planner", "reviewer", "worker", "writer",
 }
 
 
 class HostMatrixError(ValueError):
-    """Raised when candidate or trajectory evidence is invalid."""
+    """Raised when a host scenario or observation is invalid."""
 
 
-@dataclass(frozen=True)
-class _SealedScenarioPath:
-    path: Path
+class HostProbeError(HostMatrixError):
+    """Raised when the host executable or its version cannot be observed."""
+
+    def __init__(self, classification: str):
+        super().__init__(classification)
+        self.classification = classification
 
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def sha256_bytes(value: bytes) -> str:
-    return hashlib.sha256(value).hexdigest()
-
-
-def _canonical_json_bytes(value: Any) -> bytes:
-    return (json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n").encode()
-
-
-def _candidate_fingerprint(value: dict[str, Any]) -> str:
-    payload = {
-        "scope_revision": value.get("scope_revision"),
-        "candidate_id": value.get("candidate_id"),
-        "candidate_tree_oid": value.get("candidate_tree_oid"),
-        "repair_generation": value.get("repair_generation"),
-        "base_commit": value.get("base_commit"),
-        "paths_manifest_sha256": value.get("paths_manifest_sha256"),
-        "entries": value.get("entries"),
-    }
-    return sha256_bytes(_canonical_json_bytes(payload))
-
-
-def _absolute_path(path: Path) -> Path:
-    """Normalize `.`/`..` without following caller-controlled filesystem links."""
-
-    absolute = Path(os.path.abspath(os.fspath(path)))
-    # macOS exposes normal temporary paths through /var -> /private/var. This
-    # fixed OS alias is not a caller-selected component; canonicalize it before
-    # enforcing the no-link invariant for every remaining component.
-    if absolute.parts[:2] == ("/", "var") and os.path.realpath("/var") == "/private/var":
-        return Path("/private/var").joinpath(*absolute.parts[2:])
-    return absolute
-
-
-def _checked_directory(path: Path, label: str) -> Path:
-    """Return an existing directory only after rejecting every symlink component."""
-
-    absolute = _absolute_path(path)
-    current = Path(absolute.anchor)
-    try:
-        root_info = current.lstat()
-    except OSError as exc:
-        raise HostMatrixError(f"{label} root is unavailable: {current}: {exc}") from exc
-    if stat.S_ISLNK(root_info.st_mode) or not stat.S_ISDIR(root_info.st_mode):
-        raise HostMatrixError(f"{label} root must be a non-symlink directory")
-    for part in absolute.parts[1:]:
-        current /= part
-        try:
-            info = current.lstat()
-        except OSError as exc:
-            raise HostMatrixError(f"{label} directory is unavailable: {current}: {exc}") from exc
-        if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
-            raise HostMatrixError(f"{label} directory must not contain a symlink: {current}")
-    return absolute
-
-
-def _relative_under(root: Path, path: Path, label: str) -> str:
-    """Return a lexical, package-relative child path without dereferencing it."""
-
-    raw = Path(path)
-    if raw.is_absolute():
-        absolute = _absolute_path(raw)
-        try:
-            relative = absolute.relative_to(root)
-        except ValueError as exc:
-            raise HostMatrixError(f"{label} must be inside project root: {path}") from exc
-        return safe_relative(relative.as_posix(), label)
-    return safe_relative(raw.as_posix(), label)
-
-
-def _child(root: Path, relative: str, label: str) -> Path:
-    """Build a child path while refusing a link in any existing component."""
-
-    root = _checked_directory(root, f"{label} root")
-    pure = PurePosixPath(safe_relative(relative, label))
-    current = root
-    for part in pure.parts[:-1]:
-        current /= part
-        try:
-            info = current.lstat()
-        except FileNotFoundError:
-            return root.joinpath(*pure.parts)
-        except OSError as exc:
-            raise HostMatrixError(f"cannot inspect {label} parent {current}: {exc}") from exc
-        if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
-            raise HostMatrixError(f"{label} parent must be a non-symlink directory: {current}")
-    path = current / pure.name
-    try:
-        info = path.lstat()
-    except FileNotFoundError:
-        return path
-    except OSError as exc:
-        raise HostMatrixError(f"cannot inspect {label}: {path}: {exc}") from exc
-    if stat.S_ISLNK(info.st_mode):
-        raise HostMatrixError(f"{label} must not be a symlink: {path}")
-    return path
-
-
-def _regular_child(root: Path, relative: str, label: str) -> Path:
-    path = _child(root, relative, label)
-    try:
-        info = path.lstat()
-    except OSError as exc:
-        raise HostMatrixError(f"{label} is unavailable: {path}: {exc}") from exc
-    if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
-        raise HostMatrixError(f"{label} must be a single-link regular non-symlink file: {path}")
-    return path
-
-
-def _ensure_absolute_directory(path: Path, label: str) -> Path:
-    """Create a directory path one component at a time without accepting links."""
-
-    absolute = _absolute_path(path)
-    current = Path(absolute.anchor)
-    for part in absolute.parts[1:]:
-        current /= part
-        try:
-            info = current.lstat()
-        except FileNotFoundError:
-            try:
-                current.mkdir(mode=0o700)
-                info = current.lstat()
-            except OSError as exc:
-                raise HostMatrixError(f"cannot create {label} directory {current}: {exc}") from exc
-        except OSError as exc:
-            raise HostMatrixError(f"cannot inspect {label} directory {current}: {exc}") from exc
-        if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
-            raise HostMatrixError(f"{label} directory must not contain a symlink: {current}")
-    return absolute
-
-
-def _prepare_output_path(root: Path, relative: str) -> Path:
-    pure = PurePosixPath(safe_relative(relative, "installed output"))
-    parent = _ensure_absolute_directory(root.joinpath(*pure.parts[:-1]), "installed output")
-    path = parent / pure.name
-    try:
-        info = path.lstat()
-    except FileNotFoundError:
-        return path
-    except OSError as exc:
-        raise HostMatrixError(f"cannot inspect installed output {path}: {exc}") from exc
-    if stat.S_ISLNK(info.st_mode):
-        raise HostMatrixError(f"installed output must not be a symlink: {path}")
-    raise HostMatrixError(f"output already exists: {path}")
-
-
-def _release_temp_root(label: str) -> Path:
-    tmp_real = Path(os.path.realpath("/tmp"))
-    try:
-        suffix = RELEASE_TEMP_ROOT.relative_to("/tmp")
-    except ValueError as exc:
-        raise HostMatrixError("release candidate temp root must be under /tmp") from exc
-    resolved_root = tmp_real / suffix
-    if resolved_root.parent != tmp_real:
-        raise HostMatrixError("release candidate temp root parent must be the platform /tmp realpath")
-    try:
-        parent_info = tmp_real.lstat()
-    except OSError as exc:
-        raise HostMatrixError(f"cannot inspect platform /tmp realpath: {exc}") from exc
-    if stat.S_ISLNK(parent_info.st_mode) or not stat.S_ISDIR(parent_info.st_mode):
-        raise HostMatrixError("platform /tmp realpath must be a real directory")
-    try:
-        info = resolved_root.lstat()
-    except OSError as exc:
-        raise HostMatrixError(f"cannot inspect release candidate temp root: {exc}") from exc
-    if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
-        raise HostMatrixError("release candidate temp root must be a non-symlink directory")
-    if stat.S_IMODE(info.st_mode) != 0o700:
-        raise HostMatrixError("release candidate temp root must be mode 0700")
-    if info.st_uid != os.getuid():
-        raise HostMatrixError("release candidate temp root must be owned by the current user")
-    return _checked_directory(resolved_root, label)
-
-
-def _release_temp_child(path: Path, label: str) -> tuple[Path, str]:
-    lexical = Path(os.path.abspath(os.fspath(path)))
-    try:
-        relative = lexical.relative_to(RELEASE_TEMP_ROOT)
-    except ValueError as exc:
-        raise HostMatrixError(f"{label} must be under /tmp/teamwork-release-matrix") from exc
-    return _release_temp_root(label), safe_relative(relative.as_posix(), label)
-
-
-def _ensure_release_temp_directory(root: Path, relative: str, label: str) -> Path:
-    pure = PurePosixPath(safe_relative(relative, label))
-    current = root
-    for part in pure.parts:
-        current /= part
-        try:
-            info = current.lstat()
-        except FileNotFoundError:
-            try:
-                current.mkdir(mode=0o700)
-                info = current.lstat()
-            except OSError as exc:
-                raise HostMatrixError(f"cannot create {label} directory {current}: {exc}") from exc
-        except OSError as exc:
-            raise HostMatrixError(f"cannot inspect {label} directory {current}: {exc}") from exc
-        if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
-            raise HostMatrixError(f"{label} directory must not contain a symlink: {current}")
-        try:
-            Path(os.path.realpath(os.fspath(current))).relative_to(root)
-        except ValueError as exc:
-            raise HostMatrixError(f"{label} directory must remain inside release candidate temp root: {current}") from exc
-    return current
-
-
-def _prepare_absolute_output_path(path: Path) -> Path:
-    root, relative = _release_temp_child(path, "installed output")
-    pure = PurePosixPath(relative)
-    if pure.parts[:2] != ("outputs", "installed") or len(pure.parts) < 4:
-        raise HostMatrixError("installed output must be under /tmp/teamwork-release-matrix/outputs/installed")
-    parent = _ensure_release_temp_directory(root, PurePosixPath(*pure.parts[:-1]).as_posix(), "installed output")
-    try:
-        Path(os.path.realpath(os.fspath(parent))).relative_to(root)
-    except ValueError as exc:
-        raise HostMatrixError("installed output parent must remain inside release candidate temp root") from exc
-    target = parent / pure.name
-    try:
-        Path(os.path.realpath(os.fspath(target))).relative_to(root)
-    except ValueError as exc:
-        raise HostMatrixError("installed output must remain inside release candidate temp root") from exc
-    try:
-        info = target.lstat()
-    except FileNotFoundError:
-        return target
-    except OSError as exc:
-        raise HostMatrixError(f"cannot inspect installed output {target}: {exc}") from exc
-    if stat.S_ISLNK(info.st_mode):
-        raise HostMatrixError(f"installed output must not be a symlink: {target}")
-    raise HostMatrixError(f"output already exists: {target}")
-
-
-def _read_regular_bytes(path: Path, label: str) -> bytes:
-    """Read one checked regular file without following a final symlink."""
-
-    try:
-        before = path.lstat()
-    except OSError as exc:
-        raise HostMatrixError(f"cannot inspect {label} {path}: {exc}") from exc
-    if stat.S_ISLNK(before.st_mode) or not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
-        raise HostMatrixError(f"{label} must be a single-link regular non-symlink file: {path}")
-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
-    try:
-        descriptor = os.open(path, flags)
-    except OSError as exc:
-        raise HostMatrixError(f"cannot safely open {label} {path}: {exc}") from exc
-    try:
-        opened = os.fstat(descriptor)
-        if (
-            not stat.S_ISREG(opened.st_mode)
-            or opened.st_nlink != 1
-            or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
-        ):
-            raise HostMatrixError(f"{label} changed identity while opening: {path}")
-        chunks: list[bytes] = []
-        while chunk := os.read(descriptor, 1024 * 1024):
-            chunks.append(chunk)
-        final = os.fstat(descriptor)
-        if (final.st_dev, final.st_ino) != (opened.st_dev, opened.st_ino):
-            raise HostMatrixError(f"{label} changed identity while reading: {path}")
-        return b"".join(chunks)
-    finally:
-        os.close(descriptor)
-
-
-def _codex_auth_source_path(environ: dict[str, str] | None = None) -> Path:
-    env = os.environ if environ is None else environ
-    codex_home = env.get("CODEX_HOME")
-    if codex_home:
-        return Path(codex_home) / CODEX_AUTH_NAME
-    home = env.get("HOME")
-    return Path(home if home else Path.home()) / ".codex" / CODEX_AUTH_NAME
-
-
-def _validate_codex_auth_source(path: Path) -> Path:
-    source = _absolute_path(path)
-    _checked_directory(source.parent, "Codex auth source home")
-    try:
-        info = source.lstat()
-    except FileNotFoundError as exc:
-        raise HostMatrixError("Codex auth source is unavailable") from exc
-    except OSError as exc:
-        raise HostMatrixError("cannot inspect Codex auth source") from exc
-    if stat.S_ISLNK(info.st_mode):
-        raise HostMatrixError("Codex auth source must not be a symlink")
-    if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
-        raise HostMatrixError("Codex auth source must be a single-link regular file")
-    if info.st_uid != os.getuid():
-        raise HostMatrixError("Codex auth source must be owned by the current user")
-    if stat.S_IMODE(info.st_mode) & 0o077:
-        raise HostMatrixError("Codex auth source permissions must be private")
-    return source
-
-
-def _preflight_codex_auth_source(environ: dict[str, str] | None = None) -> Path:
-    try:
-        return _validate_codex_auth_source(_codex_auth_source_path(environ))
-    except HostMatrixError as exc:
-        raise HostMatrixError("codex-auth-unavailable") from exc
-
-
-def _copy_codex_auth(codex_home: Path, source: Path) -> Path:
-    source = _validate_codex_auth_source(source)
-    codex_home = _ensure_absolute_directory(codex_home, "Codex home")
-    target = codex_home / CODEX_AUTH_NAME
-    try:
-        existing = target.lstat()
-    except FileNotFoundError:
-        existing = None
-    except OSError as exc:
-        raise HostMatrixError("cannot inspect isolated Codex auth target") from exc
-    if existing is not None:
-        raise HostMatrixError("isolated Codex auth target already exists")
-    read_flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
-    write_flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
-    try:
-        reader = os.open(source, read_flags)
-    except OSError as exc:
-        raise HostMatrixError("cannot safely open Codex auth source") from exc
-    try:
-        opened = os.fstat(reader)
-        try:
-            before = source.lstat()
-        except OSError as exc:
-            raise HostMatrixError("cannot re-inspect Codex auth source") from exc
-        if (
-            stat.S_ISLNK(before.st_mode)
-            or not stat.S_ISREG(opened.st_mode)
-            or opened.st_nlink != 1
-            or opened.st_uid != os.getuid()
-            or before.st_uid != os.getuid()
-            or stat.S_IMODE(before.st_mode) & 0o077
-            or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
-        ):
-            raise HostMatrixError("Codex auth source changed identity while opening")
-        try:
-            writer = os.open(target, write_flags, 0o600)
-        except OSError as exc:
-            raise HostMatrixError("cannot create isolated Codex auth") from exc
-        try:
-            while chunk := os.read(reader, 1024 * 1024):
-                offset = 0
-                while offset < len(chunk):
-                    offset += os.write(writer, chunk[offset:])
-            os.fchmod(writer, 0o600)
-        finally:
-            os.close(writer)
-    finally:
-        os.close(reader)
-    copied = target.lstat()
-    if stat.S_ISLNK(copied.st_mode) or not stat.S_ISREG(copied.st_mode) or copied.st_nlink != 1:
-        raise HostMatrixError("isolated Codex auth must be a single-link regular file")
-    if stat.S_IMODE(copied.st_mode) != 0o600:
-        raise HostMatrixError("isolated Codex auth must be mode 0600")
-    return target
-
-
-def _codex_run_environment(home: Path, auth_source: Path | None) -> dict[str, str]:
-    codex_home = _ensure_absolute_directory(home / ".codex", "Codex home")
-    if auth_source is not None:
-        _copy_codex_auth(codex_home, auth_source)
-    return {"HOME": str(home), "CODEX_HOME": str(codex_home), "PATH": os.environ.get("PATH", os.defpath)}
-
-
-def sha256_file(path: Path) -> str:
-    return sha256_bytes(_read_regular_bytes(path, "file"))
+def safe_relative(value: Any, label: str = "path") -> str:
+    if not isinstance(value, str) or not value:
+        raise HostMatrixError(f"{label} must be non-empty text")
+    path = PurePosixPath(value)
+    if path.is_absolute() or "\\" in value or any(part in {"", ".", ".."} for part in path.parts):
+        raise HostMatrixError(f"{label} must be a normalized relative path")
+    return path.as_posix()
 
 
 def load_json(path: Path, label: str) -> dict[str, Any]:
     try:
-        value = json.loads(_read_regular_bytes(path, label).decode("utf-8"))
-    except (HostMatrixError, UnicodeError, json.JSONDecodeError) as exc:
-        raise HostMatrixError(f"cannot read {label} {path}: {exc}") from exc
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HostMatrixError(f"cannot read {label}: {exc}") from exc
     if not isinstance(value, dict):
-        raise HostMatrixError(f"{label} {path} must be a JSON object")
+        raise HostMatrixError(f"{label} must be an object")
     return value
 
 
-def _sha256(value: Any, label: str) -> str:
-    if not isinstance(value, str) or not SHA256_RE.fullmatch(value):
-        raise HostMatrixError(f"{label} must be a lowercase SHA-256 digest")
-    return value
+def validate_candidate(project_root: Path, _manifest_path: Path | None = None) -> dict[str, Any]:
+    """Validate the ordinary current source layout used by the host runner."""
 
-
-def _object_id(value: Any, label: str) -> str:
-    if not isinstance(value, str) or not OBJECT_ID_RE.fullmatch(value):
-        raise HostMatrixError(f"{label} must be a full lowercase Git object id")
-    return value
-
-
-def safe_relative(value: Any, label: str = "path") -> str:
-    if not isinstance(value, str) or not value or any(char in value for char in ("\x00", "\n", "\r", "\t")):
-        raise HostMatrixError(f"invalid {label}")
-    candidate = PurePosixPath(value)
-    if candidate.is_absolute() or any(part in {"", ".", ".."} for part in candidate.parts):
-        raise HostMatrixError(f"unsafe {label}: {value!r}")
-    return candidate.as_posix()
-
-
-def _inside(root: Path, path: Path, label: str) -> Path:
-    root = _checked_directory(root, "project root")
-    return _child(root, _relative_under(root, path, label), label)
-
-
-def _safe_release_temp_manifest(path: Path) -> Path:
-    root, relative = _release_temp_child(path, "release candidate manifest")
-    if relative != RELEASE_TEMP_MANIFEST.relative_to(RELEASE_TEMP_ROOT).as_posix():
-        raise HostMatrixError("external candidate manifest must be exactly /tmp/teamwork-release-matrix/manifest.json")
-    return _regular_child(root, relative, "release candidate manifest")
-
-
-def _candidate_manifest_path(project_root: Path, manifest_path: Path) -> tuple[Path, Path]:
-    raw = Path(manifest_path)
-    if raw.is_absolute():
-        absolute = _absolute_path(raw)
-        try:
-            relative = absolute.relative_to(project_root)
-        except ValueError:
-            if Path(os.path.abspath(os.fspath(raw))) != RELEASE_TEMP_MANIFEST:
-                raise HostMatrixError("candidate manifest must be inside project root")
-            manifest = _safe_release_temp_manifest(absolute)
-            return manifest, manifest.parent
-        manifest = _regular_child(
-            project_root, safe_relative(relative.as_posix(), "candidate manifest"), "candidate manifest"
-        )
-        return manifest, manifest.parent
-    relative = safe_relative(raw.as_posix(), "candidate manifest")
-    manifest = _regular_child(project_root, relative, "candidate manifest")
-    return manifest, manifest.parent
-
-
-def _git(project_root: Path, *arguments: str, text: bool = True) -> subprocess.CompletedProcess[Any]:
-    return subprocess.run(
-        ["git", "-C", str(project_root), *arguments], text=text,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+    root = project_root.resolve()
+    required = (
+        "install.sh",
+        "policy/teamwork-global.md",
+        "config/teamwork-topology.json",
+        "scripts/teamwork_index_v4.py",
+        "templates/teamwork-memory/index.json",
     )
+    missing = [relative for relative in required if not (root / relative).is_file()]
+    if missing:
+        raise HostMatrixError(f"candidate source layout is incomplete: {missing}")
+    return {"root": str(root), "surfaces": list(required)}
 
 
-def _canonical_commit(project_root: Path, value: str) -> str:
-    resolved = _git(project_root, "rev-parse", f"{value}^{{commit}}")
-    if resolved.returncode or resolved.stdout.strip() != value:
-        raise HostMatrixError("base_commit must resolve to its exact immutable commit id")
+def _text(value: Any, label: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise HostMatrixError(f"{label} must be non-empty text")
     return value
 
 
-def _canonical_tree(project_root: Path, value: str) -> str:
-    resolved = _git(project_root, "rev-parse", f"{value}^{{tree}}")
-    if resolved.returncode or resolved.stdout.strip() != value:
-        raise HostMatrixError("candidate_tree_oid must resolve to its exact immutable tree id")
-    return value
-
-
-def _parse_raw_diff(raw: bytes) -> list[dict[str, Any]]:
-    fields = raw.split(b"\0")
-    if fields and fields[-1] == b"":
-        fields.pop()
-    result: list[dict[str, Any]] = []
-    index = 0
-    while index < len(fields):
-        try:
-            header = fields[index].decode("ascii")
-        except UnicodeDecodeError as exc:
-            raise HostMatrixError("candidate raw diff has a non-ASCII header") from exc
-        index += 1
-        parts = header.split()
-        if len(parts) != 5 or not parts[0].startswith(":"):
-            raise HostMatrixError("candidate raw diff is malformed")
-        status = parts[4][:1]
-        if status not in {"A", "M", "D", "R"} or index >= len(fields):
-            raise HostMatrixError("candidate raw diff has an unsupported status")
-        try:
-            first = safe_relative(fields[index].decode("utf-8"), "candidate delta path")
-        except UnicodeDecodeError as exc:
-            raise HostMatrixError("candidate raw diff has a non-UTF-8 path") from exc
-        index += 1
-        item: dict[str, Any] = {
-            "status": status,
-            "mode_before": None if parts[0][1:] == "000000" else parts[0][1:],
-            "mode_after": None if parts[1] == "000000" else parts[1],
-            "blob_oid_before": None if parts[2] == "0" * len(parts[2]) else parts[2],
-            "blob_oid_after": None if parts[3] == "0" * len(parts[3]) else parts[3],
-            "path": first,
-        }
-        if status == "R":
-            if index >= len(fields):
-                raise HostMatrixError("candidate rename has no destination")
-            try:
-                item["old_path"] = first
-                item["path"] = safe_relative(fields[index].decode("utf-8"), "candidate rename destination")
-            except UnicodeDecodeError as exc:
-                raise HostMatrixError("candidate rename has a non-UTF-8 path") from exc
-            index += 1
-        result.append(item)
-    return result
-
-
-def _tree_diff(project_root: Path, base: str, tree: str) -> list[dict[str, Any]]:
-    completed = _git(
-        project_root, "diff-tree", "--no-commit-id", "-r", "--raw", "--full-index",
-        "--find-renames", "-z", base, tree, text=False,
-    )
-    if completed.returncode:
-        raise HostMatrixError("cannot compare candidate tree to base commit")
-    result = _parse_raw_diff(completed.stdout)
-    for item in result:
-        if item["status"] == "D":
-            item["sha256_after"] = None
-            continue
-        blob = item["blob_oid_after"]
-        if not isinstance(blob, str):
-            raise HostMatrixError("candidate post-image lacks a blob id")
-        data = _git(project_root, "cat-file", "blob", blob, text=False)
-        if data.returncode:
-            raise HostMatrixError("candidate post-image blob is unavailable")
-        item["sha256_after"] = sha256_bytes(data.stdout)
-    return result
-
-
-def _validate_paths_manifest(value: dict[str, Any], base_commit: str) -> dict[str, dict[str, Any]]:
-    if value.get("schema_version") != 1 or value.get("base_commit") != base_commit:
-        raise HostMatrixError("release paths manifest schema/base binding is invalid")
-    entries = value.get("entries")
-    if not isinstance(entries, list) or not entries:
-        raise HostMatrixError("release paths manifest must contain non-empty entries")
-    paths: list[str] = []
-    ledger_ids: set[str] = set()
-    result: dict[str, dict[str, Any]] = {}
-    for entry in entries:
-        if not isinstance(entry, dict):
-            raise HostMatrixError("release paths manifest entry must be an object")
-        ledger_id = entry.get("ledger_id")
-        owner = entry.get("owner")
-        path = safe_relative(entry.get("path"), "release path")
-        allowed = entry.get("allowed_statuses")
-        if not isinstance(ledger_id, str) or not ledger_id or ledger_id in ledger_ids:
-            raise HostMatrixError("release paths manifest has duplicate or invalid ledger_id")
-        if not isinstance(owner, str) or not owner:
-            raise HostMatrixError("release paths manifest owner is invalid")
-        if not isinstance(allowed, list) or not allowed or len(allowed) != len(set(allowed)) or any(status not in {"A", "M", "D", "R"} for status in allowed):
-            raise HostMatrixError(f"release paths manifest has invalid allowed_statuses for {path}")
-        if entry.get("old_path") is not None:
-            safe_relative(entry["old_path"], "release rename old_path")
-            if "R" not in allowed:
-                raise HostMatrixError(f"release paths manifest has a rename source without R status: {path}")
-        elif "R" in allowed:
-            raise HostMatrixError(f"release paths manifest R status lacks old_path: {path}")
-        paths.append(path)
-        ledger_ids.add(ledger_id)
-        result[path] = entry
-    if paths != sorted(paths, key=lambda item: item.encode("utf-8")) or len(paths) != len(set(paths)):
-        raise HostMatrixError("release paths manifest entries must be unique UTF-8 sorted")
-    return result
-
-
-def _validate_candidate_entries(
-    entries: Any, allowlist: dict[str, dict[str, Any]], observed: list[dict[str, Any]],
-) -> None:
-    if not isinstance(entries, list) or not entries:
-        raise HostMatrixError("candidate manifest entries must be a non-empty list")
-    paths: list[str] = []
-    ledger_ids: set[str] = set()
-    observed_by_path = {entry["path"]: entry for entry in observed}
-    if len(observed_by_path) != len(observed):
-        raise HostMatrixError("candidate tree contains duplicate deltas")
-    for entry in entries:
-        if not isinstance(entry, dict):
-            raise HostMatrixError("candidate manifest entry must be an object")
+def load_case_manifest(
+    path: Path, only_cases: set[str] | None = None, *, root: Path | None = None,
+) -> list[dict[str, Any]]:
+    value = load_json(path, "live case manifest")
+    if value.get("schema_version") != 3 or not isinstance(value.get("cases"), list):
+        raise HostMatrixError("live case manifest must use schema_version 3")
+    candidate_root = (root or path.resolve().parents[3]).resolve()
+    cases: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for raw in value["cases"]:
         required = {
-            "ledger_id", "owner", "path", "status", "mode_before", "mode_after",
-            "blob_oid_before", "blob_oid_after", "sha256_after",
+            "name", "prompt", "selected_skill", "required_agents",
+            "expected_outcomes", "scenario", "authority", "support",
         }
-        if required - set(entry):
-            raise HostMatrixError("candidate manifest entry lacks typed post-image fields")
-        ledger_id = entry.get("ledger_id")
-        owner = entry.get("owner")
-        path = safe_relative(entry.get("path"), "candidate path")
-        status = entry.get("status")
-        rule = allowlist.get(path)
-        if not isinstance(ledger_id, str) or not ledger_id or ledger_id in ledger_ids:
-            raise HostMatrixError("candidate manifest has duplicate or invalid ledger_id")
-        if not isinstance(owner, str) or not owner or rule is None:
-            raise HostMatrixError(f"candidate manifest contains an unlisted path: {path}")
-        if ledger_id != rule.get("ledger_id") or owner != rule.get("owner"):
-            raise HostMatrixError(f"candidate manifest ledger/owner binding differs for {path}")
-        if status not in rule.get("allowed_statuses", []):
-            raise HostMatrixError(f"candidate manifest status is not allowed for {path}")
-        if status == "R":
-            if safe_relative(entry.get("old_path"), "candidate rename old_path") != rule.get("old_path"):
-                raise HostMatrixError(f"candidate rename source differs for {path}")
-        elif entry.get("old_path") is not None:
-            raise HostMatrixError(f"non-rename candidate entry has old_path: {path}")
-        if status == "D":
-            if any(entry.get(key) is not None for key in ("mode_after", "blob_oid_after", "sha256_after")):
-                raise HostMatrixError(f"deletion has a post-image: {path}")
-        else:
-            _sha256(entry.get("sha256_after"), f"candidate post-image hash for {path}")
-            if entry.get("mode_after") not in {"100644", "100755"}:
-                raise HostMatrixError(f"candidate post-image mode is invalid for {path}")
-            _object_id(entry.get("blob_oid_after"), f"candidate post-image blob for {path}")
-        actual = observed_by_path.get(path)
-        if actual is None:
-            raise HostMatrixError(f"candidate manifest path has no tree delta: {path}")
-        for key in ("status", "mode_before", "mode_after", "blob_oid_before", "blob_oid_after", "sha256_after"):
-            if entry.get(key) != actual.get(key):
-                raise HostMatrixError(f"candidate manifest {key} does not bind tree delta for {path}")
-        if entry.get("old_path") != actual.get("old_path"):
-            raise HostMatrixError(f"candidate manifest rename does not bind tree delta for {path}")
-        paths.append(path)
-        ledger_ids.add(ledger_id)
-    if paths != sorted(paths, key=lambda item: item.encode("utf-8")) or len(paths) != len(set(paths)):
-        raise HostMatrixError("candidate entries must be unique UTF-8 sorted")
-    if set(paths) != set(allowlist) or set(paths) != set(observed_by_path):
-        raise HostMatrixError("candidate entries must exactly bind allowlist and candidate tree deltas")
+        if not isinstance(raw, dict) or set(raw) != required:
+            raise HostMatrixError("live case has an invalid shape")
+        name = _text(raw.get("name"), "case name")
+        if name in seen:
+            raise HostMatrixError("live case names must be unique")
+        seen.add(name)
+        outcomes = raw.get("expected_outcomes")
+        if not isinstance(outcomes, list) or not outcomes or not all(isinstance(item, str) and item.strip() for item in outcomes):
+            raise HostMatrixError(f"{name}: expected_outcomes must contain outcome text")
+        required_agents = raw.get("required_agents")
+        if (
+            not isinstance(required_agents, list)
+            or len(required_agents) != len(set(required_agents))
+            or not all(isinstance(item, str) and item in CANONICAL_AGENTS for item in required_agents)
+        ):
+            raise HostMatrixError(f"{name}: required_agents must be unique canonical Agent names")
+        scenario = raw.get("scenario")
+        if scenario is not None:
+            relative = safe_relative(scenario, f"{name}.scenario")
+            scenario_path = candidate_root / relative
+            if not scenario_path.is_file():
+                raise HostMatrixError(f"{name}: scenario is missing")
+            scenario_spec = load_json(scenario_path, f"{name} scenario")
+            verification = scenario_spec.get("verification")
+            if (
+                not isinstance(verification, dict)
+                or not isinstance(verification.get("argv"), list)
+                or not verification["argv"]
+            ):
+                raise HostMatrixError(f"{name}: scenario must declare verification argv")
+        _text(raw.get("selected_skill"), f"{name}.selected_skill")
+        _text(raw.get("prompt"), f"{name}.prompt")
+        if raw.get("authority") not in {"read-only", "workspace-write"}:
+            raise HostMatrixError(f"{name}: authority is invalid")
+        support = raw.get("support")
+        if (
+            not isinstance(support, dict)
+            or set(support) != HOSTS
+            or any(value not in SUPPORT_EXPECTATIONS for value in support.values())
+        ):
+            raise HostMatrixError(
+                f"{name}: support must declare every host as required or conditional-exact-role"
+            )
+        if not required_agents and "conditional-exact-role" in support.values():
+            raise HostMatrixError(
+                f"{name}: an Agent-free case cannot declare conditional exact-role support"
+            )
+        if only_cases is None or name in only_cases:
+            cases.append(dict(raw))
+    if only_cases is not None and {case["name"] for case in cases} != only_cases:
+        raise HostMatrixError("requested live case is not declared")
+    if not cases:
+        raise HostMatrixError("no live cases selected")
+    return cases
 
 
-def validate_candidate(project_root: Path, manifest_path: Path) -> dict[str, Any]:
-    """Fail closed unless candidate, allowlist and Git tree agree byte-for-byte."""
-
-    project_root = _checked_directory(project_root, "project root")
-    manifest_path, manifest_root = _candidate_manifest_path(project_root, manifest_path)
-    value = load_json(manifest_path, "candidate manifest")
-    required = {
-        "schema_version", "state", "base_commit", "candidate_tree_oid",
-        "scope_revision", "candidate_id", "repair_generation", "predecessor_candidate_id",
-        "paths_manifest_sha256", "candidate_fingerprint", "sealed_manifest_sha256",
-        "validation_artifact_sha256", "review_artifact_sha256", "review_verdict", "writer_leases",
-        "real_index_prestate", "protected_preimages", "entries",
-    }
-    if value.get("schema_version") != 1 or required - set(value):
-        raise HostMatrixError("candidate manifest has unsupported schema")
-    if value.get("state") not in {"sealed", "validated", "reviewed"}:
-        raise HostMatrixError("host matrix requires a sealed candidate")
-    _sha256(value.get("scope_revision"), "scope_revision")
-    candidate_id = value.get("candidate_id")
-    if not isinstance(candidate_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", candidate_id):
-        raise HostMatrixError("candidate_id must be an explicit stable identifier")
-    if type(value.get("repair_generation")) is not int or value["repair_generation"] not in {0, 1}:
-        raise HostMatrixError("repair_generation must be 0 or 1")
-    if value["repair_generation"] == 0 and value.get("predecessor_candidate_id") is not None:
-        raise HostMatrixError("initial candidate must not name a predecessor")
-    if value["repair_generation"] == 1 and not isinstance(value.get("predecessor_candidate_id"), str):
-        raise HostMatrixError("repair candidate must name a predecessor")
-    if value.get("writer_leases") != []:
-        raise HostMatrixError("sealed candidate must not retain writer leases")
-    if not isinstance(value.get("real_index_prestate"), dict) or not isinstance(value.get("protected_preimages"), list):
-        raise HostMatrixError("candidate manifest lacks typed transaction prestate")
-    for protected in value["protected_preimages"]:
-        if not isinstance(protected, dict) or not isinstance(protected.get("path"), str) or not protected["path"].endswith("/**"):
-            raise HostMatrixError("candidate manifest has malformed protected preimage")
-        safe_relative(protected["path"][:-3], "protected preimage root")
-        _sha256(protected.get("sha256"), "protected preimage hash")
-    base = _canonical_commit(project_root, _object_id(value.get("base_commit"), "base_commit"))
-    tree = _canonical_tree(project_root, _object_id(value.get("candidate_tree_oid"), "candidate_tree_oid"))
-    paths_sha = _sha256(value.get("paths_manifest_sha256"), "paths_manifest_sha256")
-    for field in ("candidate_fingerprint", "sealed_manifest_sha256"):
-        _sha256(value.get(field), field)
-    for field in ("validation_artifact_sha256", "review_artifact_sha256"):
-        if value.get(field) is not None:
-            _sha256(value[field], field)
-    paths_path = _regular_child(manifest_root, RELEASE_PATHS_NAME, "release paths manifest")
-    if sha256_file(paths_path) != paths_sha:
-        raise HostMatrixError("paths-manifest-changed")
-    allowlist = _validate_paths_manifest(load_json(paths_path, "release paths manifest"), base)
-    observed = _tree_diff(project_root, base, tree)
-    _validate_candidate_entries(value.get("entries"), allowlist, observed)
-    if value["candidate_fingerprint"] != _candidate_fingerprint(value):
-        raise HostMatrixError("candidate-fingerprint-changed")
+def load_trajectory_schema(path: Path) -> dict[str, Any]:
+    value = load_json(path, "trajectory schema")
+    if value.get("type") != "object":
+        raise HostMatrixError("trajectory schema must describe an object")
     return value
 
 
-def _validate_archive_member(member: tarfile.TarInfo) -> None:
-    safe_relative(member.name.rstrip("/"), "candidate archive member")
-    if member.isdir() or member.isfile():
-        return
-    if member.issym() or member.islnk():
-        raise HostMatrixError(f"candidate archive must not contain a link: {member.name}")
-    raise HostMatrixError(f"unsupported candidate archive member: {member.name}")
+def validate_trajectory(record: dict[str, Any], _schema: dict[str, Any] | None = None) -> None:
+    required = {
+        "schema_version", "record_type", "host", "host_version", "profile",
+        "case_name", "started_at", "finished_at", "selected_skill", "requested_authority",
+        "route_observed", "agent_observations", "tool_observations", "final_output", "scenario_verification",
+        "candidate_artifact", "exit_status", "status", "failure_classification",
+    }
+    if _schema:
+        schema_required = _schema.get("required")
+        if not isinstance(schema_required, list) or set(schema_required) != required:
+            raise HostMatrixError("trajectory schema and runtime contract differ")
+    if set(record) != required:
+        raise HostMatrixError("trajectory record has an invalid shape")
+    if record.get("schema_version") != SCHEMA_VERSION or record.get("record_type") != "teamwork_host_observation":
+        raise HostMatrixError("trajectory record has an unsupported schema")
+    if record.get("host") not in HOSTS or record.get("profile") not in PROFILES:
+        raise HostMatrixError("trajectory host or profile is invalid")
+    if record.get("status") not in STATUSES:
+        raise HostMatrixError("trajectory status is invalid")
+    if record.get("requested_authority") not in {"read-only", "workspace-write"}:
+        raise HostMatrixError("trajectory requested authority is invalid")
+    for field in ("host_version", "case_name", "started_at", "finished_at", "selected_skill", "final_output"):
+        if not isinstance(record.get(field), str):
+            raise HostMatrixError(f"trajectory {field} must be text")
+    if record.get("candidate_artifact") is not None and not isinstance(record.get("candidate_artifact"), str):
+        raise HostMatrixError("trajectory candidate_artifact must be text or null")
+    if record.get("scenario_verification") not in {"PASS", "FAIL", "NOT_RUN"}:
+        raise HostMatrixError("trajectory scenario verification is invalid")
+    if record.get("exit_status") is not None and not isinstance(record.get("exit_status"), int):
+        raise HostMatrixError("trajectory exit status must be integer or null")
+    if not isinstance(record.get("route_observed"), bool):
+        raise HostMatrixError("trajectory route_observed must be boolean")
+    for field in ("agent_observations", "tool_observations"):
+        values = record.get(field)
+        if not isinstance(values, list) or not all(isinstance(item, str) for item in values):
+            raise HostMatrixError(f"trajectory {field} must be a text list")
+    if record.get("status") == "PASS":
+        if not record.get("route_observed"):
+            raise HostMatrixError("PASS trajectory must observe its selected route")
+        if record.get("exit_status") != 0:
+            raise HostMatrixError("PASS trajectory must have exit status 0")
+        if record.get("scenario_verification") == "FAIL":
+            raise HostMatrixError("PASS trajectory cannot have failed scenario verification")
+        if not str(record.get("final_output", "")).strip():
+            raise HostMatrixError("PASS trajectory must retain a final answer")
+        if record.get("failure_classification") is not None:
+            raise HostMatrixError("PASS trajectory cannot retain a failure classification")
+    elif not isinstance(record.get("failure_classification"), str) or not record["failure_classification"]:
+        raise HostMatrixError("non-PASS trajectory must retain a failure classification")
 
 
-def _validate_materialized_postimages(tree_root: Path, entries: list[dict[str, Any]]) -> None:
-    for entry in entries:
-        path = _child(tree_root, entry["path"], "candidate post-image")
-        if entry["status"] == "D":
-            if path.exists() or path.is_symlink():
-                raise HostMatrixError(f"deleted candidate path returned: {entry['path']}")
-            continue
-        try:
-            info = path.lstat()
-        except OSError as exc:
-            raise HostMatrixError(f"candidate post-image missing: {entry['path']}") from exc
-        mode = entry["mode_after"]
-        if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode) or mode not in {"100644", "100755"}:
-            raise HostMatrixError(f"candidate post-image mode changed: {entry['path']}")
-        executable = bool(stat.S_IMODE(info.st_mode) & 0o111)
-        if executable != (mode == "100755"):
-            raise HostMatrixError(f"candidate post-image executable bit changed: {entry['path']}")
-        content = _read_regular_bytes(path, "candidate post-image")
-        if sha256_bytes(content) != entry["sha256_after"]:
-            raise HostMatrixError(f"candidate post-image mismatch: {entry['path']}")
-
-
-def _validate_materialized_tree(tree_root: Path) -> None:
-    """Ensure no archive entry can become an external path during scenario copy."""
-
-    for parent, directories, files in os.walk(tree_root, followlinks=False):
-        parent_path = Path(parent)
-        try:
-            parent_info = parent_path.lstat()
-        except OSError as exc:
-            raise HostMatrixError(f"cannot inspect materialized candidate directory: {exc}") from exc
-        if stat.S_ISLNK(parent_info.st_mode) or not stat.S_ISDIR(parent_info.st_mode):
-            raise HostMatrixError(f"candidate archive contains an unsafe directory: {parent_path}")
-        for name in [*directories, *files]:
-            path = parent_path / name
-            try:
-                info = path.lstat()
-            except OSError as exc:
-                raise HostMatrixError(f"cannot inspect materialized candidate path: {exc}") from exc
-            if stat.S_ISLNK(info.st_mode):
-                raise HostMatrixError(f"candidate archive contains a symlink: {path.relative_to(tree_root)}")
-            if name in directories and not stat.S_ISDIR(info.st_mode):
-                raise HostMatrixError(f"candidate archive directory changed type: {path.relative_to(tree_root)}")
-            if name in files and (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1):
-                raise HostMatrixError(f"candidate archive contains an unsafe file: {path.relative_to(tree_root)}")
-
-
-@contextmanager
-def materialize_candidate(project_root: Path, manifest: dict[str, Any]) -> Iterator[Path]:
-    """Extract only the immutable candidate tree into a private directory."""
-
-    project_root = _checked_directory(project_root, "project root")
-    temporary = Path(tempfile.mkdtemp(prefix="teamwork-release-candidate-"))
-    archive = temporary / "candidate.tar"
-    tree_root = temporary / "tree"
-    tree_root.mkdir(mode=0o700)
-    try:
-        with archive.open("wb") as handle:
-            completed = _git(project_root, "archive", manifest["candidate_tree_oid"], text=False)
-            if completed.returncode:
-                raise HostMatrixError("cannot archive candidate tree")
-            handle.write(completed.stdout)
-        with tarfile.open(archive, "r") as bundle:
-            members = bundle.getmembers()
-            for member in members:
-                _validate_archive_member(member)
-            for member in members:
-                bundle.extract(member, tree_root, set_attrs=True, numeric_owner=False, filter="data")
-        _validate_materialized_tree(tree_root)
-        _validate_materialized_postimages(tree_root, manifest["entries"])
-        yield tree_root
-    finally:
-        shutil.rmtree(temporary, ignore_errors=True)
+def validate_record_binding(
+    record: dict[str, Any], case: dict[str, Any], schema: dict[str, Any], _output_root: Path,
+) -> None:
+    validate_trajectory(record, schema)
+    if record.get("case_name") != case.get("name"):
+        raise HostMatrixError("trajectory does not name its containing case")
+    if record.get("selected_skill") != case.get("selected_skill"):
+        raise HostMatrixError("trajectory selected skill differs from the case")
+    if record.get("requested_authority") != case.get("authority"):
+        raise HostMatrixError("trajectory requested authority differs from the case")
+    artifact = record.get("candidate_artifact")
+    artifact_path = None
+    if isinstance(artifact, str):
+        relative = safe_relative(artifact, "candidate artifact")
+        artifact_path = _output_root / relative
+        if not artifact_path.is_dir() or artifact_path.is_symlink():
+            raise HostMatrixError("trajectory candidate artifact is unavailable")
+    missing_agents = set(case.get("required_agents", ())) - set(record.get("agent_observations", ()))
+    if (
+        record.get("status") == "UNSUPPORTED"
+        and record.get("failure_classification") == "required-agent-not-observed"
+    ):
+        host = record.get("host")
+        support = case.get("support", {})
+        if not isinstance(host, str) or support.get(host) != "conditional-exact-role":
+            raise HostMatrixError(
+                "missing-role UNSUPPORTED requires a conditional exact-role pair"
+            )
+        if not missing_agents:
+            raise HostMatrixError(
+                "missing-role UNSUPPORTED must genuinely lack a required Agent"
+            )
+        if record.get("exit_status") != 0:
+            raise HostMatrixError(
+                "missing-role UNSUPPORTED must retain successful host completion"
+            )
+        if not record.get("route_observed"):
+            raise HostMatrixError(
+                "missing-role UNSUPPORTED must observe the selected route"
+            )
+        if not str(record.get("final_output", "")).strip():
+            raise HostMatrixError(
+                "missing-role UNSUPPORTED must retain a final answer"
+            )
+        if case.get("scenario") is not None and artifact_path is None:
+            raise HostMatrixError(
+                "missing-role UNSUPPORTED scenario must retain its actual candidate"
+            )
+    if record.get("status") == "PASS" and missing_agents:
+        raise HostMatrixError(f"trajectory lacks required Agent observations: {sorted(missing_agents)}")
+    if record.get("status") == "PASS" and case.get("scenario") is not None:
+        if record.get("scenario_verification") != "PASS":
+            raise HostMatrixError("PASS scenario trajectory must retain successful verification")
+        if artifact_path is None:
+            raise HostMatrixError("PASS scenario trajectory must retain its actual candidate")
 
 
 def _events(stdout: str) -> list[dict[str, Any]]:
-    result: list[dict[str, Any]] = []
+    events: list[dict[str, Any]] = []
     for line in stdout.splitlines():
         try:
             value = json.loads(line)
         except json.JSONDecodeError:
             continue
         if isinstance(value, dict):
-            result.append(value)
-    return result
-
-
-def _timeout_stream_text(value: str | bytes | None) -> str:
-    if value is None:
-        return ""
-    if isinstance(value, bytes):
-        return value.decode("utf-8", errors="replace")
-    return value
-
-
-def _timeout_stream_events(stdout: str, stderr: str) -> list[dict[str, str]]:
-    """Persist host timeout output without promoting it to structural evidence."""
-
-    events: list[dict[str, str]] = []
-    if stdout:
-        events.append({"type": "teamwork.host.partial_stdout", "stream": "stdout", "content": stdout})
-    if stderr:
-        events.append({"type": "teamwork.host.partial_stderr", "stream": "stderr", "content": stderr})
+            events.append(value)
     return events
 
 
-def _walk(value: Any) -> Iterator[tuple[str, Any]]:
-    if isinstance(value, dict):
-        for key, child in value.items():
-            yield key, child
-            yield from _walk(child)
-    elif isinstance(value, list):
-        for child in value:
-            yield from _walk(child)
-
-
-def _event_type(event: dict[str, Any]) -> str:
-    value = event.get("type")
-    return value if isinstance(value, str) else ""
-
-
-def _structural_events(events: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
-    return [event for event in events if _event_type(event) in STRUCTURAL_EVENT_TYPES]
-
-
-def observed_child_start_count(events: Sequence[dict[str, Any]]) -> int:
-    """Count child starts without depending on a known or present role name."""
-
-    return sum(_event_type(event) in CHILD_START_EVENT_TYPES for event in events)
-
-
-def _event_string_values(event: dict[str, Any], keys: set[str]) -> list[str]:
-    normalized_keys = {key.casefold().replace("_", "-") for key in keys}
-    values: list[str] = []
-    for key, value in _walk(event):
-        if (
-            key.casefold().replace("_", "-") in normalized_keys
-            and isinstance(value, str)
-            and value.strip()
-        ):
-            candidate = value.strip().casefold().replace("_", "-")
-            if candidate not in values:
-                values.append(candidate)
-    return values
-
-
-def observed_dispatches(
-    events: Sequence[dict[str, Any]], host: str,
-) -> list[dict[str, Any]]:
-    """Bind dispatch evidence only from complete child-start observations."""
-
-    dispatches: list[dict[str, Any]] = []
-    child_index = 0
-    for event in events:
-        event_type = _event_type(event)
-        if event_type not in CHILD_START_EVENT_TYPES:
-            continue
-        child_index += 1
-        roles = normalize_roles(_event_string_values(
-            event,
-            {"role-identity", "role", "agent-name", "agent-type", "agent", "subagent-type", "subagent"},
-        ))
-        models = _event_string_values(event, {"actual-model", "resolved-model", "model"})
-        efforts = _event_string_values(
-            event,
-            {"actual-effort", "reasoning-effort", "model-reasoning-effort", "effort"},
-        )
-        identities = _event_string_values(
-            event,
-            {"agent-id", "subagent-id", "agent-type", "subagent-identity", "agent-name", "agent", "subagent"},
-        )
-        if len(roles) != 1 or not models or not efforts or not identities:
-            continue
-        dispatches.append({
-            "host": host,
-            "role": roles[0],
-            "child_index": child_index,
-            "actual_model": models[-1],
-            "actual_effort": efforts[-1],
-            "identity": identities[-1],
-            "observation_source": event_type,
-        })
-    return dispatches
-
-
-def observed_values(events: Sequence[dict[str, Any]], keys: set[str]) -> list[str]:
-    normalized_keys = {key.casefold().replace("_", "-") for key in keys}
-    values: list[str] = []
-    for event in _structural_events(events):
-        for key, value in _walk(event):
-            if key.casefold().replace("_", "-") in normalized_keys and isinstance(value, str) and value.strip():
-                normalized = value.strip().casefold().replace("_", "-")
-                if normalized not in values:
-                    values.append(normalized)
-    return values
-
-
-def observed_skills(events: Sequence[dict[str, Any]]) -> list[str]:
-    """Return Skills whose installed SKILL.md files were opened by a tool event."""
-
-    skills: list[str] = []
-    for event in _structural_events(events):
-        for key, value in _walk(event):
-            if key.casefold().replace("_", "-") != "command" or not isinstance(value, str):
-                continue
-            for match in SKILL_READ_RE.finditer(value):
-                skill = match.group(1).strip().casefold().replace("_", "-")
-                if skill and skill not in skills:
-                    skills.append(skill)
-    return skills
-
-
-def _trajectory_observations(
-    *, host: str, events: Sequence[dict[str, Any]], case: dict[str, Any],
-) -> dict[str, Any]:
-    roles = normalize_roles(observed_values(events, {"role-identity", "agent-name", "agent-type", "subagent-type", "role"}))
-    root_observation_events = (
-        events
-        if _is_root_case(case) and case.get("selected_skill") == "native"
-        else [event for event in events if _event_type(event) != "teamwork.invocation.started"]
-    )
-    models = observed_values(root_observation_events, {"model", "actual-model", "resolved-model"})
-    efforts = observed_values(root_observation_events, {"effort", "actual-effort", "reasoning-effort", "model-reasoning-effort"})
-    skills = observed_skills(events) + observed_values(events, {"selected-skill", "skill"})
-    authorities = observed_values(root_observation_events, {"authority", "authority-observation", "permission-mode", "sandbox"})
-    expected_skill = str(case.get("selected_skill", "")).casefold()
-    if expected_skill in skills:
-        selected_skill = expected_skill
-    elif expected_skill == "native" and not skills:
-        selected_skill = "native"
-    else:
-        selected_skill = skills[-1] if skills else "UNSUPPORTED"
-    actual_model = models[-1] if models else "UNSUPPORTED"
-    actual_effort = efforts[-1] if efforts else "UNSUPPORTED"
-    authority = authorities[-1] if authorities else ("UNSUPPORTED" if host != "codex" else str(case["authority"]).casefold())
-    return {
-        "roles": roles,
-        "child_start_count": observed_child_start_count(events),
-        "actual_model": actual_model,
-        "actual_effort": actual_effort,
-        "selected_skill": selected_skill,
-        "authority": authority,
-    }
-
-
-def normalize_roles(values: Sequence[str]) -> list[str]:
-    roles: list[str] = []
-    for value in values:
-        candidate = value.removeprefix("teamwork-")
-        if candidate in CANONICAL_ROLES and candidate not in roles:
-            roles.append(candidate)
-    return roles
-
-
-def observed_tools(events: Sequence[dict[str, Any]]) -> list[str]:
-    """Return actual tool event kinds; never promote arbitrary JSON `type` fields."""
-
-    tools: list[str] = []
-    for event in _structural_events(events):
-        event_type = _event_type(event)
-        item = event.get("item") if isinstance(event.get("item"), dict) else event
-        item_type = item.get("type") if isinstance(item, dict) else None
-        name = ""
-        if isinstance(item_type, str) and item_type in {
-            "command_execution", "web_search", "web_fetch", "file_read", "file_write", "mcp_tool_call",
-        }:
-            name = item_type
-        elif event_type in {"tool_call", "tool_result", "tool_use", "assistant.tool_use", "tool.call", "tool.result"}:
-            candidate = item.get("tool_name") if isinstance(item, dict) else None
-            candidate = candidate or event.get("tool_name") or event.get("name")
-            if isinstance(candidate, str) and candidate.strip():
-                raw = candidate.strip().casefold().replace("_", "-")
-                aliases = {
-                    "websearch": "web_search", "web-search": "web_search",
-                    "webfetch": "web_fetch", "web-fetch": "web_fetch",
-                    "bash": "command_execution", "shell": "command_execution", "command": "command_execution",
-                    "read": "file_read", "grep": "file_read", "glob": "file_read",
-                    "write": "file_write", "edit": "file_write",
-                }
-                name = aliases.get(raw, f"tool:{raw}")
-        if name and name not in tools:
-            tools.append(name)
-    return tools
-
-
-def _case_profile_expectation_for_role(
-    case: dict[str, Any], host: str, profile: str, role: str,
-) -> dict[str, str]:
-    profile_matrix = case.get("role_expectations")
-    try:
-        expected = profile_matrix[host][profile][role]
-    except (KeyError, TypeError) as exc:
-        raise HostMatrixError(f"case {case.get('id')} lacks {host}/{profile}/{role} role expectation") from exc
-    if not isinstance(expected, dict) or set(expected) != {"model", "effort"}:
-        raise HostMatrixError(f"case {case.get('id')} has malformed role expectation")
-    model, effort = expected.get("model"), expected.get("effort")
-    if not isinstance(model, str) or not model or not isinstance(effort, str) or not effort:
-        raise HostMatrixError(f"case {case.get('id')} has empty model/effort expectation")
-    return {"model": model.casefold(), "effort": effort.casefold()}
-
-
-def _case_profile_expectation(case: dict[str, Any], host: str, profile: str) -> dict[str, str]:
-    role = case.get("required_role")
-    if not isinstance(role, str) or role == "root":
-        raise HostMatrixError(f"case {case.get('id')} lacks required_role")
-    return _case_profile_expectation_for_role(case, host, profile, role)
-
-
-def _dispatches_bind_case(
-    case: dict[str, Any], host: str, profile: str,
-    dispatches: Sequence[dict[str, Any]], child_start_count: int,
-) -> bool:
-    """Require one complete, actual child-start observation per declared role."""
-
-    expected_roles = case.get("expected_roles")
-    if (
-        _is_root_case(case)
-        or not isinstance(expected_roles, list)
-        or child_start_count != len(dispatches)
-        or len(dispatches) != len(expected_roles)
-        or {dispatch.get("role") for dispatch in dispatches} != set(expected_roles)
-    ):
-        return False
-    for dispatch in dispatches:
-        try:
-            expected = _case_profile_expectation_for_role(
-                case, host, profile, str(dispatch.get("role", "")),
-            )
-        except HostMatrixError:
-            return False
-        if (
-            dispatch.get("actual_model") != expected["model"]
-            or dispatch.get("actual_effort") != expected["effort"]
-        ):
-            return False
-    return True
-
-
-def _is_root_case(case: dict[str, Any]) -> bool:
-    return case.get("required_role") == "root"
-
-
-def _validate_case_role_contract(
-    case: dict[str, Any], roles: Any, manifest_roles: frozenset[str],
-) -> None:
-    """Keep direct Root controls distinct from formal child-role cases."""
-
-    if _is_root_case(case):
-        if case.get("selected_skill") != "native" or roles != []:
-            raise HostMatrixError(
-                f"case {case.get('id')} root cases require selected_skill=native and expected_roles=[]"
-            )
-        return
-    required_role = case.get("required_role")
-    if required_role not in manifest_roles:
-        raise HostMatrixError(f"case {case.get('id')} has invalid required_role")
-    if (
-        not isinstance(roles, list)
-        or not roles
-        or not set(roles) <= manifest_roles
-        or required_role not in roles
-    ):
-        raise HostMatrixError(f"case {case.get('id')} has invalid expected_roles")
-
-
-def _record_role_identity(case: dict[str, Any], observed_roles: Sequence[str]) -> str:
-    if _is_root_case(case):
-        return "root"
-    required_role = case.get("required_role")
-    return required_role if required_role in observed_roles else "UNSUPPORTED"
-
-
-def _validate_scenario_spec(value: dict[str, Any], case: dict[str, Any]) -> None:
-    if value.get("schema_version") != 1 or value.get("case_id") != case["id"]:
-        raise HostMatrixError(f"scenario fixture does not bind case {case['id']}")
-    allowed_fields = {"schema_version", "case_id", "private_paths", "files", "verification"}
-    if set(value) - allowed_fields:
-        raise HostMatrixError(f"scenario fixture {case['id']} has unsupported fields")
-    files = value.get("files")
-    if not isinstance(files, list) or not files:
-        raise HostMatrixError(f"scenario fixture {case['id']} needs concrete setup files")
-    paths: set[str] = set()
-    content_by_path: dict[str, str] = {}
-    for item in files:
-        if not isinstance(item, dict) or set(item) != {"path", "content"}:
-            raise HostMatrixError(f"scenario fixture {case['id']} has malformed setup file")
-        path = safe_relative(item.get("path"), "scenario setup path")
-        if path in paths or not isinstance(item.get("content"), str):
-            raise HostMatrixError(f"scenario fixture {case['id']} has duplicate or non-text setup")
-        paths.add(path)
-        content_by_path[path] = item["content"]
-    evidence = case["evidence"]
-    artifact_path = safe_relative(evidence["artifact_path"], "case artifact_path")
-    if evidence["kind"] == "workspace" and artifact_path not in paths:
-        raise HostMatrixError(f"workspace case {case['id']} must seed its concrete artifact path")
-    if evidence["kind"] == "workspace" and any(marker in content_by_path[artifact_path] for marker in evidence["markers"]):
-        raise HostMatrixError(f"workspace case {case['id']} pre-seeds its own success evidence")
-    verification = value.get("verification")
-    if evidence["kind"] == "workspace":
-        if not isinstance(verification, dict) or set(verification) != {"argv", "immutable_paths"}:
-            raise HostMatrixError(f"workspace case {case['id']} needs a concrete verifier contract")
-        argv = verification.get("argv")
-        immutable = verification.get("immutable_paths")
-        if not isinstance(argv, list) or len(argv) < 2 or argv[0] not in {"python3", "sh", "bash"} or not all(isinstance(arg, str) and arg for arg in argv):
-            raise HostMatrixError(f"workspace case {case['id']} has invalid verifier argv")
-        if safe_relative(argv[1], "scenario verifier path") not in paths:
-            raise HostMatrixError(f"workspace case {case['id']} verifier is not candidate-tracked setup")
-        if not isinstance(immutable, list) or not immutable or not all(safe_relative(item, "immutable verifier path") in paths for item in immutable):
-            raise HostMatrixError(f"workspace case {case['id']} has invalid immutable verifier paths")
-        if artifact_path in immutable:
-            raise HostMatrixError(f"workspace case {case['id']} makes its result artifact immutable")
-    elif verification is not None:
-        raise HostMatrixError(f"trace case {case['id']} must not declare a workspace verifier")
-    private_paths = value.get("private_paths", [])
-    if not isinstance(private_paths, list) or not all(safe_relative(path, "private scenario path") in paths for path in private_paths):
-        raise HostMatrixError(f"scenario fixture {case['id']} has invalid private_paths")
-
-
-def load_case_manifest(path: Path, only_cases: set[str] | None = None, *, root: Path | None = None) -> list[dict[str, Any]]:
-    """Load a matrix manifest and all scenario fixtures from one candidate tree."""
-
-    raw_path = Path(path)
-    default_root = _absolute_path(raw_path).parents[3]
-    root = _checked_directory(root or default_root, "case manifest root")
-    path = _regular_child(root, _relative_under(root, raw_path, "case manifest"), "case manifest")
-    value = load_json(path, "case manifest")
-    if value.get("schema_version") != SCHEMA_VERSION:
-        raise HostMatrixError("case manifest must use schema_version 1")
-    required_roles = value.get("required_roles_per_slice")
-    if not isinstance(required_roles, list) or any(not isinstance(role, str) for role in required_roles):
-        raise HostMatrixError("case manifest must declare required roles per slice")
-    manifest_roles = frozenset(required_roles)
-    if manifest_roles != frozenset(CANONICAL_ROLES):
-        raise HostMatrixError("case manifest roles must match the topology manifest")
-    if len(required_roles) != len(manifest_roles):
-        raise HostMatrixError("case manifest role set must be exact and duplicate-free")
-    role_expectations = value.get("role_expectations")
-    if not isinstance(role_expectations, dict):
-        raise HostMatrixError("case manifest must bind every host/profile/role expectation")
-    expectation_probe = {"role_expectations": role_expectations, "required_role": "worker", "id": "matrix"}
-    for host in HOSTS:
-        for profile in PROFILES:
-            for role in manifest_roles:
-                expectation_probe["required_role"] = role
-                _case_profile_expectation(expectation_probe, host, profile)
-    cases = value.get("cases")
-    if not isinstance(cases, list) or not cases:
-        raise HostMatrixError("case manifest must contain a non-empty case list")
-    result: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    for case in cases:
-        if not isinstance(case, dict):
-            raise HostMatrixError("every release-matrix case must be an object")
-        required = {
-            "id", "selected_skill", "required_role", "expected_roles",
-            "authority", "required_tools", "scenario", "evidence", "prompt", "private_markers",
-        }
-        if required - set(case):
-            raise HostMatrixError("release-matrix case lacks evidence-binding fields")
-        case_id = case.get("id")
-        prompt = case.get("prompt")
-        roles = case.get("expected_roles")
-        if not isinstance(case_id, str) or not case_id or case_id in seen:
-            raise HostMatrixError("release-matrix case ids must be unique non-empty strings")
-        if not isinstance(prompt, str) or not prompt.strip():
-            raise HostMatrixError(f"case {case_id} needs a non-empty prompt")
-        if not isinstance(case.get("selected_skill"), str) or not case["selected_skill"]:
-            raise HostMatrixError(f"case {case_id} needs a selected_skill")
-        if case["selected_skill"] not in {*PUBLIC_SKILL_PATHS, "native"}:
-            raise HostMatrixError(f"case {case_id} selected_skill is outside the topology manifest")
-        _validate_case_role_contract(case, roles, manifest_roles)
-        if case.get("authority") not in {"read-only", "workspace-write"}:
-            raise HostMatrixError(f"case {case_id} has invalid authority")
-        tools = case.get("required_tools")
-        if not isinstance(tools, list) or not tools or not all(isinstance(tool, str) and tool for tool in tools):
-            raise HostMatrixError(f"case {case_id} has invalid required_tools")
-        markers = case.get("private_markers")
-        if not isinstance(markers, list) or not all(isinstance(marker, str) and marker for marker in markers):
-            raise HostMatrixError(f"case {case_id} has invalid private_markers")
-        evidence = case.get("evidence")
-        if not isinstance(evidence, dict) or set(evidence) != {"kind", "artifact_path", "markers"}:
-            raise HostMatrixError(f"case {case_id} has malformed evidence contract")
-        if evidence.get("kind") not in {"workspace", "trace"}:
-            raise HostMatrixError(f"case {case_id} evidence kind must be workspace or trace")
-        if not isinstance(evidence.get("markers"), list) or not evidence["markers"] or not all(isinstance(item, str) and item for item in evidence["markers"]):
-            raise HostMatrixError(f"case {case_id} needs non-empty direct evidence markers")
-        safe_relative(evidence.get("artifact_path"), "case artifact_path")
-        forbidden = list(markers) + list(evidence["markers"])
-        if any(marker in prompt for marker in forbidden):
-            raise HostMatrixError(f"case {case_id} prompt must not contain private or evidence markers")
-        case = {**case, "role_expectations": role_expectations}
-        if not _is_root_case(case):
-            _case_profile_expectation(case, "codex", "performance-first")
-            for host in HOSTS:
-                for profile in PROFILES:
-                    _case_profile_expectation(case, host, profile)
-        scenario_path = _regular_child(root, safe_relative(case.get("scenario"), "case scenario"), "case scenario")
-        _validate_scenario_spec(load_json(scenario_path, "scenario fixture"), case)
-        seen.add(case_id)
-        if only_cases is None or case_id in only_cases:
-            result.append(case)
-    if only_cases is not None and seen & only_cases != only_cases:
-        raise HostMatrixError(f"unknown --only-cases values: {sorted(only_cases - seen)}")
-    return result
-
-
-def load_trajectory_schema(path: Path) -> dict[str, Any]:
-    schema = load_json(path, "trajectory schema")
-    properties = schema.get("properties")
-    version_schema = properties.get("schema_version") if isinstance(properties, dict) else None
-    record_type_schema = properties.get("record_type") if isinstance(properties, dict) else None
-    if (
-        schema.get("$id") != "https://teamwork.example/schemas/host-trajectory.schema.json"
-        or schema.get("type") != "object" or schema.get("additionalProperties") is not False
-        or not isinstance(schema.get("required"), list) or set(schema["required"]) != TRAJECTORY_FIELDS
-        or not isinstance(properties, dict) or set(properties) != TRAJECTORY_FIELDS
-        or not isinstance(version_schema, dict) or version_schema.get("const") != SCHEMA_VERSION
-        or not isinstance(record_type_schema, dict) or record_type_schema.get("const") != "teamwork_host_trajectory"
-    ):
-        raise HostMatrixError("trajectory schema does not preserve the release record contract")
-    return schema
-
-
-def _schema_error(value: Any, schema: dict[str, Any], root: dict[str, Any], location: str = "record") -> None:
-    if "$ref" in schema:
-        ref = schema["$ref"]
-        if not isinstance(ref, str) or not ref.startswith("#/$defs/"):
-            raise HostMatrixError(f"{location}: unsupported schema reference")
-        name = ref.rsplit("/", 1)[-1]
-        target = root.get("$defs", {}).get(name)
-        if not isinstance(target, dict):
-            raise HostMatrixError(f"{location}: missing schema definition {name}")
-        _schema_error(value, target, root, location)
-    for branch in schema.get("allOf", []):
-        if not isinstance(branch, dict):
-            raise HostMatrixError(f"{location}: malformed allOf schema")
-        _schema_error(value, branch, root, location)
-    if "const" in schema and value != schema["const"]:
-        raise HostMatrixError(f"{location}: must equal {schema['const']!r}")
-    if "enum" in schema and value not in schema["enum"]:
-        raise HostMatrixError(f"{location}: value is outside schema enum")
-    expected = schema.get("type")
-    if expected is not None:
-        candidates = expected if isinstance(expected, list) else [expected]
-        checks = {
-            "object": lambda item: isinstance(item, dict),
-            "array": lambda item: isinstance(item, list),
-            "string": lambda item: isinstance(item, str),
-            "integer": lambda item: isinstance(item, int) and not isinstance(item, bool),
-            "boolean": lambda item: isinstance(item, bool),
-            "null": lambda item: item is None,
-        }
-        if not any(checks.get(kind, lambda _item: False)(value) for kind in candidates):
-            raise HostMatrixError(f"{location}: schema type mismatch")
-    if isinstance(value, str):
-        if isinstance(schema.get("minLength"), int) and len(value) < schema["minLength"]:
-            raise HostMatrixError(f"{location}: schema minimum length failed")
-        if isinstance(schema.get("pattern"), str) and re.fullmatch(schema["pattern"], value) is None:
-            raise HostMatrixError(f"{location}: schema pattern failed")
-    if isinstance(value, list):
-        if schema.get("uniqueItems") and len(value) != len({json.dumps(item, sort_keys=True) for item in value}):
-            raise HostMatrixError(f"{location}: schema uniqueItems failed")
-        item_schema = schema.get("items")
-        if isinstance(item_schema, dict):
-            for index, item in enumerate(value):
-                _schema_error(item, item_schema, root, f"{location}[{index}]")
-    if isinstance(value, dict):
-        required = schema.get("required", [])
-        if isinstance(required, list):
-            missing = [key for key in required if key not in value]
-            if missing:
-                raise HostMatrixError(f"{location}: schema missing fields: {', '.join(missing)}")
-        properties = schema.get("properties", {})
-        if schema.get("additionalProperties") is False:
-            unknown = set(value) - set(properties)
-            if unknown:
-                raise HostMatrixError(f"{location}: schema forbids fields: {', '.join(sorted(unknown))}")
-        if isinstance(properties, dict):
-            for key, child_schema in properties.items():
-                if key in value and isinstance(child_schema, dict):
-                    _schema_error(value[key], child_schema, root, f"{location}.{key}")
-
-
-def validate_trajectory(record: dict[str, Any], schema: dict[str, Any] | None = None) -> None:
-    if schema is None:
-        schema = load_trajectory_schema(Path(__file__).resolve().parents[3] / RELEASE_SCHEMA_PATH)
-    _schema_error(record, schema, schema)
-    child_start_count = record["child_start_count"]
-    if (
-        not isinstance(child_start_count, int)
-        or isinstance(child_start_count, bool)
-        or child_start_count < 0
-    ):
-        raise HostMatrixError("child_start_count must be a non-negative integer")
-    for index, dispatch in enumerate(record["dispatches"]):
-        if not isinstance(dispatch, dict) or set(dispatch) != DISPATCH_FIELDS:
-            raise HostMatrixError(f"dispatches[{index}] does not preserve the closed dispatch contract")
-        if dispatch["host"] != record["host"]:
-            raise HostMatrixError(f"dispatches[{index}] host does not bind its trajectory")
-        if dispatch["role"] not in CANONICAL_ROLES:
-            raise HostMatrixError(f"dispatches[{index}] has invalid role")
-        if (
-            not isinstance(dispatch["child_index"], int)
-            or isinstance(dispatch["child_index"], bool)
-            or dispatch["child_index"] < 1
-            or dispatch["child_index"] > child_start_count
-        ):
-            raise HostMatrixError(f"dispatches[{index}] has invalid child_index")
-        if str(dispatch["actual_model"]).casefold() in GENERIC_OBSERVATIONS:
-            raise HostMatrixError(f"dispatches[{index}] has generic actual_model")
-        if str(dispatch["actual_effort"]).casefold() in GENERIC_OBSERVATIONS:
-            raise HostMatrixError(f"dispatches[{index}] has generic actual_effort")
-        if str(dispatch["identity"]).casefold() in GENERIC_OBSERVATIONS:
-            raise HostMatrixError(f"dispatches[{index}] has generic identity")
-        if dispatch["observation_source"] not in CHILD_START_EVENT_TYPES:
-            raise HostMatrixError(f"dispatches[{index}] lacks child-start observation provenance")
-    if record["status"] == "PASS":
-        if record["role_identity"] == "root":
-            if (
-                record["dispatches"]
-                or record["child_start_count"]
-                or record["actual_model"] != record["parent_model"]
-                or record["actual_effort"] != record["parent_effort"]
-            ):
-                raise HostMatrixError("root no-child control must not contain child dispatch evidence")
-        elif record["role_identity"] not in CANONICAL_ROLES or not record["dispatches"]:
-            raise HostMatrixError("PASS requires observed formal role identity")
-        elif len(record["dispatches"]) != record["child_start_count"]:
-            raise HostMatrixError("PASS requires every child start to have trace-bound dispatch evidence")
-        elif {
-            dispatch["child_index"] for dispatch in record["dispatches"]
-        } != set(range(1, record["child_start_count"] + 1)):
-            raise HostMatrixError("PASS requires exactly one dispatch per observed child start")
-        if record["selected_skill"] == "UNSUPPORTED":
-            raise HostMatrixError("PASS requires selected Skill observation")
-        for field in ("actual_model", "actual_effort", "authority_observation"):
-            value = str(record[field]).casefold()
-            if value == "unsupported" or value in GENERIC_OBSERVATIONS:
-                raise HostMatrixError(f"PASS requires non-generic {field} observation")
-        if record["privacy_scan"] != "PASS":
-            raise HostMatrixError("PASS requires a passing privacy scan")
-        if not record["tool_observations"] or any(tool in {"type", "tool", "unknown"} for tool in record["tool_observations"]):
-            raise HostMatrixError("PASS requires actual non-generic tool observations")
-        if not record["result"]["direct_success"]:
-            raise HostMatrixError("PASS requires a direct scenario success")
-        if not record["answer_specificity_success"]:
-            raise HostMatrixError("PASS requires specific final agent output")
-        for evidence_name in ("artifact", "result", "agent_output"):
-            evidence = record[evidence_name]
-            if not isinstance(evidence.get("path"), str) or not evidence["path"] or not isinstance(evidence.get("sha256"), str):
-                raise HostMatrixError(f"PASS requires {evidence_name} path and hash evidence")
-
-
-def _verified_evidence_path(slice_root: Path, evidence: dict[str, Any], label: str) -> Path:
-    relative = safe_relative(evidence.get("path"), f"{label} path")
-    if not relative.startswith("artifacts/"):
-        raise HostMatrixError(f"{label} must be stored in the per-slice artifacts namespace")
-    path = _child(slice_root, relative, label)
-    if not path.is_file() or path.is_symlink():
-        raise HostMatrixError(f"{label} file is missing")
-    if sha256_file(path) != _sha256(evidence.get("sha256"), f"{label} sha256"):
-        raise HostMatrixError(f"{label} hash does not match its stored file")
-    return path
-
-
-def validate_record_binding(
-    record: dict[str, Any], case: dict[str, Any], schema: dict[str, Any], slice_root: Path,
-) -> None:
-    """Bind a typed PASS to its exact case, host profile, and persisted evidence."""
-
-    validate_trajectory(record, schema)
-    host, profile = record["host"], record["profile"]
-    if record["case_id"] != case["id"] or record["selected_skill"] != case["selected_skill"]:
-        raise HostMatrixError("record case or selected Skill does not bind the matrix manifest")
-    dispatch_roles = {dispatch["role"] for dispatch in record["dispatches"]}
-    if record["role_identity"] != case["required_role"] or dispatch_roles != set(case["expected_roles"]):
-        raise HostMatrixError("record role identity/coverage does not bind the matrix case")
-    if _is_root_case(case):
-        if (
-            record["dispatches"]
-            or record["child_start_count"]
-            or record["actual_model"] != record["parent_model"]
-            or record["actual_effort"] != record["parent_effort"]
-        ):
-            raise HostMatrixError("root record must bind the actual parent without child dispatches")
-    else:
-        if not _dispatches_bind_case(
-            case, host, profile, record["dispatches"], record["child_start_count"],
-        ):
-            raise HostMatrixError("record child-start dispatch evidence does not bind the matrix case")
-        expected = _case_profile_expectation(case, host, profile)
-        if record["actual_model"] != expected["model"] or record["actual_effort"] != expected["effort"]:
-            raise HostMatrixError("record model/effort does not bind its host profile and role")
-    if record["authority_observation"] != case["authority"]:
-        raise HostMatrixError("record authority does not bind the case")
-    if not set(case["required_tools"]).issubset(set(record["tool_observations"])):
-        raise HostMatrixError("record tool evidence does not bind the case")
-    if record["sanitized_input_sha256"] != sha256_bytes(case["prompt"].encode()):
-        raise HostMatrixError("record sanitized input hash does not bind the case prompt")
-    if record["status"] != "PASS":
-        raise HostMatrixError("record is a FAIL/UNSUPPORTED blocker")
-    artifact = _verified_evidence_path(slice_root, record["artifact"], "artifact")
-    result = _verified_evidence_path(slice_root, record["result"], "result")
-    agent_output = _verified_evidence_path(slice_root, record["agent_output"], "agent_output")
-    result_bytes = result.read_bytes()
-    if not all(marker.encode() in result_bytes for marker in case["evidence"]["markers"]):
-        raise HostMatrixError("result artifact lacks case-specific direct evidence markers")
-    secrets = [marker.encode() for marker in case["private_markers"]]
-    agent_output_bytes = agent_output.read_bytes()
-    if any(marker in artifact.read_bytes() or marker in result_bytes or marker in agent_output_bytes for marker in secrets):
-        raise HostMatrixError("stored trajectory evidence leaked a private marker")
-    specificity_success, _specificity_failure = evaluate_agent_output_specificity(
-        case, agent_output_bytes.decode("utf-8", errors="replace"),
-    )
-    if not specificity_success or not record["answer_specificity_success"]:
-        raise HostMatrixError("record agent output does not satisfy specificity gate")
-
-
-def _unsupported_record(
-    host: str, profile: str, case: dict[str, Any], classification: str,
-    *, invocation_id: str | None = None, host_version: str = "UNSUPPORTED",
-    arm: str = "UNSUPPORTED", parent_model: str = "UNSUPPORTED",
-    parent_effort: str = "UNSUPPORTED",
-) -> dict[str, Any]:
-    now = utc_now()
-    return {
-        "schema_version": SCHEMA_VERSION, "record_type": "teamwork_host_trajectory",
-        "host": host, "host_version": host_version,
-        "invocation_id": invocation_id or str(uuid.uuid4()), "arm": arm,
-        "started_at": now, "finished_at": now,
-        "case_id": case["id"], "profile": profile,
-        "parent_model": parent_model, "parent_effort": parent_effort,
-        "selected_skill": "UNSUPPORTED", "role_identity": "UNSUPPORTED",
-        "actual_model": "UNSUPPORTED", "actual_effort": "UNSUPPORTED",
-        "dispatches": [], "child_start_count": 0,
-        "tool_observations": [], "authority_observation": "UNSUPPORTED",
-        "sanitized_input_sha256": sha256_bytes(case["prompt"].encode()),
-        "artifact": {"path": None, "sha256": None},
-        "result": {"path": None, "sha256": None, "direct_success": False},
-        "agent_output": {"path": None, "sha256": None},
-        "answer_specificity_success": False,
-        "exit_status": None, "status": "UNSUPPORTED", "privacy_scan": "NOT_RUN",
-        "failure_classification": classification,
-    }
-
-
-def _apply_scenario(tree: Path, scenario: Path, spec: dict[str, Any]) -> _SealedScenarioPath:
-    tree = _checked_directory(tree, "sealed candidate tree")
-    scenario = _absolute_path(scenario)
-    shutil.copytree(tree, scenario, symlinks=False)
-    for item in spec["files"]:
-        path = _child(scenario, item["path"], "scenario setup path")
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(item["content"], encoding="utf-8")
-    checked = _checked_directory(scenario, "sealed archive scenario")
-    git_dir = checked / ".git"
-    if git_dir.exists() or git_dir.is_symlink():
-        raise HostMatrixError("sealed archive scenario must not contain a Git repository")
-    return _SealedScenarioPath(checked)
-
-
-def _immutable_scenario_hashes(scenario: Path, spec: dict[str, Any]) -> dict[str, str]:
-    verification = spec.get("verification")
-    if not isinstance(verification, dict):
-        return {}
-    return {
-        path: sha256_file(_child(scenario, path, "immutable verifier path"))
-        for path in verification["immutable_paths"]
-    }
-
-
-def _run_scenario_verifier(
-    scenario: Path, spec: dict[str, Any], before: dict[str, str], timeout_seconds: int,
-) -> tuple[bool, str | None]:
-    verification = spec.get("verification")
-    if not isinstance(verification, dict):
-        return True, None
-    for path, digest in before.items():
-        target = _child(scenario, path, "immutable verifier path")
-        try:
-            unchanged = sha256_file(target) == digest
-        except HostMatrixError:
-            unchanged = False
-        if not unchanged:
-            return False, "scenario-verifier-modified"
-    try:
-        completed = subprocess.run(
-            verification["argv"], cwd=scenario, text=True, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, timeout=timeout_seconds, check=False,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        return False, "scenario-verifier-unavailable"
-    return (completed.returncode == 0, None if completed.returncode == 0 else "scenario-verifier-failed")
-
-
-def _private_write(path: Path, value: bytes) -> None:
-    parent = _ensure_absolute_directory(path.parent, "trajectory evidence")
-    target = parent / path.name
-    try:
-        info = target.lstat()
-    except FileNotFoundError:
-        info = None
-    except OSError as exc:
-        raise HostMatrixError(f"cannot inspect trajectory evidence {target}: {exc}") from exc
-    if info is not None:
-        if stat.S_ISLNK(info.st_mode):
-            raise HostMatrixError(f"trajectory evidence must not be a symlink: {target}")
-        raise HostMatrixError(f"trajectory evidence already exists: {target}")
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_CLOEXEC", 0)
-    try:
-        descriptor = os.open(target, flags, 0o600)
-    except OSError as exc:
-        raise HostMatrixError(f"cannot create trajectory evidence {target}: {exc}") from exc
-    try:
-        offset = 0
-        while offset < len(value):
-            offset += os.write(descriptor, value[offset:])
-        os.fchmod(descriptor, 0o600)
-    finally:
-        os.close(descriptor)
-
-
-def _artifact_path(output: Path, invocation_id: str, name: str) -> tuple[Path, str]:
-    relative = f"artifacts/{invocation_id}/{safe_relative(name, 'artifact name')}"
-    return output.parent / relative, relative
-
-
-def _write_evidence_file(output: Path, invocation_id: str, name: str, value: bytes) -> dict[str, str]:
-    path, relative = _artifact_path(output, invocation_id, name)
-    _private_write(path, value)
-    return {"path": relative, "sha256": sha256_file(path)}
-
-
-def _specificity_normalize(value: str) -> str:
-    return " ".join("".join(character if character.isalnum() else " " for character in value.casefold()).split())
-
-
-def _specificity_content_units(value: str) -> int:
-    """Approximate non-empty answer substance across spaced and unspaced scripts."""
-
-    units = 0
-    for token in _specificity_normalize(value).split():
-        if any(ord(character) > 127 for character in token):
-            units += len(token)
-        else:
-            units += 1
-    return units
-
-
-def _text_chunks(value: Any) -> list[str]:
+def _assistant_text_fragments(value: Any) -> list[str]:
     if isinstance(value, str):
         return [value]
     if isinstance(value, list):
-        chunks: list[str] = []
-        for item in value:
-            chunks.extend(_text_chunks(item))
-        return chunks
+        return [part for item in value for part in _assistant_text_fragments(item)]
     if isinstance(value, dict):
-        chunks = []
-        for key in ("text", "content", "message", "output", "result", "final_response", "response"):
-            if key in value:
-                chunks.extend(_text_chunks(value[key]))
-        return chunks
-    return []
-
-
-def _assistant_text_chunks(value: Any) -> list[str]:
-    if isinstance(value, str):
-        return [value]
-    if isinstance(value, list):
-        chunks: list[str] = []
-        for item in value:
-            chunks.extend(_assistant_text_chunks(item))
-        return chunks
-    if isinstance(value, dict):
-        block_type = str(value.get("type", "")).casefold().replace("_", "-")
+        block_type = str(value.get("type", "")).casefold().replace("-", "_")
         if block_type in {
-            "tool-use", "tool-result", "function-call", "function-call-output",
-            "input-json-delta", "thinking", "redacted-thinking",
+            "tool_use", "tool_result", "command_execution", "reasoning", "mcp_tool_call",
+            "function_call", "function_call_output",
         }:
             return []
-        if block_type in {"text", "output-text", "text-delta"}:
-            return [
-                child
-                for key in ("text", "content", "delta")
-                for child in _assistant_text_chunks(value.get(key))
-                if child.strip()
-            ]
-        chunks = []
-        for key in ("text", "content", "message", "delta"):
+        if block_type in {"text", "output_text", "input_text"}:
+            return _assistant_text_fragments(value.get("text", value.get("content", "")))
+        fragments: list[str] = []
+        for key in ("text", "content"):
             if key in value:
-                chunks.extend(_assistant_text_chunks(value[key]))
-        return chunks
+                fragments.extend(_assistant_text_fragments(value[key]))
+        return fragments
     return []
 
 
-def _event_payload(event: dict[str, Any]) -> dict[str, Any]:
-    item = event.get("item") if isinstance(event.get("item"), dict) else None
-    return item or event
-
-
-def _agent_message_payload(event: dict[str, Any]) -> Any | None:
-    event_type = _event_type(event)
-    if event_type in AGENT_MESSAGE_EVENT_TYPES:
-        return event
-    item = event.get("item") if isinstance(event.get("item"), dict) else None
-    if (
-        event_type == "item.completed"
-        and isinstance(item, dict)
-        and item.get("type") in AGENT_MESSAGE_EVENT_TYPES
-    ):
-        return item
-    return None
-
-
-def _assistant_message_payload(event: dict[str, Any]) -> Any | None:
-    payload = _event_payload(event)
-    event_type = _event_type(payload)
-    role = payload.get("role") or payload.get("author")
-    if event_type in {"assistant", "assistant_message", "assistant-message"}:
-        return payload
-    if event_type in {"message", "item.completed"} and role == "assistant":
-        return payload
-    message = payload.get("message") if isinstance(payload.get("message"), dict) else None
-    if message and (message.get("role") == "assistant" or event_type == "assistant"):
-        return message
-    return None
-
-
-def _assistant_delta_text(event: dict[str, Any]) -> str:
-    payload = _event_payload(event)
-    event_type = _event_type(payload).casefold().replace("_", "-")
-    if event_type not in {
-        "assistant-delta", "assistant-message-delta", "message-delta",
-        "response-output-text-delta", "content-block-delta", "text-delta",
-    }:
-        return ""
-    chunks: list[str] = []
-    for key in ("delta", "text", "content"):
-        if key in payload:
-            chunks.extend(_assistant_text_chunks(payload[key]))
-    return "".join(chunks)
-
-
-def _terminal_result_text(event: dict[str, Any]) -> str:
-    payload = _event_payload(event)
-    event_type = _event_type(payload).casefold().replace("_", "-")
-    if event_type not in {
-        "result", "turn-completed", "thread-completed", "response-completed", "run-completed",
-    }:
-        return ""
-    chunks: list[str] = []
-    for key in ("result", "final_response", "final-response", "response", "output_text", "output-text", "output"):
-        if key in payload:
-            chunks.extend(_assistant_text_chunks(payload[key]))
-    return "\n".join(chunk.strip() for chunk in chunks if chunk.strip())
-
-
-def _is_agent_output_event(event: dict[str, Any]) -> bool:
-    return (
-        _agent_message_payload(event) is not None
-        or _assistant_message_payload(event) is not None
-        or bool(_assistant_delta_text(event))
-        or bool(_terminal_result_text(event))
-    )
-
-
-def final_agent_output(events: Sequence[dict[str, Any]]) -> str:
-    """Return the last host-reported agent message, not tool output or prompts."""
-
+def final_agent_output(events: Sequence[dict[str, Any]], raw_stdout: str = "") -> str:
+    del raw_stdout
     messages: list[str] = []
-    delta_parts: list[str] = []
     terminal_results: list[str] = []
     for event in events:
-        terminal_text = _terminal_result_text(event)
-        if terminal_text:
-            terminal_results.append(terminal_text)
+        event_type = str(event.get("type", ""))
+        item = event.get("item") if isinstance(event.get("item"), dict) else None
+        payload: Any | None = None
+        if event_type == "item.completed" and item and item.get("type") == "agent_message":
+            payload = item
+        elif event_type in {"agent_message", "assistant.message", "assistant_message"}:
+            payload = event
+        elif event_type == "assistant":
+            message = event.get("message")
+            payload = message if isinstance(message, dict) else event
+        elif event_type == "message" and event.get("role") == "assistant":
+            payload = event
+        elif event_type == "result" and isinstance(event.get("result"), str):
+            terminal_results.append(event["result"].strip())
             continue
-        delta_text = _assistant_delta_text(event)
-        if delta_text:
-            delta_parts.append(delta_text)
-            continue
-        payload = _assistant_message_payload(event)
         if payload is not None:
-            text = "\n".join(chunk.strip() for chunk in _assistant_text_chunks(payload) if chunk.strip())
-            if text:
-                messages.append(text)
-            continue
-        payload = _agent_message_payload(event)
-        if payload is None:
-            continue
-        text = "\n".join(chunk.strip() for chunk in _text_chunks(payload) if chunk.strip())
-        if text:
-            messages.append(text)
+            fragments = [part.strip() for part in _assistant_text_fragments(payload) if part.strip()]
+            if fragments:
+                messages.append("\n".join(fragments))
     if terminal_results:
         return terminal_results[-1]
-    if messages:
-        return messages[-1]
-    if delta_parts:
-        return "".join(delta_parts).strip()
     return messages[-1] if messages else ""
 
 
-def evaluate_agent_output_specificity(case: dict[str, Any], agent_output: str) -> tuple[bool, str | None]:
-    text = agent_output.strip()
-    normalized = _specificity_normalize(text)
-    if not text:
-        return False, "agent-output-empty"
-    refusal_patterns = (
-        "cannot answer", "can t answer", "unable to answer", "do not know",
-        "don t know", "not enough information", "no information", "cannot determine",
-        "must refuse", "can t help", "cannot help", "won t help", "refuse this request",
-        "无法回答", "不能回答", "不知道", "不清楚", "无法确定", "信息不足",
-        "必须拒绝", "拒绝这个请求", "拒绝该请求", "不能帮助", "无法帮助", "不能帮",
-    )
-    if any(pattern in normalized for pattern in refusal_patterns):
-        return False, "agent-output-non-answer"
-    if normalized in GENERIC_AGENT_OUTPUTS or _specificity_content_units(normalized) < 3:
-        return False, "agent-output-non-answer"
-    marker_free = normalized
-    for marker in case.get("evidence", {}).get("markers", []):
-        marker_free = marker_free.replace(_specificity_normalize(str(marker)), " ")
-    if _specificity_content_units(marker_free) < 3:
-        return False, "agent-output-marker-only"
+def _missing_host_authentication(
+    host: str, returncode: int, stderr: str, events: Sequence[dict[str, Any]],
+) -> bool:
+    """Recognize only supported, directly observed host authentication signals."""
+
+    if returncode == 0:
+        return False
+    if host == "cursor":
+        return stderr.strip() == CURSOR_AUTH_REQUIRED
+    if host == "claude":
+        return any(event.get("error") == "authentication_failed" for event in events)
+    return False
+
+
+def evaluate_agent_output_specificity(_case: dict[str, Any], agent_output: str) -> tuple[bool, str | None]:
+    if not agent_output.strip():
+        return False, "agent-output-missing"
     return True, None
 
 
-def _non_agent_trace(events: Sequence[dict[str, Any]]) -> str:
-    filtered = [event for event in events if not _is_agent_output_event(event)]
-    return "\n".join(json.dumps(event, sort_keys=True) for event in filtered)
-
-
-def _direct_scenario_evidence(
-    *, case: dict[str, Any], scenario: Path, events: Sequence[dict[str, Any]],
-    output: Path, invocation_id: str, workspace_before: str | None,
-    verification_ok: bool = True, verification_failure: str | None = None,
-    forbidden_output_markers: Sequence[bytes] = (),
-) -> tuple[bool, dict[str, str], dict[str, str], str | None]:
-    evidence = case["evidence"]
-    marker_values = evidence["markers"]
-    trace = _non_agent_trace(events).encode()
-    if any(marker and marker in trace for marker in forbidden_output_markers):
-        return False, {}, {}, "auth-output-leak"
-    trace_evidence = _write_evidence_file(output, invocation_id, "host-trace.jsonl", trace)
-    if not verification_ok:
-        return False, trace_evidence, {}, verification_failure or "scenario-verifier-failed"
-    if evidence["kind"] == "workspace":
-        target = _child(scenario, evidence["artifact_path"], "workspace evidence artifact")
-        try:
-            data = _read_regular_bytes(target, "workspace evidence artifact")
-        except HostMatrixError:
-            return False, trace_evidence, {}, "missing-workspace-artifact"
-        if any(marker and marker in data for marker in forbidden_output_markers):
-            return False, trace_evidence, {}, "auth-output-leak"
-        if workspace_before is None or sha256_bytes(data) == workspace_before:
-            return False, trace_evidence, {}, "workspace-artifact-unchanged"
-        if not all(marker.encode() in data for marker in marker_values):
-            return False, trace_evidence, {}, "workspace-markers-missing"
-        result = _write_evidence_file(output, invocation_id, "scenario-result.bin", data)
-        return True, trace_evidence, result, None
-    if not trace or not all(marker.encode() in trace for marker in marker_values):
-        return False, trace_evidence, {}, "trace-markers-missing"
-    result = _write_evidence_file(output, invocation_id, "scenario-result.jsonl", trace)
-    return True, trace_evidence, result, None
-
-
-def _cursor_command_prefix(executable: str) -> list[str]:
-    name = Path(executable).name
-    if name == "cursor-agent":
-        return [executable]
-    if name == "cursor":
-        probe = subprocess.run(
-            [executable, "agent", "--help"], text=True, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, timeout=10, check=False,
+def classify_case_observation(
+    case: dict[str, Any], host: str, *, exit_status: int, specific: bool,
+    route_observed: bool, agents_observed: bool, verification: str,
+    verify_failure: str | None, specificity_failure: str | None,
+) -> tuple[str, str | None]:
+    if exit_status != 0:
+        return "FAIL", "host-command-failed"
+    if not specific:
+        return "FAIL", specificity_failure or "agent-output-missing"
+    if not route_observed:
+        return "FAIL", "route-or-host-outcome-not-observed"
+    if not agents_observed:
+        status = (
+            "UNSUPPORTED"
+            if case["support"][host] == "conditional-exact-role"
+            else "FAIL"
         )
-        if probe.returncode == 0:
-            return [executable, "agent"]
-        raise HostMatrixError("cursor executable does not support `cursor agent`")
-    raise HostMatrixError("Cursor requires a cursor or cursor-agent executable; temporary wrappers are rejected")
+        return status, "required-agent-not-observed"
+    expected_verification = "PASS" if case["scenario"] is not None else "NOT_RUN"
+    if verification != expected_verification:
+        return "FAIL", verify_failure or "scenario-verification-failed"
+    return "PASS", None
 
 
-def _host_command_prefix(host: str, binary: str) -> tuple[list[str], str]:
+def observed_tools(events: Sequence[dict[str, Any]]) -> list[str]:
+    tools: set[str] = set()
+    for event in events:
+        event_type = str(event.get("type", "")).casefold()
+        if "tool" in event_type:
+            name = event.get("tool_name", event.get("name", event_type))
+            if isinstance(name, str) and name:
+                tools.add(name)
+        for payload in _tool_payloads(event):
+            payload_type = str(payload.get("type", "")).casefold().replace("-", "_")
+            name = payload.get("name", payload.get("tool_name", payload_type))
+            if isinstance(name, str) and name:
+                tools.add(name)
+    return sorted(tools)
+
+
+def _walk_strings(value: Any, keys: set[str]) -> list[str]:
+    values: list[str] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key.casefold().replace("_", "-") in keys and isinstance(item, str):
+                values.append(item)
+            values.extend(_walk_strings(item, keys))
+    elif isinstance(value, list):
+        for item in value:
+            values.extend(_walk_strings(item, keys))
+    return values
+
+
+def _tool_payloads(value: Any) -> list[dict[str, Any]]:
+    payloads: list[dict[str, Any]] = []
+    if isinstance(value, dict):
+        value_type = str(value.get("type", "")).casefold().replace("-", "_")
+        if value_type in {
+            "tool_use", "tool_call", "command_execution", "file_read", "mcp_tool_call",
+        }:
+            payloads.append(value)
+        for item in value.values():
+            payloads.extend(_tool_payloads(item))
+    elif isinstance(value, list):
+        for item in value:
+            payloads.extend(_tool_payloads(item))
+    return payloads
+
+
+def observed_skills(events: Sequence[dict[str, Any]]) -> list[str]:
+    skills: set[str] = set()
+    for event in events:
+        event_type = str(event.get("type", ""))
+        if event_type in {"skill.started", "skill.loaded"}:
+            name = event.get("skill", event.get("name"))
+            if isinstance(name, str):
+                skills.add(name.casefold().replace("_", "-"))
+        for tool_payload in _tool_payloads(event):
+            for value in _walk_strings(
+                tool_payload,
+                {"command", "path", "file", "file-path"},
+            ):
+                for match in SKILL_READ_RE.finditer(value):
+                    skills.add(match.group(1).casefold().replace("_", "-"))
+    return sorted(skills)
+
+
+def observed_agents(events: Sequence[dict[str, Any]]) -> list[str]:
+    agents: set[str] = set()
+    started_spawn_roles: dict[str, str] = {}
+    for event in events:
+        candidates = [event]
+        for key in ("payload", "item"):
+            if isinstance(event.get(key), dict):
+                candidates.append(event[key])
+        for candidate in candidates:
+            candidate_type = str(candidate.get("type", "")).casefold()
+            name = str(candidate.get("name", candidate.get("tool_name", ""))).casefold()
+            if candidate_type not in {"custom_tool_call", "function_call", "tool_call"} or name != "spawn_agent":
+                continue
+            raw_arguments = candidate.get("arguments", candidate.get("input"))
+            if isinstance(raw_arguments, str):
+                try:
+                    raw_arguments = json.loads(raw_arguments)
+                except json.JSONDecodeError:
+                    continue
+            if not isinstance(raw_arguments, dict):
+                continue
+            role = raw_arguments.get("agent_type")
+            call_id = candidate.get("call_id", candidate.get("id"))
+            if not isinstance(role, str) or not isinstance(call_id, str):
+                continue
+            normalized = role.casefold().replace("_", "-").removeprefix("teamwork-")
+            if normalized in CANONICAL_AGENTS:
+                started_spawn_roles[call_id] = normalized
+    for event in events:
+        event_type = str(event.get("type", ""))
+        payload = event
+        if event_type == "event_msg" and isinstance(event.get("payload"), dict):
+            candidate = event["payload"]
+            if candidate.get("type") == "sub_agent_activity" and candidate.get("kind") == "started":
+                event_id = candidate.get("event_id")
+                if isinstance(event_id, str) and event_id in started_spawn_roles:
+                    agents.add(started_spawn_roles[event_id])
+                payload = candidate
+                event_type = "subagent.started"
+        if event_type == "session_meta" and isinstance(event.get("payload"), dict):
+            candidate = event["payload"]
+            source = candidate.get("source") if isinstance(candidate.get("source"), dict) else {}
+            if candidate.get("thread_source") == "subagent" or isinstance(source.get("subagent"), dict):
+                payload = candidate
+                event_type = "agent.started"
+        hook_names = {
+            value.casefold().replace("_", "-")
+            for value in _walk_strings(event, {"hook-name", "hook-event", "event-name"})
+        }
+        if "subagentstart" in hook_names or "subagent-start" in hook_names:
+            event_type = "SubagentStart"
+        if event_type not in CHILD_START_EVENT_TYPES:
+            continue
+        for value in _walk_strings(
+            payload,
+            {
+                "role", "role-identity", "agent", "agent-name", "agent-type",
+                "agent-role", "subagent", "subagent-type",
+            },
+        ):
+            candidate = value.rsplit("/", 1)[-1].casefold().replace("_", "-").removeprefix("teamwork-")
+            if candidate in CANONICAL_AGENTS:
+                agents.add(candidate)
+    return sorted(agents)
+
+
+def route_is_observed(events: Sequence[dict[str, Any]], selected_skill: str) -> bool:
+    skills = observed_skills(events)
+    selected = selected_skill.casefold()
+    return not skills if selected == "native" else selected in skills
+
+
+def _host_command(
+    host: str, binary: str, scenario: Path, prompt: str, authority: str,
+    model: str, effort: str, version_timeout: float = 30,
+) -> tuple[list[str], str]:
     executable = shutil.which(binary) if not Path(binary).is_absolute() else binary
     if not executable:
-        raise HostMatrixError(f"{host} executable not found")
-    version = "UNSUPPORTED"
-    probe = subprocess.run([str(executable), "--version"], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
-    version = (probe.stdout or probe.stderr).strip() or "UNSUPPORTED"
-    if host == "cursor":
-        return _cursor_command_prefix(str(executable)), version
-    return [str(executable)], version
-
-
-def _host_argv(
-    host: str, command_prefix: Sequence[str], scenario: Path | _SealedScenarioPath, prompt: str,
-    authority: str, parent_model: str, parent_effort: str,
-) -> list[str]:
-    scenario_path = scenario.path if isinstance(scenario, _SealedScenarioPath) else Path(scenario)
-    if host == "codex":
-        argv = [
-            *command_prefix, "exec", "--ephemeral", "--json", "--model", parent_model,
-            "-c", f'model_reasoning_effort="{parent_effort}"', "--sandbox", authority,
-            "--cd", str(scenario_path),
-        ]
-        if isinstance(scenario, _SealedScenarioPath):
-            argv.insert(len(command_prefix) + 2, "--skip-git-repo-check")
-        return [*argv, prompt]
-    if host == "cursor":
-        return [*command_prefix, "--print", "--output-format", "stream-json", "--workspace", str(scenario_path), prompt]
-    permission = "plan" if authority == "read-only" else "acceptEdits"
-    return [*command_prefix, "--print", "--output-format", "stream-json", "--permission-mode", permission, prompt]
-
-
-def _host_invocation_observation(host: str, argv: Sequence[str]) -> dict[str, str] | None:
-    if host != "codex":
-        return None
+        raise HostProbeError("missing-host-binary")
     try:
-        model = argv[argv.index("--model") + 1]
-        authority = argv[argv.index("--sandbox") + 1]
-        config = argv[argv.index("-c") + 1]
-    except (ValueError, IndexError) as exc:
-        raise HostMatrixError("Codex invocation lacks observable model, effort, or authority") from exc
-    match = re.fullmatch(r'model_reasoning_effort="([^"]+)"', config)
-    if not match:
-        raise HostMatrixError("Codex invocation has an unobservable reasoning effort")
-    return {
-        "type": "teamwork.invocation.started",
-        "host": host,
-        "model": model,
-        "model_reasoning_effort": match.group(1),
-        "sandbox": authority,
-    }
-
-
-def _isolated_install_argv(installer: Path, profile: str, host: str) -> list[str]:
-    argv = [str(installer), "--copy"]
-    if host in {"codex", "claude"}:
-        argv.append("--no-notifications")
+        probe = subprocess.run(
+            [str(executable), "--version"], text=True, capture_output=True,
+            timeout=version_timeout, check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise HostProbeError("host-version-timeout") from exc
+    except OSError as exc:
+        raise HostProbeError("host-version-unavailable") from exc
+    version = (probe.stdout or probe.stderr).strip()
+    if probe.returncode != 0 or not version:
+        raise HostProbeError("host-version-unavailable")
     if host == "codex":
-        argv.extend(("--no-managed-codegraph", "--no-managed-gpu-broker"))
+        return ([str(executable), "exec", "--json", "--model", model,
+                 "-c", f'model_reasoning_effort="{effort}"', "--sandbox", authority,
+                 "--skip-git-repo-check", "--cd", str(scenario), prompt], version)
+    if host == "cursor":
+        prefix = [str(executable)] if Path(str(executable)).name == "cursor-agent" else [str(executable), "agent"]
+        authority_args = ["--mode", "ask"] if authority == "read-only" else []
+        return ([
+            *prefix, "--print", "--output-format", "stream-json",
+            "--sandbox", "enabled", *authority_args,
+            "--workspace", str(scenario), prompt,
+        ], version)
+    permission = "plan" if authority == "read-only" else "acceptEdits"
+    return ([
+        str(executable), "--print", "--output-format", "stream-json",
+        "--verbose", "--include-hook-events", "--permission-mode", permission, prompt,
+    ], version)
+
+
+def _install_command(installer: Path, profile: str, host: str) -> list[str]:
+    command = [str(installer), "--copy"]
+    if host in {"codex", "claude"}:
+        command.append("--no-notifications")
+    if host == "codex":
+        command.extend(("--no-managed-codegraph", "--no-managed-gpu-broker"))
     elif host == "cursor":
-        argv.append("--no-mcp")
-    return [*argv, "--profile", profile, host]
+        command.append("--no-mcp")
+    return [*command, "--profile", profile, host]
+
+
+def _copy_codex_auth(source_home: Path, isolated_home: Path) -> bool:
+    source = source_home / "auth.json"
+    if not source.is_file() or source.is_symlink():
+        return False
+    destination = isolated_home / ".codex/auth.json"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, destination, follow_symlinks=False)
+    return True
+
+
+def _codex_session_events(isolated_home: Path) -> list[dict[str, Any]]:
+    sessions = isolated_home / ".codex/sessions"
+    if not sessions.is_dir() or sessions.is_symlink():
+        return []
+    events: list[dict[str, Any]] = []
+    for path in sorted(sessions.rglob("*.jsonl")):
+        if not path.is_file() or path.is_symlink():
+            continue
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except (OSError, UnicodeDecodeError):
+            continue
+        for line in lines:
+            try:
+                value = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(value, dict):
+                events.append(value)
+    return events
+
+
+def _write_observations(output: Path, records: Sequence[dict[str, Any]]) -> None:
+    output.write_text(
+        "".join(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n" for record in records),
+        encoding="utf-8",
+    )
+
+
+def _apply_scenario(root: Path, target: Path, relative: str | None) -> None:
+    target.mkdir(parents=True, exist_ok=True)
+    if relative is None:
+        return
+    spec = load_json(root / relative, "scenario")
+    if spec.get("schema_version") != 2 or not isinstance(spec.get("files"), list):
+        raise HostMatrixError("scenario must use schema_version 2")
+    for row in spec["files"]:
+        if not isinstance(row, dict) or set(row) != {"path", "content"}:
+            raise HostMatrixError("scenario file has an invalid shape")
+        destination = target / safe_relative(row["path"], "scenario file")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(_text(row["content"], "scenario content"), encoding="utf-8")
+
+
+def _verify_scenario(scenario: Path, relative: str | None, root: Path, timeout: int) -> tuple[str, str | None]:
+    if relative is None:
+        return "NOT_RUN", None
+    spec = load_json(root / relative, "scenario")
+    verification = spec.get("verification")
+    if verification is None:
+        return "NOT_RUN", None
+    if not isinstance(verification, dict) or not isinstance(verification.get("argv"), list):
+        raise HostMatrixError("scenario verification must declare argv")
+    environment = os.environ.copy()
+    environment["TEAMWORK_CANDIDATE_ROOT"] = str(root)
+    try:
+        completed = subprocess.run(
+            verification["argv"], cwd=scenario, env=environment,
+            text=True, capture_output=True, timeout=timeout, check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return "FAIL", "scenario-verifier-timeout"
+    return ("PASS", None) if completed.returncode == 0 else ("FAIL", completed.stderr.strip() or "scenario verifier failed")
+
+
+def _retain_candidate(scenario: Path, output: Path, case_name: str, repeat: int) -> str:
+    artifact_root = output.parent / f"{output.stem}.artifacts"
+    destination = artifact_root / case_name / f"repeat-{repeat}"
+    require_relative = destination.relative_to(output.parent).as_posix()
+    if destination.exists() or destination.is_symlink():
+        raise HostMatrixError(f"candidate artifact already exists: {destination}")
+    for current, directories, files in os.walk(scenario, topdown=True, followlinks=False):
+        for name in [*directories, *files]:
+            path = Path(current) / name
+            mode = path.lstat().st_mode
+            if name in directories:
+                safe = stat.S_ISDIR(mode) and not stat.S_ISLNK(mode)
+            else:
+                safe = stat.S_ISREG(mode) and not stat.S_ISLNK(mode)
+            if not safe:
+                raise HostMatrixError(f"live scenario candidate contains an unsafe entry: {path}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(scenario, destination)
+    return require_relative
 
 
 def run_host_matrix(
     *, host: str, binary: str, profile: str, project_root: Path,
-    candidate_manifest: Path, case_manifest: Path, output: Path,
-    repeats: int, timeout_seconds: int, extra: dict[str, str],
-    only_cases: set[str] | None = None, max_trajectories: int | None = None,
-    arm: str | None = None, parent_model: str | None = None,
-    parent_effort: str | None = None,
+    case_manifest: Path, output: Path, repeats: int, timeout_seconds: int,
+    extra: dict[str, str], only_cases: set[str] | None = None,
+    max_trajectories: int | None = None, arm: str | None = None,
+    parent_model: str | None = None, parent_effort: str | None = None,
+    candidate_manifest: Path | None = None,
 ) -> int:
-    del extra
-    if host not in HOSTS or profile not in PROFILES:
-        raise HostMatrixError("unsupported host or profile")
-    if repeats < 1 or timeout_seconds < 1:
-        raise HostMatrixError("invalid repeats or timeout")
-    arm = arm or profile
-    parent_model = parent_model or f"{host}-managed"
-    parent_effort = parent_effort or ("cursor-managed" if host == "cursor" else f"{host}-managed")
-    project_root = _checked_directory(project_root, "project root")
-    output = _absolute_path(output if output.is_absolute() else project_root / output)
-    case_relative = _relative_under(project_root, case_manifest, "case manifest")
-    if case_relative != RELEASE_CASE_PATH:
-        raise HostMatrixError(f"case manifest must name the candidate matrix: {RELEASE_CASE_PATH}")
-    # Deliberately inspect only the pointer's type, never its dirty content.
-    # The actual bytes are loaded below from the isolated candidate tree.
-    _child(project_root, case_relative, "case manifest input")
-    raw_candidate_manifest = Path(candidate_manifest)
-    release_bound = (
-        raw_candidate_manifest.is_absolute()
-        and _absolute_path(raw_candidate_manifest) == RELEASE_TEMP_MANIFEST
-    )
-    manifest = validate_candidate(project_root, candidate_manifest)
-    codex_auth_source = _preflight_codex_auth_source() if host == "codex" else None
-    codex_auth_marker = _read_regular_bytes(codex_auth_source, "Codex auth source") if codex_auth_source else b""
-    if release_bound:
-        output = _prepare_absolute_output_path(output)
-        scenario_parent = _ensure_release_temp_directory(output.parent, "scenarios", "sealed archive scenario")
-    else:
-        output_relative = _relative_under(project_root, output, "installed output")
-        if not output_relative.startswith("evals/teamwork/outputs/installed/"):
-            raise HostMatrixError("local candidate output must be under the project installed tree")
-        output = _prepare_output_path(project_root, output_relative)
-        scenario_parent = output.parent
-    missing_host = False
-    try:
-        command_prefix, version = _host_command_prefix(host, binary)
-    except HostMatrixError as exc:
-        if release_bound or str(exc) != f"{host} executable not found":
-            raise
-        command_prefix, version, missing_host = [], "UNSUPPORTED", True
+    del extra, arm, candidate_manifest
+    if host not in HOSTS or profile not in PROFILES or repeats < 1 or timeout_seconds < 1:
+        raise HostMatrixError("unsupported host/profile or invalid run limits")
+    root = project_root.resolve()
+    validate_candidate(root)
+    cases = load_case_manifest(case_manifest.resolve(), only_cases, root=root)
+    if max_trajectories is not None and len(cases) * repeats > max_trajectories:
+        raise HostMatrixError("requested trajectories exceed --max-trajectories")
+    schema = load_trajectory_schema(root / RELEASE_SCHEMA_PATH)
+    output = output.resolve()
+    if output.exists() or output.is_symlink():
+        raise HostMatrixError(f"output already exists: {output}")
+    artifact_root = output.parent / f"{output.stem}.artifacts"
+    if artifact_root.exists() or artifact_root.is_symlink():
+        raise HostMatrixError(f"candidate artifact root already exists: {artifact_root}")
+    output.parent.mkdir(parents=True, exist_ok=True)
     records: list[dict[str, Any]] = []
-    with materialize_candidate(project_root, manifest) as tree:
-        candidate_manifest_path = _regular_child(tree, RELEASE_CASE_PATH, "candidate case manifest")
-        schema = load_trajectory_schema(_regular_child(tree, RELEASE_SCHEMA_PATH, "candidate trajectory schema"))
-        cases = load_case_manifest(candidate_manifest_path, only_cases, root=tree)
-        requested = len(cases) * repeats
-        if max_trajectories is not None and requested > max_trajectories:
-            raise HostMatrixError("requested trajectories exceed --max-trajectories")
-        for case in cases:
-            root_case = _is_root_case(case)
-            expectation = None if root_case else _case_profile_expectation(case, host, profile)
-            case_parent_model = parent_model.casefold()
-            case_parent_effort = parent_effort.casefold()
-            if not root_case and not release_bound and host == "codex":
-                assert expectation is not None
-                case_parent_model = expectation["model"]
-                case_parent_effort = expectation["effort"]
-            if missing_host:
-                for _ in range(repeats):
-                    record = _unsupported_record(
-                        host, profile, case, "missing-host-binary",
-                        host_version=version, arm=arm,
-                        parent_model=case_parent_model, parent_effort=case_parent_effort,
-                    )
-                    validate_trajectory(record, schema)
-                    records.append(record)
-                continue
-            scenario_spec = load_json(
-                _regular_child(tree, case["scenario"], "candidate scenario"), "scenario fixture"
-            )
-            for _ in range(repeats):
-                started = utc_now()
-                invocation_id = str(uuid.uuid4())
-                with tempfile.TemporaryDirectory(prefix=f"teamwork-{host}-home-") as home_name, tempfile.TemporaryDirectory(prefix="teamwork-scenario-", dir=scenario_parent) as scenario_name:
-                    home = Path(home_name)
-                    env = (
-                        _codex_run_environment(home, codex_auth_source)
-                        if host == "codex" else {"HOME": str(home), "PATH": os.environ.get("PATH", os.defpath)}
-                    )
-                    sealed_scenario = _apply_scenario(tree, Path(scenario_name) / "candidate", scenario_spec)
-                    scenario = sealed_scenario.path
-                    immutable_before = _immutable_scenario_hashes(scenario, scenario_spec)
-                    workspace_before = None
-                    if case["evidence"]["kind"] == "workspace":
-                        workspace_before = sha256_file(
-                            _child(scenario, case["evidence"]["artifact_path"], "workspace evidence artifact")
-                        )
+    model = parent_model or f"{host}-managed"
+    effort = parent_effort or f"{host}-managed"
+    real_codex_home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))).resolve()
+    for case in cases:
+        for repeat in range(1, repeats + 1):
+            started = utc_now()
+            with tempfile.TemporaryDirectory(prefix=f"teamwork-{host}-home-") as home_raw, tempfile.TemporaryDirectory(prefix=f"teamwork-{case['name']}-") as scenario_raw:
+                home = Path(home_raw)
+                scenario = Path(scenario_raw)
+                _apply_scenario(root, scenario, case["scenario"])
+                env = os.environ.copy()
+                env["HOME"] = str(home)
+                env["CODEX_HOME"] = str(home / ".codex")
+                if host == "codex":
+                    _copy_codex_auth(real_codex_home, home)
+                try:
                     install = subprocess.run(
-                        _isolated_install_argv(
-                            _regular_child(tree, "install.sh", "candidate installer"), profile, host
-                        ),
-                        cwd=tree, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                        _install_command(root / "install.sh", profile, host),
+                        cwd=root, env=env, text=True, capture_output=True,
                         timeout=timeout_seconds, check=False,
                     )
-                    if install.returncode != 0:
-                        record = _unsupported_record(
-                            host, profile, case, "isolated-install-failed",
-                            invocation_id=invocation_id, host_version=version,
-                            arm=arm, parent_model=case_parent_model, parent_effort=case_parent_effort,
-                        )
-                        validate_trajectory(record, schema)
-                        records.append(record)
-                        continue
-                    host_argv = _host_argv(
-                        host, command_prefix, sealed_scenario, case["prompt"], case["authority"],
-                        case_parent_model, case_parent_effort,
-                    )
-                    invocation_observation = _host_invocation_observation(host, host_argv)
-                    host_timed_out = False
-                    try:
-                        completed = subprocess.run(
-                            host_argv,
-                            cwd=scenario, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            timeout=timeout_seconds, check=False,
-                        )
-                    except subprocess.TimeoutExpired as exc:
-                        host_timed_out = True
-                        completed = subprocess.CompletedProcess(
-                            host_argv,
-                            HOST_TIMEOUT_EXIT_STATUS,
-                            stdout=_timeout_stream_text(exc.stdout),
-                            stderr=_timeout_stream_text(exc.stderr),
-                        )
-                    events = _events(completed.stdout)
-                    if invocation_observation is not None:
-                        events.insert(0, invocation_observation)
-                    if host_timed_out:
-                        events.extend(_timeout_stream_events(completed.stdout, completed.stderr))
-                    agent_output_text = final_agent_output(events)
-                    agent_output = _write_evidence_file(
-                        output, invocation_id, "agent-output.txt", agent_output_text.encode()
-                    )
-                    answer_specificity_ok, answer_specificity_failure = evaluate_agent_output_specificity(
-                        case, agent_output_text,
-                    )
-                    observations = _trajectory_observations(
-                        host=host, events=events, case=case,
-                    )
-                    child_start_count = observations["child_start_count"]
-                    dispatches = observed_dispatches(events, host)
-                    dispatch_roles = [dispatch["role"] for dispatch in dispatches]
-                    tools = observed_tools(events)
-                    if host_timed_out:
-                        verification_ok, verification_failure = False, "host-timeout"
-                    else:
-                        verification_ok, verification_failure = _run_scenario_verifier(
-                            scenario, scenario_spec, immutable_before, timeout_seconds,
-                        )
-                    direct, artifact, result, direct_failure = _direct_scenario_evidence(
-                        case=case, scenario=scenario, events=events, output=output, invocation_id=invocation_id,
-                        workspace_before=workspace_before,
-                        verification_ok=verification_ok, verification_failure=verification_failure,
-                        forbidden_output_markers=[codex_auth_marker] if codex_auth_marker else [],
-                    )
-                    output_stream = (completed.stdout + "\n" + completed.stderr).encode()
-                    for evidence in (artifact, result, agent_output):
-                        evidence_path = evidence.get("path") if isinstance(evidence, dict) else None
-                        if isinstance(evidence_path, str):
-                            stored = _child(output.parent, evidence_path, "stored trajectory evidence")
-                            output_stream += _read_regular_bytes(stored, "stored trajectory evidence")
-                    private = [marker.encode() for marker in case["private_markers"]]
-                    if codex_auth_marker:
-                        private.append(codex_auth_marker)
-                    privacy = "FAIL" if any(marker in output_stream for marker in private) else "PASS"
-                    if root_case:
-                        actual_model = observations["actual_model"]
-                        actual_effort = observations["actual_effort"]
-                    else:
-                        required_dispatches = [
-                            dispatch for dispatch in dispatches
-                            if dispatch["role"] == case["required_role"]
-                        ]
-                        primary_dispatch = required_dispatches[0] if len(required_dispatches) == 1 else None
-                        actual_model = primary_dispatch["actual_model"] if primary_dispatch else "UNSUPPORTED"
-                        actual_effort = primary_dispatch["actual_effort"] if primary_dispatch else "UNSUPPORTED"
-                    selected_skill = observations["selected_skill"]
-                    authority = observations["authority"]
-                    role_bound = (
-                        not dispatches and child_start_count == 0
-                        if root_case
-                        else _dispatches_bind_case(
-                            case, host, profile, dispatches, child_start_count,
-                        )
-                    )
-                    model_bound = (
-                        actual_model == case_parent_model and actual_effort == case_parent_effort
-                        if root_case
-                        else expectation is not None
-                        and actual_model == expectation["model"]
-                        and actual_effort == expectation["effort"]
-                    )
-                    bound = (
-                        role_bound and selected_skill == case["selected_skill"] and model_bound
-                        and set(case["required_tools"]).issubset(tools) and authority == case["authority"]
-                    )
-                    status = (
-                        "PASS"
-                        if not host_timed_out and completed.returncode == 0
-                        and direct and answer_specificity_ok and bound and privacy == "PASS"
-                        else "FAIL"
-                    )
-                    failure = None
-                    if status != "PASS":
-                        if host_timed_out:
-                            failure = "host-timeout"
-                        elif completed.returncode:
-                            failure = "host-exit"
-                        elif privacy != "PASS":
-                            failure = "privacy-leak"
-                        elif not direct:
-                            failure = direct_failure or "missing-direct-scenario-evidence"
-                        elif not answer_specificity_ok:
-                            failure = answer_specificity_failure or "agent-output-specificity-failed"
-                        elif root_case and child_start_count:
-                            failure = "root-child-start-observed"
-                        elif not root_case and child_start_count != len(dispatches):
-                            failure = "child-start-trace-incomplete"
-                        else:
-                            failure = "host-observation-does-not-bind-case"
+                except subprocess.TimeoutExpired:
                     record = {
-                        "schema_version": SCHEMA_VERSION, "record_type": "teamwork_host_trajectory",
-                        "host": host, "host_version": version, "invocation_id": invocation_id,
-                        "arm": arm, "started_at": started, "finished_at": utc_now(),
-                        "case_id": case["id"], "profile": profile,
-                        "parent_model": case_parent_model, "parent_effort": case_parent_effort,
-                        "selected_skill": selected_skill,
-                        "role_identity": _record_role_identity(case, dispatch_roles),
-                        "actual_model": actual_model, "actual_effort": actual_effort,
-                        "dispatches": dispatches, "child_start_count": child_start_count,
-                        "tool_observations": tools, "authority_observation": authority,
-                        "sanitized_input_sha256": sha256_bytes(case["prompt"].encode()),
-                        "artifact": artifact if artifact else {"path": None, "sha256": None},
-                        "result": {**(result if result else {"path": None, "sha256": None}), "direct_success": direct},
-                        "agent_output": agent_output,
-                        "answer_specificity_success": answer_specificity_ok,
-                        "exit_status": completed.returncode, "status": status, "privacy_scan": privacy,
-                        "failure_classification": failure,
+                        "schema_version": SCHEMA_VERSION, "record_type": "teamwork_host_observation",
+                        "host": host, "host_version": "not-observed", "profile": profile,
+                        "case_name": case["name"], "started_at": started, "finished_at": utc_now(),
+                        "selected_skill": case["selected_skill"], "requested_authority": case["authority"],
+                        "route_observed": False, "agent_observations": [], "tool_observations": [],
+                        "final_output": "", "scenario_verification": "NOT_RUN", "candidate_artifact": None,
+                        "exit_status": None, "status": "UNSUPPORTED",
+                        "failure_classification": "isolated-install-timeout",
                     }
                     validate_trajectory(record, schema)
                     records.append(record)
-    serialized: list[bytes] = []
-    for record in records:
-        validate_trajectory(record, schema)
-        serialized.append((json.dumps(record, sort_keys=True) + "\n").encode("utf-8"))
-    _private_write(output, b"".join(serialized))
+                    _write_observations(output, records)
+                    continue
+                if install.returncode != 0:
+                    record = {
+                        "schema_version": SCHEMA_VERSION, "record_type": "teamwork_host_observation",
+                        "host": host, "host_version": "not-observed", "profile": profile,
+                        "case_name": case["name"], "started_at": started, "finished_at": utc_now(),
+                        "selected_skill": case["selected_skill"], "requested_authority": case["authority"],
+                        "route_observed": False,
+                        "agent_observations": [], "tool_observations": [], "final_output": "",
+                        "scenario_verification": "NOT_RUN", "candidate_artifact": None,
+                        "exit_status": install.returncode,
+                        "status": "UNSUPPORTED", "failure_classification": "isolated-install-failed",
+                    }
+                    validate_trajectory(record, schema)
+                    records.append(record)
+                    _write_observations(output, records)
+                    continue
+                try:
+                    argv, version = _host_command(
+                        host, binary, scenario, case["prompt"], case["authority"],
+                        model, effort, min(timeout_seconds, 30),
+                    )
+                except HostProbeError as exc:
+                    version = "not-observed"
+                    completed = None
+                    timed_out = None
+                    probe_failure = exc.classification
+                else:
+                    probe_failure = None
+                    try:
+                        completed = subprocess.run(argv, cwd=scenario, env=env, text=True, capture_output=True, timeout=timeout_seconds, check=False)
+                        timed_out = None
+                    except subprocess.TimeoutExpired as exc:
+                        completed = None
+                        timed_out = exc
+                evidence_events: list[dict[str, Any]] = []
+                if timed_out is not None:
+                    partial_stdout = timed_out.stdout if isinstance(timed_out.stdout, str) else ""
+                    events = _events(partial_stdout)
+                    evidence_events = [
+                        *events,
+                        *(_codex_session_events(home) if host == "codex" else []),
+                    ]
+                    final = final_agent_output(events, partial_stdout)
+                    if not final:
+                        final = "Host command timed out before a final result was observed."
+                    exit_status = None
+                    route_observed = route_is_observed(evidence_events, case["selected_skill"])
+                    verification, _verify_failure = _verify_scenario(scenario, case["scenario"], root, timeout_seconds)
+                    status, failure = "FAIL", "host-command-timeout"
+                elif completed is None:
+                    final = "Host binary was not available; no behavior was observed."
+                    events: list[dict[str, Any]] = []
+                    exit_status = None
+                    route_observed = False
+                    verification, verify_failure = "NOT_RUN", None
+                    status, failure = "UNSUPPORTED", probe_failure or "missing-host-binary"
+                else:
+                    events = _events(completed.stdout)
+                    evidence_events = [
+                        *events,
+                        *(_codex_session_events(home) if host == "codex" else []),
+                    ]
+                    final = final_agent_output(events, completed.stdout)
+                    exit_status = completed.returncode
+                    if _missing_host_authentication(host, completed.returncode, completed.stderr, events):
+                        route_observed = False
+                        evidence_events = []
+                        verification, status = "NOT_RUN", "UNSUPPORTED"
+                        failure = "missing-host-authentication"
+                    else:
+                        route_observed = route_is_observed(evidence_events, case["selected_skill"])
+                        agent_observations = observed_agents(evidence_events)
+                        agents_observed = set(case["required_agents"]) <= set(agent_observations)
+                        verification, verify_failure = _verify_scenario(scenario, case["scenario"], root, timeout_seconds)
+                        specific, specificity_failure = evaluate_agent_output_specificity(case, final)
+                        status, failure = classify_case_observation(
+                            case,
+                            host,
+                            exit_status=completed.returncode,
+                            specific=specific,
+                            route_observed=route_observed,
+                            agents_observed=agents_observed,
+                            verification=verification,
+                            verify_failure=verify_failure,
+                            specificity_failure=specificity_failure,
+                        )
+                candidate_artifact = None
+                if case["scenario"] is not None:
+                    try:
+                        candidate_artifact = _retain_candidate(scenario, output, case["name"], repeat)
+                    except (HostMatrixError, OSError):
+                        status, failure = "FAIL", "candidate-artifact-retention-failed"
+                record = {
+                    "schema_version": SCHEMA_VERSION, "record_type": "teamwork_host_observation",
+                    "host": host, "host_version": version, "profile": profile,
+                    "case_name": case["name"], "started_at": started, "finished_at": utc_now(),
+                    "selected_skill": case["selected_skill"], "requested_authority": case["authority"],
+                    "route_observed": route_observed,
+                    "agent_observations": observed_agents(evidence_events),
+                    "tool_observations": observed_tools(evidence_events), "final_output": final,
+                    "scenario_verification": verification, "candidate_artifact": candidate_artifact,
+                    "exit_status": exit_status,
+                    "status": status, "failure_classification": failure,
+                }
+                validate_trajectory(record, schema)
+                records.append(record)
+                _write_observations(output, records)
     return 0 if records and all(record["status"] == "PASS" for record in records) else 1

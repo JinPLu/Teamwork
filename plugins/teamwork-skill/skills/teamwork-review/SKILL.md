@@ -1,51 +1,67 @@
 ---
 name: teamwork-review
-description: Use when the user asks to review, audit, critique, or validate a stable code, document, plan, artifact, or claim, or when a named material risk gate requires independent evaluation; do not use to find the cause of an unknown failure, gather ordinary evidence, implement fixes, or create the initial plan.
+description: Use when the user asks to review, audit, critique, or validate a stable code, document, plan, artifact, or claim, or when the current authorized mutation crosses an actual independent-review gate; do not use to diagnose an unknown failure, gather ordinary evidence, implement fixes, or create the initial candidate.
 ---
 
 # Teamwork Review
 
-Use Reviewer to evaluate a stable candidate independently. Reviewer remains
-read-only and may review implementation plans as well as completed code,
-documents, artifacts, and claims.
+Review is the current independent-evaluation stage. Root identifies the actual
+effect of the authorized work and selects ordinary or Strict Review; Reviewer
+owns the chosen read-only evaluation. Root does not simulate required
+independence or let the candidate's author accept their own work.
 
 ## Establish The Candidate
 
-Identify the candidate by the most natural stable handle: exact files and diff,
-commit, artifact path and version, document revision, or supplied text. A hash
-is optional integrity evidence, not a semantic acceptance gate. Record the
-scope, acceptance criteria, protected boundaries, and evidence needed for a
-verdict. Do not invent requirements.
+Identify the stable candidate with its natural handle, such as exact files and
+diff, artifact path and version, document revision, or supplied text. State the
+scope, acceptance criteria, protected boundaries, and direct evidence needed
+for a verdict. Do not invent requirements or substitute an identifier, test
+status, or summary for reading the actual candidate.
 
-## Review
+## Classify The Actual Effect
 
-1. Inspect primary evidence directly: candidate content, source and diff,
-   tests and configuration, runtime output, rendered artifact, or authoritative
-   sources. Treat summaries and claimed results as leads rather than proof.
-2. Check the acceptance criteria and highest-impact failure modes first,
-   including permissions, security, data behavior, error paths, regressions,
-   compatibility, unsupported claims, and real-path verification when relevant.
-3. Inspect the changed scope for wrong ownership, duplication, masking
-   fallbacks, speculative abstraction, temporary residue, and stale touched
-   documentation or configuration. Do not turn unrelated pre-existing debt into
-   a blocker.
-4. Report findings by severity with precise evidence, impact or violated
-   criterion, and the smallest correction route. Separate blockers from
-   follow-ups and suggestions.
+Ordinary Review is the default, including an ordinary release. It uses one
+independent semantic Reviewer on the actual candidate.
 
-Load `references/strict-review.md` only for an explicitly named release,
-security, permission, data, destructive-risk, or public-contract gate. Missing
-required access or evidence produces `BLOCKED`; plausible but unobserved concern
-is not proof.
+Strict Review applies only when the current authorized mutation actually
+crosses at least one of these boundaries:
 
-Return `ACCEPT` when all material criteria are supported and no blocker remains,
+- permission or security behavior;
+- an irreversible effect on user data;
+- migration of persistent data; or
+- changed published compatibility or another public contract.
+
+The request's keywords, importance, complexity, research topic, or subjective
+risk do not activate Strict Review. When a listed boundary is real, read
+`references/strict-review.md`. Additional independent review is useful only for
+separable bounded effects where it changes the gate; no reviewer count is
+prescribed.
+
+## Evaluate
+
+Inspect primary evidence directly: candidate content, source and diff, runtime
+behavior, rendered output, tests and configuration, or authoritative sources as
+applicable. Review the actual effects against the supplied criteria, focusing
+on material correctness and missing proof. Report findings by severity with
+precise evidence, impact or failed criterion, and the smallest correction
+route. Keep unrelated pre-existing debt separate.
+
+Return `ACCEPT` when the material criteria are supported and no blocker remains,
 `REVISE` when correctable blockers remain, or `BLOCKED` when required evidence
-is unavailable. Recheck only the changed candidate surface needed to close
-findings; treat materially broadened work as a new candidate. Reviewer does not
-implement repairs or accept the overall task on the implementer's behalf.
+or access is unavailable. Recheck only the changed candidate surface needed to
+close findings; materially broadened work is a new candidate. Reviewer never
+implements the repair or declares the surrounding task complete.
 
-## Live Document
+Reviewer is required. If unavailable, Root suspends Review, switches to Update
+for readiness repair, waits, and resumes or returns the exact blocker. Root
+cannot recreate the independence by reviewing in the missing role's place.
 
-When Writer is used, include candidate identity, scope, criteria, evidence,
-findings by severity, verdict, residual risk, and any bounded recheck. Writer
-must not change findings, evidence, or acceptance.
+## Review Document
+
+When a stable candidate plus direct evidence or a finding becomes reusable,
+Root assigns Writer the typed Review document. It carries candidate scope and
+criteria, protected boundaries, evidence and findings by severity, the semantic
+verdict, residual uncertainty, next action, and any bounded recheck. Writer may
+not alter findings or the verdict. Same-scope editorial or link corrections may
+update a finalized document; a new candidate or materially new scope needs a
+new Review document.

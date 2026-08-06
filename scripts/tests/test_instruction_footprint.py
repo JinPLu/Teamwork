@@ -84,6 +84,13 @@ class InstructionFootprintTests(unittest.TestCase):
         self.assertNotIn("CANONICAL_SKILL_COUNT", source)
         self.assertNotIn("CANONICAL_REFERENCE_COUNT", source)
 
+    def test_active_footprint_fixture_uses_schema_v4_document_language(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        source = (root / "scripts/teamwork_tooling/instruction_footprint.py").read_text()
+        self.assertNotIn("Fresh v2 case-bundle", source)
+        self.assertNotIn("relevant case manifest", source)
+        self.assertIn("Schema-v4 typed Teamwork memory", source)
+
 
 if __name__ == "__main__":
     unittest.main()

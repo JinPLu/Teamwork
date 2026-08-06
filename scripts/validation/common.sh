@@ -142,14 +142,13 @@ run_python_unit_tests() {
     done < <(find "$ROOT/scripts/tests" -maxdepth 1 -type f -name 'test_*.py' | sort)
   else
     tests=(
-      scripts/tests/test_active_artifact_currentness.py
-      scripts/tests/test_discussion_artifact_schema.py
       scripts/tests/test_evaluation_contract_v4.py
       scripts/tests/test_instruction_footprint.py
       scripts/tests/test_policy_contract_v4.py
       scripts/tests/test_privacy_scan.py
       scripts/tests/test_semantic_review.py
       scripts/tests/test_skill_topology_v4.py
+      scripts/tests/test_teamwork_schema_v4.py
     )
   fi
 

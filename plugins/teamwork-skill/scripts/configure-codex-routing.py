@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Configure or check Teamwork's Codex custom-agent routing contract."""
+"""Configure or check Teamwork's static Codex custom-agent setup."""
 
 from __future__ import annotations
 
@@ -17,8 +17,9 @@ from codex_routing_config import preview_config
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Safely configure or inspect the Codex multi-agent namespace used "
-            "to select installed Teamwork custom agents."
+            "Safely configure or inspect the stable Codex multi-agent feature "
+            "used with installed Teamwork custom-agent profiles. This static "
+            "check does not prove exact role activation."
         )
     )
     mode = parser.add_mutually_exclusive_group()
@@ -30,7 +31,7 @@ def parse_args() -> argparse.Namespace:
     mode.add_argument(
         "--check",
         action="store_true",
-        help="check routing readiness without changing config (default)",
+        help="check static routing configuration without changing config (default)",
     )
     mode.add_argument(
         "--dry-run",
@@ -62,6 +63,7 @@ def main() -> int:
             config_path=str(args.config.expanduser()),
             ready=False,
             issues=[str(exc)],
+            experimental_multi_agent_v2="unknown",
         )
         print_report(report, args.json)
         return 1

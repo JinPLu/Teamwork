@@ -107,7 +107,7 @@ grep_required 'PermissionRequest' "$ROOT/skills/teamwork-update/SKILL.md" \
 grep_absent 'trust-all' "teamwork-update must not recommend blanket hook trust" \
   "$ROOT/skills/teamwork-update/SKILL.md"
 
-if git -C "$ROOT" grep -n -E 'raoctl|RAO|Stop hook|/rao:|/teamwork:' \
+if git -C "$ROOT" grep -n -E 'raoctl|RAO|Stop hook|/rao:[[:alnum:]_-]|/teamwork:[[:alnum:]_-]' \
   -- ':!scripts/validate.sh' ':!scripts/validation/**' >/tmp/teamwork-retired-grep.$$; then
   cat /tmp/teamwork-retired-grep.$$ >&2
   rm -f /tmp/teamwork-retired-grep.$$
@@ -402,7 +402,7 @@ grep_required '^\[features\]$' "$codex_routing_config" \
 grep_required '^multi_agent = true$' "$codex_routing_config" \
   "Codex routing must enable the stable multi_agent feature"
 grep_absent 'multi_agent_v2' \
-  "Codex routing must remove the legacy multi_agent_v2 contract" \
+  "Codex routing must not create an experimental multi_agent_v2 setting" \
   "$codex_routing_config"
 python3 "$ROOT/scripts/configure-codex-routing.py" --check --config "$codex_routing_config" >/dev/null
 cp "$codex_routing_config" "$tmp/codex-routing-first.toml"
@@ -429,8 +429,8 @@ grep_required '^max_threads = 4$' "$legacy_routing_home/.codex/config.toml" \
   "routing migration must preserve stable Codex agents.max_threads"
 grep_required '^multi_agent = true$' "$legacy_routing_home/.codex/config.toml" \
   "routing migration must configure the stable multi_agent feature"
-grep_absent 'multi_agent_v2' "routing migration must remove legacy multi_agent_v2" \
-  "$legacy_routing_home/.codex/config.toml"
+grep_required '^multi_agent_v2 = false$' "$legacy_routing_home/.codex/config.toml" \
+  "routing migration must preserve user-managed multi_agent_v2"
 grep_required '^# preserve me$' "$legacy_routing_home/.codex/config.toml" \
   "routing migration must preserve unrelated comments"
 
@@ -525,9 +525,13 @@ grep_required '^INSTALL_READY=no$' "$tmp/global-routing-stale.out" \
 grep_required 'codex-routing' "$tmp/global-routing-stale.out" \
   "check-update readiness must identify stale Codex routing"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
-HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-routing-ready.out"
-grep_required '^CODEX_ROUTING=ready$' "$tmp/global-routing-ready.out" \
-  "user refresh must repair Codex routing readiness"
+HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-routing-ready.out" || true
+grep_required '^CODEX_ROUTING=configured$' "$tmp/global-routing-ready.out" \
+  "user refresh must repair Codex static routing configuration"
+grep_required '^CODEX_EXACT_ROLE_ACTIVATION=live-probe-required$' "$tmp/global-routing-ready.out" \
+  "static readiness must not claim exact Codex role activation"
+grep_required '^INSTALL_READY=no$' "$tmp/global-routing-ready.out" \
+  "Cursor manual policy activation must keep three-host readiness partial"
 printf '\n# stale teamwork-collaborate skill fixture\n' >> "$tmp/home-project-update/.agents/skills/teamwork-collaborate/SKILL.md"
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch > "$tmp/global-collaborate-skill-stale.out" || true
 grep_required '^INSTALL_READY=no$' "$tmp/global-collaborate-skill-stale.out" \
@@ -570,15 +574,17 @@ grep_required 'Summary: .*issue' "$tmp/global-agent-stale-report.out" \
   "check-update report must count global agent content drift"
 HOME="$tmp/home-project-update" "$ROOT/install.sh" all >/dev/null
 HOME="$tmp/home-project-update" "$ROOT/scripts/check-update.sh" --readiness --no-fetch \
-  > "$tmp/global-only-readiness.out"
-grep_required '^INSTALL_READY=yes$' "$tmp/global-only-readiness.out" \
-  "global readiness must pass after a fresh global install"
-grep_required '^BASELINE_READY=yes$' "$tmp/global-only-readiness.out" \
-  "fresh global install must prove the mandatory baseline"
+  > "$tmp/global-only-readiness.out" || true
+grep_required '^INSTALL_READY=no$' "$tmp/global-only-readiness.out" \
+  "global readiness must remain partial while Cursor policy activation is unobserved"
+grep_required '^STATIC_INSTALL_READY=yes$' "$tmp/global-only-readiness.out" \
+  "fresh global install must prove the static skills and agents baseline"
+grep_required '^BASELINE_READY=no$' "$tmp/global-only-readiness.out" \
+  "unobserved Cursor policy activation must not claim the active three-host baseline"
 grep_required '^FULL_CAPABILITY_READY=no$' "$tmp/global-only-readiness.out" \
   "disabled optional substrates must not claim full capability"
-grep_required '^MISSING=cursor-policy-manual$' "$tmp/global-only-readiness.out" \
-  "global readiness must recognize wrapped Codex and Claude policy text"
+grep_required '^MISSING=cursor-policy-manual-action-required$' "$tmp/global-only-readiness.out" \
+  "global readiness must isolate the unobservable Cursor policy action"
 ! grep -q '^PROJECT_' "$tmp/global-only-readiness.out" \
   || fail "global-only readiness must not report deleted project-local package surfaces"
 removed_project_flag_rc=0
@@ -733,7 +739,7 @@ grep_required '<!-- TEAMWORK_CURSOR_GLOBAL_START -->' "$tmp/cursor-policy-copy.c
   "cursor-policy-copy target must copy Teamwork global policy start marker"
 check_lean_policy "$tmp/cursor-policy-copy.clipboard" performance-first \
   "cursor-policy clipboard output"
-grep_required 'Copied Teamwork Cursor global policy to clipboard.' "$cursor_policy_copy_out" \
+grep_required 'Copied the canonical Teamwork global policy for Cursor User Rules.' "$cursor_policy_copy_out" \
   "cursor-policy-copy target must report clipboard copy"
 [[ ! -e "$tmp/home-cursor-policy-copy/.cursor" ]] \
   || fail "cursor-policy-copy target must not write Cursor home files"
@@ -878,10 +884,10 @@ HOME="$tmp/home-init-project" \
   || fail "init-project must not invoke the host CLI to manage interaction capabilities"
 grep_required '<!-- TEAMWORK_PROJECT_START -->' "$init_root/AGENTS.md" \
   "init-project must write managed AGENTS.md block"
-grep_required 'one live document' "$init_root/AGENTS.md" \
-  "init-project AGENTS.md block must describe current one-live Teamwork memory"
-! grep -q 'docs/teamwork/collaborate/current.md' "$init_root/AGENTS.md" \
-  || fail "fresh schema v3 AGENTS.md block must not require the legacy Collaborate route"
+grep_required 'schema v4' "$init_root/AGENTS.md" \
+  "init-project AGENTS.md block must describe schema-v4 typed documents"
+grep_required 'discussions,research,debug,plans,reviews,reports' "$init_root/AGENTS.md" \
+  "init-project AGENTS.md block must name all six typed directories"
 grep_required '# TEAMWORK_LOCAL_START' "$init_root/.gitignore" \
   "init-project must write local .gitignore block"
 grep_required '^docs/teamwork/\*\*$' "$init_root/.gitignore" \
@@ -898,31 +904,30 @@ for removed_ignore in '^\.agents/$' '^\.codex/$' '^\.cursor/$' '^\.claude/$'; do
 done
 python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/index.json" >/dev/null
 [[ ! -e "$init_root/docs/teamwork/current.md" ]] \
-  || fail "fresh schema v3 init-project must not write legacy current.md"
+  || fail "fresh schema-v4 init-project must not write legacy current.md"
 [[ ! -e "$init_root/docs/teamwork/README.md" ]] \
   || fail "fresh schema v3 init-project must not write the legacy runtime README"
 [[ ! -e "$init_root/docs/teamwork/collaborate" ]] \
   || fail "init-project must not create an empty or fake Collaborate artifact directory"
-writer_start_result="$tmp/init-project-writer-start.json"
-python3 "$ROOT/scripts/discussion-transaction.py" writer-apply \
-  --project-root "$init_root" \
-  --request-json '{"aliases":[],"body":"Reusable evidence that must survive Init reruns.","case_seed":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","operation":"start","purpose":"research","schema_version":1,"section":"Evidence","task_key":"init-rerun-preservation","title":"Init rerun preservation","updated_at":"2026-08-06T00:00:00Z"}' \
-  > "$writer_start_result"
-live_relative="$(python3 - "$writer_start_result" <<'PY'
-import json
-import pathlib
-import sys
-
-payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-print(payload["path"])
-PY
-)"
-live_file="$init_root/$live_relative"
-[[ -f "$live_file" ]] || fail "Writer start must create the current case live document"
+typed_relative="docs/teamwork/plans/2026-08-06-init-rerun-preservation.md"
+typed_file="$init_root/$typed_relative"
+mkdir -p "$(dirname "$typed_file")"
+printf '%s\n' '# Init rerun preservation' '' 'Reusable plan content that must survive Init reruns.' > "$typed_file"
+python3 "$ROOT/scripts/teamwork_index_v4.py" register-task \
+  "$init_root/docs/teamwork/index.json" \
+  --task-key init-rerun-preservation \
+  --title 'Init rerun preservation' \
+  --summary 'Verify that Init preserves an existing typed Teamwork document.' \
+  --search-term init --search-term preservation
+python3 "$ROOT/scripts/teamwork_index_v4.py" register-document \
+  "$init_root/docs/teamwork/index.json" \
+  --task-key init-rerun-preservation --type plan --path "$typed_relative" --status final
+python3 "$ROOT/scripts/teamwork_index_v4.py" finalize-task \
+  "$init_root/docs/teamwork/index.json" --task-key init-rerun-preservation
 init_snapshot="$tmp/init-project-snapshot"
 mkdir -p "$init_snapshot"
 cp "$init_root/docs/teamwork/index.json" "$init_snapshot/index.json"
-cp "$live_file" "$init_snapshot/live.md"
+cp "$typed_file" "$init_snapshot/typed.md"
 for global_surface in \
   "$tmp/home-init-project/.agents" \
   "$tmp/home-init-project/.codex" \
@@ -966,18 +971,26 @@ for name in ("codegraph", "gpu-broker"):
     if name not in servers:
         raise SystemExit(f"project init MCP config missing {name}")
 PY
-HOME="$tmp/home-init-project" \
-  TEAMWORK_INIT_CODEGRAPH=0 \
-  "$ROOT/install.sh" --project-root "$init_root" init-project >/dev/null
+rerun_init_rc=0
+rerun_init_output="$(
+  HOME="$tmp/home-init-project" \
+    TEAMWORK_INIT_CODEGRAPH=0 \
+    "$ROOT/install.sh" --project-root "$init_root" init-project 2>&1
+)" || rerun_init_rc=$?
+[[ "$rerun_init_rc" -ne 0 ]] \
+  || fail "fresh-only init-project must reject an already initialized schema-v4 project"
+printf '%s\n' "$rerun_init_output" | grep -q 'Init is fresh-only' \
+  || fail "repeated init-project must direct existing context to Update"
 cmp -s "$init_snapshot/index.json" "$init_root/docs/teamwork/index.json" \
-  || fail "init-project rerun must preserve the existing index"
+  || fail "rejected init-project rerun must preserve the existing index"
 [[ ! -e "$init_root/docs/teamwork/current.md" ]] \
-  || fail "schema v3 init-project rerun must not create legacy current.md"
+  || fail "schema-v4 init-project rerun must not create legacy current.md"
 [[ ! -e "$init_root/docs/teamwork/README.md" ]] \
-  || fail "schema v3 init-project rerun must not create the legacy runtime README"
-cmp -s "$init_snapshot/live.md" "$live_file" \
-  || fail "init-project rerun must preserve the current case live document"
-python3 "$ROOT/scripts/validate_teamwork_index.py" "$init_root/docs/teamwork/index.json" >/dev/null
+  || fail "schema-v4 init-project rerun must not create the legacy runtime README"
+cmp -s "$init_snapshot/typed.md" "$typed_file" \
+  || fail "rejected init-project rerun must preserve the typed document"
+python3 "$ROOT/scripts/teamwork_index_v4.py" validate \
+  "$init_root/docs/teamwork/index.json" --documents >/dev/null
 
 global_isolation_root="$tmp/init-project-isolated"
 global_isolation_home="$tmp/home-init-project-isolated"

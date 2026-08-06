@@ -143,7 +143,6 @@
       "update_migration": [
         "scripts/install/",
         "scripts/check-update.sh",
-        "scripts/teamwork-case-migration.py",
         "scripts/tests/fixtures/"
       ],
       "negative_eval": [

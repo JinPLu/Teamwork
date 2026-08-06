@@ -27,10 +27,8 @@ FORBIDDEN_ACTIVE_CONCEPTS = {
     ),
     "teamwork-plan": (
         ("durable Collaborate gate", (r"(?:accepted|durable).{0,80}Collaborate.{0,80}(?:gate|readback|required)",)),
-        ("generic digest gate", (r"sealed.{0,40}digest|digest.{0,40}gate",)),
     ),
     "teamwork-review": (
-        ("generic sealed candidate gate", (r"sealed.{0,80}candidate",)),
         ("mandatory repair ceremony", (r"one repair batch|mandatory.{0,80}recheck",)),
     ),
     "teamwork-goal": (

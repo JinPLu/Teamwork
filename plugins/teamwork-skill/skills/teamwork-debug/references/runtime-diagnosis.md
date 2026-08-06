@@ -1,39 +1,24 @@
 # Runtime Diagnosis
 
-Load this reference only when an unknown runtime, state, data-flow, event-flow,
-async, or UI failure needs a temporary probe and the current operating mode
+Use this method when an unknown runtime, state, data-flow, event-flow,
+asynchronous, or UI failure needs a temporary probe and the operating boundary
 permits instrumentation.
 
-## Choose The Smallest Probe
+Choose the smallest probe at the nearest owned boundary that distinguishes the
+live causal explanations. Prefer an existing trace, debugger, metric, event
+inspection, or narrowly scoped observation. Structured logging is one option,
+not a default; use it only when the chosen fields separate the alternatives.
 
-Instrument the nearest owned boundary that distinguishes the active hypotheses.
-Prefer an existing trace, debugger, metric, event inspection, or narrowly scoped
-probe. Use a temporary structured log when its fields clearly separate the
-leaders; it is optional rather than a universal first step.
+Before changing anything, state the probe location, what each material outcome
+would mean, what would remain inconclusive, sensitive data to exclude, cleanup
+needed, and the current authority. Change as little as possible and preserve the
+raw observation before interpreting it.
 
-Freeze the experiment before changing anything:
+Use the result to update the causal picture and choose the next discriminator.
+An inconclusive observation does not justify a fix, broader tracing, or a target
+change. Return the exact missing evidence when no deciding probe is available.
 
-```text
-Experiment E-*
-- Competing hypotheses:
-- Probe location:
-- Observation predicted by each hypothesis:
-- Inconclusive result:
-- Sensitive fields to exclude:
-- Cleanup obligation:
-- Operating mode:
-```
-
-Change one variable at a time. Avoid broad tracing, production exposure,
-sensitive-value logging, or probes that alter the behavior being measured. Do
-not start another experiment before preserving the current result.
-
-After the probe, record the raw observation and update the named hypotheses to
-`supported`, `weakened`, or `rejected`. An inconclusive result does not justify
-a fix, broader tracing, or a target change. Choose a different discriminator or
-return `blocked` with the exact missing evidence.
-
-Remove every temporary probe, flag, fixture, log, and generated trace before
-completion, including on a blocked path when safe. Under `fix` only, apply the
-narrow causal correction and rerun the original failure path. Under `observe`
-or `instrument`, do not change product behavior.
+Remove temporary probes, flags, fixtures, logs, and generated traces before
+returning whenever safe. Under fix authority only, apply the supported narrow
+correction and rerun the original failure path. Under observe or instrument
+authority, do not change product behavior.

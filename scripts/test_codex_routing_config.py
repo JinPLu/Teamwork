@@ -38,11 +38,11 @@ class CodexRoutingConfigTests(unittest.TestCase):
         self.assertTrue(inspect_config(self.config).ready)
         self.assertIn('[features]\n', self.read())
         self.assertIn('multi_agent = true\n', self.read())
-        self.assertNotIn('multi_agent_v2', self.read())
+        self.assertEqual("absent", report.experimental_multi_agent_v2)
         mode = stat.S_IMODE(self.config.stat().st_mode)
         self.assertEqual(mode, 0o600)
 
-    def test_scalar_v2_is_migrated_without_losing_other_keys(self) -> None:
+    def test_scalar_v2_is_preserved_while_stable_feature_is_added(self) -> None:
         self.write(
             '# keep top comment\n'
             '[agents]\n'
@@ -57,11 +57,13 @@ class CodexRoutingConfigTests(unittest.TestCase):
         self.assertIn('# keep top comment', text)
         self.assertIn('max_threads = 4 # child capacity', text)
         self.assertIn('max_depth = 2', text)
-        self.assertNotIn('multi_agent_v2 = false', text)
+        self.assertIn('multi_agent_v2 = false', text)
         self.assertIn('multi_agent = true', text)
-        self.assertTrue(inspect_config(self.config).ready)
+        inspected = inspect_config(self.config)
+        self.assertTrue(inspected.ready)
+        self.assertEqual("present-unmanaged", inspected.experimental_multi_agent_v2)
 
-    def test_existing_v2_table_is_removed_and_stable_feature_is_set(self) -> None:
+    def test_existing_v2_table_is_preserved_and_stable_feature_is_set(self) -> None:
         self.write(
             '[features]\n'
             'js_repl = false\n'
@@ -77,10 +79,14 @@ class CodexRoutingConfigTests(unittest.TestCase):
         text = self.read()
         self.assertIn('js_repl = false', text)
         self.assertIn('multi_agent = true', text)
-        self.assertNotIn('multi_agent_v2', text)
-        self.assertNotIn('usage_hint_text', text)
+        self.assertIn('[features.multi_agent_v2]', text)
+        self.assertIn('usage_hint_text = "keep me"', text)
+        self.assertEqual(
+            "present-unmanaged",
+            inspect_config(self.config).experimental_multi_agent_v2,
+        )
 
-    def test_stable_feature_preserves_agent_limits_and_removes_stale_v2_limits(self) -> None:
+    def test_stable_feature_preserves_agent_and_v2_limits(self) -> None:
         self.write(
             '[agents]\n'
             'max_threads = 9\n\n'
@@ -94,7 +100,7 @@ class CodexRoutingConfigTests(unittest.TestCase):
         text = self.read()
         self.assertIn('max_threads = 9', text)
         self.assertIn('multi_agent = true', text)
-        self.assertNotIn('max_concurrent_threads_per_session', text)
+        self.assertIn('max_concurrent_threads_per_session = 3', text)
 
     def test_apply_is_byte_idempotent(self) -> None:
         self.write('[features]\njs_repl = false\n')
@@ -122,7 +128,7 @@ class CodexRoutingConfigTests(unittest.TestCase):
             apply_config(self.config)
         self.assertEqual(self.read(), original)
 
-    def test_inline_v2_table_is_removed(self) -> None:
+    def test_inline_v2_table_is_preserved(self) -> None:
         original = (
             '[features]\n'
             'multi_agent_v2 = { enabled = false, tool_namespace = "other" }\n'
@@ -130,7 +136,10 @@ class CodexRoutingConfigTests(unittest.TestCase):
         self.write(original)
         apply_config(self.config)
         self.assertIn('multi_agent = true', self.read())
-        self.assertNotIn('multi_agent_v2', self.read())
+        self.assertIn(
+            'multi_agent_v2 = { enabled = false, tool_namespace = "other" }',
+            self.read(),
+        )
 
     def test_invalid_stable_feature_is_rejected_without_mutation(self) -> None:
         original = '[features]\nmulti_agent = "yes"\n'

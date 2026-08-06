@@ -60,6 +60,45 @@ def legacy_index() -> dict[str, object]:
 
 
 class InitProjectIntegrationTests(unittest.TestCase):
+    def test_cursor_mcp_requires_explicit_consent_and_writes_project_context(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary).resolve() / "project"
+            project.mkdir()
+            result = subprocess.run(
+                [str(INIT), "--project-root", str(project), "--no-codegraph", "--cursor-mcp"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((project / ".cursor/rules/codegraph.mdc").is_file())
+            self.assertTrue((project / ".cursor/rules/gpu-broker.mdc").is_file())
+            payload = json.loads((project / ".cursor/mcp.json").read_text(encoding="utf-8"))
+            self.assertEqual({"codegraph", "gpu-broker"}, set(payload["mcpServers"]))
+
+    def test_cursor_mcp_conflict_fails_before_teamwork_context_writes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary).resolve() / "project"
+            cursor = project / ".cursor"
+            cursor.mkdir(parents=True)
+            config = cursor / "mcp.json"
+            config.write_text(
+                json.dumps({"mcpServers": {"codegraph": {"command": "user-owned"}}}) + "\n",
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                [str(INIT), "--project-root", str(project), "--no-codegraph", "--cursor-mcp"],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("refusing to replace unrecognized Cursor MCP server", result.stderr)
+            self.assertFalse((project / "docs/teamwork").exists())
+            self.assertFalse((project / "AGENTS.md").exists())
+
     def test_init_rejects_retired_install_flags_without_writes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             base = Path(temporary).resolve()
@@ -94,9 +133,11 @@ class InitProjectIntegrationTests(unittest.TestCase):
     def test_codegraph_requires_explicit_consent_and_runs_before_context(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             base = Path(temporary).resolve()
-            project = base / "project"
+            skipped_project = base / "skipped-project"
+            consented_project = base / "consented-project"
             bin_dir = base / "bin"
-            project.mkdir()
+            skipped_project.mkdir()
+            consented_project.mkdir()
             bin_dir.mkdir()
             fake = bin_dir / "codegraph"
             fake.write_text("#!/bin/sh\nmkdir .codegraph\npwd > .codegraph/cwd.txt\n", encoding="utf-8")
@@ -105,7 +146,7 @@ class InitProjectIntegrationTests(unittest.TestCase):
             env["PATH"] = f"{bin_dir}{os.pathsep}{env['PATH']}"
 
             skipped = subprocess.run(
-                [str(INIT), "--project-root", str(project)],
+                [str(INIT), "--project-root", str(skipped_project)],
                 cwd=ROOT,
                 env=env,
                 text=True,
@@ -113,10 +154,10 @@ class InitProjectIntegrationTests(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(skipped.returncode, 0, skipped.stderr)
-            self.assertFalse((project / ".codegraph").exists())
+            self.assertFalse((skipped_project / ".codegraph").exists())
 
             consented = subprocess.run(
-                [str(INIT), "--project-root", str(project), "--codegraph"],
+                [str(INIT), "--project-root", str(consented_project), "--codegraph"],
                 cwd=ROOT,
                 env=env,
                 text=True,
@@ -124,8 +165,14 @@ class InitProjectIntegrationTests(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(consented.returncode, 0, consented.stderr)
-            self.assertEqual((project / ".codegraph/cwd.txt").read_text(encoding="utf-8").strip(), str(project))
-            self.assertIn("local `.codegraph/` index", (project / "AGENTS.md").read_text(encoding="utf-8"))
+            self.assertEqual(
+                (consented_project / ".codegraph/cwd.txt").read_text(encoding="utf-8").strip(),
+                str(consented_project),
+            )
+            self.assertIn(
+                "local `.codegraph/` index",
+                (consented_project / "AGENTS.md").read_text(encoding="utf-8"),
+            )
 
     def test_codegraph_failure_is_nonfatal_after_explicit_consent(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

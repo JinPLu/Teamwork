@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.1.0 - 2026-08-06
+
+**Teamwork 7.1 brings collaboration rules and project documents back to clear, restrained, readable product boundaries.**
+
+- **Clear work stays direct.** The independent global policy keeps only native-first work, honest evidence, minimum sufficient defense, and on-demand routing. Importance, complexity, risk, or security topics do not activate a workflow by themselves, and Agents do not add hash, digest, or content-fingerprint rituals on their own.
+- **Reusable content returns to six typed documents.** Writer directly maintains Discussion, Research, Debug, Plan, Review, and Report documents linked through one readable task index. Cases, manifests, live documents, and content-identity state leave the normal runtime.
+- **Eight Skills and eight Agents return to their own methods.** Every real Research activation performs full Deep Research, Debug lets evidence determine its hypothesis set, Goal owns persistence only, and Strict Review follows the actual effect of the current change.
+- **Release evidence is Codex-only.** Structural checks prove structure, the real Codex path retains the answer and actual candidate, and an independent Reviewer reaches the semantic conclusion after reading them. The local gate checks only that an answer exists, never its character count or fixed wording. Cursor and Claude Code source adapters remain as compatibility/development entry points, but they are not 7.1 supported platforms, release-qualified surfaces, or release blockers.
+
+Upgrade action: update to 7.1.0 and run `$teamwork-update` for each exact project root that needs conversion. Update has Writer migrate every older Teamwork document by meaning; after acceptance, normal runtime reads schema v4 only. Valid Teamwork 7 install preferences remain reusable; the incompatible change applies only to older project-document formats.
+
+Important limit: Codex static installation readiness does not prove exact named-Agent activation. Agent-dependent release paths must retain live role observation; when the role is not observed, the result remains conditional `UNSUPPORTED` and must not be rewritten as a pass or claimed as all conditional cases passing. Cursor/Claude authentication, User Rules, and hooks are no longer 7.1 release blockers. Teamwork does not create, delete, or enable the user's under-development `multi_agent_v2` setting.
+
 ## 7.0.2 - 2026-08-06
 
 **Teamwork 7.0.2 restores the context boundaries missed during the 7.0 iteration so upgrades, prompts, and release evidence agree again.**

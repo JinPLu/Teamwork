@@ -74,7 +74,7 @@ class InstallCliCurrentContractTests(unittest.TestCase):
         self.fixture.mkdir()
         for path in ("install.sh", "VERSION"):
             shutil.copy2(REPO_ROOT / path, self.fixture / path)
-        for directory in ("hooks", "config", "skills", "templates"):
+        for directory in ("hooks", "config", "policy", "skills", "templates"):
             shutil.copytree(REPO_ROOT / directory, self.fixture / directory)
         (self.fixture / "scripts").mkdir()
         for path in (
@@ -82,11 +82,11 @@ class InstallCliCurrentContractTests(unittest.TestCase):
             "configure-codex-routing.py",
             "configure-notifications.py",
             "codex_routing_config.py",
-            "discussion-transaction.py",
             "init-project-files.py",
             "init-project.sh",
             "plugin-activation.py",
-            "teamwork-case-migration.py",
+            "teamwork_index_v4.py",
+            "migrate-teamwork-documents.py",
             "validate_teamwork_index.py",
         ):
             source = REPO_ROOT / "scripts" / path
@@ -130,7 +130,8 @@ class InstallCliCurrentContractTests(unittest.TestCase):
         output = result.stdout.decode()
         self.assertEqual(result.returncode, 0, output)
         self.assertIn("codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap", output)
-        self.assertIn("with --project-root, migrate every", output)
+        self.assertIn("with --project-root, inventory older", output)
+        self.assertIn("$teamwork-update must complete", output)
         self.assertIn("`--project-root` is valid with `update`, `init-project`, or `plugin-init-project`.", output)
         self.assertIn("Challenger", output)
         self.assertNotIn("Plan Reviewer", output)
@@ -273,7 +274,7 @@ class InstallCliCurrentContractTests(unittest.TestCase):
         self.assertIn("not a recognized Teamwork-owned profile", output)
         self.assertIn("user-owned", agent.read_text(encoding="utf-8"))
 
-    def test_official_v630_writer_agent_is_replaced(self) -> None:
+    def test_v630_writer_agent_is_preserved_without_current_ownership(self) -> None:
         home = self.base / "v630-writer-home"
         agent = home / ".codex/agents/teamwork-writer.toml"
         agent.parent.mkdir(parents=True)
@@ -281,13 +282,11 @@ class InstallCliCurrentContractTests(unittest.TestCase):
 
         result = self.run_install("--no-codex-routing", "codex-agents", home=home)
         output = result.stdout.decode()
-        self.assertEqual(result.returncode, 0, output)
-        self.assertEqual(
-            agent.read_text(encoding="utf-8"),
-            (REPO_ROOT / "templates/codex-agents/teamwork-writer.toml").read_text(encoding="utf-8"),
-        )
+        self.assertEqual(result.returncode, 1, output)
+        self.assertIn("not a recognized Teamwork-owned profile", output)
+        self.assertEqual(agent.read_text(encoding="utf-8"), V630_WRITER_FIXTURE.read_text(encoding="utf-8"))
 
-    def test_update_replaces_official_v630_writer_agent(self) -> None:
+    def test_update_preserves_v630_writer_without_current_ownership(self) -> None:
         home = self.base / "v630-writer-update-home"
         project = self.base / "v630-writer-update-project"
         project.mkdir()
@@ -306,14 +305,11 @@ class InstallCliCurrentContractTests(unittest.TestCase):
             home=home,
         )
         output = result.stdout.decode()
-        self.assertEqual(result.returncode, 0, output)
-        self.assertIn("global updated; project migration complete", output)
-        self.assertEqual(
-            agent.read_text(encoding="utf-8"),
-            (REPO_ROOT / "templates/codex-agents/teamwork-writer.toml").read_text(encoding="utf-8"),
-        )
+        self.assertEqual(result.returncode, 1, output)
+        self.assertIn("not a recognized Teamwork-owned profile", output)
+        self.assertEqual(agent.read_text(encoding="utf-8"), V630_WRITER_FIXTURE.read_text(encoding="utf-8"))
 
-    def test_official_v630_designer_agent_is_removed(self) -> None:
+    def test_v630_designer_agent_is_preserved(self) -> None:
         home = self.base / "v630-designer-home"
         agent = home / ".codex/agents/teamwork-designer.toml"
         agent.parent.mkdir(parents=True)
@@ -322,9 +318,10 @@ class InstallCliCurrentContractTests(unittest.TestCase):
         result = self.run_install("--no-codex-routing", "codex-agents", home=home)
         output = result.stdout.decode()
         self.assertEqual(result.returncode, 0, output)
-        self.assertFalse(agent.exists())
+        self.assertTrue(agent.exists())
+        self.assertIn("Preserved retired agent conflict", output)
 
-    def test_update_removes_official_v630_designer_agent(self) -> None:
+    def test_update_preserves_v630_designer_agent(self) -> None:
         home = self.base / "v630-designer-update-home"
         project = self.base / "v630-designer-update-project"
         project.mkdir()
@@ -344,8 +341,8 @@ class InstallCliCurrentContractTests(unittest.TestCase):
         )
         output = result.stdout.decode()
         self.assertEqual(result.returncode, 0, output)
-        self.assertIn("global updated; project migration complete", output)
-        self.assertFalse(agent.exists())
+        self.assertIn("global updated; schema-v4 project context current", output)
+        self.assertTrue(agent.exists())
 
     def test_official_v630_designer_symlink_is_preserved(self) -> None:
         home = self.base / "v630-designer-symlink-home"
@@ -413,7 +410,7 @@ class InstallCliCurrentContractTests(unittest.TestCase):
         result = self.run_lifecycle_install("--no-codex-routing", "--no-mcp", "update", home=home)
         output = result.stdout.decode()
         self.assertEqual(result.returncode, 0, output)
-        self.assertIn("global updated; project migration pending", output)
+        self.assertIn("global updated; schema-v4 project migration pending", output)
 
     def test_update_with_project_root_runs_current_project_migration(self) -> None:
         home = self.base / "update-project-home"
@@ -425,16 +422,14 @@ class InstallCliCurrentContractTests(unittest.TestCase):
         result = self.run_lifecycle_install("--project-root", str(project), "--no-codex-routing", "--no-mcp", "update", home=home)
         output = result.stdout.decode()
         self.assertEqual(result.returncode, 0, output)
-        self.assertIn("global updated; project migration complete", output)
+        self.assertIn("global updated; schema-v4 project context current", output)
 
-    def test_update_propagates_project_migration_failure(self) -> None:
+    def test_update_reports_legacy_project_needs_semantic_migration(self) -> None:
         home = self.base / "update-failure-home"
         project = self.base / "failing-project"
-        project.mkdir()
-        (self.fixture / "scripts/teamwork-case-migration.py").write_text(
-            "import sys\nsys.stderr.write('{\"ok\":false,\"message\":\"fixture failure\"}\\n')\nsys.exit(7)\n",
-            encoding="utf-8",
-        )
+        memory = project / "docs/teamwork"
+        memory.mkdir(parents=True)
+        (memory / "index.json").write_text('{"schema_version":3}\n', encoding="utf-8")
 
         result = self.run_lifecycle_install(
             "--project-root",
@@ -445,18 +440,17 @@ class InstallCliCurrentContractTests(unittest.TestCase):
             home=home,
         )
         output = result.stdout.decode()
-        self.assertEqual(result.returncode, 7, output)
-        self.assertIn("global updated; project migration failed", output)
+        self.assertEqual(result.returncode, 3, output)
+        self.assertIn("schema-v4 semantic project migration required", output)
+        self.assertIn("project documents were not changed", output)
         self.assertNotIn("project migration complete", output)
 
     def test_update_propagates_project_context_refresh_failure(self) -> None:
         home = self.base / "update-context-failure-home"
         project = self.base / "context-failing-project"
         project.mkdir()
-        (self.fixture / "scripts/teamwork-case-migration.py").write_text(
-            "import sys\nsys.exit(0)\n",
-            encoding="utf-8",
-        )
+        init = self.run_install("--project-root", str(project), "init-project", home=home)
+        self.assertEqual(init.returncode, 0, init.stdout.decode())
         (self.fixture / "scripts/init-project-files.py").write_text(
             "import sys\nsys.stderr.write('fixture context failure\\n')\nsys.exit(9)\n",
             encoding="utf-8",
@@ -472,7 +466,7 @@ class InstallCliCurrentContractTests(unittest.TestCase):
         )
         output = result.stdout.decode()
         self.assertEqual(result.returncode, 9, output)
-        self.assertIn("global updated; project migration/context refresh failed", output)
+        self.assertIn("schema-v4 project context refresh failed", output)
         self.assertNotIn("project migration complete", output)
 
 

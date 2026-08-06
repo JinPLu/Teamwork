@@ -103,9 +103,9 @@ def generated_surfaces() -> dict[str, str]:
             memory_readme_text = memory_readme.read_text(encoding="utf-8")
         else:
             memory_readme_text = (
-                "Fresh v2 case-bundle memory has no maintained "
-                "docs/teamwork/README.md; read docs/teamwork/index.json and the "
-                "relevant case manifest."
+                "Schema-v4 typed Teamwork memory has no runtime README; read "
+                "docs/teamwork/index.json and the typed documents registered "
+                "for the relevant task."
             )
         return {
             "project_block": match.group(1),

@@ -1,6 +1,6 @@
 {
   "id": "behavioral-contracts",
-  "version": 5,
+  "version": 7,
   "dimensions": [
     {
       "name": "native_default",
@@ -11,8 +11,8 @@
       "description": "The result distinguishes observation, inference, unknown, and completed work, and never claims an unperformed method, tool call, test, effect, installation, or host behavior."
     },
     {
-      "name": "proportional_evidence",
-      "description": "Verification and defenses match credible risk and the claim made. Direct outcome evidence is preferred; tests and hashes can support but never replace semantic correctness."
+      "name": "defensive_restraint",
+      "description": "A defensive control is grounded in an observed failure, explicit contract, or boundary created by the current action; it also changes the action, stop condition, or conclusion, and is the smallest sufficient control."
     },
     {
       "name": "routing_precision",
@@ -23,16 +23,24 @@
       "description": "Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer keep their named responsibilities. Challenger is strict adversarial only, Reviewer also reviews plans, and an unavailable required role is reported rather than impersonated."
     },
     {
-      "name": "live_document",
-      "description": "A reusable task has one live document. Writer creates it at the first reusable content, updates it only for material evidence, decision, conclusion, or next-step changes, and finalizes it without altering facts, decisions, authority, or completion."
+      "name": "evidence_sized_debug",
+      "description": "Debug forms only hypotheses justified by observed evidence. One is sufficient when direct evidence isolates the cause; additional alternatives exist only when they remain plausible and change the next discriminator."
     },
     {
-      "name": "semantic_pairs",
-      "description": "Every public Skill has a positive routing case and a nearby negative control whose expected route differs. Pair correctness is semantic and does not depend on fixed inventory counts or digest ceremony."
+      "name": "agent_bootstrap_recovery",
+      "description": "A stage missing its required Agent is suspended and resumes only after Update observes readiness. Root's bootstrap exception is limited to Update readiness inspection and repair when the Teamwork Agent subsystem itself is missing or broken; Root never impersonates the unavailable Agent."
+    },
+    {
+      "name": "typed_documents",
+      "description": "Writer records material reusable work in the matching typed document, registers it through schema-v4 index.json, preserves meaning, and finalizes only at the owning stage boundary."
+    },
+    {
+      "name": "change_scoped_routing",
+      "description": "Changed or reasserted public release routes are evaluated semantically on Codex. Cursor and Claude observations may be retained as adapter diagnostics but are not Teamwork 7.1 release support evidence or gates."
     },
     {
       "name": "release_evidence",
-      "description": "Static, installed-semantic, disposable-write, and dry-run evidence are reported separately. Static, installed-semantic, and disposable-write must pass for release-ready; NOT RUN, UNSUPPORTED, and FAIL remain blockers in required lanes."
+      "description": "Structural, behavioral, and semantic evidence are separate. Semantic acceptance requires an independent Reviewer reading the actual candidate and judging outcomes; a missing live observation for a declared release host remains a blocker."
     }
   ]
 }

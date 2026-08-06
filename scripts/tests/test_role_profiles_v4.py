@@ -137,19 +137,24 @@ class RoleProfileTests(unittest.TestCase):
                 for role in PERFORMANCE["codex"]
             }.items()
         }
-        self.assertIn("3–5 plausible hypotheses", texts["debugger"])
+        self.assertIn("hypotheses supported by evidence", texts["debugger"])
+        self.assertIn("One hypothesis is enough", texts["debugger"])
         self.assertIn("Structured logging is optional", texts["debugger"])
         self.assertIn("Do not design", texts["challenger"])
-        self.assertIn("clear or selected direction", texts["planner"])
-        self.assertIn("plan", texts["reviewer"].lower())
+        self.assertIn("selected direction", texts["planner"])
+        self.assertIn("actual boundary", texts["reviewer"])
         self.assertIn("preserve unrelated", texts["worker"])
-        self.assertIn("one reader-first live document", texts["writer"])
+        self.assertIn("Discussion, Research, Debug, Plan, Review, and Report", texts["writer"])
+        self.assertIn("sole ordinary semantic writer", texts["writer"])
+        self.assertIn("do not create or update a Teamwork document", texts["explorer"])
+        self.assertIn("source census", texts["researcher"])
         for text in texts.values():
             self.assertNotIn("Plan Reviewer", text)
             self.assertNotIn("Teamwork Designer", text)
             self.assertNotIn("case-inspect", text)
+            self.assertNotIn("3–5 plausible hypotheses", text)
 
-    def test_retired_cleanup_removes_recognized_files_and_preserves_unknown_files(self) -> None:
+    def test_retired_cleanup_preserves_every_same_named_file(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
             recognized = root / "designer.md"
@@ -167,10 +172,10 @@ class RoleProfileTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
             )
-            self.assertFalse(recognized.exists())
+            self.assertTrue(recognized.exists())
             self.assertTrue(unknown.exists())
 
-    def test_codex_retired_designer_cleanup_requires_official_digest(self) -> None:
+    def test_codex_retired_designer_cleanup_preserves_custom_file(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)
             custom = root / "teamwork-designer.toml"

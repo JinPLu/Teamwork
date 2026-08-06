@@ -1,513 +1,106 @@
 {
-  "schema_version": 1,
-  "required_roles_per_slice": [
-    "researcher",
-    "explorer",
-    "debugger",
-    "challenger",
-    "planner",
-    "worker",
-    "writer",
-    "reviewer"
-  ],
-  "role_expectations": {
-    "codex": {
-      "performance-first": {
-        "researcher": {
-          "model": "gpt-5.6-terra",
-          "effort": "high"
-        },
-        "explorer": {
-          "model": "gpt-5.6-terra",
-          "effort": "high"
-        },
-        "debugger": {
-          "model": "gpt-5.6-sol",
-          "effort": "high"
-        },
-        "challenger": {
-          "model": "gpt-5.6-sol",
-          "effort": "high"
-        },
-        "planner": {
-          "model": "gpt-5.6-sol",
-          "effort": "high"
-        },
-        "worker": {
-          "model": "gpt-5.6-terra",
-          "effort": "high"
-        },
-        "writer": {
-          "model": "gpt-5.6-luna",
-          "effort": "high"
-        },
-        "reviewer": {
-          "model": "gpt-5.6-sol",
-          "effort": "max"
-        }
-      },
-      "cost-first": {
-        "researcher": {
-          "model": "gpt-5.6-terra",
-          "effort": "high"
-        },
-        "explorer": {
-          "model": "gpt-5.6-luna",
-          "effort": "high"
-        },
-        "debugger": {
-          "model": "gpt-5.6-terra",
-          "effort": "high"
-        },
-        "challenger": {
-          "model": "gpt-5.6-terra",
-          "effort": "high"
-        },
-        "planner": {
-          "model": "gpt-5.6-terra",
-          "effort": "high"
-        },
-        "worker": {
-          "model": "gpt-5.6-luna",
-          "effort": "xhigh"
-        },
-        "writer": {
-          "model": "gpt-5.6-luna",
-          "effort": "high"
-        },
-        "reviewer": {
-          "model": "gpt-5.6-sol",
-          "effort": "high"
-        }
-      }
-    },
-    "cursor": {
-      "performance-first": {
-        "researcher": {
-          "model": "gpt-5.6-terra-medium",
-          "effort": "cursor-managed"
-        },
-        "explorer": {
-          "model": "gemini-3.5-flash",
-          "effort": "cursor-managed"
-        },
-        "debugger": {
-          "model": "claude-opus-4-8-thinking-high",
-          "effort": "cursor-managed"
-        },
-        "challenger": {
-          "model": "gpt-5.6-sol-medium",
-          "effort": "cursor-managed"
-        },
-        "planner": {
-          "model": "gpt-5.6-terra-medium",
-          "effort": "cursor-managed"
-        },
-        "worker": {
-          "model": "composer-2.5-fast",
-          "effort": "cursor-managed"
-        },
-        "writer": {
-          "model": "composer-2.5-fast",
-          "effort": "cursor-managed"
-        },
-        "reviewer": {
-          "model": "claude-fable-5-thinking-high",
-          "effort": "cursor-managed"
-        }
-      },
-      "cost-first": {
-        "researcher": {
-          "model": "gemini-3.5-flash",
-          "effort": "cursor-managed"
-        },
-        "explorer": {
-          "model": "gemini-3.5-flash",
-          "effort": "cursor-managed"
-        },
-        "debugger": {
-          "model": "gpt-5.6-terra-medium",
-          "effort": "cursor-managed"
-        },
-        "challenger": {
-          "model": "gpt-5.6-terra-medium",
-          "effort": "cursor-managed"
-        },
-        "planner": {
-          "model": "gpt-5.6-luna-medium",
-          "effort": "cursor-managed"
-        },
-        "worker": {
-          "model": "composer-2.5-fast",
-          "effort": "cursor-managed"
-        },
-        "writer": {
-          "model": "composer-2.5-fast",
-          "effort": "cursor-managed"
-        },
-        "reviewer": {
-          "model": "claude-opus-4-8-thinking-high",
-          "effort": "cursor-managed"
-        }
-      }
-    },
-    "claude": {
-      "performance-first": {
-        "researcher": {
-          "model": "sonnet",
-          "effort": "medium"
-        },
-        "explorer": {
-          "model": "sonnet",
-          "effort": "medium"
-        },
-        "debugger": {
-          "model": "opus",
-          "effort": "high"
-        },
-        "challenger": {
-          "model": "opus",
-          "effort": "high"
-        },
-        "planner": {
-          "model": "opus",
-          "effort": "high"
-        },
-        "worker": {
-          "model": "sonnet",
-          "effort": "medium"
-        },
-        "writer": {
-          "model": "haiku",
-          "effort": "medium"
-        },
-        "reviewer": {
-          "model": "opus",
-          "effort": "max"
-        }
-      },
-      "cost-first": {
-        "researcher": {
-          "model": "haiku",
-          "effort": "medium"
-        },
-        "explorer": {
-          "model": "haiku",
-          "effort": "medium"
-        },
-        "debugger": {
-          "model": "opus",
-          "effort": "high"
-        },
-        "challenger": {
-          "model": "opus",
-          "effort": "high"
-        },
-        "planner": {
-          "model": "opus",
-          "effort": "high"
-        },
-        "worker": {
-          "model": "haiku",
-          "effort": "medium"
-        },
-        "writer": {
-          "model": "haiku",
-          "effort": "medium"
-        },
-        "reviewer": {
-          "model": "opus",
-          "effort": "max"
-        }
-      }
-    }
-  },
+  "schema_version": 3,
+  "release_hosts": ["codex"],
   "cases": [
     {
-      "id": "external-research-depth-privacy",
+      "name": "native-default",
+      "prompt": "Answer this clear request directly: explain in one sentence why the current source policy keeps clear work native. Do not activate a Teamwork Skill.",
+      "selected_skill": "native",
+      "required_agents": [],
+      "expected_outcomes": ["direct answer", "no invented workflow requirement"],
+      "scenario": null,
+      "authority": "read-only",
+      "support": {"codex": "required", "cursor": "required", "claude": "required"}
+    },
+    {
+      "name": "defensive-restraint",
+      "prompt": "Read the installed global Teamwork policy and explain when a defensive control is admissible. Do not introduce a new hash, checksum, fingerprint, or unrelated gate.",
+      "selected_skill": "native",
+      "required_agents": [],
+      "expected_outcomes": ["both admission conditions", "smallest sufficient control", "no speculative defense"],
+      "scenario": null,
+      "authority": "read-only",
+      "support": {"codex": "required", "cursor": "required", "claude": "required"}
+    },
+    {
+      "name": "research-local-deep-corpus",
+      "prompt": "Use the installed teamwork-research Skill and spawn its required installed Researcher Agent. Perform full Deep Research on only the supplied local corpus: read scenario/brief.md and all files under scenario/sources, produce a source census, evidence-backed claims, contradictions or unresolved uncertainty, and a stop basis grounded in the available corpus. Do not browse the network. Root must not perform the Researcher method itself.",
       "selected_skill": "teamwork-research",
-      "required_role": "researcher",
-      "expected_roles": [
-        "researcher"
-      ],
+      "required_agents": ["researcher"],
+      "expected_outcomes": ["actual local source census", "claims tied to supplied sources", "contradictions and stop basis reported without network dependence"],
+      "scenario": "evals/teamwork/live-scenarios/research-local-deep-corpus.json",
       "authority": "read-only",
-      "required_tools": [
-        "web_search"
-      ],
-      "scenario": "evals/teamwork/live-scenarios/external-research-depth-privacy.json",
-      "evidence": {
-        "kind": "trace",
-        "artifact_path": "scenario/research-probe.txt",
-        "markers": [
-          "EVIDENCE_RESEARCH_DEPTH_RELEASE"
-        ]
-      },
-      "private_markers": [
-        "TEAMWORK_PRIVATE_CANARY_RELEASE_DO_NOT_DISCLOSE"
-      ],
-      "prompt": "Use the installed Research path on the sanitized question in scenario/research-probe.txt. Use a primary public source and preserve the private local boundary; return only evidence obtained through the host."
+      "support": {"codex": "conditional-exact-role", "cursor": "required", "claude": "required"}
     },
     {
-      "id": "explore-research-isolation",
-      "selected_skill": "native",
-      "required_role": "explorer",
-      "expected_roles": [
-        "explorer"
-      ],
-      "authority": "read-only",
-      "required_tools": [
-        "command_execution"
-      ],
-      "scenario": "evals/teamwork/live-scenarios/explore-research-isolation.json",
-      "evidence": {
-        "kind": "trace",
-        "artifact_path": "scenario/dispatch-probe.txt",
-        "markers": [
-          "EVIDENCE_EXPLORE_RESEARCH_ISOLATION_RELEASE"
-        ]
-      },
-      "private_markers": [],
-      "prompt": "Use the installed local Explorer path to answer the precise evidence question in scenario/dispatch-probe.txt. Do not dispatch Research and do not create an independent Explore artifact."
-    },
-    {
-      "id": "collaborate-evidence-bounded-convergence",
-      "selected_skill": "teamwork-collaborate",
-      "required_role": "explorer",
-      "expected_roles": [
-        "explorer"
-      ],
-      "authority": "read-only",
-      "required_tools": [
-        "command_execution"
-      ],
-      "scenario": "evals/teamwork/live-scenarios/collaborate-evidence-bounded-convergence.json",
-      "evidence": {
-        "kind": "trace",
-        "artifact_path": "scenario/collaborate-probe.txt",
-        "markers": [
-          "EVIDENCE_COLLABORATE_CONVERGENCE_RELEASE"
-        ]
-      },
-      "private_markers": [],
-      "prompt": "Use the installed Collaborate path and one local Explorer pass to inspect scenario/collaborate-probe.txt, compare the genuine alternatives, and return a synthesis and recommendation. Do not invoke external Research, strict adversarial challenge, Plan, or Review."
-    },
-    {
-      "id": "debug-fixed-authority-human-resume",
-      "selected_skill": "teamwork-debug",
-      "required_role": "debugger",
-      "expected_roles": [
-        "debugger"
-      ],
-      "authority": "workspace-write",
-      "required_tools": [
-        "command_execution"
-      ],
-      "scenario": "evals/teamwork/live-scenarios/debug-fixed-authority-human-resume.json",
-      "evidence": {
-        "kind": "workspace",
-        "artifact_path": "scenario/debug-result.txt",
-        "markers": [
-          "EVIDENCE_DEBUG_SAME_PATH_RELEASE"
-        ]
-      },
-      "private_markers": [],
-      "prompt": "Use the installed Debugger path on scenario/debug-input.txt. Freeze the stated failure, form the ranked hypothesis ledger before probes, run one discriminating experiment at a time, keep the unrelated noise/decoy outside this causal thread, apply only the authorized causal fix, rerun the exact same path, and write Debug Findings to scenario/debug-result.txt."
-    },
-    {
-      "id": "native-result-minimality",
-      "selected_skill": "native",
-      "required_role": "root",
-      "expected_roles": [],
-      "authority": "workspace-write",
-      "required_tools": [
-        "command_execution"
-      ],
-      "scenario": "evals/teamwork/live-scenarios/native-result-minimality.json",
-      "evidence": {
-        "kind": "workspace",
-        "artifact_path": "scenario/native-result.txt",
-        "markers": [
-          "EVIDENCE_NATIVE_RESULT_RELEASE"
-        ]
-      },
-      "private_markers": [],
-      "prompt": "Make only the bounded requested change described in scenario/native-input.txt, prove it through the real path, and write the result to scenario/native-result.txt."
-    },
-    {
-      "id": "native-no-child-control",
-      "selected_skill": "native",
-      "required_role": "root",
-      "expected_roles": [],
-      "authority": "workspace-write",
-      "required_tools": [
-        "command_execution"
-      ],
-      "scenario": "evals/teamwork/live-scenarios/native-no-child-control.json",
-      "evidence": {
-        "kind": "workspace",
-        "artifact_path": "scenario/native-no-child-result.txt",
-        "markers": [
-          "EVIDENCE_NATIVE_NO_CHILD_RELEASE"
-        ]
-      },
-      "private_markers": [],
-      "prompt": "Make the clear local result described in scenario/native-no-child.txt on the native path, avoid unnecessary child-role routing, and write the scenario's required evidence marker to scenario/native-no-child-result.txt."
-    },
-    {
-      "id": "review-correctness-deslop",
-      "selected_skill": "teamwork-review",
-      "required_role": "reviewer",
-      "expected_roles": [
-        "reviewer"
-      ],
-      "authority": "read-only",
-      "required_tools": [
-        "command_execution"
-      ],
-      "scenario": "evals/teamwork/live-scenarios/review-correctness-deslop.json",
-      "evidence": {
-        "kind": "trace",
-        "artifact_path": "scenario/review-probe.txt",
-        "markers": [
-          "EVIDENCE_REVIEW_FINDING_RELEASE"
-        ]
-      },
-      "private_markers": [],
-      "prompt": "Read scenario/review-probe.txt and perform the installed read-only Review path. Report evidence-backed finding(s) without changing the scenario."
-    },
-    {
-      "id": "plan-independent-review",
-      "selected_skill": "teamwork-plan",
-      "required_role": "planner",
-      "expected_roles": [
-        "planner",
-        "reviewer"
-      ],
-      "authority": "read-only",
-      "required_tools": [
-        "command_execution"
-      ],
-      "scenario": "evals/teamwork/live-scenarios/plan-independent-review.json",
-      "evidence": {
-        "kind": "trace",
-        "artifact_path": "scenario/plan-probe.txt",
-        "markers": [
-          "EVIDENCE_PLAN_REVIEW_RELEASE"
-        ]
-      },
-      "private_markers": [],
-      "prompt": "Read scenario/plan-probe.txt. Use the installed Plan path only from the selected direction; return action owner, dependency, proof target, unresolved evidence dependency, and stop condition, then route the plan through the independent Reviewer boundary without implementation or redesign."
-    },
-    {
-      "id": "goal-wait-compaction-resume",
+      "name": "goal-persistence-native-success",
+      "prompt": "Use the installed teamwork-goal Skill only as a persistence modifier for this clear native workspace action: read scenario/request.txt, update scenario/status.txt from pending to done, run the supplied verifier, and stop only after the verifier passes. Do not replace the native action with a Plan, Research, Debug, Review, or Writer workflow, and do not spawn a Teamwork Agent.",
       "selected_skill": "teamwork-goal",
-      "required_role": "worker",
-      "expected_roles": [
-        "worker"
-      ],
+      "required_agents": [],
+      "expected_outcomes": ["Goal acts as persistence modifier only", "native workspace action completes", "real verifier success is the stop signal"],
+      "scenario": "evals/teamwork/live-scenarios/goal-persistence-native-success.json",
       "authority": "workspace-write",
-      "required_tools": [
-        "command_execution"
-      ],
-      "scenario": "evals/teamwork/live-scenarios/goal-wait-compaction-resume.json",
-      "evidence": {
-        "kind": "workspace",
-        "artifact_path": "scenario/goal-result.txt",
-        "markers": [
-          "EVIDENCE_GOAL_SUCCESS_RELEASE"
-        ]
-      },
-      "private_markers": [],
-      "prompt": "Use the explicit installed Goal path from scenario/goal-input.txt. Preserve scope across wait/resume, record failed evidence and failure class before changing strategy, avoid repeating no-progress, and write scenario/goal-result.txt only after the verifier gives the real success signal."
+      "support": {"codex": "required", "cursor": "required", "claude": "required"}
     },
     {
-      "id": "writer-live-document",
-      "selected_skill": "native",
-      "required_role": "writer",
-      "expected_roles": [
-        "writer"
-      ],
-      "authority": "workspace-write",
-      "required_tools": [
-        "command_execution"
-      ],
-      "scenario": "evals/teamwork/live-scenarios/writer-live-document.json",
-      "evidence": {
-        "kind": "workspace",
-        "artifact_path": "scenario/live-document.md",
-        "markers": [
-          "EVIDENCE_WRITER_LIVE_DOCUMENT_V5"
-        ]
-      },
-      "private_markers": [],
-      "prompt": "Use the installed Writer path in this disposable project. Read scenario/writer-input.txt, maintain the task's single live document at scenario/live-document.md, and include the required evidence marker only after the material decision and next step are represented."
+      "name": "selected-plan-route",
+      "prompt": "Use the installed teamwork-plan Skill for this selected direction: replace one legacy helper with the current schema-v4 index helper. Return an executable plan with dependencies, proof targets, and stop conditions; do not implement.",
+      "selected_skill": "teamwork-plan",
+      "required_agents": ["planner"],
+      "expected_outcomes": ["named Skill activation observed", "plan is executable", "no implementation claim"],
+      "scenario": null,
+      "authority": "read-only",
+      "support": {"codex": "conditional-exact-role", "cursor": "required", "claude": "required"}
     },
     {
-      "id": "init-recovery-promotion",
-      "selected_skill": "teamwork-init",
-      "required_role": "explorer",
-      "expected_roles": [
-        "explorer",
-        "worker"
-      ],
-      "authority": "workspace-write",
-      "required_tools": [
-        "command_execution"
-      ],
-      "scenario": "evals/teamwork/live-scenarios/init-recovery-promotion.json",
-      "evidence": {
-        "kind": "workspace",
-        "artifact_path": "scenario/init-result.txt",
-        "markers": [
-          "EVIDENCE_INIT_RECOVERY_RELEASE"
-        ]
-      },
-      "private_markers": [],
-      "prompt": "Exercise the installed project-only Init path in scenario/init-input.txt, preserving audit-only and recovery boundaries, then write direct result evidence to scenario/init-result.txt."
+      "name": "debug-evidence-sized-hypotheses",
+      "prompt": "Use the installed teamwork-debug Skill and spawn its required installed Debugger Agent to diagnose the supplied failure evidence. Let the evidence determine how many live hypotheses are warranted: do not invent alternatives or a fixed hypothesis packet when direct evidence isolates one cause. Root must not perform the Debugger method itself. Do not modify the workspace.",
+      "selected_skill": "teamwork-debug",
+      "required_agents": ["debugger"],
+      "expected_outcomes": ["actual failure evidence inspected", "hypothesis set sized by evidence", "supported cause or next discriminator reported without fixed ceremony"],
+      "scenario": "evals/teamwork/live-scenarios/debug-direct-cause.json",
+      "authority": "read-only",
+      "support": {"codex": "conditional-exact-role", "cursor": "required", "claude": "required"}
     },
     {
-      "id": "update-prepost-privileged",
+      "name": "writer-typed-document",
+      "prompt": "Use the installed teamwork-plan path and its Writer role. Record the reusable plan in the supplied schema-v4 Teamwork project, register it in index.json, finalize the document and task, then report only observed results.",
+      "selected_skill": "teamwork-plan",
+      "required_agents": ["planner", "writer"],
+      "expected_outcomes": ["typed plan document created", "schema-v4 index readback succeeds", "final state observed"],
+      "scenario": "evals/teamwork/live-scenarios/writer-typed-document.json",
+      "authority": "workspace-write",
+      "support": {"codex": "conditional-exact-role", "cursor": "required", "claude": "required"}
+    },
+    {
+      "name": "independent-review",
+      "prompt": "Use the installed teamwork-review Skill to review the supplied candidate statement. The Reviewer must read the actual statement and judge whether its claimed test was performed; reject self-review and unsupported completion claims.",
+      "selected_skill": "teamwork-review",
+      "required_agents": ["reviewer"],
+      "expected_outcomes": ["actual candidate read", "independent Reviewer", "evidence-backed verdict"],
+      "scenario": "evals/teamwork/live-scenarios/independent-review.json",
+      "authority": "read-only",
+      "support": {"codex": "conditional-exact-role", "cursor": "required", "claude": "required"}
+    },
+    {
+      "name": "update-readiness",
+      "prompt": "Use the installed teamwork-update Skill to inspect global host readiness. Distinguish static Skills/Agents from global policy activation and report Cursor policy as manual action required when it cannot be observed.",
       "selected_skill": "teamwork-update",
-      "required_role": "explorer",
-      "expected_roles": [
-        "explorer"
-      ],
+      "required_agents": ["explorer"],
+      "expected_outcomes": ["static and policy state separated", "Cursor limitation reported honestly", "no three-host parity claim"],
+      "scenario": null,
       "authority": "read-only",
-      "required_tools": [
-        "command_execution"
-      ],
-      "scenario": "evals/teamwork/live-scenarios/update-prepost-privileged.json",
-      "evidence": {
-        "kind": "trace",
-        "artifact_path": "scenario/update-probe.txt",
-        "markers": [
-          "EVIDENCE_UPDATE_READINESS_RELEASE"
-        ]
-      },
-      "private_markers": [],
-      "prompt": "Read scenario/update-probe.txt through the installed global Update boundary. Show pre/post readiness without project initialization or unsupported privileged claims."
+      "support": {"codex": "conditional-exact-role", "cursor": "required", "claude": "required"}
     },
     {
-      "id": "strict-adversarial-challenger",
-      "selected_skill": "teamwork-collaborate",
-      "required_role": "challenger",
-      "expected_roles": [
-        "challenger"
-      ],
-      "authority": "read-only",
-      "required_tools": [
-        "command_execution"
-      ],
-      "scenario": "evals/teamwork/live-scenarios/strict-adversarial-challenger.json",
-      "evidence": {
-        "kind": "trace",
-        "artifact_path": "scenario/challenger-probe.txt",
-        "markers": [
-          "EVIDENCE_STRICT_CHALLENGER_RELEASE"
-        ]
-      },
-      "private_markers": [],
-      "prompt": "Explicitly use Collaborate's strict adversarial submethod on the fixed candidate in scenario/challenger-probe.txt. Dispatch a fresh Challenger to attack its strongest assumptions and return a clear pass, fail, or unresolved verdict. Do not invoke Research, Debug, Plan, Review, Worker, or Writer."
+      "name": "update-agent-bootstrap-resume",
+      "prompt": "Use the installed teamwork-update Skill to repair the supplied disposable Teamwork Agent subsystem. The current Debug stage is suspended because its required Debugger is missing and the Agent subsystem itself is broken. Under Root's narrow Update bootstrap exception, copy the package-owned Agent fixture to agent-subsystem/debugger.md, directly compare the result, and write `ready` to agent-subsystem/readiness.txt only after that observation. Then resume the suspended stage by spawning the installed Debugger Agent only to inspect the repaired readiness files and report whether the subsystem is ready; Root must not impersonate Debugger or claim unobserved readiness.",
+      "selected_skill": "teamwork-update",
+      "required_agents": ["debugger"],
+      "expected_outcomes": ["original stage suspended", "bootstrap exception kept to readiness inspection and repair", "resume conditioned on observed Agent readiness with no impersonation"],
+      "scenario": "evals/teamwork/live-scenarios/update-agent-bootstrap.json",
+      "authority": "workspace-write",
+      "support": {"codex": "conditional-exact-role", "cursor": "required", "claude": "required"}
     }
   ]
 }

@@ -1,50 +1,56 @@
 ---
 name: teamwork-plan
-description: Use when the user asks for an implementation plan, task breakdown, checklist, roadmap, or handoff and the goal and direction are already selected; do not use to brainstorm or choose the direction, research external facts, diagnose a failure, review a candidate, or execute changes.
+description: Use when the user asks for an implementation plan, task breakdown, checklist, roadmap, or handoff and the outcome and direction are already selected; do not use to choose the direction, research external facts, diagnose a failure, review a candidate, or execute changes.
 ---
 
 # Teamwork Plan
 
-Use Planner to turn a selected direction into executable, verifiable work. Do
-not require a prior Collaborate artifact or reopen settled choices. Do not
-implement the plan.
+Plan is the current execution-design stage. Planner turns one selected direction
+into executable, verifiable work; Root owns the brief and any stage switch. Do
+not require a prior Collaborate artifact, reopen settled choices, implement the
+plan, or treat plan acceptance as execution authority.
 
 ## Prepare
 
-Confirm the outcome, direction, scope, constraints, protected boundaries, and
-acceptance signals. Inspect local owners, dependencies, interfaces, tests,
-configuration, and commands needed to make the steps concrete. Resolve
-discoverable details directly. Return a material unresolved direction to the
-decision owner rather than hiding it as an implementation assumption.
+Confirm the intended result, selected direction, scope, constraints, protected
+boundaries, and observable acceptance signals. Inspect the actual owners,
+interfaces, dependencies, tests, configuration, and commands needed to make the
+work concrete. Resolve discoverable details directly. Return an unresolved
+material direction to its decision owner instead of hiding it as an assumption.
 
-## Write The Plan
+## Build The Plan
 
-Lead with the intended result and scope. Order the work by dependency and name
-parallel tracks only when they are independent and non-overlapping. For each
-work unit, state:
+Organize outcome-sized work in dependency order. For each work unit, state the
+responsible owner, exact target surface, concrete outcome and protected
+behavior, upstream and downstream dependencies, and the nearest real
+verification. Include migration, rollout, rollback, cleanup, or risk work only
+when the selected direction actually creates it.
 
-- the owner and target surface;
-- the concrete outcome, including what must remain unchanged;
-- upstream and downstream dependencies;
-- the nearest real verification and any required boundary proof;
-- material risk, rollback, migration, or rollout work when applicable.
+Use parallel tracks only for bounded work that is genuinely independent and
+non-overlapping; there is no prescribed agent or dispatch count. Replace vague
+steps, guessed values, unresolved alternatives, and generic “handle edge cases”
+language with an action, evidence need, or exact blocker. Tests support the
+outcome but do not substitute for an available real-path check.
 
-Keep steps outcome-sized and handoff-ready. Replace placeholders, unresolved
-alternatives, guessed values, and vague instructions such as “handle edge
-cases” with a named action or blocker. Put required execution before optional
-cleanup. Tests support the result; they do not replace an available real path.
+End with dependency and verification relationships plus the conditions that
+would stop execution or require replanning, such as a changed direction, wrong
+owner, missing authority, or unverifiable protected boundary.
 
-Review the plan with Reviewer when the user requests it or a release, security,
-permission, data, destructive-risk, or public-contract gate requires an
-independent check. Planner does not review its own plan.
+An independent Plan Review is a separate current stage only when the user asks
+for it or an actual gate requires it. Importance, complexity, release wording,
+or subjective risk alone does not create that gate. Root suspends Plan, switches
+to Review, and resumes only if later planning work is needed.
 
-End with dependencies, verification matrix, blockers, and explicit stop or
-replan conditions such as a changed direction, wrong owner, missing required
-input or authority, or an unverifiable protected boundary.
+Planner is required. Root must not imitate it when unavailable. Suspend Plan,
+switch to Update for readiness repair, wait, and resume or return the exact
+blocker.
 
-## Live Document
+## Plan Document
 
-When Writer is used, include the goal, selected direction, scope, ordered work
-units, owners, dependencies, verification, risks, blockers, and replan
-conditions. Writer may improve organization but must not invent facts, change
-the direction, or mark the plan accepted.
+When the selected direction and first concrete work unit become reusable, Root
+assigns Writer the typed Plan document. It carries the intended result,
+direction, scope and protected boundaries, ordered work, owners and targets,
+dependencies, real verification, blockers, and stop or replan conditions.
+Update only when one of those meanings changes; do not use it as an execution
+progress log. Same-scope editorial corrections may update a finalized document;
+a new direction or materially new scope needs a new Plan document.

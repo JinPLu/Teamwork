@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.1.0 - 2026-08-06
+
+**Teamwork 7.1 把协作规则和项目文档一起拉回清晰、克制、可读的产品边界。**
+
+- **清楚的工作继续直接完成。** 独立全局 policy 只保留原生优先、如实表达、最小充分防御与按需路由；重要、复杂、风险或安全话题本身不再触发 workflow，也不会由 Agent 自行加入 hash、摘要或内容指纹仪式。
+- **可复用内容回到六类文档。** Writer 直接维护 Discussion、Research、Debug、Plan、Review 与 Report，并由一个可读任务索引关联；case、manifest、live document 与内容身份状态不再进入正常运行。
+- **八个 Skill 和八个 Agent 回到各自方法。** 真正的 Research 一律执行完整 Deep Research，Debug 的假设数量由证据决定，Goal 只负责持续推进，Strict Review 只跟随当前变更的实际效果。
+- **发布证据改为 Codex-only。** 结构检查只证明结构，Codex 真实路径保留回答与实际候选，独立 Reviewer 阅读后才形成语义结论；本地门只确认回答存在，不按字符长度或固定措辞打分。Cursor 与 Claude Code 源码适配器保留为兼容/开发入口，但不是 7.1 的支持平台、发布资格或发布阻塞项。
+
+升级操作：更新到 7.1.0 后，对每个需要转换的精确项目根运行 `$teamwork-update`。Update 会让 Writer 按意义迁移全部旧 Teamwork 文档；迁移接受后，正常运行只读取 schema v4。有效的 Teamwork 7 安装偏好仍可复用，本次不兼容变化只涉及旧项目文档格式。
+
+重要限制：Codex 的静态安装就绪不等于精确命名 Agent 已激活；需要 Agent 的发布路径必须保留实时角色观察，观察不到时仍是条件性 `UNSUPPORTED`，不能改写成通过或声称全部条件用例通过。Cursor/Claude 的认证、User Rules 或 hook 不再是 7.1 发布阻塞项。Teamwork 不会创建、删除或启用用户的 under-development `multi_agent_v2` 设置。
+
 ## 7.0.2 - 2026-08-06
 
 **Teamwork 7.0.2 补回了 7.0 迭代中遗漏的上下文边界，让升级、提示词和发布证据重新一致。**

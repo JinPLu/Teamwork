@@ -7,8 +7,8 @@ import json
 import sys
 from pathlib import Path
 
-from .cases import selected_cases, validate_ledger_lines
-from .contracts import EvalError, LEDGER_SCHEMAS, PLATFORMS, SPLITS
+from .cases import selected_cases
+from .contracts import EvalError, PLATFORMS, SPLITS
 
 
 def parse_args() -> argparse.Namespace:
@@ -16,24 +16,11 @@ def parse_args() -> argparse.Namespace:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--split", choices=sorted(SPLITS))
     group.add_argument("--all", action="store_true", help="validate all cases")
-    group.add_argument("--optimizer-ledger", type=Path, metavar="PATH", help="validate one optimizer candidate ledger")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    if args.optimizer_ledger:
-        path = args.optimizer_ledger.resolve()
-        try:
-            count = validate_ledger_lines(path, "optimizer-candidates.jsonl", LEDGER_SCHEMAS["optimizer-candidates.jsonl"])
-        except EvalError as exc:
-            print(json.dumps({"status": "fail", "error": str(exc)}, sort_keys=True), file=sys.stderr)
-            print(f"FAIL: {exc}", file=sys.stderr)
-            return 1
-        print(json.dumps({"status": "pass", "selection": "optimizer-ledger", "rows": count}, sort_keys=True))
-        print(f"OK: optimizer ledger passed ({count} rows)")
-        return 0
-
     selection = "all" if args.all else args.split
     try:
         cases = selected_cases(selection)

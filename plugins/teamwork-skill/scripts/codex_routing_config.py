@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read and migrate the Teamwork-owned Codex subagent feature flag."""
+"""Read and migrate Teamwork's static Codex subagent configuration."""
 
 from __future__ import annotations
 
@@ -23,9 +23,6 @@ except ModuleNotFoundError:  # pragma: no cover - depends on the host Python.
 ROUTING_TABLE = "features"
 ROUTING_KEY = "multi_agent"
 ROUTING_NAME = f"{ROUTING_TABLE}.{ROUTING_KEY}"
-LEGACY_ROUTING_TABLE = "features.multi_agent_v2"
-LEGACY_ROUTING_KEY = "multi_agent_v2"
-LEGACY_ROUTING_NAME = f"{ROUTING_TABLE}.{LEGACY_ROUTING_KEY}"
 DESIRED_VALUE = True
 
 TABLE_RE = re.compile(r"^\s*\[([^\[\]]+)\]\s*(?:#.*)?(?:\r?\n)?$")
@@ -44,6 +41,7 @@ class RoutingReport:
     issues: list[str] = field(default_factory=list)
     changes: list[str] = field(default_factory=list)
     restart_required: bool = False
+    experimental_multi_agent_v2: str = "unknown"
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -89,13 +87,19 @@ def _routing_issues(data: dict[str, Any]) -> list[str]:
     routing = features.get(ROUTING_KEY, DESIRED_VALUE)
     if routing is not DESIRED_VALUE:
         issues.append(f"{ROUTING_NAME} must be true or omitted")
-    if LEGACY_ROUTING_KEY in features:
-        issues.append(f"{LEGACY_ROUTING_NAME} must be removed")
-
     agents = data.get("agents", {})
     if agents is not None and not isinstance(agents, dict):
         issues.append("agents must be a TOML table")
     return issues
+
+
+def _experimental_v2_status(data: dict[str, Any]) -> str:
+    features = data.get("features", {})
+    return (
+        "present-unmanaged"
+        if isinstance(features, dict) and "multi_agent_v2" in features
+        else "absent"
+    )
 
 
 def inspect_config(path: pathlib.Path) -> RoutingReport:
@@ -110,10 +114,11 @@ def inspect_config(path: pathlib.Path) -> RoutingReport:
     _, data = _read_config(resolved)
     issues = _routing_issues(data)
     return RoutingReport(
-        status="ready" if not issues else "drift",
+        status="configured" if not issues else "drift",
         config_path=str(resolved),
         ready=not issues,
         issues=issues,
+        experimental_multi_agent_v2=_experimental_v2_status(data),
     )
 
 
@@ -122,15 +127,6 @@ def _resolved_write_path(path: pathlib.Path) -> pathlib.Path:
     if expanded.is_symlink():
         return expanded.resolve(strict=False)
     return expanded
-
-
-def _section_names(lines: list[str]) -> list[str]:
-    names: list[str] = []
-    for line in lines:
-        match = TABLE_RE.match(line)
-        if match:
-            names.append(match.group(1).strip())
-    return names
 
 
 def _line_key(line: str) -> str | None:
@@ -166,15 +162,7 @@ def _replace_assignment(line: str, key: str, value: Any, newline: str) -> str:
     return f"{indent}{key} = {_toml_literal(value)}{comment}{newline}"
 
 
-def _validate_supported_layout(
-    data: dict[str, Any], lines: list[str], path: pathlib.Path
-) -> None:
-    sections = _section_names(lines)
-    if any(name.startswith(f"{LEGACY_ROUTING_TABLE}.") for name in sections):
-        raise RoutingConfigError(
-            f"cannot safely remove [{LEGACY_ROUTING_TABLE}] with existing child tables in {path}"
-        )
-
+def _validate_supported_layout(data: dict[str, Any], path: pathlib.Path) -> None:
     features = data.get("features", {})
     if not isinstance(features, dict):
         raise RoutingConfigError(f"[features] is not a table in {path}")
@@ -190,12 +178,14 @@ def _validate_supported_layout(
 def migrate_text(text: str, path: pathlib.Path) -> tuple[str, list[str]]:
     data = _parse_toml(text, path)
     lines = text.splitlines(keepends=True)
-    _validate_supported_layout(data, lines, path)
+    _validate_supported_layout(data, path)
     newline = _newline_for(text)
     changes: list[str] = []
 
     section = ""
     features_table_found = False
+    features_child_table_index: int | None = None
+    features_dotted_key_found = False
     seen_desired = False
     transformed: list[str] = []
     for line in lines:
@@ -203,23 +193,17 @@ def migrate_text(text: str, path: pathlib.Path) -> tuple[str, list[str]]:
         if table_match:
             section = table_match.group(1).strip()
             features_table_found = features_table_found or section == ROUTING_TABLE
-            if section == LEGACY_ROUTING_TABLE:
-                changes.append(f"remove [{LEGACY_ROUTING_TABLE}] routing table")
-                continue
+            if (
+                features_child_table_index is None
+                and section.startswith(f"{ROUTING_TABLE}.")
+            ):
+                features_child_table_index = len(transformed)
             transformed.append(line)
-            continue
-        if section == LEGACY_ROUTING_TABLE:
             continue
 
         key = _line_key(line)
-        if section == ROUTING_TABLE and key == LEGACY_ROUTING_KEY:
-            changes.append(f"remove legacy {LEGACY_ROUTING_NAME}")
-            continue
-        if section == "" and key is not None and (
-            key == LEGACY_ROUTING_NAME or key.startswith(f"{LEGACY_ROUTING_NAME}.")
-        ):
-            changes.append(f"remove legacy {LEGACY_ROUTING_NAME}")
-            continue
+        if section == "" and key is not None and key.startswith(f"{ROUTING_TABLE}."):
+            features_dotted_key_found = True
         if section == ROUTING_TABLE and key == ROUTING_KEY:
             seen_desired = True
             replacement = _replace_assignment(line, ROUTING_KEY, DESIRED_VALUE, newline)
@@ -251,6 +235,22 @@ def migrate_text(text: str, path: pathlib.Path) -> tuple[str, list[str]]:
                 insert_at = index
                 break
         transformed.insert(insert_at, f"{ROUTING_KEY} = {_toml_literal(DESIRED_VALUE)}{newline}")
+        changes.append(f"add {ROUTING_NAME}")
+    elif features_child_table_index is not None:
+        transformed[features_child_table_index:features_child_table_index] = [
+            f"[{ROUTING_TABLE}]{newline}",
+            f"{ROUTING_KEY} = {_toml_literal(DESIRED_VALUE)}{newline}",
+        ]
+        changes.append(f"add {ROUTING_NAME}")
+    elif features_dotted_key_found:
+        insert_at = next(
+            (index for index, line in enumerate(transformed) if TABLE_RE.match(line)),
+            len(transformed),
+        )
+        transformed.insert(
+            insert_at,
+            f"{ROUTING_NAME} = {_toml_literal(DESIRED_VALUE)}{newline}",
+        )
         changes.append(f"add {ROUTING_NAME}")
     else:
         if transformed and transformed[-1] and not transformed[-1].endswith(("\n", "\r")):
@@ -294,21 +294,25 @@ def apply_config(path: pathlib.Path) -> RoutingReport:
     text, _ = _read_config(resolved)
     candidate, changes = migrate_text(text, resolved)
     if candidate == text:
+        candidate_data = _parse_toml(candidate, resolved)
         return RoutingReport(
             status="current",
             config_path=str(resolved),
             ready=True,
+            experimental_multi_agent_v2=_experimental_v2_status(candidate_data),
         )
     try:
         _atomic_write(resolved, candidate)
     except OSError as exc:
         raise RoutingConfigError(f"could not update {resolved}: {exc}") from exc
+    candidate_data = _parse_toml(candidate, resolved)
     return RoutingReport(
         status="updated",
         config_path=str(resolved),
         ready=True,
         changes=changes,
         restart_required=True,
+        experimental_multi_agent_v2=_experimental_v2_status(candidate_data),
     )
 
 
@@ -317,12 +321,14 @@ def preview_config(path: pathlib.Path) -> RoutingReport:
     resolved = _resolved_write_path(path)
     text, _ = _read_config(resolved)
     candidate, changes = migrate_text(text, resolved)
+    candidate_data = _parse_toml(candidate, resolved)
     return RoutingReport(
         status="current" if candidate == text else "would-update",
         config_path=str(resolved),
         ready=True,
         changes=changes,
         restart_required=candidate != text,
+        experimental_multi_agent_v2=_experimental_v2_status(candidate_data),
     )
 
 
@@ -332,7 +338,9 @@ def print_report(report: RoutingReport, as_json: bool = False) -> None:
         return
     print(f"CODEX_ROUTING={report.status}")
     print(f"CONFIG={report.config_path}")
-    print(f"READY={'yes' if report.ready else 'no'}")
+    print(f"STATIC_CONFIGURED={'yes' if report.ready else 'no'}")
+    print("EXACT_ROLE_ACTIVATION=live-probe-required")
+    print(f"EXPERIMENTAL_MULTI_AGENT_V2={report.experimental_multi_agent_v2}")
     print(f"RESTART_REQUIRED={'yes' if report.restart_required else 'no'}")
     if report.issues:
         print("ISSUES=" + "; ".join(report.issues))

@@ -2,6 +2,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=install/common.sh
+source "$ROOT/scripts/install/common.sh"
 # shellcheck source=install/policy.sh
 source "$ROOT/scripts/install/policy.sh"
 # shellcheck source=install/profiles.sh
@@ -149,7 +151,7 @@ codex_routing_status() {
   fi
   if output="$(python3 "$ROOT/scripts/configure-codex-routing.py" \
     --check --config "$CODEX_HOME_DIR/config.toml" 2>/dev/null)"; then
-    echo "ready"
+    echo "configured"
     return 0
   fi
   status="$(printf '%s\n' "$output" | sed -n 's/^CODEX_ROUTING=//p' | head -n1)"
@@ -160,6 +162,21 @@ codex_routing_status() {
     *)
       echo "invalid"
       ;;
+  esac
+}
+
+codex_experimental_routing_status() {
+  local output status
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "unknown"
+    return 0
+  fi
+  output="$(python3 "$ROOT/scripts/configure-codex-routing.py" \
+    --check --config "$CODEX_HOME_DIR/config.toml" 2>/dev/null || true)"
+  status="$(printf '%s\n' "$output" | sed -n 's/^EXPERIMENTAL_MULTI_AGENT_V2=//p' | head -n1)"
+  case "$status" in
+    absent|present-unmanaged) echo "$status" ;;
+    *) echo "unknown" ;;
   esac
 }
 
@@ -342,39 +359,23 @@ render_cursor_agent_expected() {
 }
 
 policy_status() {
-  local platform="$1"
-  local file start_marker end_marker expected actual
-  case "$platform" in
-    codex)
-      file="$CODEX_HOME_DIR/AGENTS.md"
-      start_marker="<!-- TEAMWORK_CODEX_GLOBAL_START -->"
-      end_marker="<!-- TEAMWORK_CODEX_GLOBAL_END -->"
-      expected="$(write_teamwork_codex_global_policy)"
-      ;;
-    claude)
-      file="$HOME/.claude/CLAUDE.md"
-      start_marker="<!-- TEAMWORK_CLAUDE_GLOBAL_START -->"
-      end_marker="<!-- TEAMWORK_CLAUDE_GLOBAL_END -->"
-      expected="$(write_teamwork_claude_global_policy)"
-      ;;
-    cursor)
-      echo "manual"
-      return 0
-      ;;
-  esac
+  teamwork_managed_policy_status "$1"
+}
 
-  [[ -f "$file" ]] || { echo "missing"; return 0; }
-  actual="$(awk -v start="$start_marker" -v end="$end_marker" '
-    $0 == start { capture = 1 }
-    capture { print }
-    $0 == end { capture = 0 }
-  ' "$file")"
-
-  if [[ "$actual" == "$expected" ]]; then
-    echo "ok"
-  else
-    echo "missing"
-  fi
+static_install_status() {
+  [[ "$(skills_status "$HOME/.agents/skills")" == "ok" ]] || { echo "partial"; return 0; }
+  [[ "$(skills_status "$HOME/.cursor/skills")" == "ok" ]] || { echo "partial"; return 0; }
+  [[ "$(skills_status "$HOME/.claude/skills")" == "ok" ]] || { echo "partial"; return 0; }
+  [[ "$(skills_content_status "$HOME/.agents/skills")" == "current" ]] || { echo "partial"; return 0; }
+  [[ "$(skills_content_status "$HOME/.cursor/skills")" == "current" ]] || { echo "partial"; return 0; }
+  [[ "$(skills_content_status "$HOME/.claude/skills")" == "current" ]] || { echo "partial"; return 0; }
+  [[ "$(agents_status "$CODEX_HOME_DIR/agents" toml "${CODEX_AGENTS[@]}")" == "ok" ]] || { echo "partial"; return 0; }
+  [[ "$(agents_status "$HOME/.cursor/agents" md "${CURSOR_AGENTS[@]}")" == "ok" ]] || { echo "partial"; return 0; }
+  [[ "$(agents_status "$HOME/.claude/agents" md "${CLAUDE_AGENTS[@]}")" == "ok" ]] || { echo "partial"; return 0; }
+  [[ "$(agents_content_status "$CODEX_HOME_DIR/agents" toml codex "${CODEX_AGENTS[@]}")" == "current" ]] || { echo "partial"; return 0; }
+  [[ "$(agents_content_status "$HOME/.cursor/agents" md cursor "${CURSOR_AGENTS[@]}")" == "current" ]] || { echo "partial"; return 0; }
+  [[ "$(agents_content_status "$HOME/.claude/agents" md claude "${CLAUDE_AGENTS[@]}")" == "current" ]] || { echo "partial"; return 0; }
+  echo "current"
 }
 
 version_drift() {
@@ -716,8 +717,8 @@ print_plugin_readiness() {
   [[ "$legacy" == "clear" ]] || { ready=no; missing+=("legacy-skill-copies"); }
   [[ "$agents" == "ok" ]] || { ready=no; missing+=("codex-agents"); }
   [[ "$agent_content" == "current" ]] || { ready=no; missing+=("codex-agent-content"); }
-  [[ "$routing" == "ready" ]] || { ready=no; missing+=("codex-routing"); }
-  [[ "$policy" == "ok" ]] || { ready=no; missing+=("codex-policy"); }
+  [[ "$routing" == "configured" ]] || { ready=no; missing+=("codex-routing-config"); }
+  [[ "$policy" == "current" ]] || { ready=no; missing+=("codex-policy"); }
   if ! plugin_notification_is_ready "$notifications" "$notification"; then
     ready=no
     missing+=("codex-notifications")
@@ -740,6 +741,9 @@ print_plugin_readiness() {
   fi
 
   echo "INSTALL_READY=$ready"
+  echo "INSTALL_SCOPE=static"
+  echo "STATIC_INSTALL_READY=$([[ "$agents" == "ok" && "$agent_content" == "current" ]] && echo yes || echo no)"
+  echo "POLICY_ACTIVATION=$([[ "$policy" == "current" ]] && echo complete || echo partial)"
   echo "MANAGED_INSTALL_READY=$ready"
   echo "BASELINE_READY=$baseline_ready"
   echo "FULL_CAPABILITY_READY=$full_ready"
@@ -755,6 +759,8 @@ print_plugin_readiness() {
   echo "CODEX_AGENTS=$agents"
   echo "CODEX_AGENT_CONTENT=$agent_content"
   echo "CODEX_ROUTING=$routing"
+  echo "CODEX_EXACT_ROLE_ACTIVATION=live-probe-required"
+  echo "CODEX_EXPERIMENTAL_MULTI_AGENT_V2=$(codex_experimental_routing_status)"
   echo "CODEX_POLICY=$policy"
   echo "CODEX_NOTIFICATIONS=$notification"
   echo "MANAGED_DEPENDENCIES=$dependency_state"
@@ -838,10 +844,11 @@ print_readiness() {
   [[ "$(agents_content_status "$CODEX_HOME_DIR/agents" toml codex "${CODEX_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("codex-agent-content"); }
   [[ "$(agents_content_status "$HOME/.cursor/agents" md cursor "${CURSOR_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("cursor-agent-content"); }
   [[ "$(agents_content_status "$HOME/.claude/agents" md claude "${CLAUDE_AGENTS[@]}")" == "current" ]] || { ready=no; missing+=("claude-agent-content"); }
-  [[ "$(codex_routing_status)" == "ready" ]] || { ready=no; missing+=("codex-routing"); }
-  [[ "$(policy_status codex)" == "ok" ]] || { ready=no; missing+=("codex-policy"); }
-  [[ "$(policy_status claude)" == "ok" ]] || { ready=no; missing+=("claude-policy"); }
-  missing+=("cursor-policy-manual")
+  [[ "$(codex_routing_status)" == "configured" ]] || { ready=no; missing+=("codex-routing-config"); }
+  [[ "$(policy_status codex)" == "current" ]] || { ready=no; missing+=("codex-policy"); }
+  [[ "$(policy_status claude)" == "current" ]] || { ready=no; missing+=("claude-policy"); }
+  ready=no
+  missing+=("cursor-policy-manual-action-required")
 
   for v in "$codex_v" "$cursor_v" "$claude_v"; do
     if [[ "$v" != "missing" && "$v" != "unknown" ]] && semver_lt "$v" "$source_version"; then
@@ -870,6 +877,10 @@ print_readiness() {
   fi
 
   echo "INSTALL_READY=$ready"
+  echo "INSTALL_SCOPE=static"
+  echo "STATIC_INSTALL_READY=$([[ "$(static_install_status)" == "current" ]] && echo yes || echo no)"
+  echo "POLICY_ACTIVATION=partial"
+  echo "INSTALL_STATE=partial"
   echo "MANAGED_INSTALL_READY=$ready"
   echo "BASELINE_READY=$baseline_ready"
   echo "FULL_CAPABILITY_READY=$full_ready"
@@ -892,12 +903,17 @@ print_readiness() {
   echo "GPU_BROKER_READY=$(gpu_broker_ready_status)"
   echo "CURSOR_MCP=$cursor_mcp"
   echo "CODEX_ROUTING=$(codex_routing_status)"
+  echo "CODEX_EXACT_ROLE_ACTIVATION=live-probe-required"
+  echo "CODEX_EXPERIMENTAL_MULTI_AGENT_V2=$(codex_experimental_routing_status)"
+  echo "CODEX_POLICY=$(policy_status codex)"
+  echo "CLAUDE_POLICY=$(policy_status claude)"
+  echo "CURSOR_POLICY=$(policy_status cursor)"
   echo "CLAUDE_NOTIFICATIONS=$(notification_status claude)"
   echo "CURSOR_NOTIFICATIONS=$(notification_status cursor)"
   echo "MISSING=$(IFS=,; echo "${missing[*]-}")"
   echo "HOST_ACTIVATION=manual-action-required"
   echo "MANUAL_ACTIONS=$(IFS=,; echo "${manual_actions[*]}")"
-  echo "CURSOR_POLICY_MANUAL=run ./install.sh cursor-policy-copy, then paste into Cursor Settings -> Rules -> User Rules"
+  echo "CURSOR_POLICY_MANUAL=run ./install.sh cursor-policy-copy; paste into Cursor Settings -> Rules -> User Rules; review the visible User Rules text"
   echo "NEXT=cd \"$ROOT\" && ./install.sh update --profile $profile"
   echo "CURSOR_POLICY=./install.sh cursor-policy-copy"
   [[ "$ready" == "yes" ]]
@@ -979,7 +995,7 @@ print_report() {
     drift_s="$(version_drift "$installed_v" "$source_version")"
     prof_s="$(read_installed_profile "$dest_skills")"
     [[ "$skills_s" == "ok" && "$content_s" == "current" && "$agents_s" == "ok" && "$agent_content_s" == "current" && "$drift_s" == "current" ]] || note_issue
-    [[ "$policy_s" == "missing" ]] && note_issue
+    [[ "$policy_s" == "current" ]] || note_issue
     printf '%-8s %-8s %-12s %-8s %-14s %-8s %-18s %-12s\n' \
       "$platform" "$skills_s" "$content_s" "$agents_s" "$agent_content_s" "$policy_s" "$drift_s" "$prof_s"
   done
@@ -989,7 +1005,9 @@ print_report() {
   local codex_routing_s
   codex_routing_s="$(codex_routing_status)"
   echo "config: $codex_routing_s"
-  [[ "$codex_routing_s" == "ready" ]] || note_issue
+  [[ "$codex_routing_s" == "configured" ]] || note_issue
+  echo "exact role activation: live-probe-required"
+  echo "experimental multi_agent_v2: $(codex_experimental_routing_status)"
   local legacy_codex_skills_s
   legacy_codex_skills_s="$(legacy_codex_skills_status)"
   echo "legacy skill root: $legacy_codex_skills_s"
@@ -1009,7 +1027,7 @@ print_report() {
   echo
 
   echo "--- Bootstrap manual checks ---"
-  echo "Cursor User Rules: run ./install.sh cursor-policy-copy, then paste in Cursor Settings -> Rules -> User Rules (cannot auto-verify)"
+  echo "Cursor User Rules: manual action required. Run ./install.sh cursor-policy-copy; paste in Cursor Settings -> Rules -> User Rules; review the visible text (activation cannot be observed by this installer)."
   echo
 
   echo "--- Model mapping (best-effort) ---"

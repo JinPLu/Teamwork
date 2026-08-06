@@ -1,52 +1,50 @@
 ---
 name: teamwork-init
-description: Use when the user asks to initialize, audit, repair, or slim project-local AI instructions, current-format Teamwork context, task documents, project routing, or local CodeGraph policy inside a named project; do not use for global Teamwork installation, host configuration, or conversion of existing Teamwork documents.
+description: Use when the user asks to create fresh project-local Teamwork instructions and an empty schema-v4 document skeleton in one named project; do not use to audit or repair existing Teamwork context, migrate documents, refresh global installation, or create task content.
 ---
 
 # Teamwork Init
 
-Keep project-local AI context accurate, small, and maintainable. Resolve the
-exact project root first. Use Explorer for read-only discovery and Worker only
-for requested mutations allowed by the current host and tool authority. Do not
-create a second approval protocol inside the Skill.
+Init is the current fresh-project context stage. It creates only concise
+project-local instructions and the empty schema-v4 Teamwork document skeleton.
+Root resolves and reports the exact project root; Explorer inspects for ownership
+conflicts and Worker performs an authorized creation.
 
-## Inspect
+## Inspect Before Creation
 
-1. Read the applicable instruction hierarchy and identify canonical owners,
-   generated surfaces, local commands, task-document state, and CodeGraph
-   policy before proposing changes.
-2. Ground project facts in current source, configuration, tests, scripts, and
-   version-control evidence. Do not invent paths, capabilities, commands, or
-   architecture.
-3. Keep only stable behavior-changing context: purpose, owners, required
-   commands, boundaries, source-of-truth paths, and local tool policy. Leave
-   volatile progress in its live task document.
-4. Give each fact one canonical owner and use short pointers elsewhere. Avoid
-   copying manuals, schemas, or external documentation into project
-   instructions.
-5. Distinguish Teamwork-managed content from user-owned content. Preserve
-   unrelated material and report an ownership conflict when safe merging is not
-   possible.
+Read the applicable instruction hierarchy and confirm canonical owners, local
+commands, source-of-truth paths, stable boundaries, and CodeGraph policy from
+current project evidence. Distinguish Teamwork-managed space from user-owned
+content and preserve unrelated material.
 
-If the user requested only an audit, stop after Explorer's evidence-backed
-findings. If a mutation was requested, give Worker the exact owned surfaces and
-desired outcome, then re-read changed files and run the nearest real
-project-local validation. Report any activation or human action the tools cannot
-perform.
+Fail closed if Teamwork context or documents already exist, if ownership is
+ambiguous, or if safe merging would rewrite user meaning. Init does not audit,
+slim, repair, convert, or migrate an existing Teamwork installation. Root must
+suspend Init and switch to Update with the exact resolved project root when
+existing context needs readiness repair or document migration.
 
-Create and maintain only the current Teamwork document format. Do not add old
-format readers, compatibility shims, dual-write behavior, or partial conversion
-inside Init. If existing Teamwork documents require a version conversion, leave
-them unchanged and route the exact project root to Update; do not treat Init as
-a migration fallback.
+## Create Fresh Context
 
-Init never installs or refreshes global skills, agents, policies, plugins,
-notifications, managed dependencies, credentials, or host settings. Route those
-Teamwork-owned global surfaces to Update.
+Give Worker only the exact new or Teamwork-owned surfaces. Create the minimal
+project instruction block and the package-defined empty schema-v4 skeleton under
+that project's `docs/teamwork/`. Do not create a case directory, `live.md`, a
+typed task document, legacy reader, compatibility shim, or dual-read/write
+path. Do not copy manuals or volatile progress into project instructions.
 
-## Live Document
+Re-read the created surfaces and run the nearest package-owned schema and
+project-context validation. Report any activation or human action that the
+tools cannot perform. Init never installs or refreshes global skills, agents,
+policies, plugins, notifications, dependencies, credentials, or host settings.
 
-When Writer is used, include the project root, inspected surfaces, findings,
-ownership, changes, validation, conflicts, document-format state, and remaining
-actions. Writer must not invent project facts or report unapplied changes as
-complete.
+Explorer and Worker are required for their assigned independent evidence and
+mutation roles. Root must not imitate a missing role. Suspend Init, switch to
+Update for readiness repair, wait, and resume or return the exact blocker.
+Explorer creates no document; it returns evidence to Init.
+
+## Init Report
+
+Only when the observed result, validation, ownership conflict, or blocker is
+material and reusable, Root assigns Writer a typed Report with kind Init. It
+records the resolved root, requested scope, observed outcome, decisive
+validation, created Teamwork-owned surfaces, conflicts, and remaining action.
+Writer must not invent project facts or report unapplied changes as complete.

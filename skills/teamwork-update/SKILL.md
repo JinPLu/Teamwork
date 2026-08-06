@@ -1,84 +1,100 @@
 ---
 name: teamwork-update
-description: Use when the user asks to check, install, activate, repair, or refresh Teamwork's global skills, agents, routing, policy, plugin, notifications, or declared managed dependencies, and to migrate all Teamwork documents for one explicitly authorized exact project root after that global refresh; do not use for ordinary project initialization, source release publication, or unrelated tools.
+description: Use when the user asks to inspect or repair Teamwork readiness, install or refresh its owned global surfaces, or orchestrate migration of all Teamwork documents under one exactly resolved and authorized project root; do not use for fresh project initialization, source release publication, or unrelated tools.
 ---
 
 # Teamwork Update
 
-Check or refresh Teamwork-owned global installation surfaces. Use Explorer for
-read-only discovery and Worker only for requested changes allowed by the current
-host and tool authority. Do not create a second approval protocol inside the
-Skill.
+Update is the current readiness and migration stage. It owns inspection, repair,
+activation sequencing, exact migration scope, and the completion claim. Use
+package-owned sources and host/tool authority; do not invent a second approval
+protocol or assume the current directory is a Teamwork checkout.
 
-## Resolve The Installation
+## Resolve And Inspect Readiness
 
-Do not assume the current directory is a Teamwork checkout. From an installed
-plugin, resolve its package root with `scripts/plugin-runtime-root.py`. From a
-checkout, verify the repository root. If no trustworthy source can be resolved,
-report the missing source instead of guessing a download location.
+Resolve a trustworthy package source, using the installed plugin's runtime-root
+helper or a verified checkout. From that resolved root, run
+`./scripts/check-update.sh --readiness` and keep static freshness, installed
+state, and live host activation as separate observations. A check-only request
+writes nothing.
 
-## Check Or Refresh
+For an authorized install, refresh, activation, or repair, inspect the current
+package contract, preserve unknown and user-owned files, apply only recognized
+current settings, and rerun the same readiness inspection. Report observed
+versions, baseline readiness, optional capability state, unresolved drift, and
+manual action or restart still required. Do not modify credentials, arbitrary
+plugins or tools, package managers, drivers, remote workloads, Git history,
+tags, or releases.
 
-1. Have Explorer run the resolved package's
-   `scripts/check-update.sh --readiness`, adding its documented plugin flag for
-   an installed plugin, and inspect recorded installation preferences,
-   installed versions, owned global surfaces, and declared managed dependencies.
-   Treat static freshness and live host activation as different claims.
-2. For check-only requests, return observed baseline readiness, optional
-   capability readiness, version drift, invalid or missing preferences, and
-   manual activation actions without writing.
-3. For install, update, activation, or repair requests, inspect the package's
-   current `install.sh --help` contract and give Worker the exact Teamwork-owned
-   surfaces and current-format preferences to apply. Reuse only choices that
-   validate against the current contract; do not preserve unrecognized old
-   settings as active configuration, silently enable optional dependencies, or
-   overwrite unowned receipts.
-4. Preserve unknown and user-owned files. Never modify credentials, arbitrary
-   plugins or tools, package managers, drivers, CUDA, remote workloads, Git
-   history, tags, or releases as part of Update.
-5. Rerun the same readiness check after mutation. Report versions, baseline and
-   optional capability status, unresolved drift, and any restart, trust,
-   notification, or other human action still required. For Codex notifications,
-   direct the user to `/hooks` and trust only Teamwork's `Stop` and
-   `PermissionRequest` hooks.
+When Codex notifications are enabled, report the observable trust state of the
+Teamwork Stop and PermissionRequest hooks. Direct the user to review those
+named hooks through the host; never recommend blanket hook trust or call them
+active when trust has not been observed.
 
-Use only package-declared sources and verification for managed dependencies.
-Do not infer success from file presence alone. An intentional optional-capability
-opt-out is a valid baseline state, not a failed installation.
+When another stage lacks a required leaf agent, Root suspends it, makes Update
+the current stage, waits for readiness repair, and resumes only after the role
+is observed ready. Root cannot substitute itself for the missing agent. The
+sole bootstrap exception is a missing or broken Teamwork agent subsystem: Root
+may directly perform only Update's readiness inspection and repair with native
+host tools. This exception does not authorize another stage method, simulate
+independence, or broaden effects.
 
-## Project Document Migration
+Explorer supplies bounded read-only readiness evidence and Worker performs
+authorized mechanical changes. If they are unavailable for a reason other than
+the agent-subsystem bootstrap case, return the real blocker.
 
-Run project migration only after the global refresh and readiness validation
-succeed. Require one exact project root that the user explicitly authorized for
-this update. Do not infer it from the current directory, a repository checkout,
-recent history, or a scan. If no exact root is available, complete the global
-result and report `project migration pending`; do not touch project files.
+## Exact-Root Document Migration
 
-For the authorized root:
+Migrate only after the refreshed runtime is ready. Resolve and report one exact
+project root covered by the user's authorization; an unambiguous current
+workspace may be resolved without asking the user to restate an absolute path.
+The only migration scope is `<resolved-project-root>/docs/teamwork/**`. Never
+migrate project source, ordinary documentation, or project instructions.
 
-1. Have Explorer inventory every Teamwork-owned project document and its format
-   version before mutation. Include all Teamwork documents in the migration;
-   do not select a convenient subset or mix formats opportunistically.
-2. Have Worker run the package-owned full migration using the refreshed package.
-   Preserve unrelated project content, but do not install old-format readers,
-   compatibility shims, dual-read, or dual-write behavior.
-3. Validate the complete new-format document set and its project routing on the
-   real project path. Mark migration complete only when every Teamwork document
-   in the inventory is converted and the current runtime can consume it.
-4. After successful migration, run the project only on the new format. If the
-   migration helper is unavailable, conversion is partial, or verification
-   fails, report the exact blocker and keep the project migration pending; do
-   not fall back to running old settings or data.
+Update owns activation, scope, sequence, recovery decision, and the final
+migration claim. The responsibilities inside that sequence are exclusive:
 
-Update does not perform ordinary project initialization or edit unrelated
-project context; use Init to create current-format context for a new project. It
-also does not edit source release metadata or publish a release.
+- scripts perform only mechanical enumeration, path, schema, and index work;
+- Writer alone reads the source meaning and transforms it into typed Discussion,
+  Research, Debug, Plan, Review, and Report documents;
+- Reviewer independently reads and accepts the actual migrated corpus.
 
-## Live Document
+Inventory every Teamwork document and prepare the package-defined external
+staging and recovery copy before Writer transforms the complete set. Do not add
+compatibility readers, dual formats, or mechanical preserved envelopes.
+Preserve user meaning and stop rather than inventing a mapping. Validate the
+staged schema, coverage, and ordinary retrieval, then require an independent
+Reviewer to accept that frozen staged corpus.
 
-When Writer is used, include the resolved source, requested operation, versions,
-preferences, observed and changed surfaces, readiness evidence, optional
-capability state, exact project root or migration pending state, migration
-inventory and verification, unresolved drift, and manual actions. Writer must
-not report an unverified installation, activation, or project migration as
-complete.
+Only an accepted staged corpus may cross the cutover boundary. Update invokes
+the package cutover for the exact project root, reads the active
+`docs/teamwork` tree back through the current runtime, and requires Reviewer to
+read and accept that actual active corpus. If cutover fails before the migration
+state reaches `cutover`, the helper has already restored the original tree;
+Update observes that restoration and reports migration pending without calling
+the phase-gated rollback command. If cutover succeeds but readback or the
+post-cutover Review fails, Update invokes rollback from the prepared external
+copy, observes the legacy tree restored, and reports the exact failure. It
+never leaves a rejected schema-v4 corpus active or calls a staging verdict the
+final migration verdict.
+
+Counts, path checks, and schema validity cannot substitute for Writer's
+semantic transformation or either Reviewer judgment. Claim completion only
+when all inventoried content is transformed, cutover and real-path readback
+succeed, the current runtime consumes it, and the post-cutover Review accepts
+it. Retire the temporary recovery material only after that acceptance and any
+applicable release operation no longer needs rollback; otherwise preserve it
+and report its exact state.
+
+Init owns only fresh context creation and never migration. Capability drift
+belongs here, not in Goal or another stage.
+
+## Update Report
+
+When readiness evidence, an applied repair, migration state, or a blocker is
+material and reusable, Root assigns Writer a typed Report with kind Update. It
+records the resolved package source, requested operation, observed outcome,
+changed Teamwork-owned surfaces, readiness evidence, exact project root and
+migration state when applicable, semantic acceptance, unresolved drift, and
+manual actions. Writer must not claim unobserved readiness, activation, or
+migration completion.

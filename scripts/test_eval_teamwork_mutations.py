@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mutation tests for semantic routing pairs and topology ownership."""
+"""Mutation tests for semantic routing scenarios and topology ownership."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from teamwork_tooling.evaluation.cases import selected_cases, validate_pair_manifest  # noqa: E402
 from teamwork_tooling.evaluation.contracts import EvalError  # noqa: E402
 from teamwork_tooling.evaluation.sources import validate_skill_source_contract  # noqa: E402
+from teamwork_tooling.topology import public_skill_paths  # noqa: E402
 
 
 class EvalCliTests(unittest.TestCase):
@@ -36,38 +37,38 @@ class EvalCliTests(unittest.TestCase):
             self.assertGreater(summary["cases"], 0)
 
 
-class PairMutationTests(unittest.TestCase):
+class ScenarioMutationTests(unittest.TestCase):
     def mutated_manifest(self) -> tuple[tempfile.TemporaryDirectory[str], Path, dict[str, object]]:
         temporary = tempfile.TemporaryDirectory()
-        path = Path(temporary.name) / "pairs.json"
+        path = Path(temporary.name) / "scenarios.json"
         value = json.loads((ROOT / "evals/teamwork/routing-pairs.json").read_text())
         return temporary, path, value
 
-    def test_collapsing_pair_routes_is_rejected(self) -> None:
+    def test_unknown_route_is_rejected(self) -> None:
         temporary, path, value = self.mutated_manifest()
         with temporary:
-            value["pairs"][0]["negative"]["expected_route"] = value["pairs"][0]["positive"]["expected_route"]
+            value["scenarios"][0]["expected_route"] = "teamwork-retired"
             path.write_text(json.dumps(value))
-            with self.assertRaisesRegex(EvalError, "routes must differ"):
+            with self.assertRaisesRegex(EvalError, "expected route is not current"):
                 validate_pair_manifest(path)
 
-    def test_losing_positive_public_skill_coverage_is_rejected(self) -> None:
+    def test_losing_changed_route_coverage_is_rejected(self) -> None:
         temporary, path, value = self.mutated_manifest()
         with temporary:
-            value["pairs"] = [
-                pair for pair in value["pairs"]
-                if pair["positive"]["expected_route"] != "teamwork-debug"
+            value["scenarios"] = [
+                scenario for scenario in value["scenarios"]
+                if scenario["expected_route"] != "teamwork-debug"
             ]
             path.write_text(json.dumps(value))
-            with self.assertRaisesRegex(EvalError, "lack positive coverage"):
+            with self.assertRaisesRegex(EvalError, "do not cover changed/reasserted routes"):
                 validate_pair_manifest(path)
 
     def test_owner_must_be_active_topology_source(self) -> None:
         temporary, path, value = self.mutated_manifest()
         with temporary:
-            value["pairs"][0]["owner"] = "skills/teamwork-explore/SKILL.md"
+            value["scenarios"][0]["owner"] = "skills/teamwork-explore/SKILL.md"
             path.write_text(json.dumps(value))
-            with self.assertRaisesRegex(EvalError, "not an active topology source"):
+            with self.assertRaisesRegex(EvalError, "not a current canonical source"):
                 validate_pair_manifest(path)
 
     def test_forbidden_collaborate_state_machine_is_rejected(self) -> None:
@@ -78,12 +79,14 @@ class PairMutationTests(unittest.TestCase):
                 source + "\nRuntime state L1 transitions to L2 and L3.\n",
             )
 
-    def test_selected_cases_have_both_pair_polarities(self) -> None:
-        by_pair: dict[str, set[str]] = {}
-        for case in selected_cases("all"):
-            by_pair.setdefault(case["pair_id"], set()).add(case["polarity"])
-        self.assertTrue(by_pair)
-        self.assertTrue(all(value == {"positive", "negative"} for value in by_pair.values()))
+    def test_selected_cases_cover_current_routes_without_pair_fields(self) -> None:
+        cases = selected_cases("all")
+        self.assertTrue(cases)
+        self.assertEqual(
+            {"native", *public_skill_paths(ROOT)},
+            {case["expected"]["route"] for case in cases},
+        )
+        self.assertTrue(all("pair_id" not in case and "polarity" not in case for case in cases))
 
 
 if __name__ == "__main__":

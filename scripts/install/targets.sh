@@ -119,7 +119,7 @@ preflight_codex_routing() {
   config="$(codex_home_path)/config.toml"
   if [[ "$CODEX_ROUTING_ACTION" == "preserve" ]]; then
     if ! python3 "$ROOT/scripts/configure-codex-routing.py" --check --config "$config" >/dev/null 2>&1; then
-      echo "Codex routing is not ready; plugin activation cannot preserve a missing or disabled multi_agent feature." >&2
+      echo "Codex static routing is not configured; plugin activation cannot preserve a missing or disabled multi_agent feature." >&2
       return 1
     fi
     return 0
@@ -216,6 +216,7 @@ install_codex() {
   configure_codex_routing
   install_codex_skill_set
   install_codex_agent_set "$agent_root" "user"
+  echo "Codex static skills/agents: installed"
   install_codex_global_policy
   configure_user_notifications codex
 }
@@ -230,6 +231,7 @@ install_plugin_codex_bootstrap() {
   refresh_managed_dependencies
   configure_codex_routing
   install_codex_agent_set "$code_home/agents" "plugin"
+  echo "Codex static agents: installed"
   install_codex_global_policy
   configure_user_notifications codex
   remove_plugin_legacy_skill_copies
@@ -247,6 +249,7 @@ install_checkout_plugin_codex_update() {
   refresh_managed_dependencies
   configure_codex_routing
   install_codex_agent_set "$code_home/agents" "plugin"
+  echo "Codex static agents: installed"
   install_codex_global_policy
   configure_user_notifications codex
   remove_plugin_legacy_skill_copies
@@ -275,8 +278,10 @@ install_cursor() {
   persist_install_preferences_if_recorded
   install_skill_set "$skill_root" "Cursor"
   install_cursor_agent_set "$agent_root" "user Cursor"
+  echo "Cursor static skills/agents: installed"
   configure_cursor_mcp_install
-  echo "Cursor User Rules: run ./install.sh cursor-policy-copy (or cursor-policy) and paste into Cursor Settings -> Rules -> User Rules."
+  echo "Cursor global policy activation: partial; manual action required because User Rules activation is not observable."
+  echo "Exact action: run ./install.sh cursor-policy-copy; paste into Cursor Settings -> Rules -> User Rules; review the visible User Rules text."
 }
 
 install_claude() {
@@ -289,6 +294,7 @@ install_claude() {
   persist_install_preferences_if_recorded
   install_skill_set "$skill_root" "Claude Code"
   install_claude_agent_set "$agent_root" "user Claude Code"
+  echo "Claude static skills/agents: installed"
   install_claude_global_policy
   configure_user_notifications claude
 }
@@ -327,40 +333,51 @@ install_all() {
   configure_codex_routing
   install_codex_skill_set
   install_codex_agent_set "$codex_agent_root" "user"
+  echo "Codex static skills/agents: installed"
   install_codex_global_policy
   configure_user_notifications codex
   install_skill_set "$cursor_skill_root" "Cursor"
   install_cursor_agent_set "$cursor_agent_root" "user Cursor"
+  echo "Cursor static skills/agents: installed"
   configure_cursor_mcp_install
-  echo "Cursor User Rules: run ./install.sh cursor-policy-copy (or cursor-policy) and paste into Cursor Settings -> Rules -> User Rules."
+  echo "Cursor global policy activation: partial; manual action required because User Rules activation is not observable."
+  echo "Exact action: run ./install.sh cursor-policy-copy; paste into Cursor Settings -> Rules -> User Rules; review the visible User Rules text."
   install_skill_set "$claude_skill_root" "Claude Code"
   install_claude_agent_set "$claude_agent_root" "user Claude Code"
+  echo "Claude static skills/agents: installed"
   install_claude_global_policy
   configure_user_notifications claude
 }
 
 run_update_project_migration() {
-  local status
+  local inventory_output source_count status
   if [[ -z "${PROJECT_ROOT:-}" ]]; then
-    echo "global updated; project migration pending"
+    echo "global updated; schema-v4 project migration pending (rerun Update with --project-root for an exact project)"
     return 0
   fi
-  if python3 "$ROOT/scripts/teamwork-case-migration.py" upgrade-project \
-      --project-root "$PROJECT_ROOT"; then
+  if python3 "$ROOT/scripts/teamwork_index_v4.py" validate \
+      "$PROJECT_ROOT/docs/teamwork/index.json" --documents >/dev/null 2>&1; then
     if python3 "$ROOT/scripts/init-project-files.py" \
-        --project-root "$PROJECT_ROOT" write-context; then
-      echo "global updated; project migration complete"
+        --project-root "$PROJECT_ROOT" refresh-context; then
+      echo "global updated; schema-v4 project context current (no migration required)"
       return 0
     else
       status=$?
-      echo "global updated; project migration/context refresh failed" >&2
+      echo "global updated; schema-v4 project context refresh failed" >&2
       return "$status"
     fi
-  else
-    status=$?
   fi
-  echo "global updated; project migration failed" >&2
-  return "$status"
+  echo "global updated; schema-v4 semantic project migration required" >&2
+  if [[ -f "$ROOT/scripts/migrate-teamwork-documents.py" ]] &&
+      inventory_output="$(python3 "$ROOT/scripts/migrate-teamwork-documents.py" inventory \
+        --project-root "$PROJECT_ROOT" 2>/dev/null)" &&
+      source_count="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["source_count"])' \
+        <<<"$inventory_output")"; then
+    echo "Migration inventory: discovered $source_count legacy source case(s). Writer semantic transformation and independent Reviewer acceptance are required; project documents were not changed." >&2
+  else
+    echo "Migration inventory could not be completed safely; Writer and Reviewer migration remains pending and project documents were not changed." >&2
+  fi
+  return 3
 }
 
 install_update() {

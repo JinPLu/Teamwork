@@ -89,7 +89,7 @@ git -C "$ROOT" check-ignore -q docs/teamwork/discussion/validation-probe.md \
 git -C "$ROOT" check-ignore -q docs/teamwork/collaborate/validation-probe.md \
   || fail ".gitignore must match untracked Teamwork Collaborate artifacts"
 git -C "$ROOT" check-ignore -q docs/teamwork/cases/c-0000000000000000000000000000000000000000000000000000000000000000/manifest.json \
-  || fail ".gitignore must match current Teamwork case memory"
+  || fail ".gitignore must continue matching a historical Teamwork case path"
 python3 - "$ROOT/.gitignore" <<'PY'
 import pathlib
 import sys
@@ -290,12 +290,6 @@ if is_full_validation; then
     --candidate-score 0.92 --current-score 0.80 --best-score 0.90 --dead-band 0.01 \
     | grep -q '"action": "accept_new_best"' \
     || fail "optimizer smoke gate did not accept new best"
-  opt_ledger_tmp="$(mktemp -d)"
-  CLEANUP_PATHS+=("$opt_ledger_tmp")
-  printf '%s\n' \
-    '{"date":"2026-07-08","candidate_id":"optimizer-smoke-valid","kind":"skillopt-lite","provider":"offline","model":"deterministic-smoke","model_config":"offline-smoke","prompt_or_template":"skills/teamwork-collaborate/SKILL.md","owned_files":["skills/teamwork-review/SKILL.md"],"denylist":["evals/teamwork/routing-pairs.json","evals/teamwork/live-cases/release-matrix.json"],"baseline":"evals/teamwork/README.md","treatment":"scripts/optimize-teamwork.py","gate_decision":"reject","rollback":"evals/teamwork/README.md","validation":["scripts/validate.sh"],"release_audit":"validate smoke only","reviewer":"validate.sh","decision":"rejected"}' \
-    > "$opt_ledger_tmp/valid.jsonl"
-  python3 "$ROOT/scripts/eval-teamwork.py" --optimizer-ledger "$opt_ledger_tmp/valid.jsonl" >/dev/null
 else
   validation_note "optimizer workspace smoke is release-only"
 fi
@@ -308,14 +302,14 @@ python3 "$ROOT/scripts/validate_teamwork_index.py" \
 index_pointer_tmp="$(mktemp -d "${TMPDIR:-/tmp}/teamwork-index-pointer.XXXXXX")"
 CLEANUP_PATHS+=("$index_pointer_tmp")
 
-sed 's/"claim_heads": {}/"claim_heads": []/' \
+sed 's/"tasks": {}/"tasks": []/' \
   "$ROOT/templates/teamwork-memory/index.json" \
-  > "$index_pointer_tmp/invalid-claim-heads.json"
+  > "$index_pointer_tmp/invalid-tasks.json"
 if python3 "$ROOT/scripts/validate_teamwork_index.py" \
-  "$index_pointer_tmp/invalid-claim-heads.json" >/dev/null 2>&1; then
-  fail "Teamwork index validator accepted non-object current claim_heads"
+  "$index_pointer_tmp/invalid-tasks.json" >/dev/null 2>&1; then
+  fail "Teamwork index validator accepted a non-object tasks map"
 fi
-sed 's/"schema_version": 3/"schema_version": 4/' \
+sed 's/"schema_version": 4/"schema_version": 5/' \
   "$ROOT/templates/teamwork-memory/index.json" \
   > "$index_pointer_tmp/unknown-schema.json"
 if python3 "$ROOT/scripts/validate_teamwork_index.py" \
@@ -344,10 +338,8 @@ python3 "$ROOT/scripts/build-codex-plugin.py" --check \
 python3 -m json.tool "$ROOT/.codex-plugin/plugin.json" >/dev/null
 python3 -m json.tool "$ROOT/.claude-plugin/plugin.json" >/dev/null
 python3 - "$ROOT" <<'PY'
-import hashlib
 import json
 import pathlib
-import stat
 import sys
 
 root = pathlib.Path(sys.argv[1])
@@ -391,7 +383,10 @@ source_skills = {
 }
 if source_skills != expected_skills:
     raise SystemExit("FAIL: canonical source inventory must match the topology manifest")
-actual_skills = {path.name for path in (bundle / "skills").iterdir() if path.is_dir()}
+actual_skills = {
+    path.name for path in (bundle / "skills").iterdir()
+    if path.is_dir() and (path / "SKILL.md").is_file()
+}
 if actual_skills != expected_skills:
     raise SystemExit("FAIL: Marketplace bundle skill inventory must match canonical source")
 expected_references = {
@@ -442,17 +437,23 @@ required_runtime = {
     "scripts/configure-notifications.py",
     "scripts/init-project.sh",
     "scripts/init-project-files.py",
-    "scripts/discussion-transaction.py",
-    "scripts/teamwork-case-migration.py",
+    "scripts/teamwork_index_v4.py",
+    "scripts/migrate-teamwork-documents.py",
+    "scripts/validate_teamwork_index.py",
     "scripts/plugin-activation.py",
     "templates/codex-agents/teamwork-worker.toml",
     "templates/cursor-agents/worker.md",
     "templates/claude-agents/worker.md",
     "hooks/notify.py",
     "scripts/plugin-runtime-root.py",
+    "policy/teamwork-global.md",
     "templates/teamwork-memory/index.json",
-    "templates/teamwork-memory/teamwork-collaborate-template.md",
-    ".teamwork-runtime-integrity.json",
+    "templates/teamwork-memory/discussion.md",
+    "templates/teamwork-memory/research.md",
+    "templates/teamwork-memory/debug.md",
+    "templates/teamwork-memory/plan.md",
+    "templates/teamwork-memory/review.md",
+    "templates/teamwork-memory/report.md",
 }
 for rel in required_runtime:
     if not (bundle / rel).is_file():
@@ -463,40 +464,6 @@ if (bundle / ".claude-plugin").exists():
     raise SystemExit("FAIL: Marketplace bundle must copy only the Codex plugin manifest")
 if (bundle / ".teamwork-plugin-runtime").read_text() != "TEAMWORK_CODEX_PLUGIN_RUNTIME=1\n":
     raise SystemExit("FAIL: Marketplace bundle runtime marker is invalid")
-integrity = json.loads((bundle / ".teamwork-runtime-integrity.json").read_text())
-if set(integrity) != {"schema_version", "version", "marker", "manifest_sha256", "files"}:
-    raise SystemExit("FAIL: Marketplace bundle runtime integrity manifest has unexpected fields")
-if integrity.get("version") != version or integrity.get("schema_version") != 1:
-    raise SystemExit("FAIL: Marketplace bundle runtime integrity manifest has the wrong version/schema")
-if integrity.get("marker") != "TEAMWORK_CODEX_PLUGIN_RUNTIME=1":
-    raise SystemExit("FAIL: Marketplace bundle runtime integrity manifest has the wrong marker")
-manifest_hash = hashlib.sha256((bundle / ".codex-plugin/plugin.json").read_bytes()).hexdigest()
-if integrity.get("manifest_sha256") != manifest_hash:
-    raise SystemExit("FAIL: Marketplace bundle runtime integrity manifest has the wrong manifest hash")
-files = integrity.get("files")
-if not isinstance(files, dict):
-    raise SystemExit("FAIL: Marketplace bundle runtime integrity file inventory drifted")
-actual_integrity_files = set()
-for path in bundle.rglob("*"):
-    rel = path.relative_to(bundle).as_posix()
-    if rel == ".teamwork-runtime-integrity.json":
-        continue
-    info = path.lstat()
-    if stat.S_ISDIR(info.st_mode):
-        continue
-    if not stat.S_ISREG(info.st_mode):
-        raise SystemExit(f"FAIL: Marketplace bundle runtime integrity rejects non-regular input: {rel}")
-    actual_integrity_files.add(rel)
-if set(files) != actual_integrity_files:
-    raise SystemExit("FAIL: Marketplace bundle runtime integrity file inventory drifted")
-for rel, expected in files.items():
-    if not isinstance(expected, dict) or set(expected) != {"sha256", "mode"}:
-        raise SystemExit(f"FAIL: Marketplace bundle runtime integrity has invalid entry: {rel}")
-    path = bundle / rel
-    if expected["sha256"] != hashlib.sha256(path.read_bytes()).hexdigest():
-        raise SystemExit(f"FAIL: Marketplace bundle runtime integrity hash drifted: {rel}")
-    if expected["mode"] != f"{path.stat().st_mode & 0o777:04o}":
-        raise SystemExit(f"FAIL: Marketplace bundle runtime integrity mode drifted: {rel}")
 if claude.get("skills") != "./skills/":
     raise SystemExit("FAIL: Claude manifest skills must remain ./skills/")
 if "Claude Code" not in claude.get("description", ""):

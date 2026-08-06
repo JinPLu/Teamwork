@@ -1,13 +1,9 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "project": {
     "name": "Example Project",
     "root": ".",
-    "description": "Local Teamwork case-bundle index for this project."
+    "description": "Local Teamwork typed-document index for this project."
   },
-  "active_cases": [],
-  "claim_heads": {},
-  "aliases": {},
-  "recent_cases": [],
-  "migration": null
+  "tasks": {}
 }

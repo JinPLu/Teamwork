@@ -13,15 +13,15 @@ usage() {
 Usage:
   ./scripts/init-project.sh [--project-root PATH] [--codegraph|--no-codegraph] [--cursor-mcp|--no-cursor-mcp] [--full-bootstrap]
 
-Initialize only project-local Teamwork context:
+Initialize minimal project-local Teamwork context:
+  - an empty schema-v4 index at docs/teamwork/index.json
   - the managed Teamwork block in AGENTS.md
-  - ordinary durable memory under docs/teamwork/
   - local Teamwork ignore rules
   - a CodeGraph index only after explicit --codegraph consent
-  - Cursor MCP rules and optional project .cursor/mcp.json after explicit --cursor-mcp consent
+  - project Cursor MCP rules and configuration only after explicit --cursor-mcp consent
 
-This command does not install or refresh global skills, agents, policies,
-notifications, or clipboard content.
+Typed directories and documents are created later by Writer when material
+reusable output first appears. Init never migrates older Teamwork formats.
 USAGE
 }
 
@@ -75,7 +75,6 @@ project_files() {
 }
 
 PROJECT_ROOT="$(project_files print-root)"
-
 project_files preflight
 
 if (( RUN_CODEGRAPH == 0 )); then
@@ -90,19 +89,14 @@ else
   echo "CodeGraph: init failed; continuing with project files in place" >&2
 fi
 
-cursor_mcp_args=()
-if (( RUN_CURSOR_MCP == 1 )); then
-  cursor_mcp_args=(--cursor-mcp)
-else
-  echo "Cursor MCP: skipped (explicit consent not given)"
-fi
-
-write_args=(write-context)
+write_args=(initialize)
 if (( FULL_BOOTSTRAP == 1 )); then
   write_args+=(--full-bootstrap)
 fi
-if (( ${#cursor_mcp_args[@]} > 0 )); then
-  write_args+=("${cursor_mcp_args[@]}")
+if (( RUN_CURSOR_MCP == 1 )); then
+  write_args+=(--cursor-mcp)
+else
+  echo "Cursor MCP: skipped (explicit consent not given)"
 fi
 project_files "${write_args[@]}"
 project_files validate

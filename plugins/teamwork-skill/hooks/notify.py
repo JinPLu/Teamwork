@@ -3,15 +3,12 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import platform
 import shutil
 import subprocess
 import sys
-import tempfile
-import time
 from pathlib import Path
 from typing import Any
 
@@ -41,19 +38,8 @@ METADATA_KEYS = (
     "request_id",
     "tool_use_id",
 )
-IDENTITY_KEYS = (
-    "session_id",
-    "thread_id",
-    "thread-id",
-    "turn_id",
-    "turn-id",
-    "request_id",
-    "tool_use_id",
-)
-
-
 def metadata(payload: Any) -> dict[str, str]:
-    """Copy only routing and identity metadata; never inspect message content."""
+    """Copy only event metadata; never inspect message content."""
     if not isinstance(payload, dict):
         return {}
     return {
@@ -77,30 +63,6 @@ def classify(meta: dict[str, str]) -> str | None:
     if event == "notification" and str(meta.get("notification_type", "")).lower() in ATTENTION_NOTIFICATIONS:
         return "attention"
     return None
-
-
-def claim_once(event: str, meta: dict[str, str], ttl: float = 2.0) -> bool:
-    identity = {key: meta[key] for key in IDENTITY_KEYS if key in meta}
-    if not identity:
-        identity = {key: meta[key] for key in METADATA_KEYS if key in meta}
-    digest = hashlib.sha256(
-        json.dumps([event, identity], sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest()[:24]
-    marker = Path(tempfile.gettempdir()) / f"teamwork-notify-{digest}"
-    try:
-        marker.touch(exist_ok=False)
-        return True
-    except FileExistsError:
-        try:
-            if time.time() - marker.stat().st_mtime <= ttl:
-                return False
-            marker.unlink()
-            marker.touch(exist_ok=False)
-            return True
-        except (FileNotFoundError, FileExistsError, OSError):
-            return False
-    except OSError:
-        return True
 
 
 def playback_command(event: str) -> list[str] | None:
@@ -168,7 +130,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         meta = metadata(read_payload(argv or sys.argv))
         event = classify(meta)
-        if event and claim_once(event, meta):
+        if event:
             play(event)
     except Exception:
         pass

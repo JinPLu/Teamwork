@@ -1,76 +1,71 @@
 ---
 name: teamwork-debug
-description: Use when a failure, crash, flake, regression, or unexpected result has an unknown cause and must be diagnosed before a safe fix; do not use when the cause and narrow fix are already clear, to review a finished candidate, or for general research.
+description: Use when a failure, crash, flake, regression, or unexpected result has an unknown cause and must be diagnosed before a safe fix; do not use when the cause and narrow fix are already clear, to review a stable candidate, or for general research.
 ---
 
 # Teamwork Debug
 
-Use Debugger as the causal owner. Hold one failure signature and follow evidence
-until the cause is confirmed, the authorized fix is verified, or the next
-discriminator is unavailable. Do not widen the requested scope.
+Debug is the current causal stage. Debugger owns one failure investigation;
+Root owns user communication, authority, and any stage switch. Follow evidence
+until the cause is supported, an authorized fix passes the original path, the
+next discriminator is unavailable, or a materially different failure appears.
 
-## Establish The Boundary
+## Bound The Failure
 
-Capture the actual failing command or interaction, environment and relevant
-inputs, expected result, observed result, first relevant error, and the same-path
-success signal. Do not substitute an easier target. Treat a materially different
-failure as `new-failure-split`.
+Capture the actual failing command or interaction, relevant environment and
+inputs, expected and observed results, first useful error or divergence, and
+the same-path success signal. Do not substitute an easier target.
 
-Derive the operating mode from the user request and host/tool authority:
+Derive the operating boundary from the request and current authority:
 
-- `observe`: inspect and reproduce without changing files or behavior;
-- `instrument`: add reversible diagnostic probes, then remove them;
-- `fix`: diagnose, apply the evidenced narrow fix, clean probes, and rerun.
+- observe: inspect and reproduce without changing files or behavior;
+- instrument: add reversible diagnostic probes and remove them afterward;
+- fix: diagnose, apply only the evidenced correction, clean probes, and rerun.
 
-Never elevate the mode implicitly. If the next discriminating action is outside
-the available authority, return its exact requirement as the blocker.
+Do not elevate authority implicitly. A materially different signature becomes
+`new-failure-split`; it is not silently folded into the current diagnosis.
 
-## Hypothesis Loop
+## Causal Loop
 
-1. Rank three to five plausible `H-*` hypotheses before broad inspection or
-   repair. Do not pad the set; if direct evidence already isolates one cause,
-   state that evidence and continue without invented alternatives.
-2. For each hypothesis, record why it fits, its predicted observation, what
-   would falsify it, the smallest deciding evidence, and the distinct action it
-   implies.
-3. Select one discriminating `E-*` experiment. Before running it, state how each
-   possible result changes the leading hypotheses. Map every inspection, probe,
-   lookup, or human observation to that evidence gap.
-4. Preserve the raw observation, then update each affected hypothesis to
-   `supported`, `weakened`, or `rejected`. The live set must shrink, the causal
-   boundary must move, or the next experiment must change. Otherwise stop and
-   name the missing discriminator instead of expanding the search.
-5. Confirm a cause only when evidence distinguishes it from the remaining
-   leaders and locates the first bad owned boundary. Correlation, an adjacent
-   passing test, or disappearance of a later error is not causal proof.
-6. Under `observe` or `instrument`, stop at the supported cause. Under `fix`,
-   make only the narrow causal correction, remove probes, and rerun the original
-   path. Check adjacent behavior only where a named shared or high-risk boundary
-   requires it.
+1. Form only the hypotheses justified by current evidence. One strong
+   hypothesis is enough when direct evidence isolates it; several are useful
+   only when they remain genuinely plausible and imply different observations.
+2. For each live hypothesis, identify why it fits, what would distinguish or
+   weaken it, and what different next action would follow.
+3. Choose the smallest observation or experiment that best separates the live
+   alternatives. State how its possible outcomes change the causal picture,
+   then preserve the actual observation.
+4. Update the hypothesis standing and causal boundary. If the evidence neither
+   narrows the cause nor changes the next discriminator, stop and name the
+   missing evidence instead of expanding mechanically.
+5. Confirm a cause only when evidence distinguishes it from credible
+   alternatives and locates the first bad owned boundary. Correlation, a nearby
+   passing check, or disappearance of a downstream error is not enough.
+6. In fix authority, apply the narrow causal correction, remove temporary
+   probes, and rerun the original path. Check adjacent behavior only when a
+   demonstrated shared boundary makes it relevant.
 
-Use Explorer or Researcher only to answer a named `H-*` evidence gap and return
-the result to Debugger. Do not open parallel causal owners. Load
-`references/runtime-diagnosis.md` when a runtime, state, data-flow, event-flow,
-async, or UI hypothesis needs temporary instrumentation. Structured logging is
-one optional probe, not the default for every runtime failure.
+Read `references/runtime-diagnosis.md` when runtime, state, data-flow,
+event-flow, asynchronous, or UI behavior needs temporary instrumentation.
+Explorer or Researcher may answer an independently bounded evidence question
+and returns it to Debugger; neither becomes another causal owner or creates a
+separate document.
 
-## Terminal Result
+Debugger is required. Root must not imitate it when unavailable. Suspend Debug,
+switch to Update for readiness repair, wait, and resume or return the exact
+blocker.
 
-Use one terminal state:
+## Result And Debug Document
 
-- `cause-confirmed`: direct evidence identifies the cause; no product change;
-- `fix-verified`: the narrow fix passes the original path;
-- `blocked`: the next discriminator, input, access, or authority is unavailable;
-- `new-failure-split`: a materially different failure needs its own diagnosis.
+Use the semantic state that follows from the evidence: `cause-confirmed`,
+`fix-verified`, `blocked`, or `new-failure-split`. Report the causal picture,
+decisive observations, supported cause or next discriminator, authorized fix
+and same-path verification when applicable, probe cleanup, and remaining action
+without forcing a fixed packet.
 
-Report the failure signature, operating mode, ranked hypotheses, active
-experiment, raw observation, hypothesis update, supported cause, rejected
-hypotheses, fix if any, same-path rerun, probe cleanup, and exact remaining
-blocker or next action.
-
-## Live Document
-
-When Writer is used, include the failure signature, hypotheses, experiment
-cards, raw observations, evidence, cause, fix, verification, cleanup, and
-status. Writer must not reinterpret the evidence or promote a hypothesis to a
-confirmed cause.
+When a bounded failure plus a real hypothesis or direct causal evidence becomes
+reusable, Root assigns Writer the typed Debug document. Update it only when the
+failure boundary, hypothesis standing, discriminator, cause, fix, or
+verification materially changes. Writer may not promote a hypothesis to a
+cause. Same-scope editorial corrections may update a finalized document;
+materially new failure scope needs a new Debug document.

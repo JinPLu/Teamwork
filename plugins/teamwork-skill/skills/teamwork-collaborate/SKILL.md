@@ -1,42 +1,49 @@
 ---
 name: teamwork-collaborate
-description: Use when the user explicitly wants to discuss, co-design, brainstorm, compare options, or think together, or when an unformed intent or preference would materially change the outcome; do not use for a clear execution task or merely to obtain one concrete missing parameter.
+description: Use when the user explicitly wants to discuss, co-design, brainstorm, compare options, or think together, or when an unformed intent or preference would materially change the outcome; do not use for clear execution or a single concrete missing parameter.
 ---
 
 # Teamwork Collaborate
 
-Help the user understand the decision, explore meaningful directions, and
-challenge assumptions before they choose. Root owns the dialogue and the user
-owns material preference decisions.
+Collaborate is the current decision-forming stage. Root owns the dialogue and
+synthesis; the user owns material preference decisions. Keep clear work native
+and do not activate Collaborate merely because a task is important or complex.
 
 ## Method
 
-1. Restate the emerging goal, success criteria, boundaries, and the decision at
-   hand. Skip settled points and do not begin with a ritual question.
-2. Explore meaningfully different directions from the overall outcome toward
-   the details that can still change it. Compare consequences, evidence,
-   uncertainty, and trade-offs rather than producing a flat idea list.
-3. Synthesize the current picture, offer a recommendation, and then ask only a
-   question whose answer changes the next substantive step. Batch independent
-   questions and sequence dependent ones. Do not repeat answered questions.
-4. Challenge hidden assumptions, irreversible consequences, conflicting
-   evidence, and the strongest alternative when they matter. Keep ordinary
-   challenge inside the conversation; do not turn every discussion into an
-   adversarial exercise.
-5. Converge on the user's decision, remaining uncertainty, and the next useful
-   route. Do not convert a recommendation into a user decision.
+1. State the emerging outcome, decision, criteria, boundaries, and what is
+   already settled. Do not begin with a ritual question.
+2. Develop meaningfully different options and compare their consequences,
+   evidence, uncertainty, and trade-offs. Avoid a flat idea list or cosmetic
+   variants.
+3. Give the current synthesis and a candid recommendation without presenting it
+   as the user's decision.
+4. Ask every currently meaningful independent question together. Sequence only
+   questions whose answers genuinely depend on earlier answers, and do not ask
+   for facts that can be discovered directly.
+5. Fold the user's answers into the comparison, surface remaining uncertainty,
+   and converge on either a decision or the exact next stage.
 
-If the user cannot choose because the relevant evidence or local structure is
-unknown, have Researcher or Explorer map that bounded gap first. Bring the
-evidence back to the same conversation; those agents do not own the decision.
+Root may assign a bounded local evidence question to Explorer or a bounded
+external evidence area to Researcher only when it can proceed independently.
+They return evidence to Collaborate; they do not own the decision or a separate
+document. If the gap requires a full Research investigation, Root suspends
+Collaborate, switches the current stage, and later resumes with the result.
 
-Use Challenger only when the user explicitly requests a strict adversarial
-search or independent stress test. In that case, read
-`references/adversarial-search.md` and execute the real method. Report any
-unavailable isolation or coverage honestly instead of imitating it.
+Use Challenger only when the user explicitly asks for adversarial challenge,
+independent stress testing, or strict search closure. Read
+`references/adversarial-search.md` before dispatch. A required independent
+Challenger cannot be simulated by Root: if it is unavailable, suspend this
+stage, switch to Update for readiness repair, wait, and resume or report the
+real blocker.
 
-## Live Document
+## Discussion Document
 
-When Writer is used, preserve the user's meaning rather than a turn-by-turn
-transcript. Include the goal, criteria, options and trade-offs, evidence,
-decisions, open questions, current recommendation, and next step.
+When durable framing, a material option comparison, a meaningful question
+batch, or a decision first becomes reusable, Root assigns Writer the typed
+Discussion document. Writer rewrites the current synthesis only when options,
+evidence, recommendations, questions, or decisions materially change. Finalize
+when the material decision is settled or the user stops with unresolved choices
+recorded. Same-scope editorial or link corrections may update a finalized
+document in place; a new decision or materially new scope needs a new Discussion
+document.

@@ -1,45 +1,53 @@
 ---
 name: teamwork-goal
-description: Use when the user explicitly asks the host to keep working until a verifiable result, fix until green, converge without stopping, monitor through completion, or stay within a stated budget; do not infer Goal from difficulty or use it for ordinary one-shot work.
+description: Use when the user explicitly asks the host to persist until a verifiable result, fix until green, converge without stopping, monitor through completion, or stay within a stated budget; do not infer Goal from difficulty or use it for ordinary one-shot work.
 ---
 
 # Teamwork Goal
 
-Treat Goal as an explicit persistence modifier around the user's task. Root owns
-the objective and routes each current obstacle to the appropriate native action
-or Skill. Goal does not broaden scope or effect authority.
+Goal is Teamwork's only orthogonal persistence modifier. It is never the current
+stage and does not own Research, Debug, Plan, Review, or another stage method.
+While Goal remains active, Root keeps at most one current stage Skill active,
+suspends it when a different method is needed, switches stages, waits for that
+result, and resumes the appropriate stage. Goal never broadens scope or effect
+authority.
 
 ## Establish
 
 Record the objective, observable success signal, scope, protected boundaries,
-available budget, and hard stops. Resolve discoverable facts before asking for
-an input. If the objective or a material preference is still unformed, discuss
-it before committing to Goal.
+available budget, and hard stops. Resolve discoverable facts before requesting
+input. If the outcome or a material preference is unformed, Root first makes
+Collaborate the current stage and resumes Goal-directed work after the decision.
 
-## Continue
+## Persist
 
 1. Observe the current unmet success signal or direct failure.
-2. Choose the smallest useful next action within the existing boundaries.
+2. Choose the smallest evidence-backed next action and the one stage method that
+   actually fits it.
 3. Run the nearest real success path.
-4. If it fails, use the new evidence to change the hypothesis, method, or
+4. When it fails, use the new evidence to change the hypothesis, method, or
    strategy. Do not repeat an unchanged attempt.
-5. Continue while a safe evidence-backed action remains and the hard stops are
-   not reached.
+5. Continue while an authorized, evidence-backed action remains and no budget
+   or hard stop has been reached.
 
-Use Research, Debug, Plan, Review, Explorer, or Worker only when its method fits
-the current obstacle. Do not claim a named method was performed when its agent
-or required isolation was unavailable.
+Complete only when the real success signal passes and protected boundaries
+still hold. Stop with the exact observed state when the next action needs user
+input, access, or authority; would cross a destructive, security, or scope
+boundary; exceeds the budget; or no evidence-backed strategy remains.
 
-Complete only when the real success signal passes and protected boundaries hold.
-Stop with the exact state when the next step needs unavailable input, access, or
-authority; would cross a destructive, security, or scope boundary; exceeds the
-budget; or no evidence-backed strategy remains.
+Missing or broken required Teamwork capability is installation drift, not a
+reason for Root to imitate a leaf role. Suspend the current stage, switch to
+Update, wait for readiness repair, and then resume. If Update itself cannot
+repair the capability or lacks authority, return that hard stop.
 
-## Live Document
+## Goal Report
 
-When Writer is used, include the objective, success signal, boundaries, current
-status, meaningful attempts, evidence, strategy changes, budget or hard-stop
-state, blocker, and next step. Do not turn every attempt into an activity log.
+When the success signal, a material strategy change, a decisive result, or a
+real blocker first becomes reusable, Root assigns Writer a typed Report with
+kind Goal. Keep the objective, success signal, boundaries, current observed
+state, decisive evidence, material strategy changes, budget or hard-stop state,
+and remaining action. Do not record every attempt. Writer cannot declare
+completion; only Root may do so from the observed success signal.
 
-Return the observed result first, followed by the success evidence or exact
-blocker and any remaining action.
+Lead the user-facing result with success evidence or the exact blocker and
+remaining action.

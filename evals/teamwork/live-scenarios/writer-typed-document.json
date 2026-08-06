@@ -1,0 +1,18 @@
+{
+  "schema_version": 2,
+  "files": [
+    {
+      "path": "docs/teamwork/index.json",
+      "content": "{\"schema_version\":4,\"project\":{\"name\":\"Live evaluation\",\"root\":\".\",\"description\":\"Disposable Teamwork scenario.\"},\"tasks\":{}}\n"
+    },
+    {
+      "path": "scenario/request.txt",
+      "content": "Selected direction: replace the retired helper with schema-v4 discovery. Record a small reusable Plan and finalize it.\n"
+    },
+    {
+      "path": "scenario/verify.py",
+      "content": "import json\nimport os\nimport subprocess\nimport sys\nfrom pathlib import Path\nroot=Path(os.environ['TEAMWORK_CANDIDATE_ROOT'])\nsubprocess.run([sys.executable,str(root/'scripts/teamwork_index_v4.py'),'validate','docs/teamwork/index.json','--documents'],check=True)\nindex=json.loads(Path('docs/teamwork/index.json').read_text())\nassert len(index['tasks'])==1\ntask=next(iter(index['tasks'].values()))\nassert task['status']=='final'\nassert task['documents'] and all(d['status']=='final' and d['type']=='plan' for d in task['documents'])\npaths=[Path(d['path']) for d in task['documents']]\nassert all(path.is_file() and path.read_text(encoding='utf-8').strip() for path in paths)\n"
+    }
+  ],
+  "verification": {"argv": ["python3", "scenario/verify.py"]}
+}

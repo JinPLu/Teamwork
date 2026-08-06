@@ -251,6 +251,7 @@ case "$EFFECTIVE_TARGET" in
     ;;
   cursor-policy)
     write_teamwork_cursor_global_policy
+    echo "Cursor policy activation remains partial: paste the block above into Cursor Settings -> Rules -> User Rules, then review the visible User Rules text." >&2
     ;;
   cursor-policy-copy)
     copy_teamwork_cursor_global_policy
