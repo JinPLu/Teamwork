@@ -1,0 +1,18 @@
+{
+  "schema_version": 2,
+  "files": [
+    {
+      "path": "scenario/request.txt",
+      "content": "Clear authorized local task: change only scenario/status.txt from pending to done. Do not ask for confirmation and do not activate a Teamwork Skill.\n"
+    },
+    {
+      "path": "scenario/status.txt",
+      "content": "pending\n"
+    },
+    {
+      "path": "scenario/verify.py",
+      "content": "from pathlib import Path\nassert Path('scenario/status.txt').read_text(encoding='utf-8') == 'done\\n'\n"
+    }
+  ],
+  "verification": {"argv": ["python3", "scenario/verify.py"]}
+}

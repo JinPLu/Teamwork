@@ -4,6 +4,19 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.2.0 - 2026-08-10
+
+**Teamwork 7.2 让协作少问无效问题、把证据与授权分开，并让审查强度真正跟随候选声称。**
+
+- **文档不再替代当前授权。** Discussion、Research、Debug、Plan、Report 与 Review 只支持各自拥有的语义结论；有后果的效果仍必须来自当前请求与仍适用的明确授权，宿主权限本身不会制造授权，同一结论冲突时保持未解决而不是“最新覆盖”。
+- **Collaborate 只问会改变结果的问题。** 可直接发现的事实由 agent 自行查明；有界选择给出少量选项、影响和明确建议，只有解空间本身开放时才使用开放回答，不再强制逐轮单问、穷举 grilling 或固定探针仪式。
+- **Review 按候选声称选择证据。** 所有候选都检查结果匹配；只有工程表面才检查工程质量，只有 runtime、host、rendered、external 或 execution 声称才要求真实路径证据。缺失的适用证据标记为 `unknown`，`not applicable` 必须说明候选特定理由，最终仍只有一个整体 verdict。
+- **Review 记录更容易解释。** Review 文档分别记录三类 lens 的适用性、理由、证据和发现，让不适用、未知和负面结论不会互相替代或被静态绿灯掩盖。
+
+升级操作：更新到 7.2.0 后运行 `$teamwork-update`，并从新任务开始使用刷新后的 global policy、Collaborate 和 Review 契约。
+
+重要限制：依赖 Agent 的工作流要求 Codex 运行时暴露精确角色选择；若其 Agent 启动接口没有 `agent_type`，Teamwork 必须将该激活报告为 unsupported，而不能把具名角色当作已经运行。依赖 Agent 的工作流前请先刷新 Codex。
+
 ## 7.1.0 - 2026-08-06
 
 **Teamwork 7.1 把协作规则和项目文档一起拉回清晰、克制、可读的产品边界。**

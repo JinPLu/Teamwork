@@ -108,7 +108,7 @@ Targets:
                  Claude managed wrapper
 
 Default mode is --copy. For Codex users, install through the Marketplace plugin
-by default. Teamwork 7.1 support and release qualification are Codex-only. Use
+by default. Teamwork 7.2 support and release qualification are Codex-only. Use
 this checkout installer for local development, manual Codex setups, or retained
 Cursor/Claude Code compatibility-adapter maintenance; use --link for local
 development when installs should track this checkout.

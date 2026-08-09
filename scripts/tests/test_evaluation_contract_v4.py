@@ -54,6 +54,7 @@ def trajectory(**overrides: object) -> dict[str, object]:
         "schema_version": 2,
         "record_type": "teamwork_host_observation",
         "host": "codex",
+        "host_executable": "/usr/bin/true",
         "host_version": "codex-cli",
         "profile": "performance-first",
         "case_name": "native-default",
@@ -96,6 +97,20 @@ def accepted_semantic_evidence() -> dict[str, object]:
         },
         "verdict": "ACCEPT",
     }
+
+
+DIRECT_BEHAVIOR_CASES = {
+    "collaborate-discoverable-fact",
+    "collaborate-bounded-material-preference",
+    "collaborate-genuinely-open-question",
+    "native-authorized-local-mutation",
+    "native-ambiguous-consequential-effect",
+    "native-conflicting-typed-claims",
+    "review-wrong-outcome-static-green",
+    "review-engineering-defect",
+    "review-missing-real-path-evidence",
+    "review-prose-non-engineering",
+}
 
 
 def release_matrix_module():
@@ -240,6 +255,103 @@ class RoutingScenarioContractTests(unittest.TestCase):
         with self.assertRaises(EvalError):
             validate_bound_producer_sources(row, ROOT, {owner: ""})
 
+    def test_behavioral_contract_rubric_declares_new_semantic_dimensions(self) -> None:
+        rubric = json.loads(
+            (ROOT / "evals/teamwork/rubrics/behavioral-contracts.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertGreaterEqual(rubric["version"], 8)
+        dimensions = {row["name"]: row["description"] for row in rubric["dimensions"]}
+        self.assertIn("effect_authority", dimensions)
+        self.assertIn("adaptive_questions", dimensions)
+        self.assertIn("claim_sensitive_review", dimensions)
+        self.assertIn(
+            "permission alone does not create authority",
+            dimensions["effect_authority"].casefold(),
+        )
+        self.assertIn("one-question-per-turn", dimensions["adaptive_questions"])
+        self.assertIn("lenses cannot compensate", dimensions["claim_sensitive_review"])
+
+    def test_direct_behavior_cases_bind_scenarios_authority_and_exact_roles(self) -> None:
+        cases = {
+            row["name"]: row
+            for row in load_case_manifest(
+                ROOT / "evals/teamwork/live-cases/release-matrix.json",
+                root=ROOT,
+            )
+        }
+        self.assertTrue(DIRECT_BEHAVIOR_CASES <= set(cases))
+        collaborate = {
+            "collaborate-discoverable-fact",
+            "collaborate-bounded-material-preference",
+            "collaborate-genuinely-open-question",
+        }
+        for name in collaborate:
+            case = cases[name]
+            self.assertEqual("teamwork-collaborate", case["selected_skill"])
+            self.assertEqual([], case["required_agents"])
+            self.assertEqual("read-only", case["authority"])
+            self.assertEqual(
+                "evals/teamwork/live-scenarios/collaborate-question-shapes.json",
+                case["scenario"],
+            )
+            self.assertEqual("required", case["support"]["codex"])
+
+        native_expectations = {
+            "native-authorized-local-mutation": ("workspace-write", "authorized-local-mutation.json"),
+            "native-ambiguous-consequential-effect": ("read-only", "effect-authority-boundaries.json"),
+            "native-conflicting-typed-claims": ("read-only", "effect-authority-boundaries.json"),
+        }
+        for name, (authority, scenario_name) in native_expectations.items():
+            case = cases[name]
+            self.assertEqual("native", case["selected_skill"])
+            self.assertEqual([], case["required_agents"])
+            self.assertEqual(authority, case["authority"])
+            self.assertTrue(str(case["scenario"]).endswith(scenario_name))
+            self.assertEqual("required", case["support"]["codex"])
+
+        for name in DIRECT_BEHAVIOR_CASES:
+            if not name.startswith("review-"):
+                continue
+            case = cases[name]
+            self.assertEqual("teamwork-review", case["selected_skill"])
+            self.assertEqual(["reviewer"], case["required_agents"])
+            self.assertEqual("read-only", case["authority"])
+            self.assertEqual(
+                "evals/teamwork/live-scenarios/claim-sensitive-review.json",
+                case["scenario"],
+            )
+            self.assertEqual("required", case["support"]["codex"])
+
+    def test_direct_behavior_scenario_verifiers_cover_fixture_state_only(self) -> None:
+        scenario_expectations = {
+            "evals/teamwork/live-scenarios/collaborate-question-shapes.json": "PASS",
+            "evals/teamwork/live-scenarios/effect-authority-boundaries.json": "PASS",
+            "evals/teamwork/live-scenarios/claim-sensitive-review.json": "PASS",
+            "evals/teamwork/live-scenarios/authorized-local-mutation.json": "FAIL",
+        }
+        for scenario_relative, expected in scenario_expectations.items():
+            with self.subTest(scenario=scenario_relative):
+                with tempfile.TemporaryDirectory() as temporary:
+                    target = Path(temporary)
+                    _apply_scenario(ROOT, target, scenario_relative)
+                    verification, failure = _verify_scenario(target, scenario_relative, ROOT, 10)
+                    self.assertEqual(expected, verification)
+                    if expected == "PASS":
+                        self.assertIsNone(failure)
+                    else:
+                        self.assertIsNotNone(failure)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            target = Path(temporary)
+            scenario_relative = "evals/teamwork/live-scenarios/authorized-local-mutation.json"
+            _apply_scenario(ROOT, target, scenario_relative)
+            (target / "scenario/status.txt").write_text("done\n", encoding="utf-8")
+            verification, failure = _verify_scenario(target, scenario_relative, ROOT, 10)
+            self.assertEqual("PASS", verification)
+            self.assertIsNone(failure)
+
 
 class InstalledHostObservationTests(unittest.TestCase):
     def test_release_case_manifest_uses_outcomes_not_marker_counts(self) -> None:
@@ -377,6 +489,7 @@ class InstalledHostObservationTests(unittest.TestCase):
 
     def test_pass_trajectory_rejects_contradictory_evidence(self) -> None:
         contradictions = (
+            {"host_executable": None},
             {"route_observed": False},
             {"scenario_verification": "FAIL"},
             {"exit_status": 9},
@@ -390,7 +503,7 @@ class InstalledHostObservationTests(unittest.TestCase):
     def test_conditional_unsupported_read_boundary_fails_closed(self) -> None:
         case = load_case_manifest(
             ROOT / "evals/teamwork/live-cases/release-matrix.json",
-            {"selected-plan-route"},
+            {"update-readiness"},
             root=ROOT,
         )[0]
         base = {
@@ -401,12 +514,12 @@ class InstalledHostObservationTests(unittest.TestCase):
             "failure_classification": "required-agent-not-observed",
             "exit_status": 0,
             "route_observed": True,
-            "final_output": "The exact Planner role was not observed.",
+            "final_output": "The exact Explorer role was not observed.",
             "agent_observations": [],
         }
         validate_record_binding(trajectory(**base), case, {}, ROOT)
         contradictions = (
-            {"agent_observations": ["planner"]},
+            {"agent_observations": ["explorer"]},
             {"route_observed": False},
             {"exit_status": None},
             {"final_output": ""},
@@ -625,6 +738,47 @@ class InstalledHostObservationTests(unittest.TestCase):
         with self.assertRaisesRegex(HostMatrixError, "required Agent observations"):
             validate_record_binding(record, case, {}, ROOT)
 
+    def test_direct_reviewer_cases_require_observed_exact_reviewer(self) -> None:
+        case = load_case_manifest(
+            ROOT / "evals/teamwork/live-cases/release-matrix.json",
+            {"review-missing-real-path-evidence"},
+            root=ROOT,
+        )[0]
+        base = {
+            "case_name": case["name"],
+            "selected_skill": case["selected_skill"],
+            "requested_authority": case["authority"],
+            "scenario_verification": "PASS",
+            "candidate_artifact": "artifact/reviewer-case",
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "artifact/reviewer-case").mkdir(parents=True)
+            with self.assertRaisesRegex(HostMatrixError, "required Agent observations"):
+                validate_record_binding(trajectory(**base), case, {}, root)
+
+            validate_record_binding(
+                trajectory(**(base | {"agent_observations": ["reviewer"]})),
+                case,
+                {},
+                root,
+            )
+
+            with self.assertRaisesRegex(HostMatrixError, "conditional exact-role"):
+                validate_record_binding(
+                    trajectory(**(
+                        base
+                        | {
+                            "status": "UNSUPPORTED",
+                            "failure_classification": "required-agent-not-observed",
+                            "agent_observations": [],
+                        }
+                    )),
+                    case,
+                    {},
+                    root,
+                )
+
     def test_answer_presence_is_language_and_length_neutral(self) -> None:
         self.assertEqual((False, "agent-output-missing"), evaluate_agent_output_specificity({}, "  "))
         self.assertEqual((True, None), evaluate_agent_output_specificity({}, "清楚的工作直接原生完成。"))
@@ -633,6 +787,134 @@ class InstalledHostObservationTests(unittest.TestCase):
             (True, None),
             evaluate_agent_output_specificity({}, "The installed policy keeps clear work native and direct."),
         )
+
+    def test_selected_plan_route_requires_fixture_grounded_executable_plan(self) -> None:
+        case = {"name": "selected-plan-route"}
+        for output in (
+            "I cannot safely produce an executable plan without a populated repository.",
+            "1. Update the helper. 2. Run tests. 3. Stop if needed.",
+            """I will not provide a plan. `report_tasks.py`, `legacy_index.py`,
+`teamwork_index_v4.task_keys`, sorted output, and
+`python3 -m unittest discover -s scenario/tests` are the relevant details.
+Migration, proof, cleanup, stop, and replan remain someone else's work.""",
+            """I refuse to supply an executable plan. `report_tasks.py`,
+`teamwork_index_v4.task_keys`, sorted output, `legacy_index.py`, and
+`python3 -m unittest discover -s scenario/tests` are all relevant. Stop and replan.""",
+            """1. Delete `scenario/src/legacy_index.py` first.
+2. Migration is requested for `scenario/src/report_tasks.py` and
+`teamwork_index_v4.task_keys` with sorted output.
+3. Run `python3 -m unittest discover -s scenario/tests`; stop and replan if it fails.""",
+            """1. Migration is requested for `scenario/src/report_tasks.py` and
+`teamwork_index_v4.task_keys` with sorted output.
+2. Run `python3 -m unittest discover -s scenario/tests`.
+3. Delete `scenario/src/legacy_index.py`; stop and replan if it fails.""",
+            """1. Important context: `scenario/src/report_tasks.py` should use
+`teamwork_index_v4.task_keys` and preserve sorted output.
+2. Run `python3 -m unittest discover -s scenario/tests`.
+3. Delete `scenario/src/legacy_index.py`; stop and replan if it fails.""",
+            """1. Do not edit `scenario/src/report_tasks.py`; retain
+`teamwork_index_v4.task_keys` and sorted output.
+2. Run `python3 -m unittest discover -s scenario/tests`.
+3. Delete `scenario/src/legacy_index.py`; stop and replan if it fails.""",
+            """1. Edit `scenario/src/report_tasks.py` to use
+`teamwork_index_v4.task_keys` and preserve sorted output.
+2. Do not run `python3 -m unittest discover -s scenario/tests`.
+3. Delete `scenario/src/legacy_index.py`; stop and replan if it fails.""",
+            """1. Edit `scenario/src/report_tasks.py` to use
+`teamwork_index_v4.task_keys` and preserve sorted output.
+2. Run `python3 -m unittest discover -s scenario/tests`.
+3. Do not delete `scenario/src/legacy_index.py`; stop and replan if it fails.""",
+            """1. Edit `scenario/src/notreport_tasks.py.bak` to use
+`notteamwork_index_v4.not_task_keys` and preserve unsorted output.
+2. Run `python3 -m unittest discover -s scenario/tests_extra`.
+3. Delete `scenario/src/notlegacy_index.py.bak`; stop and replan if it fails.""",
+            """1. Edit `scenario/src/report_tasks.py` to use
+`teamwork_index_v4.task_keys` and preserve sorted output.
+2. Run `python3 -m unittest discover -s scenario/tests_extra`.
+3. Delete `scenario/src/legacy_index.py`; stop and replan if it fails.""",
+        ):
+            with self.subTest(output=output):
+                self.assertEqual(
+                    (False, "selected-plan-not-executable"),
+                    evaluate_agent_output_specificity(case, output),
+                )
+        executable = """1. Edit `scenario/src/report_tasks.py`: replace the legacy helper with `teamwork_index_v4.task_keys` while preserving sorted task names.
+2. Run exactly `python3 -m unittest discover -s scenario/tests`.
+3. Only then delete `scenario/src/legacy_index.py`. Stop and replan if the replacement cannot preserve the stated report behavior."""
+        self.assertEqual((True, None), evaluate_agent_output_specificity(case, executable))
+        staged_cleanup = """1. Edit scenario/src/report_tasks.py to call teamwork_index_v4.task_keys and preserve sorted output.
+2. Before cleanup, run python3 -m unittest discover -s scenario/tests; stop and replan if it fails.
+3. After the passing migration proof, delete scenario/src/legacy_index.py."""
+        self.assertEqual((True, None), evaluate_agent_output_specificity(case, staged_cleanup))
+        proof_with_migration = """1. Migrate scenario/src/report_tasks.py to teamwork_index_v4.task_keys and preserve sorted output; then run python3 -m unittest discover -s scenario/tests.
+2. Delete scenario/src/legacy_index.py only after that proof passes.
+3. Stop and replan if the proof fails."""
+        self.assertEqual((True, None), evaluate_agent_output_specificity(case, proof_with_migration))
+        proof_verb = """1. Edit scenario/src/report_tasks.py to use teamwork_index_v4.task_keys and preserve sorted output. Prove the caller migration with python3 -m unittest discover -s scenario/tests.
+2. Delete scenario/src/legacy_index.py after that proof passes.
+3. Stop and replan if the proof fails."""
+        self.assertEqual((True, None), evaluate_agent_output_specificity(case, proof_verb))
+        imported_helper = """1. Edit scenario/src/report_tasks.py to import task_keys from teamwork_index_v4 and preserve sorted output.
+2. Run python3 -m unittest discover -s scenario/tests before deleting scenario/src/legacy_index.py.
+3. Stop and replan if the proof fails; otherwise delete scenario/src/legacy_index.py."""
+        self.assertEqual((True, None), evaluate_agent_output_specificity(case, imported_helper))
+
+    def test_host_executable_is_resolved_and_retained_for_host_and_install_outcomes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            binary = root / "host"
+            binary.write_text(
+                "#!/usr/bin/env python3\n"
+                "import json, sys\n"
+                "if '--version' in sys.argv:\n"
+                "    print('host 1')\n"
+                "else:\n"
+                "    print(json.dumps({'type': 'assistant', 'content': [{'type': 'text', 'text': 'Direct native response.'}]}))\n",
+                encoding="utf-8",
+            )
+            binary.chmod(0o700)
+            installer = root / "installer"
+            installer.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            installer.chmod(0o700)
+            output = root / "observations.jsonl"
+            with patch(
+                "teamwork_tooling.evaluation.host_matrix._install_command",
+                return_value=[str(installer)],
+            ):
+                self.assertEqual(
+                    0,
+                    run_host_matrix(
+                        host="cursor", binary=str(binary), profile="performance-first",
+                        project_root=ROOT,
+                        case_manifest=ROOT / "evals/teamwork/live-cases/release-matrix.json",
+                        output=output, repeats=1, timeout_seconds=10, extra={},
+                        only_cases={"native-default"},
+                    ),
+                )
+            row = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(str(binary.resolve()), row["host_executable"])
+
+            failing_installer = root / "failing-installer"
+            failing_installer.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+            failing_installer.chmod(0o700)
+            failed_output = root / "install-failure.jsonl"
+            with patch(
+                "teamwork_tooling.evaluation.host_matrix._install_command",
+                return_value=[str(failing_installer)],
+            ):
+                self.assertEqual(
+                    1,
+                    run_host_matrix(
+                        host="cursor", binary=str(binary), profile="performance-first",
+                        project_root=ROOT,
+                        case_manifest=ROOT / "evals/teamwork/live-cases/release-matrix.json",
+                        output=failed_output, repeats=1, timeout_seconds=10, extra={},
+                        only_cases={"native-default"},
+                    ),
+                )
+            failed = json.loads(failed_output.read_text(encoding="utf-8"))
+            self.assertEqual(str(binary.resolve()), failed["host_executable"])
+            self.assertEqual("isolated-install-failed", failed["failure_classification"])
 
     def test_host_commands_and_authentication_signals_are_evidence_bound(self) -> None:
         claude, _version = _host_command(

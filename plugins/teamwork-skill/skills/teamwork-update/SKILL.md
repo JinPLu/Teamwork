@@ -39,9 +39,13 @@ may directly perform only Update's readiness inspection and repair with native
 host tools. This exception does not authorize another stage method, simulate
 independence, or broaden effects.
 
-Explorer supplies bounded read-only readiness evidence and Worker performs
-authorized mechanical changes. If they are unavailable for a reason other than
-the agent-subsystem bootstrap case, return the real blocker.
+For every check-only readiness inspection, Root must spawn the exact installed
+Explorer through `agent_type`, request its bounded read-only evidence, and
+observe a live child start before reporting readiness. Writer may record an
+Update Report after that evidence but cannot substitute for Explorer. If the
+exact Explorer is not observed, return the real blocker. Worker performs
+authorized mechanical changes; if either required Agent is unavailable for a
+reason other than the agent-subsystem bootstrap case, return the real blocker.
 
 ## Exact-Root Document Migration
 

@@ -67,7 +67,7 @@ Use $teamwork-init to initialize this project.
 <details>
 <summary><strong>Compatibility adapters and development checkout</strong></summary>
 
-Teamwork 7.1 officially supports and release-qualifies Codex only; release blocking applies only to Codex evidence. The Cursor and Claude Code source adapters remain for compatibility maintenance and local development; they are not release-qualified platforms and are not recommended as normal supported install paths.
+Teamwork 7.2's official support scope and release-qualification evidence cover Codex only; release blocking applies only to Codex evidence. The Cursor and Claude Code source adapters remain for compatibility maintenance and local development; they are not release-qualified platforms and are not recommended as normal supported install paths.
 
 ```bash
 git clone https://github.com/JinPLu/Teamwork.git
@@ -206,7 +206,7 @@ When a task produces reusable content, Writer maintains six typed documents inst
 Codex and its permissions still control files, tools, credentials, and external effects. Cursor and Claude Code compatibility adapters remain governed by their hosts. Teamwork creates no second authorization system. Discussing or accepting a plan does not authorize execution.
 
 > [!IMPORTANT]
-> **Teamwork 7.1 keeps no normal-runtime compatibility for older document formats.** Update is the only older-document migration path. With an exact project root, Writer reorganizes every older Teamwork document by meaning, scripts handle only mechanics, and an independent Reviewer reads the actual migrated result. After acceptance, normal runtime uses only schema v4 and has no legacy reader. Valid Teamwork 7 install preferences remain reusable; the incompatible change here is the project-document format.
+> **Teamwork 7.2 keeps no normal-runtime compatibility for older document formats.** Update is the only older-document migration path. With an exact project root, Writer reorganizes every older Teamwork document by meaning, scripts handle only mechanics, and an independent Reviewer reads the actual migrated result. After acceptance, normal runtime uses only schema v4 and has no legacy reader. Valid Teamwork 7 install preferences remain reusable; the incompatible change here is the project-document format.
 
 Use the CLI to refresh the global install and inventory whether one project
 needs semantic migration:

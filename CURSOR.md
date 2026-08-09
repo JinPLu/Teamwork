@@ -1,6 +1,6 @@
 # Teamwork for Cursor
 
-Teamwork 7.1 does not officially support or release-qualify Cursor. This retained source adapter exists for compatibility maintenance and local development only; Codex is the supported install and release-evidence path.
+Teamwork 7.2 does not officially support or release-qualify Cursor. This retained source adapter exists for compatibility maintenance and local development only; Codex is the supported install and release-evidence path.
 
 The adapter still adds focused collaboration methods while leaving clear local inspection and implementation on Cursor's native path when you choose to test or maintain it.
 
@@ -54,5 +54,5 @@ legacy runtime reader.
 
 Readiness cannot verify the manually pasted User Rules, deterministic model
 routing, or live external authentication. Cursor results are compatibility and
-development signals only; they are not Teamwork 7.1 support claims or release
+development signals only; they are not Teamwork 7.2 support claims or release
 blockers.

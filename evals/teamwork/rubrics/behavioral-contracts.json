@@ -1,6 +1,6 @@
 {
   "id": "behavioral-contracts",
-  "version": 7,
+  "version": 8,
   "dimensions": [
     {
       "name": "native_default",
@@ -36,11 +36,23 @@
     },
     {
       "name": "change_scoped_routing",
-      "description": "Changed or reasserted public release routes are evaluated semantically on Codex. Cursor and Claude observations may be retained as adapter diagnostics but are not Teamwork 7.1 release support evidence or gates."
+      "description": "Changed or reasserted public release routes are evaluated semantically on Codex. Cursor and Claude observations may be retained as adapter diagnostics but are not Teamwork 7.2 release support evidence or gates."
     },
     {
       "name": "release_evidence",
       "description": "Structural, behavioral, and semantic evidence are separate. Semantic acceptance requires an independent Reviewer reading the actual candidate and judging outcomes; a missing live observation for a declared release host remains a blocker."
+    },
+    {
+      "name": "effect_authority",
+      "description": "Typed Teamwork documents own only their stage-specific semantic claims: Discussion for intended result, options, and user decisions; Research for external findings at its cutoff; Debug for cause, fix, and same-path evidence; Plan for selected scope, work, dependencies, and proof targets; Report for observed execution and resulting state; Review for the verdict on a stable candidate. Current consequential effect authority comes only from the current request plus explicit still-applicable authorization, bounded by host/tool permission. Permission alone does not create authority, same-claim conflicts are unresolved rather than latest-wins, and clear authorized local work remains native without confirmation or Skill activation."
+    },
+    {
+      "name": "adaptive_questions",
+      "description": "Collaborate resolves discoverable facts directly, asks only unresolved result-changing questions, uses small host-compatible option sets with consequence/impact and a candid recommendation for bounded choices, uses open response only when the solution shape is genuinely open, and batches or sequences questions only when it lowers burden or depends on earlier answers. It rejects one-question-per-turn mandates, exhaustive grilling trees, fixed counts beyond host limits, and mandatory probe rituals."
+    },
+    {
+      "name": "claim_sensitive_review",
+      "description": "Review evaluates outcome fit against supplied requirements, engineering quality only when an engineering surface exists, and real-path evidence only for runtime, host, rendered, external, or execution claims. Missing applicable evidence is unknown; not applicable requires a candidate-specific reason; lenses cannot compensate for one another. Review still returns one ACCEPT, REVISE, or BLOCKED verdict and never repairs, interacts with the user, or declares the surrounding task complete."
     }
   ]
 }

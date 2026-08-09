@@ -1,7 +1,7 @@
 # Teamwork Repository
 
 `skills/` is source of truth for Codex. Cursor and Claude Code source adapters
-may remain for compatibility and development, but Teamwork 7.1 support and
+may remain for compatibility and development, but Teamwork 7.2 support and
 release qualification are Codex-only. Native work handles local inspection and
 authorized implementation; skills stay self-contained: no router, generic
 Execute skill, cross-skill behavior load, or shared behavior reference.
@@ -23,7 +23,7 @@ Execute skill, cross-skill behavior load, or shared behavior reference.
   hashes, digests, checksums, content fingerprints, or substitute identity and
   sealing schemes. Git object identities, host or third-party internals, and an
   explicit user-domain requirement remain outside this repository rule.
-- Teamwork 7.1 keeps no normal-runtime compatibility for older document
+- Teamwork 7.2 keeps no normal-runtime compatibility for older document
   formats. Update is the only old-to-new document migration route; after
   migration, only schema v4 typed documents are available to normal readers
   and writers. Valid Teamwork 7 install preferences remain reusable.
@@ -44,7 +44,7 @@ Execute skill, cross-skill behavior load, or shared behavior reference.
 - One release unit includes VERSION, manifests, bilingual changelogs, needed
   public docs, Codex release evidence, verification, commit, `v<VERSION>` tag,
   GitHub Release, install refresh, and applicable exact-root project migration.
-  Cursor/Claude adapter state is not a 7.1 release blocker. Until tag and
+  Cursor/Claude adapter state is not a 7.2 release blocker. Until tag and
   GitHub Release both exist, say `release-ready`, not released.
 - Write changelogs for users. Every release uses the 4.2/4.3-style: one short, natural summary sentence
   and one to four concise bold-led points; substantive releases normally use four.

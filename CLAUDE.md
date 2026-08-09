@@ -1,6 +1,6 @@
 # Teamwork for Claude Code
 
-Teamwork 7.1 does not officially support or release-qualify Claude Code. This retained source adapter exists for compatibility maintenance and local development only; Codex is the supported install and release-evidence path.
+Teamwork 7.2 does not officially support or release-qualify Claude Code. This retained source adapter exists for compatibility maintenance and local development only; Codex is the supported install and release-evidence path.
 
 The adapter still gives Claude Code focused collaboration methods without adding a generic Execute or router Skill when you choose to test or maintain it. Clear local work stays native.
 
@@ -56,4 +56,4 @@ Structural checks cannot prove live hook delivery, host trust, authentication,
 model selection, or semantic Skill behavior. Those claims require observed host
 behavior or an independent Reviewer reading the actual candidate. Claude Code
 results are compatibility and development signals only; they are not Teamwork
-7.1 support claims or release blockers.
+7.2 support claims or release blockers.

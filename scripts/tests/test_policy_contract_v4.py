@@ -46,6 +46,22 @@ class PolicyContractTests(unittest.TestCase):
         self.assertIn("smallest sufficient control", text)
         self.assertIn("framework itself does not use them", text)
 
+    def test_canonical_policy_separates_typed_claims_from_effect_authority(self) -> None:
+        text = POLICY.read_text(encoding="utf-8")
+        for phrase in (
+            "Discussion owns intended result, options, and user decisions",
+            "Research owns external findings at its cutoff",
+            "Debug owns cause, fix, and same-path evidence",
+            "Plan owns selected scope, work, dependencies, and proof targets",
+            "Report owns observed execution and resulting state",
+            "Review owns the verdict on its stable candidate",
+            "Current consequential effect authority",
+            "permission does not manufacture authority",
+            "Same-claim conflicts are surfaced and become unresolved",
+            "Clear authorized local work remains native",
+        ):
+            self.assertIn(phrase, text)
+
     def test_codex_and_claude_managed_blocks_preserve_surrounding_content(self) -> None:
         codex = self.home / ".codex/AGENTS.md"
         claude = self.home / ".claude/CLAUDE.md"
@@ -66,6 +82,8 @@ class PolicyContractTests(unittest.TestCase):
             self.assertIn(before, installed)
             self.assertIn(after, installed)
             self.assertEqual(installed.count("Clear work stays native"), 1)
+            self.assertEqual(installed.count("Current consequential effect authority"), 1)
+            self.assertIn("permission does not manufacture authority", installed)
         self.assertIn("global policy activation: current", codex_result.stdout)
         self.assertIn("global policy activation: current", claude_result.stdout)
 

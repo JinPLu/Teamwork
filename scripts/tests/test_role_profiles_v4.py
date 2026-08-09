@@ -154,6 +154,32 @@ class RoleProfileTests(unittest.TestCase):
             self.assertNotIn("case-inspect", text)
             self.assertNotIn("3–5 plausible hypotheses", text)
 
+    def test_codex_reviewer_template_uses_claim_sensitive_lenses_and_one_verdict(self) -> None:
+        path = ROOT / "templates/codex-agents/teamwork-reviewer.toml"
+        data = tomllib.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(data["name"], "teamwork_reviewer")
+        self.assertEqual(data["sandbox_mode"], "read-only")
+        instructions = data["developer_instructions"]
+        for phrase in (
+            "outcome fit",
+            "outcome fit is never not applicable",
+            "engineering quality",
+            "real-path evidence",
+            "not applicable",
+            "unknown",
+            "one `ACCEPT / REVISE / BLOCKED` verdict",
+        ):
+            self.assertIn(phrase, instructions)
+        for phrase in (
+            "runtime, host, rendered, external, or execution claims",
+            "lenses cannot compensate for one another",
+            "do not implement fixes",
+            "do not interact with the user",
+            "dispatch agents",
+            "declare the surrounding task complete",
+        ):
+            self.assertIn(phrase, instructions)
+
     def test_retired_cleanup_preserves_every_same_named_file(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             root = pathlib.Path(raw)

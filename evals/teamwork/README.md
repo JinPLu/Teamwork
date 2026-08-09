@@ -41,7 +41,7 @@ Release claims stay separate:
   judges the declared outcomes.
 
 All three layers must pass for the capability actually claimed on the manifest's
-declared release hosts. For Teamwork 7.1, `release_hosts` is Codex only.
+declared release hosts. For Teamwork 7.2, `release_hosts` is Codex only.
 `NOT RUN`, `UNSUPPORTED`, or `FAIL` in a required release host/case pair remains
 a blocker. A release pair declared `conditional-exact-role` may retain either an
 observed `PASS` or an `UNSUPPORTED` result classified specifically as
@@ -56,8 +56,10 @@ The installed release matrix is `live-cases/release-matrix.json`. It declares
 match that list exactly. Each case declares an intended Skill, authority,
 optional disposable scenario, outcomes, and per-host adapter expectations. Cases
 that require a leaf Agent also declare that role; the runner retains observed
-child-start identity and never turns a desired dispatch count into a gate. It
-keeps final Agent output separate from structural tool observations. Its local
+child-start identity and never turns a desired dispatch count into a gate. Each
+trajectory retains the resolved host executable path separately from its
+observed version, without retaining prompts, environment, or authentication
+state. It keeps final Agent output separate from structural tool observations. Its local
 gate checks only that the host completed, the requested Skill file was actually
 read (or native work read no Teamwork Skill), the requested authority matches
 the case, and a final answer exists. A supported `PASS` additionally requires
@@ -65,14 +67,18 @@ the declared Agent identities, successful disposable-scenario verification, and
 the retained actual candidate. A conditional missing-role observation stops at
 explicit `UNSUPPORTED`; it does not require downstream scenario work that could
 not validly occur. The gate does not score answer wording, length, or semantic
-correctness.
+correctness, except where a declared case directly tests a concrete promised
+outcome. The `selected-plan-route` case is one such narrow exception: its
+self-contained fixture checks that the returned plan names its supplied
+targets, dependency, proof command, and stop or replan condition. Independent
+semantic review remains a separate release lane.
 
 The three installed-host entrypoints are
 `run-installed-codex-teamwork-live-eval.py`,
 `run-installed-cursor-teamwork-live-eval.py`, and
 `run-installed-claude-teamwork-live-eval.py`. Cursor and Claude entrypoints are
 retained adapter diagnostics and development observations; they are not
-Teamwork 7.1 release gates or supported-release evidence. Independent semantic
+Teamwork 7.2 release gates or supported-release evidence. Independent semantic
 review uses the retained prompt, observed output, declared outcomes, and actual
 candidate; it does not rely on fixed wording, marker counts, dispatch counts,
 hashes, digests, checksums, or another sealing identity.

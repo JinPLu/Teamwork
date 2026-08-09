@@ -39,6 +39,18 @@ prescribed.
 
 ## Evaluate
 
+Evaluate claim-sensitive lenses independently. Outcome fit is always judged
+against the supplied requirements and criteria and is never not applicable.
+When requirements or applicable outcome evidence are missing, record outcome
+fit as unknown. Engineering quality applies
+only when the candidate has an engineering surface such as code, configuration,
+automation, schema, tests, deployment, migration, or comparable implementation
+work. Real-path evidence applies only to runtime, host, rendered, external, or
+execution claims. Missing applicable evidence is `unknown`, not success; `not
+applicable` requires a candidate-specific reason. Lenses cannot compensate for
+one another, so a satisfied lens does not erase an adverse or unknown result in
+another applicable lens.
+
 Inspect primary evidence directly: candidate content, source and diff, runtime
 behavior, rendered output, tests and configuration, or authoritative sources as
 applicable. Review the actual effects against the supplied criteria, focusing

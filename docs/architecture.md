@@ -55,7 +55,7 @@ only installed state. A live child-start observation proves exact activation;
 without it, the Agent-dependent path is unsupported or failed. Teamwork does
 not create, delete, or enable the user's under-development host feature to
 change that result. Cursor and Claude Code adapters may keep native named Agent
-selectors for compatibility and development, but Teamwork 7.1 does not treat
+selectors for compatibility and development, but Teamwork 7.2 does not treat
 them as supported, release-qualified, or release-blocking surfaces.
 
 ## Typed project documents

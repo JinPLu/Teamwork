@@ -4,7 +4,7 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version", "record_type", "host", "host_version", "profile",
+    "schema_version", "record_type", "host", "host_executable", "host_version", "profile",
     "case_name", "started_at", "finished_at", "selected_skill", "requested_authority",
     "route_observed", "agent_observations", "tool_observations", "final_output",
     "scenario_verification", "candidate_artifact", "exit_status", "status", "failure_classification"
@@ -13,6 +13,7 @@
     "schema_version": {"const": 2},
     "record_type": {"const": "teamwork_host_observation"},
     "host": {"enum": ["codex", "cursor", "claude"]},
+    "host_executable": {"type": ["string", "null"]},
     "host_version": {"type": "string"},
     "profile": {"enum": ["performance-first", "cost-first"]},
     "case_name": {"type": "string", "minLength": 1},

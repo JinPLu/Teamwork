@@ -67,7 +67,7 @@ $teamwork-update
 <details>
 <summary><strong>兼容适配器与开发 checkout</strong></summary>
 
-Teamwork 7.1 的正式支持、发布证据和发布阻塞项只覆盖 Codex。Cursor 与 Claude Code 的源码适配器继续保留，供兼容性维护和本地开发使用；它们不是 release-qualified 平台，也不建议作为普通受支持安装路径。
+Teamwork 7.2 的正式支持、发布证据和发布阻塞项只覆盖 Codex。Cursor 与 Claude Code 的源码适配器继续保留，供兼容性维护和本地开发使用；它们不是 release-qualified 平台，也不建议作为普通受支持安装路径。
 
 ```bash
 git clone https://github.com/JinPLu/Teamwork.git
@@ -206,7 +206,7 @@ Challenger 只用于明确的严格对抗挑战。Reviewer 同时审查实现与
 文件、工具、凭据与外部效果仍由 Codex 及其权限控制。Cursor 与 Claude Code 兼容适配器由对应宿主权限控制。Teamwork 不建立第二套授权系统；讨论或接受计划也不等于授权执行。
 
 > [!IMPORTANT]
-> **Teamwork 7.1 不保留旧文档格式的正常运行兼容。** Update 是唯一旧文档迁移入口：给出精确项目根目录后，Writer 按意义整理全部旧 Teamwork 文档，scripts 只处理机械步骤，独立 Reviewer 阅读实际迁移结果；接受后正常运行只使用 schema v4，不保留旧 runtime reader。有效的 Teamwork 7 安装偏好仍可复用；这次不兼容变化针对项目文档格式。
+> **Teamwork 7.2 不保留旧文档格式的正常运行兼容。** Update 是唯一旧文档迁移入口：给出精确项目根目录后，Writer 按意义整理全部旧 Teamwork 文档，scripts 只处理机械步骤，独立 Reviewer 阅读实际迁移结果；接受后正常运行只使用 schema v4，不保留旧 runtime reader。有效的 Teamwork 7 安装偏好仍可复用；这次不兼容变化针对项目文档格式。
 
 用 CLI 刷新全局安装，并盘点一个项目是否需要语义迁移：
 

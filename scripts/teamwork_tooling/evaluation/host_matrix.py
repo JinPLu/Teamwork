@@ -176,7 +176,7 @@ def load_trajectory_schema(path: Path) -> dict[str, Any]:
 
 def validate_trajectory(record: dict[str, Any], _schema: dict[str, Any] | None = None) -> None:
     required = {
-        "schema_version", "record_type", "host", "host_version", "profile",
+        "schema_version", "record_type", "host", "host_executable", "host_version", "profile",
         "case_name", "started_at", "finished_at", "selected_skill", "requested_authority",
         "route_observed", "agent_observations", "tool_observations", "final_output", "scenario_verification",
         "candidate_artifact", "exit_status", "status", "failure_classification",
@@ -198,6 +198,11 @@ def validate_trajectory(record: dict[str, Any], _schema: dict[str, Any] | None =
     for field in ("host_version", "case_name", "started_at", "finished_at", "selected_skill", "final_output"):
         if not isinstance(record.get(field), str):
             raise HostMatrixError(f"trajectory {field} must be text")
+    executable = record.get("host_executable")
+    if executable is not None and (
+        not isinstance(executable, str) or not executable or not Path(executable).is_absolute()
+    ):
+        raise HostMatrixError("trajectory host_executable must be an absolute path or null")
     if record.get("candidate_artifact") is not None and not isinstance(record.get("candidate_artifact"), str):
         raise HostMatrixError("trajectory candidate_artifact must be text or null")
     if record.get("scenario_verification") not in {"PASS", "FAIL", "NOT_RUN"}:
@@ -211,6 +216,8 @@ def validate_trajectory(record: dict[str, Any], _schema: dict[str, Any] | None =
         if not isinstance(values, list) or not all(isinstance(item, str) for item in values):
             raise HostMatrixError(f"trajectory {field} must be a text list")
     if record.get("status") == "PASS":
+        if not isinstance(executable, str) or not executable:
+            raise HostMatrixError("PASS trajectory must retain its resolved host executable")
         if not record.get("route_observed"):
             raise HostMatrixError("PASS trajectory must observe its selected route")
         if record.get("exit_status") != 0:
@@ -359,9 +366,95 @@ def _missing_host_authentication(
     return False
 
 
-def evaluate_agent_output_specificity(_case: dict[str, Any], agent_output: str) -> tuple[bool, str | None]:
+def _selected_plan_is_executable(agent_output: str) -> bool:
+    normalized = agent_output.casefold()
+    required = (
+        r"(?<![a-z0-9_])report_tasks\.py(?![a-z0-9_])",
+        r"(?<![a-z0-9_])legacy_index\.py(?![a-z0-9_])",
+        r"(?<![a-z0-9_])teamwork_index_v4(?![a-z0-9_])",
+        r"(?<![a-z0-9_])task_keys(?![a-z0-9_])",
+        r"python3\s+-m\s+unittest\s+discover\s+-s\s+scenario/tests(?![a-z0-9_/-]|\.[a-z0-9_])",
+    )
+    if any(re.search(pattern, normalized) is None for pattern in required) or re.search(r"(?<![a-z0-9_])sorted(?![a-z0-9_])", normalized) is None:
+        return False
+    if any(
+        item in normalized
+        for item in (
+            "cannot produce an executable plan",
+            "cannot safely produce an executable plan",
+            "need a populated repository",
+            "need a repository",
+        )
+    ) or re.search(
+        r"\b(?:cannot|can not|will not|won't|refuse(?:s|d)?\s+to|decline(?:s|d)?\s+to|"
+        r"not able to|unable to)\s+(?:produce|provide|create|write|give|return|supply|present|draft)\s+(?:an?\s+)?"
+        r"(?:executable\s+)?plan\b",
+        normalized,
+    ):
+        return False
+    clauses = [
+        clause.strip()
+        for clause in re.split(r"(?m)^(?:\d+[.)]|step\s+\d+:)\s*", normalized)
+        if clause.strip()
+    ]
+
+    def positive_action_position(clause: str, actions: tuple[str, ...]) -> int:
+        action_re = re.compile(r"\b(?:" + "|".join(re.escape(action) for action in actions) + r")\b")
+        negation_re = re.compile(
+            r"(?:do\s+not|don't|never|must\s+not|cannot|can't|should\s+not)\s+(?:\w+\s+){0,2}$"
+        )
+        for match in action_re.finditer(clause):
+            if not negation_re.search(clause[max(0, match.start() - 48):match.start()]):
+                return match.start()
+        return -1
+
+    migration = next(
+        (
+            index
+            for index, clause in enumerate(clauses)
+            if re.search(r"(?<![a-z0-9_])report_tasks\.py(?![a-z0-9_])", clause)
+            and re.search(r"(?<![a-z0-9_])teamwork_index_v4(?![a-z0-9_])", clause)
+            and re.search(r"(?<![a-z0-9_])task_keys(?![a-z0-9_])", clause)
+            and re.search(r"(?<![a-z0-9_])sorted(?![a-z0-9_])", clause)
+            and positive_action_position(clause, ("edit", "replace", "import", "update", "migrate")) >= 0
+        ),
+        -1,
+    )
+    proof = next(
+        (
+            index
+            for index, clause in enumerate(clauses)
+            if re.search(r"python3\s+-m\s+unittest\s+discover\s+-s\s+scenario/tests(?![a-z0-9_/-]|\.[a-z0-9_])", clause)
+            and positive_action_position(clause, ("run", "verify", "test", "prove")) >= 0
+        ),
+        -1,
+    )
+    cleanup = next(
+        (
+            index
+            for index, clause in enumerate(clauses)
+            if re.search(r"(?<![a-z0-9_])legacy_index\.py(?![a-z0-9_])", clause)
+            and positive_action_position(clause, ("remove", "delete", "retire")) >= 0
+        ),
+        -1,
+    )
+    if migration < 0 or proof < 0 or cleanup < 0 or not (migration <= proof < cleanup):
+        return False
+    if migration == proof:
+        migration_action = positive_action_position(
+            clauses[migration], ("edit", "replace", "import", "update", "migrate"),
+        )
+        proof_action = positive_action_position(clauses[proof], ("run", "verify", "test", "prove"))
+        if migration_action < 0 or proof_action < 0 or migration_action > proof_action:
+            return False
+    return "stop" in normalized or "replan" in normalized
+
+
+def evaluate_agent_output_specificity(case: dict[str, Any], agent_output: str) -> tuple[bool, str | None]:
     if not agent_output.strip():
         return False, "agent-output-missing"
+    if case.get("name") == "selected-plan-route" and not _selected_plan_is_executable(agent_output):
+        return False, "selected-plan-not-executable"
     return True, None
 
 
@@ -524,13 +617,24 @@ def route_is_observed(events: Sequence[dict[str, Any]], selected_skill: str) -> 
     return not skills if selected == "native" else selected in skills
 
 
+def _resolve_host_executable(binary: str) -> str:
+    candidate = shutil.which(binary) if not Path(binary).is_absolute() else binary
+    if not candidate:
+        raise HostProbeError("missing-host-binary")
+    try:
+        executable = Path(candidate).resolve(strict=True)
+    except OSError as exc:
+        raise HostProbeError("missing-host-binary") from exc
+    if not executable.is_file() or not os.access(executable, os.X_OK):
+        raise HostProbeError("missing-host-binary")
+    return str(executable)
+
+
 def _host_command(
     host: str, binary: str, scenario: Path, prompt: str, authority: str,
     model: str, effort: str, version_timeout: float = 30,
 ) -> tuple[list[str], str]:
-    executable = shutil.which(binary) if not Path(binary).is_absolute() else binary
-    if not executable:
-        raise HostProbeError("missing-host-binary")
+    executable = _resolve_host_executable(binary)
     try:
         probe = subprocess.run(
             [str(executable), "--version"], text=True, capture_output=True,
@@ -696,6 +800,10 @@ def run_host_matrix(
     records: list[dict[str, Any]] = []
     model = parent_model or f"{host}-managed"
     effort = parent_effort or f"{host}-managed"
+    try:
+        host_executable: str | None = _resolve_host_executable(binary)
+    except HostProbeError:
+        host_executable = None
     real_codex_home = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))).resolve()
     for case in cases:
         for repeat in range(1, repeats + 1):
@@ -718,7 +826,7 @@ def run_host_matrix(
                 except subprocess.TimeoutExpired:
                     record = {
                         "schema_version": SCHEMA_VERSION, "record_type": "teamwork_host_observation",
-                        "host": host, "host_version": "not-observed", "profile": profile,
+                        "host": host, "host_executable": host_executable, "host_version": "not-observed", "profile": profile,
                         "case_name": case["name"], "started_at": started, "finished_at": utc_now(),
                         "selected_skill": case["selected_skill"], "requested_authority": case["authority"],
                         "route_observed": False, "agent_observations": [], "tool_observations": [],
@@ -733,7 +841,7 @@ def run_host_matrix(
                 if install.returncode != 0:
                     record = {
                         "schema_version": SCHEMA_VERSION, "record_type": "teamwork_host_observation",
-                        "host": host, "host_version": "not-observed", "profile": profile,
+                        "host": host, "host_executable": host_executable, "host_version": "not-observed", "profile": profile,
                         "case_name": case["name"], "started_at": started, "finished_at": utc_now(),
                         "selected_skill": case["selected_skill"], "requested_authority": case["authority"],
                         "route_observed": False,
@@ -747,8 +855,10 @@ def run_host_matrix(
                     _write_observations(output, records)
                     continue
                 try:
+                    if host_executable is None:
+                        raise HostProbeError("missing-host-binary")
                     argv, version = _host_command(
-                        host, binary, scenario, case["prompt"], case["authority"],
+                        host, host_executable, scenario, case["prompt"], case["authority"],
                         model, effort, min(timeout_seconds, 30),
                     )
                 except HostProbeError as exc:
@@ -824,7 +934,7 @@ def run_host_matrix(
                         status, failure = "FAIL", "candidate-artifact-retention-failed"
                 record = {
                     "schema_version": SCHEMA_VERSION, "record_type": "teamwork_host_observation",
-                    "host": host, "host_version": version, "profile": profile,
+                    "host": host, "host_executable": host_executable, "host_version": version, "profile": profile,
                     "case_name": case["name"], "started_at": started, "finished_at": utc_now(),
                     "selected_skill": case["selected_skill"], "requested_authority": case["authority"],
                     "route_observed": route_observed,

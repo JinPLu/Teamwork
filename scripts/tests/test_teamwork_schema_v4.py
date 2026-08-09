@@ -225,6 +225,30 @@ class TeamworkSchemaV4Tests(unittest.TestCase):
             {"discussion.md", "research.md", "debug.md", "plan.md", "review.md", "report.md"},
         )
 
+    def test_review_template_has_claim_sensitive_sections_and_one_verdict(self) -> None:
+        text = (TEMPLATES / "review.md").read_text(encoding="utf-8")
+        self.assertIn("## Outcome Fit", text)
+        self.assertIn("## Engineering Quality", text)
+        self.assertIn("## Real-Path Evidence", text)
+        self.assertIn("applicability", text)
+        self.assertIn("reason", text)
+        self.assertIn("evidence", text)
+        self.assertIn("findings", text)
+        outcome = text.split("## Engineering Quality", 1)[0]
+        self.assertIn("applicability: applicable", outcome)
+        self.assertNotIn("not applicable", outcome)
+        self.assertIn("not applicable", text.split("## Engineering Quality", 1)[1])
+        self.assertEqual(text.count("## Verdict"), 1)
+        self.assertIn("## Residual Risk and Next Action", text)
+
+    def test_update_check_only_readiness_requires_an_exact_explorer(self) -> None:
+        text = (ROOT / "skills/teamwork-update/SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("every check-only readiness inspection", text)
+        self.assertIn("exact installed\nExplorer through `agent_type`", text)
+        self.assertIn("observe a live child start", text)
+        self.assertIn("cannot substitute for Explorer", text)
+        self.assertIn("If the\nexact Explorer is not observed, return the real blocker", text)
+
 
 if __name__ == "__main__":
     unittest.main()

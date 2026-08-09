@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.2.0 - 2026-08-10
+
+**Teamwork 7.2 asks fewer unproductive questions, separates evidence from authority, and makes review depth follow the candidate's actual claims.**
+
+- **Documents no longer substitute for current authority.** Discussion, Research, Debug, Plan, Report, and Review support only their owned semantic conclusions. Consequential effects still require the current request plus explicit still-applicable authorization; host permission does not manufacture authority, and conflicting same-claim records remain unresolved instead of using latest-wins.
+- **Collaborate asks only what can change the result.** Agents discover available facts directly. Bounded choices use a small option set with impact and a candid recommendation; open responses are reserved for genuinely open solution shapes, without one-question-per-turn, exhaustive grilling, or mandatory probe rituals.
+- **Review evidence follows the claim.** Every candidate is checked for outcome fit; engineering quality applies only to engineering surfaces, and real-path evidence applies only to runtime, host, rendered, external, or execution claims. Missing applicable evidence is `unknown`, `not applicable` needs a candidate-specific reason, and one overall verdict remains authoritative.
+- **Review records explain applicability.** Review documents record applicability, reason, evidence, and findings for each lens so static success, unknown evidence, and adverse findings cannot compensate for one another.
+
+Upgrade action: update to 7.2.0, run `$teamwork-update`, and start a new task to load the refreshed global policy, Collaborate, and Review contracts.
+
+Important limit: Agent-dependent workflows require a Codex runtime that exposes exact role selection. When its Agent-spawn surface does not expose `agent_type`, Teamwork must report that activation as unsupported rather than treating a named role as active. Refresh Codex before relying on Agent-dependent workflows.
+
 ## 7.1.0 - 2026-08-06
 
 **Teamwork 7.1 brings collaboration rules and project documents back to clear, restrained, readable product boundaries.**

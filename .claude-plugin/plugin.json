@@ -1,7 +1,7 @@
 {
   "name": "teamwork-skill",
-  "version": "7.1.0",
-  "description": "Retained Teamwork compatibility adapter for Claude Code development; Teamwork 7.1 is officially supported and release-qualified on Codex only.",
+  "version": "7.2.0",
+  "description": "Retained Teamwork compatibility adapter for Claude Code development; Teamwork 7.2's official support scope and release-qualification evidence are Codex-only.",
   "author": {
     "name": "JinPLu",
     "url": "https://github.com/JinPLu"
@@ -27,7 +27,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Retained Claude Code compatibility adapter for development use.",
-    "longDescription": "This retained Claude Code adapter is for compatibility maintenance and local development, not a Teamwork 7.1 supported or release-qualified platform. It keeps clear Claude Code work native and adds focused methods only when discussion, full Deep Research, unknown-cause debugging, executable planning, independent review, project setup, global refresh, exact-root document migration, or persistent convergence needs them. Explorer remains an internal local-evidence role, Reviewer covers plan review, and Writer maintains six typed project documents without exposing storage mechanics. Claude Code remains in control of tools and permissions.",
+    "longDescription": "This retained Claude Code adapter is for compatibility maintenance and local development, not a Teamwork 7.2 supported or release-qualified platform. It keeps clear Claude Code work native and adds focused methods only when discussion, full Deep Research, unknown-cause debugging, executable planning, independent review, project setup, global refresh, exact-root document migration, or persistent convergence needs them. Explorer remains an internal local-evidence role, Reviewer covers plan review, and Writer maintains six typed project documents without exposing storage mechanics. Claude Code remains in control of tools and permissions.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [

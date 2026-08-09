@@ -1,0 +1,50 @@
+{
+  "schema_version": 2,
+  "files": [
+    {
+      "path": "scenario/candidates/wrong-outcome-static-green/requirements.md",
+      "content": "# Requirements\n\nThe CLI must print `ready` when invoked with the supplied sample input.\n"
+    },
+    {
+      "path": "scenario/candidates/wrong-outcome-static-green/candidate.txt",
+      "content": "Candidate behavior: the CLI prints `ok` for the sample input.\n"
+    },
+    {
+      "path": "scenario/candidates/wrong-outcome-static-green/static-check.txt",
+      "content": "Static check: PASS. Formatting and import checks succeeded.\n"
+    },
+    {
+      "path": "scenario/candidates/engineering-defect/requirements.md",
+      "content": "# Requirements\n\nThe helper must preserve unrelated file content while updating only the named status file.\n"
+    },
+    {
+      "path": "scenario/candidates/engineering-defect/candidate.py",
+      "content": "from pathlib import Path\n\ndef mark_done(root: Path) -> None:\n    for path in root.rglob('*.txt'):\n        path.write_text('done\\n', encoding='utf-8')\n"
+    },
+    {
+      "path": "scenario/candidates/engineering-defect/evidence.md",
+      "content": "Engineering defect: implementation loops over every text file and overwrites unrelated files. Correction route: target only scenario/status.txt.\n"
+    },
+    {
+      "path": "scenario/candidates/missing-real-path-evidence/requirements.md",
+      "content": "# Requirements\n\nThe installed host workflow must complete the runtime scenario and produce the expected final output.\n"
+    },
+    {
+      "path": "scenario/candidates/missing-real-path-evidence/claim.md",
+      "content": "Claim: installed runtime behavior passes. Evidence supplied: static source inspection only; no host run, rendered output, external call, or execution transcript is available.\n"
+    },
+    {
+      "path": "scenario/candidates/prose-non-engineering/requirements.md",
+      "content": "# Requirements\n\nThe paragraph must explain that typed documents support claims but do not grant current authority.\n"
+    },
+    {
+      "path": "scenario/candidates/prose-non-engineering/candidate.md",
+      "content": "Typed Teamwork documents preserve stage-specific claims for later review. Current consequential authority still comes from the current request and explicit still-applicable authorization.\n"
+    },
+    {
+      "path": "scenario/verify.py",
+      "content": "from pathlib import Path\nrequired = [\n    'scenario/candidates/wrong-outcome-static-green/requirements.md',\n    'scenario/candidates/wrong-outcome-static-green/candidate.txt',\n    'scenario/candidates/wrong-outcome-static-green/static-check.txt',\n    'scenario/candidates/engineering-defect/requirements.md',\n    'scenario/candidates/engineering-defect/candidate.py',\n    'scenario/candidates/engineering-defect/evidence.md',\n    'scenario/candidates/missing-real-path-evidence/requirements.md',\n    'scenario/candidates/missing-real-path-evidence/claim.md',\n    'scenario/candidates/prose-non-engineering/requirements.md',\n    'scenario/candidates/prose-non-engineering/candidate.md',\n]\nfor relative in required:\n    path = Path(relative)\n    assert path.is_file(), relative\n    assert path.read_text(encoding='utf-8').strip(), relative\n"
+    }
+  ],
+  "verification": {"argv": ["python3", "scenario/verify.py"]}
+}

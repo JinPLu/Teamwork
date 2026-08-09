@@ -18,9 +18,14 @@ and do not activate Collaborate merely because a task is important or complex.
    variants.
 3. Give the current synthesis and a candid recommendation without presenting it
    as the user's decision.
-4. Ask every currently meaningful independent question together. Sequence only
-   questions whose answers genuinely depend on earlier answers, and do not ask
-   for facts that can be discovered directly.
+4. Resolve discoverable facts directly before asking. Ask only unresolved
+   questions whose answers can change the current result. For a bounded choice,
+   use a small host-compatible option set with consequence or impact and a
+   candid recommendation. Use an open response only when the solution shape is
+   genuinely open. Batch or sequence questions only when it lowers user burden
+   or later answers depend on earlier answers. Do not enforce
+   one-question-per-turn, exhaustive grilling trees, fixed counts beyond host limits, or
+   mandatory probe rituals.
 5. Fold the user's answers into the comparison, surface remaining uncertainty,
    and converge on either a decision or the exact next stage.
 
