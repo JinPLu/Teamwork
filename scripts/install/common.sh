@@ -1,12 +1,11 @@
 INSTALL_MODE="${TEAMWORK_INSTALL_MODE:-copy}"
-CODEX_PROFILE="${TEAMWORK_CODEX_PROFILE:-}"
+CODEX_PROFILE="${TEAMWORK_CODEX_PROFILE:-performance-first}"
 CODEX_PROFILE_SOURCE=""
 if [[ -n "${TEAMWORK_CODEX_PROFILE:-}" ]]; then
   CODEX_PROFILE_SOURCE="env"
 fi
 NOTIFICATIONS_ACTION="${TEAMWORK_NOTIFICATIONS_ACTION:-preserve}"
 CODEX_ROUTING_ACTION="${TEAMWORK_CODEX_ROUTING:-configure}"
-CURSOR_MCP_ACTION="${TEAMWORK_CURSOR_MCP_ACTION:-apply}"
 CODEX_USER_SKILLS_ROOT="$HOME/.agents/skills"
 PKG_VERSION="unknown"
 if [[ -f "$ROOT/VERSION" ]]; then
@@ -59,30 +58,29 @@ done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" retired --kind agents)
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] [--notifications|--no-notifications] [--codex-routing|--no-codex-routing] [--no-mcp] [--dependencies|--no-dependencies] [--managed-codegraph|--no-managed-codegraph] [--managed-gpu-broker|--no-managed-gpu-broker] [--profile performance-first|cost-first] \
+  ./install.sh [--copy|--link] [--notifications|--no-notifications] [--codex-routing|--no-codex-routing] [--profile performance-first|cost-first] \
     [--project-root PATH] \
-    codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy|cursor-mcp
+    codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
 
 Targets:
   codex          Install checkout-based Codex skills/agents and separately
                  activate the managed Codex global policy
                  (script default target; Marketplace plugin is the default
                  Codex user install path)
-  cursor         Compatibility/development target: install skills/agents,
-                 register MCP servers, and report the separate manual Cursor
-                 User Rules activation action
+  cursor         Compatibility/development target: install skills/agents and
+                 report the separate manual Cursor User Rules activation action
   claude         Compatibility/development target: install skills/agents and
                  separately activate the managed Claude global policy
   all            Compatibility/development target: install static surfaces for
                  all hosts, activate observable Codex/Claude policy, and
                  report Cursor policy as partial
-  update         Refresh all Teamwork global surfaces plus managed CodeGraph and
-                 GPU Broker dependencies; with --project-root, inventory older
-                 Teamwork documents and report the semantic migration that
-                 $teamwork-update must complete with Writer and Reviewer
-  init-project   Initialize AGENTS.md, docs/teamwork/, ignore rules, and
-                 CodeGraph context for one project without changing global
-                 skills, agents, policies, routing, or notifications
+  update         Refresh all Teamwork global surfaces; with --project-root,
+                 inventory older Teamwork documents and report the semantic
+                 migration that $teamwork-update must complete with Writer and
+                 Reviewer
+  init-project   Initialize AGENTS.md, docs/teamwork/, and ignore rules for
+                 one project without changing global skills, agents, policies,
+                 routing, notifications, or external tooling
   plugin-codex-bootstrap
                  Marketplace-internal Codex-only activation: install agents,
                  routing, managed policy, and optional notifications without
@@ -94,8 +92,6 @@ Targets:
                  and configure their user-level routing unless opted out
   cursor-agents  Compatibility/development: install Teamwork Cursor subagents
                  to ~/.cursor/agents
-  cursor-mcp     Compatibility/development: register Teamwork MCP servers in
-                 ~/.cursor/mcp.json
   claude-agents  Compatibility/development: install Teamwork Claude subagents
                  to ~/.claude/agents
   codex-policy   Print the canonical policy in its Codex managed wrapper
@@ -121,16 +117,8 @@ Marketplace bootstrap installs Codex notifications by default; use
 --no-notifications to opt out.
 Project init targets never change notifications; notification flags are ignored
 there because project context setup has no user-level notification surface.
-Cursor compatibility/development installs register codegraph and gpu-broker in
-~/.cursor/mcp.json by default. Use --no-mcp to skip MCP registration; enable
-new servers in Cursor Settings -> MCP when prompted.
-The mandatory install baseline does not require CodeGraph or GPU Broker. Enable
-either managed capability explicitly with --managed-codegraph or
---managed-gpu-broker; --dependencies enables both and --no-dependencies disables
-both. These capability options are accepted only by codex, all, update, and
-plugin-codex-bootstrap, the targets that own dependency lifecycles. Set
-TEAMWORK_GPU_BROKER_SOURCE when the enabled companion is not a sibling of this
-checkout. Choices are recorded and inherited by later updates.
+Teamwork never installs, configures, or checks external MCP servers or compute
+tools. Install and configure optional tools through their own documentation.
 --no-notifications removes only Teamwork-owned handlers. Cursor notification
 installs are intentionally unsupported until their local hook contracts are
 live-verified.
@@ -143,7 +131,7 @@ Use --no-codex-routing only when another owner manages the stable feature.
 Project init never changes user-level routing; run a Codex global install or
 codex-agents separately when that surface needs refresh.
 
-Profile inherits the recorded choice and otherwise defaults to performance-first.
+Profile defaults to performance-first; choose cost-first explicitly when needed.
 On Codex, performance-first
 uses Terra/high for Researcher, Explorer, and Worker; Luna/high for Writer;
 Sol/high for Debugger, Challenger, and Planner; and Sol/max for Reviewer. On

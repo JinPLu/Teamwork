@@ -8,8 +8,6 @@ source "$ROOT/scripts/install/common.sh"
 source "$ROOT/scripts/install/policy.sh"
 # shellcheck source=install/profiles.sh
 source "$ROOT/scripts/install/profiles.sh"
-# shellcheck source=install/dependencies.sh
-source "$ROOT/scripts/install/dependencies.sh"
 GITHUB_REPO="${TEAMWORK_GITHUB_REPO:-https://github.com/JinPLu/Teamwork}"
 READINESS=0
 FETCH_UPSTREAM=1
@@ -178,19 +176,6 @@ codex_experimental_routing_status() {
     absent|present-unmanaged) echo "$status" ;;
     *) echo "unknown" ;;
   esac
-}
-
-cursor_mcp_status() {
-  local output
-  if ! command -v python3 >/dev/null 2>&1; then
-    echo "unavailable"
-    return 0
-  fi
-  if output="$(python3 "$ROOT/scripts/install/configure_cursor_mcp.py" --check 2>/dev/null)"; then
-    printf '%s\n' "${output:-ready}"
-  else
-    printf '%s\n' "${output:-invalid}"
-  fi
 }
 
 skills_status() {
@@ -429,15 +414,15 @@ installed_profile_marker_status() {
 }
 
 source_profile() {
-  local preference_profile
+  local installed_profile
   if [[ -n "$STATUS_PROFILE_OVERRIDE" ]]; then
     printf '%s\n' "$STATUS_PROFILE_OVERRIDE"
     return 0
   fi
-  preference_profile="$(python3 "$ROOT/scripts/install/preferences.py" status --field profile 2>/dev/null || echo invalid)"
-  case "$preference_profile" in
+  installed_profile="$(installed_profile_marker_status)"
+  case "$installed_profile" in
     performance-first|cost-first)
-      printf '%s\n' "$preference_profile"
+      printf '%s\n' "$installed_profile"
       return 0
       ;;
   esac
@@ -691,8 +676,7 @@ plugin_notification_is_ready() {
 }
 
 print_plugin_readiness() {
-  local source_version marker profile notifications catalog cache legacy agents agent_content routing policy notification dependency_state
-  local baseline_ready preference_status codegraph_preference gpu_preference full_ready=no
+  local source_version marker profile notifications catalog cache legacy agents agent_content routing policy notification
   source_version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
   marker="$(plugin_marker_status)"
   profile="$(plugin_marker_field profile 2>/dev/null || echo "unknown")"
@@ -706,7 +690,6 @@ print_plugin_readiness() {
   routing="$(codex_routing_status)"
   policy="$(policy_status codex)"
   notification="$(notification_status codex)"
-  dependency_state="$(managed_dependencies_status)"
 
   local ready=yes
   local missing=()
@@ -723,16 +706,6 @@ print_plugin_readiness() {
     ready=no
     missing+=("codex-notifications")
   fi
-  baseline_ready="$ready"
-  [[ "$dependency_state" == "ready" || "$dependency_state" == "skipped" ]] \
-    || { ready=no; missing+=("managed-dependencies"); }
-  preference_status="$(preference_document_status)"
-  codegraph_preference="$(managed_capability_preference codegraph)"
-  gpu_preference="$(managed_capability_preference gpu_broker)"
-  if full_capability_ready; then
-    full_ready=yes
-  fi
-
   local manual_actions=("restart-codex")
   if [[ "$notifications" == "enabled" && "$notification" == "review-required" ]]; then
     manual_actions+=("codex-hook-trust")
@@ -744,12 +717,6 @@ print_plugin_readiness() {
   echo "INSTALL_SCOPE=static"
   echo "STATIC_INSTALL_READY=$([[ "$agents" == "ok" && "$agent_content" == "current" ]] && echo yes || echo no)"
   echo "POLICY_ACTIVATION=$([[ "$policy" == "current" ]] && echo complete || echo partial)"
-  echo "MANAGED_INSTALL_READY=$ready"
-  echo "BASELINE_READY=$baseline_ready"
-  echo "FULL_CAPABILITY_READY=$full_ready"
-  echo "PREFERENCES=$preference_status"
-  echo "MANAGED_CODEGRAPH_PREFERENCE=$codegraph_preference"
-  echo "MANAGED_GPU_BROKER_PREFERENCE=$gpu_preference"
   echo "SOURCE_VERSION=$source_version"
   echo "PLUGIN_CATALOG=$catalog"
   echo "PLUGIN_CACHE=$cache"
@@ -763,14 +730,6 @@ print_plugin_readiness() {
   echo "CODEX_EXPERIMENTAL_MULTI_AGENT_V2=$(codex_experimental_routing_status)"
   echo "CODEX_POLICY=$policy"
   echo "CODEX_NOTIFICATIONS=$notification"
-  echo "MANAGED_DEPENDENCIES=$dependency_state"
-  echo "CODEGRAPH_VERSION=$(codegraph_version)"
-  echo "CODEGRAPH_READY=$(codegraph_readiness)"
-  echo "GPU_BROKER_SOURCE=$(gpu_broker_source_status)"
-  echo "GPU_BROKER_TOOL=$(gpu_broker_tool_status)"
-  echo "GPU_BROKER_DAEMON=$(gpu_broker_daemon_status)"
-  echo "GPU_BROKER_LIVE=$(gpu_broker_live_status)"
-  echo "GPU_BROKER_READY=$(gpu_broker_ready_status)"
   echo "MISSING=$(IFS=,; echo "${missing[*]-}")"
   echo "HOST_ACTIVATION=manual-action-required"
   echo "MANUAL_ACTIONS=$(IFS=,; echo "${manual_actions[*]}")"
@@ -799,8 +758,7 @@ print_plugin_report() {
 }
 
 print_readiness() {
-  local source_version profile profile_markers codex_v cursor_v claude_v codex_notifications dependency_state cursor_mcp
-  local baseline_ready preference_status codegraph_preference gpu_preference full_ready=no
+  local source_version profile profile_markers codex_v cursor_v claude_v codex_notifications
   source_version="$(tr -d '[:space:]' < "$ROOT/VERSION")"
   profile="$(source_profile)"
   profile_markers="$(installed_profile_marker_status)"
@@ -859,18 +817,6 @@ print_readiness() {
   done
 
   codex_notifications="$(notification_status codex)"
-  dependency_state="$(managed_dependencies_status)"
-  cursor_mcp="$(cursor_mcp_status)"
-  [[ "$cursor_mcp" == "ready" ]] || { ready=no; missing+=("cursor-mcp"); }
-  baseline_ready="$ready"
-  [[ "$dependency_state" == "ready" || "$dependency_state" == "skipped" ]] \
-    || { ready=no; missing+=("managed-dependencies"); }
-  preference_status="$(preference_document_status)"
-  codegraph_preference="$(managed_capability_preference codegraph)"
-  gpu_preference="$(managed_capability_preference gpu_broker)"
-  if full_capability_ready; then
-    full_ready=yes
-  fi
   local manual_actions=("cursor-policy-paste")
   if [[ "$codex_notifications" == "review-required" ]]; then
     manual_actions+=("codex-hook-trust")
@@ -881,27 +827,12 @@ print_readiness() {
   echo "STATIC_INSTALL_READY=$([[ "$(static_install_status)" == "current" ]] && echo yes || echo no)"
   echo "POLICY_ACTIVATION=partial"
   echo "INSTALL_STATE=partial"
-  echo "MANAGED_INSTALL_READY=$ready"
-  echo "BASELINE_READY=$baseline_ready"
-  echo "FULL_CAPABILITY_READY=$full_ready"
-  echo "PREFERENCES=$preference_status"
-  echo "MANAGED_CODEGRAPH_PREFERENCE=$codegraph_preference"
-  echo "MANAGED_GPU_BROKER_PREFERENCE=$gpu_preference"
   echo "SOURCE_VERSION=$source_version"
   echo "PROFILE=$profile"
   echo "CODEX_VERSION=$codex_v"
   echo "CURSOR_VERSION=$cursor_v"
   echo "CLAUDE_VERSION=$claude_v"
   echo "CODEX_NOTIFICATIONS=$codex_notifications"
-  echo "MANAGED_DEPENDENCIES=$dependency_state"
-  echo "CODEGRAPH_VERSION=$(codegraph_version)"
-  echo "CODEGRAPH_READY=$(codegraph_readiness)"
-  echo "GPU_BROKER_SOURCE=$(gpu_broker_source_status)"
-  echo "GPU_BROKER_TOOL=$(gpu_broker_tool_status)"
-  echo "GPU_BROKER_DAEMON=$(gpu_broker_daemon_status)"
-  echo "GPU_BROKER_LIVE=$(gpu_broker_live_status)"
-  echo "GPU_BROKER_READY=$(gpu_broker_ready_status)"
-  echo "CURSOR_MCP=$cursor_mcp"
   echo "CODEX_ROUTING=$(codex_routing_status)"
   echo "CODEX_EXACT_ROLE_ACTIVATION=live-probe-required"
   echo "CODEX_EXPERIMENTAL_MULTI_AGENT_V2=$(codex_experimental_routing_status)"
@@ -1036,23 +967,6 @@ print_report() {
   echo "Expected cost-first Codex: Researcher/Debugger/Challenger/Planner=Terra/high, Explorer/Writer=Luna/high, Worker=Luna/xhigh, Reviewer=Sol/high"
   echo "Expected cost-first Cursor: Researcher/Explorer=gemini-3.5-flash, Debugger/Challenger=gpt-5.6-terra-medium, Planner=gpt-5.6-luna-medium, Worker/Writer=composer-2.5-fast, Reviewer=claude-opus-4-8-thinking-high"
   echo "Expected performance-first Cursor: Researcher=gpt-5.6-terra-medium, Explorer=gemini-3.5-flash, Debugger=claude-opus-4-8-thinking-high, Challenger=gpt-5.6-sol-medium, Planner=gpt-5.6-terra-medium, Worker/Writer=composer-2.5-fast, Reviewer=claude-fable-5-thinking-high"
-  echo
-
-  echo "--- Optional substrates ---"
-  echo "Install preferences: $(preference_document_status)"
-  echo "Managed CodeGraph preference: $(managed_capability_preference codegraph)"
-  echo "Managed GPU Broker preference: $(managed_capability_preference gpu_broker)"
-  if full_capability_ready; then
-    echo "Full capability: ready"
-  else
-    echo "Full capability: not enabled or not ready"
-  fi
-  echo "Managed dependencies: $(managed_dependencies_status)"
-  echo "CodeGraph: $(codegraph_readiness) ($(codegraph_version))"
-  echo "GPU Broker source: $(gpu_broker_source_status)"
-  echo "GPU Broker tool: $(gpu_broker_tool_status)"
-  echo "GPU Broker daemon/live/ready: $(gpu_broker_daemon_status)/$(gpu_broker_live_status)/$(gpu_broker_ready_status)"
-  echo "Cursor MCP: $(cursor_mcp_status)"
   echo
 
   echo "--- Recommended actions ---"

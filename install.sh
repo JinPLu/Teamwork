@@ -8,8 +8,6 @@ source "$ROOT/scripts/install/common.sh"
 source "$ROOT/scripts/install/policy.sh"
 # shellcheck source=scripts/install/profiles.sh
 source "$ROOT/scripts/install/profiles.sh"
-# shellcheck source=scripts/install/dependencies.sh
-source "$ROOT/scripts/install/dependencies.sh"
 # shellcheck source=scripts/install/targets.sh
 source "$ROOT/scripts/install/targets.sh"
 
@@ -42,48 +40,6 @@ while [[ $# -gt 0 ]]; do
       CODEX_ROUTING_ACTION="preserve"
       shift
       ;;
-    --no-mcp)
-      CURSOR_MCP_ACTION="skip"
-      shift
-      ;;
-    --dependencies)
-      MANAGED_DEPENDENCIES_ACTION="apply"
-      MANAGED_DEPENDENCIES_SOURCE="cli"
-      shift
-      ;;
-    --no-dependencies)
-      MANAGED_DEPENDENCIES_ACTION="skip"
-      MANAGED_DEPENDENCIES_SOURCE="cli"
-      shift
-      ;;
-    --managed-codegraph)
-      MANAGED_CODEGRAPH_ACTION="enabled"
-      MANAGED_CODEGRAPH_SOURCE="cli"
-      shift
-      ;;
-    --no-managed-codegraph)
-      MANAGED_CODEGRAPH_ACTION="disabled"
-      MANAGED_CODEGRAPH_SOURCE="cli"
-      shift
-      ;;
-    --managed-gpu-broker)
-      MANAGED_GPU_BROKER_ACTION="enabled"
-      MANAGED_GPU_BROKER_SOURCE="cli"
-      shift
-      ;;
-    --no-managed-gpu-broker)
-      MANAGED_GPU_BROKER_ACTION="disabled"
-      MANAGED_GPU_BROKER_SOURCE="cli"
-      shift
-      ;;
-    --cursor-mcp)
-      TEAMWORK_INIT_CURSOR_MCP=1
-      shift
-      ;;
-    --no-cursor-mcp)
-      TEAMWORK_INIT_CURSOR_MCP=0
-      shift
-      ;;
     --project-root)
       [[ $# -ge 2 ]] || { echo "--project-root requires a path." >&2; usage; exit 2; }
       PROJECT_ROOT="$(cd "$2" && pwd)"
@@ -110,7 +66,7 @@ while [[ $# -gt 0 ]]; do
       usage
       exit 2
       ;;
-    codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy|cursor-mcp)
+    codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy)
       if [[ -n "$TARGET" ]]; then
         echo "Specify only one install target." >&2
         usage
@@ -189,28 +145,7 @@ if [[ -n "$PROJECT_ROOT" && "$EFFECTIVE_TARGET" != "update" && "$EFFECTIVE_TARGE
   exit 2
 fi
 
-validate_preference_overrides
-if ! validate_managed_dependency_target "$EFFECTIVE_TARGET"; then
-  usage
-  exit 2
-fi
-
-case "$EFFECTIVE_TARGET" in
-  init-project|plugin-init-project)
-    CODEX_PROFILE="${CODEX_PROFILE:-performance-first}"
-    MANAGED_CODEGRAPH_ACTION="disabled"
-    MANAGED_GPU_BROKER_ACTION="disabled"
-    MANAGED_DEPENDENCIES_ACTION="skip"
-    ;;
-  codex-policy|cursor-policy|cursor-policy-copy|claude-policy|cursor-mcp)
-    resolve_install_preferences read
-    ;;
-  *)
-    resolve_install_preferences read
-    ;;
-esac
 validate_codex_profile
-require_explicit_lifecycle_preferences "$EFFECTIVE_TARGET"
 
 case "$EFFECTIVE_TARGET" in
   codex)
@@ -258,9 +193,6 @@ case "$EFFECTIVE_TARGET" in
     ;;
   claude-policy)
     write_teamwork_claude_global_policy
-    ;;
-  cursor-mcp)
-    install_cursor_mcp_home
     ;;
   *)
     usage

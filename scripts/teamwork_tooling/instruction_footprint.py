@@ -81,7 +81,6 @@ def generated_surfaces() -> dict[str, str]:
                 str(ROOT / "scripts/init-project.sh"),
                 "--project-root",
                 str(project),
-                "--no-codegraph",
             ],
             cwd=ROOT,
             env=env,

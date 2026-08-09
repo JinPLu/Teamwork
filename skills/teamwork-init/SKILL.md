@@ -13,9 +13,9 @@ conflicts and Worker performs an authorized creation.
 ## Inspect Before Creation
 
 Read the applicable instruction hierarchy and confirm canonical owners, local
-commands, source-of-truth paths, stable boundaries, and CodeGraph policy from
-current project evidence. Distinguish Teamwork-managed space from user-owned
-content and preserve unrelated material.
+commands, source-of-truth paths, and stable boundaries from current project
+evidence. Distinguish Teamwork-managed space from user-owned content and
+preserve unrelated material.
 
 Fail closed if Teamwork context or documents already exist, if ownership is
 ambiguous, or if safe merging would rewrite user meaning. Init does not audit,

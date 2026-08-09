@@ -4,6 +4,16 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.2.1 - 2026-08-10
+
+**Teamwork 7.2.1 keeps its core collaboration flow independent of managed external code-indexing and compute-scheduling tools.**
+
+- **Installation and updates stay self-contained.** Teamwork no longer installs, configures, checks, or refreshes CodeGraph, GPU Broker, or Cursor MCP, and they no longer affect installation readiness.
+- **Init and Explorer use native capabilities only.** New-project setup no longer creates an external-tool index or project MCP configuration; Explorer gathers evidence with the host's local search and read tools.
+- **External tools remain available by choice.** The README keeps a separate-install recommendation; Teamwork will not take over or delete your existing tools or configuration.
+
+Upgrade action: update to 7.2.1, run `$teamwork-update`, and start a new task to load the refreshed Skills, Agents, and global policy.
+
 ## 7.2.0 - 2026-08-10
 
 **Teamwork 7.2 asks fewer unproductive questions, separates evidence from authority, and makes review depth follow the candidate's actual claims.**

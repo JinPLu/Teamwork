@@ -13,7 +13,6 @@ import json
 import os
 import re
 import stat
-import subprocess
 import sys
 from pathlib import Path
 from typing import NoReturn
@@ -23,7 +22,6 @@ from teamwork_index_v4 import IndexValidationError, load_index, validate_index
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 INDEX_TEMPLATE = REPOSITORY_ROOT / "templates/teamwork-memory/index.json"
-CURSOR_MCP_TEMPLATE_DIR = REPOSITORY_ROOT / "templates/cursor-mcp"
 MANAGED_START = "<!-- TEAMWORK_PROJECT_START -->"
 MANAGED_END = "<!-- TEAMWORK_PROJECT_END -->"
 IGNORE_START = "# TEAMWORK_LOCAL_START"
@@ -122,9 +120,6 @@ def _managed_agents_block(root: Path, label: str) -> str:
         "- Same-scope editorial or link corrections may update a final document in place; materially new scope uses a new same-type path and preserves the final document.",
         "- Older schemas, `cases/`, manifests, and `live.md` are migration-only inputs for Update; normal readers fail closed and Init never migrates them.",
     ]
-    codegraph = root / ".codegraph"
-    if codegraph.exists() and codegraph.is_dir() and not codegraph.is_symlink():
-        lines.append("- CodeGraph: this project has a local `.codegraph/` index.")
     return (
         f"{MANAGED_START}\n"
         "## Teamwork Project Instructions\n\n"
@@ -135,7 +130,6 @@ def _managed_agents_block(root: Path, label: str) -> str:
 
 GITIGNORE_BLOCK = f"""{IGNORE_START}
 # Teamwork local runtime state
-.codegraph/
 docs/teamwork/**
 .teamwork/runtime/**
 {IGNORE_END}
@@ -150,49 +144,6 @@ def _render_index(label: str) -> str:
     template["project"]["name"] = label
     validate_index(template)
     return json.dumps(template, ensure_ascii=False, indent=2) + "\n"
-
-
-def _cursor_project_outputs(root: Path) -> dict[Path, str]:
-    cursor = root / ".cursor"
-    rules = cursor / "rules"
-    _checked_directory(cursor, ".cursor")
-    _checked_directory(rules, ".cursor/rules")
-    outputs: dict[Path, str] = {}
-    for name in ("codegraph.mdc", "gpu-broker.mdc"):
-        source = _regular_text(CURSOR_MCP_TEMPLATE_DIR / name, f"Cursor rule template {name}")
-        target = rules / name
-        if target.exists() or target.is_symlink():
-            existing = _regular_text(target, f".cursor/rules/{name}")
-            if existing != source:
-                fail(f"refusing to replace unrecognized Cursor rule: .cursor/rules/{name}")
-        outputs[target] = source
-
-    canonical_path = CURSOR_MCP_TEMPLATE_DIR / "servers.json"
-    try:
-        canonical = json.loads(_regular_text(canonical_path, "Cursor MCP server template"))
-    except json.JSONDecodeError as exc:
-        fail(f"Cursor MCP server template is invalid JSON: {exc}")
-    if not isinstance(canonical, dict):
-        fail("Cursor MCP server template must be an object")
-    mcp_path = cursor / "mcp.json"
-    if mcp_path.exists() or mcp_path.is_symlink():
-        try:
-            current = json.loads(_regular_text(mcp_path, ".cursor/mcp.json"))
-        except json.JSONDecodeError as exc:
-            fail(f".cursor/mcp.json is invalid JSON: {exc}")
-        if not isinstance(current, dict):
-            fail(".cursor/mcp.json must contain a JSON object")
-    else:
-        current = {}
-    servers = current.setdefault("mcpServers", {})
-    if not isinstance(servers, dict):
-        fail(".cursor/mcp.json mcpServers must be an object")
-    for name, definition in canonical.items():
-        if name in servers and servers[name] != definition:
-            fail(f"refusing to replace unrecognized Cursor MCP server: {name}")
-        servers[name] = definition
-    outputs[mcp_path] = json.dumps(current, ensure_ascii=False, indent=2) + "\n"
-    return outputs
 
 
 def _inspect_memory(root: Path) -> dict[str, object] | None:
@@ -295,11 +246,6 @@ def _write_project_context(
         block=GITIGNORE_BLOCK,
     )
     index_after = None if require_existing_index else _render_index(label)
-    cursor_after = (
-        _cursor_project_outputs(root)
-        if not require_existing_index and getattr(arguments, "cursor_mcp", False)
-        else {}
-    )
 
     docs = root / "docs"
     memory = docs / "teamwork"
@@ -311,8 +257,6 @@ def _write_project_context(
     index_path = memory / "index.json"
     if index_after is not None:
         before[index_path] = None
-    for path in cursor_after:
-        before[path] = _regular_text(path, str(path)) if path.exists() or path.is_symlink() else None
     try:
         if not docs.exists():
             docs.mkdir()
@@ -320,21 +264,10 @@ def _write_project_context(
         if not memory.exists():
             memory.mkdir()
             created.append(memory)
-        if cursor_after:
-            cursor = root / ".cursor"
-            rules = cursor / "rules"
-            if not cursor.exists():
-                cursor.mkdir()
-                created.append(cursor)
-            if not rules.exists():
-                rules.mkdir()
-                created.append(rules)
         if index_after is not None:
             _atomic_write(index_path, index_after)
         _atomic_write(agents_path, agents_after)
         _atomic_write(ignore_path, ignore_after)
-        for path, text in cursor_after.items():
-            _atomic_write(path, text)
     except BaseException:
         for path, old_text in reversed(tuple(before.items())):
             if old_text is None:
@@ -387,17 +320,6 @@ def command_validate(root: Path, _arguments: argparse.Namespace) -> None:
         fail("AGENTS.md Teamwork managed block is missing or ambiguous")
 
 
-def command_codegraph(root: Path, arguments: argparse.Namespace) -> None:
-    command = list(arguments.command_line)
-    if command[:1] == ["--"]:
-        command = command[1:]
-    if not command:
-        fail("codegraph requires an explicit command")
-    result = subprocess.run(command, cwd=root, check=False)
-    if result.returncode != 0:
-        fail(f"CodeGraph separate phase failed with exit status {result.returncode}")
-
-
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     result.add_argument("--project-root", default=os.environ.get("TEAMWORK_PROJECT_ROOT", os.getcwd()))
@@ -412,12 +334,9 @@ def parser() -> argparse.ArgumentParser:
     initialize.add_argument("--candidate-docs-graph")
     initialize.add_argument("--promote-candidates", action="store_true")
     initialize.add_argument("--root-authorized-promotion", action="store_true")
-    initialize.add_argument("--cursor-mcp", action="store_true")
     refresh = sub.add_parser("refresh-context")
     refresh.add_argument("--project-label")
     sub.add_parser("validate")
-    graph = sub.add_parser("codegraph")
-    graph.add_argument("command_line", nargs=argparse.REMAINDER)
     return result
 
 
@@ -435,8 +354,6 @@ def main() -> int:
             command_refresh_context(root, arguments)
         elif arguments.action == "validate":
             command_validate(root, arguments)
-        elif arguments.action == "codegraph":
-            command_codegraph(root, arguments)
     except (InitError, IndexValidationError) as exc:
         print(f"Teamwork project init refused: {exc}", file=sys.stderr)
         return 1

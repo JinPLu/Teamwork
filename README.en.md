@@ -44,7 +44,10 @@ Start a new Codex task and run:
 $teamwork-update
 ```
 
-The first setup lets you choose `performance-first` or `cost-first`, then decide independently whether to enable managed CodeGraph and the local GPU Broker. Codex installs and reads back its Skills, Agents, routing, and managed global-policy block regardless of those optional capabilities.
+The first setup can use either `performance-first` or `cost-first`. Codex installs and reads back its Skills, Agents, routing, and managed global-policy block without requiring extra infrastructure.
+
+> [!TIP]
+> If a project genuinely needs a structural code index or GPU resource scheduling, install CodeGraph, GPU Broker, or another compatible tool separately. They are independent options: Teamwork does not install, configure, check, or call them from any Skill workflow.
 
 Now ask for the result directly:
 

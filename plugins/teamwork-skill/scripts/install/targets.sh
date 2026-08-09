@@ -210,9 +210,6 @@ install_codex() {
     python3 "$ROOT/scripts/configure-codex-routing.py" \
       --dry-run --config "$(codex_home_path)/config.toml" >/dev/null
   fi
-  persist_install_preferences
-  preflight_managed_dependencies
-  refresh_managed_dependencies
   configure_codex_routing
   install_codex_skill_set
   install_codex_agent_set "$agent_root" "user"
@@ -226,9 +223,6 @@ install_plugin_codex_bootstrap() {
   code_home="$(codex_home_path)"
   preflight_plugin_codex_bootstrap
   preflight_legacy_codex_skills "$code_home/skills"
-  persist_install_preferences
-  preflight_managed_dependencies
-  refresh_managed_dependencies
   configure_codex_routing
   install_codex_agent_set "$code_home/agents" "plugin"
   echo "Codex static agents: installed"
@@ -244,9 +238,6 @@ install_checkout_plugin_codex_update() {
   code_home="$(codex_home_path)"
   preflight_plugin_codex_bootstrap checkout
   preflight_legacy_codex_skills "$code_home/skills"
-  persist_install_preferences
-  preflight_managed_dependencies
-  refresh_managed_dependencies
   configure_codex_routing
   install_codex_agent_set "$code_home/agents" "plugin"
   echo "Codex static agents: installed"
@@ -256,30 +247,14 @@ install_checkout_plugin_codex_update() {
   echo "Teamwork checkout update refreshed Codex plugin-managed global setup without copying duplicate skills or rewriting plugin activation."
 }
 
-configure_cursor_mcp_install() {
-  if [[ "$CURSOR_MCP_ACTION" == "skip" ]]; then
-    echo "Cursor MCP: skipped (--no-mcp)"
-    return 0
-  fi
-  python3 "$ROOT/scripts/install/configure_cursor_mcp.py" --apply
-  echo "Cursor MCP: registered codegraph and gpu-broker in ~/.cursor/mcp.json"
-  echo "Enable them in Cursor Settings -> MCP if prompted."
-}
-
-install_cursor_mcp_home() {
-  configure_cursor_mcp_install
-}
-
 install_cursor() {
   local skill_root="$HOME/.cursor/skills"
   local agent_root="$HOME/.cursor/agents"
   preflight_teamwork_skill_root "$skill_root" "Cursor skill root"
   preflight_agent_destination "$agent_root" md Cursor "${CURSOR_AGENTS[@]}"
-  persist_install_preferences_if_recorded
   install_skill_set "$skill_root" "Cursor"
   install_cursor_agent_set "$agent_root" "user Cursor"
   echo "Cursor static skills/agents: installed"
-  configure_cursor_mcp_install
   echo "Cursor global policy activation: partial; manual action required because User Rules activation is not observable."
   echo "Exact action: run ./install.sh cursor-policy-copy; paste into Cursor Settings -> Rules -> User Rules; review the visible User Rules text."
 }
@@ -291,7 +266,6 @@ install_claude() {
   preflight_agent_destination "$agent_root" md "Claude Code" "${CLAUDE_AGENTS[@]}"
   preflight_claude_global_policy
   preflight_user_notifications claude
-  persist_install_preferences_if_recorded
   install_skill_set "$skill_root" "Claude Code"
   install_claude_agent_set "$agent_root" "user Claude Code"
   echo "Claude static skills/agents: installed"
@@ -326,10 +300,6 @@ install_all() {
     python3 "$ROOT/scripts/configure-codex-routing.py" \
       --dry-run --config "$(codex_home_path)/config.toml" >/dev/null
   fi
-  persist_install_preferences
-  preflight_managed_dependencies
-  refresh_managed_dependencies
-
   configure_codex_routing
   install_codex_skill_set
   install_codex_agent_set "$codex_agent_root" "user"
@@ -339,7 +309,6 @@ install_all() {
   install_skill_set "$cursor_skill_root" "Cursor"
   install_cursor_agent_set "$cursor_agent_root" "user Cursor"
   echo "Cursor static skills/agents: installed"
-  configure_cursor_mcp_install
   echo "Cursor global policy activation: partial; manual action required because User Rules activation is not observable."
   echo "Exact action: run ./install.sh cursor-policy-copy; paste into Cursor Settings -> Rules -> User Rules; review the visible User Rules text."
   install_skill_set "$claude_skill_root" "Claude Code"
@@ -403,7 +372,6 @@ init_project() {
   local base="${PROJECT_ROOT:-$PWD}"
   TEAMWORK_CODEX_ROUTING="$CODEX_ROUTING_ACTION" \
   TEAMWORK_NOTIFICATIONS_ACTION="$NOTIFICATIONS_ACTION" \
-  TEAMWORK_INIT_CURSOR_MCP="${TEAMWORK_INIT_CURSOR_MCP:-0}" \
   "$ROOT/scripts/init-project.sh" \
     --project-root "$base"
 }
@@ -420,7 +388,6 @@ init_plugin_project() {
 install_codex_agents_home() {
   local agent_root="$(codex_home_path)/agents"
   preflight_codex_agent_set "$agent_root"
-  persist_install_preferences_if_recorded
   configure_codex_routing
   install_codex_agent_set "$agent_root" "user"
 }
@@ -428,13 +395,11 @@ install_codex_agents_home() {
 install_cursor_agents_home() {
   local agent_root="$HOME/.cursor/agents"
   preflight_agent_destination "$agent_root" md Cursor "${CURSOR_AGENTS[@]}"
-  persist_install_preferences_if_recorded
   install_cursor_agent_set "$agent_root" "user Cursor"
 }
 
 install_claude_agents_home() {
   local agent_root="$HOME/.claude/agents"
   preflight_agent_destination "$agent_root" md "Claude Code" "${CLAUDE_AGENTS[@]}"
-  persist_install_preferences_if_recorded
   install_claude_agent_set "$agent_root" "user Claude Code"
 }

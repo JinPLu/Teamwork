@@ -44,7 +44,10 @@ codex plugin add teamwork-skill@teamwork
 $teamwork-update
 ```
 
-首次配置会让你选择 `performance-first` 或 `cost-first`，并分别决定是否启用受管 CodeGraph 与本地 GPU Broker。Codex 的 Skills、Agents、路由和全局 policy managed block 会安装并回读；可选能力不改变这些基础能力。
+首次配置可选择 `performance-first` 或 `cost-first`。Codex 的 Skills、Agents、路由和全局 policy managed block 会安装并回读；不需要额外的基础设施。
+
+> [!TIP]
+> 如你的项目确实需要结构化代码索引或 GPU 资源调度，可自行安装 CodeGraph、GPU Broker 或其他兼容工具。它们是独立可选项：Teamwork 不会安装、配置、检查或在任何 Skill 流程中调用它们。
 
 然后直接提出目标：
 

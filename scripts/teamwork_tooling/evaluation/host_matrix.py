@@ -670,10 +670,6 @@ def _install_command(installer: Path, profile: str, host: str) -> list[str]:
     command = [str(installer), "--copy"]
     if host in {"codex", "claude"}:
         command.append("--no-notifications")
-    if host == "codex":
-        command.extend(("--no-managed-codegraph", "--no-managed-gpu-broker"))
-    elif host == "cursor":
-        command.append("--no-mcp")
     return [*command, "--profile", profile, host]
 
 

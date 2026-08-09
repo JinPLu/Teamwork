@@ -30,7 +30,7 @@ Initialize a new project's current-format context with `./install.sh --project-r
 - Project-local setup: `teamwork-init`.
 - Global Teamwork refresh: `teamwork-update`.
 
-The installed roles are Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer. Teamwork defines no fixed dispatch count. Use healthy `codegraph_*` MCP tools for structural questions when available.
+The installed roles are Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer. Teamwork defines no fixed dispatch count. Explorer gathers local evidence with the host's native read and search tools.
 
 Collaborate helps select an acceptable direction; Plan begins once that direction is selected. Neither step authorizes implementation.
 

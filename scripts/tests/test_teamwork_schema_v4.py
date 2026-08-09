@@ -35,7 +35,7 @@ class TeamworkSchemaV4Tests(unittest.TestCase):
             project.mkdir()
 
             result = subprocess.run(
-                [str(INIT), "--project-root", str(project), "--no-codegraph"],
+                [str(INIT), "--project-root", str(project)],
                 cwd=ROOT,
                 text=True,
                 capture_output=True,
@@ -64,7 +64,7 @@ class TeamworkSchemaV4Tests(unittest.TestCase):
             project = Path(temporary).resolve() / "sample-project"
             project.mkdir()
             first = subprocess.run(
-                [str(INIT), "--project-root", str(project), "--no-codegraph"],
+                [str(INIT), "--project-root", str(project)],
                 cwd=ROOT,
                 text=True,
                 capture_output=True,
@@ -81,7 +81,7 @@ class TeamworkSchemaV4Tests(unittest.TestCase):
             }
 
             repeated = subprocess.run(
-                [str(INIT), "--project-root", str(project), "--no-codegraph"],
+                [str(INIT), "--project-root", str(project)],
                 cwd=ROOT,
                 text=True,
                 capture_output=True,
@@ -100,7 +100,7 @@ class TeamworkSchemaV4Tests(unittest.TestCase):
             project = Path(temporary).resolve() / "sample-project"
             project.mkdir()
             initialized = subprocess.run(
-                [str(INIT), "--project-root", str(project), "--no-codegraph"],
+                [str(INIT), "--project-root", str(project)],
                 cwd=ROOT,
                 text=True,
                 capture_output=True,

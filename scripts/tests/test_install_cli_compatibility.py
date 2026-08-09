@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import pathlib
 import shutil
@@ -13,14 +12,11 @@ import unittest
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
-PREFERENCES_HELPER = REPO_ROOT / "scripts/install/preferences.py"
 V630_DESIGNER_FIXTURE = REPO_ROOT / "scripts/tests/fixtures/v6.3.0-teamwork-designer.toml"
 V630_WRITER_FIXTURE = REPO_ROOT / "scripts/tests/fixtures/v6.3.0-teamwork-writer.toml"
 EXPLICIT_BASELINE = (
     "--profile",
     "performance-first",
-    "--no-managed-codegraph",
-    "--no-managed-gpu-broker",
 )
 EXPECTED_SKILLS = {
     "teamwork-collaborate",
@@ -130,13 +126,36 @@ class InstallCliCurrentContractTests(unittest.TestCase):
         output = result.stdout.decode()
         self.assertEqual(result.returncode, 0, output)
         self.assertIn("codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap", output)
-        self.assertIn("with --project-root, inventory older", output)
+        self.assertIn("Refresh all Teamwork global surfaces", output)
         self.assertIn("$teamwork-update must complete", output)
         self.assertIn("`--project-root` is valid with `update`, `init-project`, or `plugin-init-project`.", output)
         self.assertIn("Challenger", output)
         self.assertNotIn("Plan Reviewer", output)
         self.assertNotIn("v3.4.2", output)
         self.assertNotIn("frozen", output.lower())
+
+    def test_external_integrations_are_not_part_of_the_runtime_flow(self) -> None:
+        runtime_sources = [
+            REPO_ROOT / "install.sh",
+            REPO_ROOT / "scripts/check-update.sh",
+            REPO_ROOT / "scripts/init-project.sh",
+            REPO_ROOT / "scripts/init-project-files.py",
+            *sorted((REPO_ROOT / "skills").rglob("SKILL.md")),
+            *sorted((REPO_ROOT / "templates").rglob("*")),
+        ]
+        forbidden = ("codegraph", "gpu-broker", "gpu_broker", "serverpilot")
+        for source in runtime_sources:
+            if not source.is_file():
+                continue
+            content = source.read_text(encoding="utf-8").lower()
+            self.assertFalse(
+                any(term in content for term in forbidden),
+                f"external integration leaked into runtime flow: {source.relative_to(REPO_ROOT)}",
+            )
+
+        result = self.run_install("--managed-codegraph", "codex")
+        self.assertEqual(result.returncode, 2, result.stdout.decode())
+        self.assertIn("Unknown argument", result.stdout.decode())
 
     def test_project_root_is_accepted_only_by_project_update_targets(self) -> None:
         project = self.base / "project-root-only"
@@ -300,7 +319,6 @@ class InstallCliCurrentContractTests(unittest.TestCase):
             "--project-root",
             str(project),
             "--no-codex-routing",
-            "--no-mcp",
             "update",
             home=home,
         )
@@ -335,7 +353,6 @@ class InstallCliCurrentContractTests(unittest.TestCase):
             "--project-root",
             str(project),
             "--no-codex-routing",
-            "--no-mcp",
             "update",
             home=home,
         )
@@ -407,7 +424,7 @@ class InstallCliCurrentContractTests(unittest.TestCase):
 
     def test_update_without_project_root_reports_pending_migration(self) -> None:
         home = self.base / "update-no-project"
-        result = self.run_lifecycle_install("--no-codex-routing", "--no-mcp", "update", home=home)
+        result = self.run_lifecycle_install("--no-codex-routing", "update", home=home)
         output = result.stdout.decode()
         self.assertEqual(result.returncode, 0, output)
         self.assertIn("global updated; schema-v4 project migration pending", output)
@@ -419,7 +436,7 @@ class InstallCliCurrentContractTests(unittest.TestCase):
         init = self.run_install("--project-root", str(project), "init-project", home=home)
         self.assertEqual(init.returncode, 0, init.stdout.decode())
 
-        result = self.run_lifecycle_install("--project-root", str(project), "--no-codex-routing", "--no-mcp", "update", home=home)
+        result = self.run_lifecycle_install("--project-root", str(project), "--no-codex-routing", "update", home=home)
         output = result.stdout.decode()
         self.assertEqual(result.returncode, 0, output)
         self.assertIn("global updated; schema-v4 project context current", output)
@@ -435,7 +452,6 @@ class InstallCliCurrentContractTests(unittest.TestCase):
             "--project-root",
             str(project),
             "--no-codex-routing",
-            "--no-mcp",
             "update",
             home=home,
         )
@@ -460,7 +476,6 @@ class InstallCliCurrentContractTests(unittest.TestCase):
             "--project-root",
             str(project),
             "--no-codex-routing",
-            "--no-mcp",
             "update",
             home=home,
         )
@@ -468,124 +483,6 @@ class InstallCliCurrentContractTests(unittest.TestCase):
         self.assertEqual(result.returncode, 9, output)
         self.assertIn("schema-v4 project context refresh failed", output)
         self.assertNotIn("project migration complete", output)
-
-
-class InstallPreferenceHelperTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.tempdir = tempfile.TemporaryDirectory()
-        self.base = pathlib.Path(self.tempdir.name).resolve()
-        self.home = self.base / "home"
-        self.state_root = self.base / "state"
-        self.home.mkdir()
-        self.env = os.environ.copy()
-        self.env["HOME"] = str(self.home)
-        self.env["XDG_STATE_HOME"] = str(self.state_root)
-        self.env["CODEX_HOME"] = str(self.home / ".codex")
-        self.path = self.state_root / "teamwork/install-preferences.json"
-
-    def tearDown(self) -> None:
-        self.tempdir.cleanup()
-
-    def run_helper(self, *args: str) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
-            ["python3", str(PREFERENCES_HELPER), *args],
-            cwd=REPO_ROOT,
-            env=self.env,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-
-    def test_missing_preferences_are_read_only_until_recorded_and_then_inherited(self) -> None:
-        missing = self.run_helper("resolve")
-        self.assertEqual(missing.returncode, 0, missing.stderr)
-        self.assertEqual(missing.stdout.strip(), "performance-first\tdisabled\tdisabled\tmissing")
-        self.assertFalse(self.path.exists())
-
-        recorded = self.run_helper(
-            "resolve",
-            "--profile",
-            "cost-first",
-            "--profile-source",
-            "cli",
-            "--codegraph",
-            "enabled",
-            "--codegraph-source",
-            "cli",
-            "--record",
-        )
-        self.assertEqual(recorded.returncode, 0, recorded.stderr)
-        state = json.loads(self.path.read_text(encoding="utf-8"))
-        self.assertEqual(state["schema_version"], 2)
-        self.assertEqual(state["owner"], "teamwork")
-        self.assertEqual(state["desired"]["profile"]["value"], "cost-first")
-        self.assertEqual(state["desired"]["codegraph"]["value"], "enabled")
-        self.assertEqual(state["desired"]["gpu_broker"]["value"], "disabled")
-        self.assertEqual(self.path.stat().st_mode & 0o777, 0o600)
-
-    def test_invalid_or_unowned_preferences_are_never_overwritten(self) -> None:
-        self.path.parent.mkdir(parents=True)
-        original = b'{"schema_version":1,"owner":"someone-else"}\n'
-        self.path.write_bytes(original)
-        result = self.run_helper("resolve", "--record")
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Teamwork install preferences refused", result.stderr)
-        self.assertEqual(self.path.read_bytes(), original)
-
-    def test_owned_pre_7_preferences_are_not_reused_and_can_be_replaced(self) -> None:
-        self.path.parent.mkdir(parents=True)
-        self.path.write_text(
-            json.dumps(
-                {
-                    "schema_version": 1,
-                    "owner": "teamwork",
-                    "desired": {
-                        "profile": {"value": "cost-first"},
-                        "codegraph": {"value": "enabled"},
-                        "gpu_broker": {"value": "enabled"},
-                    },
-                }
-            ),
-            encoding="utf-8",
-        )
-
-        current = self.run_helper("resolve")
-        self.assertEqual(current.returncode, 0, current.stderr)
-        self.assertEqual(
-            current.stdout.strip(),
-            "performance-first\tdisabled\tdisabled\tobsolete",
-        )
-
-        replaced = self.run_helper("resolve", "--record")
-        self.assertEqual(replaced.returncode, 0, replaced.stderr)
-        state = json.loads(self.path.read_text(encoding="utf-8"))
-        self.assertEqual(state["schema_version"], 2)
-        self.assertEqual(state["desired"]["profile"]["value"], "performance-first")
-        self.assertEqual(state["desired"]["codegraph"]["value"], "disabled")
-        self.assertEqual(state["desired"]["gpu_broker"]["value"], "disabled")
-
-    def test_old_plugin_activation_does_not_seed_missing_preferences(self) -> None:
-        activation = self.home / ".codex/teamwork/plugin-activation.json"
-        activation.parent.mkdir(parents=True)
-        activation.write_text(
-            json.dumps(
-                {
-                    "schema_version": 1,
-                    "plugin": "teamwork-skill",
-                    "marketplace": "teamwork",
-                    "version": "6.3.0",
-                    "profile": "cost-first",
-                    "notifications": "disabled",
-                }
-            ),
-            encoding="utf-8",
-        )
-
-        result = self.run_helper("resolve", "--record")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        state = json.loads(self.path.read_text(encoding="utf-8"))
-        self.assertEqual(state["desired"]["profile"]["value"], "performance-first")
-        self.assertEqual(state["desired"]["profile"]["source"], "baseline")
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 POLICY = ROOT / "policy/teamwork-global.md"
-BASELINE = ("--profile", "performance-first", "--no-managed-codegraph", "--no-managed-gpu-broker")
+BASELINE = ("--profile", "performance-first")
 
 
 class PolicyContractTests(unittest.TestCase):
@@ -88,7 +88,7 @@ class PolicyContractTests(unittest.TestCase):
         self.assertIn("global policy activation: current", claude_result.stdout)
 
     def test_cursor_policy_is_always_reported_as_manual_partial(self) -> None:
-        result = self.install("--profile", "performance-first", "--no-mcp", "cursor")
+        result = self.install("--profile", "performance-first", "cursor")
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
         self.assertIn("Cursor static skills/agents: installed", result.stdout)
         self.assertIn("Cursor global policy activation: partial", result.stdout)

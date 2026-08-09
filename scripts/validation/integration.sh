@@ -1,21 +1,13 @@
 #!/usr/bin/env bash
 
 REAL_CODEX="${TEAMWORK_REAL_CODEX:-$(command -v codex 2>/dev/null || true)}"
-# Integration validates Teamwork's file ownership in temporary homes. Managed
-# dependency refresh is covered by its own fully mocked test and must never
-# update the validator's real npm/uv installations. Effect-owning targets use
-# the explicit capability opt-out arrays below; profile-only targets receive no
-# managed-dependency option.
+# Integration validates Teamwork's file ownership in temporary homes.
 TEAMWORK_PROFILE_ARGS=(--profile performance-first)
 TEAMWORK_BASELINE_ARGS=(
   --profile performance-first
-  --no-managed-codegraph
-  --no-managed-gpu-broker
 )
 TEAMWORK_COST_BASELINE_ARGS=(
   --profile cost-first
-  --no-managed-codegraph
-  --no-managed-gpu-broker
 )
 if [[ -n "$REAL_CODEX" && ! -x "$REAL_CODEX" ]]; then
   REAL_CODEX=""
@@ -183,18 +175,6 @@ grep_required '^MISSING=.*cursor-skills.*claude-skills' "$tmp/fresh-readiness.ou
 grep_absent 'codex-skill-content' \
   "fresh Codex skill content must not be reported stale" \
   "$tmp/fresh-readiness.out"
-grep_required '^MANAGED_INSTALL_READY=' "$tmp/fresh-readiness.out" \
-  "readiness must distinguish managed install state"
-grep_required '^BASELINE_READY=' "$tmp/fresh-readiness.out" \
-  "readiness must expose mandatory baseline state"
-grep_required '^FULL_CAPABILITY_READY=no$' "$tmp/fresh-readiness.out" \
-  "explicit managed dependency opt-out must not claim full capability"
-grep_required '^PREFERENCES=valid$' "$tmp/fresh-readiness.out" \
-  "install must persist an owned preference receipt"
-grep_required '^MANAGED_CODEGRAPH_PREFERENCE=disabled$' "$tmp/fresh-readiness.out" \
-  "readiness must distinguish CodeGraph opt-out from missing"
-grep_required '^MANAGED_GPU_BROKER_PREFERENCE=disabled$' "$tmp/fresh-readiness.out" \
-  "readiness must distinguish GPU Broker opt-out from missing"
 grep_required '^HOST_ACTIVATION=manual-action-required$' "$tmp/fresh-readiness.out" \
   "readiness must expose remaining host-owned manual activation"
 grep_required '^MANUAL_ACTIONS=.*cursor-policy-paste' "$tmp/fresh-readiness.out" \
@@ -332,15 +312,10 @@ No user needs to specify sub-agents for distribution; default assignment is used
 
 All code runs on a remote server; the local environment only supports basic testing and syntax checking.
 
-<!-- CODEGRAPH_START -->
-Keep CodeGraph instructions.
-<!-- CODEGRAPH_END -->
 AGENTS
 HOME="$agents_preserve_home" "$ROOT/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" codex >/dev/null
 grep_required 'Personal rule before.' "$agents_preserve_home/.codex/AGENTS.md" \
   "Codex global policy install must preserve user content"
-grep_required '<!-- CODEGRAPH_START -->' "$agents_preserve_home/.codex/AGENTS.md" \
-  "Codex global policy install must preserve CodeGraph block"
 check_lean_policy "$agents_preserve_home/.codex/AGENTS.md" performance-first \
   "refreshed Codex global policy"
 grep_absent 'old managed content' \
@@ -579,10 +554,6 @@ grep_required '^INSTALL_READY=no$' "$tmp/global-only-readiness.out" \
   "global readiness must remain partial while Cursor policy activation is unobserved"
 grep_required '^STATIC_INSTALL_READY=yes$' "$tmp/global-only-readiness.out" \
   "fresh global install must prove the static skills and agents baseline"
-grep_required '^BASELINE_READY=no$' "$tmp/global-only-readiness.out" \
-  "unobserved Cursor policy activation must not claim the active three-host baseline"
-grep_required '^FULL_CAPABILITY_READY=no$' "$tmp/global-only-readiness.out" \
-  "disabled optional substrates must not claim full capability"
 grep_required '^MISSING=cursor-policy-manual-action-required$' "$tmp/global-only-readiness.out" \
   "global readiness must isolate the unobservable Cursor policy action"
 ! grep -q '^PROJECT_' "$tmp/global-only-readiness.out" \
@@ -647,48 +618,6 @@ grep_required '^model: gpt-5.6-terra-medium$' "$tmp/home-cursor/.cursor/agents/p
   "Cursor install must render terra medium model for planner"
 grep_required '^model: claude-fable-5-thinking-high$' "$tmp/home-cursor/.cursor/agents/reviewer.md" \
   "Cursor install must render fable 5 model for reviewer"
-[[ -f "$tmp/home-cursor/.cursor/mcp.json" ]] \
-  || fail "Cursor install must write ~/.cursor/mcp.json"
-[[ -f "$tmp/home-cursor/.cursor/.teamwork-mcp.json" ]] \
-  || fail "Cursor install must write Teamwork MCP ownership sidecar"
-python3 - "$tmp/home-cursor/.cursor/mcp.json" <<'PY'
-import json
-import pathlib
-import sys
-
-payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-servers = payload.get("mcpServers", {})
-for name in ("codegraph", "gpu-broker"):
-    if name not in servers:
-        raise SystemExit(f"missing Teamwork MCP server: {name}")
-if servers["codegraph"].get("command") != "codegraph":
-    raise SystemExit("codegraph MCP command mismatch")
-if servers["gpu-broker"].get("command") != "gpu-broker-mcp":
-    raise SystemExit("gpu-broker MCP command mismatch")
-PY
-
-HOME="$tmp/home-cursor-no-mcp" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" --no-mcp cursor >/dev/null
-[[ ! -e "$tmp/home-cursor-no-mcp/.cursor/mcp.json" ]] \
-  || fail "--no-mcp cursor install must not write mcp.json"
-
-mkdir -p "$tmp/home-cursor-preserve/.cursor"
-printf '%s\n' '{"mcpServers":{"custom-server":{"command":"keep-me"}}}' \
-  > "$tmp/home-cursor-preserve/.cursor/mcp.json"
-HOME="$tmp/home-cursor-preserve" "$ROOT/install.sh" cursor-mcp >/dev/null
-python3 - "$tmp/home-cursor-preserve/.cursor/mcp.json" <<'PY'
-import json
-import pathlib
-import sys
-
-payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-servers = payload.get("mcpServers", {})
-if "custom-server" not in servers:
-    raise SystemExit("cursor-mcp must preserve unrelated MCP servers")
-for name in ("codegraph", "gpu-broker"):
-    if name not in servers:
-        raise SystemExit(f"missing Teamwork MCP server after preserve merge: {name}")
-PY
-
 HOME="$tmp/home-cursor-agents" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" cursor-agents >/dev/null
 for agent in "${CURSOR_AGENTS[@]}"; do
   [[ -f "$tmp/home-cursor-agents/.cursor/agents/$agent.md" ]] \
@@ -820,15 +749,10 @@ Personal rule before.
 old managed content
 <!-- TEAMWORK_CLAUDE_GLOBAL_END -->
 
-<!-- CODEGRAPH_START -->
-Keep CodeGraph instructions.
-<!-- CODEGRAPH_END -->
 CLAUDE
 HOME="$claude_preserve_home" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]}" claude >/dev/null
 grep_required 'Personal rule before.' "$claude_preserve_home/.claude/CLAUDE.md" \
   "Claude global policy install must preserve user content"
-grep_required '<!-- CODEGRAPH_START -->' "$claude_preserve_home/.claude/CLAUDE.md" \
-  "Claude global policy install must preserve CodeGraph block"
 check_lean_policy "$claude_preserve_home/.claude/CLAUDE.md" performance-first \
   "refreshed Claude global policy"
 grep_absent 'old managed content' \
@@ -867,8 +791,6 @@ done
 for agent in "${CURSOR_AGENTS[@]}"; do
   [[ -L "$tmp/home-all/.cursor/agents/$agent.md" ]] || fail "all install must link Cursor agent $agent"
 done
-[[ -f "$tmp/home-all/.cursor/mcp.json" ]] \
-  || fail "all install must write Cursor MCP config"
 [[ ! -e "$tmp/home-all/.claude/skills/teamwork" ]] || fail "all install must remove retired teamwork skill"
 grep_required '<!-- TEAMWORK_CLAUDE_GLOBAL_START -->' "$tmp/home-all/.claude/CLAUDE.md" \
   "all install must write Claude global policy"
@@ -877,7 +799,6 @@ init_root="$tmp/init-project"
 mkdir -p "$init_root"
 printf '# Init Smoke\n' > "$init_root/README.md"
 HOME="$tmp/home-init-project" \
-  TEAMWORK_INIT_CODEGRAPH=0 \
   TEAMWORK_INIT_CURSOR_POLICY_COPY=0 \
   "$ROOT/install.sh" --copy --project-root "$init_root" init-project >/dev/null
 [[ ! -e "$tmp/home-init-project/.fake-codex-invocations" ]] \
@@ -936,8 +857,6 @@ for global_surface in \
   [[ ! -e "$global_surface" ]] \
     || fail "init-project must remain project-local and not create $global_surface"
 done
-[[ ! -e "$tmp/home-init-project/.local/state/teamwork/install-preferences.json" ]] \
-  || fail "init-project must not create or change the global install preference receipt"
 for removed_local_surface in \
   "$init_root/.agents" \
   "$init_root/.codex/agents" \
@@ -948,33 +867,9 @@ for removed_local_surface in \
   [[ ! -e "$removed_local_surface" ]] \
     || fail "init-project must not create project-local Teamwork package surface $removed_local_surface"
 done
-init_mcp_root="$tmp/init-project-cursor-mcp"
-mkdir -p "$init_mcp_root"
-printf '# Init MCP Smoke\n' > "$init_mcp_root/README.md"
-HOME="$tmp/home-init-project-cursor-mcp" \
-  TEAMWORK_INIT_CODEGRAPH=0 \
-  "$ROOT/install.sh" --copy --project-root "$init_mcp_root" --cursor-mcp init-project >/dev/null
-[[ -f "$init_mcp_root/.cursor/rules/codegraph.mdc" ]] \
-  || fail "init-project --cursor-mcp must write codegraph Cursor rule"
-[[ -f "$init_mcp_root/.cursor/rules/gpu-broker.mdc" ]] \
-  || fail "init-project --cursor-mcp must write gpu-broker Cursor rule"
-[[ -f "$init_mcp_root/.cursor/mcp.json" ]] \
-  || fail "init-project --cursor-mcp must write project .cursor/mcp.json"
-python3 - "$init_mcp_root/.cursor/mcp.json" <<'PY'
-import json
-import pathlib
-import sys
-
-payload = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
-servers = payload.get("mcpServers", {})
-for name in ("codegraph", "gpu-broker"):
-    if name not in servers:
-        raise SystemExit(f"project init MCP config missing {name}")
-PY
 rerun_init_rc=0
 rerun_init_output="$(
   HOME="$tmp/home-init-project" \
-    TEAMWORK_INIT_CODEGRAPH=0 \
     "$ROOT/install.sh" --project-root "$init_root" init-project 2>&1
 )" || rerun_init_rc=$?
 [[ "$rerun_init_rc" -ne 0 ]] \
@@ -1000,7 +895,6 @@ printf '%s\n' '[broken' 'value = [' > "$global_isolation_home/.codex/config.toml
 cp "$global_isolation_home/.codex/config.toml" "$tmp/global-config-before.toml"
 global_isolation_output="$(
   HOME="$global_isolation_home" \
-    TEAMWORK_INIT_CODEGRAPH=0 \
     "$ROOT/scripts/init-project.sh" --project-root "$global_isolation_root" 2>&1
 )" || fail "project-local init must ignore malformed global Codex configuration"
 cmp -s "$tmp/global-config-before.toml" "$global_isolation_home/.codex/config.toml" \
@@ -1023,7 +917,6 @@ cp "$invalid_root/docs/teamwork/index.json" "$invalid_index_snapshot"
 invalid_rc=0
 invalid_output="$(
   HOME="$tmp/home-init-project-invalid" \
-    TEAMWORK_INIT_CODEGRAPH=0 \
     TEAMWORK_INIT_CURSOR_POLICY_COPY=0 \
     "$ROOT/scripts/init-project.sh" --project-root "$invalid_root" 2>&1
 )" || invalid_rc=$?
@@ -1087,7 +980,7 @@ else
       || fail "Marketplace cache must contain Teamwork skill $skill"
   done
 
-  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
+  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
     "$cache_root/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" plugin-codex-bootstrap >/dev/null
   [[ -f "$marketplace_codex_home/teamwork/plugin-activation.json" ]] \
     || fail "plugin bootstrap must write activation marker last"
@@ -1112,7 +1005,7 @@ else
 
   # A repeated bootstrap may render a different supported profile and remove
   # notifications without creating duplicate skills or hooks.
-  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
+  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
     "$cache_root/install.sh" --profile cost-first --no-notifications plugin-codex-bootstrap >/dev/null
   grep_required '^model = "gpt-5.6-luna"$' "$marketplace_codex_home/agents/teamwork-explorer.toml" \
     "plugin bootstrap must render the requested Codex profile"
@@ -1121,16 +1014,8 @@ else
   grep_required '"profile": "cost-first"' "$marketplace_codex_home/teamwork/plugin-activation.json" \
     "activation marker must record the selected profile"
   real_codex_dir="$(dirname "$REAL_CODEX")"
-  PATH="$real_codex_dir:$PATH" HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
+  PATH="$real_codex_dir:$PATH" HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
     "$cache_root/scripts/check-update.sh" --plugin --readiness --no-fetch > "$tmp/plugin-readiness.out"
-  grep_required '^MANAGED_INSTALL_READY=yes$' "$tmp/plugin-readiness.out" \
-    "plugin readiness must verify the cached full Codex setup"
-  grep_required '^BASELINE_READY=yes$' "$tmp/plugin-readiness.out" \
-    "plugin readiness must prove the mandatory Codex baseline"
-  grep_required '^FULL_CAPABILITY_READY=no$' "$tmp/plugin-readiness.out" \
-    "plugin readiness must preserve the explicit managed dependency opt-out"
-  grep_required '^PREFERENCES=valid$' "$tmp/plugin-readiness.out" \
-    "plugin bootstrap must share the owned install preference receipt"
   grep_required '^PLUGIN_CATALOG=enabled$' "$tmp/plugin-readiness.out" \
     "plugin readiness must inspect codex plugin list JSON"
   grep_required '^PLUGIN_CACHE=current' "$tmp/plugin-readiness.out" \
@@ -1143,7 +1028,7 @@ else
   "$cache_root/scripts/plugin-activation.py" write \
     --path "$marketplace_codex_home/teamwork/plugin-activation.json" \
     --version 0.0.0 --profile cost-first --notifications disabled >/dev/null
-  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
+  HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
     "$cache_root/install.sh" --profile cost-first --no-notifications plugin-codex-bootstrap >/dev/null
   grep_required '"version": "'"$(tr -d '[:space:]' < "$ROOT/VERSION")"'"' \
     "$marketplace_codex_home/teamwork/plugin-activation.json" \
@@ -1159,7 +1044,7 @@ else
   printf '# Plugin Init Smoke\n' > "$plugin_project/README.md"
   plugin_project="$(cd "$plugin_project" && pwd -P)"
   HOME="$marketplace_home" CODEX_HOME="$marketplace_codex_home" \
-    TEAMWORK_INIT_CODEGRAPH=0 TEAMWORK_INIT_CURSOR_POLICY_COPY=0 \
+    TEAMWORK_INIT_CURSOR_POLICY_COPY=0 \
     "$cache_root/install.sh" --no-notifications --project-root "$plugin_project" plugin-init-project >/dev/null
   [[ -f "$plugin_project/docs/teamwork/index.json" ]] \
     || fail "plugin-init-project must create Teamwork project context"
@@ -1170,7 +1055,7 @@ else
   unknown_plugin_codex_home="$tmp/codex-plugin-unknown-legacy"
   mkdir -p "$unknown_plugin_home/.agents/skills/teamwork-update" "$unknown_plugin_codex_home"
   printf '%s\n' 'unowned content' > "$unknown_plugin_home/.agents/skills/teamwork-update/SKILL.md"
-  if HOME="$unknown_plugin_home" CODEX_HOME="$unknown_plugin_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
+  if HOME="$unknown_plugin_home" CODEX_HOME="$unknown_plugin_codex_home" \
     "$cache_root/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" --no-notifications plugin-codex-bootstrap >/dev/null 2>&1; then
     fail "plugin bootstrap must reject unknown same-name legacy skill content"
   fi
@@ -1182,7 +1067,7 @@ else
   failed_plugin_codex_home="$tmp/codex-plugin-invalid-notifications"
   mkdir -p "$failed_plugin_home" "$failed_plugin_codex_home"
   printf '%s\n' '{broken-json' > "$failed_plugin_codex_home/hooks.json"
-  if HOME="$failed_plugin_home" CODEX_HOME="$failed_plugin_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
+  if HOME="$failed_plugin_home" CODEX_HOME="$failed_plugin_codex_home" \
     "$cache_root/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" plugin-codex-bootstrap >/dev/null 2>&1; then
     fail "plugin bootstrap must reject invalid notification config before mutation"
   fi
@@ -1201,7 +1086,7 @@ else
   printf '%s\n' "$(tr -d '[:space:]' < "$ROOT/VERSION")" > "$migrated_plugin_home/.agents/skills/.teamwork-version"
   printf '%s\n' performance-first > "$migrated_plugin_home/.agents/skills/.teamwork-profile"
   printf '%s\n' 'preserve unrelated content' > "$migrated_plugin_home/.agents/skills/unrelated.txt"
-  HOME="$migrated_plugin_home" CODEX_HOME="$migrated_plugin_codex_home" TEAMWORK_MANAGED_DEPENDENCIES=skip \
+  HOME="$migrated_plugin_home" CODEX_HOME="$migrated_plugin_codex_home" \
     "$cache_root/install.sh" "${TEAMWORK_BASELINE_ARGS[@]}" --no-notifications plugin-codex-bootstrap >/dev/null
   for skill in "${SKILLS[@]}"; do
     [[ ! -e "$migrated_plugin_home/.agents/skills/$skill" ]] \
