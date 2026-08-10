@@ -41,6 +41,13 @@ mutation roles. Root must not imitate a missing role. Suspend Init, switch to
 Update for readiness repair, wait, and resume or return the exact blocker.
 Explorer creates no document; it returns evidence to Init.
 
+## Codex Role Dispatch
+
+On Codex, dispatch Explorer, Worker, and Writer through `spawn_agent.agent_type`
+as `teamwork_explorer`, `teamwork_worker`, and `teamwork_writer`. Use `fork_turns`
+set to `none` or a bounded recent context, then observe a live child start; never
+silently substitute an unavailable role.
+
 ## Init Report
 
 Only when the observed result, validation, ownership conflict, or blocker is

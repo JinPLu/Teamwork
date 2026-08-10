@@ -40,6 +40,12 @@ reason for Root to imitate a leaf role. Suspend the current stage, switch to
 Update, wait for readiness repair, and then resume. If Update itself cannot
 repair the capability or lacks authority, return that hard stop.
 
+## Codex Role Dispatch
+
+On Codex, dispatch Writer through `spawn_agent.agent_type` as
+`teamwork_writer`. Use `fork_turns` set to `none` or a bounded recent context,
+then observe a live child start; never silently substitute an unavailable role.
+
 ## Goal Report
 
 When the success signal, a material strategy change, a decisive result, or a

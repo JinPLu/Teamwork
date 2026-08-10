@@ -68,6 +68,13 @@ Reviewer is required. If unavailable, Root suspends Review, switches to Update
 for readiness repair, waits, and resumes or returns the exact blocker. Root
 cannot recreate the independence by reviewing in the missing role's place.
 
+## Codex Role Dispatch
+
+On Codex, dispatch Reviewer and Writer through `spawn_agent.agent_type` as
+`teamwork_reviewer` and `teamwork_writer`. Use `fork_turns` set to `none` or a
+bounded recent context, then observe a live child start; never silently
+substitute an unavailable role.
+
 ## Review Document
 
 When a stable candidate plus direct evidence or a finding becomes reusable,

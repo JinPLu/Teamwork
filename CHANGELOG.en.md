@@ -4,6 +4,16 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.2.2 - 2026-08-10
+
+**Teamwork 7.2.2 makes every new task lighter by keeping the global policy to its essential collaboration boundaries.**
+
+- **Global guidance is shorter and clearer.** Clear work, honest evidence, authority, proportionate verification, minimum controls, and real role activation remain globally protected.
+- **Specialist details now load only when needed.** Document ownership, host API mechanics, role lists, and transport details stay with the Skills or project context that use them.
+- **Existing safety boundaries are unchanged.** Git and shared-resource authorization remain protected, while the project-level rule against content fingerprints remains in force.
+
+Upgrade action: update to 7.2.2, run `$teamwork-update`, and start a new task to load the refreshed global policy and Skills.
+
 ## 7.2.1 - 2026-08-10
 
 **Teamwork 7.2.1 keeps its core collaboration flow independent of managed external code-indexing and compute-scheduling tools.**

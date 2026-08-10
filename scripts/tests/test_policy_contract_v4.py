@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 POLICY = ROOT / "policy/teamwork-global.md"
+PROJECT_AGENTS = ROOT / "AGENTS.md"
 BASELINE = ("--profile", "performance-first")
 
 
@@ -37,30 +38,34 @@ class PolicyContractTests(unittest.TestCase):
             check=False,
         )
 
-    def test_canonical_policy_is_one_readable_source_with_owned_principles(self) -> None:
+    def test_canonical_policy_is_one_readable_source_with_six_universal_invariants(self) -> None:
         text = POLICY.read_text(encoding="utf-8")
         sections = text.strip().split("\n\n")
         self.assertEqual(sections[0], "# Teamwork Global Policy")
-        self.assertIn("Clear work stays native", text)
-        self.assertIn("Calibrate verification", text)
-        self.assertIn("smallest sufficient control", text)
-        self.assertIn("framework itself does not use them", text)
-
-    def test_canonical_policy_separates_typed_claims_from_effect_authority(self) -> None:
-        text = POLICY.read_text(encoding="utf-8")
         for phrase in (
-            "Discussion owns intended result, options, and user decisions",
-            "Research owns external findings at its cutoff",
-            "Debug owns cause, fix, and same-path evidence",
-            "Plan owns selected scope, work, dependencies, and proof targets",
-            "Report owns observed execution and resulting state",
-            "Review owns the verdict on its stable candidate",
-            "Current consequential effect authority",
-            "permission does not manufacture authority",
-            "Same-claim conflicts are surfaced and become unresolved",
-            "Clear authorized local work remains native",
+            "Clear, authorized work stays native",
+            "Use a named Teamwork Skill only when its stated trigger applies",
+            "Be epistemically honest",
+            "Current consequential effects require the current user request",
+            "Tool access does not manufacture authority",
+            "Calibrate verification",
+            "smallest sufficient control",
+            "When a named Teamwork Agent is required",
+            "observe it actually start",
         ):
             self.assertIn(phrase, text)
+        for removed_detail in (
+            "Discussion owns intended result",
+            "hashes, digests, checksums",
+            "Ask material questions through the host's user-input mechanism",
+            "Treat tool-call and transport limits",
+        ):
+            self.assertNotIn(removed_detail, text)
+
+    def test_project_agents_retains_the_project_owned_no_hash_boundary(self) -> None:
+        text = PROJECT_AGENTS.read_text(encoding="utf-8")
+        self.assertIn("Teamwork-owned source, data formats, protocols, and validation", text)
+        self.assertIn("hashes, digests, checksums, content fingerprints", text)
 
     def test_codex_and_claude_managed_blocks_preserve_surrounding_content(self) -> None:
         codex = self.home / ".codex/AGENTS.md"
@@ -81,9 +86,12 @@ class PolicyContractTests(unittest.TestCase):
             installed = path.read_text(encoding="utf-8")
             self.assertIn(before, installed)
             self.assertIn(after, installed)
-            self.assertEqual(installed.count("Clear work stays native"), 1)
-            self.assertEqual(installed.count("Current consequential effect authority"), 1)
-            self.assertIn("permission does not manufacture authority", installed)
+            self.assertEqual(installed.count("Clear, authorized work stays native"), 1)
+            self.assertEqual(installed.count("Current consequential effects require"), 1)
+            self.assertIn("Tool access does not manufacture authority", installed)
+            self.assertIn("observe it actually start", installed)
+            self.assertNotIn("The role IDs are", installed)
+            self.assertNotIn("`fork_turns`", installed)
         self.assertIn("global policy activation: current", codex_result.stdout)
         self.assertIn("global policy activation: current", claude_result.stdout)
 

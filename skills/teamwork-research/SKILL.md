@@ -43,6 +43,13 @@ Researcher is required once Research activates. Root must not imitate the
 missing role or claim the full method. If unavailable, suspend Research, switch
 to Update for readiness repair, wait, and resume or return the exact blocker.
 
+## Codex Role Dispatch
+
+On Codex, dispatch Researcher, Explorer, and Writer through
+`spawn_agent.agent_type` as `teamwork_researcher`, `teamwork_explorer`, and
+`teamwork_writer`. Use `fork_turns` set to `none` or a bounded recent context,
+then observe a live child start; never silently substitute an unavailable role.
+
 ## Research Document
 
 When the first reusable evidence synthesis appears, Root assigns Writer the

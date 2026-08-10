@@ -21,20 +21,6 @@ POLICY
   write_teamwork_global_policy_body
   cat <<'POLICY'
 
-Codex host mapping: use `request_user_input` for material questions. When a
-Teamwork Skill requires a named Agent, select the installed role through
-`spawn_agent.agent_type`; a task name alone does not activate that role. The
-role IDs are `teamwork_challenger`, `teamwork_debugger`, `teamwork_explorer`,
-`teamwork_planner`, `teamwork_researcher`, `teamwork_reviewer`,
-`teamwork_worker`, and `teamwork_writer`. When selecting one, use a self-contained
-assignment (`fork_turns` `none` or a bounded recent-turn fork), because a
-full-history fork inherits Root's role and cannot select a different Agent type.
-Static profile installation and `features.multi_agent` configuration do not
-prove that selector worked. Require a live child-start observation; if the host
-surface does not expose or honor the exact role, report the activation as
-unsupported or failed and do not substitute a task name or enable an
-under-development feature on the user's behalf. Preserve such user-managed
-feature settings unchanged.
 <!-- TEAMWORK_CODEX_GLOBAL_END -->
 POLICY
 }

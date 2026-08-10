@@ -42,6 +42,14 @@ Challenger cannot be simulated by Root: if it is unavailable, suspend this
 stage, switch to Update for readiness repair, wait, and resume or report the
 real blocker.
 
+## Codex Role Dispatch
+
+On Codex, dispatch Explorer, Researcher, Challenger, and Writer through
+`spawn_agent.agent_type` as `teamwork_explorer`, `teamwork_researcher`,
+`teamwork_challenger`, and `teamwork_writer`. Use `fork_turns` set to `none`
+or a bounded recent context, then observe a live child start; never silently
+substitute an unavailable role.
+
 ## Discussion Document
 
 When durable framing, a material option comparison, a meaningful question

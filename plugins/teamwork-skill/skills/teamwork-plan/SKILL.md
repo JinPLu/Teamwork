@@ -45,6 +45,13 @@ Planner is required. Root must not imitate it when unavailable. Suspend Plan,
 switch to Update for readiness repair, wait, and resume or return the exact
 blocker.
 
+## Codex Role Dispatch
+
+On Codex, dispatch Planner and Writer through `spawn_agent.agent_type` as
+`teamwork_planner` and `teamwork_writer`. Use `fork_turns` set to `none` or a
+bounded recent context, then observe a live child start; never silently
+substitute an unavailable role.
+
 ## Plan Document
 
 When the selected direction and first concrete work unit become reusable, Root

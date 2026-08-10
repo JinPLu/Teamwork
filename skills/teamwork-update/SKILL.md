@@ -93,6 +93,14 @@ and report its exact state.
 Init owns only fresh context creation and never migration. Capability drift
 belongs here, not in Goal or another stage.
 
+## Codex Role Dispatch
+
+On Codex, dispatch Explorer, Worker, Reviewer, and Writer through
+`spawn_agent.agent_type` as `teamwork_explorer`, `teamwork_worker`,
+`teamwork_reviewer`, and `teamwork_writer`. Use `fork_turns` set to `none` or
+a bounded recent context, then observe a live child start; never silently
+substitute an unavailable role.
+
 ## Update Report
 
 When readiness evidence, an applied repair, migration state, or a blocker is

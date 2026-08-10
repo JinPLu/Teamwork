@@ -55,6 +55,14 @@ Debugger is required. Root must not imitate it when unavailable. Suspend Debug,
 switch to Update for readiness repair, wait, and resume or return the exact
 blocker.
 
+## Codex Role Dispatch
+
+On Codex, dispatch Debugger, Explorer, Researcher, and Writer through
+`spawn_agent.agent_type` as `teamwork_debugger`, `teamwork_explorer`,
+`teamwork_researcher`, and `teamwork_writer`. Use `fork_turns` set to `none`
+or a bounded recent context, then observe a live child start; never silently
+substitute an unavailable role.
+
 ## Result And Debug Document
 
 Use the semantic state that follows from the evidence: `cause-confirmed`,

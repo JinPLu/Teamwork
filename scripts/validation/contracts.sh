@@ -61,16 +61,23 @@ for platform in codex cursor claude; do
   "$ROOT/install.sh" "$platform-policy" > "$policy_tmp/$platform.md"
   check_lean_policy "$policy_tmp/$platform.md" "$platform" "$platform global policy"
 done
-grep_required 'request_user_input' "$policy_tmp/codex.md" \
-  "Codex adapter must use request_user_input when callable"
-grep_required 'spawn_agent.agent_type' "$policy_tmp/codex.md" \
-  "Codex adapter must select required Teamwork Agent roles explicitly"
-grep_required 'teamwork_debugger' "$policy_tmp/codex.md" \
-  "Codex adapter must expose exact installed Teamwork role IDs"
-grep_required 'fork_turns' "$policy_tmp/codex.md" \
-  "Codex adapter must describe compatible named-role context forking"
-grep_absent 'request_user_input' "host-neutral policies must not name Codex input tools" \
-  "$policy_tmp/cursor.md" "$policy_tmp/claude.md"
+# The global policy carries only universal invariants. Codex API mechanics are
+# loaded with the Skills that actually dispatch named roles.
+grep_required 'When a named Teamwork Agent is required' "$policy_tmp/codex.md" \
+  "Codex global policy must retain the real-role activation invariant"
+grep_absent 'request_user_input\|spawn_agent\.agent_type\|teamwork_debugger\|fork_turns' \
+  "global policies must not embed host API or role-routing detail" \
+  "$policy_tmp/codex.md" "$policy_tmp/cursor.md" "$policy_tmp/claude.md"
+for skill in teamwork-collaborate teamwork-research teamwork-debug teamwork-plan \
+  teamwork-review teamwork-update teamwork-init teamwork-goal; do
+  skill_file="$ROOT/skills/$skill/SKILL.md"
+  grep_required 'spawn_agent\.agent_type' "$skill_file" \
+    "$skill must own its Codex role dispatch"
+  grep_required 'fork_turns' "$skill_file" \
+    "$skill must own its Codex role context boundary"
+  grep_required 'observe a live child start' "$skill_file" \
+    "$skill must require live role activation evidence"
+done
 
 # Every public behavior owner is self-contained and reasonably focused. The
 # semantic validator checks capability boundaries without freezing prose.
