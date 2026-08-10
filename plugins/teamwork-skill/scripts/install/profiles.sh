@@ -26,14 +26,17 @@ codex_agent_profile_values() {
     performance-first:*)
       codex_agent_performance_values "$agent"
       ;;
-    cost-first:teamwork-researcher|cost-first:teamwork-debugger|cost-first:teamwork-challenger|cost-first:teamwork-planner)
+    cost-first:teamwork-researcher|cost-first:teamwork-debugger|cost-first:teamwork-planner)
       printf '%s %s\n' "gpt-5.6-terra" "high"
+      ;;
+    cost-first:teamwork-challenger)
+      printf '%s %s\n' "gpt-5.6-sol" "high"
       ;;
     cost-first:teamwork-explorer|cost-first:teamwork-writer)
       printf '%s %s\n' "gpt-5.6-luna" "high"
       ;;
     cost-first:teamwork-worker)
-      printf '%s %s\n' "gpt-5.6-luna" "xhigh"
+      printf '%s %s\n' "gpt-5.6-luna" "high"
       ;;
     cost-first:teamwork-reviewer)
       printf '%s %s\n' "gpt-5.6-sol" "high"

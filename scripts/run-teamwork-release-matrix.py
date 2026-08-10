@@ -19,8 +19,21 @@ from teamwork_tooling.evaluation.host_matrix import (  # noqa: E402
     load_json,
     load_case_manifest,
     load_trajectory_schema,
+    utc_now,
     validate_record_binding,
 )
+
+
+MATRIX_EVIDENCE_SCOPE = {
+    "lane": "behavioral",
+    "source": "supplied-installed-host-trajectories",
+    "matrix_verifier_executes_host": False,
+    "does_not_establish": [
+        "fresh-host-execution",
+        "semantic-acceptance",
+        "release-readiness",
+    ],
+}
 
 
 def read_records(
@@ -126,6 +139,80 @@ def output_slices(
     ]
 
 
+def summarize_slice(
+    *,
+    host: str,
+    profile: str,
+    arm: str,
+    path: Path,
+    output_root: Path,
+    records: list[dict[str, object]],
+    cases: dict[str, dict[str, object]],
+    expected_per_output: int,
+) -> tuple[dict[str, object], list[str], dict[str, int]]:
+    """Summarize one verified trajectory slice without retaining its private output."""
+
+    failures: list[str] = []
+    support_counts = {
+        "required-pass": 0,
+        "conditional-pass": 0,
+        "conditional-unsupported": 0,
+    }
+    case_names = [record.get("case_name") for record in records]
+    statuses = {str(record.get("status")) for record in records}
+    if len(records) != expected_per_output:
+        failures.append(f"expected {expected_per_output} records, got {len(records)}")
+    if len(case_names) != len(set(case_names)) or set(case_names) != set(cases):
+        failures.append("case coverage differs from the case manifest")
+    blockers: list[str] = []
+    case_outcomes: list[dict[str, object]] = []
+    for record in records:
+        case_name = record.get("case_name")
+        case = cases.get(case_name) if isinstance(case_name, str) else None
+        if case is None:
+            continue
+        accepted, support_observation = support_result(host=host, case=case, record=record)
+        if accepted:
+            support_counts[support_observation] += 1
+        else:
+            blockers.append(f"{case_name}: {support_observation}")
+        case_outcomes.append({
+            "case_name": case_name,
+            "status": record.get("status"),
+            "failure_classification": record.get("failure_classification"),
+            "support_observation": support_observation,
+            "accepted": accepted,
+        })
+    if blockers:
+        failures.append(
+            f"contains {len(blockers)} support blockers: " + "; ".join(blockers)
+        )
+    try:
+        trajectory_path = path.relative_to(output_root).as_posix()
+    except ValueError as exc:
+        raise HostMatrixError("trajectory slice is outside the matrix output root") from exc
+    contract_satisfied = not failures
+    return ({
+        "host": host,
+        "profile": profile,
+        "arm": arm,
+        "trajectory_path": trajectory_path,
+        "records": len(records),
+        "host_tool_versions": sorted({str(record.get("host_version")) for record in records}),
+        "observed_started_at": min((str(record["started_at"]) for record in records), default=None),
+        "observed_finished_at": max((str(record["finished_at"]) for record in records), default=None),
+        "statuses": sorted(statuses),
+        "case_outcomes": case_outcomes,
+        "support_observation": (
+            "conditional-unsupported"
+            if "UNSUPPORTED" in statuses and not blockers
+            else "all-observed-pass" if statuses == {"PASS"} and not blockers
+            else "blocked"
+        ),
+        "contract_satisfied": contract_satisfied,
+    }, failures, support_counts)
+
+
 def main() -> int:
     args = parse_args()
     expected_output_root = RELEASE_TEMP_ROOT / "outputs/installed"
@@ -149,7 +236,7 @@ def main() -> int:
     failures: list[str] = []
     slices: list[dict[str, object]] = []
     total = 0
-    support_counts = {
+    support_counts: dict[str, int] = {
         "required-pass": 0,
         "conditional-pass": 0,
         "conditional-unsupported": 0,
@@ -162,45 +249,29 @@ def main() -> int:
             failures.append(f"{host}/{arm}: {exc}")
             records = []
         total += len(records)
-        case_names = [record.get("case_name") for record in records]
-        statuses = {str(record.get("status")) for record in records}
-        if len(records) != expected_per_output:
-            failures.append(f"{host}/{arm}: expected {expected_per_output} records, got {len(records)}")
-        if len(case_names) != len(set(case_names)) or set(case_names) != set(cases):
-            failures.append(f"{host}/{arm}: case coverage differs from the case manifest")
-        blockers: list[str] = []
-        for record in records:
-            case_name = record.get("case_name")
-            case = cases.get(case_name) if isinstance(case_name, str) else None
-            if case is None:
-                continue
-            accepted, result = support_result(host=host, case=case, record=record)
-            if accepted:
-                support_counts[result] += 1
-            else:
-                blockers.append(f"{case_name}: {result}")
-        if blockers:
-            failures.append(
-                f"{host}/{arm}: contains {len(blockers)} support blockers: "
-                + "; ".join(blockers)
-            )
-        slices.append({
-            "host": host, "profile": profile, "arm": arm, "records": len(records),
-            "statuses": sorted(statuses),
-            "support_observation": (
-                "conditional-unsupported"
-                if "UNSUPPORTED" in statuses and not blockers
-                else "all-observed-pass" if statuses == {"PASS"} and not blockers
-                else "blocked"
-            ),
-            "contract_satisfied": not blockers and len(records) == expected_per_output
-            and len(case_names) == len(set(case_names)) and set(case_names) == set(cases),
-        })
+        slice_summary, slice_failures, slice_counts = summarize_slice(
+            host=host,
+            profile=profile,
+            arm=arm,
+            path=path,
+            output_root=output_root,
+            records=records,
+            cases=cases,
+            expected_per_output=expected_per_output,
+        )
+        failures.extend(f"{host}/{arm}: {failure}" for failure in slice_failures)
+        for label, count in slice_counts.items():
+            support_counts[label] += count
+        slices.append(slice_summary)
     expected_total = len(output_slices(output_root, args.hosts, args.profiles)) * expected_per_output
     if total != expected_total:
         failures.append(f"matrix expected {expected_total} total records, got {total}")
     summary = {
-        "schema_version": 2, "status": "FAIL" if failures else "PASS",
+        "schema_version": 3,
+        "record_type": "teamwork_installed_matrix_summary",
+        "evidence_scope": MATRIX_EVIDENCE_SCOPE,
+        "generated_at": utc_now(),
+        "status": "FAIL" if failures else "PASS",
         "release_hosts": release_hosts,
         "total_records": total, "expected_total_records": expected_total,
         "support_counts": support_counts, "slices": slices, "failures": failures,

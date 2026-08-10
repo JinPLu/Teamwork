@@ -197,6 +197,103 @@ class RoutingScenarioContractTests(unittest.TestCase):
             )[0]
         )
 
+    def test_matrix_summary_retains_public_codex_behavioral_receipt_fields(self) -> None:
+        module = release_matrix_module()
+        output_root = Path("/tmp/teamwork-release-matrix/outputs/installed")
+        records = [
+            trajectory(
+                case_name="native-default",
+                host_version="codex 0.144.0",
+                started_at="2026-08-11T00:00:00Z",
+                finished_at="2026-08-11T00:00:01Z",
+            ),
+            trajectory(
+                case_name="role-route",
+                selected_skill="teamwork-review",
+                status="UNSUPPORTED",
+                failure_classification="required-agent-not-observed",
+                host_version="codex 0.144.0",
+                started_at="2026-08-11T00:00:02Z",
+                finished_at="2026-08-11T00:00:03Z",
+            ),
+        ]
+        cases = {
+            "native-default": {"support": {"codex": "required"}},
+            "role-route": {"support": {"codex": "conditional-exact-role"}},
+        }
+        summary, failures, counts = module.summarize_slice(
+            host="codex",
+            profile="performance-first",
+            arm="performance-first",
+            path=output_root / "codex/performance-first.jsonl",
+            output_root=output_root,
+            records=records,
+            cases=cases,
+            expected_per_output=2,
+        )
+
+        self.assertEqual([], failures)
+        self.assertEqual(
+            {
+                "required-pass": 1,
+                "conditional-pass": 0,
+                "conditional-unsupported": 1,
+            },
+            counts,
+        )
+        self.assertEqual("codex/performance-first.jsonl", summary["trajectory_path"])
+        self.assertEqual(["codex 0.144.0"], summary["host_tool_versions"])
+        self.assertEqual("2026-08-11T00:00:00Z", summary["observed_started_at"])
+        self.assertEqual("2026-08-11T00:00:03Z", summary["observed_finished_at"])
+        self.assertEqual(
+            "conditional-unsupported", summary["support_observation"]
+        )
+        self.assertTrue(summary["contract_satisfied"])
+        self.assertEqual(
+            "conditional-unsupported",
+            summary["case_outcomes"][1]["support_observation"],
+        )
+        self.assertTrue(summary["case_outcomes"][1]["accepted"])
+        self.assertEqual(
+            {
+                "lane": "behavioral",
+                "source": "supplied-installed-host-trajectories",
+                "matrix_verifier_executes_host": False,
+                "does_not_establish": [
+                    "fresh-host-execution",
+                    "semantic-acceptance",
+                    "release-readiness",
+                ],
+            },
+            module.MATRIX_EVIDENCE_SCOPE,
+        )
+
+    def test_matrix_summary_marks_unacceptable_unsupported_as_blocked(self) -> None:
+        module = release_matrix_module()
+        output_root = Path("/tmp/teamwork-release-matrix/outputs/installed")
+        summary, failures, counts = module.summarize_slice(
+            host="codex",
+            profile="cost-first",
+            arm="cost-first",
+            path=output_root / "codex/cost-first.jsonl",
+            output_root=output_root,
+            records=[trajectory(
+                status="UNSUPPORTED",
+                failure_classification="missing-host-authentication",
+            )],
+            cases={"native-default": {"support": {"codex": "required"}}},
+            expected_per_output=1,
+        )
+
+        self.assertEqual(["contains 1 support blockers: native-default: required case returned UNSUPPORTED"], failures)
+        self.assertEqual(
+            {"required-pass": 0, "conditional-pass": 0, "conditional-unsupported": 0},
+            counts,
+        )
+        self.assertEqual("blocked", summary["support_observation"])
+        self.assertFalse(summary["contract_satisfied"])
+        self.assertFalse(summary["case_outcomes"][0]["accepted"])
+
     def test_conditional_missing_role_precedes_unmodified_scenario(self) -> None:
         case = {
             "scenario": "scenario.json",

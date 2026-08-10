@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "7.2.2",
+  "version": "7.2.3",
   "description": "Retained Teamwork compatibility adapter for Claude Code development; Teamwork 7.2's official support scope and release-qualification evidence are Codex-only.",
   "author": {
     "name": "JinPLu",

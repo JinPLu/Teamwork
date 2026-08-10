@@ -135,9 +135,9 @@ Profile defaults to performance-first; choose cost-first explicitly when needed.
 On Codex, performance-first
 uses Terra/high for Researcher, Explorer, and Worker; Luna/high for Writer;
 Sol/high for Debugger, Challenger, and Planner; and Sol/max for Reviewer. On
-Codex, cost-first uses Terra/high for Researcher, Debugger, Challenger, and
-Planner; Luna/high for Explorer and Writer;
-Luna/xhigh for Worker; and Sol/high for Reviewer. Cursor and Claude Code keep
+Codex, cost-first uses Terra/high for Researcher, Debugger, and
+Planner; Luna/high for Explorer, Worker, and Writer;
+and Sol/high for Challenger and Reviewer. Cursor and Claude Code keep
 their existing compatibility/development profile mappings.
 USAGE
 }

@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.2.3 - 2026-08-11
+
+**Teamwork 7.2.3 makes real Codex behavioral evidence easier to review and first-use outcomes easier to understand.**
+
+- **Publishable behavioral receipts.** After an installed Codex matrix completes, its summary retains host versions, observation times, per-case outcomes, and accurate conditional-unsupported classifications for redacted manual publication.
+- **Honest evidence boundaries.** The summary distinguishes behavioral evidence from fresh host execution, semantic acceptance, and release readiness; static validation never creates or implies a live-run receipt.
+- **Clearer first outcomes.** The README illustrates native work, reusable discussion, and independent review without adding a new default workflow.
+- **Lighter role allocation.** `cost-first` uses Terra/Luna for everyday orchestration and execution; only Challenger and the independent Reviewer retain Sol/high, and Worker no longer uses xhigh.
+
+Upgrade action: update to 7.2.3, run `$teamwork-update`, and start a new task to load the refreshed global policy and Skills. A publishable behavioral receipt exists only after an installed Codex matrix completes.
+
+Important limit: the receipt does not replace independent semantic acceptance or prove release readiness. Without retained installed trajectories, no live-run result may be claimed.
+
 ## 7.2.2 - 2026-08-10
 
 **Teamwork 7.2.2 makes every new task lighter by keeping the global policy to its essential collaboration boundaries.**

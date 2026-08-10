@@ -87,7 +87,7 @@ cd Teamwork
 ./install.sh codex   # 仅用于开发或手动 Codex setup
 ```
 
-Codex 开发安装可使用较低成本配置：
+Codex 开发安装可使用较低成本配置：Researcher、Explorer、Debugger、Planner、Worker 与 Writer 使用 Terra/Luna；只有 Challenger 和独立 Reviewer 保留 Sol/high。为获得相同的编排取舍，请在 Codex 中为根任务选择 Terra/high；角色 profile 不会替你改写根任务的模型选择。
 
 ```bash
 ./install.sh codex --profile cost-first
@@ -95,7 +95,7 @@ Codex 开发安装可使用较低成本配置：
 
 Cursor 兼容适配器还需要运行 `./install.sh cursor-policy-copy`，审阅后把同一份全局 policy 粘贴到 **Cursor Settings → Rules → User Rules**。Teamwork 无法观察这一步，因此 Cursor readiness 会诚实保留为 `manual action required` / partial。适配器细节见 [Cursor 指南](CURSOR.md) 与 [Claude Code 指南](CLAUDE.md)。
 
-Codex 的静态安装检查只证明 Agent profile 与稳定版 `multi_agent` 配置存在，不证明精确命名 Agent 已激活。需要 Agent 的路径必须在实时运行中观察到对应角色；当前 Codex CLI 0.144 的稳定路径若无法提供该证据，会保留 `UNSUPPORTED`，而不是冒充通过。Teamwork 不会创建、删除或启用用户的 under-development `multi_agent_v2` 设置。
+Codex 的静态安装检查只证明 Agent profile 与稳定版 `multi_agent` 配置存在，不证明精确命名 Agent 已激活。需要 Agent 的路径必须在实时运行中观察到对应角色；若宿主没有提供该证据，会保留 `UNSUPPORTED`，而不是冒充通过。Teamwork 不会创建、删除或启用用户的 `multi_agent_v2` 设置。
 
 </details>
 
@@ -155,6 +155,14 @@ Codex 的静态安装检查只证明 Agent profile 与稳定版 `multi_agent` �
 **路径：** Research → 有来源的结论；只有仍存在真实选择时，才回到 Collaborate。
 
 Review 是按需加入的独立验收门，Goal 是显式要求的持续推进器。普通发布使用一位独立语义 Reviewer；只有当前变更实际跨越权限/安全、不可逆用户数据、持久数据迁移或公开兼容契约时，才进入 Strict Review。两者都不是每个任务的默认步骤。
+
+## ✨ 第一次可看到的结果
+
+下面是按当前 [Skills](skills/) 约定会产生的工作结果示例，不是已观察到的运行、视频、sandbox 或性能数据：
+
+1. **清楚的任务仍走原生路径。** 说“修改登录超时，只验证相关测试和真实登录路径”即可直接检查、修改和验证；不需要先创建 workflow 或文档。
+2. **明确要求讨论，才沉淀可复用决定。** 说“用 [$teamwork-collaborate](skills/teamwork-collaborate/SKILL.md) 比较三个 onboarding 方向并记录决定”。当形成有实质内容的选项、权衡或决定时，Writer 会创建 schema-v4 的 `discussions/` 文档，并在 [索引](docs/teamwork/index.json) 用可读任务键登记；讨论本身不授权实现。
+3. **需要复查时，结论来自独立证据。** 为稳定候选说“用 [$teamwork-review](skills/teamwork-review/SKILL.md) 按需求检查这个 diff”。独立 Reviewer 直接阅读候选及适用的主证据，按发现给出 `ACCEPT`、`REVISE` 或 `BLOCKED`；缺少适用证据时保持 unknown，而不把它写成通过。
 
 ## 📋 可直接复制的提示词
 
