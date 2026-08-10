@@ -53,10 +53,6 @@ Execute skill, cross-skill behavior load, or shared behavior reference.
 - Lead with the user outcome. Omit maintainer-only details such as internal scripts,
   numeric thresholds, and test counts unless they change required action or compatibility.
 
-## CodeGraph
-- Use CodeGraph for structural questions when callable/fresh; use `rg`/direct
-  reads for literals or stale files. Ask before initializing a missing index.
-
 <!-- TEAMWORK_PROJECT_START -->
 ## Teamwork Project Instructions
 
@@ -66,5 +62,4 @@ Execute skill, cross-skill behavior load, or shared behavior reference.
 - A task may reference several typed documents. Update a document only for a material semantic change and finalize it at its owning stage boundary.
 - Same-scope editorial or link corrections may update a final document in place; materially new scope uses a new same-type path and preserves the earlier conclusion.
 - Older schemas, `cases/`, manifests, and `live.md` are migration-only inputs for Update; Init reads them only to fail closed and never migrates them.
-- CodeGraph: this project has a local `.codegraph/` index.
 <!-- TEAMWORK_PROJECT_END -->
