@@ -1,7 +1,9 @@
 name = "teamwork_reviewer"
 description = "Independent review of finished code, documents, plans, and evidence."
+# Sol/xhigh is the strongest non-ultra efficiency point in the referenced
+# benchmark and replaces the slower, costlier, lower-scoring max tier.
 model = "gpt-5.6-sol"
-model_reasoning_effort = "max"
+model_reasoning_effort = "xhigh"
 sandbox_mode = "read-only"
 nickname_candidates = ["Argus", "Iris", "Sable", "Verity"]
 developer_instructions = """

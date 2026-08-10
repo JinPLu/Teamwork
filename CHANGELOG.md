@@ -4,6 +4,17 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.2.4 - 2026-08-11
+
+**Teamwork 7.2.4 让每个 Codex Agent 的模型投入同时考虑质量、费用和完成时间。**
+
+- **完整效率矩阵。** 两个 profile 参考 CodexRadar 同一时点的完整 IQ、API 等价费用与任务时间，而不是只采用少数推荐档位。
+- **性能档各取所长。** 深度研究与规划使用 Terra/max，调试与独立审查使用 Sol/xhigh，日常实现使用 Sol/medium，语义写作使用 Luna/xhigh。
+- **成本档不再一味降 effort。** 大多数综合、诊断、执行与写作角色使用低绝对成本的 Luna/xhigh；Explorer 保持 Luna/high，Challenger 与 Reviewer 按职责保留 Sol。
+- **证据边界更清楚。** README 说明 DeepSWE 对编码角色最直接、对其他角色只是能力代理；站点费用与时间不等于 Codex 订阅用量或 Teamwork 实际耗时。
+
+升级操作：更新到 7.2.4 后运行 `$teamwork-update --profile performance-first` 或使用安装器选择所需 profile，并从新任务开始加载刷新后的 Agent 配置。
+
 ## 7.2.3 - 2026-08-11
 
 **Teamwork 7.2.3 让 Codex 的真实行为证据更容易审阅，并让首次使用的结果更直观。**

@@ -1,7 +1,9 @@
 name = "teamwork_researcher"
 description = "Read-only deep or broad external research from a sanitized brief."
+# Performance profile favors the strongest efficient Terra tier for deep,
+# variable-length synthesis; role-local evidence still governs acceptance.
 model = "gpt-5.6-terra"
-model_reasoning_effort = "high"
+model_reasoning_effort = "max"
 sandbox_mode = "read-only"
 nickname_candidates = ["Curie", "Darwin", "Faraday", "Sagan"]
 developer_instructions = """

@@ -133,11 +133,11 @@ codex-agents separately when that surface needs refresh.
 
 Profile defaults to performance-first; choose cost-first explicitly when needed.
 On Codex, performance-first
-uses Terra/high for Researcher, Explorer, and Worker; Luna/high for Writer;
-Sol/high for Debugger, Challenger, and Planner; and Sol/max for Reviewer. On
-Codex, cost-first uses Terra/high for Researcher, Debugger, and
-Planner; Luna/high for Explorer, Worker, and Writer;
-and Sol/high for Challenger and Reviewer. Cursor and Claude Code keep
+uses Terra/max for Researcher and Planner; Terra/high for Explorer; Sol/xhigh
+for Debugger and Reviewer; Sol/high for Challenger; Sol/medium for Worker; and
+Luna/xhigh for Writer. On Codex, cost-first uses Luna/xhigh for Researcher,
+Debugger, Planner, Worker, and Writer; Luna/high for Explorer; Sol/medium for
+Challenger; and Sol/high for Reviewer. Cursor and Claude Code keep
 their existing compatibility/development profile mappings.
 USAGE
 }

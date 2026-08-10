@@ -963,8 +963,8 @@ print_report() {
 
   echo "--- Model mapping (best-effort) ---"
   echo "Cursor explorer model: $(cursor_model_sample)"
-  echo "Expected performance-first Codex: Researcher/Explorer/Worker=Terra/high, Writer=Luna/high, Debugger/Challenger/Planner=Sol/high, Reviewer=Sol/max"
-  echo "Expected cost-first Codex: Researcher/Debugger/Planner=Terra/high, Explorer/Worker/Writer=Luna/high, Challenger/Reviewer=Sol/high"
+  echo "Expected performance-first Codex: Researcher/Planner=Terra/max, Explorer=Terra/high, Debugger/Reviewer=Sol/xhigh, Challenger=Sol/high, Worker=Sol/medium, Writer=Luna/xhigh"
+  echo "Expected cost-first Codex: Researcher/Debugger/Planner/Worker/Writer=Luna/xhigh, Explorer=Luna/high, Challenger=Sol/medium, Reviewer=Sol/high"
   echo "Expected cost-first Cursor: Researcher/Explorer=gemini-3.5-flash, Debugger/Challenger=gpt-5.6-terra-medium, Planner=gpt-5.6-luna-medium, Worker/Writer=composer-2.5-fast, Reviewer=claude-opus-4-8-thinking-high"
   echo "Expected performance-first Cursor: Researcher=gpt-5.6-terra-medium, Explorer=gemini-3.5-flash, Debugger=claude-opus-4-8-thinking-high, Challenger=gpt-5.6-sol-medium, Planner=gpt-5.6-terra-medium, Worker/Writer=composer-2.5-fast, Reviewer=claude-fable-5-thinking-high"
   echo

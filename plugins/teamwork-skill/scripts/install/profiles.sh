@@ -1,17 +1,26 @@
 codex_agent_performance_values() {
   local agent="$1"
   case "$agent" in
-    teamwork-researcher|teamwork-explorer|teamwork-worker)
+    teamwork-explorer)
       printf '%s %s\n' "gpt-5.6-terra" "high"
       ;;
-    teamwork-writer)
-      printf '%s %s\n' "gpt-5.6-luna" "high"
+    teamwork-researcher|teamwork-planner)
+      printf '%s %s\n' "gpt-5.6-terra" "max"
       ;;
-    teamwork-debugger|teamwork-challenger|teamwork-planner)
+    teamwork-worker)
+      printf '%s %s\n' "gpt-5.6-sol" "medium"
+      ;;
+    teamwork-writer)
+      printf '%s %s\n' "gpt-5.6-luna" "xhigh"
+      ;;
+    teamwork-debugger)
+      printf '%s %s\n' "gpt-5.6-sol" "xhigh"
+      ;;
+    teamwork-challenger)
       printf '%s %s\n' "gpt-5.6-sol" "high"
       ;;
     teamwork-reviewer)
-      printf '%s %s\n' "gpt-5.6-sol" "max"
+      printf '%s %s\n' "gpt-5.6-sol" "xhigh"
       ;;
     *)
       echo "Unsupported Codex role: $agent" >&2
@@ -26,16 +35,13 @@ codex_agent_profile_values() {
     performance-first:*)
       codex_agent_performance_values "$agent"
       ;;
-    cost-first:teamwork-researcher|cost-first:teamwork-debugger|cost-first:teamwork-planner)
-      printf '%s %s\n' "gpt-5.6-terra" "high"
+    cost-first:teamwork-researcher|cost-first:teamwork-debugger|cost-first:teamwork-planner|cost-first:teamwork-worker|cost-first:teamwork-writer)
+      printf '%s %s\n' "gpt-5.6-luna" "xhigh"
       ;;
     cost-first:teamwork-challenger)
-      printf '%s %s\n' "gpt-5.6-sol" "high"
+      printf '%s %s\n' "gpt-5.6-sol" "medium"
       ;;
-    cost-first:teamwork-explorer|cost-first:teamwork-writer)
-      printf '%s %s\n' "gpt-5.6-luna" "high"
-      ;;
-    cost-first:teamwork-worker)
+    cost-first:teamwork-explorer)
       printf '%s %s\n' "gpt-5.6-luna" "high"
       ;;
     cost-first:teamwork-reviewer)

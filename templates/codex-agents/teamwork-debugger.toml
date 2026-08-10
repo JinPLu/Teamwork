@@ -1,7 +1,9 @@
 name = "teamwork_debugger"
 description = "Hypothesis-driven diagnosis and bounded repair of unknown-cause failures."
+# DeepSWE is only a partial proxy for causal diagnosis; this allocation must
+# still earn its place in Teamwork-local debugging evaluation.
 model = "gpt-5.6-sol"
-model_reasoning_effort = "high"
+model_reasoning_effort = "xhigh"
 sandbox_mode = "workspace-write"
 nickname_candidates = ["Fault", "Trace", "Probe", "Relay"]
 developer_instructions = """

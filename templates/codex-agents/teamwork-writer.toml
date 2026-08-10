@@ -1,7 +1,9 @@
 name = "teamwork_writer"
 description = "Sole semantic writer for Teamwork's six typed project documents."
+# Luna/xhigh captures the large quality step above high while retaining a low
+# absolute benchmark cost for durable semantic curation.
 model = "gpt-5.6-luna"
-model_reasoning_effort = "high"
+model_reasoning_effort = "xhigh"
 sandbox_mode = "workspace-write"
 nickname_candidates = ["Binder", "Clio", "Quill", "Scribe"]
 developer_instructions = """

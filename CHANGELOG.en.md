@@ -4,6 +4,17 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.2.4 - 2026-08-11
+
+**Teamwork 7.2.4 makes each Codex Agent allocation account for quality, cost, and completion time together.**
+
+- **Complete efficiency matrix.** Both profiles use the same-time CodexRadar IQ, API-equivalent cost, and task-duration matrix instead of copying a few recommendation cards.
+- **Performance where it fits.** Deep research and planning use Terra/max, debugging and independent review use Sol/xhigh, routine implementation uses Sol/medium, and semantic writing uses Luna/xhigh.
+- **Cost-first keeps useful reasoning.** Most synthesis, diagnosis, implementation, and writing roles use low-absolute-cost Luna/xhigh; Explorer stays on Luna/high, while Challenger and Reviewer retain Sol for their gates.
+- **Clear evidence boundary.** The README explains that DeepSWE most directly represents coding work and is only a capability proxy elsewhere; site costs and durations are not Codex subscription usage or expected Teamwork runtime.
+
+Upgrade action: update to 7.2.4, run `$teamwork-update --profile performance-first` or select the desired installer profile, and start a new task to load the refreshed Agent configuration.
+
 ## 7.2.3 - 2026-08-11
 
 **Teamwork 7.2.3 makes real Codex behavioral evidence easier to review and first-use outcomes easier to understand.**

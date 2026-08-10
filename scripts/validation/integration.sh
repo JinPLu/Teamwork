@@ -283,16 +283,22 @@ for agent in "${CODEX_AGENTS[@]}"; do
   [[ ! -L "$tmp/home/.codex/agents/$agent.toml" ]] \
     || fail "default Codex install must copy Codex agent $agent"
 done
-for agent in teamwork-researcher teamwork-explorer teamwork-debugger teamwork-challenger teamwork-planner teamwork-worker; do
-  grep_required '^model_reasoning_effort = "high"$' "$tmp/home/.codex/agents/$agent.toml" \
-    "Codex install must render high reasoning for $agent"
-done
-grep_required '^model_reasoning_effort = "high"$' "$tmp/home/.codex/agents/teamwork-writer.toml" \
-  "Codex install must render high reasoning for teamwork-writer"
-for agent in teamwork-reviewer; do
+for agent in teamwork-researcher teamwork-planner; do
   grep_required '^model_reasoning_effort = "max"$' "$tmp/home/.codex/agents/$agent.toml" \
     "Codex install must render max reasoning for $agent"
 done
+for agent in teamwork-debugger teamwork-reviewer; do
+  grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home/.codex/agents/$agent.toml" \
+    "Codex install must render xhigh reasoning for $agent"
+done
+for agent in teamwork-explorer teamwork-challenger; do
+  grep_required '^model_reasoning_effort = "high"$' "$tmp/home/.codex/agents/$agent.toml" \
+    "Codex install must render high reasoning for $agent"
+done
+grep_required '^model_reasoning_effort = "medium"$' "$tmp/home/.codex/agents/teamwork-worker.toml" \
+  "Codex install must render medium reasoning for teamwork-worker"
+grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home/.codex/agents/teamwork-writer.toml" \
+  "Codex install must render xhigh reasoning for teamwork-writer"
 grep_required '<!-- TEAMWORK_CODEX_GLOBAL_START -->' "$tmp/home/.codex/AGENTS.md" \
   "Codex install must create Teamwork global AGENTS block"
 grep_required 'Teamwork Codex Global Policy' "$tmp/home/.codex/AGENTS.md" \
@@ -347,28 +353,36 @@ for agent in "${CODEX_AGENTS[@]}"; do
   [[ ! -L "$tmp/home-codex-agents/.codex/agents/$agent.toml" ]] \
     || fail "default Codex agent install must copy $agent"
 done
-for agent in teamwork-researcher teamwork-explorer teamwork-worker; do
+grep_required '^model = "gpt-5.6-terra"$' "$tmp/home-codex-agents/.codex/agents/teamwork-explorer.toml" \
+  "default Codex explorer install must use Terra"
+grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/teamwork-explorer.toml" \
+  "default Codex explorer install must use high reasoning"
+for agent in teamwork-researcher teamwork-planner; do
   grep_required '^model = "gpt-5.6-terra"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
-    "default Codex routine-path agent must use Terra for $agent"
-  grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
-    "default Codex routine-path agent must use high reasoning for $agent"
+    "default Codex deep agent must use Terra for $agent"
+  grep_required '^model_reasoning_effort = "max"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
+    "default Codex deep agent must use max reasoning for $agent"
 done
+grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents/.codex/agents/teamwork-worker.toml" \
+  "default Codex worker install must use Sol"
+grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents/.codex/agents/teamwork-worker.toml" \
+  "default Codex worker install must use medium reasoning"
 grep_required '^model = "gpt-5.6-luna"$' "$tmp/home-codex-agents/.codex/agents/teamwork-writer.toml" \
   "default Codex writer install must use Luna"
-grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/teamwork-writer.toml" \
-  "default Codex writer install must use high reasoning"
-for agent in teamwork-debugger teamwork-challenger teamwork-planner; do
-  grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
-    "default Codex agent install must render gpt-5.6-sol for $agent"
-  grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
-    "default Codex agent install must render high reasoning for $agent"
-done
-for agent in teamwork-reviewer; do
-  grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
-    "default Codex reviewer install must render gpt-5.6-sol for $agent"
-  grep_required '^model_reasoning_effort = "max"$' "$tmp/home-codex-agents/.codex/agents/$agent.toml" \
-    "default Codex reviewer install must render max reasoning for $agent"
-done
+grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home-codex-agents/.codex/agents/teamwork-writer.toml" \
+  "default Codex writer install must use xhigh reasoning"
+grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents/.codex/agents/teamwork-debugger.toml" \
+  "default Codex debugger install must render gpt-5.6-sol"
+grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home-codex-agents/.codex/agents/teamwork-debugger.toml" \
+  "default Codex debugger install must render xhigh reasoning"
+grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents/.codex/agents/teamwork-challenger.toml" \
+  "default Codex challenger install must render gpt-5.6-sol"
+grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents/.codex/agents/teamwork-challenger.toml" \
+  "default Codex challenger install must render high reasoning"
+grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents/.codex/agents/teamwork-reviewer.toml" \
+  "default Codex reviewer install must render gpt-5.6-sol"
+grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home-codex-agents/.codex/agents/teamwork-reviewer.toml" \
+  "default Codex reviewer install must render xhigh reasoning"
 [[ ! -e "$tmp/home-codex-agents/.codex/AGENTS.md" ]] \
   || fail "codex-agents target must not write global AGENTS policy"
 codex_routing_config="$tmp/home-codex-agents/.codex/config.toml"
@@ -414,28 +428,24 @@ HOME="$tmp/home-codex-no-routing" "$ROOT/install.sh" "${TEAMWORK_PROFILE_ARGS[@]
   || fail "--no-codex-routing must preserve a missing user config"
 
 HOME="$tmp/home-codex-agents-cost" "$ROOT/install.sh" --profile cost-first codex-agents >/dev/null
-for agent in teamwork-researcher teamwork-debugger teamwork-planner; do
-  grep_required '^model = "gpt-5.6-terra"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex agent install must use Terra for $agent"
-  grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex agent install must use high reasoning for $agent"
-done
-for agent in teamwork-explorer teamwork-writer; do
+for agent in teamwork-researcher teamwork-debugger teamwork-planner teamwork-worker teamwork-writer; do
   grep_required '^model = "gpt-5.6-luna"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex bounded agent install must use Luna for $agent"
-  grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex bounded agent install must use high reasoning for $agent"
+    "cost-first Codex agent install must use Luna for $agent"
+  grep_required '^model_reasoning_effort = "xhigh"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
+    "cost-first Codex agent install must use xhigh reasoning for $agent"
 done
-grep_required '^model = "gpt-5.6-luna"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-worker.toml" \
-  "cost-first Codex worker install must use Luna"
-grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-worker.toml" \
-  "cost-first Codex worker install must use high reasoning"
-for agent in teamwork-challenger teamwork-reviewer; do
-  grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex agent install must use Sol for $agent"
-  grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-cost/.codex/agents/$agent.toml" \
-    "cost-first Codex agent install must use high reasoning for $agent"
-done
+grep_required '^model = "gpt-5.6-luna"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-explorer.toml" \
+  "cost-first Codex explorer install must use Luna"
+grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-explorer.toml" \
+  "cost-first Codex explorer install must use high reasoning"
+grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-challenger.toml" \
+  "cost-first Codex challenger install must use Sol"
+grep_required '^model_reasoning_effort = "medium"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-challenger.toml" \
+  "cost-first Codex challenger install must use medium reasoning"
+grep_required '^model = "gpt-5.6-sol"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-reviewer.toml" \
+  "cost-first Codex reviewer install must use Sol"
+grep_required '^model_reasoning_effort = "high"$' "$tmp/home-codex-agents-cost/.codex/agents/teamwork-reviewer.toml" \
+  "cost-first Codex reviewer install must use high reasoning"
 
 HOME="$tmp/home-codex-cost" "$ROOT/install.sh" "${TEAMWORK_COST_BASELINE_ARGS[@]}" codex >/dev/null
 check_lean_policy "$tmp/home-codex-cost/.codex/AGENTS.md" cost-first "cost-first Codex policy"

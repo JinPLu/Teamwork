@@ -17,14 +17,14 @@ from teamwork_tooling.topology import host_role_paths  # noqa: E402
 
 PERFORMANCE = {
     "codex": {
-        "researcher": ("gpt-5.6-terra", "high"),
+        "researcher": ("gpt-5.6-terra", "max"),
         "explorer": ("gpt-5.6-terra", "high"),
-        "debugger": ("gpt-5.6-sol", "high"),
+        "debugger": ("gpt-5.6-sol", "xhigh"),
         "challenger": ("gpt-5.6-sol", "high"),
-        "planner": ("gpt-5.6-sol", "high"),
-        "worker": ("gpt-5.6-terra", "high"),
-        "writer": ("gpt-5.6-luna", "high"),
-        "reviewer": ("gpt-5.6-sol", "max"),
+        "planner": ("gpt-5.6-terra", "max"),
+        "worker": ("gpt-5.6-sol", "medium"),
+        "writer": ("gpt-5.6-luna", "xhigh"),
+        "reviewer": ("gpt-5.6-sol", "xhigh"),
     },
     "claude": {
         "researcher": ("sonnet", "medium"),
@@ -51,13 +51,13 @@ PERFORMANCE = {
 COST = {
     "codex": {
         **PERFORMANCE["codex"],
-        "researcher": ("gpt-5.6-terra", "high"),
+        "researcher": ("gpt-5.6-luna", "xhigh"),
         "explorer": ("gpt-5.6-luna", "high"),
-        "debugger": ("gpt-5.6-terra", "high"),
-        "challenger": ("gpt-5.6-sol", "high"),
-        "planner": ("gpt-5.6-terra", "high"),
-        "worker": ("gpt-5.6-luna", "high"),
-        "writer": ("gpt-5.6-luna", "high"),
+        "debugger": ("gpt-5.6-luna", "xhigh"),
+        "challenger": ("gpt-5.6-sol", "medium"),
+        "planner": ("gpt-5.6-luna", "xhigh"),
+        "worker": ("gpt-5.6-luna", "xhigh"),
+        "writer": ("gpt-5.6-luna", "xhigh"),
         "reviewer": ("gpt-5.6-sol", "high"),
     },
     "claude": {
