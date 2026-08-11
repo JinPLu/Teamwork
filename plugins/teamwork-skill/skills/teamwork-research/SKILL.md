@@ -50,6 +50,9 @@ On Codex, dispatch Researcher, Explorer, and Writer through
 `teamwork_writer`. Use `fork_turns` set to `none` or a bounded recent context,
 then observe a live child start; never silently substitute an unavailable role.
 
+When context is omitted or bounded, the brief must include every still-applicable
+settled user constraint. A child cannot infer that a missing constraint was relaxed.
+
 ## Research Document
 
 When the first reusable evidence synthesis appears, Root assigns Writer the

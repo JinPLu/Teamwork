@@ -4,6 +4,19 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.2.5 - 2026-08-12
+
+**Teamwork 7.2.5 makes settled user boundaries constrain later execution instead of letting “necessity” inference quietly expand them.**
+
+- **User constraints take precedence.** Settled preferences remain effective across stages, repositories, and child Agents until the user explicitly changes them.
+- **Unsupported controls default to removal.** Risk inference, prior plans, tests, compatibility, and dependencies no longer retain or add defensive mechanisms on their own; unsupported uncommitted code, tests, and documentation are removed together.
+- **Delegation keeps boundaries intact.** A child with bounded or omitted context must receive every still-applicable user constraint; a real conflict with an explicit domain contract must be reported first.
+- **Update state is inspectable.** Local readiness distinguishes refreshed policy, plugin cache, and the new-task restart boundary instead of treating a version marker as loaded behavior.
+
+Upgrade action: update the Marketplace plugin, run `$teamwork-update`, then restart Codex or start a new task.
+
+Important limit: an older plugin cache does not become new content merely because it has the same version number; complete the Marketplace update and recheck readiness.
+
 ## 7.2.4 - 2026-08-11
 
 **Teamwork 7.2.4 makes each Codex Agent allocation account for quality, cost, and completion time together.**

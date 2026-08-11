@@ -63,6 +63,9 @@ On Codex, dispatch Debugger, Explorer, Researcher, and Writer through
 or a bounded recent context, then observe a live child start; never silently
 substitute an unavailable role.
 
+When context is omitted or bounded, the brief must include every still-applicable
+settled user constraint. A child cannot infer that a missing constraint was relaxed.
+
 ## Result And Debug Document
 
 Use the semantic state that follows from the evidence: `cause-confirmed`,

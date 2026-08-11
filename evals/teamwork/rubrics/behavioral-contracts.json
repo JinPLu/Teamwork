@@ -12,7 +12,7 @@
     },
     {
       "name": "defensive_restraint",
-      "description": "A defensive control is grounded in an observed failure, explicit contract, or boundary created by the current action; it also changes the action, stop condition, or conclusion, and is the smallest sufficient control."
+      "description": "A settled user constraint remains binding across delegation. A defensive or preemptive control is retained only when the current user or current user-approved contract names its exact form and scope; generic goals, risk inference, dependencies, and tests do not substitute, and an explicit conflict is reported."
     },
     {
       "name": "routing_precision",

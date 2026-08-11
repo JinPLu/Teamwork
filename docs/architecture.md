@@ -6,19 +6,21 @@ Teamwork separates model-facing behavior from implementation infrastructure so o
 
 ### 1. Global principles
 
-`policy/teamwork-global.md` is the sole readable owner of five durable
+`policy/teamwork-global.md` is the sole readable owner of six durable
 principles. Installers only render host-specific wrappers:
 
 1. Keep clear work native.
 2. Distinguish observation, inference, unknowns, and completed work.
 3. Calibrate verification to the credible risk and the claim being made;
    prefer direct outcome evidence.
-4. Admit a defensive control only when an observed failure, explicit contract,
-   or boundary created by the current authorized action supports it, and only
-   when it changes the action, stop condition, or conclusion. Use the smallest
-   sufficient control, and do not autonomously introduce hashes, digests,
-   checksums, or content fingerprints.
-5. Route to a named Skill only when its public trigger and host route match.
+4. Keep settled explicit user constraints across stages, repositories, and
+   delegation until the user changes them.
+5. Treat defensive and preemptive controls as default-removal: only a current
+   user or current user-approved contract that names the exact control and
+   scope can retain one. Risk inference, dependencies, tests, generic goals,
+   and earlier plans do not substitute; report an explicit conflict instead of
+   silently overriding the user.
+6. Route to a named Skill only when its public trigger and host route match.
 
 Host and tool permissions remain authoritative. Importance, complexity, and
 subjective risk do not activate a Teamwork workflow. Teamwork's own source,

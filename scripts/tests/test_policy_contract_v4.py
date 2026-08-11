@@ -49,7 +49,10 @@ class PolicyContractTests(unittest.TestCase):
             "Current consequential effects require the current user request",
             "Tool access does not manufacture authority",
             "Calibrate verification",
-            "smallest sufficient control",
+            "Settled explicit user constraints",
+            "Carry every still-applicable constraint into a delegated brief",
+            "Do not add, retain, or reinstate a defensive or preemptive control",
+            "Existing controls receive no grandfathering",
             "When a named Teamwork Agent is required",
             "observe it actually start",
         ):
@@ -66,6 +69,13 @@ class PolicyContractTests(unittest.TestCase):
         text = PROJECT_AGENTS.read_text(encoding="utf-8")
         self.assertIn("Teamwork-owned source, data formats, protocols, and validation", text)
         self.assertIn("hashes, digests, checksums, content fingerprints", text)
+
+    def test_every_dispatching_skill_requires_settled_constraint_transport(self) -> None:
+        for name in (
+            "collaborate", "debug", "goal", "init", "plan", "research", "review", "update",
+        ):
+            text = (ROOT / f"skills/teamwork-{name}/SKILL.md").read_text(encoding="utf-8")
+            self.assertIn("settled user constraint", text, name)
 
     def test_codex_and_claude_managed_blocks_preserve_surrounding_content(self) -> None:
         codex = self.home / ".codex/AGENTS.md"

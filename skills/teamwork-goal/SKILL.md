@@ -46,6 +46,9 @@ On Codex, dispatch Writer through `spawn_agent.agent_type` as
 `teamwork_writer`. Use `fork_turns` set to `none` or a bounded recent context,
 then observe a live child start; never silently substitute an unavailable role.
 
+When context is omitted or bounded, the brief must include every still-applicable
+settled user constraint. A child cannot infer that a missing constraint was relaxed.
+
 ## Goal Report
 
 When the success signal, a material strategy change, a decisive result, or a

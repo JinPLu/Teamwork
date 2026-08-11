@@ -52,6 +52,9 @@ On Codex, dispatch Planner and Writer through `spawn_agent.agent_type` as
 bounded recent context, then observe a live child start; never silently
 substitute an unavailable role.
 
+When context is omitted or bounded, the brief must include every still-applicable
+settled user constraint. A child cannot infer that a missing constraint was relaxed.
+
 ## Plan Document
 
 When the selected direction and first concrete work unit become reusable, Root

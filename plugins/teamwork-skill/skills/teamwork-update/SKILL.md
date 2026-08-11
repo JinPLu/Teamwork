@@ -101,6 +101,9 @@ On Codex, dispatch Explorer, Worker, Reviewer, and Writer through
 a bounded recent context, then observe a live child start; never silently
 substitute an unavailable role.
 
+When context is omitted or bounded, the brief must include every still-applicable
+settled user constraint. A child cannot infer that a missing constraint was relaxed.
+
 ## Update Report
 
 When readiness evidence, an applied repair, migration state, or a blocker is

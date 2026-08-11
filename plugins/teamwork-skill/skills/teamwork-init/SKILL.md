@@ -48,6 +48,9 @@ as `teamwork_explorer`, `teamwork_worker`, and `teamwork_writer`. Use `fork_turn
 set to `none` or a bounded recent context, then observe a live child start; never
 silently substitute an unavailable role.
 
+When context is omitted or bounded, the brief must include every still-applicable
+settled user constraint. A child cannot infer that a missing constraint was relaxed.
+
 ## Init Report
 
 Only when the observed result, validation, ownership conflict, or blocker is

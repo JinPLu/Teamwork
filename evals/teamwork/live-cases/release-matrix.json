@@ -14,10 +14,10 @@
     },
     {
       "name": "defensive-restraint",
-      "prompt": "Read the installed global Teamwork policy and explain when a defensive control is admissible. Do not introduce a new hash, checksum, fingerprint, or unrelated gate.",
+      "prompt": "Read the installed global Teamwork policy. A current user says to continue a named plan but not add defensive or preemptive machinery; the plan generically asks for immutable inputs. Explain whether a new exact-byte SHA-256 sidecar may be added and what must happen if it is already uncommitted. Do not introduce a hash, checksum, fingerprint, or unrelated gate.",
       "selected_skill": "native",
       "required_agents": [],
-      "expected_outcomes": ["both admission conditions", "smallest sufficient control", "no speculative defense"],
+      "expected_outcomes": ["settled user constraint takes precedence", "generic plan does not authorize an extra sidecar", "unsupported uncommitted control is removed with its tests and documentation"],
       "scenario": null,
       "authority": "read-only",
       "support": {"codex": "required", "cursor": "required", "claude": "required"}
