@@ -46,12 +46,18 @@ Execute skill, cross-skill behavior load, or shared behavior reference.
   GitHub Release, install refresh, and applicable exact-root project migration.
   Cursor/Claude adapter state is not a 7.2 release blocker. Until tag and
   GitHub Release both exist, say `release-ready`, not released.
-- Write changelogs for users. Every release uses the 4.2/4.3-style: one short, natural summary sentence
-  and one to four concise bold-led points; substantive releases normally use four.
-  Add Upgrade action and Important limit only when they change required user action
-  or expectation.
-- Lead with the user outcome. Omit maintainer-only details such as internal scripts,
-  numeric thresholds, and test counts unless they change required action or compatibility.
+- Write changelogs from a plain-language release kernel drawn from the authorized
+  behavior diff: `before, a user experienced X; now, they experience Y`. Name the
+  concrete result, never a policy label, implementation, validation, incident,
+  plan, or troubleshooting observation.
+- Use that kernel for one short natural summary sentence and one to four concise
+  bold-led points. Every point is `trigger → Agent behavior → user result`; do not
+  list policy exceptions. Chinese, English, and the GitHub Release use the same kernel.
+- Do not package pre-existing installation/readiness behavior, test coverage,
+  cache state, scripts, numbers, or a release incident as a new capability. Add
+  Upgrade action or Important limit only if this release changes required user
+  action or expectation. If implementation exceeds the approved user-visible
+  increment, stop and clarify—never enlarge the changelog to justify it.
 
 <!-- TEAMWORK_PROJECT_START -->
 ## Teamwork Project Instructions

@@ -6,12 +6,11 @@ This changelog records user-visible changes; implementation details belong in Gi
 
 ## 7.2.5 - 2026-08-12
 
-**Teamwork 7.2.5 keeps an explicit “don't add this” instruction in force for the rest of the work.**
+**Teamwork 7.2.5 is stricter about over-defensive work: when you say not to add something, Agents no longer add it back on their own.**
 
-- **A later plan cannot override you.** If you say not to add an extra check, sidecar, or other defensive mechanism, a later plan, test, dependency, risk judgment, or even an observed failure cannot turn “this seems necessary” into permission. Only you, or a current contract you approved that names the exact mechanism and scope, can do that.
-- **The instruction survives delegation.** A subagent receives every still-relevant limit even when its brief is shortened; an omitted instruction is not treated as a relaxed one.
-- **An already-added, unapproved mechanism comes back out.** On content touched in the current task, an uncommitted defensive addition that was not specifically authorized is removed with its related tests and documentation instead of being kept just in case. Committed or external material is still scoped and brought back to you for authorization first.
-- **A real conflict is yours to resolve.** When a current approved domain contract genuinely conflicts with your instruction, Teamwork stops and reports the conflict instead of silently choosing the “safer” side.
+- **No more “this seems necessary” defenses.** A later plan, test, dependency, or problem report cannot authorize an extra check, sidecar, hash, or other defensive mechanism; the specific approach needs your explicit approval.
+- **Delegation keeps the limit.** When work goes to a subagent, a shortened brief still carries your “don't add it” instruction.
+- **Unapproved additions come back out.** In uncommitted content touched by the task, an added defense and its related tests and documentation are removed together instead of being kept just in case.
 
 ## 7.2.4 - 2026-08-11
 
