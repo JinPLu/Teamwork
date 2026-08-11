@@ -6,16 +6,12 @@ This changelog records user-visible changes; implementation details belong in Gi
 
 ## 7.2.5 - 2026-08-12
 
-**Teamwork 7.2.5 makes settled user boundaries constrain later execution instead of letting “necessity” inference quietly expand them.**
+**Teamwork 7.2.5 keeps an explicit “don't add this” instruction in force for the rest of the work.**
 
-- **User constraints take precedence.** Settled preferences remain effective across stages, repositories, and child Agents until the user explicitly changes them.
-- **Unsupported controls default to removal.** Risk inference, prior plans, tests, compatibility, and dependencies no longer retain or add defensive mechanisms on their own; unsupported uncommitted code, tests, and documentation are removed together.
-- **Delegation keeps boundaries intact.** A child with bounded or omitted context must receive every still-applicable user constraint; a real conflict with an explicit domain contract must be reported first.
-- **Update state is inspectable.** Local readiness distinguishes refreshed policy, plugin cache, and the new-task restart boundary instead of treating a version marker as loaded behavior.
-
-Upgrade action: update the Marketplace plugin, run `$teamwork-update`, then restart Codex or start a new task.
-
-Important limit: an older plugin cache does not become new content merely because it has the same version number; complete the Marketplace update and recheck readiness.
+- **A later plan cannot override you.** If you say not to add an extra check, sidecar, or other defensive mechanism, a later plan, test, dependency, risk judgment, or even an observed failure cannot turn “this seems necessary” into permission. Only you, or a current contract you approved that names the exact mechanism and scope, can do that.
+- **The instruction survives delegation.** A subagent receives every still-relevant limit even when its brief is shortened; an omitted instruction is not treated as a relaxed one.
+- **An already-added, unapproved mechanism comes back out.** On content touched in the current task, an uncommitted defensive addition that was not specifically authorized is removed with its related tests and documentation instead of being kept just in case. Committed or external material is still scoped and brought back to you for authorization first.
+- **A real conflict is yours to resolve.** When a current approved domain contract genuinely conflicts with your instruction, Teamwork stops and reports the conflict instead of silently choosing the “safer” side.
 
 ## 7.2.4 - 2026-08-11
 
