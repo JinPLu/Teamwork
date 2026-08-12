@@ -1,113 +1,177 @@
-# Teamwork
+<p align="center">
+  <img src="assets/teamwork-readme-teaser-v73.png" alt="Teamwork: clear work stays direct, methods join when needed, with seven optional Agent roles" width="860">
+</p>
 
-Teamwork is a small set of collaboration Skills for Codex. Its default is
-simple: **do clear, authorized work directly; load a specialized method only
-when the request matches its trigger.**
+<h1 align="center">Teamwork</h1>
 
-Teamwork no longer maintains a Router, mandatory stage chain, Cases, a project
-document schema, Writer, global readiness gate, or version preflight.
+<p align="center">
+  <strong>Less workflow for Codex. More work actually finished.</strong><br>
+  Clear, authorized work runs directly. A focused method joins only when the task genuinely needs one.
+</p>
 
-## Runtime flow
+<p align="center">
+  <a href="https://github.com/JinPLu/Teamwork/releases"><img src="https://img.shields.io/github/v/release/JinPLu/Teamwork?display_name=tag&amp;sort=semver" alt="Latest Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2563EB" alt="MIT License"></a>
+  <img src="https://img.shields.io/badge/Skills-8-2563EB" alt="8 Skills">
+  <img src="https://img.shields.io/badge/optional_agents-7-0F766E" alt="7 optional Agent roles">
+  <img src="https://img.shields.io/badge/supported-Codex-0F766E" alt="Officially supports Codex">
+</p>
 
-```text
-User request
-  → Root decides whether a specialized Skill applies
-  → Optional: delegate an independent, bounded subtask
-  → Root integrates and performs the authorized work
-  → Verify the real outcome in proportion to the claim
-```
+<p align="center">
+  <a href="README.md">中文</a> ·
+  <a href="CHANGELOG.en.md">Changelog</a> ·
+  <a href="CODEX.md">Codex</a> ·
+  <a href="docs/architecture.md">Architecture</a> ·
+  <a href="https://github.com/JinPLu/Teamwork/issues">Feedback</a>
+</p>
 
-Every subagent handoff has five fields: objective, owned scope, settled user
-constraints, available evidence, and requested return.
+---
 
-An unavailable Agent does not trigger Update and does not block work that Root
-can perform directly. If the user explicitly requires independent review but
-the host cannot provide independent context, Root labels the review
-non-independent instead of pretending otherwise.
+> [!TIP]
+> **You do not need to memorize eight Skills.** Describe the result directly most of the time. Name a `$teamwork-*` Skill only when you genuinely need discussion, deep research, unknown-cause debugging, planning, or review.
 
-## Skills
+## 🚀 Start in one minute
 
-| Request | Skill | Result |
-|---|---|---|
-| Discuss or compare directions | `$teamwork-collaborate` | Options, trade-offs, and a decision |
-| Deep external investigation | `$teamwork-research` | Multi-source, claim-level synthesis |
-| Unknown-cause failure | `$teamwork-debug` | Cause first, authorized repair second |
-| Plan a selected direction | `$teamwork-plan` | Executable work and verification links |
-| Review a stable candidate | `$teamwork-review` | Evidence-backed verdict and findings |
-| Persist to a success signal | `$teamwork-goal` | Continued progress on the original task |
-| Add project instructions | `$teamwork-init` | One small managed AGENTS.md block |
-| Inspect or refresh installation | `$teamwork-update` | Codex install state by default |
+Install from the Codex Marketplace:
 
-Ordinary edits, local inspection, narrow lookups, and known-cause fixes need no
-Teamwork preflight.
-
-## Agent behavior
-
-Seven optional internal roles remain: Researcher, Explorer, Debugger,
-Challenger, Planner, Reviewer, and Worker.
-
-- Root owns user dialogue, integration, and the final result.
-- Agents stay inside the supplied brief.
-- A failed subtask affects that subtask, not the whole workflow.
-- Reviewer is read-only and never implements its own findings.
-
-## Installation
-
-Codex Marketplace is the default:
-
-```text
+```bash
 codex plugin marketplace add JinPLu/Teamwork
 codex plugin add teamwork-skill@teamwork
 ```
 
-Then run `$teamwork-update` in a new task. For checkout development:
+Start a new Codex task, then run:
 
-```bash
-./install.sh --help
+```text
+$teamwork-update
 ```
 
-`update` refreshes Codex only. Cursor and Claude Code remain explicit
-compatibility-development targets and never block Codex work.
+Now ask for the outcome directly:
 
-## Project setup
+```text
+Change the login timeout, verify only the real affected path, and stop when it works.
+```
+
+When the outcome and approach are clear, Teamwork does not manufacture a workflow, project record, or readiness gate first. To shape the direction together:
+
+```text
+Use $teamwork-collaborate to compare synchronous, queued, and hybrid approaches. Recommend one, then ask only what could change the choice.
+```
+
+## ✨ Why Teamwork
+
+| | What you get | What it feels like |
+| --- | --- | --- |
+| ⚡ | **Clear work runs directly** | Ordinary edits, local inspection, narrow lookups, and known-cause fixes need no preflight. |
+| 🧭 | **Your boundaries remain yours** | “Continue” does not turn an Agent's own SHA-256, receipt, audit-test, or other defensive proposal into your requirement. |
+| 🧰 | **Methods join on demand** | Discussion, research, debugging, planning, review, and persistence appear only when the request matches. |
+| 🤝 | **Subagents are optional collaborators** | They join when parallel or independent work is useful; missing optional roles do not block ordinary work. |
+| ✅ | **Completion follows the real outcome** | Verification matches the claim instead of substituting versions, markers, or test counts for the result. |
+
+## 🛣️ How work flows
+
+```mermaid
+flowchart LR
+    R["Your request"] --> C{"Are the outcome and boundaries clear?"}
+    C -->|"Yes"| D["Work directly"]
+    C -->|"A focused method helps"| S["Load the matching Skill"]
+    S --> A{"Is parallel or independent help useful?"}
+    A -->|"Optional"| G["Bounded subagent"]
+    A -->|"No"| I["Root works and integrates"]
+    G --> I
+    D --> V["Proportional verification"]
+    I --> V
+    V --> O["Deliverable result"]
+```
+
+There is no Router, mandatory stage chain, or automatic Update detour. Root always owns user dialogue, integration, and the final result.
+
+## 🧭 Use the method you actually need
+
+| What is missing | Skill | Result |
+| --- | --- | --- |
+| 💬 An acceptable direction | `$teamwork-collaborate` | Compare options and trade-offs, then converge on a direction you accept. |
+| 🔎 Deep external evidence | `$teamwork-research` | Synthesize claims, contradictions, and conclusions across primary and reliable sources. |
+| 🐞 The cause of a failure | `$teamwork-debug` | Start from the real failure, find the cause, then make an authorized narrow repair. |
+| 📝 Executable steps | `$teamwork-plan` | Turn a selected direction into clear outcomes, dependencies, verification, and stop conditions. |
+| ✅ Judgment on a stable candidate | `$teamwork-review` | Read the actual code, document, plan, or artifact and return an evidence-backed verdict. |
+| 🎯 Progress to a success signal | `$teamwork-goal` | Continue only when explicitly requested, until success is verified or a real blocker appears. |
+| 🧰 Lightweight project guidance | `$teamwork-init` | Maintain one concise, idempotent `AGENTS.md` managed block. |
+| 🔄 Install inspection or refresh | `$teamwork-update` | Refresh the Codex Teamwork installation by default. |
+
+## 🤝 Seven optional Agent roles
+
+Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, and Worker are bounded helpers, not a pipeline every task must traverse.
+
+- Root delegates only when parallel investigation, independent judgment, or a clean division of work is useful.
+- A handoff carries the objective, owned scope, settled constraints, available evidence, and requested return.
+- Reviewer stays read-only and never implements its own findings; other roles do not need to manufacture extra records.
+- Teamwork children use Standard by default. Fast on the parent does not automatically multiply child cost unless you explicitly accelerate the children too.
+
+## 📋 Prompts you can copy
+
+```text
+# Choose a direction together
+Use $teamwork-collaborate to compare three onboarding directions. Recommend one and ask only questions that could change the choice.
+
+# Research deeply
+Use $teamwork-research to check official sources and key papers, resolve contradictory evidence, and return traceable conclusions.
+
+# Debug an unknown cause
+Use $teamwork-debug to reproduce this CI failure, confirm the cause, then make the smallest repair and verify the same path.
+
+# Build an execution plan
+Use $teamwork-plan to turn the selected migration direction into outcomes, owners, dependencies, verification, and stop conditions. Do not execute it.
+
+# Review independently
+Use $teamwork-review to check whether this diff meets the requirements, focusing on false success, missed paths, and stale documentation.
+
+# Persist to completion
+Use $teamwork-goal to continue until the named check passes; stop only for a real blocker.
+```
+
+## 🔄 Update and project setup
+
+Refresh the Marketplace version:
+
+```bash
+codex plugin marketplace remove teamwork
+codex plugin marketplace add JinPLu/Teamwork
+codex plugin add teamwork-skill@teamwork
+```
+
+Restart Codex, open a new task, and run `$teamwork-update`.
+
+To add only lightweight Teamwork guidance to one project:
 
 ```bash
 ./install.sh --project-root /absolute/project/path init-project
 ```
 
-This idempotently adds or refreshes one managed block in `AGENTS.md`. It creates
-no `docs/teamwork`, Case, index, schema, migration state, or runtime files.
+This only adds or refreshes one `AGENTS.md` managed block. It creates no Case, index, schema, migration state, or project runtime.
 
-## Verification
+<details>
+<summary><strong>Development checkout, compatibility adapters, and verification</strong></summary>
 
 ```bash
+git clone https://github.com/JinPLu/Teamwork.git
+cd Teamwork
+./install.sh --help
 ./scripts/validate.sh
-```
-
-The default smoke covers syntax, Skill metadata, Codex profiles, project init,
-non-blocking readiness, and generated bundle synchronization. Explicit release
-preparation adds packaging version checks:
-
-```bash
-./scripts/validate.sh --release
-```
-
-Install state is informational:
-
-```bash
 ./scripts/check-update.sh --readiness
 ```
 
-It exits successfully and never authorizes or blocks another task.
+Codex is the supported and release-qualified runtime. Cursor and Claude Code adapters remain for explicit compatibility development; they do not participate in Codex readiness or block ordinary work.
 
-## Development rules
+`./scripts/validate.sh` runs the fast core smoke. Explicit release preparation uses `./scripts/validate.sh --release`. Readiness reports installation state only; it never authorizes or blocks another task.
 
-- `skills/` is the behavior source of truth.
-- `templates/*-agents/` contains optional role profiles.
-- `policy/teamwork-global.md` contains the minimal global principles.
-- `plugins/teamwork-skill/` is generated from canonical sources.
-- Unknown or user-owned install files are not overwritten.
-- Universal authorization and mechanism rules live only in
-  `policy/teamwork-global.md`.
+</details>
+
+## 📚 Learn more
+
+- [Changelog](CHANGELOG.en.md): what each release actually changed.
+- [Codex guide](CODEX.md): installation, configuration, and troubleshooting.
+- [Architecture](docs/architecture.md): boundaries between native work, Skills, Agents, and installation.
+- [Contributing](CONTRIBUTING.md): canonical owners and verification commands.
+- [Cursor](CURSOR.md) / [Claude Code](CLAUDE.md): compatibility-development adapters.
 
 License: [MIT](LICENSE)

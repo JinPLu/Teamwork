@@ -1,112 +1,177 @@
-# Teamwork
+<p align="center">
+  <img src="assets/teamwork-readme-teaser-v73.png" alt="Teamwork：清楚工作直接完成，需要方法时按需加入，并可使用七个可选 Agent 角色" width="860">
+</p>
 
-Teamwork 是一组给 Codex 使用的轻量协作 Skills。它只有一个默认原则：
-**清楚、已授权的工作直接做；只有请求确实匹配时才加载专项方法。**
+<h1 align="center">Teamwork</h1>
 
-它不再维护 Router、固定阶段链、Case、项目文档 schema、Writer、全局
-readiness 门或版本前置检查。
+<p align="center">
+  <strong>让 Codex 少一点流程，多一点真正完成。</strong><br>
+  清楚、已授权的工作直接做；方向未定、原因未知、需要深研或复查时，再加载恰当的方法。
+</p>
 
-## 实际工作流
+<p align="center">
+  <a href="https://github.com/JinPLu/Teamwork/releases"><img src="https://img.shields.io/github/v/release/JinPLu/Teamwork?display_name=tag&amp;sort=semver" alt="最新 Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2563EB" alt="MIT License"></a>
+  <img src="https://img.shields.io/badge/Skills-8-2563EB" alt="8 个 Skills">
+  <img src="https://img.shields.io/badge/optional_agents-7-0F766E" alt="7 个可选 Agent 角色">
+  <img src="https://img.shields.io/badge/supported-Codex-0F766E" alt="正式支持 Codex">
+</p>
 
-```text
-用户请求
-  → Root 判断是否需要专项 Skill
-  → 可选：把独立、边界清楚的子任务交给 subagent
-  → Root 汇总并完成被授权的工作
-  → 对真实结果做相称验证
-```
+<p align="center">
+  <a href="README.en.md">English</a> ·
+  <a href="CHANGELOG.md">更新日志</a> ·
+  <a href="CODEX.md">Codex</a> ·
+  <a href="docs/architecture.md">架构</a> ·
+  <a href="https://github.com/JinPLu/Teamwork/issues">反馈</a>
+</p>
 
-subagent 交接只需要五项：
+---
 
-1. 目标；
-2. 负责范围；
-3. 已确定的用户约束；
-4. 当前证据；
-5. 期望返回。
+> [!TIP]
+> **你不需要先背会 8 个 Skills。** 大多数时候直接描述结果。只有确实需要一起选方向、深入调研、排查未知原因、制定计划或独立复查时，才点名 `$teamwork-*`。
 
-Agent 不可用不会触发 Update，也不会阻塞原本可以直接完成的工作。只有用户明确
-要求“独立审查”而宿主无法提供独立上下文时，Root 才需要如实说明审查并不独立。
+## 🚀 一分钟开始
 
-## Skills
+使用 Codex Marketplace 安装：
 
-| 请求 | Skill | 作用 |
-|---|---|---|
-| 一起讨论、比较方向 | `$teamwork-collaborate` | 形成选项、权衡和决定 |
-| 深度外部调查 | `$teamwork-research` | 多来源、逐主张证据综合 |
-| 未知原因的故障 | `$teamwork-debug` | 先定位原因，再按授权修复 |
-| 已选方向的执行计划 | `$teamwork-plan` | 产出可执行任务和验证关系 |
-| 稳定候选的复查 | `$teamwork-review` | 按需求与直接证据给出结论 |
-| 持续做到成功信号出现 | `$teamwork-goal` | 为原任务增加持续推进 |
-| 添加项目 Teamwork 指令 | `$teamwork-init` | 只维护一个简短 AGENTS.md block |
-| 检查或刷新全局安装 | `$teamwork-update` | 默认只处理 Codex 安装面 |
-
-普通代码修改、文件阅读、单页查询、已知原因的小修复都不需要先调用 Teamwork Skill。
-
-## Agent 行为
-
-Teamwork 保留七个可选内部角色：Researcher、Explorer、Debugger、Challenger、
-Planner、Reviewer、Worker。
-
-- Root 始终负责用户沟通、集成和最终结果。
-- Agent 只处理 brief 中的范围。
-- 子任务失败只影响该子任务；Root 可以采用其他可用工具继续。
-- Reviewer 只读且不修复自己的发现；其他角色不需要制造额外记录。
-
-## 安装
-
-Codex Marketplace 是默认安装方式：
-
-```text
+```bash
 codex plugin marketplace add JinPLu/Teamwork
 codex plugin add teamwork-skill@teamwork
 ```
 
-然后在新任务中运行 `$teamwork-update`。Checkout 开发安装可查看：
+开启一个新的 Codex 任务，然后运行：
 
-```bash
-./install.sh --help
+```text
+$teamwork-update
 ```
 
-`update` 默认只刷新 Codex。Cursor 和 Claude Code 是显式选择的兼容开发目标，
-不会参与 Codex readiness 或阻塞普通工作。
+现在直接说你要的结果：
 
-## 项目初始化
+```text
+修改登录超时逻辑，只验证真实受影响路径，成功后停止。
+```
+
+目标和改法清楚时，Teamwork 不会先制造 workflow、项目记录或 readiness 门。想先共同判断方向，再这样说：
+
+```text
+用 $teamwork-collaborate 比较同步、排队和混合三种方案，先给建议，再问真正会改变选择的问题。
+```
+
+## ✨ 为什么用 Teamwork
+
+| | 你得到什么 | 实际体验 |
+| --- | --- | --- |
+| ⚡ | **清楚工作直接做** | 普通修改、文件阅读、窄查询和已知原因修复不需要流程前置。 |
+| 🧭 | **你的边界一直有效** | “继续执行”不会把 Agent 自己写进计划或交接的 SHA-256、回执、审计测试等机制变成你的要求。 |
+| 🧰 | **方法按需加入** | 讨论、深研、排错、计划、复查和持续推进各自只在匹配请求时出现。 |
+| 🤝 | **subagent 是可选协作者** | 只有并行或独立工作真的有价值时才分派；缺少可选角色不会卡住普通工作。 |
+| ✅ | **完成以真实结果为准** | 验证与实际声明相称，不用版本、marker 或测试数量代替结果本身。 |
+
+## 🛣️ 工作如何流动
+
+```mermaid
+flowchart LR
+    R["你的请求"] --> C{"目标和边界清楚吗？"}
+    C -->|"是"| D["直接完成"]
+    C -->|"需要专项方法"| S["加载匹配的 Skill"]
+    S --> A{"并行或独立帮助有价值吗？"}
+    A -->|"可选"| G["边界清楚的 subagent"]
+    A -->|"不需要"| I["Root 完成并整合"]
+    G --> I
+    D --> V["相称验证"]
+    I --> V
+    V --> O["可交付结果"]
+```
+
+没有 Router、固定阶段链或自动 Update 绕路。Root 始终负责用户沟通、集成与最终结果。
+
+## 🧭 当前缺什么，就用什么
+
+| 你当前缺少 | Skill | 它带来的结果 |
+| --- | --- | --- |
+| 💬 一个可接受的方向 | `$teamwork-collaborate` | 比较选项与权衡，收敛到你愿意采用的方向。 |
+| 🔎 深入的外部证据 | `$teamwork-research` | 跨官方资料、论文和可靠来源综合主张、矛盾与结论。 |
+| 🐞 未知原因的失败 | `$teamwork-debug` | 从真实失败定位原因，再在已有授权内做窄修复。 |
+| 📝 可执行步骤 | `$teamwork-plan` | 把已选方向变成目标、依赖、验证与停止条件清楚的计划。 |
+| ✅ 对稳定候选的判断 | `$teamwork-review` | 阅读实际代码、文档、计划或产物，给出有证据的 verdict。 |
+| 🎯 持续推进到成功信号 | `$teamwork-goal` | 仅在你明确要求时，持续到验证成功或出现真实阻塞。 |
+| 🧰 新项目的轻量说明 | `$teamwork-init` | 只维护一个简短、幂等的 `AGENTS.md` managed block。 |
+| 🔄 检查或刷新安装 | `$teamwork-update` | 默认只刷新 Codex 的 Teamwork 安装面。 |
+
+## 🤝 7 个可选 Agent 角色
+
+Researcher、Explorer、Debugger、Challenger、Planner、Reviewer 和 Worker 都是边界化帮助者，不是必须经过的流水线。
+
+- Root 只在并行调查、独立判断或清楚分工确实有用时分派。
+- handoff 带上目标、负责范围、已确定约束、已有证据和期望返回。
+- Reviewer 保持只读，不修复自己的发现；其他角色也不需要制造额外记录。
+- Teamwork 子任务默认使用 Standard。父任务启用 Fast 不会自动提高所有子任务的费用，除非你明确要求子任务也加速。
+
+## 📋 可直接复制的请求
+
+```text
+# 一起选择方向
+用 $teamwork-collaborate 比较三个 onboarding 方向，推荐一个，并只问真正影响选择的问题。
+
+# 深入调研
+用 $teamwork-research 查官方资料和关键论文，处理矛盾证据并给出可追溯结论。
+
+# 排查未知原因
+用 $teamwork-debug 复现这个 CI 失败，确认根因后再做最小修复并验证同一路径。
+
+# 制定执行计划
+用 $teamwork-plan 把已确定的迁移方向拆成目标、owner、依赖、验证和停止条件，不要执行。
+
+# 独立复查
+用 $teamwork-review 检查这个 diff 是否满足需求，重点寻找假成功、遗漏路径和过期说明。
+
+# 持续到完成
+用 $teamwork-goal 继续修到指定检查通过；只有出现真实阻塞才停。
+```
+
+## 🔄 更新与项目设置
+
+刷新 Marketplace 版本：
+
+```bash
+codex plugin marketplace remove teamwork
+codex plugin marketplace add JinPLu/Teamwork
+codex plugin add teamwork-skill@teamwork
+```
+
+重启 Codex、开启新任务，再运行 `$teamwork-update`。
+
+如果只想给一个项目加入轻量 Teamwork 说明：
 
 ```bash
 ./install.sh --project-root /absolute/project/path init-project
 ```
 
-这个命令只在 `AGENTS.md` 中添加或刷新一个小的 managed block。它是幂等的，
-不会创建 `docs/teamwork`、Case、索引、schema、迁移状态或其他运行时文件。
+它只添加或刷新一个 `AGENTS.md` managed block，不创建 Case、索引、schema、迁移状态或项目运行时。
 
-## 验证
+<details>
+<summary><strong>开发 checkout、兼容适配器与验证</strong></summary>
 
 ```bash
+git clone https://github.com/JinPLu/Teamwork.git
+cd Teamwork
+./install.sh --help
 ./scripts/validate.sh
-```
-
-默认命令只做快速核心 smoke：语法、Skill 元数据、Codex profiles、项目初始化、
-readiness 非阻塞行为和生成插件同步。显式发布准备才运行：
-
-```bash
-./scripts/validate.sh --release
-```
-
-安装状态也可以单独查看：
-
-```bash
 ./scripts/check-update.sh --readiness
 ```
 
-它只返回诊断信息，退出成功，不会授权或阻止其他任务。
+Codex 是正式支持与 release-qualified 的运行面。Cursor 和 Claude Code 适配器保留用于显式兼容开发，不参与 Codex readiness，也不会阻塞普通工作。
 
-## 开发原则
+`./scripts/validate.sh` 运行快速核心 smoke；显式发布准备使用 `./scripts/validate.sh --release`。readiness 只报告安装状态，不授权或阻止其他任务。
 
-- `skills/` 是行为真源。
-- `templates/*-agents/` 是可选角色 profile。
-- `policy/teamwork-global.md` 是最小全局原则。
-- `plugins/teamwork-skill/` 是生成包，修改 canonical 后重新生成。
-- 未知或用户拥有的安装文件不会被覆盖。
-- 全局授权与机制规则只维护在 `policy/teamwork-global.md`。
+</details>
+
+## 📚 继续了解
+
+- [更新日志](CHANGELOG.md)：每个版本真正改变了什么。
+- [Codex 指南](CODEX.md)：安装、配置和排错。
+- [架构](docs/architecture.md)：原生路径、Skills、Agent 与安装面的边界。
+- [参与贡献](CONTRIBUTING.md)：canonical owners 与验证命令。
+- [Cursor](CURSOR.md) / [Claude Code](CLAUDE.md)：兼容开发适配器。
 
 许可证：[MIT](LICENSE)
