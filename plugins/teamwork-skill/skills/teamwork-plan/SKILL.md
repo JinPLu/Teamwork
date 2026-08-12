@@ -27,3 +27,18 @@ scope, settled constraints, evidence, and requested return. If unavailable,
 Root continues without switching to Update or blocking the plan.
 
 Return unresolved material choices to the user; do not hide them as assumptions.
+
+When a durable plan is useful or requested, Root may ask Writer to maintain one
+Markdown document for the selected outcome and direction from
+`references/plan.md`. This hook does not turn the plan into a
+discussion history or execution log. Every Writer wake-up explicitly supplies
+the document kind and path, stable subject identity, authoritative planning
+owner, owner-certified semantic delta, read-only context, and expected base.
+Writer may only compress literally, locate, deduplicate the current synthesis
+and pending delta, refresh the current plan synthesis, and append dated
+plan-revision history. Existing history is immutable. It cannot choose or
+change the direction, requirements, recommendation, authority, dependencies,
+verification, next action, or mainline. Missing state or a conflicting base
+produces a no-write exact gap. Writer unavailability or conflict does not block
+planning; if the document was explicitly requested, only its delivery remains
+incomplete.

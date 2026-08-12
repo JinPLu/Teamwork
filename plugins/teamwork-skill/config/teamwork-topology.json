@@ -89,6 +89,14 @@
         "cursor": "templates/cursor-agents/worker.md",
         "claude": "templates/claude-agents/worker.md"
       }
+    },
+    {
+      "name": "writer",
+      "templates": {
+        "codex": "templates/codex-agents/teamwork-writer.toml",
+        "cursor": "templates/cursor-agents/writer.md",
+        "claude": "templates/claude-agents/writer.md"
+      }
     }
   ],
   "root_owned_methods": [
@@ -96,6 +104,41 @@
     "goal"
   ],
   "owned_references": [
-    "skills/teamwork-research/references/deep-research.md"
+    "skills/teamwork-collaborate/references/discussion.md",
+    "skills/teamwork-debug/references/debug.md",
+    "skills/teamwork-debug/references/runtime-diagnosis.md",
+    "skills/teamwork-goal/references/report.md",
+    "skills/teamwork-init/references/report.md",
+    "skills/teamwork-plan/references/plan.md",
+    "skills/teamwork-research/references/deep-research.md",
+    "skills/teamwork-research/references/research.md",
+    "skills/teamwork-review/references/review.md",
+    "skills/teamwork-update/references/report.md"
+  ],
+  "document_templates": [
+    {
+      "name": "debug",
+      "path": "skills/teamwork-debug/references/debug.md"
+    },
+    {
+      "name": "discussion",
+      "path": "skills/teamwork-collaborate/references/discussion.md"
+    },
+    {
+      "name": "plan",
+      "path": "skills/teamwork-plan/references/plan.md"
+    },
+    {
+      "name": "report",
+      "path": "skills/teamwork-goal/references/report.md"
+    },
+    {
+      "name": "research",
+      "path": "skills/teamwork-research/references/research.md"
+    },
+    {
+      "name": "review",
+      "path": "skills/teamwork-review/references/review.md"
+    }
   ]
 }

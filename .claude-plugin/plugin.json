@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "7.3.0",
+  "version": "7.4.0",
   "description": "Retained Teamwork compatibility adapter for Claude Code development; official support and release-qualification evidence are Codex-only.",
   "author": {
     "name": "JinPLu",
@@ -27,7 +27,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Retained Claude Code compatibility adapter for development use.",
-    "longDescription": "This retained Claude Code adapter is for compatibility maintenance and local development. It keeps clear work native and adds focused discussion, research, debugging, planning, review, setup, refresh, and persistent-goal methods without mandatory stage chains or document state.",
+    "longDescription": "This retained Claude Code adapter is for compatibility maintenance and local development. It keeps clear work native and adds focused methods plus an optional low-cost Writer for owner-confirmed Markdown records, without mandatory stage chains or document state gates.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [

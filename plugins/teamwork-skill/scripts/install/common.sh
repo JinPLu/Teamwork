@@ -39,9 +39,9 @@ done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host claude 
 while IFS= read -r item; do
   CODEX_AGENTS+=("$item")
 done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host codex --field stem)
-RETIRED_CLAUDE_AGENTS=(designer plan-reviewer writer)
-RETIRED_CURSOR_AGENTS=(designer plan-reviewer writer)
-RETIRED_CODEX_AGENTS=(teamwork-designer teamwork-plan-reviewer teamwork-writer)
+RETIRED_CLAUDE_AGENTS=(designer plan-reviewer)
+RETIRED_CURSOR_AGENTS=(designer plan-reviewer)
+RETIRED_CODEX_AGENTS=(teamwork-designer teamwork-plan-reviewer)
 
 usage() {
   cat <<'USAGE'
@@ -118,9 +118,10 @@ codex-agents separately when that surface needs refresh.
 Profile defaults to performance-first; choose cost-first explicitly when needed.
 On Codex, performance-first
 uses Terra/max for Researcher and Planner; Terra/high for Explorer; Sol/xhigh
-for Debugger and Reviewer; Sol/high for Challenger; and Sol/medium for Worker.
+for Debugger and Reviewer; Sol/high for Challenger; Sol/medium for Worker; and
+Luna/xhigh for Writer.
 On Codex, cost-first uses Luna/xhigh for Researcher, Debugger, Planner, and
-Worker; Luna/high for Explorer; Sol/medium for Challenger; and Sol/high for Reviewer. Cursor and Claude Code keep
+Worker and Writer; Luna/high for Explorer; Sol/medium for Challenger; and Sol/high for Reviewer. Cursor and Claude Code keep
 their existing compatibility/development profile mappings.
 USAGE
 }

@@ -10,6 +10,9 @@ codex_agent_performance_values() {
     teamwork-worker)
       printf '%s %s\n' "gpt-5.6-sol" "medium"
       ;;
+    teamwork-writer)
+      printf '%s %s\n' "gpt-5.6-luna" "xhigh"
+      ;;
     teamwork-debugger)
       printf '%s %s\n' "gpt-5.6-sol" "xhigh"
       ;;
@@ -32,7 +35,7 @@ codex_agent_profile_values() {
     performance-first:*)
       codex_agent_performance_values "$agent"
       ;;
-    cost-first:teamwork-researcher|cost-first:teamwork-debugger|cost-first:teamwork-planner|cost-first:teamwork-worker)
+    cost-first:teamwork-researcher|cost-first:teamwork-debugger|cost-first:teamwork-planner|cost-first:teamwork-worker|cost-first:teamwork-writer)
       printf '%s %s\n' "gpt-5.6-luna" "xhigh"
       ;;
     cost-first:teamwork-challenger)
@@ -57,7 +60,7 @@ claude_agent_profile_values() {
     performance-first:researcher|performance-first:explorer|performance-first:worker)
       printf '%s %s\n' "sonnet" "medium"
       ;;
-    cost-first:researcher|cost-first:explorer|cost-first:worker)
+    performance-first:writer|cost-first:researcher|cost-first:explorer|cost-first:worker|cost-first:writer)
       printf '%s %s\n' "haiku" "medium"
       ;;
     performance-first:debugger|performance-first:challenger|performance-first:planner|cost-first:debugger|cost-first:challenger|cost-first:planner)
@@ -91,7 +94,7 @@ cursor_agent_profile_values() {
     performance-first:planner)
       printf '%s\n' "gpt-5.6-terra-medium"
       ;;
-    performance-first:worker)
+    performance-first:worker|performance-first:writer)
       printf '%s\n' "composer-2.5-fast"
       ;;
     performance-first:reviewer)
@@ -106,7 +109,7 @@ cursor_agent_profile_values() {
     cost-first:planner)
       printf '%s\n' "gpt-5.6-luna-medium"
       ;;
-    cost-first:worker)
+    cost-first:worker|cost-first:writer)
       printf '%s\n' "composer-2.5-fast"
       ;;
     cost-first:reviewer)

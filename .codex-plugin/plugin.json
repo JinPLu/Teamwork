@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "7.3.0",
+  "version": "7.4.0",
   "description": "AI-native collaboration skills for direct work, discussion, deep research, debugging, planning, review, setup, updates, and persistent goals in Codex.",
   "author": {
     "name": "JinPLu",
@@ -27,7 +27,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Focused collaboration methods that keep clear work direct.",
-    "longDescription": "Teamwork keeps clear Codex work native and adds focused methods for discussion, deep research, unknown-cause debugging, executable planning, review, project setup, Codex refresh, and persistent goals. Subagents are optional bounded helpers, not workflow gates. Codex remains in control of tools and permissions.",
+    "longDescription": "Teamwork keeps clear Codex work native and adds focused methods for discussion, deep research, unknown-cause debugging, executable planning, review, project setup, Codex refresh, and persistent goals. An optional low-cost Writer can preserve owner-confirmed results in plain Markdown without becoming a workflow gate. Codex remains in control of tools and permissions.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [

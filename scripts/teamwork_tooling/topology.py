@@ -17,7 +17,13 @@ def load_topology(root: Path = ROOT) -> dict[str, object]:
     value = json.loads((root / "config/teamwork-topology.json").read_text(encoding="utf-8"))
     if not isinstance(value, dict):
         raise ValueError("Teamwork topology must be a JSON object")
-    if set(value) != {"public_skills", "agents", "root_owned_methods", "owned_references"}:
+    if set(value) != {
+        "public_skills",
+        "agents",
+        "root_owned_methods",
+        "owned_references",
+        "document_templates",
+    }:
         raise ValueError("Teamwork topology has unexpected fields")
     return value
 
@@ -42,12 +48,18 @@ def owned_references(root: Path = ROOT) -> tuple[str, ...]:
     return tuple(load_topology(root)["owned_references"])
 
 
+def document_template_paths(root: Path = ROOT) -> dict[str, str]:
+    return {row["name"]: row["path"] for row in load_topology(root)["document_templates"]}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=ROOT)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("skills")
     sub.add_parser("references")
+    documents = sub.add_parser("documents")
+    documents.add_argument("--field", choices=("name", "path"), default="path")
     agents = sub.add_parser("agent-templates")
     agents.add_argument("--host", choices=HOSTS, required=True)
     agents.add_argument("--field", choices=("name", "path", "stem"), default="path")
@@ -59,6 +71,9 @@ def main() -> int:
     elif args.command == "references":
         for path in sorted(owned_references(root)):
             print(path)
+    elif args.command == "documents":
+        for name, path in sorted(document_template_paths(root).items()):
+            print(name if args.field == "name" else path)
     else:
         for name, path in sorted(host_role_paths(root)[args.host].items()):
             print(name if args.field == "name" else Path(path).stem if args.field == "stem" else path)

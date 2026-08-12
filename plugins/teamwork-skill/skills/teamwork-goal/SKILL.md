@@ -26,3 +26,17 @@ report writing never block the underlying authorized task.
 
 Tests support the goal but do not replace the real success signal when that
 signal is available.
+
+When the outcome is worth reusing or a report is requested, Root may ask Writer
+to maintain one Markdown report for the continuing objective from
+`references/report.md`. The report records requested versus
+observed outcome, decisive evidence, resulting state or changes, remaining
+action or blocker, and dated history; it is not an activity log and never
+claims an unobserved completion. Every wake-up supplies the document kind and
+path, stable subject identity, authoritative goal owner, owner-certified
+semantic delta, read-only context, and expected base. Writer only compresses
+literally, locates, deduplicates the current synthesis and pending delta,
+updates the current synthesis, and appends history. Existing history is
+immutable. It cannot change completion, evidence meaning, authority, next action,
+or mainline. Writer failure never blocks the underlying goal; if the report was
+explicitly requested, only report delivery remains incomplete.

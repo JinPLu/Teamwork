@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/teamwork-readme-teaser-v73.png" alt="Teamwork: clear work stays direct, methods join when needed, with seven optional Agent roles" width="860">
+  <img src="assets/teamwork-readme-teaser-v74.png" alt="Teamwork: clear work stays direct, methods join when needed, with eight optional Agent roles" width="860">
 </p>
 
 <h1 align="center">Teamwork</h1>
@@ -13,7 +13,7 @@
   <a href="https://github.com/JinPLu/Teamwork/releases"><img src="https://img.shields.io/github/v/release/JinPLu/Teamwork?display_name=tag&amp;sort=semver" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2563EB" alt="MIT License"></a>
   <img src="https://img.shields.io/badge/Skills-8-2563EB" alt="8 Skills">
-  <img src="https://img.shields.io/badge/optional_agents-7-0F766E" alt="7 optional Agent roles">
+  <img src="https://img.shields.io/badge/optional_agents-8-0F766E" alt="8 optional Agent roles">
   <img src="https://img.shields.io/badge/supported-Codex-0F766E" alt="Officially supports Codex">
 </p>
 
@@ -98,14 +98,29 @@ There is no Router, mandatory stage chain, or automatic Update detour. Root alwa
 | 🧰 Lightweight project guidance | `$teamwork-init` | Maintain one concise, idempotent `AGENTS.md` managed block. |
 | 🔄 Install inspection or refresh | `$teamwork-update` | Refresh the Codex Teamwork installation by default. |
 
-## 🤝 Seven optional Agent roles
+## 🤝 Eight optional Agent roles
 
-Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, and Worker are bounded helpers, not a pipeline every task must traverse.
+Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer are bounded helpers, not a pipeline every task must traverse. Writer is a low-cost, non-blocking recorder reusable across Skills: it turns only owner-certified semantic changes into readable Markdown and never changes the owner's facts, decisions, or conclusions.
 
 - Root delegates only when parallel investigation, independent judgment, or a clean division of work is useful.
 - A handoff carries the objective, owned scope, settled constraints, available evidence, and requested return.
-- Reviewer stays read-only and never implements its own findings; other roles do not need to manufacture extra records.
+- Reviewer stays read-only and never implements its own findings. Writer failure does not block the main work, and Root still confirms what enters the mainline.
 - Teamwork children use Standard by default. Fast on the parent does not automatically multiply child cost unless you explicitly accelerate the children too.
+
+## 🗃️ Six readable document types
+
+When a focused method produces reusable content, Writer continuously maintains plain Markdown. Each document carries both a **current synthesis** and an append-only **chronological history**, so it is quick to read without hiding how the conclusion changed.
+
+| Document | What it records |
+| --- | --- |
+| 💬 Discussion | Options, trade-offs, settled choices, and open decisions. |
+| 🔎 Research | External evidence, contradictions, synthesized conclusions, confidence, and stop basis. |
+| 🐞 Debug | Failure boundary, hypotheses, root cause, repair, and same-path verification. |
+| 📝 Plan | Selected-direction steps, owners, dependencies, verification, and stop conditions. |
+| ✅ Review | Stable candidate, direct evidence, findings, and verdict. |
+| 📌 Report | Status, outcomes, and blockers from Goal, Init, Update, or execution work. |
+
+Reusing Writer across Skills reuses only the Agent lifecycle; it does not let one Skill take ownership of another Skill's meaning. Documents require no Case, schema, JSON index, migration, or readiness gate, and no document is needed when nothing reusable changed.
 
 ## 📋 Prompts you can copy
 

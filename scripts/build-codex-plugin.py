@@ -67,13 +67,21 @@ def load_topology(root: Path) -> dict[str, object]:
         raise SystemExit(f"invalid topology manifest {path}: {exc}") from exc
     if not isinstance(value, dict):
         raise SystemExit("topology manifest must be a JSON object")
-    for key in ("public_skills", "agents", "owned_references"):
+    for key in ("public_skills", "agents", "owned_references", "document_templates"):
         if key not in value:
             raise SystemExit(f"topology manifest lacks {key}")
     return value
 
 
-def expected_bundle_surfaces(root: Path) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...], dict[str, tuple[str, ...]]]:
+def expected_bundle_surfaces(
+    root: Path,
+) -> tuple[
+    tuple[str, ...],
+    tuple[str, ...],
+    tuple[str, ...],
+    dict[str, tuple[str, ...]],
+    tuple[str, ...],
+]:
     topology = load_topology(root)
     skills = tuple(sorted(row["name"] for row in topology["public_skills"]))
     references = tuple(sorted(topology["owned_references"]))
@@ -84,9 +92,14 @@ def expected_bundle_surfaces(root: Path) -> tuple[tuple[str, ...], tuple[str, ..
         for host, path in row["templates"].items():
             directory = host_directories[host]
             roles[directory].append(Path(path).name)
-    return skills, references, metadata, {
-        directory: tuple(sorted(files)) for directory, files in roles.items()
-    }
+    documents = tuple(sorted(row["path"] for row in topology["document_templates"]))
+    return (
+        skills,
+        references,
+        metadata,
+        {directory: tuple(sorted(files)) for directory, files in roles.items()},
+        documents,
+    )
 
 
 def copy_item(source: Path, destination: Path) -> None:
@@ -129,7 +142,15 @@ def validate_marketplace(root: Path) -> None:
 
 
 def validate_source(root: Path) -> None:
-    load_topology(root)
+    topology = load_topology(root)
+    declared_paths = [row["path"] for row in topology["public_skills"]]
+    declared_paths.extend(topology["owned_references"])
+    declared_paths.extend(row["path"] for row in topology["document_templates"])
+    for row in topology["agents"]:
+        declared_paths.extend(row["templates"].values())
+    missing = [path for path in declared_paths if not (root / path).is_file()]
+    if missing:
+        raise SystemExit(f"topology declares missing canonical files: {', '.join(sorted(missing))}")
     for manifest_rel, label in (
         (".codex-plugin/plugin.json", "Codex"),
         (".claude-plugin/plugin.json", "Claude Code"),
@@ -167,7 +188,13 @@ def build_stage(root: Path, parent: Path) -> Path:
 
 
 def validate_bundle(bundle: Path, root: Path) -> None:
-    expected_skills, expected_references, expected_metadata, expected_roles = expected_bundle_surfaces(root)
+    (
+        expected_skills,
+        expected_references,
+        expected_metadata,
+        expected_roles,
+        expected_documents,
+    ) = expected_bundle_surfaces(root)
     if load_topology(bundle) != load_topology(root):
         raise SystemExit("bundle topology manifest drifted from canonical source")
     manifest_path = bundle / ".codex-plugin/plugin.json"
@@ -206,6 +233,8 @@ def validate_bundle(bundle: Path, root: Path) -> None:
             raise SystemExit(
                 f"bundle templates/{directory} differs from the topology manifest"
             )
+    if not set(expected_documents).issubset(actual_references):
+        raise SystemExit("bundle Teamwork document templates are not self-contained Skill resources")
     if (bundle / "hooks/hooks.json").exists():
         raise SystemExit("bundle must not carry plugin-bundled hooks/hooks.json")
     if not (bundle / "hooks/notify.py").is_file():
@@ -260,21 +289,50 @@ def bundle_matches(current: Path, staged: Path) -> bool:
     return tree_entries(current) == tree_entries(staged)
 
 
+def remove_entry(path: Path) -> None:
+    if path.is_symlink() or path.is_file():
+        path.unlink()
+    elif path.is_dir():
+        shutil.rmtree(path)
+
+
 def replace_bundle(stage: Path, target: Path) -> None:
-    backup = target.parent / f".{PLUGIN_NAME}.previous-{os.getpid()}"
-    if backup.exists():
-        shutil.rmtree(backup)
-    try:
-        if target.exists():
-            os.replace(target, backup)
-        os.replace(stage, target)
-    except BaseException:
-        if not target.exists() and backup.exists():
-            os.replace(backup, target)
-        raise
-    finally:
-        if backup.exists() and target.exists():
-            shutil.rmtree(backup)
+    """Synchronize the generated tree without renaming the tracked root.
+
+    Directory-level swaps can leave the tracked bundle absent in
+    file-provider-backed workspaces.  The stage has already been fully
+    validated, so update the stable root in place while still removing stale
+    generated entries.
+    """
+
+    target.mkdir(parents=True, exist_ok=True)
+    staged_paths = {path.relative_to(stage) for path in stage.rglob("*")}
+    current_paths = sorted(
+        (path.relative_to(target) for path in target.rglob("*")),
+        key=lambda path: len(path.parts),
+        reverse=True,
+    )
+    for relative in current_paths:
+        if relative not in staged_paths:
+            remove_entry(target / relative)
+
+    for source in sorted(stage.rglob("*"), key=lambda path: len(path.relative_to(stage).parts)):
+        relative = source.relative_to(stage)
+        destination = target / relative
+        if source.is_symlink():
+            if destination.exists() or destination.is_symlink():
+                remove_entry(destination)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.symlink_to(os.readlink(source))
+        elif source.is_dir():
+            if destination.is_symlink() or (destination.exists() and not destination.is_dir()):
+                remove_entry(destination)
+            destination.mkdir(parents=True, exist_ok=True)
+        elif source.is_file():
+            if destination.is_symlink() or (destination.exists() and destination.is_dir()):
+                remove_entry(destination)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination, follow_symlinks=False)
 
 
 def main() -> int:

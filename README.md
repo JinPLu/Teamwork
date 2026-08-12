@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/teamwork-readme-teaser-v73.png" alt="Teamwork：清楚工作直接完成，需要方法时按需加入，并可使用七个可选 Agent 角色" width="860">
+  <img src="assets/teamwork-readme-teaser-v74.png" alt="Teamwork：清楚工作直接完成，需要方法时按需加入，并可使用八个可选 Agent 角色" width="860">
 </p>
 
 <h1 align="center">Teamwork</h1>
@@ -13,7 +13,7 @@
   <a href="https://github.com/JinPLu/Teamwork/releases"><img src="https://img.shields.io/github/v/release/JinPLu/Teamwork?display_name=tag&amp;sort=semver" alt="最新 Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2563EB" alt="MIT License"></a>
   <img src="https://img.shields.io/badge/Skills-8-2563EB" alt="8 个 Skills">
-  <img src="https://img.shields.io/badge/optional_agents-7-0F766E" alt="7 个可选 Agent 角色">
+  <img src="https://img.shields.io/badge/optional_agents-8-0F766E" alt="8 个可选 Agent 角色">
   <img src="https://img.shields.io/badge/supported-Codex-0F766E" alt="正式支持 Codex">
 </p>
 
@@ -98,14 +98,29 @@ flowchart LR
 | 🧰 新项目的轻量说明 | `$teamwork-init` | 只维护一个简短、幂等的 `AGENTS.md` managed block。 |
 | 🔄 检查或刷新安装 | `$teamwork-update` | 默认只刷新 Codex 的 Teamwork 安装面。 |
 
-## 🤝 7 个可选 Agent 角色
+## 🤝 8 个可选 Agent 角色
 
-Researcher、Explorer、Debugger、Challenger、Planner、Reviewer 和 Worker 都是边界化帮助者，不是必须经过的流水线。
+Researcher、Explorer、Debugger、Challenger、Planner、Reviewer、Worker 和 Writer 都是边界化帮助者，不是必须经过的流水线。Writer 是低成本、可跨 Skill 复用的非阻塞记录者：它只把方法 owner 确认的语义变化写成可读 Markdown，不替 owner 改变事实、决定或结论。
 
 - Root 只在并行调查、独立判断或清楚分工确实有用时分派。
 - handoff 带上目标、负责范围、已确定约束、已有证据和期望返回。
-- Reviewer 保持只读，不修复自己的发现；其他角色也不需要制造额外记录。
+- Reviewer 保持只读，不修复自己的发现；Writer 失败不阻塞主要工作，Root 仍负责确认进入主线的结果。
 - Teamwork 子任务默认使用 Standard。父任务启用 Fast 不会自动提高所有子任务的费用，除非你明确要求子任务也加速。
+
+## 🗃️ 六类可读文档
+
+当专项方法产生值得复用的内容时，Writer 持续维护纯 Markdown 文档。每份文档同时保留一份**当前综合**和按时间追加的**历史**，既方便快速阅读，也不会抹掉结论如何变化。
+
+| 文档 | 它记录什么 |
+| --- | --- |
+| 💬 Discussion | 选项、权衡、已定选择与仍待决定的问题。 |
+| 🔎 Research | 外部证据、矛盾、综合结论、置信度与停止依据。 |
+| 🐞 Debug | 失败边界、假设、根因、修复与同路径验证。 |
+| 📝 Plan | 已选方向的步骤、owner、依赖、验证与停止条件。 |
+| ✅ Review | 稳定候选、直接证据、发现与 verdict。 |
+| 📌 Report | Goal、Init、Update 或执行工作的状态、结果与阻塞。 |
+
+跨 Skill 复用 Writer 只复用同一个 Agent 生命周期，不让一个 Skill 接管另一个 Skill 的语义。文档不依赖 Case、schema、JSON index、迁移或 readiness；没有可复用变化时，也不必为流程而创建文档。
 
 ## 📋 可直接复制的请求
 

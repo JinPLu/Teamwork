@@ -27,6 +27,7 @@ ROLE_SANDBOX = {
     "planner": "read-only",
     "reviewer": "read-only",
     "worker": "workspace-write",
+    "writer": "workspace-write",
 }
 REQUIRED_FIELDS = {
     "name",

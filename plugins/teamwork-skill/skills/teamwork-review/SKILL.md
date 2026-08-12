@@ -21,8 +21,32 @@ of switching workflows or blocking on installation state.
 4. Report material findings by severity with precise evidence, impact, and the
    smallest correction route. Keep unrelated debt separate.
 5. Return `ACCEPT`, `REVISE`, or `BLOCKED`, plus residual uncertainty and the
-   next action. Recheck only the changed surface needed to close findings.
+   next action. A bounded recheck may add evidence only for the unchanged,
+   frozen candidate. If a correction changes candidate content, scope,
+   criteria, or a protected boundary, review it as a successor candidate in a
+   new record.
+
+Keep one review record per stable candidate identity. Any correction that
+changes candidate content, scope, criteria, or a protected boundary creates a
+successor candidate and a new document rather than overwriting the verdict
+basis of the old candidate. The old record may receive only an
+owner-certified successor link; its findings and verdict remain unchanged.
+Preserve the candidate identity, criteria and protected boundaries, direct
+evidence, findings and severity, status of each criterion, verdict, residual
+uncertainty, and evidence-only bounded recheck scope.
 
 A Reviewer handoff contains the candidate, requirements, scope, settled
 constraints, direct evidence, and requested verdict. Reviewer remains read-only
 and never implements the repair.
+
+When a durable review record is useful or requested, Root may ask Writer to
+maintain it from `references/review.md`. Every wake-up supplies
+the document kind and path, stable candidate identity, authoritative review
+owner, owner-certified semantic delta, read-only context, and expected base.
+Writer only compresses literally, locates, deduplicates the current synthesis
+and pending delta, refreshes current synthesis, and appends dated history.
+Existing history is immutable. It cannot create or alter a finding,
+severity, criterion status, verdict, uncertainty, authority, next action, or
+mainline. Missing state or a conflicting base produces a no-write exact gap.
+Writer unavailability or conflict does not block the review; if the document
+was explicitly requested, only its delivery remains incomplete.
