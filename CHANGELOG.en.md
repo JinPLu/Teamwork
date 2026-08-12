@@ -4,6 +4,13 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.2.6 - 2026-08-12
+
+**Teamwork 7.2.6 removes arbitrary delivery deadlines for subagents: once a specialist starts, it keeps working until it returns a result.**
+
+- **Started means wait for the result.** Once a Debugger, Planner, or other role has actually started, Teamwork no longer cancels or replaces it for being slow; waiting stops only when you interrupt it or the host explicitly reports a terminal failure.
+- **Waiting is no longer misreported as inactive.** When a child has a start record, Teamwork keeps using that specialist's conclusion instead of falsely calling the role unavailable and sending you toward a restart or reconfiguration.
+
 ## 7.2.5 - 2026-08-12
 
 **Teamwork 7.2.5 is stricter about over-defensive work: when you say not to add something, Agents no longer add it back on their own.**

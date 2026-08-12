@@ -53,10 +53,13 @@ text, is not Agent activation. On a Codex surface that exposes it, the policy
 adapter selects named roles through `spawn_agent.agent_type` and a
 self-contained or bounded-history assignment; a full-history fork inherits
 Root's role. Static profiles and `features.multi_agent` configuration establish
-only installed state. A live child-start observation proves exact activation;
-without it, the Agent-dependent path is unsupported or failed. Teamwork does
-not create, delete, or enable the user's under-development host feature to
-change that result. Cursor and Claude Code adapters may keep native named Agent
+only installed state. A live child-start observation proves exact activation.
+After that observation, Root waits for the child's terminal result: an arbitrary
+return deadline neither cancels the child nor turns it into an unavailable role.
+Only user interruption or a host-reported terminal failure changes that state.
+Without a child start, the Agent-dependent path is unsupported or failed.
+Teamwork does not create, delete, or enable the user's under-development host
+feature to change that result. Cursor and Claude Code adapters may keep native named Agent
 selectors for compatibility and development, but Teamwork 7.2 does not treat
 them as supported, release-qualified, or release-blocking surfaces.
 

@@ -54,10 +54,10 @@
     },
     {
       "name": "debug-evidence-sized-hypotheses",
-      "prompt": "Use the installed teamwork-debug Skill and spawn its required installed Debugger Agent to diagnose the supplied failure evidence. Let the evidence determine how many live hypotheses are warranted: do not invent alternatives or a fixed hypothesis packet when direct evidence isolates one cause. Root must not perform the Debugger method itself. Do not modify the workspace.",
+      "prompt": "Use the installed teamwork-debug Skill and spawn its required installed Debugger Agent to diagnose the supplied failure evidence. A live child start proves the Debugger is active: do not cancel, replace, or call it unavailable because it has not yet returned by an arbitrary deadline. Let the evidence determine how many live hypotheses are warranted: do not invent alternatives or a fixed hypothesis packet when direct evidence isolates one cause. Root must not perform the Debugger method itself. Do not modify the workspace.",
       "selected_skill": "teamwork-debug",
       "required_agents": ["debugger"],
-      "expected_outcomes": ["actual failure evidence inspected", "hypothesis set sized by evidence", "supported cause or next discriminator reported without fixed ceremony"],
+      "expected_outcomes": ["actual Debugger child start observed", "no arbitrary return deadline or false unavailable classification", "actual failure evidence inspected", "hypothesis set sized by evidence", "supported cause or next discriminator reported without fixed ceremony"],
       "scenario": "evals/teamwork/live-scenarios/debug-direct-cause.json",
       "authority": "read-only",
       "support": {"codex": "conditional-exact-role", "cursor": "required", "claude": "required"}

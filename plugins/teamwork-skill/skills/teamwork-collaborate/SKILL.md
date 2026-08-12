@@ -53,6 +53,10 @@ substitute an unavailable role.
 When context is omitted or bounded, the brief must include every still-applicable
 settled user constraint. A child cannot infer that a missing constraint was relaxed.
 
+A live child start proves the role is active. Do not impose an arbitrary return
+deadline or replace it; wait for its terminal result unless the user interrupts
+it or the host reports a terminal failure.
+
 ## Discussion Document
 
 When durable framing, a material option comparison, a meaningful question

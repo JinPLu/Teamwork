@@ -55,6 +55,8 @@ class PolicyContractTests(unittest.TestCase):
             "Existing controls receive no grandfathering",
             "When a named Teamwork Agent is required",
             "observe it actually start",
+            "A real child-start observation proves activation",
+            "arbitrary elapsed-time limit",
         ):
             self.assertIn(phrase, text)
         for removed_detail in (
@@ -70,12 +72,14 @@ class PolicyContractTests(unittest.TestCase):
         self.assertIn("Teamwork-owned source, data formats, protocols, and validation", text)
         self.assertIn("hashes, digests, checksums, content fingerprints", text)
 
-    def test_every_dispatching_skill_requires_settled_constraint_transport(self) -> None:
+    def test_every_dispatching_skill_transports_constraints_and_waits_for_live_roles(self) -> None:
         for name in (
             "collaborate", "debug", "goal", "init", "plan", "research", "review", "update",
         ):
             text = (ROOT / f"skills/teamwork-{name}/SKILL.md").read_text(encoding="utf-8")
             self.assertIn("settled user constraint", text, name)
+            self.assertIn("A live child start proves the role is active", text, name)
+            self.assertIn("arbitrary return\ndeadline", text, name)
 
     def test_codex_and_claude_managed_blocks_preserve_surrounding_content(self) -> None:
         codex = self.home / ".codex/AGENTS.md"
