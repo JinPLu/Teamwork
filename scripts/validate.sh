@@ -2,44 +2,43 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
-TEAMWORK_VALIDATION_MODE="${TEAMWORK_VALIDATION_MODE:-fast}"
-while (($#)); do
-  case "$1" in
-    --fast)
-      TEAMWORK_VALIDATION_MODE="fast"
-      ;;
-    --full|--release)
-      TEAMWORK_VALIDATION_MODE="full"
-      ;;
-    -h|--help)
-      printf '%s\n' \
-        "Usage: scripts/validate.sh [--fast|--full]" \
-        "" \
-        "  --fast   Run the default local validation set." \
-        "  --full   Run release-grade validation, including install integration." \
-        "" \
-        "Default: --fast"
-      exit 0
-      ;;
-    *)
-      echo "FAIL: unsupported validate option: $1" >&2
-      exit 2
-      ;;
-  esac
-  shift
-done
-export TEAMWORK_VALIDATION_MODE
-export PYTHONDONTWRITEBYTECODE=1
-
-source "$ROOT/scripts/validation/common.sh"
-source "$ROOT/scripts/validation/package.sh"
-source "$ROOT/scripts/validation/contracts.sh"
-
-if is_full_validation; then
-  source "$ROOT/scripts/validation/integration.sh"
-else
-  echo "SKIP: install integration and release-only tests (run ./scripts/validate.sh --full)"
+MODE=fast
+if [[ "${1:-}" == "--release" || "${1:-}" == "--full" ]]; then
+  MODE=release
+elif [[ -n "${1:-}" && "${1:-}" != "--fast" ]]; then
+  echo "Usage: ./scripts/validate.sh [--fast|--release]" >&2
+  exit 2
 fi
 
-echo "OK: Teamwork skill package validates ($TEAMWORK_VALIDATION_MODE)"
+bash -n "$ROOT/install.sh" "$ROOT/scripts/check-update.sh" \
+  "$ROOT/scripts/init-project.sh" "$ROOT/scripts/install/"*.sh
+
+python3 -m json.tool "$ROOT/config/teamwork-topology.json" >/dev/null
+python3 -m json.tool "$ROOT/.codex-plugin/plugin.json" >/dev/null
+python3 -m json.tool "$ROOT/.claude-plugin/plugin.json" >/dev/null
+python3 -m json.tool "$ROOT/hooks/hooks.json" >/dev/null
+
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.tests.test_core_flow
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/check-codex-routing.py" \
+  --agents-dir "$ROOT/templates/codex-agents" --profiles-only >/dev/null
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/build-codex-plugin.py" --check
+
+if [[ "$MODE" == release ]]; then
+  python3 - "$ROOT" <<'PY'
+import json
+import pathlib
+import re
+import sys
+
+root = pathlib.Path(sys.argv[1])
+version = (root / "VERSION").read_text(encoding="utf-8").strip()
+if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+    raise SystemExit("VERSION must be semver for release")
+for relative in (".codex-plugin/plugin.json", ".claude-plugin/plugin.json"):
+    manifest = json.loads((root / relative).read_text(encoding="utf-8"))
+    if manifest.get("version") != version:
+        raise SystemExit(f"{relative} version does not match VERSION")
+PY
+fi
+
+echo "OK: Teamwork validation ($MODE)"

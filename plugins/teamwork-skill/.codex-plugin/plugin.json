@@ -1,6 +1,6 @@
 {
   "name": "teamwork-skill",
-  "version": "7.2.7",
+  "version": "7.3.0",
   "description": "AI-native collaboration skills for direct work, discussion, deep research, debugging, planning, review, setup, updates, and persistent goals in Codex.",
   "author": {
     "name": "JinPLu",
@@ -27,7 +27,7 @@
   "interface": {
     "displayName": "Teamwork",
     "shortDescription": "Focused collaboration methods that keep clear work direct.",
-    "longDescription": "Teamwork keeps clear Codex work native and adds focused methods only when discussion, full Deep Research, unknown-cause debugging, executable planning, independent review, project setup, global refresh, exact-root document migration, or persistent convergence needs them. Explorer remains an internal local-evidence role, Reviewer covers plan review, and Writer maintains six typed project documents without exposing storage mechanics. Codex remains in control of tools and permissions.",
+    "longDescription": "Teamwork keeps clear Codex work native and adds focused methods for discussion, deep research, unknown-cause debugging, executable planning, review, project setup, Codex refresh, and persistent goals. Subagents are optional bounded helpers, not workflow gates. Codex remains in control of tools and permissions.",
     "developerName": "JinPLu",
     "category": "Productivity",
     "capabilities": [
@@ -36,7 +36,7 @@
     ],
     "websiteURL": "https://github.com/JinPLu/Teamwork",
     "defaultPrompt": [
-      "Use $teamwork-update to refresh Teamwork and migrate this exact project's documents to the current format.",
+      "Use $teamwork-update to inspect or refresh this Codex Teamwork installation.",
       "Use $teamwork-collaborate to explore this decision with me and recommend a direction.",
       "Use $teamwork-research to investigate this external question across primary sources."
     ],

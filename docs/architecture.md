@@ -1,144 +1,50 @@
 # Teamwork Architecture
 
-Teamwork separates model-facing behavior from implementation infrastructure so ordinary work stays fast and specialized methods remain understandable.
+Teamwork is a small collection of optional methods around native work.
 
-## Model-facing layers
+## Runtime flow
 
-### 1. Global principles
+1. Root reads the user's request and the repository instructions.
+2. Clear authorized work stays native.
+3. A named Skill is loaded only when its public trigger matches.
+4. Root may delegate a bounded, independent subtask when doing so is useful.
+5. Root integrates the result, performs the authorized work, and verifies the
+   outcome in proportion to the claim.
 
-`policy/teamwork-global.md` is the sole readable owner of six durable
-principles. Installers only render host-specific wrappers:
+There is no router, mandatory stage chain, readiness preflight, document schema,
+case lifecycle, or automatic Update detour.
 
-1. Keep clear work native.
-2. Distinguish observation, inference, unknowns, and completed work.
-3. Calibrate verification to the credible risk and the claim being made;
-   prefer direct outcome evidence.
-4. Keep settled explicit user constraints across stages, repositories, and
-   delegation until the user changes them.
-5. Treat defensive and preemptive controls as default-removal: only a current
-   user or current user-approved contract that names the exact control and
-   scope can retain one. Risk inference, dependencies, tests, generic goals,
-   and earlier plans do not substitute; report an explicit conflict instead of
-   silently overriding the user.
-6. Route to a named Skill only when its public trigger and host route match.
+## Agent handoff
 
-Host and tool permissions remain authoritative. Importance, complexity, and
-subjective risk do not activate a Teamwork workflow. Teamwork's own source,
-formats, protocols, and validation use no hash, digest, checksum, or content-
-fingerprint machinery.
+Every handoff uses the same five fields:
 
-### 2. Routing
+- objective;
+- owned scope;
+- settled user constraints;
+- available evidence;
+- requested return.
 
-`SKILL.md` descriptions are the semantic routing source. `agents/openai.yaml` is UI metadata, not a second behavior contract.
+Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, and Worker are
+focused helpers. They do not own the user dialogue. Missing
+agents do not block native work. When the user specifically requires an
+independent review and no independent context is available, Root labels the
+review non-independent instead of pretending otherwise.
 
-The selected public methods are Collaborate, Research, Debug, Plan, Review, Goal, Init, and Update. Their number is not an architectural invariant. Local evidence routes internally to Explorer. Strict adversarial work routes to Challenger.
+## Sources and installation
 
-### 3. Skill methods
+- `skills/` owns behavior.
+- `templates/*-agents/` owns optional host agent profiles.
+- `policy/teamwork-global.md` is the sole owner of universal authorization and
+  mechanism rules.
+- `scripts/install/` owns installation mechanics.
+- `plugins/teamwork-skill/` is generated from canonical sources.
 
-Each Skill is self-contained and uses progressive disclosure:
+The default install and Update path is Codex-only. Cursor and Claude Code remain
+explicit compatibility targets.
 
-- metadata contains the trigger and exclusion boundary;
-- `SKILL.md` contains the concise core method;
-- one-level references contain only complex optional protocols.
+## Verification
 
-There is no public router, generic Execute Skill, cross-Skill behavior loading, fixed dispatch count, or workflow-wide transaction ceremony.
-
-### 4. Agent responsibilities
-
-Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer have narrow responsibilities. Root owns Collaborate, Goal, and user dialogue. Reviewer covers both execution and plan review. Worker preserves unrelated work. Writer maintains documents without changing facts, decisions, authority, or completion.
-
-A required Agent is active only when the host selects that installed role.
-Naming a task after the role, or repeating a purported result in Root's own
-text, is not Agent activation. On a Codex surface that exposes it, the policy
-adapter selects named roles through `spawn_agent.agent_type` and a
-self-contained or bounded-history assignment; a full-history fork inherits
-Root's role. Static profiles and `features.multi_agent` configuration establish
-only installed state. Named Teamwork roles use the normal `default` service
-tier; a parent task's Fast setting does not accelerate children unless the
-current user explicitly applies it to them. A live child-start observation proves exact activation.
-After that observation, Root waits for the child's terminal result: an arbitrary
-return deadline neither cancels the child nor turns it into an unavailable role.
-Only user interruption or a host-reported terminal failure changes that state.
-Without a child start, the Agent-dependent path is unsupported or failed.
-Teamwork does not create, delete, or enable the user's under-development host
-feature to change that result. Cursor and Claude Code adapters may keep native named Agent
-selectors for compatibility and development, but Teamwork 7.2 does not treat
-them as supported, release-qualified, or release-blocking surfaces.
-
-## Typed project documents
-
-Writer is the sole ordinary semantic writer. It creates a document only when
-material reusable content first appears, updates it on a material semantic
-change, and finalizes it at the owning stage boundary. The six types are:
-
-- `discussions/` for decisions, options, trade-offs, and settled choices;
-- `research/` for full Deep Research evidence and conclusions;
-- `debug/` for failure boundaries, causal evidence, fixes, and verification;
-- `plans/` for selected-direction executable plans;
-- `reviews/` for candidate evidence, findings, and verdicts;
-- `reports/` for Goal, Init, Update, and reusable execution outcomes.
-
-`docs/teamwork/index.json` groups one or more typed paths under a human-readable
-task key with a title, one-sentence summary, search terms, lifecycle status, and
-document statuses. It does not copy document content or create a second identity
-system. Explorer has no standalone document; its evidence goes to the consumer.
-
-Skills state what each document must communicate. Same-scope editorial or link
-corrections may update a final document in place; materially new semantic scope
-creates a new same-type document and preserves the earlier conclusion.
-
-## Storage and migration
-
-Schema v4 storage is deliberately small: normalized typed paths, index schema
-validation, task/document registration, discovery, and lifecycle updates. It
-does not summarize prose and contains no cases, manifests, artifacts, claims,
-lineage, content identities, hashes, digests, or sealed evidence.
-
-Normal readers accept only schema v4. Older project records enter through the
-explicit Update path, never through runtime compatibility branches. Writer
-reorganizes every source record by meaning, scripts handle bounded mechanics,
-and an independent Reviewer reads the actual migrated corpus. With an exact
-project root, Update migrates every Teamwork document before normal work
-resumes; without one it reports migration as pending.
-
-Teamwork does not replace retired hash machinery with byte comparison,
-fingerprints, opaque IDs, or another sealing layer.
-
-## Canonical and generated surfaces
-
-- `skills/` owns Skill behavior.
-- `templates/*-agents/` owns host agent templates.
-- `policy/teamwork-global.md` owns the global policy;
-  `scripts/install/policy.sh` transports it to hosts.
-- `config/teamwork-topology.json` owns the current mechanical inventory and retired names, not behavior.
-- `scripts/build-codex-plugin.py` generates `plugins/teamwork-skill/`.
-
-Generated plugin files are never edited directly.
-
-## Evidence lanes
-
-Keep claims scoped to their evidence:
-
-1. **Structural evidence** validates topology, schema, generated synchronization,
-   version, and file layout. It proves structure only.
-2. **Behavioral evidence** observes the installed, changed or reasserted public
-   behavior on the relevant Codex path. The trajectory binds the case's
-   requested authority and retains any disposable scenario candidate outside
-   the scenario lifetime; model and effort are invocation choices, not inferred
-   behavior claims. Cursor and Claude Code adapter observations are
-   compatibility/development evidence only.
-3. **Semantic evidence** comes from an independent Reviewer reading the actual
-   output or artifact against outcome-based criteria.
-
-The live Codex evidence manifest declares each case as required or
-`conditional-exact-role`. Required cases must pass. A conditional case may
-retain a precisely classified missing-role `UNSUPPORTED` observation without
-turning it into success, claiming that capability, or claiming that all
-conditional cases passed; missing declarations and other failures remain
-blockers.
-
-A dry run proves only configuration and command shape. The local host gate
-checks evidence presence and consistency without scoring answer length or
-wording. Tests and structural checks never stand in for semantic correctness.
-Missing required observed or review evidence stays missing instead of being
-rewritten as success.
+The default validation command checks syntax, Skill metadata, Codex profiles,
+project initialization, and bundle synchronization. Release-only version and
+packaging checks run only with `--release`. Tests and markers never substitute
+for reading the actual result.

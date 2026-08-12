@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any
 
 
-SCHEMA_VERSION = 1
 PLUGIN_NAME = "teamwork-skill"
 MARKETPLACE_NAME = "teamwork"
 VALID_PROFILES = {
@@ -58,12 +57,8 @@ def read_marker(path: Path) -> dict[str, Any] | None:
 
 
 def validate_marker(value: dict[str, Any], path: Path) -> None:
-    if value.get("schema_version") != SCHEMA_VERSION:
-        raise ActivationError(f"unsupported Teamwork activation marker schema at {path}")
     if value.get("plugin") != PLUGIN_NAME or value.get("marketplace") != MARKETPLACE_NAME:
         raise ActivationError(f"activation marker at {path} is not owned by Teamwork Codex plugin")
-    if not isinstance(value.get("version"), str) or not value["version"].strip():
-        raise ActivationError(f"activation marker at {path} has no plugin version")
     if value.get("profile") not in VALID_PROFILES:
         raise ActivationError(f"activation marker at {path} has an invalid profile")
     if value.get("notifications") not in VALID_NOTIFICATIONS:
@@ -77,8 +72,6 @@ def status(path: Path, version: str | None) -> dict[str, Any]:
         return {"status": "invalid", "detail": str(exc)}
     if marker is None:
         return {"status": "missing"}
-    if version is not None and marker["version"] != version:
-        return {"status": "stale", "marker": marker}
     return {"status": "current", "marker": marker}
 
 
@@ -114,8 +107,8 @@ def main() -> int:
             print(result["status"])
         return 0 if result["status"] != "invalid" else 1
 
-    if not args.version or not args.profile or not args.notifications:
-        raise SystemExit("write requires --version, --profile, and --notifications")
+    if not args.profile or not args.notifications:
+        raise SystemExit("write requires --profile and --notifications")
     if args.profile not in VALID_PROFILES:
         raise SystemExit(f"unsupported Teamwork profile: {args.profile}")
     try:
@@ -124,10 +117,8 @@ def main() -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
     value = {
-        "schema_version": SCHEMA_VERSION,
         "plugin": PLUGIN_NAME,
         "marketplace": MARKETPLACE_NAME,
-        "version": args.version,
         "profile": args.profile,
         "notifications": args.notifications,
     }

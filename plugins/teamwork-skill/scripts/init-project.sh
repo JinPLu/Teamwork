@@ -11,13 +11,9 @@ usage() {
 Usage:
   ./scripts/init-project.sh [--project-root PATH] [--full-bootstrap]
 
-Initialize minimal project-local Teamwork context:
-  - an empty schema-v4 index at docs/teamwork/index.json
-  - the managed Teamwork block in AGENTS.md
-  - local Teamwork ignore rules
-
-Typed directories and documents are created later by Writer when material
-reusable output first appears. Init never migrates older Teamwork formats.
+Create or refresh one concise managed Teamwork block in AGENTS.md.
+No document database, schema, case directory, migration, or global setting is
+created.
 USAGE
 }
 

@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
         description=(
             "Safely configure or inspect the stable Codex multi-agent feature "
             "used with installed Teamwork custom-agent profiles. This static "
-            "check does not prove exact role activation."
+            "Agent availability is reported separately from workflow success."
         )
     )
     mode = parser.add_mutually_exclusive_group()

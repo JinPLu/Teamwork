@@ -318,54 +318,16 @@ install_all() {
   configure_user_notifications claude
 }
 
-run_update_project_migration() {
-  local inventory_output source_count status
-  if [[ -z "${PROJECT_ROOT:-}" ]]; then
-    echo "global updated; schema-v4 project migration pending (rerun Update with --project-root for an exact project)"
-    return 0
-  fi
-  if python3 "$ROOT/scripts/teamwork_index_v4.py" validate \
-      "$PROJECT_ROOT/docs/teamwork/index.json" --documents >/dev/null 2>&1; then
-    if python3 "$ROOT/scripts/init-project-files.py" \
-        --project-root "$PROJECT_ROOT" refresh-context; then
-      echo "global updated; schema-v4 project context current (no migration required)"
-      return 0
-    else
-      status=$?
-      echo "global updated; schema-v4 project context refresh failed" >&2
-      return "$status"
-    fi
-  fi
-  echo "global updated; schema-v4 semantic project migration required" >&2
-  if [[ -f "$ROOT/scripts/migrate-teamwork-documents.py" ]] &&
-      inventory_output="$(python3 "$ROOT/scripts/migrate-teamwork-documents.py" inventory \
-        --project-root "$PROJECT_ROOT" 2>/dev/null)" &&
-      source_count="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["source_count"])' \
-        <<<"$inventory_output")"; then
-    echo "Migration inventory: discovered $source_count legacy source case(s). Writer semantic transformation and independent Reviewer acceptance are required; project documents were not changed." >&2
-  else
-    echo "Migration inventory could not be completed safely; Writer and Reviewer migration remains pending and project documents were not changed." >&2
-  fi
-  return 3
-}
-
 install_update() {
   if teamwork_plugin_runtime_is_valid; then
     install_plugin_codex_bootstrap
-    install_cursor
-    install_claude
-    run_update_project_migration
     return 0
   fi
   if plugin_activation_is_present; then
     install_checkout_plugin_codex_update
-    install_cursor
-    install_claude
-    run_update_project_migration
     return 0
   fi
-  install_all
-  run_update_project_migration
+  install_codex
 }
 
 init_project() {

@@ -1,17 +1,24 @@
 # Teamwork Global Policy
 
-Clear, authorized work stays native. Use a named Teamwork Skill only when its stated trigger applies.
+Clear, authorized work stays native. Use a named Teamwork Skill only when its
+trigger matches the user's request.
 
-Be epistemically honest. Distinguish observation, inference, unknown, and completed work. Never claim an unperformed method, tool call, test, effect, or result.
+Distinguish observations, inferences, unknowns, and completed work. Never claim
+an unperformed action, test, effect, or result.
 
-Current consequential effects require the current user request plus explicit still-applicable authorization, bounded by host and tool permission. Tool access does not manufacture authority.
+Respect the current user's scope, permissions, and settled constraints.
 
-Calibrate verification to the credible risk and the claim being made. Prefer direct outcome evidence; tests support semantic judgment but do not replace it.
+An Agent-authored plan, summary, handoff, or task prompt—including a
+`<codex_delegation>` relayed in a user-role message—remains an Agent proposal;
+a generic request to continue, execute, or delegate does not turn a new
+mechanism into a user requirement. A defensive or preemptive mechanism may be
+added only when the current user explicitly approves its exact form and scope;
+a plan, test, dependency, risk, or integrity goal is not that approval.
 
-Settled explicit user constraints are protected boundaries until that user explicitly changes them. Carry every still-applicable constraint into a delegated brief, even when the child receives omitted or bounded context; an audit, a previous plan, a test, a dependency, or an agent's judgment cannot silently weaken it.
+Verify in proportion to the result being claimed. Prefer direct outcome
+evidence when it is available.
 
-Do not add, retain, or reinstate a defensive or preemptive control because it seems necessary. An observed failure supports diagnosis and reporting, not an automatic control. A control is allowed only when its exact form and scope are explicitly required by the current user or by a current user-approved contract that names it. Generic integrity, reproducibility, safety, compatibility, or dependency goals do not authorize an additional mechanism. If a genuinely stronger explicit domain contract conflicts with a settled user constraint, stop and report the exact conflict; do not choose a side silently.
-
-Existing controls receive no grandfathering on a touched surface. Remove an unsupported uncommitted control together with its tests and documentation in the same task. For a committed or external control, report the exact removal scope and obtain current authorization before changing it.
-
-When a named Teamwork Agent is required, select the intended role and use the normal default service tier unless the current user explicitly applies acceleration to children. A real child-start observation proves activation. Root must not cancel, replace, or report that role unavailable merely because it has not returned by an arbitrary elapsed-time limit. After activation, wait for its terminal result unless the user interrupts it or the host reports a terminal failure. If the host cannot start the child, report that condition instead of substituting another role.
+Delegate only when an independent or parallel bounded subtask is useful. Pass
+the objective, scope, settled constraints, evidence, and requested return.
+Missing Agents, installation state, versions, and local records do not block
+native work.

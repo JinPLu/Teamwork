@@ -12,16 +12,12 @@ from typing import Any
 PLUGIN_NAME = "teamwork-skill"
 RUNTIME_MARKER = "TEAMWORK_CODEX_PLUGIN_RUNTIME=1\n"
 REQUIRED_RUNTIME_FILES = {
-    "VERSION",
     "install.sh",
     "policy/teamwork-global.md",
     "config/teamwork-topology.json",
     ".codex-plugin/plugin.json",
     "scripts/check-update.sh",
     "scripts/init-project-files.py",
-    "scripts/teamwork_index_v4.py",
-    "scripts/migrate-teamwork-documents.py",
-    "scripts/validate_teamwork_index.py",
     "scripts/plugin-activation.py",
     "scripts/plugin-runtime-root.py",
     "hooks/notify.py",
@@ -45,23 +41,15 @@ def require_regular_file(path: Path) -> None:
         raise SystemExit(f"not a Teamwork plugin runtime: non-regular runtime file {path}")
 
 
-def read_version(root: Path) -> str:
-    require_regular_file(root / "VERSION")
-    version = (root / "VERSION").read_text(encoding="utf-8").strip()
-    if not version:
-        raise SystemExit("not a Teamwork plugin runtime: empty VERSION")
-    return version
-
-
-def validate_manifests(root: Path, version: str) -> None:
+def validate_manifests(root: Path) -> None:
     manifest = load_json(root / ".codex-plugin" / "plugin.json")
-    if manifest.get("name") != PLUGIN_NAME or manifest.get("version") != version:
-        raise SystemExit("not a Teamwork plugin runtime: Codex manifest name/version mismatch")
+    if manifest.get("name") != PLUGIN_NAME:
+        raise SystemExit("not a Teamwork plugin runtime: unexpected Codex manifest")
     claude_manifest = root / ".claude-plugin" / "plugin.json"
     if claude_manifest.exists() or claude_manifest.is_symlink():
         claude = load_json(claude_manifest)
-        if claude.get("name") != PLUGIN_NAME or claude.get("version") != version:
-            raise SystemExit("not a Teamwork plugin runtime: Claude manifest name/version mismatch")
+        if claude.get("name") != PLUGIN_NAME:
+            raise SystemExit("not a Teamwork plugin runtime: unexpected Claude manifest")
 
 
 def _relative_file(value: object, label: str) -> str:
@@ -75,8 +63,6 @@ def _relative_file(value: object, label: str) -> str:
 
 def validate_topology_layout(root: Path) -> None:
     topology = load_json(root / "config" / "teamwork-topology.json")
-    if topology.get("schema_version") != 1:
-        raise SystemExit("not a Teamwork plugin runtime: unsupported topology schema")
     skills = topology.get("public_skills")
     agents = topology.get("agents")
     if not isinstance(skills, list) or not skills or not isinstance(agents, list) or not agents:
@@ -104,8 +90,7 @@ def validate_runtime_root(root: Path) -> None:
     elif not (root / ".git").is_dir():
         raise SystemExit("not a Teamwork Marketplace runtime or source checkout")
 
-    version = read_version(root)
-    validate_manifests(root, version)
+    validate_manifests(root)
     for relative in REQUIRED_RUNTIME_FILES:
         require_regular_file(root / relative)
     validate_topology_layout(root)

@@ -1,73 +1,27 @@
 ---
 name: teamwork-research
-description: Use when a broad or deep external investigation needs multiple source classes, claim-level evidence synthesis, contradiction resolution, or a source-grounded research deliverable; do not use for a narrow lookup, single-page fact check, local project evidence, supplied-text explanation, or unknown-cause debugging.
+description: Use when a broad or deep external investigation needs multiple source classes, claim-level evidence synthesis, or contradiction resolution; do not use for a narrow lookup or local code inspection.
 ---
 
 # Teamwork Research
 
-Every real Research activation runs the complete Deep Research method. There is
-no lightweight Research mode: keep narrow ordinary lookup native. Researcher is
-the external evidence owner, while Root freezes the brief and synthesizes the
-stage result. Read `references/deep-research.md` before starting.
+Keep narrow lookups native. When Research is activated, investigate the complete
+question rather than creating a lightweight ritual around a few searches. Read
+`references/deep-research.md` for the detailed method.
 
-## Freeze The Brief
+## Method
 
-State the decision question, intended use, scope, freshness cutoff, public
-source and privacy boundaries, and the material claims that evidence must
-support. Sanitize any project context before dispatch. If an unformed user
-preference changes what should be investigated, Root suspends Research and
-switches to Collaborate before resuming.
-
-## Deep Research
-
-1. Build search axes, a source census by relevant source class, and a
-   provisional claim-to-evidence map or ledger.
-2. Read the strongest primary and current sources first. Use independent source
-   classes where they can materially confirm, qualify, or dispute a claim.
-3. For each material claim, connect direct support, counterevidence, inference,
-   confidence, date or version, and a nearby citation. Do not treat source count
-   as claim coverage.
+1. Define the decision question, intended use, scope, freshness cutoff, privacy
+   boundary, and material claims.
+2. Search the strongest primary and current sources first, then add independent
+   source classes where they can change confidence.
+3. Connect each material claim to direct support, counterevidence, inference,
+   confidence, date, and nearby citation.
 4. Investigate contradictions and explain rejected sources or unresolved gaps.
-   Do not average disagreement into a synthetic consensus or invent missing
-   facts.
-5. Audit coverage against the frozen material claims. Stop only when the scope
-   is answered, or every residual gap is explicit and further retrieval is
-   unlikely to change the conclusion. State that stop basis.
+5. Stop when the scope is answered or further retrieval is unlikely to change
+   the conclusion; state which condition applies.
 
-Split work only across genuinely independent evidence areas. Parallel dispatch
-has no prescribed count; Researcher remains the single synthesis owner for the
-assigned investigation. Explorer may supply a bounded local fact to the same
-consumer but creates no separate document.
-
-Researcher is required once Research activates. Root must not imitate the
-missing role or claim the full method. If unavailable, suspend Research, switch
-to Update for readiness repair, wait, and resume or return the exact blocker.
-
-## Codex Role Dispatch
-
-On Codex, dispatch Researcher, Explorer, and Writer through
-`spawn_agent.agent_type` as `teamwork_researcher`, `teamwork_explorer`, and
-`teamwork_writer`. Use `fork_turns` set to `none` or a bounded recent context,
-then observe a live child start; never silently substitute an unavailable role.
-
-When context is omitted or bounded, the brief must include every still-applicable
-settled user constraint. A child cannot infer that a missing constraint was relaxed.
-
-Dispatch every Teamwork child with the normal `default` service tier. A parent
-task's Fast setting does not authorize Fast for children; use acceleration only
-when the current user explicitly applies it to those children.
-
-A live child start proves the role is active. Do not impose an arbitrary return
-deadline or replace it; wait for its terminal result unless the user interrupts
-it or the host reports a terminal failure.
-
-## Research Document
-
-When the first reusable evidence synthesis appears, Root assigns Writer the
-typed Research document. It carries the brief and intended use, supported
-conclusion, evidence near claims, source census, claim map or ledger,
-contradictions, inference and uncertainty, coverage audit, residual gaps, and
-stop basis. Update only when evidence materially changes a conclusion,
-confidence, contradiction, gap, or stop basis—not for source accumulation
-alone. Same-scope editorial or link corrections may update a finalized document
-in place; materially new scope needs a new Research document.
+A Researcher may own a bounded investigation and Explorers may gather local
+facts. Give each subagent the objective, scope, settled constraints, sanitized
+evidence, and requested return. Their availability is not a workflow gate; Root
+may perform the method directly with available research tools.

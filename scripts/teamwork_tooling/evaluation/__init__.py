@@ -1,1 +1,0 @@
-"""Deterministic Teamwork evaluation package."""

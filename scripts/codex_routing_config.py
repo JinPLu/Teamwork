@@ -339,7 +339,7 @@ def print_report(report: RoutingReport, as_json: bool = False) -> None:
     print(f"CODEX_ROUTING={report.status}")
     print(f"CONFIG={report.config_path}")
     print(f"STATIC_CONFIGURED={'yes' if report.ready else 'no'}")
-    print("EXACT_ROLE_ACTIVATION=live-probe-required")
+    print("AGENT_ROUTING=optional")
     print(f"EXPERIMENTAL_MULTI_AGENT_V2={report.experimental_multi_agent_v2}")
     print(f"RESTART_REQUIRED={'yes' if report.restart_required else 'no'}")
     if report.issues:

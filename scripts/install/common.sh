@@ -28,13 +28,6 @@ RETIRED_SKILLS=(
   teamwork-execute
   teamwork
 )
-while IFS= read -r item; do
-  RETIRED_SKILLS+=("$item")
-done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" retired --kind public_skills)
-RETIRED_REFERENCES=()
-while IFS= read -r item; do
-  RETIRED_REFERENCES+=("$item")
-done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" retired --kind references)
 LEGACY_CODEX_ROUTER_SKILL="teamwork"
 CLAUDE_AGENTS=()
 CURSOR_AGENTS=()
@@ -46,14 +39,9 @@ done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host claude 
 while IFS= read -r item; do
   CODEX_AGENTS+=("$item")
 done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host codex --field stem)
-RETIRED_CLAUDE_AGENTS=()
-RETIRED_CURSOR_AGENTS=()
-RETIRED_CODEX_AGENTS=()
-while IFS= read -r item; do
-  RETIRED_CLAUDE_AGENTS+=("$item")
-  RETIRED_CURSOR_AGENTS+=("$item")
-  RETIRED_CODEX_AGENTS+=("teamwork-$item")
-done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" retired --kind agents)
+RETIRED_CLAUDE_AGENTS=(designer plan-reviewer writer)
+RETIRED_CURSOR_AGENTS=(designer plan-reviewer writer)
+RETIRED_CODEX_AGENTS=(teamwork-designer teamwork-plan-reviewer teamwork-writer)
 
 usage() {
   cat <<'USAGE'
@@ -74,13 +62,9 @@ Targets:
   all            Compatibility/development target: install static surfaces for
                  all hosts, activate observable Codex/Claude policy, and
                  report Cursor policy as partial
-  update         Refresh all Teamwork global surfaces; with --project-root,
-                 inventory older Teamwork documents and report the semantic
-                 migration that $teamwork-update must complete with Writer and
-                 Reviewer
-  init-project   Initialize AGENTS.md, docs/teamwork/, and ignore rules for
-                 one project without changing global skills, agents, policies,
-                 routing, notifications, or external tooling
+  update         Refresh Teamwork's Codex global surfaces
+  init-project   Add or refresh one concise Teamwork block in a project's
+                 AGENTS.md without changing global settings
   plugin-codex-bootstrap
                  Marketplace-internal Codex-only activation: install agents,
                  routing, managed policy, and optional notifications without
@@ -104,11 +88,11 @@ Targets:
                  Claude managed wrapper
 
 Default mode is --copy. For Codex users, install through the Marketplace plugin
-by default. Teamwork 7.2 support and release qualification are Codex-only. Use
+by default. Official support and release qualification are Codex-only. Use
 this checkout installer for local development, manual Codex setups, or retained
 Cursor/Claude Code compatibility-adapter maintenance; use --link for local
 development when installs should track this checkout.
-`--project-root` is valid with `update`, `init-project`, or `plugin-init-project`.
+`--project-root` is valid with `init-project` or `plugin-init-project`.
 
 The compatibility/development `all` target enables ready/permission sounds for
 user-level Codex and Claude Code by default. Direct platform targets leave
@@ -125,7 +109,7 @@ live-verified.
 
 User-level Codex installs configure ~/.codex/config.toml with the stable
 multi_agent feature enabled alongside installed Teamwork Agent profiles. This is
-static configuration, not proof that an exact role activated in a live run.
+static configuration; Agent availability is not a workflow prerequisite.
 Other feature settings, including multi_agent_v2, are preserved and unmanaged.
 Use --no-codex-routing only when another owner manages the stable feature.
 Project init never changes user-level routing; run a Codex global install or
@@ -134,10 +118,9 @@ codex-agents separately when that surface needs refresh.
 Profile defaults to performance-first; choose cost-first explicitly when needed.
 On Codex, performance-first
 uses Terra/max for Researcher and Planner; Terra/high for Explorer; Sol/xhigh
-for Debugger and Reviewer; Sol/high for Challenger; Sol/medium for Worker; and
-Luna/xhigh for Writer. On Codex, cost-first uses Luna/xhigh for Researcher,
-Debugger, Planner, Worker, and Writer; Luna/high for Explorer; Sol/medium for
-Challenger; and Sol/high for Reviewer. Cursor and Claude Code keep
+for Debugger and Reviewer; Sol/high for Challenger; and Sol/medium for Worker.
+On Codex, cost-first uses Luna/xhigh for Researcher, Debugger, Planner, and
+Worker; Luna/high for Explorer; Sol/medium for Challenger; and Sol/high for Reviewer. Cursor and Claude Code keep
 their existing compatibility/development profile mappings.
 USAGE
 }
@@ -190,7 +173,7 @@ teamwork_skill_entry_has_known_inventory() {
   local root="$1"
   local skill="$2"
   local entry="$root/$skill"
-  local path relative retired_reference
+  local path relative
 
   if retired_skill_is_configured "$skill"; then
     teamwork_retired_skill_entry_is_owned "$root" "$skill"
@@ -205,12 +188,24 @@ teamwork_skill_entry_has_known_inventory() {
   while IFS= read -r -d '' path; do
     relative="${path#"$entry"/}"
     [[ ! -L "$path" ]] || return 1
-    [[ -e "$ROOT/skills/$skill/$relative" ]] && continue
-    for retired_reference in "${RETIRED_REFERENCES[@]}"; do
-      [[ "$retired_reference" == "skills/$skill/$relative" ]] && continue 2
-    done
-    return 1
+    [[ -e "$ROOT/skills/$skill/$relative" ]] \
+      || teamwork_retired_reference_is_configured "$skill" "$relative" \
+      || return 1
   done < <(find "$entry" -mindepth 1 -print0)
+}
+
+
+teamwork_retired_reference_is_configured() {
+  local skill="$1"
+  local relative="$2"
+  case "$skill/$relative" in
+    teamwork-collaborate/references|teamwork-collaborate/references/adversarial-search.md|\
+    teamwork-debug/references|teamwork-debug/references/runtime-diagnosis.md|\
+    teamwork-review/references|teamwork-review/references/strict-review.md)
+      return 0
+      ;;
+  esac
+  return 1
 }
 
 
@@ -386,7 +381,7 @@ preflight_plugin_runtime() {
     return 1
   fi
   if [[ ! -x "$ROOT/scripts/plugin-activation.py" ]]; then
-    echo "Teamwork Marketplace runtime is missing the activation writer." >&2
+    echo "Teamwork Marketplace runtime is missing the activation helper." >&2
     return 1
   fi
   if [[ -e "$(codex_plugin_activation_path)" || -L "$(codex_plugin_activation_path)" ]]; then

@@ -139,8 +139,8 @@ if [[ "$NOTIFICATIONS_ACTION" != "preserve" ]]; then
   esac
 fi
 
-if [[ -n "$PROJECT_ROOT" && "$EFFECTIVE_TARGET" != "update" && "$EFFECTIVE_TARGET" != "init-project" && "$EFFECTIVE_TARGET" != "plugin-init-project" ]]; then
-  echo "--project-root is valid only with update, init-project, or plugin-init-project." >&2
+if [[ -n "$PROJECT_ROOT" && "$EFFECTIVE_TARGET" != "init-project" && "$EFFECTIVE_TARGET" != "plugin-init-project" ]]; then
+  echo "--project-root is valid only with init-project or plugin-init-project." >&2
   usage
   exit 2
 fi

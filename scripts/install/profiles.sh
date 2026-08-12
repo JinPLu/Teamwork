@@ -10,9 +10,6 @@ codex_agent_performance_values() {
     teamwork-worker)
       printf '%s %s\n' "gpt-5.6-sol" "medium"
       ;;
-    teamwork-writer)
-      printf '%s %s\n' "gpt-5.6-luna" "xhigh"
-      ;;
     teamwork-debugger)
       printf '%s %s\n' "gpt-5.6-sol" "xhigh"
       ;;
@@ -35,7 +32,7 @@ codex_agent_profile_values() {
     performance-first:*)
       codex_agent_performance_values "$agent"
       ;;
-    cost-first:teamwork-researcher|cost-first:teamwork-debugger|cost-first:teamwork-planner|cost-first:teamwork-worker|cost-first:teamwork-writer)
+    cost-first:teamwork-researcher|cost-first:teamwork-debugger|cost-first:teamwork-planner|cost-first:teamwork-worker)
       printf '%s %s\n' "gpt-5.6-luna" "xhigh"
       ;;
     cost-first:teamwork-challenger)
@@ -59,9 +56,6 @@ claude_agent_profile_values() {
   case "$CODEX_PROFILE:$agent" in
     performance-first:researcher|performance-first:explorer|performance-first:worker)
       printf '%s %s\n' "sonnet" "medium"
-      ;;
-    performance-first:writer|cost-first:writer)
-      printf '%s %s\n' "haiku" "medium"
       ;;
     cost-first:researcher|cost-first:explorer|cost-first:worker)
       printf '%s %s\n' "haiku" "medium"
@@ -97,7 +91,7 @@ cursor_agent_profile_values() {
     performance-first:planner)
       printf '%s\n' "gpt-5.6-terra-medium"
       ;;
-    performance-first:worker|performance-first:writer)
+    performance-first:worker)
       printf '%s\n' "composer-2.5-fast"
       ;;
     performance-first:reviewer)
@@ -112,7 +106,7 @@ cursor_agent_profile_values() {
     cost-first:planner)
       printf '%s\n' "gpt-5.6-luna-medium"
       ;;
-    cost-first:worker|cost-first:writer)
+    cost-first:worker)
       printf '%s\n' "composer-2.5-fast"
       ;;
     cost-first:reviewer)
@@ -340,7 +334,15 @@ remove_retired_agent_files() {
   for agent in "$@"; do
     path="$root/$agent.$extension"
     [[ -e "$path" || -L "$path" ]] || continue
-    echo "Preserved retired agent conflict without current-format ownership evidence: $path" >&2
+    if [[ "$platform" == "codex" ]] && teamwork_codex_agent_file_is_recognized "$path" "$agent"; then
+      rm -f "$path"
+      echo "Removed retired Teamwork agent: $path"
+    elif [[ "$platform" != "codex" ]] && teamwork_markdown_agent_file_is_recognized "$path" "$agent"; then
+      rm -f "$path"
+      echo "Removed retired Teamwork agent: $path"
+    else
+      echo "Preserved unrecognized retired agent file: $path" >&2
+    fi
   done
 }
 

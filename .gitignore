@@ -23,16 +23,5 @@ docs/superpowers/
 docs/teamwork 2/
 
 # TEAMWORK_LOCAL_START
-# Teamwork local runtime state
-.codegraph/
-docs/teamwork/**
-.teamwork/runtime/**
-.teamwork-init-transaction.json
-.*.teamwork-init-*
-docs/teamwork/.teamwork-init-transaction.json
-# Legacy v3 location retained as a fail-closed migration interlock.
-docs/teamwork/.discussion-transaction.json
-docs/teamwork/discussion/.discussion-transaction.json
-docs/teamwork/collaborate/.collaborate-transaction.json
-docs/teamwork/.*.teamwork-init-*
+# Teamwork creates no project-local runtime state.
 # TEAMWORK_LOCAL_END

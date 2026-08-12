@@ -38,15 +38,11 @@ COPY_ITEMS = (
     ("scripts/configure-notifications.py", "scripts/configure-notifications.py"),
     ("scripts/init-project.sh", "scripts/init-project.sh"),
     ("scripts/init-project-files.py", "scripts/init-project-files.py"),
-    ("scripts/teamwork_index_v4.py", "scripts/teamwork_index_v4.py"),
-    ("scripts/migrate-teamwork-documents.py", "scripts/migrate-teamwork-documents.py"),
-    ("scripts/validate_teamwork_index.py", "scripts/validate_teamwork_index.py"),
     ("scripts/plugin-activation.py", "scripts/plugin-activation.py"),
     ("scripts/plugin-runtime-root.py", "scripts/plugin-runtime-root.py"),
     ("templates/codex-agents", "templates/codex-agents"),
     ("templates/cursor-agents", "templates/cursor-agents"),
     ("templates/claude-agents", "templates/claude-agents"),
-    ("templates/teamwork-memory", "templates/teamwork-memory"),
     ("hooks/notify.py", "hooks/notify.py"),
 )
 TRANSIENT_NAMES = {"__pycache__"}
@@ -69,9 +65,9 @@ def load_topology(root: Path) -> dict[str, object]:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise SystemExit(f"invalid topology manifest {path}: {exc}") from exc
-    if not isinstance(value, dict) or value.get("schema_version") != 1:
-        raise SystemExit("topology manifest must use schema_version 1")
-    for key in ("public_skills", "agents", "owned_references", "retired"):
+    if not isinstance(value, dict):
+        raise SystemExit("topology manifest must be a JSON object")
+    for key in ("public_skills", "agents", "owned_references"):
         if key not in value:
             raise SystemExit(f"topology manifest lacks {key}")
     return value
@@ -134,7 +130,6 @@ def validate_marketplace(root: Path) -> None:
 
 def validate_source(root: Path) -> None:
     load_topology(root)
-    version = (root / "VERSION").read_text(encoding="utf-8").strip()
     for manifest_rel, label in (
         (".codex-plugin/plugin.json", "Codex"),
         (".claude-plugin/plugin.json", "Claude Code"),
@@ -143,8 +138,8 @@ def validate_source(root: Path) -> None:
             manifest = json.loads((root / manifest_rel).read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             raise SystemExit(f"invalid canonical {label} plugin manifest: {exc}") from exc
-        if manifest.get("name") != PLUGIN_NAME or manifest.get("version") != version:
-            raise SystemExit(f"canonical {label} plugin manifest name/version must match VERSION")
+        if manifest.get("name") != PLUGIN_NAME:
+            raise SystemExit(f"canonical {label} plugin manifest has an unexpected name")
         prompts = manifest.get("interface", {}).get("defaultPrompt")
         if not isinstance(prompts, list) or not prompts:
             raise SystemExit(f"canonical {label} plugin manifest must expose default prompts")
@@ -219,18 +214,7 @@ def validate_bundle(bundle: Path, root: Path) -> None:
         raise SystemExit("bundle runtime marker is invalid")
     if (bundle / ".teamwork-runtime-integrity.json").exists():
         raise SystemExit("bundle must not contain retired runtime integrity metadata")
-    for required in (
-        "policy/teamwork-global.md",
-        "scripts/teamwork_index_v4.py",
-        "scripts/migrate-teamwork-documents.py",
-        "templates/teamwork-memory/index.json",
-        "templates/teamwork-memory/discussion.md",
-        "templates/teamwork-memory/research.md",
-        "templates/teamwork-memory/debug.md",
-        "templates/teamwork-memory/plan.md",
-        "templates/teamwork-memory/review.md",
-        "templates/teamwork-memory/report.md",
-    ):
+    for required in ("policy/teamwork-global.md",):
         if not (bundle / required).is_file():
             raise SystemExit(f"bundle is missing current runtime surface: {required}")
     for path in bundle.rglob("*"):
@@ -240,7 +224,6 @@ def validate_bundle(bundle: Path, root: Path) -> None:
         "install.sh",
         "scripts/check-update.sh",
         "scripts/init-project.sh",
-        "scripts/migrate-teamwork-documents.py",
         "scripts/plugin-runtime-root.py",
     ):
         path = bundle / executable

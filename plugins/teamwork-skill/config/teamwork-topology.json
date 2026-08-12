@@ -1,5 +1,4 @@
 {
-  "schema_version": 1,
   "public_skills": [
     {
       "name": "teamwork-collaborate",
@@ -90,14 +89,6 @@
         "cursor": "templates/cursor-agents/worker.md",
         "claude": "templates/claude-agents/worker.md"
       }
-    },
-    {
-      "name": "writer",
-      "templates": {
-        "codex": "templates/codex-agents/teamwork-writer.toml",
-        "cursor": "templates/cursor-agents/writer.md",
-        "claude": "templates/claude-agents/writer.md"
-      }
     }
   ],
   "root_owned_methods": [
@@ -105,60 +96,6 @@
     "goal"
   ],
   "owned_references": [
-    "skills/teamwork-collaborate/references/adversarial-search.md",
-    "skills/teamwork-debug/references/runtime-diagnosis.md",
-    "skills/teamwork-research/references/deep-research.md",
-    "skills/teamwork-review/references/strict-review.md"
-  ],
-  "retired": {
-    "public_skills": {
-      "grill-me": "Historical pre-Collaborate surface.",
-      "run-analyze-design": "Historical router-era surface.",
-      "run-analyze-execute": "Historical router-era surface.",
-      "run-analyze-execution-review": "Historical router-era surface.",
-      "run-analyze-goal": "Historical router-era surface.",
-      "run-analyze-optimize": "Historical router-era surface.",
-      "run-analyze-plan": "Historical router-era surface.",
-      "run-analyze-plan-review": "Historical router-era surface.",
-      "run-analyze-research": "Historical router-era surface.",
-      "run-analyze-review": "Historical router-era surface.",
-      "teamwork": "Historical router surface.",
-      "teamwork-design": "Historical design surface.",
-      "teamwork-discuss": "Historical discussion surface.",
-      "teamwork-execute": "Historical generic execution surface.",
-      "teamwork-explore": "Explorer remains an internal read-only agent.",
-      "using-teamwork": "Historical router surface."
-    },
-    "agents": {
-      "designer": "challenger",
-      "plan-reviewer": "reviewer"
-    },
-    "references": [
-      "skills/teamwork-collaborate/references/collaboration-layers.md"
-    ],
-    "allowed_path_classes": {
-      "inventory": [
-        "config/teamwork-topology.json"
-      ],
-      "update_migration": [
-        "scripts/install/",
-        "scripts/check-update.sh",
-        "scripts/tests/fixtures/"
-      ],
-      "negative_eval": [
-        "evals/teamwork/routing-pairs.json",
-        "scripts/test_eval_teamwork_mutations.py",
-        "scripts/tests/test_skill_topology_v4.py"
-      ],
-      "history": [
-        "CHANGELOG.md",
-        "CHANGELOG.en.md",
-        "evals/teamwork/migrations/",
-        "evals/teamwork/ledgers/",
-        "evals/teamwork/manifests/",
-        "evals/teamwork/reviews/",
-        "evals/teamwork/validation/"
-      ]
-    }
-  }
+    "skills/teamwork-research/references/deep-research.md"
+  ]
 }

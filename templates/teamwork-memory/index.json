@@ -1,9 +1,0 @@
-{
-  "schema_version": 4,
-  "project": {
-    "name": "Example Project",
-    "root": ".",
-    "description": "Local Teamwork typed-document index for this project."
-  },
-  "tasks": {}
-}
