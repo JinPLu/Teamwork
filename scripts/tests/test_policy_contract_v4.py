@@ -54,9 +54,10 @@ class PolicyContractTests(unittest.TestCase):
             "Do not add, retain, or reinstate a defensive or preemptive control",
             "Existing controls receive no grandfathering",
             "When a named Teamwork Agent is required",
-            "observe it actually start",
             "A real child-start observation proves activation",
             "arbitrary elapsed-time limit",
+            "normal default service tier",
+            "explicitly applies acceleration to children",
         ):
             self.assertIn(phrase, text)
         for removed_detail in (
@@ -80,6 +81,8 @@ class PolicyContractTests(unittest.TestCase):
             self.assertIn("settled user constraint", text, name)
             self.assertIn("A live child start proves the role is active", text, name)
             self.assertIn("arbitrary return\ndeadline", text, name)
+            self.assertIn("normal `default` service tier", text, name)
+            self.assertIn("Fast setting does not authorize Fast for children", text, name)
 
     def test_codex_and_claude_managed_blocks_preserve_surrounding_content(self) -> None:
         codex = self.home / ".codex/AGENTS.md"
@@ -103,7 +106,7 @@ class PolicyContractTests(unittest.TestCase):
             self.assertEqual(installed.count("Clear, authorized work stays native"), 1)
             self.assertEqual(installed.count("Current consequential effects require"), 1)
             self.assertIn("Tool access does not manufacture authority", installed)
-            self.assertIn("observe it actually start", installed)
+            self.assertIn("A real child-start observation proves activation", installed)
             self.assertNotIn("The role IDs are", installed)
             self.assertNotIn("`fork_turns`", installed)
         self.assertIn("global policy activation: current", codex_result.stdout)

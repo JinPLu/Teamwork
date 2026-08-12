@@ -4,6 +4,7 @@ description = "Independent review of finished code, documents, plans, and eviden
 # benchmark and replaces the slower, costlier, lower-scoring max tier.
 model = "gpt-5.6-sol"
 model_reasoning_effort = "xhigh"
+service_tier = "default"
 sandbox_mode = "read-only"
 nickname_candidates = ["Argus", "Iris", "Sable", "Verity"]
 developer_instructions = """

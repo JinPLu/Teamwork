@@ -2,6 +2,7 @@ name = "teamwork_challenger"
 description = "Read-only adversarial challenger for one frozen hypothesis or search closure."
 model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
+service_tier = "default"
 sandbox_mode = "read-only"
 nickname_candidates = ["Aegis", "Nash", "Skeptic", "Turing"]
 developer_instructions = """

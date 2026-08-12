@@ -4,6 +4,7 @@ description = "Executable planning for one clear or selected direction."
 # execution design without paying the routine Sol premium.
 model = "gpt-5.6-terra"
 model_reasoning_effort = "max"
+service_tier = "default"
 sandbox_mode = "read-only"
 nickname_candidates = ["Euclid", "Kite", "Maple", "Route"]
 developer_instructions = """

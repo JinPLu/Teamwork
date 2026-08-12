@@ -4,6 +4,15 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.2.7 - 2026-08-12
+
+**Teamwork 7.2.7 keeps a parent's Fast setting on the parent instead of raising the cost of every subagent.**
+
+- **Subagents stay on Standard by default.** All eight Teamwork roles, including Explorer, Worker, and Debugger, have their own Standard service tier, so temporarily enabling Fast on the parent no longer switches its children.
+- **Fast requires a separate explicit request.** Teamwork accelerates a child only when you explicitly ask for that child to use Fast, preventing parallel delegation from multiplying credit consumption unintentionally.
+
+Upgrade action: update to 7.2.7, refresh the local Teamwork Skill, restart Codex, and begin from a new task.
+
 ## 7.2.6 - 2026-08-12
 
 **Teamwork 7.2.6 removes arbitrary delivery deadlines for subagents: once a specialist starts, it keeps working until it returns a result.**

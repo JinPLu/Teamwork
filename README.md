@@ -89,6 +89,8 @@ cd Teamwork
 
 Codex 的角色 profile 是工作负载策略，不是模型总榜。`performance-first` 使用 Researcher/Planner=Terra/max、Explorer=Terra/high、Debugger/Reviewer=Sol/xhigh、Challenger=Sol/high、Worker=Sol/medium、Writer=Luna/xhigh；`cost-first` 使用 Researcher/Debugger/Planner/Worker/Writer=Luna/xhigh、Explorer=Luna/high、Challenger=Sol/medium、Reviewer=Sol/high。为获得相同的成本取舍，请在 Codex 中为根任务选择对应模型；角色 profile 不会替你改写根任务的模型选择。
 
+Teamwork 子代理默认使用 Standard。父任务启用 Fast 不会加速子代理，除非用户明确把 Fast 应用于子代理。
+
 模型候选以 [CodexRadar](https://codexradar.com/) 同一时点的完整 IQ、API 等价费用与任务时间矩阵为主要外部参考，再结合 OpenAI 的官方能力定位和 Teamwork 角色边界。选择时比较整条效率前沿，而不是只照抄站长推荐：例如避免使用同时更慢、更贵、分数更低的档位，并把高质量、低成本和低延迟分配给真正需要它们的角色。CodexRadar 的 DeepSWE 加权通过率对编码型 Worker 最直接，对其他角色只是能力代理；站点费用和分钟数也不代表 Codex 订阅账单或 Teamwork 的实际耗时。站点展示的 `ultra` 不是 Agent 配置可用的 reasoning effort。README 不固化会持续变化的数值快照，profile 发布仍需通过 Teamwork 自身验证。
 
 ```bash

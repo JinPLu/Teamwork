@@ -53,7 +53,9 @@ text, is not Agent activation. On a Codex surface that exposes it, the policy
 adapter selects named roles through `spawn_agent.agent_type` and a
 self-contained or bounded-history assignment; a full-history fork inherits
 Root's role. Static profiles and `features.multi_agent` configuration establish
-only installed state. A live child-start observation proves exact activation.
+only installed state. Named Teamwork roles use the normal `default` service
+tier; a parent task's Fast setting does not accelerate children unless the
+current user explicitly applies it to them. A live child-start observation proves exact activation.
 After that observation, Root waits for the child's terminal result: an arbitrary
 return deadline neither cancels the child nor turns it into an unavailable role.
 Only user interruption or a host-reported terminal failure changes that state.

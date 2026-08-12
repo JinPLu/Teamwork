@@ -117,6 +117,7 @@ class RoleProfileTests(unittest.TestCase):
                         (data["model"], data["model_reasoning_effort"]),
                         PERFORMANCE[host][role],
                     )
+                    self.assertEqual(data["service_tier"], "default")
                 else:
                     data = {key.strip(): value.strip() for key, value in markdown_frontmatter(path).items()}
                     self.assertEqual(data["name"], role)

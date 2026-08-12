@@ -1,6 +1,6 @@
 {
   "id": "behavioral-contracts",
-  "version": 9,
+  "version": 10,
   "dimensions": [
     {
       "name": "native_default",
@@ -20,7 +20,7 @@
     },
     {
       "name": "role_isolation",
-      "description": "Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer keep their named responsibilities. Challenger is strict adversarial only and Reviewer also reviews plans. A live child start proves the required role is active; Root waits for its terminal result rather than applying an arbitrary return deadline, and reports the role unavailable only when the host cannot start it."
+      "description": "Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer keep their named responsibilities. Challenger is strict adversarial only and Reviewer also reviews plans. Named roles use the normal default service tier unless the current user explicitly accelerates children. A live child start proves the required role is active; Root waits for its terminal result rather than applying an arbitrary return deadline, and reports the role unavailable only when the host cannot start it."
     },
     {
       "name": "evidence_sized_debug",

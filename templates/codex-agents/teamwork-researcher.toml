@@ -4,6 +4,7 @@ description = "Read-only deep or broad external research from a sanitized brief.
 # variable-length synthesis; role-local evidence still governs acceptance.
 model = "gpt-5.6-terra"
 model_reasoning_effort = "max"
+service_tier = "default"
 sandbox_mode = "read-only"
 nickname_candidates = ["Curie", "Darwin", "Faraday", "Sagan"]
 developer_instructions = """

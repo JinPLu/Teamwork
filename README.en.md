@@ -93,6 +93,9 @@ Choose the lower-cost profile for a Codex development install with:
 ./install.sh codex --profile cost-first
 ```
 
+Teamwork subagents use Standard by default. Enabling Fast on the parent does
+not accelerate children unless the user explicitly applies Fast to them.
+
 The Cursor compatibility adapter also needs `./install.sh cursor-policy-copy`, followed by a review and paste of the same global policy into **Cursor Settings → Rules → User Rules**. Teamwork cannot observe that setting, so Cursor readiness honestly remains `manual action required` / partial. See the [Cursor guide](CURSOR.md) and [Claude Code guide](CLAUDE.md) for adapter details.
 
 Codex static installation checks prove only that Agent profiles and the stable `multi_agent` configuration are present; they do not prove exact named-Agent activation. An Agent-dependent path must observe that role in a live run. The stable Codex CLI 0.144 path retains `UNSUPPORTED` when it cannot provide that evidence instead of pretending to pass. Teamwork does not create, delete, or enable the user's under-development `multi_agent_v2` setting.
