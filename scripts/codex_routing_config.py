@@ -24,6 +24,9 @@ ROUTING_TABLE = "features"
 ROUTING_KEY = "multi_agent"
 ROUTING_NAME = f"{ROUTING_TABLE}.{ROUTING_KEY}"
 DESIRED_VALUE = True
+DEFAULT_MODEL_KEY = "model"
+DEFAULT_EFFORT_KEY = "model_reasoning_effort"
+VALID_EFFORTS = frozenset({"low", "medium", "high", "xhigh", "max"})
 
 TABLE_RE = re.compile(r"^\s*\[([^\[\]]+)\]\s*(?:#.*)?(?:\r?\n)?$")
 KEY_RE = re.compile(r"^(?P<indent>\s*)(?P<key>[A-Za-z0-9_.-]+)\s*=.*$")
@@ -79,7 +82,30 @@ def _parse_toml(text: str, path: pathlib.Path) -> dict[str, Any]:
     return data
 
 
-def _routing_issues(data: dict[str, Any]) -> list[str]:
+def _validate_main_thread_defaults(
+    default_model: str | None,
+    default_effort: str | None,
+) -> None:
+    if (default_model is None) != (default_effort is None):
+        raise RoutingConfigError(
+            "--default-model and --default-effort must be provided together"
+        )
+    if default_model is None:
+        return
+    if not default_model.strip():
+        raise RoutingConfigError("default model must not be empty")
+    if default_effort not in VALID_EFFORTS:
+        raise RoutingConfigError(
+            "default effort must be one of: " + ", ".join(sorted(VALID_EFFORTS))
+        )
+
+
+def _routing_issues(
+    data: dict[str, Any],
+    default_model: str | None = None,
+    default_effort: str | None = None,
+) -> list[str]:
+    _validate_main_thread_defaults(default_model, default_effort)
     issues: list[str] = []
     features = data.get("features", {})
     if not isinstance(features, dict):
@@ -90,6 +116,10 @@ def _routing_issues(data: dict[str, Any]) -> list[str]:
     agents = data.get("agents", {})
     if agents is not None and not isinstance(agents, dict):
         issues.append("agents must be a TOML table")
+    if default_model is not None and data.get(DEFAULT_MODEL_KEY) != default_model:
+        issues.append(f"{DEFAULT_MODEL_KEY} must be {default_model!r}")
+    if default_effort is not None and data.get(DEFAULT_EFFORT_KEY) != default_effort:
+        issues.append(f"{DEFAULT_EFFORT_KEY} must be {default_effort!r}")
     return issues
 
 
@@ -102,7 +132,12 @@ def _experimental_v2_status(data: dict[str, Any]) -> str:
     )
 
 
-def inspect_config(path: pathlib.Path) -> RoutingReport:
+def inspect_config(
+    path: pathlib.Path,
+    default_model: str | None = None,
+    default_effort: str | None = None,
+) -> RoutingReport:
+    _validate_main_thread_defaults(default_model, default_effort)
     resolved = _resolved_write_path(path)
     if not resolved.exists():
         return RoutingReport(
@@ -112,7 +147,7 @@ def inspect_config(path: pathlib.Path) -> RoutingReport:
             issues=["config.toml is missing"],
         )
     _, data = _read_config(resolved)
-    issues = _routing_issues(data)
+    issues = _routing_issues(data, default_model, default_effort)
     return RoutingReport(
         status="configured" if not issues else "drift",
         config_path=str(resolved),
@@ -175,10 +210,16 @@ def _validate_supported_layout(data: dict[str, Any], path: pathlib.Path) -> None
         raise RoutingConfigError(f"[agents] is not a table in {path}")
 
 
-def migrate_text(text: str, path: pathlib.Path) -> tuple[str, list[str]]:
+def migrate_text(
+    text: str,
+    path: pathlib.Path,
+    default_model: str | None = None,
+    default_effort: str | None = None,
+) -> tuple[str, list[str]]:
     data = _parse_toml(text, path)
     lines = text.splitlines(keepends=True)
     _validate_supported_layout(data, path)
+    _validate_main_thread_defaults(default_model, default_effort)
     newline = _newline_for(text)
     changes: list[str] = []
 
@@ -187,6 +228,8 @@ def migrate_text(text: str, path: pathlib.Path) -> tuple[str, list[str]]:
     features_child_table_index: int | None = None
     features_dotted_key_found = False
     seen_desired = False
+    seen_default_model = False
+    seen_default_effort = False
     transformed: list[str] = []
     for line in lines:
         table_match = TABLE_RE.match(line)
@@ -204,6 +247,20 @@ def migrate_text(text: str, path: pathlib.Path) -> tuple[str, list[str]]:
         key = _line_key(line)
         if section == "" and key is not None and key.startswith(f"{ROUTING_TABLE}."):
             features_dotted_key_found = True
+        if section == "" and key == DEFAULT_MODEL_KEY and default_model is not None:
+            seen_default_model = True
+            replacement = _replace_assignment(line, DEFAULT_MODEL_KEY, default_model, newline)
+            if replacement != line:
+                changes.append(f"set {DEFAULT_MODEL_KEY}")
+            transformed.append(replacement)
+            continue
+        if section == "" and key == DEFAULT_EFFORT_KEY and default_effort is not None:
+            seen_default_effort = True
+            replacement = _replace_assignment(line, DEFAULT_EFFORT_KEY, default_effort, newline)
+            if replacement != line:
+                changes.append(f"set {DEFAULT_EFFORT_KEY}")
+            transformed.append(replacement)
+            continue
         if section == ROUTING_TABLE and key == ROUTING_KEY:
             seen_desired = True
             replacement = _replace_assignment(line, ROUTING_KEY, DESIRED_VALUE, newline)
@@ -219,6 +276,22 @@ def migrate_text(text: str, path: pathlib.Path) -> tuple[str, list[str]]:
             transformed.append(replacement)
             continue
         transformed.append(line)
+
+    missing_defaults: list[tuple[str, str]] = []
+    if default_model is not None and not seen_default_model:
+        missing_defaults.append((DEFAULT_MODEL_KEY, default_model))
+    if default_effort is not None and not seen_default_effort:
+        missing_defaults.append((DEFAULT_EFFORT_KEY, default_effort))
+    if missing_defaults:
+        insert_at = next(
+            (index for index, line in enumerate(transformed) if TABLE_RE.match(line)),
+            len(transformed),
+        )
+        if insert_at == len(transformed) and transformed and not transformed[-1].endswith(("\n", "\r")):
+            transformed[-1] += newline
+        for offset, (key, value) in enumerate(missing_defaults):
+            transformed.insert(insert_at + offset, f"{key} = {_toml_literal(value)}{newline}")
+            changes.append(f"add {key}")
 
     if seen_desired:
         pass
@@ -264,7 +337,7 @@ def migrate_text(text: str, path: pathlib.Path) -> tuple[str, list[str]]:
 
     candidate = "".join(transformed)
     candidate_data = _parse_toml(candidate, path)
-    issues = _routing_issues(candidate_data)
+    issues = _routing_issues(candidate_data, default_model, default_effort)
     if issues:
         raise RoutingConfigError(
             "migrated config did not satisfy routing contract: " + "; ".join(issues)
@@ -289,10 +362,14 @@ def _atomic_write(path: pathlib.Path, text: str) -> None:
         raise
 
 
-def apply_config(path: pathlib.Path) -> RoutingReport:
+def apply_config(
+    path: pathlib.Path,
+    default_model: str | None = None,
+    default_effort: str | None = None,
+) -> RoutingReport:
     resolved = _resolved_write_path(path)
     text, _ = _read_config(resolved)
-    candidate, changes = migrate_text(text, resolved)
+    candidate, changes = migrate_text(text, resolved, default_model, default_effort)
     if candidate == text:
         candidate_data = _parse_toml(candidate, resolved)
         return RoutingReport(
@@ -316,11 +393,15 @@ def apply_config(path: pathlib.Path) -> RoutingReport:
     )
 
 
-def preview_config(path: pathlib.Path) -> RoutingReport:
-    """Validate the exact routing migration without writing user configuration."""
+def preview_config(
+    path: pathlib.Path,
+    default_model: str | None = None,
+    default_effort: str | None = None,
+) -> RoutingReport:
+    """Validate the exact routing and optional main-thread profile migration."""
     resolved = _resolved_write_path(path)
     text, _ = _read_config(resolved)
-    candidate, changes = migrate_text(text, resolved)
+    candidate, changes = migrate_text(text, resolved, default_model, default_effort)
     candidate_data = _parse_toml(candidate, resolved)
     return RoutingReport(
         status="current" if candidate == text else "would-update",

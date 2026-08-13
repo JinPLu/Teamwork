@@ -4,6 +4,11 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.4.1 - 2026-08-14
+
+- **Both Codex profiles now balance quality, completion time, and cost.** `performance-first` avoids paying disproportionate latency for marginal gains in Researcher, Planner, and Writer, while `cost-first` uses low-absolute-cost Luna throughout, with high for routine roles and xhigh only where failure or rework is costlier.
+- **The main thread now follows the selected profile too.** Install or update preserves other `config.toml` settings while setting the top-level default to Terra/xhigh for `performance-first` or Luna/high for `cost-first`.
+
 ## 7.4.0 - 2026-08-13
 
 **Teamwork 7.4 restores and strengthens the low-cost Writer so reusable conclusions from focused methods remain in simple, readable Markdown.**

@@ -16,6 +16,12 @@ from another task.
 3. For an authorized refresh, update only the requested host. The default
    `update` target refreshes Codex; Cursor or Claude adapters require explicit
    targets.
+   When refreshing an intentionally revised Agent profile, keep
+   `performance-first` and `cost-first` distinct and compare task success,
+   elapsed time, and cost together instead of maximizing model or effort.
+   For a Codex profile refresh, update both the role profiles and the
+   top-level main-thread default while preserving other user configuration:
+   `performance-first` uses Terra/xhigh and `cost-first` uses Luna/high.
 4. Preserve unknown and user-owned files. Replace only recognizable
    Teamwork-owned surfaces.
 5. Re-run the same focused check and report what changed and any manual restart

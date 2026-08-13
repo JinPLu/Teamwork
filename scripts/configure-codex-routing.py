@@ -44,19 +44,30 @@ def parse_args() -> argparse.Namespace:
         default=pathlib.Path.home() / ".codex" / "config.toml",
         help="Codex config path (default: ~/.codex/config.toml)",
     )
+    parser.add_argument(
+        "--default-model",
+        help="optional main-thread model to set alongside the Teamwork profile",
+    )
+    parser.add_argument(
+        "--default-effort",
+        help="optional main-thread reasoning effort to set alongside the Teamwork profile",
+    )
     parser.add_argument("--json", action="store_true", help="emit JSON")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if (args.default_model is None) != (args.default_effort is None):
+        parser.error("--default-model and --default-effort must be provided together")
+    return args
 
 
 def main() -> int:
     args = parse_args()
     try:
         if args.apply:
-            report = apply_config(args.config)
+            report = apply_config(args.config, args.default_model, args.default_effort)
         elif args.dry_run:
-            report = preview_config(args.config)
+            report = preview_config(args.config, args.default_model, args.default_effort)
         else:
-            report = inspect_config(args.config)
+            report = inspect_config(args.config, args.default_model, args.default_effort)
     except RoutingConfigError as exc:
         report = RoutingReport(
             status="invalid",

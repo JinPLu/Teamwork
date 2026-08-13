@@ -1,9 +1,9 @@
 name = "teamwork_planner"
 description = "Executable planning for one clear or selected direction."
-# Performance profile favors Terra's high-quality efficiency point for
-# execution design without paying the routine Sol premium.
+# Performance profile uses Terra's balanced high-quality tier for execution
+# design without paying the max latency or routine Sol premium.
 model = "gpt-5.6-terra"
-model_reasoning_effort = "max"
+model_reasoning_effort = "xhigh"
 service_tier = "default"
 sandbox_mode = "read-only"
 nickname_candidates = ["Euclid", "Kite", "Maple", "Route"]

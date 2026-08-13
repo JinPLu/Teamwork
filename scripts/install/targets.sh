@@ -36,6 +36,7 @@ configure_user_notifications() {
 
 
 configure_codex_routing() {
+  local main_model main_effort
   if [[ "$CODEX_ROUTING_ACTION" == "preserve" ]]; then
     echo "Codex custom-agent routing: preserved (--no-codex-routing)"
     return 0
@@ -44,8 +45,11 @@ configure_codex_routing() {
     echo "python3 is required to configure Codex custom-agent routing." >&2
     return 1
   fi
+  read -r main_model main_effort < <(codex_default_profile_values)
   python3 "$ROOT/scripts/configure-codex-routing.py" \
     --apply \
+    --default-model "$main_model" \
+    --default-effort "$main_effort" \
     --config "$(codex_home_path)/config.toml"
 }
 
@@ -115,7 +119,7 @@ preflight_claude_global_policy() {
 }
 
 preflight_codex_routing() {
-  local config
+  local config main_model main_effort
   config="$(codex_home_path)/config.toml"
   if [[ "$CODEX_ROUTING_ACTION" == "preserve" ]]; then
     if ! python3 "$ROOT/scripts/configure-codex-routing.py" --check --config "$config" >/dev/null 2>&1; then
@@ -124,7 +128,12 @@ preflight_codex_routing() {
     fi
     return 0
   fi
-  python3 "$ROOT/scripts/configure-codex-routing.py" --dry-run --config "$config" >/dev/null
+  read -r main_model main_effort < <(codex_default_profile_values)
+  python3 "$ROOT/scripts/configure-codex-routing.py" \
+    --dry-run \
+    --default-model "$main_model" \
+    --default-effort "$main_effort" \
+    --config "$config" >/dev/null
 }
 
 preflight_plugin_codex_bootstrap() {
@@ -196,6 +205,7 @@ write_plugin_activation() {
 install_codex() {
   local skill_root="$CODEX_USER_SKILLS_ROOT"
   local agent_root="$(codex_home_path)/agents"
+  local main_model main_effort
   if plugin_activation_is_present; then
     echo "Teamwork Codex plugin activation is present. Legacy ./install.sh codex will not copy duplicate skills; start a new Codex task and run \$teamwork-update instead." >&2
     return 1
@@ -207,8 +217,12 @@ install_codex() {
   preflight_codex_global_policy
   preflight_codex_notifications
   if [[ "$CODEX_ROUTING_ACTION" == "configure" ]]; then
+    read -r main_model main_effort < <(codex_default_profile_values)
     python3 "$ROOT/scripts/configure-codex-routing.py" \
-      --dry-run --config "$(codex_home_path)/config.toml" >/dev/null
+      --dry-run \
+      --default-model "$main_model" \
+      --default-effort "$main_effort" \
+      --config "$(codex_home_path)/config.toml" >/dev/null
   fi
   configure_codex_routing
   install_codex_skill_set
@@ -280,6 +294,7 @@ install_all() {
   local cursor_agent_root="$HOME/.cursor/agents"
   local claude_skill_root="$HOME/.claude/skills"
   local claude_agent_root="$HOME/.claude/agents"
+  local main_model main_effort
   if plugin_activation_is_present; then
     echo "Teamwork Codex plugin activation is present. Legacy ./install.sh all will not copy duplicate skills; start a new Codex task and run \$teamwork-update instead." >&2
     return 1
@@ -297,8 +312,12 @@ install_all() {
   preflight_codex_notifications
   preflight_user_notifications claude
   if [[ "$CODEX_ROUTING_ACTION" == "configure" ]]; then
+    read -r main_model main_effort < <(codex_default_profile_values)
     python3 "$ROOT/scripts/configure-codex-routing.py" \
-      --dry-run --config "$(codex_home_path)/config.toml" >/dev/null
+      --dry-run \
+      --default-model "$main_model" \
+      --default-effort "$main_effort" \
+      --config "$(codex_home_path)/config.toml" >/dev/null
   fi
   configure_codex_routing
   install_codex_skill_set

@@ -4,6 +4,11 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.4.1 - 2026-08-14
+
+- **两套 Codex profile 现在同时权衡质量、完成时间与费用。** `performance-first` 避免 Researcher、Planner 和 Writer 为边际质量支付过高延迟；`cost-first` 全部使用低绝对成本的 Luna，日常角色采用 high，仅在失败或返工成本较高的角色保留 xhigh。
+- **主线程也随 profile 一起配置。** 安装或更新会保留 `config.toml` 的其他设置，并把顶层默认设为：`performance-first` 的 Terra/xhigh，或 `cost-first` 的 Luna/high。
+
 ## 7.4.0 - 2026-08-13
 
 **Teamwork 7.4 恢复并强化了低成本 Writer，让专项方法的可复用结论持续保存在简单、可读的 Markdown 中。**

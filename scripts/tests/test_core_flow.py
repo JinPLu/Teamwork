@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import tomllib
 import unittest
 
 
@@ -26,7 +27,7 @@ class CoreFlowTests(unittest.TestCase):
         )
         writer = (ROOT / agents["writer"]["codex"]).read_text(encoding="utf-8")
         self.assertIn('model = "gpt-5.6-luna"', writer)
-        self.assertIn('model_reasoning_effort = "xhigh"', writer)
+        self.assertIn('model_reasoning_effort = "high"', writer)
         self.assertIn('service_tier = "default"', writer)
         self.assertIn('sandbox_mode = "workspace-write"', writer)
 
@@ -82,6 +83,109 @@ class CoreFlowTests(unittest.TestCase):
                 for skill in ("teamwork-goal", "teamwork-init", "teamwork-update")
             }
             self.assertEqual(len(report_texts), 1)
+
+    def test_codex_agent_profiles_render_the_expected_role_tradeoffs(self) -> None:
+        main_threads = {
+            "performance-first": ("gpt-5.6-terra", "xhigh"),
+            "cost-first": ("gpt-5.6-luna", "high"),
+        }
+        expected = {
+            "performance-first": {
+                "challenger": ("gpt-5.6-sol", "high"),
+                "debugger": ("gpt-5.6-sol", "xhigh"),
+                "explorer": ("gpt-5.6-terra", "high"),
+                "planner": ("gpt-5.6-terra", "xhigh"),
+                "researcher": ("gpt-5.6-terra", "xhigh"),
+                "reviewer": ("gpt-5.6-sol", "xhigh"),
+                "worker": ("gpt-5.6-sol", "medium"),
+                "writer": ("gpt-5.6-luna", "high"),
+            },
+            "cost-first": {
+                "challenger": ("gpt-5.6-luna", "high"),
+                "debugger": ("gpt-5.6-luna", "xhigh"),
+                "explorer": ("gpt-5.6-luna", "high"),
+                "planner": ("gpt-5.6-luna", "xhigh"),
+                "researcher": ("gpt-5.6-luna", "xhigh"),
+                "reviewer": ("gpt-5.6-luna", "xhigh"),
+                "worker": ("gpt-5.6-luna", "high"),
+                "writer": ("gpt-5.6-luna", "high"),
+            },
+        }
+        for profile, roles in expected.items():
+            with self.subTest(profile=profile), tempfile.TemporaryDirectory() as raw:
+                env = os.environ.copy()
+                env["HOME"] = raw
+                env["CODEX_HOME"] = str(Path(raw) / ".codex")
+                result = subprocess.run(
+                    [
+                        str(ROOT / "install.sh"),
+                        "--copy",
+                        "--profile",
+                        profile,
+                        "codex-agents",
+                    ],
+                    env=env,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                main_config = tomllib.loads(
+                    (Path(raw) / ".codex/config.toml").read_text(encoding="utf-8")
+                )
+                self.assertEqual(main_config["model"], main_threads[profile][0])
+                self.assertEqual(
+                    main_config["model_reasoning_effort"], main_threads[profile][1]
+                )
+                for role, (model, effort) in roles.items():
+                    path = Path(raw) / ".codex/agents" / f"teamwork-{role}.toml"
+                    rendered = tomllib.loads(path.read_text(encoding="utf-8"))
+                    self.assertEqual(rendered["model"], model, path)
+                    self.assertEqual(rendered["model_reasoning_effort"], effort, path)
+
+    def test_codex_profile_config_migration_preserves_user_settings(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            config = Path(raw) / "config.toml"
+            config.write_text(
+                "#:schema https://developers.openai.com/codex/config-schema.json\n"
+                'model = "gpt-5.6-luna" # existing default\n'
+                'model_reasoning_effort = "max"\n'
+                'personality = "friendly"\n'
+                "\n"
+                "[features]\n"
+                "multi_agent_v2 = true\n"
+                "\n"
+                "[mcp_servers.example]\n"
+                'command = "example"\n',
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts/configure-codex-routing.py"),
+                    "--apply",
+                    "--default-model",
+                    "gpt-5.6-terra",
+                    "--default-effort",
+                    "xhigh",
+                    "--config",
+                    str(config),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("CHANGES=set model; set model_reasoning_effort; add features.multi_agent", result.stdout)
+            config_text = config.read_text(encoding="utf-8")
+            rendered = tomllib.loads(config_text)
+            self.assertEqual(rendered["model"], "gpt-5.6-terra")
+            self.assertEqual(rendered["model_reasoning_effort"], "xhigh")
+            self.assertEqual(rendered["personality"], "friendly")
+            self.assertTrue(rendered["features"]["multi_agent"])
+            self.assertTrue(rendered["features"]["multi_agent_v2"])
+            self.assertEqual(rendered["mcp_servers"]["example"]["command"], "example")
+            self.assertIn('# existing default', config_text)
 
     def test_schema_index_and_migration_runtime_remain_absent(self) -> None:
         retired = (

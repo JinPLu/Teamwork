@@ -108,20 +108,22 @@ installs are intentionally unsupported until their local hook contracts are
 live-verified.
 
 User-level Codex installs configure ~/.codex/config.toml with the stable
-multi_agent feature enabled alongside installed Teamwork Agent profiles. This is
-static configuration; Agent availability is not a workflow prerequisite.
-Other feature settings, including multi_agent_v2, are preserved and unmanaged.
-Use --no-codex-routing only when another owner manages the stable feature.
+multi_agent feature enabled alongside installed Teamwork Agent profiles, and
+set the main-thread model and effort selected by that profile. This is static
+configuration; Agent availability is not a workflow prerequisite. Other
+settings, including multi_agent_v2, are preserved and unmanaged. Use
+--no-codex-routing only when another owner manages this configuration.
 Project init never changes user-level routing; run a Codex global install or
 codex-agents separately when that surface needs refresh.
 
 Profile defaults to performance-first; choose cost-first explicitly when needed.
-On Codex, performance-first
-uses Terra/max for Researcher and Planner; Terra/high for Explorer; Sol/xhigh
+On Codex, performance-first sets the main thread to Terra/xhigh and
+uses Terra/xhigh for Researcher and Planner; Terra/high for Explorer; Sol/xhigh
 for Debugger and Reviewer; Sol/high for Challenger; Sol/medium for Worker; and
-Luna/xhigh for Writer.
-On Codex, cost-first uses Luna/xhigh for Researcher, Debugger, Planner, and
-Worker and Writer; Luna/high for Explorer; Sol/medium for Challenger; and Sol/high for Reviewer. Cursor and Claude Code keep
+Luna/high for Writer.
+On Codex, cost-first sets the main thread to Luna/high and uses Luna/xhigh for Researcher, Debugger, Planner, and
+Reviewer; and Luna/high for Explorer, Worker, Writer, and Challenger.
+Cursor and Claude Code keep
 their existing compatibility/development profile mappings.
 USAGE
 }
