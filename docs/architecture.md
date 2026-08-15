@@ -25,8 +25,9 @@ Every handoff uses the same five fields:
 - requested return.
 
 Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and
-Writer are focused helpers. Cursor installs 7 roles and omits Explorer because
-the host already provides Explore; Codex and Claude retain the Explorer role.
+Writer are focused helpers. Cursor and Claude Code install 7 roles and omit
+Explorer because those hosts already provide Explore; Codex retains the
+Explorer role.
 Helpers do not own the user dialogue. Missing agents do not block native work.
 When the user specifically requires an independent review and no independent
 context is available, Root labels the review non-independent instead of

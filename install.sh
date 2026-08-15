@@ -120,7 +120,7 @@ case "$EFFECTIVE_TARGET" in
     ;;
 esac
 
-if ! teamwork_target_is_cursor_only "$EFFECTIVE_TARGET"; then
+if ! teamwork_target_is_cursor_only "$EFFECTIVE_TARGET" && ! teamwork_target_is_claude_only "$EFFECTIVE_TARGET"; then
   case "$CODEX_ROUTING_ACTION" in
     configure|preserve)
       ;;
@@ -149,8 +149,11 @@ if teamwork_target_is_cursor_only "$EFFECTIVE_TARGET"; then
     usage
     exit 2
   fi
+fi
+
+if teamwork_target_is_cursor_only "$EFFECTIVE_TARGET" || teamwork_target_is_claude_only "$EFFECTIVE_TARGET"; then
   if [[ "$CODEX_ROUTING_SOURCE" == "cli" ]]; then
-    echo "Codex routing flags are supported only with Codex or Claude Code targets." >&2
+    echo "Codex routing flags are supported only with Codex targets." >&2
     usage
     exit 2
   fi

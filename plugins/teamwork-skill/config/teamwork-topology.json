@@ -53,8 +53,7 @@
     {
       "name": "explorer",
       "templates": {
-        "codex": "templates/codex-agents/teamwork-explorer.toml",
-        "claude": "templates/claude-agents/explorer.md"
+        "codex": "templates/codex-agents/teamwork-explorer.toml"
       }
     },
     {

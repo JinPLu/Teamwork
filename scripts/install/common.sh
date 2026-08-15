@@ -46,7 +46,7 @@ done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host cursor 
 while IFS= read -r item; do
   CODEX_AGENTS+=("$item")
 done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host codex --field stem)
-RETIRED_CLAUDE_AGENTS=(designer plan-reviewer)
+RETIRED_CLAUDE_AGENTS=(designer plan-reviewer explorer)
 RETIRED_CURSOR_AGENTS=(designer plan-reviewer explorer)
 RETIRED_CODEX_AGENTS=(teamwork-designer teamwork-plan-reviewer)
 
@@ -57,9 +57,13 @@ Usage:
     cursor|cursor-agents|cursor-policy|cursor-policy-copy
 
   ./install.sh [--copy|--link] [--notifications|--no-notifications] \
+    [--profile performance-first|cost-first] \
+    claude|claude-agents|claude-policy
+
+  ./install.sh [--copy|--link] [--notifications|--no-notifications] \
     [--codex-routing|--no-codex-routing] [--profile performance-first|cost-first] \
     [--project-root PATH] \
-    codex|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|claude-agents|codex-policy|claude-policy
+    codex|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|codex-policy
 
 Targets:
   codex          Install checkout-based Codex skills/agents and separately
@@ -126,11 +130,13 @@ settings, including multi_agent_v2, are preserved and unmanaged. Use
 --no-codex-routing only when another owner manages this configuration.
 Project init never changes user-level routing; run a Codex global install or
 codex-agents separately when that surface needs refresh.
+Codex-routing flags apply to Codex targets only. Cursor and Claude Code
+targets reject --codex-routing and --no-codex-routing.
 
-Profile and Codex-routing flags apply to Codex and Claude Code targets only.
-Cursor targets reject --profile, --performance-first, --cost-first,
---codex-routing, and --no-codex-routing. Profile defaults to performance-first
-for Codex and Claude Code; choose cost-first explicitly when needed.
+Profile flags apply to Codex and Claude Code targets only.
+Cursor targets reject --profile, --performance-first, and --cost-first.
+Profile defaults to performance-first for Codex and Claude Code; choose
+cost-first explicitly when needed.
 On Codex, performance-first sets the main thread to Terra/xhigh and
 uses Terra/xhigh for Researcher and Planner; Terra/high for Explorer; Sol/xhigh
 for Debugger and Reviewer; Sol/high for Challenger; Sol/medium for Worker; and
@@ -148,6 +154,15 @@ USAGE
 teamwork_target_is_cursor_only() {
   case "${1:-}" in
     cursor|cursor-agents|cursor-policy|cursor-policy-copy)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+teamwork_target_is_claude_only() {
+  case "${1:-}" in
+    claude|claude-agents|claude-policy)
       return 0
       ;;
   esac

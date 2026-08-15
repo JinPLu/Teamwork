@@ -4,6 +4,11 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.5.1 - 2026-08-16
+
+- **Claude Code now ships 7 optional roles and retires Teamwork Explorer.** Local search uses the host Explore subagent. Plan mode and the host Plan subagent are not substitutes for Teamwork Planner; Debugger stays.
+- **Claude-only installs reject `--codex-routing`.** `--profile` still remaps Claude role model and effort.
+
 ## 7.5.0 - 2026-08-16
 
 - **Cursor now ships 7 optional roles and retires Explorer.** Local search uses the host's built-in Explore; Planner and Debugger remain optional bounded helpers, not substitutes for Cursor Plan or Debug modes. Roles inherit the host model choice and no longer write a default `is_background`.

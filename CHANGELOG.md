@@ -4,6 +4,11 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.5.1 - 2026-08-16
+
+- **Claude Code 改为安装 7 个可选角色，并停用 Teamwork Explorer。** 本地检索使用宿主自带 Explore；Plan 模式与宿主 Plan 子代理不能替代 Teamwork Planner；Debugger 保留。
+- **仅 Claude 的安装会拒绝 `--codex-routing`。** `--profile` 仍会改写 Claude 角色的 model/effort。
+
 ## 7.5.0 - 2026-08-16
 
 - **Cursor 改为安装 7 个可选角色，并停用 Explorer。** 本地检索使用宿主自带 Explore；Planner 与 Debugger 仍是可选的有界助手，不能替代 Cursor 的 Plan / Debug 模式。角色继承宿主模型选择（`inherit`），也不再写入默认 `is_background`。

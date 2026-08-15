@@ -331,7 +331,7 @@ class CoreFlowTests(unittest.TestCase):
         explorer = next(row for row in topology["agents"] if row["name"] == "explorer")
         self.assertEqual(
             set(explorer["templates"]),
-            {"codex", "claude"},
+            {"codex"},
         )
         module.validate_topology_layout(ROOT)
 
@@ -340,14 +340,9 @@ class CoreFlowTests(unittest.TestCase):
             (isolated / "config").mkdir()
             (isolated / "skills/demo").mkdir(parents=True)
             (isolated / "templates/codex-agents").mkdir(parents=True)
-            (isolated / "templates/claude-agents").mkdir(parents=True)
             (isolated / "skills/demo/SKILL.md").write_text("# demo\n", encoding="utf-8")
             (isolated / "templates/codex-agents/teamwork-explorer.toml").write_text(
                 "name = \"teamwork_explorer\"\n",
-                encoding="utf-8",
-            )
-            (isolated / "templates/claude-agents/explorer.md").write_text(
-                "name: explorer\n",
                 encoding="utf-8",
             )
             (isolated / "config/teamwork-topology.json").write_text(
@@ -361,7 +356,6 @@ class CoreFlowTests(unittest.TestCase):
                                 "name": "explorer",
                                 "templates": {
                                     "codex": "templates/codex-agents/teamwork-explorer.toml",
-                                    "claude": "templates/claude-agents/explorer.md",
                                 },
                             }
                         ],

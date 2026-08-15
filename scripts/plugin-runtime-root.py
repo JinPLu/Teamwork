@@ -80,7 +80,7 @@ def validate_topology_layout(root: Path) -> None:
         # Validate each declared host file. Do not require {codex,cursor,claude}
         # on every agent: Codex is the supported minimum when present, and a
         # host may be omitted when the topology row intentionally drops it.
-        # Explorer therefore passes with only Codex and Claude templates.
+        # Explorer therefore passes with only a Codex template.
         if not hosts or not hosts.issubset(SUPPORTED_AGENT_HOSTS):
             raise SystemExit("not a Teamwork plugin runtime: invalid agent host topology")
         for host, relative in templates.items():

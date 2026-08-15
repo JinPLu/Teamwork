@@ -66,10 +66,10 @@ codex_agent_profile_values() {
 claude_agent_profile_values() {
   local agent="$1"
   case "$CODEX_PROFILE:$agent" in
-    performance-first:researcher|performance-first:explorer|performance-first:worker)
+    performance-first:researcher|performance-first:worker)
       printf '%s %s\n' "sonnet" "medium"
       ;;
-    performance-first:writer|cost-first:researcher|cost-first:explorer|cost-first:worker|cost-first:writer)
+    performance-first:writer|cost-first:researcher|cost-first:worker|cost-first:writer)
       printf '%s %s\n' "haiku" "medium"
       ;;
     performance-first:debugger|performance-first:challenger|performance-first:planner|cost-first:debugger|cost-first:challenger|cost-first:planner)
