@@ -66,7 +66,10 @@ teamwork_managed_policy_status() {
       expected="$(write_teamwork_claude_global_policy)"
       ;;
     cursor)
-      printf '%s\n' "manual-action-required"
+      # Cursor keeps user rules in its own settings store, not in a file this
+      # installer owns. A Cursor Agent applies and reads back the block through
+      # Cursor's user-rule API.
+      printf '%s\n' "agent-applied"
       return 0
       ;;
     *)
@@ -165,7 +168,7 @@ copy_teamwork_cursor_global_policy() {
   else
     echo "No supported clipboard command found; printed the canonical policy block instead." >&2
   fi
-  echo "Cursor policy activation: manual action required (unobservable). Paste into Cursor Settings -> Rules -> User Rules, then review the visible User Rules text."
+  echo "Cursor policy activation fallback: paste into Cursor Settings -> Rules -> User Rules. A Cursor Agent can instead apply this block through Cursor's user-rule API and verify it with a rule list readback."
 }
 
 install_codex_global_policy() {

@@ -4,6 +4,11 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.4.2 - 2026-08-16
+
+- **Cursor 子代理不再钉死模型。** 八个可选角色交给 Cursor 自己调度，避免安装器写入已失效或过时的模型 slug；`performance-first` / `cost-first` 也不再改动 Cursor 安装结果。
+- **Cursor 全局策略可经 Agent 写入并回读。** 仍可打印或复制策略块，但推荐由 Cursor Agent 通过 User Rules API 新增或更新带标记的那条规则，并用 list 回读确认；手动粘贴降为后备路径。
+
 ## 7.4.1 - 2026-08-14
 
 - **两套 Codex profile 现在同时权衡质量、完成时间与费用。** `performance-first` 避免 Researcher、Planner 和 Writer 为边际质量支付过高延迟；`cost-first` 全部使用低绝对成本的 Luna，日常角色采用 high，仅在失败或返工成本较高的角色保留 xhigh。

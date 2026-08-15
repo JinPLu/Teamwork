@@ -186,7 +186,7 @@ case "$EFFECTIVE_TARGET" in
     ;;
   cursor-policy)
     write_teamwork_cursor_global_policy
-    echo "Cursor policy activation remains partial: paste the block above into Cursor Settings -> Rules -> User Rules, then review the visible User Rules text." >&2
+    echo "Apply the block above as one Cursor user rule, then confirm it with a rule list readback. A Cursor Agent can do both through Cursor's user-rule API; Settings -> Rules -> User Rules is the manual fallback." >&2
     ;;
   cursor-policy-copy)
     copy_teamwork_cursor_global_policy

@@ -1,7 +1,6 @@
 ---
 name: researcher
 description: Read-only deep or broad external research from a sanitized brief.
-model: gpt-5.6-terra-medium
 readonly: true
 ---
 

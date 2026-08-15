@@ -80,10 +80,10 @@ Targets:
                  to ~/.claude/agents
   codex-policy   Print the canonical policy in its Codex managed wrapper
   cursor-policy  Compatibility/development: print the Teamwork Cursor global
-                 policy block for User Rules paste
+                 policy block for one Cursor user rule
   cursor-policy-copy
-                 Compatibility/development: copy the Teamwork Cursor global
-                 policy block to the clipboard
+                 Compatibility/development: copy that block to the clipboard
+                 for the manual Settings -> Rules paste fallback
   claude-policy  Compatibility/development: print the canonical policy in its
                  Claude managed wrapper
 
@@ -123,8 +123,9 @@ for Debugger and Reviewer; Sol/high for Challenger; Sol/medium for Worker; and
 Luna/high for Writer.
 On Codex, cost-first sets the main thread to Luna/high and uses Luna/xhigh for Researcher, Debugger, Planner, and
 Reviewer; and Luna/high for Explorer, Worker, Writer, and Challenger.
-Cursor and Claude Code keep
-their existing compatibility/development profile mappings.
+Claude Code keeps its existing compatibility/development profile mapping.
+Cursor subagents pin no model; Cursor selects one through its own scheduling,
+so the profile does not change a Cursor install.
 USAGE
 }
 

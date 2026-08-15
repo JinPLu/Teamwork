@@ -85,52 +85,6 @@ claude_agent_profile_values() {
   esac
 }
 
-cursor_agent_profile_values() {
-  local agent="$1"
-  case "$CODEX_PROFILE:$agent" in
-    performance-first:researcher)
-      printf '%s\n' "gpt-5.6-terra-medium"
-      ;;
-    performance-first:explorer)
-      printf '%s\n' "gemini-3.5-flash"
-      ;;
-    performance-first:debugger)
-      printf '%s\n' "claude-opus-4-8-thinking-high"
-      ;;
-    performance-first:challenger)
-      printf '%s\n' "gpt-5.6-sol-medium"
-      ;;
-    performance-first:planner)
-      printf '%s\n' "gpt-5.6-terra-medium"
-      ;;
-    performance-first:worker|performance-first:writer)
-      printf '%s\n' "composer-2.5-fast"
-      ;;
-    performance-first:reviewer)
-      printf '%s\n' "claude-fable-5-thinking-high"
-      ;;
-    cost-first:researcher|cost-first:explorer)
-      printf '%s\n' "gemini-3.5-flash"
-      ;;
-    cost-first:debugger|cost-first:challenger)
-      printf '%s\n' "gpt-5.6-terra-medium"
-      ;;
-    cost-first:planner)
-      printf '%s\n' "gpt-5.6-luna-medium"
-      ;;
-    cost-first:worker|cost-first:writer)
-      printf '%s\n' "composer-2.5-fast"
-      ;;
-    cost-first:reviewer)
-      printf '%s\n' "claude-opus-4-8-thinking-high"
-      ;;
-    *)
-      echo "Unsupported Cursor role/profile mapping: $CODEX_PROFILE:$agent" >&2
-      return 1
-      ;;
-  esac
-}
-
 require_single_profile_field() {
   local path="$1"
   local pattern="$2"
@@ -232,33 +186,20 @@ install_cursor_agent_file() {
   local source="$1"
   local dest="$2"
   local agent="$3"
-  local model tmp
 
-  read -r model < <(cursor_agent_profile_values "$agent")
   require_single_profile_field "$source" '^name: [a-z-]+$' "Cursor name"
-  require_single_profile_field "$source" '^model: [a-z0-9.-]+$' "Cursor model"
   require_single_profile_field "$source" '^readonly: (true|false)$' "Cursor readonly"
   grep -Fqx "name: $agent" "$source" || {
     echo "Cursor profile identity does not match $agent: $source" >&2
     return 1
   }
-  rm -f "$dest"
-  mkdir -p "$(dirname "$dest")"
-
-  if [[ "$INSTALL_MODE" == "link" && "$CODEX_PROFILE" == "performance-first" ]]; then
-    grep -Fqx "model: $model" "$source"
-    ln -sfn "$source" "$dest"
-    return 0
-  fi
-
-  tmp="$(mktemp)"
-  sed -e "s/^model: .*/model: $model/" "$source" > "$tmp"
-  if ! grep -Fqx "model: $model" "$tmp"; then
-    rm -f "$tmp"
-    echo "Failed to render Cursor role/profile mapping: $CODEX_PROFILE:$agent" >&2
+  # Cursor schedules its own model per subagent. A pinned slug would override
+  # that and can name a model the host no longer offers.
+  if grep -Eq '^model:' "$source"; then
+    echo "Cursor profile must not pin a model: $source" >&2
     return 1
   fi
-  mv "$tmp" "$dest"
+  install_agent_file "$source" "$dest"
 }
 
 
@@ -293,7 +234,7 @@ install_cursor_agent_set() {
       "$agent"
   done
 
-  echo "Installed $label Cursor agents under: $dest_root ($INSTALL_MODE, $CODEX_PROFILE)"
+  echo "Installed $label Cursor agents under: $dest_root ($INSTALL_MODE, host-selected models)"
 }
 
 install_codex_agent_set() {

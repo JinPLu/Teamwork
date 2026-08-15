@@ -1,7 +1,6 @@
 ---
 name: worker
 description: Bounded implementation on exact owned paths.
-model: composer-2.5-fast
 readonly: false
 is_background: false
 ---

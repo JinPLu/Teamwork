@@ -1,7 +1,6 @@
 ---
 name: debugger
 description: Hypothesis-driven diagnosis and bounded repair of unknown-cause failures.
-model: claude-opus-4-8-thinking-high
 readonly: false
 is_background: false
 ---

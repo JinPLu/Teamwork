@@ -1,7 +1,6 @@
 ---
 name: challenger
 description: Strict read-only adversarial challenge of one frozen hypothesis or search closure.
-model: gpt-5.6-sol-medium
 readonly: true
 ---
 

@@ -1,7 +1,6 @@
 ---
 name: writer
 description: Literal maintenance of authorized Teamwork Markdown documents.
-model: composer-2.5-fast
 readonly: false
 is_background: false
 ---

@@ -1,7 +1,6 @@
 ---
 name: planner
 description: Executable planning for one clear or selected direction.
-model: gpt-5.6-terra-medium
 readonly: true
 is_background: false
 ---

@@ -1,7 +1,6 @@
 ---
 name: explorer
 description: Read-only local evidence gathering from project files and local tools.
-model: gemini-3.5-flash
 readonly: true
 ---
 

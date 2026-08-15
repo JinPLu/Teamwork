@@ -4,6 +4,11 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.4.2 - 2026-08-16
+
+- **Cursor subagents no longer pin a model.** The eight optional roles leave model choice to Cursor's own scheduling, so the installer no longer writes stale or unavailable model slugs; `performance-first` / `cost-first` also leave Cursor installs unchanged.
+- **Cursor global policy can be applied and verified by an Agent.** The policy block can still be printed or copied, but the preferred path is a Cursor Agent adding or updating the marked user rule through Cursor's User Rules API and confirming it with a list readback; manual paste remains the fallback.
+
 ## 7.4.1 - 2026-08-14
 
 - **Both Codex profiles now balance quality, completion time, and cost.** `performance-first` avoids paying disproportionate latency for marginal gains in Researcher, Planner, and Writer, while `cost-first` uses low-absolute-cost Luna throughout, with high for routine roles and xhigh only where failure or rework is costlier.

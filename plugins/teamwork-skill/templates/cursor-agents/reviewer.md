@@ -1,7 +1,6 @@
 ---
 name: reviewer
 description: Independent review of finished code, documents, plans, and evidence.
-model: claude-fable-5-thinking-high
 readonly: true
 ---
 

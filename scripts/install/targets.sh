@@ -269,8 +269,8 @@ install_cursor() {
   install_skill_set "$skill_root" "Cursor"
   install_cursor_agent_set "$agent_root" "user Cursor"
   echo "Cursor static skills/agents: installed"
-  echo "Cursor global policy activation: partial; manual action required because User Rules activation is not observable."
-  echo "Exact action: run ./install.sh cursor-policy-copy; paste into Cursor Settings -> Rules -> User Rules; review the visible User Rules text."
+  echo "Cursor global policy activation: separate; this installer cannot reach Cursor's user-rule store."
+  echo "Exact action: run ./install.sh cursor-policy, then have a Cursor Agent add or update that block as one user rule and confirm it with a rule list readback."
 }
 
 install_claude() {
@@ -328,8 +328,8 @@ install_all() {
   install_skill_set "$cursor_skill_root" "Cursor"
   install_cursor_agent_set "$cursor_agent_root" "user Cursor"
   echo "Cursor static skills/agents: installed"
-  echo "Cursor global policy activation: partial; manual action required because User Rules activation is not observable."
-  echo "Exact action: run ./install.sh cursor-policy-copy; paste into Cursor Settings -> Rules -> User Rules; review the visible User Rules text."
+  echo "Cursor global policy activation: separate; this installer cannot reach Cursor's user-rule store."
+  echo "Exact action: run ./install.sh cursor-policy, then have a Cursor Agent add or update that block as one user rule and confirm it with a rule list readback."
   install_skill_set "$claude_skill_root" "Claude Code"
   install_claude_agent_set "$claude_agent_root" "user Claude Code"
   echo "Claude static skills/agents: installed"
