@@ -4,6 +4,10 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.5.2 - 2026-08-16
+
+- **Collaborate 把已记录的否定和决定当作主线。** 检查点分开用户原话与当前理解；同一课题下一轮先读回讨论文档，调研不得把已锁定内容重述成新问题。
+
 ## 7.5.1 - 2026-08-16
 
 - **Claude Code 改为安装 7 个可选角色，并停用 Teamwork Explorer。** 本地检索使用宿主自带 Explore；Plan 模式与宿主 Plan 子代理不能替代 Teamwork Planner；Debugger 保留。

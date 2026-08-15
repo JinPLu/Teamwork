@@ -28,6 +28,14 @@ Mermaid>
 
 <user decisions, unresolved points, and next authorized action>
 
+## User quotes
+
+<user's original wording, especially recorded rejections and decisions>
+
+## Working understanding
+
+<model understanding; do not write this as the user's wording>
+
 ## History
 
 <Append only. Never rewrite or remove an existing entry; a correction or

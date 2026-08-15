@@ -261,6 +261,34 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("guided clarification", description)
         self.assertIn("do not use for clear execution or a single discoverable detail", description)
 
+    def test_collaborate_keeps_recorded_locks_and_separates_quotes(self) -> None:
+        skill = self._folded(self._skill_text("teamwork-collaborate"))
+        self.assertIn(
+            "Recorded rejections and decisions are the mainline; research or a "
+            "subagent return must not restate them as a new question.",
+            skill,
+        )
+        self.assertIn(
+            "A checkpoint must keep user quotes separate from the working understanding.",
+            skill,
+        )
+        self.assertIn(
+            "The next turn on the same subject reads the discussion document's "
+            "current synthesis first; if it cannot be read, treat that as a "
+            "memory gap and do not reconstruct the mainline from session recall.",
+            skill,
+        )
+        template = (
+            ROOT / "skills/teamwork-collaborate/references/discussion.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("## User quotes", template)
+        self.assertIn("## Working understanding", template)
+        self.assertIn(
+            "user's original wording, especially recorded rejections and decisions",
+            template,
+        )
+        self.assertIn("do not write this as the user's wording", template)
+
     def test_debug_freezes_observe_instrument_fix_and_runtime_log_first(self) -> None:
         skill = self._folded(self._skill_text("teamwork-debug"))
         self.assertIn("freeze observe, instrument, and fix permission", skill)

@@ -4,6 +4,10 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.5.2 - 2026-08-16
+
+- **Collaborate treats recorded rejections and decisions as the mainline.** Checkpoints keep user quotes separate from the working understanding; the next turn on the same subject re-reads the discussion document first, and research must not restate those locks as a new question.
+
 ## 7.5.1 - 2026-08-16
 
 - **Claude Code now ships 7 optional roles and retires Teamwork Explorer.** Local search uses the host Explore subagent. Plan mode and the host Plan subagent are not substitutes for Teamwork Planner; Debugger stays.

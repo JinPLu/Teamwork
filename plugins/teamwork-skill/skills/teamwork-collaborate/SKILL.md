@@ -22,14 +22,21 @@ change the result, or when unclear intent needs guided clarification.
 4. Resolve facts directly. Ask the user only for preferences or authority that
    cannot be discovered.
 5. Recommend a direction when the evidence supports one. Record the user's
-   decision and advance to the next dependent stage.
+   decision and advance to the next dependent stage. Recorded rejections and
+   decisions are the mainline; research or a subagent return must not restate
+   them as a new question.
 6. End with the decision, unresolved points, and the next authorized action.
+   The next turn on the same subject reads the discussion document's current
+   synthesis first; if it cannot be read, treat that as a memory gap and do
+   not reconstruct the mainline from session recall.
 
 Use subagents only for bounded evidence gathering or a genuinely independent
 challenge. Use Explorer when available; otherwise use native local search. A
 handoff contains the objective, owned scope, settled user constraints, available
-evidence, and requested return. No fixed role or dispatch count is required, and
-an unavailable optional subagent does not block the discussion.
+evidence, and requested return. Settled user constraints must include recorded
+rejections and decisions, and the requested return must not change the topic.
+No fixed role or dispatch count is required, and an unavailable optional
+subagent does not block the discussion.
 
 ## Persistence
 
@@ -38,7 +45,8 @@ for that continuing decision subject from `references/discussion.md` at
 `docs/teamwork/discussions/<YYYY-MM-DD>-<slug>.md` (reuse the existing path for
 the same subject identity). Checkpoints: the user records a material decision;
 a stage's option set is settled; or the discussion ends with an authorized next
-action that must survive the session.
+action that must survive the session. A checkpoint must keep user quotes
+separate from the working understanding.
 
 Every Writer wake-up explicitly supplies the document kind and path, stable
 subject identity, authoritative owner, owner-certified semantic delta,
