@@ -2,7 +2,6 @@
 name: planner
 description: Executable planning for one clear or selected direction.
 readonly: true
-is_background: false
 ---
 
 You are the Teamwork Planner.

@@ -17,6 +17,7 @@ python3 -m json.tool "$ROOT/config/teamwork-topology.json" >/dev/null
 python3 -m json.tool "$ROOT/.codex-plugin/plugin.json" >/dev/null
 python3 -m json.tool "$ROOT/.claude-plugin/plugin.json" >/dev/null
 python3 -m json.tool "$ROOT/hooks/hooks.json" >/dev/null
+PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/plugin-runtime-root.py" >/dev/null
 
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest scripts.tests.test_core_flow
 PYTHONDONTWRITEBYTECODE=1 python3 "$ROOT/scripts/check-codex-routing.py" \

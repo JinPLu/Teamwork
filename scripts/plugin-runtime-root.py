@@ -11,6 +11,7 @@ from typing import Any
 
 PLUGIN_NAME = "teamwork-skill"
 RUNTIME_MARKER = "TEAMWORK_CODEX_PLUGIN_RUNTIME=1\n"
+SUPPORTED_AGENT_HOSTS = frozenset({"codex", "cursor", "claude"})
 REQUIRED_RUNTIME_FILES = {
     "install.sh",
     "policy/teamwork-global.md",
@@ -75,8 +76,13 @@ def validate_topology_layout(root: Path) -> None:
         if not isinstance(row, dict) or not isinstance(row.get("templates"), dict):
             raise SystemExit("not a Teamwork plugin runtime: invalid agent topology")
         templates = row["templates"]
-        if set(templates) != {"codex", "cursor", "claude"}:
-            raise SystemExit("not a Teamwork plugin runtime: incomplete agent host topology")
+        hosts = set(templates)
+        # Validate each declared host file. Do not require {codex,cursor,claude}
+        # on every agent: Codex is the supported minimum when present, and a
+        # host may be omitted when the topology row intentionally drops it.
+        # Explorer therefore passes with only Codex and Claude templates.
+        if not hosts or not hosts.issubset(SUPPORTED_AGENT_HOSTS):
+            raise SystemExit("not a Teamwork plugin runtime: invalid agent host topology")
         for host, relative in templates.items():
             require_regular_file(root / _relative_file(relative, f"{host} agent template"))
 

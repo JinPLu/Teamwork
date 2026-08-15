@@ -18,7 +18,11 @@ a plan, test, dependency, risk, or integrity goal is not that approval.
 Verify in proportion to the result being claimed. Prefer direct outcome
 evidence when it is available.
 
-Delegate only when an independent or parallel bounded subtask is useful. Pass
-the objective, scope, settled constraints, evidence, and requested return.
-Missing Agents, installation state, versions, and local records do not block
-native work.
+Delegate only when an independent or parallel bounded subtask is useful. Every
+child brief carries the objective, owned scope, settled user constraints,
+available evidence, and requested return. Settled user constraints travel in
+that brief; the child does not reconstruct or widen them. Missing Agents,
+installation state, versions, and local records do not block native work.
+
+Host interaction surfaces do not replace Teamwork method contracts, evidence
+standards, or authority boundaries.

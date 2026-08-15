@@ -65,13 +65,6 @@ teamwork_managed_policy_status() {
       end_marker="<!-- TEAMWORK_CLAUDE_GLOBAL_END -->"
       expected="$(write_teamwork_claude_global_policy)"
       ;;
-    cursor)
-      # Cursor keeps user rules in its own settings store, not in a file this
-      # installer owns. A Cursor Agent applies and reads back the block through
-      # Cursor's user-rule API.
-      printf '%s\n' "agent-applied"
-      return 0
-      ;;
     *)
       printf '%s\n' "unknown"
       return 0

@@ -54,7 +54,6 @@
       "name": "explorer",
       "templates": {
         "codex": "templates/codex-agents/teamwork-explorer.toml",
-        "cursor": "templates/cursor-agents/explorer.md",
         "claude": "templates/claude-agents/explorer.md"
       }
     },

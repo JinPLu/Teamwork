@@ -6,6 +6,11 @@ if [[ -n "${TEAMWORK_CODEX_PROFILE:-}" ]]; then
 fi
 NOTIFICATIONS_ACTION="${TEAMWORK_NOTIFICATIONS_ACTION:-preserve}"
 CODEX_ROUTING_ACTION="${TEAMWORK_CODEX_ROUTING:-configure}"
+CODEX_ROUTING_SOURCE=""
+if [[ -n "${TEAMWORK_CODEX_ROUTING:-}" ]]; then
+  CODEX_ROUTING_SOURCE="env"
+fi
+CURSOR_SKILL_PROFILE_TOKEN="inherit"
 CODEX_USER_SKILLS_ROOT="$HOME/.agents/skills"
 PKG_VERSION="unknown"
 if [[ -f "$ROOT/VERSION" ]]; then
@@ -34,21 +39,27 @@ CURSOR_AGENTS=()
 CODEX_AGENTS=()
 while IFS= read -r item; do
   CLAUDE_AGENTS+=("$item")
-  CURSOR_AGENTS+=("$item")
 done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host claude --field name)
+while IFS= read -r item; do
+  CURSOR_AGENTS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host cursor --field name)
 while IFS= read -r item; do
   CODEX_AGENTS+=("$item")
 done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host codex --field stem)
 RETIRED_CLAUDE_AGENTS=(designer plan-reviewer)
-RETIRED_CURSOR_AGENTS=(designer plan-reviewer)
+RETIRED_CURSOR_AGENTS=(designer plan-reviewer explorer)
 RETIRED_CODEX_AGENTS=(teamwork-designer teamwork-plan-reviewer)
 
 usage() {
   cat <<'USAGE'
 Usage:
-  ./install.sh [--copy|--link] [--notifications|--no-notifications] [--codex-routing|--no-codex-routing] [--profile performance-first|cost-first] \
+  ./install.sh [--copy|--link] \
+    cursor|cursor-agents|cursor-policy|cursor-policy-copy
+
+  ./install.sh [--copy|--link] [--notifications|--no-notifications] \
+    [--codex-routing|--no-codex-routing] [--profile performance-first|cost-first] \
     [--project-root PATH] \
-    codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy
+    codex|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|claude-agents|codex-policy|claude-policy
 
 Targets:
   codex          Install checkout-based Codex skills/agents and separately
@@ -116,7 +127,10 @@ settings, including multi_agent_v2, are preserved and unmanaged. Use
 Project init never changes user-level routing; run a Codex global install or
 codex-agents separately when that surface needs refresh.
 
-Profile defaults to performance-first; choose cost-first explicitly when needed.
+Profile and Codex-routing flags apply to Codex and Claude Code targets only.
+Cursor targets reject --profile, --performance-first, --cost-first,
+--codex-routing, and --no-codex-routing. Profile defaults to performance-first
+for Codex and Claude Code; choose cost-first explicitly when needed.
 On Codex, performance-first sets the main thread to Terra/xhigh and
 uses Terra/xhigh for Researcher and Planner; Terra/high for Explorer; Sol/xhigh
 for Debugger and Reviewer; Sol/high for Challenger; Sol/medium for Worker; and
@@ -124,11 +138,30 @@ Luna/high for Writer.
 On Codex, cost-first sets the main thread to Luna/high and uses Luna/xhigh for Researcher, Debugger, Planner, and
 Reviewer; and Luna/high for Explorer, Worker, Writer, and Challenger.
 Claude Code keeps its existing compatibility/development profile mapping.
-Cursor subagents pin no model; Cursor selects one through its own scheduling,
-so the profile does not change a Cursor install.
+Cursor agents omit `model` so the host default applies (`inherit` / parent
+unless Task overrides). Cursor skill-root ownership still writes
+`.teamwork-profile` with the host-neutral token `inherit`.
 USAGE
 }
 
+
+teamwork_target_is_cursor_only() {
+  case "${1:-}" in
+    cursor|cursor-agents|cursor-policy|cursor-policy-copy)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+teamwork_target_uses_codex_profile() {
+  case "${1:-}" in
+    codex|claude|all|update|plugin-codex-bootstrap|codex-agents|claude-agents)
+      return 0
+      ;;
+  esac
+  return 1
+}
 
 validate_codex_profile() {
   case "$CODEX_PROFILE" in
@@ -331,6 +364,7 @@ install_agent_file() {
 install_skill_set() {
   local dest_root="$1"
   local label="$2"
+  local profile_token="${3:-$CODEX_PROFILE}"
   local skill
 
   preflight_teamwork_skill_root "$dest_root" "$label skill root"
@@ -344,7 +378,7 @@ install_skill_set() {
   done
 
   printf '%s\n' "$PKG_VERSION" > "$dest_root/.teamwork-version"
-  printf '%s\n' "$CODEX_PROFILE" > "$dest_root/.teamwork-profile"
+  printf '%s\n' "$profile_token" > "$dest_root/.teamwork-profile"
 
   echo "Installed $label skills under: $dest_root ($INSTALL_MODE)"
 }

@@ -4,6 +4,12 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.5.0 - 2026-08-16
+
+- **Cursor 改为安装 7 个可选角色，并停用 Explorer。** 本地检索使用宿主自带 Explore；Planner 与 Debugger 仍是可选的有界助手，不能替代 Cursor 的 Plan / Debug 模式。角色继承宿主模型选择（`inherit`），也不再写入默认 `is_background`。
+- **语义检查点会写入 `docs/teamwork/`。** Writer 在检查点保存可读 Markdown。topology 允许某个宿主省略未声明的角色；Cursor 安装会拒绝 `--profile` 等仅适用于 Codex 的标志。
+- **专项方法补回原先缺失的边界。** Collaborate 也可用于意图不清时的引导澄清；Debug 不会在诊断中悄悄扩大修复权限；Goal 的重试会带上原来的目标和约束。
+
 ## 7.4.2 - 2026-08-16
 
 - **Cursor 子代理不再钉死模型。** 八个可选角色交给 Cursor 自己调度，避免安装器写入已失效或过时的模型 slug；`performance-first` / `cost-first` 也不再改动 Cursor 安装结果。

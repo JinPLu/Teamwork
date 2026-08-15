@@ -26,8 +26,11 @@ of switching workflows or blocking on installation state.
    criteria, or a protected boundary, review it as a successor candidate in a
    new record.
 
-Keep one review record per stable candidate identity. Any correction that
-changes candidate content, scope, criteria, or a protected boundary creates a
+A protected boundary is a requirement, criterion, candidate identity, or
+behavior that must remain unchanged for this review record to stay valid.
+Example: the public API contract or the frozen acceptance criteria. Keep one
+review record per stable candidate identity. Any correction that changes
+candidate content, scope, criteria, or a protected boundary creates a
 successor candidate and a new document rather than overwriting the verdict
 basis of the old candidate. The old record may receive only an
 owner-certified successor link; its findings and verdict remain unchanged.
@@ -35,18 +38,26 @@ Preserve the candidate identity, criteria and protected boundaries, direct
 evidence, findings and severity, status of each criterion, verdict, residual
 uncertainty, and evidence-only bounded recheck scope.
 
-A Reviewer handoff contains the candidate, requirements, scope, settled
-constraints, direct evidence, and requested verdict. Reviewer remains read-only
+A Reviewer handoff contains the objective, owned scope, settled user
+constraints, available evidence, and requested return, naming the frozen
+candidate, requirements, and requested verdict. Reviewer remains read-only
 and never implements the repair.
 
-When a durable review record is useful or requested, Root may ask Writer to
-maintain it from `references/review.md`. Every wake-up supplies
-the document kind and path, stable candidate identity, authoritative review
-owner, owner-certified semantic delta, read-only context, and expected base.
-Writer only compresses literally, locates, deduplicates the current synthesis
-and pending delta, refreshes current synthesis, and appends dated history.
-Existing history is immutable. It cannot create or alter a finding,
-severity, criterion status, verdict, uncertainty, authority, next action, or
-mainline. Missing state or a conflicting base produces a no-write exact gap.
-Writer unavailability or conflict does not block the review; if the document
-was explicitly requested, only its delivery remains incomplete.
+## Persistence
+
+At each semantic checkpoint, Root asks Writer to maintain the review record from
+`references/review.md` at
+`docs/teamwork/reviews/<YYYY-MM-DD>-<slug>.md` (reuse the existing path for the
+same candidate identity). Checkpoints: a verdict is returned; a bounded recheck
+adds evidence for the unchanged frozen candidate; or a successor candidate is
+opened after a protected-boundary change.
+
+Every wake-up supplies the document kind and path, stable candidate identity,
+authoritative review owner, owner-certified semantic delta, read-only context,
+and expected base. Writer only compresses literally, locates, deduplicates the
+current synthesis and pending delta, refreshes current synthesis, and appends
+dated history. Existing history is immutable. It cannot create or alter a
+finding, severity, criterion status, verdict, uncertainty, authority, next
+action, or mainline. Missing state or a conflicting base produces a no-write
+exact gap. Writer unavailability or conflict does not block the review; when a
+checkpoint fired, report incomplete document delivery.

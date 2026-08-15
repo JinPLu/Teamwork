@@ -266,7 +266,7 @@ install_cursor() {
   local agent_root="$HOME/.cursor/agents"
   preflight_teamwork_skill_root "$skill_root" "Cursor skill root"
   preflight_agent_destination "$agent_root" md Cursor "${CURSOR_AGENTS[@]}"
-  install_skill_set "$skill_root" "Cursor"
+  install_skill_set "$skill_root" "Cursor" "$CURSOR_SKILL_PROFILE_TOKEN"
   install_cursor_agent_set "$agent_root" "user Cursor"
   echo "Cursor static skills/agents: installed"
   echo "Cursor global policy activation: separate; this installer cannot reach Cursor's user-rule store."
@@ -325,7 +325,7 @@ install_all() {
   echo "Codex static skills/agents: installed"
   install_codex_global_policy
   configure_user_notifications codex
-  install_skill_set "$cursor_skill_root" "Cursor"
+  install_skill_set "$cursor_skill_root" "Cursor" "$CURSOR_SKILL_PROFILE_TOKEN"
   install_cursor_agent_set "$cursor_agent_root" "user Cursor"
   echo "Cursor static skills/agents: installed"
   echo "Cursor global policy activation: separate; this installer cannot reach Cursor's user-rule store."

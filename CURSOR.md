@@ -23,7 +23,26 @@ copies the same block for a manual Settings -> Rules -> User Rules paste.
 Teamwork does not treat the policy state or adapter freshness as a blocker for
 Codex or ordinary project work.
 
-The adapter exposes the same focused Skills and eight optional helper roles. The
-roles pin no model, so Cursor selects one through its own scheduling and the
-install profile does not change them. The adapter creates no project document
-schema, mandatory Writer workflow, or migration state.
+## Roles and host modes
+
+Built-in Explore, AskQuestion, Plan, and Debug handle live interaction.
+Teamwork Skills add purpose-specific contracts and checkpoint documents under
+`docs/teamwork/`. The adapter exposes the same focused Skills and seven
+optional helper roles: Researcher, Debugger, Challenger, Planner, Reviewer,
+Worker, and Writer. Cursor installs 7 roles; Explorer is intentionally
+omitted. Planner and Debugger remain optional bounded helpers, not
+substitutes for Cursor's Plan or Debug modes.
+
+Roles pin no `model` field, so Cursor's default applies (`inherit` / parent
+unless Task overrides). `--profile` does not apply to Cursor; it affects
+Codex and Claude agents only, and the Cursor install does not rewrite agent
+models.
+
+## Project documents
+
+At semantic checkpoints, Skills ask Writer to persist plain Markdown under
+`docs/teamwork/` (for example `plans/`, `debug/`, `reviews/`) using
+`YYYY-MM-DD-<slug>.md` for a new subject and reusing the path for the same
+stable identity. That is durable project memory, not a Case lifecycle, document
+schema, JSON index, or migration gate. Writer failure never blocks the primary
+method; incomplete document delivery is reported when a checkpoint fired.

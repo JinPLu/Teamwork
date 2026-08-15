@@ -34,10 +34,12 @@ while [[ $# -gt 0 ]]; do
       ;;
     --codex-routing)
       CODEX_ROUTING_ACTION="configure"
+      CODEX_ROUTING_SOURCE="cli"
       shift
       ;;
     --no-codex-routing)
       CODEX_ROUTING_ACTION="preserve"
+      CODEX_ROUTING_SOURCE="cli"
       shift
       ;;
     --project-root)
@@ -88,7 +90,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 EFFECTIVE_TARGET="${TARGET:-codex}"
-if [[ -n "$CODEX_PROFILE_SOURCE" ]]; then
+if [[ -n "$CODEX_PROFILE_SOURCE" ]] && teamwork_target_uses_codex_profile "$EFFECTIVE_TARGET"; then
   validate_codex_profile
 fi
 
@@ -118,14 +120,16 @@ case "$EFFECTIVE_TARGET" in
     ;;
 esac
 
-case "$CODEX_ROUTING_ACTION" in
-  configure|preserve)
-    ;;
-  *)
-    echo "TEAMWORK_CODEX_ROUTING must be configure or preserve." >&2
-    exit 2
-    ;;
-esac
+if ! teamwork_target_is_cursor_only "$EFFECTIVE_TARGET"; then
+  case "$CODEX_ROUTING_ACTION" in
+    configure|preserve)
+      ;;
+    *)
+      echo "TEAMWORK_CODEX_ROUTING must be configure or preserve." >&2
+      exit 2
+      ;;
+  esac
+fi
 
 if [[ "$NOTIFICATIONS_ACTION" != "preserve" ]]; then
   case "$EFFECTIVE_TARGET" in
@@ -139,13 +143,28 @@ if [[ "$NOTIFICATIONS_ACTION" != "preserve" ]]; then
   esac
 fi
 
+if teamwork_target_is_cursor_only "$EFFECTIVE_TARGET"; then
+  if [[ "$CODEX_PROFILE_SOURCE" == "cli" ]]; then
+    echo "Profile flags are supported only with Codex or Claude Code targets." >&2
+    usage
+    exit 2
+  fi
+  if [[ "$CODEX_ROUTING_SOURCE" == "cli" ]]; then
+    echo "Codex routing flags are supported only with Codex or Claude Code targets." >&2
+    usage
+    exit 2
+  fi
+fi
+
 if [[ -n "$PROJECT_ROOT" && "$EFFECTIVE_TARGET" != "init-project" && "$EFFECTIVE_TARGET" != "plugin-init-project" ]]; then
   echo "--project-root is valid only with init-project or plugin-init-project." >&2
   usage
   exit 2
 fi
 
-validate_codex_profile
+if teamwork_target_uses_codex_profile "$EFFECTIVE_TARGET"; then
+  validate_codex_profile
+fi
 
 case "$EFFECTIVE_TARGET" in
   codex)

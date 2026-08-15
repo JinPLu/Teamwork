@@ -229,6 +229,157 @@ class CoreFlowTests(unittest.TestCase):
             self.assertIn("INSTALL_STATE=partial", result.stdout)
             self.assertIn("BLOCKS_OTHER_WORK=no", result.stdout)
 
+    def _skill_text(self, name: str) -> str:
+        return (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
+
+    @staticmethod
+    def _folded(text: str) -> str:
+        return " ".join(text.split())
+
+    def _frontmatter_description(self, skill_text: str) -> str:
+        self.assertTrue(skill_text.startswith("---\n"), skill_text[:40])
+        end = skill_text.find("\n---\n", 4)
+        self.assertGreater(end, 0)
+        block = skill_text[4:end]
+        prefix = "description: "
+        for line in block.splitlines():
+            if line.startswith(prefix):
+                return line[len(prefix) :]
+        self.fail("missing description frontmatter")
+
+    def _persistence_section(self, skill_text: str) -> str:
+        marker = "## Persistence"
+        start = skill_text.find(marker)
+        self.assertGreaterEqual(start, 0, "missing Persistence section")
+        rest = skill_text[start + len(marker) :]
+        nxt = rest.find("\n## ")
+        return rest if nxt < 0 else rest[:nxt]
+
+    def test_collaborate_description_requires_unclear_intent_not_one_detail(self) -> None:
+        description = self._frontmatter_description(self._skill_text("teamwork-collaborate"))
+        self.assertIn("unclear intent", description)
+        self.assertIn("guided clarification", description)
+        self.assertIn("do not use for clear execution or a single discoverable detail", description)
+
+    def test_debug_freezes_observe_instrument_fix_and_runtime_log_first(self) -> None:
+        skill = self._folded(self._skill_text("teamwork-debug"))
+        self.assertIn("freeze observe, instrument, and fix permission", skill)
+        self.assertIn(
+            "For a runtime unknown, use structured logging first when it is that discriminator",
+            skill,
+        )
+        self.assertIn("keep non-runtime or already-isolated failures probe-minimal", skill)
+        templates = (
+            ROOT / "templates/codex-agents/teamwork-debugger.toml",
+            ROOT / "templates/cursor-agents/debugger.md",
+            ROOT / "templates/claude-agents/debugger.md",
+        )
+        for path in templates:
+            text = self._folded(path.read_text(encoding="utf-8"))
+            self.assertRegex(text, r"observe.{0,40}instrument.{0,40}fix", path.name)
+            self.assertIn("structured logging first", text, path.name)
+            self.assertIn("runtime unknown", text, path.name)
+            self.assertIn("must not expand repair authority", text, path.name)
+
+    def test_goal_mentions_invariants_and_attempt_record(self) -> None:
+        skill = self._folded(self._skill_text("teamwork-goal"))
+        self.assertIn("Invariants", skill)
+        self.assertIn("Attempt Record", skill)
+
+    def test_review_marks_missing_evidence_unknown_and_names_protected_boundary(self) -> None:
+        skill = self._skill_text("teamwork-review")
+        self.assertIn("missing evidence is `unknown`", skill)
+        self.assertIn("protected boundary", skill)
+
+    def test_init_and_update_report_observed_noop(self) -> None:
+        for name in ("teamwork-init", "teamwork-update"):
+            with self.subTest(skill=name):
+                skill = self._skill_text(name)
+                self.assertIn("observed no-op", skill)
+
+    def test_each_skill_persistence_section_retains_writer_grant_fields(self) -> None:
+        grant_fields = (
+            "document kind and path",
+            "identity",
+            "authoritative",
+            "owner-certified semantic delta",
+            "read-only context",
+            "expected base",
+        )
+        topology = json.loads((ROOT / "config/teamwork-topology.json").read_text(encoding="utf-8"))
+        skills = [row["name"] for row in topology["public_skills"]]
+        self.assertEqual(len(skills), 8)
+        for name in skills:
+            with self.subTest(skill=name):
+                section = self._folded(self._persistence_section(self._skill_text(name)))
+                for field in grant_fields:
+                    self.assertIn(field, section, field)
+
+    def test_plugin_runtime_root_accepts_explorer_without_cursor(self) -> None:
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "plugin_runtime_root",
+            ROOT / "scripts/plugin-runtime-root.py",
+        )
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        topology = json.loads((ROOT / "config/teamwork-topology.json").read_text(encoding="utf-8"))
+        explorer = next(row for row in topology["agents"] if row["name"] == "explorer")
+        self.assertEqual(
+            set(explorer["templates"]),
+            {"codex", "claude"},
+        )
+        module.validate_topology_layout(ROOT)
+
+        with tempfile.TemporaryDirectory() as raw:
+            isolated = Path(raw)
+            (isolated / "config").mkdir()
+            (isolated / "skills/demo").mkdir(parents=True)
+            (isolated / "templates/codex-agents").mkdir(parents=True)
+            (isolated / "templates/claude-agents").mkdir(parents=True)
+            (isolated / "skills/demo/SKILL.md").write_text("# demo\n", encoding="utf-8")
+            (isolated / "templates/codex-agents/teamwork-explorer.toml").write_text(
+                "name = \"teamwork_explorer\"\n",
+                encoding="utf-8",
+            )
+            (isolated / "templates/claude-agents/explorer.md").write_text(
+                "name: explorer\n",
+                encoding="utf-8",
+            )
+            (isolated / "config/teamwork-topology.json").write_text(
+                json.dumps(
+                    {
+                        "public_skills": [
+                            {"name": "demo", "path": "skills/demo/SKILL.md"}
+                        ],
+                        "agents": [
+                            {
+                                "name": "explorer",
+                                "templates": {
+                                    "codex": "templates/codex-agents/teamwork-explorer.toml",
+                                    "claude": "templates/claude-agents/explorer.md",
+                                },
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            module.validate_topology_layout(isolated)
+
+        live = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/plugin-runtime-root.py")],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(live.returncode, 0, live.stderr)
+        self.assertEqual(live.stdout.strip(), str(ROOT))
+
 
 if __name__ == "__main__":
     unittest.main()

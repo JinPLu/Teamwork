@@ -4,6 +4,12 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.5.0 - 2026-08-16
+
+- **Cursor now ships 7 optional roles and retires Explorer.** Local search uses the host's built-in Explore; Planner and Debugger remain optional bounded helpers, not substitutes for Cursor Plan or Debug modes. Roles inherit the host model choice and no longer write a default `is_background`.
+- **Semantic checkpoints persist under `docs/teamwork/`.** Writer records reusable Markdown at those checkpoints. Topology may omit a role on a host that does not declare it; Cursor installs reject Codex-only flags such as `--profile`.
+- **Focused methods regain missing boundaries.** Collaborate may also guide clarification when intent is unclear; Debug does not silently expand repair authority during diagnosis; Goal retries carry the original objective and constraints.
+
 ## 7.4.2 - 2026-08-16
 
 - **Cursor subagents no longer pin a model.** The eight optional roles leave model choice to Cursor's own scheduling, so the installer no longer writes stale or unavailable model slugs; `performance-first` / `cost-first` also leave Cursor installs unchanged.

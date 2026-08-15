@@ -27,9 +27,14 @@
 
 ## Source notes
 
+For every source that actually participated in the reasoning, record its
+identity or citation, date or version, source class, the claims it supports or
+contradicts, and why it was used, rejected, or left unresolved. Source count is
+not a coverage quota.
+
 ### <source citation>
 
-<notes for every source that actually participated in reasoning>
+<identity, date or version, class, claim role, and disposition>
 
 ## Coverage and stop condition
 

@@ -31,7 +31,7 @@
 
 ## Authorized repair and verification
 
-- Authorization: <scope or not authorized>
+- Authorization: <observe, instrument, and/or fix, as frozen in the brief>
 - Repair: <exact change>
 - Same-path verification: <observed result against success signal>
 - Probe cleanup: <removed temporary diagnostics>

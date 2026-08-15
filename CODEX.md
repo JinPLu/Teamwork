@@ -20,12 +20,14 @@ ownership of its own meaning. Writer failure is reported and never blocks the
 main work; if the document itself was explicitly requested, only that delivery
 remains incomplete.
 
-Reusable content has six document semantics: Discussion records choices and
-trade-offs; Research records external evidence and synthesis; Debug records
-failure boundaries, causal reasoning, repair, and verification; Plan records
-executable steps for a selected direction; Review records candidate evidence,
-findings, and verdict; Report records reusable status and outcomes. Each plain
-Markdown document maintains a current synthesis plus chronological history.
+Reusable content has six document semantics under `docs/teamwork/`: Discussion
+records choices and trade-offs; Research records external evidence and
+synthesis; Debug records failure boundaries, causal reasoning, repair, and
+verification; Plan records executable steps for a selected direction; Review
+records candidate evidence, findings, and verdict; Report records reusable
+status and outcomes. Each plain Markdown document maintains a current synthesis
+plus chronological history at Skill-defined semantic checkpoints, using
+`<YYYY-MM-DD>-<slug>.md` and reusing the path for the same stable identity.
 These documents require no Case, schema, JSON index, migration, or readiness
 gate.
 

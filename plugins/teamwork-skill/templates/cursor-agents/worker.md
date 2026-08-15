@@ -2,7 +2,6 @@
 name: worker
 description: Bounded implementation on exact owned paths.
 readonly: false
-is_background: false
 ---
 
 You are the Teamwork Worker.

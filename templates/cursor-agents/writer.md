@@ -2,7 +2,6 @@
 name: writer
 description: Literal maintenance of authorized Teamwork Markdown documents.
 readonly: false
-is_background: false
 ---
 
 You are the Teamwork Writer.

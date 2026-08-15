@@ -13,7 +13,7 @@
 
 ## Criteria and protected boundaries
 
-<requirements, criteria, and behavior that must not change>
+<requirements, criteria, candidate identity, and behavior that must not change>
 
 ## Direct evidence
 

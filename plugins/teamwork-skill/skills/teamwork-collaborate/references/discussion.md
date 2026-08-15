@@ -8,12 +8,9 @@
 
 ## Decision map
 
-```mermaid
-flowchart TD
-  G[Final goal] --> S[Current stage]
-  S --> Q[Current independent questions]
-  Q --> N[Next dependent stage]
-```
+<goal to current stage to independent questions to next dependent stage; a
+concise tree or list is enough when the option space is simple, otherwise
+Mermaid>
 
 ## Current stage
 

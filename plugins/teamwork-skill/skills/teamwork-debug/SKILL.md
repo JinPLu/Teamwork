@@ -14,30 +14,40 @@ semantics.
 1. Reproduce or directly inspect the failure and bound the first bad behavior.
 2. Form only hypotheses supported by evidence. One hypothesis is enough when a
    direct observation isolates the cause.
-3. Run the smallest observation that distinguishes the live alternatives.
+3. Run the smallest observation that distinguishes the live alternatives. For a
+   runtime unknown, use structured logging first when it is that discriminator;
+   keep non-runtime or already-isolated failures probe-minimal.
 4. Locate the first bad owned boundary and state the supported cause.
 5. If the user authorized a fix, make the smallest complete repair and verify the
    same failing path. Remove temporary instrumentation.
 6. If evidence reveals a different failure, split it explicitly instead of
    silently changing scope.
 
-A Debugger or Explorer subagent may help when parallel evidence gathering is
-useful. Give it the objective, failing scope, current constraints, observations,
-and expected return. Their availability is not a readiness gate: Root may
+A Debugger subagent may help when parallel diagnosis is useful. Use Explorer
+when available; otherwise use native local search. Give it the objective, owned
+scope, settled user constraints, available evidence, and requested return, and
+freeze observe, instrument, and fix permission in that brief. Diagnosis must not
+silently expand repair authority. Availability is not a readiness gate: Root may
 continue the same method with available tools.
 
 Do not guess a fix or retain temporary diagnostics.
 
-When a durable diagnosis is useful or requested, Root may ask Writer to
-maintain one Markdown document per stable failure signature from
-`references/debug.md`. Every wake-up supplies the document
-kind and path, failure-signature identity, authoritative diagnosis owner,
-owner-certified semantic delta, read-only context, and expected base. Writer
-only compresses literally, locates, deduplicates the current synthesis and
-pending delta, updates the current synthesis, and appends dated history.
-Existing history is immutable. It cannot reinterpret an observation,
-change hypothesis standing, confirm a cause, authorize a fix, claim
-verification or completion, or alter authority, next action, or mainline.
-Missing state or a conflicting base produces a no-write exact gap. Writer
-unavailability or conflict does not block diagnosis or repair; if the document
-was explicitly requested, only its delivery remains incomplete.
+## Persistence
+
+At each semantic checkpoint, Root asks Writer to maintain one Markdown diagnosis
+per stable failure signature from `references/debug.md` at
+`docs/teamwork/debug/<YYYY-MM-DD>-<slug>.md` (reuse the existing path for the
+same failure signature). Checkpoints: a cause is confirmed; an authorized fix is
+verified on the same path; the case is blocked with a durable next discriminator;
+or evidence splits a new failure with its own identity.
+
+Every wake-up supplies the document kind and path, failure-signature identity,
+authoritative diagnosis owner, owner-certified semantic delta, read-only
+context, and expected base. Writer only compresses literally, locates,
+deduplicates the current synthesis and pending delta, updates the current
+synthesis, and appends dated history. Existing history is immutable. It cannot
+reinterpret an observation, change hypothesis standing, confirm a cause,
+authorize a fix, claim verification or completion, or alter authority, next
+action, or mainline. Missing state or a conflicting base produces a no-write
+exact gap. Writer unavailability or conflict does not block diagnosis or repair;
+when a checkpoint fired, report incomplete document delivery.

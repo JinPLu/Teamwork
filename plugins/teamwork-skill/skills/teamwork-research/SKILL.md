@@ -28,20 +28,28 @@ and stop conditions, and notes for every source that actually participated in
 the reasoning; source notes are embedded in the document rather than delegated
 to a separate index.
 
-A Researcher may own a bounded investigation and Explorers may gather local
-facts. Give each subagent the objective, scope, settled constraints, sanitized
-evidence, and requested return. Their availability is not a workflow gate; Root
-may perform the method directly with available research tools.
+A Researcher may own a bounded investigation. Use Explorer when available;
+otherwise use native local search for project facts. Give each subagent the
+objective, owned scope, settled user constraints, sanitized evidence, and
+requested return. Their availability is not a workflow gate; Root may perform
+the method directly with available research tools.
 
-When a durable research record is useful or requested, Root may ask Writer to
-maintain one Markdown document for the continuing research question from
-`references/research.md`. Every wake-up supplies the document
-kind and path, stable subject identity, authoritative research owner,
-owner-certified semantic delta, read-only context, and expected base. Writer
-only compresses literally, locates, deduplicates the current synthesis and
-pending delta, refreshes the current synthesis, and appends dated history.
-Existing history is immutable. It does not search, assess evidence, or
-change claims, conclusions, confidence, recommendations, authority, next
-action, or mainline. Missing state or a conflicting base produces a no-write
-exact gap. Writer unavailability or conflict never blocks the investigation;
-if the document was explicitly requested, only its delivery remains incomplete.
+## Persistence
+
+At each semantic checkpoint, Root asks Writer to maintain one Markdown document
+for the continuing research question from `references/research.md` at
+`docs/teamwork/research/<YYYY-MM-DD>-<slug>.md` (reuse the existing path for
+the same subject identity). Checkpoints: a material claim-to-evidence synthesis is
+first settled; contradictions change confidence or the conclusion; or a stop
+condition is reached.
+
+Every wake-up supplies the document kind and path, stable subject identity,
+authoritative research owner, owner-certified semantic delta, read-only
+context, and expected base. Writer only compresses literally, locates,
+deduplicates the current synthesis and pending delta, refreshes the current
+synthesis, and appends dated history. Existing history is immutable. It does
+not search, assess evidence, or change claims, conclusions, confidence,
+recommendations, authority, next action, or mainline. Missing state or a
+conflicting base produces a no-write exact gap. Writer unavailability or
+conflict never blocks the investigation; when a checkpoint fired, report
+incomplete document delivery.

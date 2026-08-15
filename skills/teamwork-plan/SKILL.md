@@ -22,23 +22,30 @@ discussion artifact.
 6. End with dependencies, verification, and the conditions that require
    replanning.
 
-A Planner or Explorer subagent is optional. Its handoff contains the objective,
-scope, settled constraints, evidence, and requested return. If unavailable,
+A Planner subagent is optional. Use Explorer when available; otherwise use
+native local search. Its handoff contains the objective, owned scope, settled
+user constraints, available evidence, and requested return. If unavailable,
 Root continues without switching to Update or blocking the plan.
 
 Return unresolved material choices to the user; do not hide them as assumptions.
 
-When a durable plan is useful or requested, Root may ask Writer to maintain one
-Markdown document for the selected outcome and direction from
-`references/plan.md`. This hook does not turn the plan into a
-discussion history or execution log. Every Writer wake-up explicitly supplies
-the document kind and path, stable subject identity, authoritative planning
-owner, owner-certified semantic delta, read-only context, and expected base.
-Writer may only compress literally, locate, deduplicate the current synthesis
-and pending delta, refresh the current plan synthesis, and append dated
-plan-revision history. Existing history is immutable. It cannot choose or
-change the direction, requirements, recommendation, authority, dependencies,
-verification, next action, or mainline. Missing state or a conflicting base
-produces a no-write exact gap. Writer unavailability or conflict does not block
-planning; if the document was explicitly requested, only its delivery remains
-incomplete.
+## Persistence
+
+At each semantic checkpoint, Root asks Writer to maintain one Markdown plan for
+the selected outcome and direction from `references/plan.md` at
+`docs/teamwork/plans/<YYYY-MM-DD>-<slug>.md` (reuse the existing path for the
+same subject identity). Checkpoints: the direction and scope are accepted; the
+executable plan is first settled; a material replan changes steps, dependencies,
+verification, or stop conditions.
+
+This hook does not turn the plan into a discussion history or execution log.
+Every Writer wake-up explicitly supplies the document kind and path, stable
+subject identity, authoritative planning owner, owner-certified semantic delta,
+read-only context, and expected base. Writer may only compress literally,
+locate, deduplicate the current synthesis and pending delta, refresh the
+current plan synthesis, and append dated plan-revision history. Existing
+history is immutable. It cannot choose or change the direction, requirements,
+recommendation, authority, dependencies, verification, next action, or
+mainline. Missing state or a conflicting base produces a no-write exact gap.
+Writer unavailability or conflict does not block planning; when a checkpoint
+fired, report incomplete document delivery.

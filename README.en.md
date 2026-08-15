@@ -100,7 +100,7 @@ There is no Router, mandatory stage chain, or automatic Update detour. Root alwa
 
 ## 🤝 Eight optional Agent roles
 
-Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer are bounded helpers, not a pipeline every task must traverse. Writer is a low-cost, non-blocking recorder reusable across Skills: it turns only owner-certified semantic changes into readable Markdown and never changes the owner's facts, decisions, or conclusions.
+Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer are bounded helpers, not a pipeline every task must traverse. Cursor installs 7 roles and uses the host's built-in Explore; Codex and Claude keep Explorer. Writer is a low-cost, non-blocking recorder reusable across Skills: at semantic checkpoints it turns owner-certified changes into readable Markdown under `docs/teamwork/` and never changes the owner's facts, decisions, or conclusions.
 
 - Root delegates only when parallel investigation, independent judgment, or a clean division of work is useful.
 - A handoff carries the objective, owned scope, settled constraints, available evidence, and requested return.
@@ -109,7 +109,11 @@ Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Write
 
 ## 🗃️ Six readable document types
 
-When a focused method produces reusable content, Writer continuously maintains plain Markdown. Each document carries both a **current synthesis** and an append-only **chronological history**, so it is quick to read without hiding how the conclusion changed.
+When a focused method reaches a semantic checkpoint, Writer maintains plain
+Markdown under `docs/teamwork/`. Each document carries both a **current
+synthesis** and an append-only **chronological history**, so it is quick to
+read without hiding how the conclusion changed. Default filenames are
+`<YYYY-MM-DD>-<slug>.md`; reuse the path for the same stable identity.
 
 | Document | What it records |
 | --- | --- |

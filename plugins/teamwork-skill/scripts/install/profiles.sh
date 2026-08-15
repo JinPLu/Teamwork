@@ -193,8 +193,9 @@ install_cursor_agent_file() {
     echo "Cursor profile identity does not match $agent: $source" >&2
     return 1
   }
-  # Cursor schedules its own model per subagent. A pinned slug would override
-  # that and can name a model the host no longer offers.
+  # Omitting model uses Cursor's default (inherit / parent unless Task
+  # overrides). A pinned slug would override that and can name a model the
+  # host no longer offers.
   if grep -Eq '^model:' "$source"; then
     echo "Cursor profile must not pin a model: $source" >&2
     return 1
@@ -234,7 +235,7 @@ install_cursor_agent_set() {
       "$agent"
   done
 
-  echo "Installed $label Cursor agents under: $dest_root ($INSTALL_MODE, host-selected models)"
+  echo "Installed $label Cursor agents under: $dest_root ($INSTALL_MODE, inherit models)"
 }
 
 install_codex_agent_set() {
