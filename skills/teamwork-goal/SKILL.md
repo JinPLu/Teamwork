@@ -19,8 +19,7 @@ Goal adds persistence to the underlying task; it does not add a second workflow.
 4. Change approach when evidence invalidates the current one. Do not repeat a
    failed action without a new reason.
 5. Report success with the observed evidence, or report the exact blocker and
-   what would unblock it. Persist the checkpoint under Persistence before
-   closeout; a host plan or question UI does not complete it.
+   what would unblock it.
 
 Carry compact Invariants through every retry: the original objective, protected
 constraints, and stop or budget state. After each attempt, keep an Attempt
@@ -46,9 +45,3 @@ different subject gets a new path.
 Checkpoints: the success signal is directly observed; a genuine external
 blocker stops progress; or the user interrupts after material progress worth
 reusing. Keep user quotes separate from the working understanding.
-
-Prefer Writer, a helper role with its own writing contract, not a Skill. If
-Writer is unavailable or returns a no-write, Root writes the same template to
-the same path and marks Root fallback in the closeout. The underlying goal
-never blocks on Writer; silently skipping a fired checkpoint is a Skill
-violation.

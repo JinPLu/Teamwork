@@ -14,12 +14,12 @@ integration, user dialogue, and confirmation of what enters the mainline.
 
 Writer is a low-cost, non-blocking recorder. A method owner certifies the
 semantic delta; Writer expresses that delta in plain Markdown without changing
-facts, decisions, authority, or completion. Prefer Writer at checkpoints; if
-Writer is unavailable, Root writes the same Skill template and marks that Root
-fallback in the closeout. One Writer may be reused across Skills, but that reuse
-shares only the Agent lifecycle: each Skill retains ownership of its own
-meaning. Silently skipping a fired checkpoint is a Skill violation; the primary
-method never blocks on Writer.
+facts, decisions, authority, or completion. Prefer Writer after the
+user-facing result exists; if Writer is unavailable, Root writes the same Skill
+template and marks that Root fallback in the closeout. One Writer may be reused
+across Skills, but that reuse shares only the Agent lifecycle: each Skill
+retains ownership of its own meaning. Write failure is visible and does not
+undo the completed result; the primary method never blocks on Writer.
 
 Reusable content has six document semantics under `docs/teamwork/`: Discussion
 records choices and trade-offs; Research records external evidence and

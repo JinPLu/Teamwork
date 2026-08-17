@@ -100,7 +100,7 @@ flowchart LR
 
 ## 🤝 8 个可选 Agent 角色
 
-Researcher、Explorer、Debugger、Challenger、Planner、Reviewer、Worker 和 Writer 都是边界化帮助者，不是必须经过的流水线。Cursor 与 Claude Code 安装 7 个角色并使用宿主自带 Explore；Codex 仍保留 Explorer。Writer 是低成本、可跨 Skill 复用的非阻塞记录者：它在语义检查点把方法 owner 确认的变化写成 `docs/teamwork/` 下的可读 Markdown，不替 owner 改变事实、决定或结论。Writer 不可用时，Root 按同一模板直写并在收口标明 Root 兜底；静默不写仍违规。
+Researcher、Explorer、Debugger、Challenger、Planner、Reviewer、Worker 和 Writer 都是边界化帮助者，不是必须经过的流水线。Cursor 与 Claude Code 安装 7 个角色并使用宿主自带 Explore；Codex 仍保留 Explorer。Writer 是低成本、可跨 Skill 复用的非阻塞记录者：它在语义检查点把方法 owner 确认的变化写成 `docs/teamwork/` 下的可读 Markdown，不替 owner 改变事实、决定或结论。Writer 不可用时，Root 按同一模板直写并在收口标明 Root 兜底；写入失败可见，但不撤销已经完成的结果。
 
 - Root 只在并行调查、独立判断或清楚分工确实有用时分派。
 - handoff 带上目标、负责范围、已确定约束、已有证据和期望返回。

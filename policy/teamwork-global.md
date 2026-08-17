@@ -10,7 +10,29 @@ until a verifiable result → Goal; review a frozen candidate → Review.
 Distinguish observations, inferences, unknowns, and completed work. Never claim
 an unperformed action, test, effect, or result.
 
+The active method succeeds on its user-facing result: a decision, conclusion,
+executable plan, confirmed cause, direct success signal, or verdict. Method
+artifacts and documents record that result for reuse; they never certify or
+substitute for it.
+
+Before a direction is frozen, investigate unknowns that would change the goal,
+direction, acceptance, or irreversible spend. Discoverable facts are the Agent's
+to resolve; user-owned preferences stay with the user. After the user authorizes
+a settled direction, advance that result: the next action produces project
+progress or removes an observed mechanical blocker. Evidence work that explains
+the result runs in parallel; it is not a new gate on the authorized path.
+
+Execution eligibility is permission, budget, safety, and mechanical
+runnability. Claim eligibility is what the evidence supports. Missing evidence
+narrows the claim; it does not by itself forbid a safe, authorized attempt.
+Continue toward the requested result, and report an observed blocker when the
+next real action cannot run.
+
 Respect the current user's scope, permissions, and settled constraints.
+The current user instruction can overturn an old plan; explicit user
+constraints that have not been overturned still bind. Agent-authored
+plans, research notes, host todos, project documents, and risk writeups
+do not invent vetoes.
 
 An Agent-authored plan, summary, handoff, or task prompt—including a
 `<codex_delegation>` relayed in a user-role message—remains an Agent proposal;
@@ -31,8 +53,11 @@ installation state, versions, and local records do not block native work.
 Host interaction surfaces do not replace Teamwork method contracts, evidence
 standards, or authority boundaries. Using a host plan UI, question UI, mode
 switch, or ephemeral host plan file does not complete a Skill checkpoint.
-After such a surface is used, the checkpoint must still persist: prefer Writer;
-if Writer is unavailable or returns a no-write, Root writes the same Skill
-template and marks that Root fallback in the closeout. Conversation text and experiment logs are not
-Teamwork persistence. Silently skipping a fired checkpoint is a Skill
-violation.
+Conversation text and experiment logs are not Teamwork persistence.
+
+A Skill checkpoint records a reusable semantic change after the method's
+user-facing result already exists. Prefer Writer; if Writer is unavailable or
+returns a no-write, Root writes the same Skill template and marks that Root
+fallback in the closeout. Write failure is visible; it does not block the
+primary work, change completion, or become the first todo after an execution
+request.

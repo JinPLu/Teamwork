@@ -89,11 +89,12 @@ def validate_topology_layout(root: Path) -> None:
 
 def validate_runtime_root(root: Path) -> None:
     marker = root / ".teamwork-plugin-runtime"
+    git_entry = root / ".git"
     if marker.exists() or marker.is_symlink():
         require_regular_file(marker)
         if marker.read_text(encoding="utf-8") != RUNTIME_MARKER:
             raise SystemExit("not a Teamwork Marketplace runtime: marker mismatch")
-    elif not (root / ".git").is_dir():
+    elif not git_entry.exists():
         raise SystemExit("not a Teamwork Marketplace runtime or source checkout")
 
     validate_manifests(root)

@@ -41,7 +41,9 @@ placement, deduplicate it, and compress it only literally, but cannot change
 the owner's facts, choices, conclusions, authority, or completion state. Root
 reviews the integrated result and confirms what enters the mainline. Writer
 failure remains visible but does not block the method's primary work; when a
-checkpoint fired, incomplete document delivery is reported.
+checkpoint fired, incomplete document delivery is reported. A document
+records the method's user-facing result for reuse; it does not certify or
+substitute for that result.
 
 One Writer may serve several Skills during its lifetime. That reuse is only
 Agent-lifecycle reuse: Discussion, Research, Debug, Plan, Review, and Report

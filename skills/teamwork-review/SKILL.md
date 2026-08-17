@@ -24,8 +24,7 @@ of switching workflows or blocking on installation state.
    next action. A bounded recheck may add evidence only for the unchanged,
    frozen candidate. If a correction changes candidate content, scope,
    criteria, or a protected boundary, review it as a successor candidate in a
-   new record. Persist the checkpoint under Persistence before closeout; a host
-   plan or question UI does not complete it.
+   new record.
 
 A protected boundary is a requirement, criterion, candidate identity, or
 behavior that must remain unchanged for this review record to stay valid.
@@ -55,8 +54,3 @@ Checkpoints: a verdict is returned; a bounded recheck adds evidence for the
 unchanged frozen candidate; or a successor candidate is opened after a
 protected-boundary change. Keep user quotes separate from the working
 understanding.
-
-Prefer Writer, a helper role with its own writing contract, not a Skill. If
-Writer is unavailable or returns a no-write, Root writes the same template to
-the same path and marks Root fallback in the closeout. Review never blocks on
-Writer; silently skipping a fired checkpoint is a Skill violation.

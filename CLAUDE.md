@@ -44,10 +44,11 @@ Default Update does not touch Claude.
 
 ## Project documents
 
-At semantic checkpoints, Skills prefer Writer to persist plain Markdown under
-`docs/teamwork/` (for example `plans/`, `debug/`, `reviews/`) using
-`YYYY-MM-DD-<slug>.md` for a new subject and reusing the path for the same
-stable identity. That is durable project memory, not a Case lifecycle, document
-schema, JSON index, or migration gate. If Writer is unavailable, Root writes
-the same template and marks Root fallback in the closeout; silently skipping a
-fired checkpoint is a Skill violation.
+After the method's user-facing result exists, Skills prefer Writer to persist
+plain Markdown under `docs/teamwork/` (for example `plans/`, `debug/`,
+`reviews/`) using `YYYY-MM-DD-<slug>.md` for a new subject and reusing the path
+for the same stable identity. That is durable project memory, not a Case
+lifecycle, document schema, JSON index, or migration gate. If Writer is
+unavailable, Root writes the same template and marks Root fallback. A write
+failure is visible and does not undo the completed result. Host plan or
+question UI is not durable memory.

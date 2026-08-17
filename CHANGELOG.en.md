@@ -4,6 +4,11 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.7.0 - 2026-08-18
+
+- **Before planning, settle the questions that would change direction or acceptance, and cover the full confirmed goal.** Discoverable facts are resolved directly; only real preferences go to you. If a direction-changing gap remains, that gap is returned instead of a partial plan.
+- **Once the direction is settled and you authorize it, work advances along the real result.** The first step changes the target artifact or removes an observed mechanical blocker. Evidence, appendices, and documents run beside that path; they do not replace it.
+
 ## 7.6.0 - 2026-08-17
 
 - **Collaborate is one discussion method.** It moves from goal, priors, and option judgment to a recommendation; the Experiment gate opens only for scheduling, scarce compute, or a paper slot, and the discussion document records the contribution slot.

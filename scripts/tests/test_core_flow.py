@@ -363,7 +363,7 @@ class CoreFlowTests(unittest.TestCase):
                 self.assertIn("Root may write the same template", persistence)
                 self.assertIn("Root fallback", persistence)
 
-    def test_each_skill_persistence_section_retains_writer_grant_fields(self) -> None:
+    def test_each_skill_persistence_section_retains_path_and_identity(self) -> None:
         mandatory = (
             "teamwork-collaborate",
             "teamwork-research",
@@ -384,17 +384,19 @@ class CoreFlowTests(unittest.TestCase):
                 self.assertIn("name the document you read", section)
                 self.assertIn("A different subject gets a new path", section)
                 self.assertIn("Checkpoints:", section)
-                self.assertEqual(section.count("no-write"), 1)
-                self.assertEqual(section.count("Root fallback"), 1)
-                self.assertIn("unavailable or returns a no-write", section)
-                self.assertIn("helper role with its own writing contract", section)
-                self.assertIn("Root writes the same template", section)
-                self.assertIn("silently skipping a fired checkpoint", section.lower())
+                self.assertNotIn("no-write", section)
+                self.assertNotIn("Root fallback", section)
+                self.assertNotIn("unavailable or returns a no-write", section)
+                self.assertNotIn("helper role with its own writing contract", section)
+                self.assertNotIn("Root writes the same template", section)
+                self.assertNotIn("silently skipping", section.lower())
+                self.assertNotIn("Skill violation", skill)
+                self.assertNotIn("before closeout", skill)
                 self.assertNotIn("expected base", skill)
                 self.assertNotIn("owner-certified semantic delta", skill)
                 self.assertNotIn("Do not write the checkpoint document yourself", section)
 
-    def test_each_skill_persists_before_closeout_and_rejects_host_surfaces(self) -> None:
+    def test_skill_methods_return_results_without_checkpoint_gate(self) -> None:
         mandatory = (
             "teamwork-collaborate",
             "teamwork-research",
@@ -408,17 +410,13 @@ class CoreFlowTests(unittest.TestCase):
                 skill = self._skill_text(name)
                 method = self._folded(self._method_section(skill))
                 persistence = self._folded(self._persistence_section(skill))
-                self.assertIn("Persist the checkpoint under Persistence before closeout", method)
-                self.assertIn("host plan or question UI does not complete", method)
+                self.assertNotIn("before closeout", method)
+                self.assertNotIn("host plan or question UI does not complete", method)
                 self.assertNotIn("unavailable or returns a no-write", method)
                 self.assertNotIn("Root writes the same template", method)
                 self.assertNotIn("Root fallback", method)
                 self.assertNotIn("prefer Writer", method.lower())
-                self.assertIn("helper role with its own writing contract", persistence)
-                self.assertIn("not a Skill", persistence)
-                self.assertIn("unavailable or returns a no-write", persistence)
-                self.assertIn("Root writes the same template", persistence)
-                self.assertIn("silently skipping", persistence.lower())
+                self.assertNotIn("silently skipping", persistence.lower())
                 self.assertNotIn("Do not write the checkpoint document yourself", skill)
                 self.assertNotIn("CreatePlan", skill)
                 self.assertNotIn("AskQuestion", skill)
@@ -441,18 +439,18 @@ class CoreFlowTests(unittest.TestCase):
         collaborate = self._folded(self._method_section(collaborate_skill))
         persistence = self._folded(self._persistence_section(collaborate_skill))
         self.assertIn("next authorized action", collaborate)
+        self.assertIn("do not open a new evidence gate", collaborate)
         self.assertIn("references/experiment.md", collaborate)
         self.assertIn("Otherwise skip Experiment", collaborate)
         self.assertNotIn("\n### ", collaborate_skill)
-        self.assertIn(
-            "question batch, recommendation, decision, or next action",
-            persistence,
-        )
+        self.assertIn("decision, recommendation, or unresolved question batch", persistence)
+        self.assertIn("An ordinary next action by itself does not write a document", persistence)
 
         plan = self._folded(self._persistence_section(self._skill_text("teamwork-plan")))
         self.assertIn("direction and scope are accepted", plan)
         self.assertIn("executable plan is first settled", plan)
         self.assertIn("material replan", plan)
+        self.assertNotIn("Acceptance, Parallel, and Presentation", plan)
 
     def test_policy_and_cursor_adapter_name_host_surfaces(self) -> None:
         policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
@@ -462,7 +460,7 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("host plan UI", policy)
         self.assertIn("question UI", policy)
         self.assertIn("does not complete a Skill checkpoint", policy)
-        self.assertIn("prefer Writer", policy)
+        self.assertIn("Prefer Writer", policy)
         self.assertIn("unavailable or returns a no-write", policy)
         self.assertIn("Root writes the same Skill template", policy)
         self.assertIn("Root fallback", policy)
@@ -519,7 +517,7 @@ class CoreFlowTests(unittest.TestCase):
             claude_plan = claude_root / "teamwork-plan/SKILL.md"
             self.assertTrue(cursor_plan.is_file(), cursor_plan)
             self.assertTrue(claude_plan.is_file(), claude_plan)
-            self.assertIn("Prefer Writer", claude_plan.read_text(encoding="utf-8"))
+            self.assertIn("docs/teamwork/plans/", claude_plan.read_text(encoding="utf-8"))
             self.assertFalse((home / ".claude/agents").exists())
             self.assertFalse((home / ".claude/CLAUDE.md").exists())
             self.assertIn(
@@ -586,6 +584,383 @@ class CoreFlowTests(unittest.TestCase):
         self.assertEqual(live.returncode, 0, live.stderr)
         self.assertEqual(live.stdout.strip(), str(ROOT))
 
+    def test_policy_owns_outcome_and_persistence_contract(self) -> None:
+        policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
+        self.assertIn("The active method succeeds on its user-facing result", policy)
+        self.assertIn("never certify or substitute", policy)
+        self.assertIn("Before a direction is frozen", policy)
+        self.assertIn("would change the goal, direction, acceptance, or irreversible spend", policy)
+        self.assertIn("After the user authorizes a settled direction, advance that result", policy)
+        self.assertIn("Execution eligibility", policy)
+        self.assertIn("Claim eligibility", policy)
+        self.assertIn("does not by itself forbid a safe, authorized attempt", policy)
+        self.assertIn("do not invent vetoes", policy)
+        self.assertIn("after the method's user-facing result already exists", policy)
+        self.assertIn("first todo after an execution request", policy)
+        self.assertNotIn("silently skipping a fired checkpoint", policy.lower())
+        self.assertNotIn("before closeout", policy.lower())
+
+        architecture = self._folded((ROOT / "docs/architecture.md").read_text(encoding="utf-8"))
+        self.assertIn("does not certify or substitute for that result", architecture)
+        self.assertIn("policy/teamwork-global.md` is the sole owner", architecture)
+
+        for name in (
+            "teamwork-collaborate",
+            "teamwork-research",
+            "teamwork-debug",
+            "teamwork-plan",
+            "teamwork-review",
+            "teamwork-goal",
+        ):
+            with self.subTest(skill=name):
+                skill = self._folded(self._skill_text(name))
+                self.assertNotIn("Execution eligibility is permission", skill)
+                self.assertNotIn("first todo after an execution request", skill)
+                self.assertNotIn("silently skipping a fired checkpoint", skill.lower())
+
+    def test_collaborate_rebuilds_decision_surface_then_advances(self) -> None:
+        method = self._folded(self._method_section(self._skill_text("teamwork-collaborate")))
+        self.assertIn("Rebuild the full decision surface first", method)
+        self.assertIn("unknowns that would change the goal, direction, or acceptance", method)
+        self.assertIn("Resolve discoverable facts directly", method)
+        self.assertIn("Recommend a direction when the evidence distinguishes one", method)
+        self.assertIn("discussion ends at that real action", method)
+        self.assertIn("do not open a new evidence gate", method)
+        self.assertNotIn("main deliverable", method.lower())
+
+    def test_plan_returns_gap_and_requires_first_real_step(self) -> None:
+        plan = self._folded(self._skill_text("teamwork-plan"))
+        self.assertIn("full set of goals", plan)
+        self.assertIn("return that gap instead of a partial plan", plan)
+        self.assertIn(
+            "The first executable step must change the target artifact or remove an observed mechanical blocker",
+            plan,
+        )
+        self.assertIn("The critical path holds only actions that produce the result", plan)
+        self.assertIn("not prerequisites just because they help explain", plan)
+        self.assertIn("Default to a local patch", plan)
+        self.assertIn("Do not open a new plan because of added acceptance checks", plan)
+        self.assertNotIn("Classify new feedback", plan)
+        self.assertNotIn("Impact log", plan)
+        self.assertNotIn("main-deliverable", plan)
+
+        plan_template = (ROOT / "skills/teamwork-plan/references/plan.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("## Current execution plan", plan_template)
+        self.assertNotIn("## Impact log", plan_template)
+
+        for path in (
+            ROOT / "templates/codex-agents/teamwork-planner.toml",
+            ROOT / "templates/cursor-agents/planner.md",
+            ROOT / "templates/claude-agents/planner.md",
+        ):
+            text = self._folded(path.read_text(encoding="utf-8"))
+            with self.subTest(planner=path.name):
+                self.assertIn("return that gap instead of a partial plan", text)
+                self.assertIn("first executable step must change the target artifact", text)
+                self.assertIn("default to a local patch", text.lower())
+
+    def test_research_names_decision_and_feeds_matching_section(self) -> None:
+        research = self._folded(self._skill_text("teamwork-research"))
+        self.assertIn("Name the decision this investigation serves", research)
+        self.assertIn("Stop when the evidence distinguishes the served direction", research)
+        self.assertIn("feed the matching discussion or plan section", research)
+        self.assertIn("they do not rewrite the whole case", research)
+        self.assertNotIn("main deliverable", research.lower())
+
+    def test_experiment_slots_constrain_claim_and_scale(self) -> None:
+        experiment = (
+            ROOT / "skills/teamwork-collaborate/references/experiment.md"
+        ).read_text(encoding="utf-8")
+        folded = self._folded(experiment)
+        self.assertIn("The slot decides what may be claimed and whether scale-up is worth it", folded)
+        self.assertIn(
+            "does not decide whether the first authorized, in-budget real attempt may run",
+            folded,
+        )
+        self.assertIn("stop the matching claim or scale-up", folded)
+        self.assertIn("do not stop the whole project", folded)
+        self.assertIn(
+            "do not stop an authorized, in-budget first outcome-bearing attempt",
+            folded,
+        )
+        self.assertNotIn("Unfrozen mechanism work stays out of training", experiment)
+        self.assertNotIn("until agreed gates pass", experiment)
+        self.assertNotIn("a gate, not a contribution", experiment)
+
+        collaborate = self._folded(self._skill_text("teamwork-collaborate"))
+        self.assertIn("Practice first forbids claiming an unobserved result", collaborate)
+        self.assertIn("does not require proxy experiments", collaborate)
+
+    def test_debug_goal_review_keep_v76_method_contracts(self) -> None:
+        debug = self._folded(self._skill_text("teamwork-debug"))
+        self.assertIn("Do not guess a fix", debug)
+        self.assertIn("same failing path", debug)
+        self.assertIn("freeze observe, instrument, and fix permission", debug)
+        self.assertIn("Reproduce or directly inspect the failure", debug)
+        self.assertNotIn("main deliverable", debug.lower())
+        self.assertNotIn("outcome-bearing", debug)
+
+        goal = self._folded(self._skill_text("teamwork-goal"))
+        self.assertIn("success signal is the directly observable result", goal)
+        self.assertIn("Invariants", goal)
+        self.assertIn("Attempt Record", goal)
+        self.assertNotIn("main deliverable", goal.lower())
+        self.assertNotIn("outcome-bearing", goal)
+
+        review = self._skill_text("teamwork-review")
+        folded_review = self._folded(review)
+        self.assertIn("missing evidence is `unknown`", review)
+        self.assertIn("`ACCEPT`, `REVISE`, or `BLOCKED`", review)
+        self.assertIn("protected boundary", review)
+        self.assertNotIn("main deliverable", folded_review.lower())
+        self.assertNotIn("outcome-bearing", folded_review)
+
+    BASELINE_V76 = "82459cc3dec6ff8872a33be6fe2e11c6a1e5997c"
+
+    def _git_show(self, rev: str, rel: str) -> str:
+        result = subprocess.run(
+            ["git", "show", f"{rev}:{rel}"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
+        return result.stdout
+
+    def _replay_first_todo(self, texts: dict[str, str], candidates: tuple[str, ...], kind: str) -> str:
+        policy = self._folded(texts["policy"])
+        plan = self._folded(texts["plan"])
+        debug = self._folded(texts["debug"])
+        review = self._folded(texts["review"])
+        collaborate = self._folded(texts["collaborate"])
+        experiment = self._folded(texts["experiment"])
+
+        persist = {
+            "persist checkpoint",
+            "wake Writer",
+            "write docs/teamwork first",
+        }
+        evidence = {
+            "bake-off / metric dry-run",
+            "design document",
+            "audit",
+            "benchmark harness",
+        }
+        new_or_rewrite = {
+            "Write new plan slug",
+            "full rewrite of plan.md",
+            "full rewrite",
+        }
+        forbidden: set[str] = set()
+        if "Rebuild the full decision surface first" in collaborate and kind == "scope":
+            forbidden |= {
+                "write a plan from the last message only",
+                "start bake-off / metric dry-run",
+                "implement immediately",
+                "design document",
+            }
+        if "Resolve discoverable facts directly" in collaborate and kind == "scope":
+            forbidden.add("design document")
+        if "after the method's user-facing result already exists" in policy and kind == "scope":
+            forbidden |= persist
+        if "return that gap instead of a partial plan" in plan and kind == "plan-gap":
+            forbidden.add("write a partial plan assuming the gap")
+        if "first todo after an execution request" in policy and kind in {
+            "execution",
+            "plan-edit",
+        }:
+            forbidden |= persist
+        if "not prerequisites just because they help explain" in plan and kind == "execution":
+            forbidden |= evidence
+        if "does not require proxy experiments" in collaborate and kind == "execution":
+            forbidden.add("bake-off / metric dry-run")
+        if "do not open a new evidence gate" in collaborate and kind == "execution":
+            forbidden.add("reopen execution with a new evidence gate")
+        if "Unfrozen mechanism work stays out of training" in experiment and kind == "execution":
+            forbidden.add("start training or mechanical prep")
+        if "Default to a local patch" in plan and kind == "plan-edit":
+            forbidden |= new_or_rewrite
+        if "Do not open a new plan because of added acceptance checks" in plan and kind == "plan-edit":
+            forbidden.add("Write new plan slug")
+        if "Rearrange the whole plan only when the user changes the goal or direction" in plan and kind == "plan-edit":
+            forbidden.add("reopen direction")
+        if "Do not guess a fix" in debug and kind == "debug":
+            forbidden.add("guess a fix")
+        if "missing evidence is `unknown`" in review and kind == "review-missing-evidence":
+            forbidden.add("ACCEPT")
+        if "before closeout" in collaborate.lower() and kind == "execution":
+            forbidden.add("start training or mechanical prep")
+            forbidden.add("implement or report mechanical blocker")
+
+        remaining = [item for item in candidates if item not in forbidden]
+        if not remaining:
+            return "blocked"
+        return remaining[0]
+
+    def _replay_corpus(self) -> tuple[tuple[str, str, tuple[str, ...], str], ...]:
+        return (
+            (
+                "ml_intake",
+                "scope",
+                (
+                    "write a plan from the last message only",
+                    "start bake-off / metric dry-run",
+                    "persist checkpoint",
+                    "rebuild full decision surface: probe vs paper vs complete goal",
+                ),
+                "rebuild full decision surface: probe vs paper vs complete goal",
+            ),
+            (
+                "ml_build",
+                "execution",
+                (
+                    "persist checkpoint",
+                    "bake-off / metric dry-run",
+                    "reopen execution with a new evidence gate",
+                    "start training or mechanical prep",
+                ),
+                "start training or mechanical prep",
+            ),
+            (
+                "ml_add_public_metric",
+                "plan-edit",
+                (
+                    "Write new plan slug",
+                    "full rewrite of plan.md",
+                    "local patch same plan",
+                ),
+                "local patch same plan",
+            ),
+            (
+                "ml_scale_1_2_gpu",
+                "plan-edit",
+                (
+                    "Write new plan slug",
+                    "full rewrite",
+                    "reopen direction",
+                    "local patch: 1-2 GPU constraint, keep unaffected goals",
+                ),
+                "local patch: 1-2 GPU constraint, keep unaffected goals",
+            ),
+            (
+                "software_intake",
+                "scope",
+                (
+                    "write a plan from the last message only",
+                    "design document",
+                    "implement immediately",
+                    "resolve API/scope-changing facts",
+                ),
+                "resolve API/scope-changing facts",
+            ),
+            (
+                "software_build",
+                "execution",
+                (
+                    "persist checkpoint",
+                    "design document",
+                    "audit",
+                    "benchmark harness",
+                    "implement or report mechanical blocker",
+                ),
+                "implement or report mechanical blocker",
+            ),
+            (
+                "plan_direction_gap",
+                "plan-gap",
+                (
+                    "write a partial plan assuming the gap",
+                    "return the direction-changing gap",
+                ),
+                "return the direction-changing gap",
+            ),
+            (
+                "debug_unknown",
+                "debug",
+                ("guess a fix", "locate the cause"),
+                "locate the cause",
+            ),
+            (
+                "review_missing_runtime",
+                "review-missing-evidence",
+                ("ACCEPT", "unknown / not ACCEPT"),
+                "unknown / not ACCEPT",
+            ),
+        )
+
+    def _live_texts(self) -> dict[str, str]:
+        return {
+            "policy": (ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"),
+            "plan": self._skill_text("teamwork-plan"),
+            "debug": self._skill_text("teamwork-debug"),
+            "review": self._skill_text("teamwork-review"),
+            "collaborate": self._skill_text("teamwork-collaborate"),
+            "experiment": (
+                ROOT / "skills/teamwork-collaborate/references/experiment.md"
+            ).read_text(encoding="utf-8"),
+        }
+
+    def _v76_texts(self) -> dict[str, str]:
+        return {
+            "policy": self._git_show(self.BASELINE_V76, "policy/teamwork-global.md"),
+            "plan": self._git_show(self.BASELINE_V76, "skills/teamwork-plan/SKILL.md"),
+            "debug": self._git_show(self.BASELINE_V76, "skills/teamwork-debug/SKILL.md"),
+            "review": self._git_show(self.BASELINE_V76, "skills/teamwork-review/SKILL.md"),
+            "collaborate": self._git_show(
+                self.BASELINE_V76, "skills/teamwork-collaborate/SKILL.md"
+            ),
+            "experiment": self._git_show(
+                self.BASELINE_V76,
+                "skills/teamwork-collaborate/references/experiment.md",
+            ),
+        }
+
+    def test_behavioral_replay_orders_scope_then_real_action(self) -> None:
+        texts = self._live_texts()
+        for name, kind, candidates, expected in self._replay_corpus():
+            with self.subTest(scenario=name):
+                first = self._replay_first_todo(texts, candidates, kind)
+                self.assertEqual(first, expected)
+                self.assertNotEqual(first, "persist checkpoint")
+                self.assertNotEqual(first, "Write new plan slug")
+                self.assertNotEqual(first, "guess a fix")
+                self.assertNotEqual(first, "ACCEPT")
+
+    def test_ab_replay_improves_scope_and_advance_versus_v76(self) -> None:
+        live = self._live_texts()
+        baseline = self._v76_texts()
+        scope_kinds = {"scope", "plan-gap"}
+        advance_kinds = {"execution", "plan-edit"}
+        live_scope_hits = 0
+        base_scope_hits = 0
+        live_advance_hits = 0
+        base_advance_hits = 0
+        rows = []
+        for name, kind, candidates, expected in self._replay_corpus():
+            live_first = self._replay_first_todo(live, candidates, kind)
+            base_first = self._replay_first_todo(baseline, candidates, kind)
+            rows.append((name, kind, base_first, live_first, expected))
+            self.assertEqual(live_first, expected, name)
+            if kind in scope_kinds:
+                live_scope_hits += int(live_first == expected)
+                base_scope_hits += int(base_first == expected)
+            if kind in advance_kinds:
+                live_advance_hits += int(live_first == expected)
+                base_advance_hits += int(base_first == expected)
+            if kind in {"debug", "review-missing-evidence"}:
+                self.assertEqual(live_first, base_first)
+        report = "\n".join(
+            f"{name} [{kind}]: v7.6={base} -> candidate={live_first} (want {expected})"
+            for name, kind, base, live_first, expected in rows
+        )
+        print("\nA/B replay vs v7.6.0:\n" + report)
+        self.assertGreater(live_scope_hits, base_scope_hits, report)
+        self.assertGreater(live_advance_hits, base_advance_hits, report)
+
 
 if __name__ == "__main__":
     unittest.main()
+

@@ -21,8 +21,7 @@ semantics.
 5. If the user authorized a fix, make the smallest complete repair and verify the
    same failing path. Remove temporary instrumentation.
 6. If evidence reveals a different failure, split it explicitly instead of
-   silently changing scope. Persist the checkpoint under Persistence before
-   closeout; a host plan or question UI does not complete it.
+   silently changing scope.
 
 A Debugger subagent may help when parallel diagnosis is useful. Use Explorer
 when available; otherwise use native local search. Give it the objective, owned
@@ -44,9 +43,3 @@ Checkpoints: a cause is confirmed; an authorized fix is verified on the same
 path; the case is blocked with a durable next discriminator; or evidence splits
 a new failure with its own identity. Keep user quotes separate from the working
 understanding.
-
-Prefer Writer, a helper role with its own writing contract, not a Skill. If
-Writer is unavailable or returns a no-write, Root writes the same template to
-the same path and marks Root fallback in the closeout. Diagnosis and repair
-never block on Writer; silently skipping a fired checkpoint is a Skill
-violation.
