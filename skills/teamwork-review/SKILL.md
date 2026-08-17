@@ -24,7 +24,8 @@ of switching workflows or blocking on installation state.
    next action. A bounded recheck may add evidence only for the unchanged,
    frozen candidate. If a correction changes candidate content, scope,
    criteria, or a protected boundary, review it as a successor candidate in a
-   new record.
+   new record. Persist the checkpoint under Persistence before closeout; a host
+   plan or question UI does not complete it.
 
 A protected boundary is a requirement, criterion, candidate identity, or
 behavior that must remain unchanged for this review record to stay valid.
@@ -45,19 +46,17 @@ and never implements the repair.
 
 ## Persistence
 
-At each semantic checkpoint, Root asks Writer to maintain the review record from
-`references/review.md` at
-`docs/teamwork/reviews/<YYYY-MM-DD>-<slug>.md` (reuse the existing path for the
-same candidate identity). Checkpoints: a verdict is returned; a bounded recheck
-adds evidence for the unchanged frozen candidate; or a successor candidate is
-opened after a protected-boundary change.
+Cross-chat memory lives in one Markdown document from `references/review.md`
+at `docs/teamwork/reviews/<YYYY-MM-DD>-<slug>.md`. Same identity means the same
+candidate; reuse that path and name the document you read. A different subject
+gets a new path.
 
-Every wake-up supplies the document kind and path, stable candidate identity,
-authoritative review owner, owner-certified semantic delta, read-only context,
-and expected base. Writer only compresses literally, locates, deduplicates the
-current synthesis and pending delta, refreshes current synthesis, and appends
-dated history. Existing history is immutable. It cannot create or alter a
-finding, severity, criterion status, verdict, uncertainty, authority, next
-action, or mainline. Missing state or a conflicting base produces a no-write
-exact gap. Writer unavailability or conflict does not block the review; when a
-checkpoint fired, report incomplete document delivery.
+Checkpoints: a verdict is returned; a bounded recheck adds evidence for the
+unchanged frozen candidate; or a successor candidate is opened after a
+protected-boundary change. Keep user quotes separate from the working
+understanding.
+
+Prefer Writer, a helper role with its own writing contract, not a Skill. If
+Writer is unavailable or returns a no-write, Root writes the same template to
+the same path and marks Root fallback in the closeout. Review never blocks on
+Writer; silently skipping a fired checkpoint is a Skill violation.

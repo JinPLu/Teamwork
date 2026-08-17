@@ -28,7 +28,7 @@
 ---
 
 > [!TIP]
-> **You do not need to memorize eight Skills.** Describe the result directly most of the time. Name a `$teamwork-*` Skill only when you genuinely need discussion, deep research, unknown-cause debugging, planning, or review.
+> **You do not need to memorize eight Skills.** Describe the result directly most of the time. Name a Skill only when you genuinely need discussion, deep research, unknown-cause debugging, planning, or review: Codex uses `$teamwork-*`; Cursor / Claude Code use `/teamwork-*`.
 
 ## 🚀 Start in one minute
 
@@ -100,17 +100,19 @@ There is no Router, mandatory stage chain, or automatic Update detour. Root alwa
 
 ## 🤝 Eight optional Agent roles
 
-Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer are bounded helpers, not a pipeline every task must traverse. Cursor and Claude Code install 7 roles and use the host's built-in Explore; Codex keeps Explorer. Writer is a low-cost, non-blocking recorder reusable across Skills: at semantic checkpoints it turns owner-certified changes into readable Markdown under `docs/teamwork/` and never changes the owner's facts, decisions, or conclusions.
+Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer are bounded helpers, not a pipeline every task must traverse. Cursor and Claude Code install 7 roles and use the host's built-in Explore; Codex keeps Explorer. Writer is a low-cost, non-blocking recorder reusable across Skills: at semantic checkpoints it turns owner-certified changes into readable Markdown under `docs/teamwork/` and never changes the owner's facts, decisions, or conclusions. If Writer is unavailable, Root writes the same template and marks that Root fallback in the closeout; silently skipping remains a violation.
 
 - Root delegates only when parallel investigation, independent judgment, or a clean division of work is useful.
 - A handoff carries the objective, owned scope, settled constraints, available evidence, and requested return.
 - Reviewer stays read-only and never implements its own findings. Writer failure does not block the main work, and Root still confirms what enters the mainline.
 - Teamwork children use Standard by default. Fast on the parent does not automatically multiply child cost unless you explicitly accelerate the children too.
+- When Cursor and Claude both have same-named Skill copies, which copy wins is not guaranteed; keep both in sync on install.
 
 ## 🗃️ Six readable document types
 
-When a focused method reaches a semantic checkpoint, Writer maintains plain
-Markdown under `docs/teamwork/`. Each document carries both a **current
+When a focused method reaches a semantic checkpoint, prefer Writer to maintain
+plain Markdown under `docs/teamwork/`; if Writer is unavailable, Root writes the
+same template and marks Root fallback. Each document carries both a **current
 synthesis** and an append-only **chronological history**, so it is quick to
 read without hiding how the conclusion changed. Default filenames are
 `<YYYY-MM-DD>-<slug>.md`; reuse the path for the same stable identity.
@@ -179,7 +181,7 @@ cd Teamwork
 ./scripts/check-update.sh --readiness
 ```
 
-Codex is the supported and release-qualified runtime. Cursor and Claude Code adapters remain for explicit compatibility development; they do not participate in Codex readiness or block ordinary work.
+Codex is the supported and release-qualified runtime (invoke Skills with `$name`). Cursor and Claude Code adapters remain for explicit compatibility development (invoke Skills with `/name`); they do not participate in Codex readiness or block ordinary work. When dual skill roots both have same-named copies, which wins is not guaranteed—keep both in sync on install.
 
 `./scripts/validate.sh` runs the fast core smoke. Explicit release preparation uses `./scripts/validate.sh --release`. Readiness reports installation state only; it never authorizes or blocks another task.
 

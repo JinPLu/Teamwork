@@ -28,6 +28,13 @@ Mermaid>
 
 <user decisions, unresolved points, and next authorized action>
 
+## Experiment slot
+
+Used only when the Experiment step fired.
+
+<This experiment feeds which contribution slot: main table / appendix hygiene /
+exploratory probe / unused.>
+
 ## User quotes
 
 <user's original wording, especially recorded rejections and decisions>

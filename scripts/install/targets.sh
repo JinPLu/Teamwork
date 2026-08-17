@@ -264,11 +264,16 @@ install_checkout_plugin_codex_update() {
 install_cursor() {
   local skill_root="$HOME/.cursor/skills"
   local agent_root="$HOME/.cursor/agents"
+  local claude_skill_root="$HOME/.claude/skills"
   preflight_teamwork_skill_root "$skill_root" "Cursor skill root"
   preflight_agent_destination "$agent_root" md Cursor "${CURSOR_AGENTS[@]}"
   install_skill_set "$skill_root" "Cursor" "$CURSOR_SKILL_PROFILE_TOKEN"
   install_cursor_agent_set "$agent_root" "user Cursor"
   echo "Cursor static skills/agents: installed"
+  if teamwork_skill_root_has_markers "$claude_skill_root"; then
+    install_skill_set "$claude_skill_root" "Claude Code"
+    echo "Both Teamwork skill roots were refreshed; when both exist, which copy wins is not guaranteed."
+  fi
   echo "Cursor global policy activation: separate; this installer cannot reach Cursor's user-rule store."
   echo "Exact action: run ./install.sh cursor-policy, then have a Cursor Agent add or update that block as one user rule and confirm it with a rule list readback."
 }

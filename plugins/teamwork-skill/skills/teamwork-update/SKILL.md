@@ -36,20 +36,27 @@ reusable or the user explicitly requests it.
 
 ## Persistence
 
-At each semantic checkpoint, Root asks Writer to maintain one Markdown report
-from `references/report.md` at
+Persistence is optional. Write a report only when the observed result is reusable
+across sessions or the user explicitly requests it. When that optional
+checkpoint fires, prefer Writer from `references/report.md` at
 `docs/teamwork/reports/<YYYY-MM-DD>-<slug>.md` (reuse the existing path for the
-same operation identity). Checkpoints: an authorized refresh completes with
-observed surface changes; Update stops on a real blocker worth reusing; or a
-no-op result is reusable or explicitly requested as a report.
+same operation identity). Optional triggers: an authorized refresh completes
+with observed surface changes worth reusing; Update stops on a real blocker
+worth reusing; or a no-op result is reusable or explicitly requested.
 
-Every wake-up supplies the document kind and path, stable operation identity,
-authoritative Update owner, owner-certified semantic delta, read-only context,
-and expected base. The report preserves requested versus observed outcome,
-decisive evidence, resulting state or changes, remaining action or blocker, and
-dated history; it is not an activity log and does not claim unobserved
-completion. Writer only compresses literally, locates, deduplicates the current
-synthesis and pending delta, updates the current synthesis, and appends
-history. Existing history is immutable. It cannot change authority, completion,
-next action, or mainline. Writer failure does not block Update; when a
-checkpoint fired, report incomplete document delivery.
+Every Writer wake-up supplies the document kind and path, stable operation
+identity, authoritative Update owner, owner-certified semantic delta, read-only
+context, and expected base. The report preserves requested versus observed
+outcome, decisive evidence, resulting state or changes, remaining action or
+blocker, and dated history; it is not an activity log and does not claim
+unobserved completion. Writer only compresses literally, locates, deduplicates
+the current synthesis and pending delta, updates the current synthesis, and
+appends history. Existing history is immutable. It cannot change authority,
+completion, next action, or mainline.
+
+Writer is a helper role, not a Skill. There is no `teamwork-writer` Skill.
+Host interaction surfaces, ephemeral host plan files, the conversation body,
+and experiment logs do not satisfy persistence. Prefer Writer when writing;
+if Writer is unavailable, Root may write the same template and mark Root
+fallback in the closeout. Update never blocks on a report. Silently skipping
+after choosing to persist is a Skill violation.

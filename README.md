@@ -28,7 +28,7 @@
 ---
 
 > [!TIP]
-> **你不需要先背会 8 个 Skills。** 大多数时候直接描述结果。只有确实需要一起选方向、深入调研、排查未知原因、制定计划或独立复查时，才点名 `$teamwork-*`。
+> **你不需要先背会 8 个 Skills。** 大多数时候直接描述结果。只有确实需要一起选方向、深入调研、排查未知原因、制定计划或独立复查时，才点名 Skill：Codex 用 `$teamwork-*`，Cursor / Claude Code 用 `/teamwork-*`。
 
 ## 🚀 一分钟开始
 
@@ -100,16 +100,17 @@ flowchart LR
 
 ## 🤝 8 个可选 Agent 角色
 
-Researcher、Explorer、Debugger、Challenger、Planner、Reviewer、Worker 和 Writer 都是边界化帮助者，不是必须经过的流水线。Cursor 与 Claude Code 安装 7 个角色并使用宿主自带 Explore；Codex 仍保留 Explorer。Writer 是低成本、可跨 Skill 复用的非阻塞记录者：它在语义检查点把方法 owner 确认的变化写成 `docs/teamwork/` 下的可读 Markdown，不替 owner 改变事实、决定或结论。
+Researcher、Explorer、Debugger、Challenger、Planner、Reviewer、Worker 和 Writer 都是边界化帮助者，不是必须经过的流水线。Cursor 与 Claude Code 安装 7 个角色并使用宿主自带 Explore；Codex 仍保留 Explorer。Writer 是低成本、可跨 Skill 复用的非阻塞记录者：它在语义检查点把方法 owner 确认的变化写成 `docs/teamwork/` 下的可读 Markdown，不替 owner 改变事实、决定或结论。Writer 不可用时，Root 按同一模板直写并在收口标明 Root 兜底；静默不写仍违规。
 
 - Root 只在并行调查、独立判断或清楚分工确实有用时分派。
 - handoff 带上目标、负责范围、已确定约束、已有证据和期望返回。
 - Reviewer 保持只读，不修复自己的发现；Writer 失败不阻塞主要工作，Root 仍负责确认进入主线的结果。
 - Teamwork 子任务默认使用 Standard。父任务启用 Fast 不会自动提高所有子任务的费用，除非你明确要求子任务也加速。
+- Cursor 与 Claude 若同时装有同名 Skill 副本，谁被读到未保证；安装时两边同步刷新。
 
 ## 🗃️ 六类可读文档
 
-当专项方法到达语义检查点时，Writer 持续维护 `docs/teamwork/` 下的纯 Markdown 文档。每份文档同时保留一份**当前综合**和按时间追加的**历史**，既方便快速阅读，也不会抹掉结论如何变化。默认文件名为 `<YYYY-MM-DD>-<slug>.md`，同一稳定身份复用已有路径。
+当专项方法到达语义检查点时，优先由 Writer 维护 `docs/teamwork/` 下的纯 Markdown 文档；Writer 不可用时 Root 按同一模板直写并标明。每份文档同时保留一份**当前综合**和按时间追加的**历史**，既方便快速阅读，也不会抹掉结论如何变化。默认文件名为 `<YYYY-MM-DD>-<slug>.md`，同一稳定身份复用已有路径。
 
 | 文档 | 它记录什么 |
 | --- | --- |
@@ -175,7 +176,7 @@ cd Teamwork
 ./scripts/check-update.sh --readiness
 ```
 
-Codex 是正式支持与 release-qualified 的运行面。Cursor 和 Claude Code 适配器保留用于显式兼容开发，不参与 Codex readiness，也不会阻塞普通工作。
+Codex 是正式支持与 release-qualified 的运行面（Skill 调用用 `$name`）。Cursor 和 Claude Code 适配器保留用于显式兼容开发（Skill 调用用 `/name`），不参与 Codex readiness，也不会阻塞普通工作。双根 Skill 副本并存时谁赢未保证，安装时两边同步。
 
 `./scripts/validate.sh` 运行快速核心 smoke；显式发布准备使用 `./scripts/validate.sh --release`。readiness 只报告安装状态，不授权或阻止其他任务。
 

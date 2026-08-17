@@ -103,6 +103,7 @@
   ],
   "owned_references": [
     "skills/teamwork-collaborate/references/discussion.md",
+    "skills/teamwork-collaborate/references/experiment.md",
     "skills/teamwork-debug/references/debug.md",
     "skills/teamwork-debug/references/runtime-diagnosis.md",
     "skills/teamwork-goal/references/report.md",

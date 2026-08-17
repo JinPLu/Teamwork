@@ -19,7 +19,8 @@ question rather than creating a lightweight ritual around a few searches. Read
    confidence, date, and nearby citation.
 4. Investigate contradictions and explain rejected sources or unresolved gaps.
 5. Stop when the scope is answered or further retrieval is unlikely to change
-   the conclusion; state which condition applies.
+   the conclusion; state which condition applies. Persist the checkpoint under
+   Persistence before closeout; a host plan or question UI does not complete it.
 
 Maintain an early provisional conclusion as evidence develops, clearly marked
 as provisional. The research synthesis must preserve the decision use, a
@@ -36,20 +37,16 @@ the method directly with available research tools.
 
 ## Persistence
 
-At each semantic checkpoint, Root asks Writer to maintain one Markdown document
-for the continuing research question from `references/research.md` at
-`docs/teamwork/research/<YYYY-MM-DD>-<slug>.md` (reuse the existing path for
-the same subject identity). Checkpoints: a material claim-to-evidence synthesis is
-first settled; contradictions change confidence or the conclusion; or a stop
-condition is reached.
+Cross-chat memory lives in one Markdown document from `references/research.md`
+at `docs/teamwork/research/<YYYY-MM-DD>-<slug>.md`. Same identity means the same
+research question; reuse that path and name the document you read. A different
+subject gets a new path.
 
-Every wake-up supplies the document kind and path, stable subject identity,
-authoritative research owner, owner-certified semantic delta, read-only
-context, and expected base. Writer only compresses literally, locates,
-deduplicates the current synthesis and pending delta, refreshes the current
-synthesis, and appends dated history. Existing history is immutable. It does
-not search, assess evidence, or change claims, conclusions, confidence,
-recommendations, authority, next action, or mainline. Missing state or a
-conflicting base produces a no-write exact gap. Writer unavailability or
-conflict never blocks the investigation; when a checkpoint fired, report
-incomplete document delivery.
+Checkpoints: a material claim-to-evidence synthesis is first settled;
+contradictions change confidence or the conclusion; or a stop condition is
+reached. Keep user quotes separate from the working understanding.
+
+Prefer Writer, a helper role with its own writing contract, not a Skill. If
+Writer is unavailable or returns a no-write, Root writes the same template to
+the same path and marks Root fallback in the closeout. Investigation never
+blocks on Writer; silently skipping a fired checkpoint is a Skill violation.

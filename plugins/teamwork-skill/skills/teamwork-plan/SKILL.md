@@ -20,7 +20,8 @@ discussion artifact.
 5. Include migration, rollback, compatibility, or risk work only when the chosen
    direction actually requires it.
 6. End with dependencies, verification, and the conditions that require
-   replanning.
+   replanning. Persist the checkpoint under Persistence before closeout; a host
+   plan or question UI does not complete it.
 
 A Planner subagent is optional. Use Explorer when available; otherwise use
 native local search. Its handoff contains the objective, owned scope, settled
@@ -31,21 +32,16 @@ Return unresolved material choices to the user; do not hide them as assumptions.
 
 ## Persistence
 
-At each semantic checkpoint, Root asks Writer to maintain one Markdown plan for
-the selected outcome and direction from `references/plan.md` at
-`docs/teamwork/plans/<YYYY-MM-DD>-<slug>.md` (reuse the existing path for the
-same subject identity). Checkpoints: the direction and scope are accepted; the
-executable plan is first settled; a material replan changes steps, dependencies,
-verification, or stop conditions.
+Cross-chat memory lives in one Markdown document from `references/plan.md`
+at `docs/teamwork/plans/<YYYY-MM-DD>-<slug>.md`. Same identity means the same
+selected outcome and direction; reuse that path and name the document you read.
+A different subject gets a new path.
 
-This hook does not turn the plan into a discussion history or execution log.
-Every Writer wake-up explicitly supplies the document kind and path, stable
-subject identity, authoritative planning owner, owner-certified semantic delta,
-read-only context, and expected base. Writer may only compress literally,
-locate, deduplicate the current synthesis and pending delta, refresh the
-current plan synthesis, and append dated plan-revision history. Existing
-history is immutable. It cannot choose or change the direction, requirements,
-recommendation, authority, dependencies, verification, next action, or
-mainline. Missing state or a conflicting base produces a no-write exact gap.
-Writer unavailability or conflict does not block planning; when a checkpoint
-fired, report incomplete document delivery.
+Checkpoints: the direction and scope are accepted; the executable plan is first
+settled; a material replan changes steps, dependencies, verification, or stop
+conditions. Keep user quotes separate from the working understanding.
+
+Prefer Writer, a helper role with its own writing contract, not a Skill. If
+Writer is unavailable or returns a no-write, Root writes the same template to
+the same path and marks Root fallback in the closeout. Planning never blocks on
+Writer; silently skipping a fired checkpoint is a Skill violation.

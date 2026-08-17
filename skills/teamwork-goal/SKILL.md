@@ -19,7 +19,8 @@ Goal adds persistence to the underlying task; it does not add a second workflow.
 4. Change approach when evidence invalidates the current one. Do not repeat a
    failed action without a new reason.
 5. Report success with the observed evidence, or report the exact blocker and
-   what would unblock it.
+   what would unblock it. Persist the checkpoint under Persistence before
+   closeout; a host plan or question UI does not complete it.
 
 Carry compact Invariants through every retry: the original objective, protected
 constraints, and stop or budget state. After each attempt, keep an Attempt
@@ -37,20 +38,17 @@ signal is available.
 
 ## Persistence
 
-At each semantic checkpoint, Root asks Writer to maintain one Markdown report
-for the continuing objective from `references/report.md` at
-`docs/teamwork/reports/<YYYY-MM-DD>-<slug>.md` (reuse the existing path for the
-same subject identity). Checkpoints: the success signal is directly observed; a
-genuine external blocker stops progress; or the user interrupts after material
-progress worth reusing.
+Cross-chat memory lives in one Markdown document from `references/report.md`
+at `docs/teamwork/reports/<YYYY-MM-DD>-<slug>.md`. Same identity means the same
+continuing objective; reuse that path and name the document you read. A
+different subject gets a new path.
 
-The report records requested versus observed outcome, decisive evidence,
-resulting state or changes, remaining action or blocker, and dated history; it
-is not an activity log and never claims an unobserved completion. Every wake-up
-supplies the document kind and path, stable subject identity, authoritative
-goal owner, owner-certified semantic delta, read-only context, and expected
-base. Writer only compresses literally, locates, deduplicates the current
-synthesis and pending delta, updates the current synthesis, and appends
-history. Existing history is immutable. It cannot change completion, evidence
-meaning, authority, next action, or mainline. Writer failure never blocks the
-underlying goal; when a checkpoint fired, report incomplete document delivery.
+Checkpoints: the success signal is directly observed; a genuine external
+blocker stops progress; or the user interrupts after material progress worth
+reusing. Keep user quotes separate from the working understanding.
+
+Prefer Writer, a helper role with its own writing contract, not a Skill. If
+Writer is unavailable or returns a no-write, Root writes the same template to
+the same path and marks Root fallback in the closeout. The underlying goal
+never blocks on Writer; silently skipping a fired checkpoint is a Skill
+violation.

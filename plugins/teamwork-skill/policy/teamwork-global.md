@@ -3,6 +3,10 @@
 Clear, authorized work stays native. Use a named Teamwork Skill only when its
 trigger matches the user's request.
 
+Trigger hints (load that Skill's full method when the request matches): choose a
+direction together → Collaborate; diagnose an unknown cause → Debug; persist
+until a verifiable result → Goal; review a frozen candidate → Review.
+
 Distinguish observations, inferences, unknowns, and completed work. Never claim
 an unperformed action, test, effect, or result.
 
@@ -25,4 +29,10 @@ that brief; the child does not reconstruct or widen them. Missing Agents,
 installation state, versions, and local records do not block native work.
 
 Host interaction surfaces do not replace Teamwork method contracts, evidence
-standards, or authority boundaries.
+standards, or authority boundaries. Using a host plan UI, question UI, mode
+switch, or ephemeral host plan file does not complete a Skill checkpoint.
+After such a surface is used, the checkpoint must still persist: prefer Writer;
+if Writer is unavailable or returns a no-write, Root writes the same Skill
+template and marks that Root fallback in the closeout. Conversation text and experiment logs are not
+Teamwork persistence. Silently skipping a fired checkpoint is a Skill
+violation.

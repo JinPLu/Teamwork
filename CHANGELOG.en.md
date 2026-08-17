@@ -4,6 +4,12 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.6.0 - 2026-08-17
+
+- **Collaborate is one discussion method.** It moves from goal, priors, and option judgment to a recommendation; the Experiment gate opens only for scheduling, scarce compute, or a paper slot, and the discussion document records the contribution slot.
+- **A fired checkpoint must persist; Root writes if Writer is unavailable.** The same subject reuses the same document; a recommendation or question batch that must survive the session is a checkpoint. A host plan or question UI does not complete it.
+- **Skill methods no longer name host products.** A Cursor install also refreshes an existing Claude skill root so dual-host sessions do not keep a stale copy.
+
 ## 7.5.2 - 2026-08-16
 
 - **Collaborate treats recorded rejections and decisions as the mainline.** Checkpoints keep user quotes separate from the working understanding; the next turn on the same subject re-reads the discussion document first, and research must not restate those locks as a new question.
