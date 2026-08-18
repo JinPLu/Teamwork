@@ -37,6 +37,10 @@ signal is available.
 
 ## Persistence
 
+When a listed checkpoint fires, write the document in the same response cycle
+as that result. If separate stable identities each cross a checkpoint, write
+each to its own path.
+
 Cross-chat memory lives in one Markdown document from `references/report.md`
 at `docs/teamwork/reports/<YYYY-MM-DD>-<slug>.md`. Same identity means the same
 continuing objective; reuse that path and name the document you read. A

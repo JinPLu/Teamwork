@@ -100,7 +100,7 @@ There is no Router, mandatory stage chain, or automatic Update detour. Root alwa
 
 ## 🤝 Eight optional Agent roles
 
-Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer are bounded helpers, not a pipeline every task must traverse. Cursor and Claude Code install 7 roles and use the host's built-in Explore; Codex keeps Explorer. Writer is a low-cost, non-blocking recorder reusable across Skills: at semantic checkpoints it turns owner-certified changes into readable Markdown under `docs/teamwork/` and never changes the owner's facts, decisions, or conclusions. If Writer is unavailable, Root writes the same template and marks that Root fallback in the closeout. Write failure is visible and does not undo the completed result.
+Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer are bounded helpers, not a pipeline every task must traverse. Cursor and Claude Code install 7 roles and use the host's built-in Explore; Codex keeps Explorer. Writer is a low-cost, non-blocking recorder reusable across Skills: it turns owner-certified changes into readable Markdown under `docs/teamwork/` and never changes the owner's facts, decisions, or conclusions. Root owns checkpoint delivery; Writer helps only when that does not delay the write. If the environment cannot write, the exact path and non-delivery are reported; the completed result is not undone.
 
 - Root delegates only when parallel investigation, independent judgment, or a clean division of work is useful.
 - A handoff carries the objective, owned scope, settled constraints, available evidence, and requested return.
@@ -110,9 +110,9 @@ Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Write
 
 ## 🗃️ Six readable document types
 
-When a focused method reaches a semantic checkpoint, prefer Writer to maintain
-plain Markdown under `docs/teamwork/`; if Writer is unavailable, Root writes the
-same template and marks Root fallback. Each document carries both a **current
+When a focused method reaches a semantic checkpoint, Root writes plain
+Markdown under `docs/teamwork/` in the same response cycle; Writer helps only
+when that does not delay the write. Each document carries both a **current
 synthesis** and an append-only **chronological history**, so it is quick to
 read without hiding how the conclusion changed. Default filenames are
 `<YYYY-MM-DD>-<slug>.md`; reuse the path for the same stable identity.

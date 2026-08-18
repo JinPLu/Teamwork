@@ -35,15 +35,18 @@ pretending otherwise.
 
 ## Writer and documents
 
-Writer is a low-cost, non-blocking recorder for semantic checkpoints. The owner
-of the active method first certifies a semantic delta; Writer may clarify its
-placement, deduplicate it, and compress it only literally, but cannot change
-the owner's facts, choices, conclusions, authority, or completion state. Root
-reviews the integrated result and confirms what enters the mainline. Writer
-failure remains visible but does not block the method's primary work; when a
-checkpoint fired, incomplete document delivery is reported. A document
-records the method's user-facing result for reuse; it does not certify or
-substitute for that result.
+A document records the method's user-facing result for reuse after that result
+already exists; it does not certify or substitute for that result. When a
+Skill-defined checkpoint fires, Root owns document delivery and writes in the
+same response cycle, or delegates an already-certified delta to Writer only
+when that does not delay the current checkpoint write. Writer is a low-cost,
+optional recorder: it may clarify placement, deduplicate, and compress only
+literally, but cannot change the owner's facts, choices, conclusions,
+authority, or completion state. Root reviews the integrated result and
+confirms what enters the mainline. When the current environment cannot write,
+report the exact expected path and that the document was not delivered. Write
+failure is visible; it does not block the method's primary work, change
+completion, or become the first action after an execution request.
 
 One Writer may serve several Skills during its lifetime. That reuse is only
 Agent-lifecycle reuse: Discussion, Research, Debug, Plan, Review, and Report

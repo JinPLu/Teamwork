@@ -55,11 +55,15 @@ change the result, or when unclear intent needs guided clarification.
    When the direction is decided and the user authorizes execution, the
    discussion ends at that real action; do not open a new evidence gate or a
    new planning door. The next turn on the same subject reads the discussion
-   document's current synthesis first when that document exists. If the
-   document is missing, session recall may be used and must be marked as not
-   persisted.
+   document's current synthesis first when that document exists. Session
+   recall may be used on the next turn only after a write is observed
+   unavailable or failed, and must be marked as not persisted.
 
 ## Persistence
+
+When a listed checkpoint fires, write the document in the same response cycle
+as that result. If separate stable identities each cross a checkpoint, write
+each to its own path.
 
 Cross-chat memory lives in one Markdown document from `references/discussion.md`
 at `docs/teamwork/discussions/<YYYY-MM-DD>-<slug>.md`. Same identity means the
@@ -69,3 +73,7 @@ read. A different subject gets a new path.
 Checkpoints: a decision, recommendation, or unresolved question batch that will
 change later work. An ordinary next action by itself does not write a document.
 Keep user quotes separate from the working understanding.
+
+Session recall may be used on the next turn only after a write is observed
+unavailable or failed, and that recall must be marked as not persisted. A
+missing document is not a license to skip a fired checkpoint write.

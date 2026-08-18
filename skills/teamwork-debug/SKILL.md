@@ -34,6 +34,10 @@ Do not guess a fix or retain temporary diagnostics.
 
 ## Persistence
 
+When a listed checkpoint fires, write the document in the same response cycle
+as that result. If separate stable identities each cross a checkpoint, write
+each to its own path.
+
 Cross-chat memory lives in one Markdown document from `references/debug.md`
 at `docs/teamwork/debug/<YYYY-MM-DD>-<slug>.md`. Same identity means the same
 failure signature; reuse that path and name the document you read. A different

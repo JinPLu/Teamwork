@@ -41,6 +41,10 @@ Return the executable plan.
 
 ## Persistence
 
+When a listed checkpoint fires, write the document in the same response cycle
+as that result. If separate stable identities each cross a checkpoint, write
+each to its own path.
+
 Cross-chat memory lives in one Markdown document from `references/plan.md`
 at `docs/teamwork/plans/<YYYY-MM-DD>-<slug>.md`. Same identity means the same
 selected outcome; reuse that path and name the document you read.

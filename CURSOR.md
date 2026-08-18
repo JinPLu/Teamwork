@@ -42,22 +42,26 @@ complete a Skill checkpoint. Batching a stage's questions through AskQuestion
 is the host mapping and still does not complete a checkpoint. CreatePlan is
 not Writer. Writer is the Task
 helper role (`subagent_type: writer`), not a Skill; there is no
-`teamwork-writer` Skill. Prefer Writer for checkpoint writes; if Writer is
-unavailable, Root writes the same Skill template and marks that Root fallback.
+`teamwork-writer` Skill. Root owns document delivery and may write the Skill
+template directly or delegate an already-certified delta to Writer when that
+does not delay the current checkpoint write.
 `.cursor/plans` and host Plan mode do not persist `docs/teamwork/`.
 
-Roles pin no `model` field, so Cursor's default applies (`inherit` / parent
-unless Task overrides). `--profile` does not apply to Cursor; it affects
-Codex and Claude agents only, and the Cursor install does not rewrite agent
-models.
+Roles pin `model` to Grok 4.6 Fast with role effort in the model bracket:
+researcher, planner, debugger, reviewer, and challenger use xhigh; worker
+uses high; writer uses medium. `--profile` does not apply to Cursor; it
+affects Codex and Claude agents only, and the Cursor install does not rewrite
+those pins.
 
 ## Project documents
 
-After the method's user-facing result exists, Skills prefer Writer to persist
-plain Markdown under `docs/teamwork/` (for example `plans/`, `debug/`,
-`reviews/`) using `YYYY-MM-DD-<slug>.md` for a new subject and reusing the path
-for the same stable identity. That is durable project memory, not a Case
-lifecycle, document schema, JSON index, or migration gate. If Writer is
-unavailable, Root writes the same template and marks Root fallback. A write
-failure is visible and does not undo the completed result. Host plan or
-question UI is not durable memory.
+After the method's user-facing result exists, Root owns delivery of the
+checkpoint document as plain Markdown under `docs/teamwork/` (for example
+`plans/`, `debug/`, `reviews/`) using `YYYY-MM-DD-<slug>.md` for a new subject
+and reusing the path for the same stable identity. Write in the same response
+cycle as that result. Writer is optional and must not delay the current
+checkpoint write. That is durable project memory, not a Case lifecycle,
+document schema, JSON index, or migration gate. When the current environment
+cannot write, report the exact expected path and that the document was not
+delivered. A write failure is visible and does not undo the completed result.
+Host plan or question UI is not durable memory.

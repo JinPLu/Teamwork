@@ -31,7 +31,8 @@ when that result is reusable or the user explicitly requests it.
 
 Persistence is optional. Write a report only when the observed result is reusable
 across sessions or the user explicitly requests it. When that optional
-checkpoint fires, prefer Writer from `references/report.md` at
+checkpoint fires, write the document in the same response cycle from
+`references/report.md` at
 `docs/teamwork/reports/<YYYY-MM-DD>-<slug>.md` (reuse the existing path for the
 same project-operation identity). Optional triggers: Init completes with an
 observed `AGENTS.md` change worth reusing; Init stops on a real file-ownership
@@ -46,7 +47,6 @@ authority, next action, or mainline. Existing history is immutable.
 
 Writer is a helper role, not a Skill. There is no `teamwork-writer` Skill.
 Host interaction surfaces, ephemeral host plan files, the conversation body,
-and experiment logs do not satisfy persistence. Prefer Writer when writing;
-if Writer is unavailable, Root may write the same template and mark Root
-fallback in the closeout. Init never blocks on a report. Silently skipping after
-choosing to persist is a Skill violation.
+and experiment logs do not satisfy persistence. Root owns document delivery.
+Root may write the same template directly or delegate to Writer only when that
+does not delay the current checkpoint write. Init never blocks on a report.

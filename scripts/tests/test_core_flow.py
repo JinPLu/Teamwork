@@ -287,8 +287,17 @@ class CoreFlowTests(unittest.TestCase):
             skill,
         )
         self.assertIn(
-            "If the document is missing, session recall may be used and must be "
-            "marked as not persisted.",
+            "Session recall may be used on the next turn only after a write is "
+            "observed unavailable or failed",
+            skill,
+        )
+        self.assertIn("marked as not persisted", skill)
+        self.assertIn(
+            "A missing document is not a license to skip a fired checkpoint write",
+            skill,
+        )
+        self.assertNotIn(
+            "If the document is missing, session recall may be used",
             skill,
         )
         self.assertIn("Start from facts, constraints, and the goal", skill)
@@ -359,9 +368,12 @@ class CoreFlowTests(unittest.TestCase):
                 self.assertIn("observed no-op", skill)
                 persistence = self._folded(self._persistence_section(skill))
                 self.assertIn("Persistence is optional", persistence)
-                self.assertIn("Prefer Writer when writing", persistence)
+                self.assertIn("same response cycle", persistence)
+                self.assertIn("Root owns document delivery", persistence)
+                self.assertIn("does not delay the current checkpoint write", persistence)
                 self.assertIn("Root may write the same template", persistence)
-                self.assertIn("Root fallback", persistence)
+                self.assertNotIn("Prefer Writer", persistence)
+                self.assertNotIn("Root fallback", persistence)
 
     def test_each_skill_persistence_section_retains_path_and_identity(self) -> None:
         mandatory = (
@@ -384,6 +396,8 @@ class CoreFlowTests(unittest.TestCase):
                 self.assertIn("name the document you read", section)
                 self.assertIn("A different subject gets a new path", section)
                 self.assertIn("Checkpoints:", section)
+                self.assertIn("same response cycle", section)
+                self.assertIn("separate stable identities", section)
                 self.assertNotIn("no-write", section)
                 self.assertNotIn("Root fallback", section)
                 self.assertNotIn("unavailable or returns a no-write", section)
@@ -460,10 +474,15 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("host plan UI", policy)
         self.assertIn("question UI", policy)
         self.assertIn("does not complete a Skill checkpoint", policy)
-        self.assertIn("Prefer Writer", policy)
-        self.assertIn("unavailable or returns a no-write", policy)
+        self.assertIn("Root owns document delivery", policy)
+        self.assertIn("same response cycle", policy)
+        self.assertIn("does not delay the current checkpoint write", policy)
+        self.assertIn("current environment cannot write", policy)
+        self.assertIn("document was not delivered", policy)
+        self.assertIn("unavailable, returns a no-write", policy)
         self.assertIn("Root writes the same Skill template", policy)
-        self.assertIn("Root fallback", policy)
+        self.assertNotIn("Prefer Writer", policy)
+        self.assertNotIn("Root fallback", policy)
         self.assertIn("Trigger hints", policy)
         self.assertIn("Collaborate", policy)
         self.assertIn("Debug", policy)
@@ -480,7 +499,10 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("keep both in sync", cursor)
         self.assertIn("/name", cursor)
         self.assertIn("$name", cursor)
-        self.assertIn("Root fallback", cursor)
+        self.assertIn("Root owns document delivery", cursor)
+        self.assertIn("does not delay the current checkpoint write", cursor)
+        self.assertNotIn("Prefer Writer", cursor)
+        self.assertNotIn("Root fallback", cursor)
         self.assertIn("Privacy Mode (Legacy)", cursor)
         self.assertIn("agent refresh is not a usable path", cursor)
         self.assertIn("global policy block is not injected", cursor)
@@ -493,8 +515,41 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("Task/Agent helper role", claude)
         self.assertIn("/name", claude)
         self.assertIn("$name", claude)
-        self.assertIn("Root fallback", claude)
+        self.assertIn("Root owns document delivery", claude)
+        self.assertIn("does not delay the current checkpoint write", claude)
         self.assertIn("not guaranteed", claude)
+        self.assertNotIn("Prefer Writer", claude)
+        self.assertNotIn("Root fallback", claude)
+
+    def test_cursor_agents_pin_grok_fast_by_role(self) -> None:
+        expected = {
+            "researcher": "model: grok-4.6[effort=xhigh,fast=true]",
+            "planner": "model: grok-4.6[effort=xhigh,fast=true]",
+            "debugger": "model: grok-4.6[effort=xhigh,fast=true]",
+            "reviewer": "model: grok-4.6[effort=xhigh,fast=true]",
+            "challenger": "model: grok-4.6[effort=xhigh,fast=true]",
+            "worker": "model: grok-4.6[effort=high,fast=true]",
+            "writer": "model: grok-4.6[effort=medium,fast=true]",
+        }
+        with tempfile.TemporaryDirectory() as raw:
+            env = os.environ.copy()
+            env["HOME"] = raw
+            result = subprocess.run(
+                [str(ROOT / "install.sh"), "--copy", "cursor-agents"],
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for role, model_line in expected.items():
+                path = Path(raw) / ".cursor/agents" / f"{role}.md"
+                lines = [
+                    line
+                    for line in path.read_text(encoding="utf-8").splitlines()
+                    if line.startswith("model:")
+                ]
+                self.assertEqual(lines, [model_line], path)
 
     def test_install_cursor_refreshes_existing_claude_skill_root(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -596,9 +651,16 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("does not by itself forbid a safe, authorized attempt", policy)
         self.assertIn("do not invent vetoes", policy)
         self.assertIn("after the method's user-facing result already exists", policy)
+        self.assertIn("same response cycle", policy)
+        self.assertIn("Root owns document delivery", policy)
+        self.assertIn("does not delay the current checkpoint write", policy)
+        self.assertIn("current environment cannot write", policy)
+        self.assertIn("document was not delivered", policy)
         self.assertIn("first todo after an execution request", policy)
         self.assertNotIn("silently skipping a fired checkpoint", policy.lower())
         self.assertNotIn("before closeout", policy.lower())
+        self.assertNotIn("Prefer Writer", policy)
+        self.assertNotIn("Root fallback", policy)
 
         architecture = self._folded((ROOT / "docs/architecture.md").read_text(encoding="utf-8"))
         self.assertIn("does not certify or substitute for that result", architecture)
@@ -617,6 +679,92 @@ class CoreFlowTests(unittest.TestCase):
                 self.assertNotIn("Execution eligibility is permission", skill)
                 self.assertNotIn("first todo after an execution request", skill)
                 self.assertNotIn("silently skipping a fired checkpoint", skill.lower())
+
+    def test_method_skill_persistence_requires_timely_write_and_identity_split(
+        self,
+    ) -> None:
+        for name in (
+            "teamwork-collaborate",
+            "teamwork-research",
+            "teamwork-debug",
+            "teamwork-plan",
+            "teamwork-review",
+            "teamwork-goal",
+        ):
+            with self.subTest(skill=name):
+                section = self._folded(self._persistence_section(self._skill_text(name)))
+                self.assertIn("When a listed checkpoint fires", section)
+                self.assertIn("same response cycle", section)
+                self.assertIn(
+                    "If separate stable identities each cross a checkpoint",
+                    section,
+                )
+                self.assertIn("write each to its own path", section)
+                self.assertNotIn("Prefer Writer", section)
+                method = self._folded(self._method_section(self._skill_text(name)))
+                self.assertNotIn("same response cycle", method)
+                self.assertNotIn("write the document", method.lower())
+
+    def test_init_update_persist_only_after_optional_checkpoint(self) -> None:
+        for name in ("teamwork-init", "teamwork-update"):
+            with self.subTest(skill=name):
+                persistence = self._folded(
+                    self._persistence_section(self._skill_text(name))
+                )
+                self.assertIn("Persistence is optional", persistence)
+                self.assertIn("When that optional checkpoint fires", persistence)
+                self.assertIn("same response cycle", persistence)
+                self.assertIn("Root owns document delivery", persistence)
+                self.assertIn("does not delay the current checkpoint write", persistence)
+                method = self._folded(self._method_section(self._skill_text(name)))
+                self.assertNotIn("same response cycle", method)
+
+    def test_collaborate_session_recall_only_after_observed_write_failure(
+        self,
+    ) -> None:
+        skill = self._folded(self._skill_text("teamwork-collaborate"))
+        persistence = self._folded(
+            self._persistence_section(self._skill_text("teamwork-collaborate"))
+        )
+        self.assertIn(
+            "Session recall may be used on the next turn only after a write is "
+            "observed unavailable or failed",
+            skill,
+        )
+        self.assertIn(
+            "A missing document is not a license to skip a fired checkpoint write",
+            persistence,
+        )
+        self.assertNotIn(
+            "If the document is missing, session recall may be used",
+            skill,
+        )
+
+    def test_skills_and_core_policy_omit_host_mode_tool_names(self) -> None:
+        forbidden = (
+            "CreatePlan",
+            "AskQuestion",
+            "AskUserQuestion",
+            "plan mode",
+            ".cursor/plans",
+        )
+        products = ("Cursor", "Claude", "Codex")
+        policy = (ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8")
+        for name in forbidden + products:
+            self.assertNotIn(name, policy, name)
+        for skill_name in (
+            "teamwork-collaborate",
+            "teamwork-research",
+            "teamwork-debug",
+            "teamwork-plan",
+            "teamwork-review",
+            "teamwork-goal",
+            "teamwork-init",
+            "teamwork-update",
+        ):
+            persistence = self._persistence_section(self._skill_text(skill_name))
+            for name in forbidden + products:
+                self.assertNotIn(name, persistence, f"{skill_name}:{name}")
 
     def test_collaborate_rebuilds_decision_surface_then_advances(self) -> None:
         method = self._folded(self._method_section(self._skill_text("teamwork-collaborate")))

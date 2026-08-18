@@ -4,6 +4,11 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.8.0 - 2026-08-18
+
+- **A fired checkpoint writes the project document in the same turn as the result.** Root owns delivery; Writer helps only when that does not delay the write. A host plan UI is not persistence. If the environment cannot write, the exact path and non-delivery are reported; the main work continues.
+- **Cursor's seven roles pin Grok 4.6 Fast.** Research, planning, debugging, review, and challenge use higher effort; execution uses high; recording uses medium.
+
 ## 7.7.0 - 2026-08-18
 
 - **Before planning, settle the questions that would change direction or acceptance, and cover the full confirmed goal.** Discoverable facts are resolved directly; only real preferences go to you. If a direction-changing gap remains, that gap is returned instead of a partial plan.

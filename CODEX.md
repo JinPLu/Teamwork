@@ -12,14 +12,17 @@ Planner, Reviewer, Worker, and Writer. Root sends a five-part brief: objective,
 scope, settled constraints, evidence, and requested return. Root owns
 integration, user dialogue, and confirmation of what enters the mainline.
 
-Writer is a low-cost, non-blocking recorder. A method owner certifies the
+Writer is a low-cost, optional recorder. A method owner certifies the
 semantic delta; Writer expresses that delta in plain Markdown without changing
-facts, decisions, authority, or completion. Prefer Writer after the
-user-facing result exists; if Writer is unavailable, Root writes the same Skill
-template and marks that Root fallback in the closeout. One Writer may be reused
+facts, decisions, authority, or completion. Root owns document delivery after
+the user-facing result exists and writes in the same response cycle. Root may
+write the Skill template directly or delegate to Writer only when that does
+not delay the current checkpoint write. One Writer may be reused
 across Skills, but that reuse shares only the Agent lifecycle: each Skill
-retains ownership of its own meaning. Write failure is visible and does not
-undo the completed result; the primary method never blocks on Writer.
+retains ownership of its own meaning. When the current environment cannot
+write, report the exact expected path and that the document was not delivered.
+Write failure is visible and does not undo the completed result; the primary
+method never blocks on Writer.
 
 Reusable content has six document semantics under `docs/teamwork/`: Discussion
 records choices and trade-offs; Research records external evidence and

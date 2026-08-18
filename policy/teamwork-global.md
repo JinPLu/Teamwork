@@ -56,8 +56,15 @@ switch, or ephemeral host plan file does not complete a Skill checkpoint.
 Conversation text and experiment logs are not Teamwork persistence.
 
 A Skill checkpoint records a reusable semantic change after the method's
-user-facing result already exists. Prefer Writer; if Writer is unavailable or
-returns a no-write, Root writes the same Skill template and marks that Root
-fallback in the closeout. Write failure is visible; it does not block the
+user-facing result already exists. When that checkpoint fires, write the
+document in the same response cycle; do not defer the write. Root owns
+document delivery and decides what to write. Root may write the Skill
+template directly or delegate an already-certified delta to Writer. Use
+Writer only when that delegation does not delay the current checkpoint
+write; if Writer is unavailable, returns a no-write, or delegation would
+delay the write, Root writes the same Skill template. When the current
+environment cannot write, report the exact expected path and that the
+document was not delivered. Write failure is visible; it does not block the
 primary work, change completion, or become the first todo after an execution
-request.
+request. A document may be written in parallel with authorized execution; it
+does not replace the next real action.

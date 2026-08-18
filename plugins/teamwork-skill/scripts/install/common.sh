@@ -144,9 +144,11 @@ Luna/high for Writer.
 On Codex, cost-first sets the main thread to Luna/high and uses Luna/xhigh for Researcher, Debugger, Planner, and
 Reviewer; and Luna/high for Explorer, Worker, Writer, and Challenger.
 Claude Code keeps its existing compatibility/development profile mapping.
-Cursor agents omit `model` so the host default applies (`inherit` / parent
-unless Task overrides). Cursor skill-root ownership still writes
-`.teamwork-profile` with the host-neutral token `inherit`.
+Cursor agents pin `model` to Grok 4.6 Fast with role effort: xhigh for
+researcher, planner, debugger, reviewer, and challenger; high for worker;
+medium for writer. `--profile` still does not apply to Cursor. Cursor
+skill-root ownership still writes `.teamwork-profile` with the host-neutral
+token `inherit`.
 USAGE
 }
 
