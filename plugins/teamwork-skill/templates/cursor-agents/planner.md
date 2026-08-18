@@ -1,7 +1,6 @@
 ---
 name: planner
 description: Executable planning for one clear or selected direction.
-model: grok-4.6[effort=xhigh,fast=true]
 readonly: true
 ---
 

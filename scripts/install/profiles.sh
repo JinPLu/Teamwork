@@ -182,41 +182,19 @@ install_claude_agent_file() {
   mv "$tmp" "$dest"
 }
 
-cursor_agent_model_value() {
-  local agent="$1"
-  case "$agent" in
-    researcher|planner|debugger|reviewer|challenger)
-      printf '%s\n' "grok-4.6[effort=xhigh,fast=true]"
-      ;;
-    worker)
-      printf '%s\n' "grok-4.6[effort=high,fast=true]"
-      ;;
-    writer)
-      printf '%s\n' "grok-4.6[effort=medium,fast=true]"
-      ;;
-    *)
-      echo "Unsupported Cursor role: $agent" >&2
-      return 1
-      ;;
-  esac
-}
-
 install_cursor_agent_file() {
   local source="$1"
   local dest="$2"
   local agent="$3"
-  local model
 
-  model="$(cursor_agent_model_value "$agent")"
   require_single_profile_field "$source" '^name: [a-z-]+$' "Cursor name"
   require_single_profile_field "$source" '^readonly: (true|false)$' "Cursor readonly"
-  require_single_profile_field "$source" '^model: .+$' "Cursor model"
+  if grep -Eq '^model:' "$source"; then
+    echo "Cursor profile must not pin model: $source" >&2
+    return 1
+  fi
   grep -Fqx "name: $agent" "$source" || {
     echo "Cursor profile identity does not match $agent: $source" >&2
-    return 1
-  }
-  grep -Fqx "model: $model" "$source" || {
-    echo "Cursor profile model does not match $agent: $source" >&2
     return 1
   }
   install_agent_file "$source" "$dest"
@@ -254,7 +232,7 @@ install_cursor_agent_set() {
       "$agent"
   done
 
-  echo "Installed $label Cursor agents under: $dest_root ($INSTALL_MODE, pinned Grok Fast + role effort)"
+  echo "Installed $label Cursor agents under: $dest_root ($INSTALL_MODE, host model scheduling)"
 }
 
 install_codex_agent_set() {

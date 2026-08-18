@@ -4,6 +4,10 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.8.1 - 2026-08-18
+
+- **Cursor's seven roles no longer pin a model.** Cursor selects the model; when the parent uses Auto, children can follow host routing. `--profile` still affects only Codex and Claude.
+
 ## 7.8.0 - 2026-08-18
 
 - **A fired checkpoint writes the project document in the same turn as the result.** Root owns delivery; Writer helps only when that does not delay the write. A host plan UI is not persistence. If the environment cannot write, the exact path and non-delivery are reported; the main work continues.

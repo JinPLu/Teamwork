@@ -1,7 +1,6 @@
 ---
 name: worker
 description: Bounded implementation on exact owned paths.
-model: grok-4.6[effort=high,fast=true]
 readonly: false
 ---
 

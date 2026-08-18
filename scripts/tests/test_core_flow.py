@@ -521,16 +521,16 @@ class CoreFlowTests(unittest.TestCase):
         self.assertNotIn("Prefer Writer", claude)
         self.assertNotIn("Root fallback", claude)
 
-    def test_cursor_agents_pin_grok_fast_by_role(self) -> None:
-        expected = {
-            "researcher": "model: grok-4.6[effort=xhigh,fast=true]",
-            "planner": "model: grok-4.6[effort=xhigh,fast=true]",
-            "debugger": "model: grok-4.6[effort=xhigh,fast=true]",
-            "reviewer": "model: grok-4.6[effort=xhigh,fast=true]",
-            "challenger": "model: grok-4.6[effort=xhigh,fast=true]",
-            "worker": "model: grok-4.6[effort=high,fast=true]",
-            "writer": "model: grok-4.6[effort=medium,fast=true]",
-        }
+    def test_cursor_agents_omit_model_for_host_scheduling(self) -> None:
+        roles = (
+            "researcher",
+            "planner",
+            "debugger",
+            "reviewer",
+            "challenger",
+            "worker",
+            "writer",
+        )
         with tempfile.TemporaryDirectory() as raw:
             env = os.environ.copy()
             env["HOME"] = raw
@@ -542,14 +542,16 @@ class CoreFlowTests(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            for role, model_line in expected.items():
+            self.assertIn("host model scheduling", result.stdout)
+            for role in roles:
                 path = Path(raw) / ".cursor/agents" / f"{role}.md"
-                lines = [
-                    line
-                    for line in path.read_text(encoding="utf-8").splitlines()
-                    if line.startswith("model:")
+                text = path.read_text(encoding="utf-8")
+                self.assertRegex(text, rf"(?m)^name: {role}$", path)
+                self.assertRegex(text, r"(?m)^readonly: (true|false)$", path)
+                model_lines = [
+                    line for line in text.splitlines() if line.startswith("model:")
                 ]
-                self.assertEqual(lines, [model_line], path)
+                self.assertEqual(model_lines, [], path)
 
     def test_install_cursor_refreshes_existing_claude_skill_root(self) -> None:
         with tempfile.TemporaryDirectory() as raw:

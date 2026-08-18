@@ -1,7 +1,6 @@
 ---
 name: writer
 description: Literal maintenance of authorized Teamwork Markdown documents.
-model: grok-4.6[effort=medium,fast=true]
 readonly: false
 ---
 

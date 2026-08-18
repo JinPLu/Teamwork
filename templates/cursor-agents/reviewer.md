@@ -1,7 +1,6 @@
 ---
 name: reviewer
 description: Independent review of finished code, documents, plans, and evidence.
-model: grok-4.6[effort=xhigh,fast=true]
 readonly: true
 ---
 

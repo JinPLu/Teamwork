@@ -1,7 +1,6 @@
 ---
 name: researcher
 description: Read-only deep or broad external research from a sanitized brief.
-model: grok-4.6[effort=xhigh,fast=true]
 readonly: true
 ---
 
