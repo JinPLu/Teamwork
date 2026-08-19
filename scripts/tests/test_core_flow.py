@@ -341,7 +341,6 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("keep non-runtime or already-isolated failures probe-minimal", skill)
         templates = (
             ROOT / "templates/codex-agents/teamwork-debugger.toml",
-            ROOT / "templates/cursor-agents/debugger.md",
             ROOT / "templates/claude-agents/debugger.md",
         )
         for path in templates:
@@ -509,6 +508,11 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("self-sufficient", cursor)
         self.assertIn("User Rule paste is optional", cursor)
         self.assertIn("Batching a stage's questions through AskQuestion", cursor)
+        self.assertIn("Cursor installs 6 roles", cursor)
+        self.assertIn("does not install the Debug or Goal Skills", cursor)
+        self.assertIn("Explorer and Debugger are intentionally omitted", cursor)
+        self.assertIn("reviewer uses xhigh", cursor)
+        self.assertNotIn("debugger and reviewer", cursor)
         self.assertIn("AskUserQuestion", claude)
         self.assertIn("host Plan", claude)
         self.assertIn("do not persist", claude)
@@ -520,20 +524,32 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("not guaranteed", claude)
         self.assertNotIn("Prefer Writer", claude)
         self.assertNotIn("Root fallback", claude)
+        self.assertIn("Debugger stays", claude)
+        self.assertIn("still installs Debug, Goal, and Debugger", claude)
 
     def test_cursor_agents_pin_grok_fast_by_role(self) -> None:
         expected = {
             "researcher": "model: kimi-k3[effort=high]",
             "planner": "model: grok-4.6[effort=high,fast=true]",
-            "debugger": "model: grok-4.6[effort=xhigh,fast=true]",
             "reviewer": "model: grok-4.6[effort=xhigh,fast=true]",
             "challenger": "model: grok-4.6[effort=high,fast=true]",
             "worker": "model: grok-4.6[effort=high,fast=true]",
             "writer": "model: grok-4.6[effort=medium,fast=true]",
         }
+        leftover = (
+            "---\n"
+            "name: debugger\n"
+            "description: leftover Teamwork debugger\n"
+            "readonly: false\n"
+            "---\n\n"
+            "You are the Teamwork Debugger.\n"
+        )
         with tempfile.TemporaryDirectory() as raw:
             env = os.environ.copy()
             env["HOME"] = raw
+            agent_root = Path(raw) / ".cursor/agents"
+            agent_root.mkdir(parents=True)
+            (agent_root / "debugger.md").write_text(leftover, encoding="utf-8")
             result = subprocess.run(
                 [str(ROOT / "install.sh"), "--copy", "cursor-agents"],
                 env=env,
@@ -543,6 +559,7 @@ class CoreFlowTests(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("pinned role models + effort", result.stdout)
+            self.assertFalse((agent_root / "debugger.md").exists())
             for role, model_line in expected.items():
                 path = Path(raw) / ".cursor/agents" / f"{role}.md"
                 lines = [
@@ -559,6 +576,17 @@ class CoreFlowTests(unittest.TestCase):
             claude_root.mkdir(parents=True)
             (claude_root / ".teamwork-version").write_text("0.0.0\n", encoding="utf-8")
             (claude_root / ".teamwork-profile").write_text("performance-first\n", encoding="utf-8")
+            cursor_root = home / ".cursor/skills"
+            cursor_root.mkdir(parents=True)
+            (cursor_root / ".teamwork-version").write_text("0.0.0\n", encoding="utf-8")
+            (cursor_root / ".teamwork-profile").write_text("inherit\n", encoding="utf-8")
+            for name in ("teamwork-debug", "teamwork-goal"):
+                leftover = cursor_root / name
+                leftover.mkdir()
+                (leftover / "SKILL.md").write_text(
+                    f"---\nname: {name}\ndescription: leftover\n---\n\nTeamwork leftover.\n",
+                    encoding="utf-8",
+                )
             env = os.environ.copy()
             env["HOME"] = raw
             result = subprocess.run(
@@ -574,6 +602,10 @@ class CoreFlowTests(unittest.TestCase):
             self.assertTrue(cursor_plan.is_file(), cursor_plan)
             self.assertTrue(claude_plan.is_file(), claude_plan)
             self.assertIn("docs/teamwork/plans/", claude_plan.read_text(encoding="utf-8"))
+            for name in ("teamwork-debug", "teamwork-goal"):
+                self.assertFalse((cursor_root / name).exists(), name)
+                claude_skill = claude_root / name / "SKILL.md"
+                self.assertTrue(claude_skill.is_file(), claude_skill)
             self.assertFalse((home / ".claude/agents").exists())
             self.assertFalse((home / ".claude/CLAUDE.md").exists())
             self.assertIn(
@@ -599,6 +631,16 @@ class CoreFlowTests(unittest.TestCase):
             set(explorer["templates"]),
             {"codex"},
         )
+        debugger = next(row for row in topology["agents"] if row["name"] == "debugger")
+        self.assertEqual(
+            set(debugger["templates"]),
+            {"codex", "claude"},
+        )
+        self.assertNotIn("cursor", debugger["templates"])
+        for name in ("teamwork-debug", "teamwork-goal"):
+            skill = next(row for row in topology["public_skills"] if row["name"] == name)
+            self.assertEqual(set(skill["hosts"]), {"codex", "claude"})
+            self.assertNotIn("cursor", skill["hosts"])
         module.validate_topology_layout(ROOT)
 
         with tempfile.TemporaryDirectory() as raw:
@@ -606,16 +648,29 @@ class CoreFlowTests(unittest.TestCase):
             (isolated / "config").mkdir()
             (isolated / "skills/demo").mkdir(parents=True)
             (isolated / "templates/codex-agents").mkdir(parents=True)
+            (isolated / "templates/claude-agents").mkdir(parents=True)
             (isolated / "skills/demo/SKILL.md").write_text("# demo\n", encoding="utf-8")
             (isolated / "templates/codex-agents/teamwork-explorer.toml").write_text(
                 "name = \"teamwork_explorer\"\n",
+                encoding="utf-8",
+            )
+            (isolated / "templates/codex-agents/teamwork-debugger.toml").write_text(
+                "name = \"teamwork_debugger\"\n",
+                encoding="utf-8",
+            )
+            (isolated / "templates/claude-agents/debugger.md").write_text(
+                "name: debugger\n",
                 encoding="utf-8",
             )
             (isolated / "config/teamwork-topology.json").write_text(
                 json.dumps(
                     {
                         "public_skills": [
-                            {"name": "demo", "path": "skills/demo/SKILL.md"}
+                            {
+                                "name": "demo",
+                                "path": "skills/demo/SKILL.md",
+                                "hosts": ["codex", "claude"],
+                            }
                         ],
                         "agents": [
                             {
@@ -623,13 +678,37 @@ class CoreFlowTests(unittest.TestCase):
                                 "templates": {
                                     "codex": "templates/codex-agents/teamwork-explorer.toml",
                                 },
-                            }
+                            },
+                            {
+                                "name": "debugger",
+                                "templates": {
+                                    "codex": "templates/codex-agents/teamwork-debugger.toml",
+                                    "claude": "templates/claude-agents/debugger.md",
+                                },
+                            },
                         ],
                     }
                 ),
                 encoding="utf-8",
             )
             module.validate_topology_layout(isolated)
+
+            invalid = json.loads((isolated / "config/teamwork-topology.json").read_text(encoding="utf-8"))
+            invalid["public_skills"][0]["hosts"] = []
+            (isolated / "config/teamwork-topology.json").write_text(
+                json.dumps(invalid),
+                encoding="utf-8",
+            )
+            with self.assertRaises(SystemExit):
+                module.validate_topology_layout(isolated)
+
+            invalid["public_skills"][0]["hosts"] = ["vim"]
+            (isolated / "config/teamwork-topology.json").write_text(
+                json.dumps(invalid),
+                encoding="utf-8",
+            )
+            with self.assertRaises(SystemExit):
+                module.validate_topology_layout(isolated)
 
         live = subprocess.run(
             [sys.executable, str(ROOT / "scripts/plugin-runtime-root.py")],
@@ -639,6 +718,71 @@ class CoreFlowTests(unittest.TestCase):
         )
         self.assertEqual(live.returncode, 0, live.stderr)
         self.assertEqual(live.stdout.strip(), str(ROOT))
+
+    def test_topology_skills_host_filter_omits_cursor_debug_goal(self) -> None:
+        query = ROOT / "scripts/teamwork_tooling/topology.py"
+        all_skills = subprocess.run(
+            [sys.executable, str(query), "skills"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(all_skills.returncode, 0, all_skills.stderr)
+        all_names = all_skills.stdout.split()
+        self.assertEqual(len(all_names), 8)
+        self.assertIn("teamwork-debug", all_names)
+        self.assertIn("teamwork-goal", all_names)
+
+        cursor = subprocess.run(
+            [sys.executable, str(query), "skills", "--host", "cursor"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(cursor.returncode, 0, cursor.stderr)
+        cursor_names = cursor.stdout.split()
+        self.assertEqual(len(cursor_names), 6)
+        self.assertNotIn("teamwork-debug", cursor_names)
+        self.assertNotIn("teamwork-goal", cursor_names)
+
+        for host in ("claude", "codex"):
+            result = subprocess.run(
+                [sys.executable, str(query), "skills", "--host", host],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            names = result.stdout.split()
+            self.assertEqual(len(names), 8, host)
+            self.assertIn("teamwork-debug", names)
+            self.assertIn("teamwork-goal", names)
+
+        cursor_roles = subprocess.run(
+            [sys.executable, str(query), "agent-templates", "--host", "cursor", "--field", "name"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(cursor_roles.returncode, 0, cursor_roles.stderr)
+        role_names = cursor_roles.stdout.split()
+        self.assertEqual(len(role_names), 6)
+        self.assertNotIn("debugger", role_names)
+        self.assertNotIn("explorer", role_names)
+
+    def test_cursor_policy_declares_omit_debug_goal_debugger(self) -> None:
+        result = subprocess.run(
+            [str(ROOT / "install.sh"), "cursor-policy"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        folded = self._folded(result.stdout)
+        self.assertIn("does not install the Debug or Goal Skills or the Debugger role", folded)
+        self.assertIn("Do not load them", folded)
+        self.assertIn("use the host Debug mode", folded)
+        self.assertNotIn("CreatePlan", (ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
 
     def test_policy_owns_outcome_and_persistence_contract(self) -> None:
         policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
@@ -666,6 +810,8 @@ class CoreFlowTests(unittest.TestCase):
         architecture = self._folded((ROOT / "docs/architecture.md").read_text(encoding="utf-8"))
         self.assertIn("does not certify or substitute for that result", architecture)
         self.assertIn("policy/teamwork-global.md` is the sole owner", architecture)
+        self.assertIn("Claude Code installs 7 roles", architecture)
+        self.assertIn("Cursor installs 6 roles", architecture)
 
         for name in (
             "teamwork-collaborate",

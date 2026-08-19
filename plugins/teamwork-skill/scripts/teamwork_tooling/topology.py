@@ -28,8 +28,30 @@ def load_topology(root: Path = ROOT) -> dict[str, object]:
     return value
 
 
-def public_skill_paths(root: Path = ROOT) -> dict[str, str]:
-    return {row["name"]: row["path"] for row in load_topology(root)["public_skills"]}
+def skill_hosts(row: dict[str, object]) -> tuple[str, ...]:
+    hosts = row.get("hosts")
+    if hosts is None:
+        return HOSTS
+    if not isinstance(hosts, list) or not hosts:
+        raise ValueError("Teamwork skill hosts must be a non-empty list")
+    if any(not isinstance(item, str) or item not in HOSTS for item in hosts):
+        raise ValueError("Teamwork skill hosts must be a subset of supported hosts")
+    return tuple(hosts)
+
+
+def public_skill_paths(root: Path = ROOT, host: str | None = None) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for row in load_topology(root)["public_skills"]:
+        if not isinstance(row, dict):
+            raise ValueError("Teamwork skill topology is invalid")
+        if host is not None and host not in skill_hosts(row):
+            continue
+        name = row.get("name")
+        path = row.get("path")
+        if not isinstance(name, str) or not isinstance(path, str):
+            raise ValueError("Teamwork skill topology is invalid")
+        result[name] = path
+    return result
 
 
 def agent_template_paths(root: Path = ROOT) -> dict[str, dict[str, str]]:
@@ -56,7 +78,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=ROOT)
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("skills")
+    skills = sub.add_parser("skills")
+    skills.add_argument("--host", choices=HOSTS)
     sub.add_parser("references")
     documents = sub.add_parser("documents")
     documents.add_argument("--field", choices=("name", "path"), default="path")
@@ -66,7 +89,7 @@ def main() -> int:
     args = parser.parse_args()
     root = args.root.resolve()
     if args.command == "skills":
-        for name in sorted(public_skill_paths(root)):
+        for name in sorted(public_skill_paths(root, host=args.host)):
             print(name)
     elif args.command == "references":
         for path in sorted(owned_references(root)):

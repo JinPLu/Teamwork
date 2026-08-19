@@ -188,7 +188,7 @@ cursor_agent_model_value() {
     researcher)
       printf '%s\n' "kimi-k3[effort=high]"
       ;;
-    debugger|reviewer)
+    reviewer)
       printf '%s\n' "grok-4.6[effort=xhigh,fast=true]"
       ;;
     planner|challenger|worker)

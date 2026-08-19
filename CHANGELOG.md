@@ -4,6 +4,13 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.8.4 - 2026-08-19
+
+- **Cursor 不再安装 Debug、Goal Skill 和 Debugger 角色。** 未知原因诊断改用宿主 Debug；Explorer 本来就省略。重装会清掉 Teamwork 自己留下的旧副本。Claude 与 Codex 仍安装这三项。
+- **Cursor 刷新已有 Claude 技能根时，仍给 Claude 装全套 8 个 Skill。** 不会把 Cursor 的子集写进 `~/.claude/skills`。
+
+升级操作：更新到 7.8.4 后运行 `./install.sh cursor`（或 `cursor-agents`），并从新任务开始。若使用 Cursor 全局策略，再跑 `./install.sh cursor-policy` 并更新那条 User Rule。
+
 ## 7.8.3 - 2026-08-19
 
 **Teamwork 7.8.3 让 Cursor 按职责各取所长：调研走覆盖面，其余角色仍走便宜、少轮次的编码默认。**

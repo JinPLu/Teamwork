@@ -21,10 +21,29 @@ python3 "$TOPOLOGY_QUERY" --root "$ROOT" skills >/dev/null || {
   echo "Cannot load Teamwork topology: $ROOT/config/teamwork-topology.json" >&2
   return 1 2>/dev/null || exit 1
 }
+for _teamwork_skill_host in cursor claude codex; do
+  python3 "$TOPOLOGY_QUERY" --root "$ROOT" skills --host "$_teamwork_skill_host" >/dev/null || {
+    echo "Cannot load Teamwork topology: $ROOT/config/teamwork-topology.json" >&2
+    return 1 2>/dev/null || exit 1
+  }
+done
+unset _teamwork_skill_host
 SKILLS=()
 while IFS= read -r item; do
   SKILLS+=("$item")
 done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" skills)
+CURSOR_SKILLS=()
+CLAUDE_SKILLS=()
+CODEX_SKILLS=()
+while IFS= read -r item; do
+  CURSOR_SKILLS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" skills --host cursor)
+while IFS= read -r item; do
+  CLAUDE_SKILLS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" skills --host claude)
+while IFS= read -r item; do
+  CODEX_SKILLS+=("$item")
+done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" skills --host codex)
 RETIRED_SKILLS=(
   grill-me
   teamwork-design
@@ -32,6 +51,10 @@ RETIRED_SKILLS=(
   using-teamwork
   teamwork-execute
   teamwork
+)
+RETIRED_CURSOR_SKILLS=(
+  teamwork-debug
+  teamwork-goal
 )
 LEGACY_CODEX_ROUTER_SKILL="teamwork"
 CLAUDE_AGENTS=()
@@ -47,7 +70,7 @@ while IFS= read -r item; do
   CODEX_AGENTS+=("$item")
 done < <(python3 "$TOPOLOGY_QUERY" --root "$ROOT" agent-templates --host codex --field stem)
 RETIRED_CLAUDE_AGENTS=(designer plan-reviewer explorer)
-RETIRED_CURSOR_AGENTS=(designer plan-reviewer explorer)
+RETIRED_CURSOR_AGENTS=(designer plan-reviewer explorer debugger)
 RETIRED_CODEX_AGENTS=(teamwork-designer teamwork-plan-reviewer)
 
 usage() {
@@ -145,9 +168,9 @@ On Codex, cost-first sets the main thread to Luna/high and uses Luna/xhigh for R
 Reviewer; and Luna/high for Explorer, Worker, Writer, and Challenger.
 Claude Code keeps its existing compatibility/development profile mapping.
 Cursor agents pick models by job: Researcher pins Kimi K3 high for coverage
-and retrieval; the other six roles pin Grok 4.6 Fast for cheap, few-turn
-coding work, with role effort: xhigh for debugger and reviewer; high for
-planner, challenger, and worker; medium for writer. `--profile` still does
+and retrieval; the other five roles pin Grok 4.6 Fast for cheap, few-turn
+coding work, with role effort: xhigh for reviewer; high for planner,
+challenger, and worker; medium for writer. `--profile` still does
 not apply to Cursor. Cursor
 skill-root ownership still writes `.teamwork-profile` with the host-neutral
 token `inherit`.
@@ -384,17 +407,46 @@ install_skill_set() {
   local dest_root="$1"
   local label="$2"
   local profile_token="${3:-$CODEX_PROFILE}"
-  local skill
+  local host="${4:-}"
+  local skill retired
 
   preflight_teamwork_skill_root "$dest_root" "$label skill root"
   mkdir -p "$dest_root"
   for retired in "${RETIRED_SKILLS[@]}"; do
     remove_retired_skill "$dest_root" "$retired"
   done
+  if [[ "$host" == "cursor" ]]; then
+    for retired in "${RETIRED_CURSOR_SKILLS[@]}"; do
+      remove_retired_skill "$dest_root" "$retired"
+    done
+  fi
 
-  for skill in "${SKILLS[@]}"; do
-    install_skill_dir "$ROOT/skills/$skill" "$dest_root/$skill"
-  done
+  case "$host" in
+    cursor)
+      for skill in "${CURSOR_SKILLS[@]}"; do
+        install_skill_dir "$ROOT/skills/$skill" "$dest_root/$skill"
+      done
+      ;;
+    claude)
+      for skill in "${CLAUDE_SKILLS[@]}"; do
+        install_skill_dir "$ROOT/skills/$skill" "$dest_root/$skill"
+      done
+      ;;
+    codex)
+      for skill in "${CODEX_SKILLS[@]}"; do
+        install_skill_dir "$ROOT/skills/$skill" "$dest_root/$skill"
+      done
+      ;;
+    "")
+      for skill in "${SKILLS[@]}"; do
+        install_skill_dir "$ROOT/skills/$skill" "$dest_root/$skill"
+      done
+      ;;
+    *)
+      echo "Unknown skill-set host: $host" >&2
+      return 1
+      ;;
+  esac
 
   printf '%s\n' "$PKG_VERSION" > "$dest_root/.teamwork-version"
   printf '%s\n' "$profile_token" > "$dest_root/.teamwork-profile"
@@ -604,7 +656,7 @@ install_codex_skill_set() {
     preflight_legacy_codex_skills "$legacy_root"
     preflight_owned_legacy_cleanup "$legacy_root"
   fi
-  install_skill_set "$dest_root" "Codex"
+  install_skill_set "$dest_root" "Codex" "$CODEX_PROFILE" "codex"
   if [[ "$legacy_root" != "$dest_root" ]]; then
     remove_owned_legacy_codex_skills "$legacy_root"
     remove_legacy_codex_router_copy "$legacy_root"

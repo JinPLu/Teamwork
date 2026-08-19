@@ -32,11 +32,11 @@ Codex or ordinary project work.
 
 Built-in Explore, AskQuestion, Plan, and Debug handle live interaction.
 Teamwork Skills add purpose-specific contracts and checkpoint documents under
-`docs/teamwork/`. The adapter exposes the same focused Skills and seven
-optional helper roles: Researcher, Debugger, Challenger, Planner, Reviewer,
-Worker, and Writer. Cursor installs 7 roles; Explorer is intentionally
-omitted. Planner and Debugger remain optional bounded helpers, not
-substitutes for Cursor's Plan or Debug modes. CreatePlan and AskQuestion are
+`docs/teamwork/`. The adapter exposes six focused Skills and six optional
+helper roles: Researcher, Challenger, Planner, Reviewer, Worker, and Writer.
+Cursor installs 6 roles; Explorer and Debugger are intentionally omitted.
+Cursor does not install the Debug or Goal Skills. Planner remains an optional
+bounded helper, not a substitute for Cursor's Plan mode. CreatePlan and AskQuestion are
 host signals that a plan was settled or a decision was recorded; they do not
 complete a Skill checkpoint. Batching a stage's questions through AskQuestion
 is the host mapping and still does not complete a checkpoint. CreatePlan is
@@ -48,9 +48,9 @@ does not delay the current checkpoint write.
 `.cursor/plans` and host Plan mode do not persist `docs/teamwork/`.
 
 Cursor roles pick models by job. Researcher pins `model` to Kimi K3 high for
-coverage and retrieval. The other six roles pin Grok 4.6 Fast for cheap,
-few-turn coding work, with role effort in the model bracket: debugger and
-reviewer use xhigh; planner, challenger, and worker use high; writer uses
+coverage and retrieval. The other five roles pin Grok 4.6 Fast for cheap,
+few-turn coding work, with role effort in the model bracket: reviewer uses
+xhigh; planner, challenger, and worker use high; writer uses
 medium. Public retrieval scores and Cursor pool prices are directional at
 one snapshot; they are not a Teamwork ranking. `--profile` does not apply
 to Cursor; it affects Codex and Claude agents only, and the Cursor install

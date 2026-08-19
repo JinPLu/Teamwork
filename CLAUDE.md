@@ -32,7 +32,9 @@ contracts and checkpoint documents under `docs/teamwork/`. The adapter exposes t
 and seven optional helper roles: Researcher, Debugger, Challenger, Planner,
 Reviewer, Worker, and Writer. Claude installs 7 roles; Teamwork Explorer is
 omitted so it does not sit beside the built-in Explore. Debugger stays because
-Claude has no diagnosis role. Do not name a custom agent `Explore`; that
+Claude has no diagnosis role. Claude still installs Debug, Goal, and Debugger.
+Cursor omits those Skills and the Debugger role; a Cursor install that
+refreshes this Claude skill root still installs the full Claude set. Do not name a custom agent `Explore`; that
 identifier overrides the built-in.
 
 When both same-named Teamwork skill copies exist under `~/.cursor/skills/` and

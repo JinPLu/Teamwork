@@ -6,11 +6,13 @@
     },
     {
       "name": "teamwork-debug",
-      "path": "skills/teamwork-debug/SKILL.md"
+      "path": "skills/teamwork-debug/SKILL.md",
+      "hosts": ["codex", "claude"]
     },
     {
       "name": "teamwork-goal",
-      "path": "skills/teamwork-goal/SKILL.md"
+      "path": "skills/teamwork-goal/SKILL.md",
+      "hosts": ["codex", "claude"]
     },
     {
       "name": "teamwork-init",
@@ -46,7 +48,6 @@
       "name": "debugger",
       "templates": {
         "codex": "templates/codex-agents/teamwork-debugger.toml",
-        "cursor": "templates/cursor-agents/debugger.md",
         "claude": "templates/claude-agents/debugger.md"
       }
     },

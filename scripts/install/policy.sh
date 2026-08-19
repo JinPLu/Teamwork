@@ -45,6 +45,9 @@ write_teamwork_cursor_global_policy() {
 POLICY
   write_teamwork_global_policy_body
   cat <<'POLICY'
+
+This host does not install the Debug or Goal Skills or the Debugger role.
+Do not load them. For unknown-cause diagnosis, use the host Debug mode.
 <!-- TEAMWORK_CURSOR_GLOBAL_END -->
 POLICY
 }

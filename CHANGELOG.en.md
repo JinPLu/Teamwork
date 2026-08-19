@@ -4,6 +4,13 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.8.4 - 2026-08-19
+
+- **Cursor no longer installs the Debug or Goal Skills or the Debugger role.** Unknown-cause diagnosis uses host Debug; Explorer was already omitted. A reinstall removes Teamwork-owned leftover copies. Claude and Codex still install all three.
+- **A Cursor refresh of an existing Claude skill root still installs Claude's full 8 Skills.** The Cursor subset is not written into `~/.claude/skills`.
+
+Upgrade action: after updating to 7.8.4, run `./install.sh cursor` (or `cursor-agents`) and start a new task. If you use the Cursor global policy, also run `./install.sh cursor-policy` and update that user rule.
+
 ## 7.8.3 - 2026-08-19
 
 **Teamwork 7.8.3 lets Cursor pick models by job: coverage for research, cheap few-turn coding as the default elsewhere.**

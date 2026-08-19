@@ -71,6 +71,12 @@ def validate_topology_layout(root: Path) -> None:
     for row in skills:
         if not isinstance(row, dict):
             raise SystemExit("not a Teamwork plugin runtime: invalid skill topology")
+        if "hosts" in row:
+            hosts = row["hosts"]
+            if not isinstance(hosts, list) or not hosts:
+                raise SystemExit("not a Teamwork plugin runtime: invalid skill host topology")
+            if any(not isinstance(item, str) or item not in SUPPORTED_AGENT_HOSTS for item in hosts):
+                raise SystemExit("not a Teamwork plugin runtime: invalid skill host topology")
         require_regular_file(root / _relative_file(row.get("path"), "skill path"))
     for row in agents:
         if not isinstance(row, dict) or not isinstance(row.get("templates"), dict):
@@ -80,7 +86,8 @@ def validate_topology_layout(root: Path) -> None:
         # Validate each declared host file. Do not require {codex,cursor,claude}
         # on every agent: Codex is the supported minimum when present, and a
         # host may be omitted when the topology row intentionally drops it.
-        # Explorer therefore passes with only a Codex template.
+        # Explorer therefore passes with only a Codex template, and Debugger
+        # may omit Cursor.
         if not hosts or not hosts.issubset(SUPPORTED_AGENT_HOSTS):
             raise SystemExit("not a Teamwork plugin runtime: invalid agent host topology")
         for host, relative in templates.items():
