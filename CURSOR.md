@@ -47,9 +47,11 @@ template directly or delegate an already-certified delta to Writer when that
 does not delay the current checkpoint write.
 `.cursor/plans` and host Plan mode do not persist `docs/teamwork/`.
 
-Cursor roles do not pin `model`; Cursor selects the model through its own
-scheduling (including Auto when the parent uses Auto). `--profile` does not
-apply to Cursor; it affects Codex and Claude agents only.
+Roles pin `model` to Grok 4.6 Fast with role effort in the model bracket:
+debugger and reviewer use xhigh; researcher, planner, challenger, and worker
+use high; writer uses medium. `--profile` does not apply to Cursor; it
+affects Codex and Claude agents only, and the Cursor install does not rewrite
+those pins.
 
 ## Project documents
 

@@ -4,6 +4,10 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.8.2 - 2026-08-19
+
+- **Cursor's seven roles pin Grok 4.6 Fast again.** Debugging and review use xhigh; research, planning, challenge, and execution use high; recording uses medium. Children no longer follow the parent model.
+
 ## 7.8.1 - 2026-08-18
 
 - **Cursor's seven roles no longer pin a model.** Cursor selects the model; when the parent uses Auto, children can follow host routing. `--profile` still affects only Codex and Claude.

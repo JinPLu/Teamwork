@@ -145,8 +145,8 @@ On Codex, cost-first sets the main thread to Luna/high and uses Luna/xhigh for R
 Reviewer; and Luna/high for Explorer, Worker, Writer, and Challenger.
 Claude Code keeps its existing compatibility/development profile mapping.
 Cursor agents pin `model` to Grok 4.6 Fast with role effort: xhigh for
-researcher, planner, debugger, reviewer, and challenger; high for worker;
-medium for writer. `--profile` still does not apply to Cursor. Cursor
+debugger and reviewer; high for researcher, planner, challenger, and
+worker; medium for writer. `--profile` still does not apply to Cursor. Cursor
 skill-root ownership still writes `.teamwork-profile` with the host-neutral
 token `inherit`.
 USAGE

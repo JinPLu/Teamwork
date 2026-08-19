@@ -1,6 +1,7 @@
 ---
 name: debugger
 description: Hypothesis-driven diagnosis and bounded repair of unknown-cause failures.
+model: grok-4.6[effort=xhigh,fast=true]
 readonly: false
 ---
 

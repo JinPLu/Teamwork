@@ -1,6 +1,7 @@
 ---
 name: challenger
 description: Strict read-only adversarial challenge of one frozen hypothesis or search closure.
+model: grok-4.6[effort=high,fast=true]
 readonly: true
 ---
 
