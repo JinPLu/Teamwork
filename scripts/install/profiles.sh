@@ -185,10 +185,13 @@ install_claude_agent_file() {
 cursor_agent_model_value() {
   local agent="$1"
   case "$agent" in
+    researcher)
+      printf '%s\n' "kimi-k3[effort=high]"
+      ;;
     debugger|reviewer)
       printf '%s\n' "grok-4.6[effort=xhigh,fast=true]"
       ;;
-    researcher|planner|challenger|worker)
+    planner|challenger|worker)
       printf '%s\n' "grok-4.6[effort=high,fast=true]"
       ;;
     writer)
@@ -254,7 +257,7 @@ install_cursor_agent_set() {
       "$agent"
   done
 
-  echo "Installed $label Cursor agents under: $dest_root ($INSTALL_MODE, pinned Grok Fast + role effort)"
+  echo "Installed $label Cursor agents under: $dest_root ($INSTALL_MODE, pinned role models + effort)"
 }
 
 install_codex_agent_set() {

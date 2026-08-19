@@ -4,6 +4,17 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.8.3 - 2026-08-19
+
+**Teamwork 7.8.3 lets Cursor pick models by job: coverage for research, cheap few-turn coding as the default elsewhere.**
+
+- **Researcher pins Kimi K3 high.** Same-time public coverage and retrieval scores sit well above Grok in the default coding pool; that is the research job, not a flagship swap for every role.
+- **The other six roles stay on Grok 4.6 Fast.** Debugging and review use xhigh; planning, challenge, and execution use high; recording uses medium. Public evidence does not yet distinguish them from that default.
+
+Upgrade action: after updating to 7.8.3, run `./install.sh cursor` (or `cursor-agents`) and start a new task to load the refreshed role configuration.
+
+Important limit: public retrieval benches and Cursor pool prices are directional at one snapshot; they do not mean Teamwork measured a fixed ranking or price.
+
 ## 7.8.2 - 2026-08-19
 
 - **Cursor's seven roles pin Grok 4.6 Fast again.** Debugging and review use xhigh; research, planning, challenge, and execution use high; recording uses medium. Children no longer follow the parent model.

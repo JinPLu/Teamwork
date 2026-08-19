@@ -523,7 +523,7 @@ class CoreFlowTests(unittest.TestCase):
 
     def test_cursor_agents_pin_grok_fast_by_role(self) -> None:
         expected = {
-            "researcher": "model: grok-4.6[effort=high,fast=true]",
+            "researcher": "model: kimi-k3[effort=high]",
             "planner": "model: grok-4.6[effort=high,fast=true]",
             "debugger": "model: grok-4.6[effort=xhigh,fast=true]",
             "reviewer": "model: grok-4.6[effort=xhigh,fast=true]",
@@ -542,7 +542,7 @@ class CoreFlowTests(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertIn("pinned Grok Fast + role effort", result.stdout)
+            self.assertIn("pinned role models + effort", result.stdout)
             for role, model_line in expected.items():
                 path = Path(raw) / ".cursor/agents" / f"{role}.md"
                 lines = [
