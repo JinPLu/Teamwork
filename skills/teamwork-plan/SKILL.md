@@ -51,6 +51,9 @@ selected outcome; reuse that path and name the document you read.
 A different subject gets a new path. Later edits reuse that path; do not open
 a new plan because of added acceptance checks or parallel concerns.
 
-Checkpoints: the direction and scope are accepted; the executable plan is first
-settled; a material replan changes steps, dependencies, verification, or stop
-conditions. Keep user quotes separate from the working understanding.
+Checkpoints: the direction and scope are accepted (this settles direction
+only; it does not create a document for an unaccepted draft); the executable
+plan is first settled when that first executable plan is accepted by the
+user; a material replan changes steps, dependencies, verification, or stop
+conditions only after the user accepts that replan. Keep user quotes separate
+from the working understanding.

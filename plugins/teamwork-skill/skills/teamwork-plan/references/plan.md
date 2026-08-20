@@ -12,6 +12,14 @@
 
 1. <outcome-sized step, owner, exact target, produced result>
 
+## Authoritative project records
+
+- <paper, experiment log, dataset, or benchmark: owner, exact path, when it updates>
+
+Teamwork checkpoint records under `docs/teamwork/` are not project paper,
+experiment, or data documents. List those project records here with owner and
+path; do not treat the Teamwork plan document itself as an execution todo.
+
 ## Dependencies and parallel tracks
 
 <dependency order; only independent non-overlapping parallel work>

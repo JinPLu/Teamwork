@@ -19,7 +19,8 @@ owns.
 
 Privacy Mode (Legacy) blocks Cursor's User Rule API, so agent refresh is not
 a usable path and the global policy block is not injected. Skills are
-self-sufficient; the User Rule paste is optional. `./install.sh cursor-policy`
+self-sufficient; the User Rule paste is optional. The project `AGENTS.md`
+block is the minimum shared bridge. `./install.sh cursor-policy`
 prints the block for a manual Settings -> Rules -> User Rules paste;
 `./install.sh cursor-policy-copy` copies the same block. The
 `TEAMWORK_CURSOR_GLOBAL_START` marker is what keeps a refresh an update
@@ -36,16 +37,19 @@ Teamwork Skills add purpose-specific contracts and checkpoint documents under
 helper roles: Researcher, Challenger, Planner, Reviewer, Worker, and Writer.
 Cursor installs 6 roles; Explorer and Debugger are intentionally omitted.
 Cursor does not install the Debug or Goal Skills. Planner remains an optional
-bounded helper, not a substitute for Cursor's Plan mode. CreatePlan and AskQuestion are
-host signals that a plan was settled or a decision was recorded; they do not
-complete a Skill checkpoint. Batching a stage's questions through AskQuestion
+bounded helper, not a substitute for Cursor's Plan mode. CreatePlan and host
+Plan drafts are editable candidates; they do not complete a Skill checkpoint.
+User confirmation or Build is acceptance of a reusable plan; then apply the
+matching Persistence contract. Batching a stage's questions through AskQuestion
 is the host mapping and still does not complete a checkpoint. CreatePlan is
 not Writer. Writer is the Task
 helper role (`subagent_type: writer`), not a Skill; there is no
 `teamwork-writer` Skill. Root owns document delivery and may write the Skill
 template directly or delegate an already-certified delta to Writer when that
 does not delay the current checkpoint write.
-`.cursor/plans` and host Plan mode do not persist `docs/teamwork/`.
+`.cursor/plans` remains the host editing surface; accepted reusable results
+persist under `docs/teamwork/`. If this User Rule is absent, the project
+`AGENTS.md` block is the minimum shared bridge.
 
 Cursor roles pick models by job. Researcher pins `model` to Kimi K3 high for
 coverage and retrieval. The other five roles pin Grok 4.6 Fast for cheap,
@@ -67,4 +71,5 @@ checkpoint write. That is durable project memory, not a Case lifecycle,
 document schema, JSON index, or migration gate. When the current environment
 cannot write, report the exact expected path and that the document was not
 delivered. A write failure is visible and does not undo the completed result.
-Host plan or question UI is not durable memory.
+Invoking a host plan or question UI is not durable memory; a user-accepted
+reusable result is.

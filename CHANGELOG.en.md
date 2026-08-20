@@ -4,6 +4,13 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.9.0 - 2026-08-20
+
+- **Native Plan, question, and Debug stay host-owned.** Opening those surfaces is not persistence.
+- **After you accept a reusable result, Root writes `docs/teamwork/` in the same turn.** A named Skill is not required; Root applies the matching method record. If the environment cannot write, the exact path and non-delivery are reported. Project init still does not create that directory.
+
+Upgrade action: after updating to 7.9.0, re-run `./install.sh` for the host you use (`$teamwork-update` on Codex), refresh the global policy, and start a new task. For an existing project that should pick up the persistence pointer in project instructions, also run `./install.sh init-project`.
+
 ## 7.8.5 - 2026-08-20
 
 - **Cursor Grok roles no longer use xhigh.** Review, planning, challenge, and execution use high; recording uses medium.

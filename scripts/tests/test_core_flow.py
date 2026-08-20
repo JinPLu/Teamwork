@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -215,6 +216,16 @@ class CoreFlowTests(unittest.TestCase):
             agents = (project / "AGENTS.md").read_text(encoding="utf-8")
             self.assertEqual(agents.count("<!-- TEAMWORK_PROJECT_START -->"), 1)
             self.assertIn("no required project-local workflow or state", agents)
+            self.assertIn("no empty directory, schema, or mandatory stage chain", agents)
+            self.assertIn("Native host modes stay in charge", agents)
+            self.assertIn(
+                "User-accepted reusable results live under `docs/teamwork/`",
+                agents,
+            )
+            self.assertIn(
+                "Chat, host plans, and todos are not cross-session memory",
+                agents,
+            )
             self.assertFalse((project / "docs/teamwork").exists())
 
     def test_readiness_is_informational(self) -> None:
@@ -462,8 +473,14 @@ class CoreFlowTests(unittest.TestCase):
         plan = self._folded(self._persistence_section(self._skill_text("teamwork-plan")))
         self.assertIn("direction and scope are accepted", plan)
         self.assertIn("executable plan is first settled", plan)
+        self.assertIn("unaccepted draft", plan)
+        self.assertIn("accepted by the user", plan)
+        self.assertIn("only after the user accepts that replan", plan)
         self.assertIn("material replan", plan)
         self.assertNotIn("Acceptance, Parallel, and Presentation", plan)
+        description = self._frontmatter_description(self._skill_text("teamwork-plan"))
+        self.assertTrue(description.startswith("Use when"))
+        self.assertNotIn("docs/teamwork", description)
 
     def test_policy_and_cursor_adapter_name_host_surfaces(self) -> None:
         policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
@@ -484,9 +501,31 @@ class CoreFlowTests(unittest.TestCase):
         self.assertNotIn("Root fallback", policy)
         self.assertIn("Trigger hints", policy)
         self.assertIn("Collaborate", policy)
+        self.assertIn("investigate broad external evidence", policy)
+        self.assertIn("executable work → Plan", policy)
         self.assertIn("Debug", policy)
         self.assertIn("Goal", policy)
         self.assertIn("Review", policy)
+        self.assertIn(
+            "they do not replace or take ownership of native interaction surfaces",
+            policy,
+        )
+        self.assertIn("user-accepted reusable semantic result", policy)
+        self.assertIn(
+            "even when that Skill was not explicitly invoked",
+            policy,
+        )
+        self.assertIn("Entering a mode or invoking a surface is not acceptance", policy)
+        self.assertIn(
+            "Answers that serve an active result merge into that result",
+            policy,
+        )
+        self.assertIn(
+            "independent reusable preference decision",
+            policy,
+        )
+        self.assertIn("temporarily read-only", policy)
+        self.assertIn("write permission returns", policy)
         self.assertNotIn("CreatePlan", policy)
         self.assertNotIn("AskQuestion", policy)
         self.assertIn("CreatePlan is not Writer", cursor)
@@ -516,8 +555,13 @@ class CoreFlowTests(unittest.TestCase):
         self.assertNotIn("debugger and reviewer", cursor)
         self.assertIn("AskUserQuestion", claude)
         self.assertIn("host Plan", claude)
-        self.assertIn("do not persist", claude)
+        self.assertIn("read-only permission boundary", claude)
+        self.assertIn("approves exiting Plan", claude)
+        self.assertIn("write permission returns", claude)
         self.assertIn("Task/Agent helper role", claude)
+        self.assertIn("CreatePlan and host Plan drafts are editable candidates", cursor)
+        self.assertIn("User confirmation or Build is acceptance", cursor)
+        self.assertIn("minimum shared bridge", cursor)
         self.assertIn("/name", claude)
         self.assertIn("$name", claude)
         self.assertIn("Root owns document delivery", claude)
@@ -785,6 +829,210 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("use the host Debug mode", folded)
         self.assertNotIn("CreatePlan", (ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
 
+    def _replay_persistence_action(self, event: str, texts: dict[str, str]) -> str:
+        policy = self._folded(texts["policy"])
+        plan = self._folded(texts["plan_persistence"])
+        method = self._folded(texts["plan_method"])
+        skill = self._folded(texts["plan_skill"])
+        cursor = self._folded(texts["cursor"])
+        claude = self._folded(texts["claude"])
+        architecture = self._folded(texts["architecture"])
+
+        invoke_not_checkpoint = "does not complete a Skill checkpoint" in policy
+        accepted_applies = (
+            "even when that Skill was not explicitly invoked" in policy
+            and "user-accepted reusable semantic result" in policy
+        )
+        draft_skip = "unaccepted draft" in plan
+        user_accept = "accepted by the user" in plan
+        replan_after_accept = "only after the user accepts that replan" in plan
+        same_identity = (
+            "Do not open a new plan because of added acceptance checks" in skill
+        )
+        reuse_path = "reuse that path" in plan
+        merge_answers = (
+            "Answers that serve an active result merge into that result" in policy
+        )
+        independent = "independent reusable preference decision" in policy
+        delayed = (
+            "write permission returns" in policy
+            and "read-only permission boundary" in claude
+            and "temporarily read-only" in architecture
+        )
+        not_first_todo = "does not replace the next real action" in policy
+        method_has_no_write_gate = (
+            "write the document" not in method.lower()
+            and "same response cycle" not in method
+        )
+        report_fail = "document was not delivered" in policy
+        cursor_candidate = "editable candidates" in cursor
+        cursor_accept = "User confirmation or Build is acceptance" in cursor
+
+        if event in {"plan_draft", "plan_reject"}:
+            if invoke_not_checkpoint and draft_skip and cursor_candidate:
+                return "no_write"
+            return "write"
+        if event == "plan_accept_new":
+            if accepted_applies and user_accept and cursor_accept:
+                return "create_plan_record"
+            return "no_write"
+        if event == "readonly_then_approve":
+            if delayed and accepted_applies:
+                return "deliver_after_permission"
+            return "bypass_readonly"
+        if event == "material_replan_accept":
+            if replan_after_accept and reuse_path:
+                return "same_path_history"
+            return "new_slug"
+        if event == "add_acceptance_checks":
+            if same_identity:
+                return "same_identity"
+            return "new_slug"
+        if event == "questions_for_active_plan":
+            if merge_answers:
+                return "merge_into_plan"
+            return "create_discussion"
+        if event == "independent_preference":
+            if independent:
+                return "create_discussion"
+            return "merge_into_plan"
+        if event == "direct_execution":
+            if not_first_todo and method_has_no_write_gate:
+                return "first_real_action"
+            return "persist_first"
+        if event == "write_unavailable":
+            if report_fail:
+                return "report_expected_path"
+            return "claim_persisted"
+        return "unknown"
+
+    def test_native_interaction_lifecycle_contract(self) -> None:
+        texts = {
+            "policy": (ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"),
+            "plan_persistence": self._persistence_section(
+                self._skill_text("teamwork-plan")
+            ),
+            "plan_method": self._method_section(self._skill_text("teamwork-plan")),
+            "plan_skill": self._skill_text("teamwork-plan"),
+            "cursor": (ROOT / "CURSOR.md").read_text(encoding="utf-8"),
+            "claude": (ROOT / "CLAUDE.md").read_text(encoding="utf-8"),
+            "codex": (ROOT / "CODEX.md").read_text(encoding="utf-8"),
+            "architecture": (ROOT / "docs/architecture.md").read_text(encoding="utf-8"),
+        }
+        architecture = self._folded(texts["architecture"])
+        codex = self._folded(texts["codex"])
+        self.assertIn("native interaction → accepted semantic result → durable record", architecture)
+        self.assertIn("latest user-accepted semantic delta", architecture)
+        self.assertIn("Init does not create", architecture)
+        self.assertIn("candidates until the user approves them", codex)
+        self.assertIn("native execution approval", codex)
+        self.assertIn("`$name`", texts["codex"])
+
+        expected = (
+            ("plan_draft", "no_write"),
+            ("plan_reject", "no_write"),
+            ("plan_accept_new", "create_plan_record"),
+            ("readonly_then_approve", "deliver_after_permission"),
+            ("material_replan_accept", "same_path_history"),
+            ("add_acceptance_checks", "same_identity"),
+            ("questions_for_active_plan", "merge_into_plan"),
+            ("independent_preference", "create_discussion"),
+            ("direct_execution", "first_real_action"),
+            ("write_unavailable", "report_expected_path"),
+        )
+        for event, action in expected:
+            with self.subTest(event=event):
+                self.assertEqual(self._replay_persistence_action(event, texts), action)
+
+    def test_host_policy_wrappers_and_init_readback_use_temp_home(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw)
+            env = os.environ.copy()
+            env["HOME"] = str(home)
+            env["CODEX_HOME"] = str(home / ".codex")
+            needles = {
+                "cursor-policy": (
+                    "CreatePlan and host Plan drafts are editable candidates",
+                    "AskQuestion batches collect input",
+                    "minimum shared bridge",
+                    "user-accepted reusable semantic result",
+                ),
+                "claude-policy": (
+                    "read-only permission boundary",
+                    "AskUserQuestion batches collect input",
+                    "approves exiting Plan",
+                    "user-accepted reusable semantic result",
+                ),
+                "codex-policy": (
+                    "candidates until the user approves them",
+                    "native execution approval",
+                    "`$name`",
+                    "user-accepted reusable semantic result",
+                ),
+            }
+            for target, expected in needles.items():
+                result = subprocess.run(
+                    [str(ROOT / "install.sh"), target],
+                    env=env,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                folded = self._folded(result.stdout)
+                for needle in expected:
+                    self.assertIn(needle, folded, target)
+                self.assertNotIn("CreatePlan", (ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
+
+            script = (
+                "set -euo pipefail\n"
+                f"ROOT={shlex.quote(str(ROOT))}\n"
+                'source "$ROOT/scripts/install/common.sh"\n'
+                'source "$ROOT/scripts/install/policy.sh"\n'
+                "install_claude_global_policy\n"
+                "install_codex_global_policy\n"
+            )
+            written = subprocess.run(
+                ["bash", "-c", script],
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(written.returncode, 0, written.stderr)
+            claude_md = (home / ".claude/CLAUDE.md").read_text(encoding="utf-8")
+            codex_md = (home / ".codex/AGENTS.md").read_text(encoding="utf-8")
+            self.assertIn("read-only permission boundary", claude_md)
+            self.assertIn("approves exiting Plan", claude_md)
+            self.assertIn("candidates until the user approves them", codex_md)
+            self.assertIn("`$name`", codex_md)
+            self.assertIn("user-accepted reusable semantic result", claude_md)
+            self.assertIn("user-accepted reusable semantic result", codex_md)
+
+            project = home / "proj"
+            project.mkdir()
+            init = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts/init-project-files.py"),
+                    "--project-root",
+                    str(project),
+                    "initialize",
+                ],
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(init.returncode, 0, init.stderr)
+            agents = (project / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertIn(
+                "User-accepted reusable results live under `docs/teamwork/`",
+                agents,
+            )
+            self.assertFalse((project / "docs/teamwork").exists())
+            self.assertFalse((home / "docs/teamwork").exists())
+
     def test_policy_owns_outcome_and_persistence_contract(self) -> None:
         policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
         self.assertIn("The active method succeeds on its user-facing result", policy)
@@ -944,6 +1192,8 @@ class CoreFlowTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("## Current execution plan", plan_template)
+        self.assertIn("## Authoritative project records", plan_template)
+        self.assertIn("do not treat the Teamwork plan document itself as an execution todo", plan_template)
         self.assertNotIn("## Impact log", plan_template)
 
         for path in (

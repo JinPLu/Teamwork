@@ -110,7 +110,7 @@ Researcher、Explorer、Debugger、Challenger、Planner、Reviewer、Worker 和 
 
 ## 🗃️ 六类可读文档
 
-当专项方法到达语义检查点时，Root 在同一响应周期把纯 Markdown 写入 `docs/teamwork/`；Writer 只在不耽误写入时帮忙。每份文档同时保留一份**当前综合**和按时间追加的**历史**，既方便快速阅读，也不会抹掉结论如何变化。默认文件名为 `<YYYY-MM-DD>-<slug>.md`，同一稳定身份复用已有路径。
+当原生交互或专项方法到达可复用语义结果、且你已经接受该结果时，Root 在同一响应周期把纯 Markdown 写入 `docs/teamwork/`；进入 mode 或调用宿主界面本身不会落盘，也不必先点名 Skill。Writer 只在不耽误写入时帮忙。每份文档同时保留一份**当前综合**和按时间追加的**历史**，既方便快速阅读，也不会抹掉结论如何变化。默认文件名为 `<YYYY-MM-DD>-<slug>.md`，同一稳定身份复用已有路径。
 
 | 文档 | 它记录什么 |
 | --- | --- |

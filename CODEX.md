@@ -24,6 +24,13 @@ write, report the exact expected path and that the document was not delivered.
 Write failure is visible and does not undo the completed result; the primary
 method never blocks on Writer.
 
+Native Plan proposals are candidates until the user approves them. Native
+questions collect input and do not by themselves create a document. After the
+user accepts a reusable result, apply the matching Persistence contract, then
+continue with native execution approval. Explicit Skill invocation remains
+`$name`. Invoking a host plan or question UI is not durable memory; a
+user-accepted reusable result is.
+
 Reusable content has six document semantics under `docs/teamwork/`: Discussion
 records choices and trade-offs; Research records external evidence and
 synthesis; Debug records failure boundaries, causal reasoning, repair, and

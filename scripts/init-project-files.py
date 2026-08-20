@@ -50,8 +50,12 @@ def managed_block(label: str) -> str:
         f"{MANAGED_START}\n"
         "## Teamwork Project Instructions\n\n"
         f"- Project label: `{label}`.\n"
-        "- Teamwork adds no required project-local workflow or state. Follow this "
-        "project's normal instructions and invoke a named Skill only when its trigger matches.\n"
+        "- Teamwork adds no required project-local workflow or state. It creates "
+        "no empty directory, schema, or mandatory stage chain. Native host modes "
+        "stay in charge. Follow this project's normal instructions and invoke a "
+        "named Skill only when its trigger matches.\n"
+        "- User-accepted reusable results live under `docs/teamwork/`. Chat, host "
+        "plans, and todos are not cross-session memory.\n"
         f"{MANAGED_END}\n"
     )
 

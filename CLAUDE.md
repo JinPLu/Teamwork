@@ -23,8 +23,11 @@ migration state.
 AskUserQuestion handles bounded Collaborate batches. Task/Agent dispatches
 the seven optional helpers. Built-in Explore handles live local search, with
 thoroughness quick, medium, or very thorough. Plan mode and the host Plan
-subagent are not substitutes for Teamwork Planner. AskUserQuestion and host
-Plan do not persist `docs/teamwork/` or complete a Skill checkpoint. Writer
+subagent are not substitutes for Teamwork Planner. Plan mode is a read-only
+permission boundary; do not write project files during that phase.
+AskUserQuestion batches collect input and do not by themselves complete a
+Skill checkpoint. After the user approves exiting Plan, write permission
+returns; deliver the accepted result in that same response cycle. Writer
 is a Task/Agent helper role, not a Skill. Root owns document delivery and may
 write the Skill template directly or delegate to Writer when that does not
 delay the current checkpoint write. Teamwork Skills add purpose-specific
@@ -55,4 +58,6 @@ checkpoint write. That is durable project memory, not a Case lifecycle,
 document schema, JSON index, or migration gate. When the current environment
 cannot write, report the exact expected path and that the document was not
 delivered. A write failure is visible and does not undo the completed result.
-Host plan or question UI is not durable memory.
+Invoking a host plan or question UI is not durable memory; a user-accepted
+reusable result is. A temporarily read-only Plan delays that delivery until
+write permission returns.

@@ -23,4 +23,6 @@ Only explicit release preparation uses:
 
 Universal authorization and mechanism rules belong only in
 `policy/teamwork-global.md`; do not duplicate them in Skills, Agent profiles,
-tests, or project adapters.
+tests, or project adapters. Host adapter docs (`CURSOR.md`, `CLAUDE.md`,
+`CODEX.md`) and install policy wrappers may name host tools. Shared policy and
+Skill Persistence sections stay host-neutral.

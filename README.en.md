@@ -110,8 +110,10 @@ Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Write
 
 ## 🗃️ Six readable document types
 
-When a focused method reaches a semantic checkpoint, Root writes plain
-Markdown under `docs/teamwork/` in the same response cycle; Writer helps only
+When a native interaction or focused method reaches a reusable semantic result
+and you accept that result, Root writes plain Markdown under `docs/teamwork/`
+in the same response cycle. Entering a mode or invoking a host surface is not
+itself a write, and you do not need to name a Skill first. Writer helps only
 when that does not delay the write. Each document carries both a **current
 synthesis** and an append-only **chronological history**, so it is quick to
 read without hiding how the conclusion changed. Default filenames are

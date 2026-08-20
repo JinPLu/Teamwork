@@ -21,6 +21,11 @@ POLICY
   write_teamwork_global_policy_body
   cat <<'POLICY'
 
+Native Plan proposals are candidates until the user approves them. Native
+questions collect input and do not by themselves create a document. After the
+user accepts a reusable result, apply the matching Persistence contract, then
+continue with native execution approval. Explicit Skill invocation remains
+`$name`.
 <!-- TEAMWORK_CODEX_GLOBAL_END -->
 POLICY
 }
@@ -33,6 +38,11 @@ write_teamwork_claude_global_policy() {
 POLICY
   write_teamwork_global_policy_body
   cat <<'POLICY'
+
+Plan mode is a read-only permission boundary. Do not write project files during
+that phase. AskUserQuestion batches collect input and do not by themselves
+create a document. After the user approves exiting Plan, write permission
+returns; deliver the accepted result in that same response cycle.
 <!-- TEAMWORK_CLAUDE_GLOBAL_END -->
 POLICY
 }
@@ -48,6 +58,13 @@ POLICY
 
 This host does not install the Debug or Goal Skills or the Debugger role.
 Do not load them. For unknown-cause diagnosis, use the host Debug mode.
+
+CreatePlan and host Plan drafts are editable candidates. User confirmation or
+Build is acceptance of a reusable plan; then apply the matching Persistence
+contract. AskQuestion batches collect input and do not by themselves create a
+document. Host Debug intermediate hypotheses do not persist; a confirmed cause,
+verified fix, or durable blocker does. If this User Rule is absent, the
+project AGENTS.md block is the minimum shared bridge. CreatePlan is not Writer.
 <!-- TEAMWORK_CURSOR_GLOBAL_END -->
 POLICY
 }
