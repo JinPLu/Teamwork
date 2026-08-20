@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import re
 import shlex
 import subprocess
 import sys
@@ -219,7 +220,7 @@ class CoreFlowTests(unittest.TestCase):
             self.assertIn("no empty directory, schema, or mandatory stage chain", agents)
             self.assertIn("Native host modes stay in charge", agents)
             self.assertIn(
-                "User-accepted reusable results live under `docs/teamwork/`",
+                "User-accepted reusable results live under `docs/teamwork/<kind>/`",
                 agents,
             )
             self.assertIn(
@@ -227,6 +228,70 @@ class CoreFlowTests(unittest.TestCase):
                 agents,
             )
             self.assertFalse((project / "docs/teamwork").exists())
+
+    def test_document_kind_set_is_closed(self) -> None:
+        kinds = frozenset(
+            {
+                "discussions",
+                "research",
+                "debug",
+                "plans",
+                "reviews",
+                "reports",
+            }
+        )
+        path_kind = re.compile(r"docs/teamwork/([a-z]+)/")
+        policy = (ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8")
+        folded_policy = self._folded(policy)
+        self.assertIn("`docs/teamwork/<kind>/<YYYY-MM-DD>-<slug>.md`", folded_policy)
+        self.assertIn("The set is closed", folded_policy)
+        self.assertIn("do not invent a new kind", folded_policy)
+        self.assertIn("do not write a checkpoint at the `docs/teamwork/` root", folded_policy)
+        self.assertIn("Reusable status and results", folded_policy)
+        self.assertIn("`reports/`", folded_policy)
+        self.assertIn("always-read instruction surface", folded_policy)
+        self.assertIn("`AGENTS.md` or the project's own reference pages", folded_policy)
+        self.assertIn("never a new checkpoint kind", folded_policy)
+
+        skill_kinds: set[str] = set()
+        for skill in (ROOT / "skills").iterdir():
+            path = skill / "SKILL.md"
+            if not path.is_file():
+                continue
+            section = self._persistence_section(path.read_text(encoding="utf-8"))
+            skill_kinds.update(path_kind.findall(section))
+        self.assertEqual(skill_kinds, kinds)
+
+        with tempfile.TemporaryDirectory() as raw:
+            project = Path(raw)
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts/init-project-files.py"),
+                    "--project-root",
+                    str(project),
+                    "initialize",
+                    "--project-label",
+                    "Teamwork",
+                ],
+                check=True,
+            )
+            agents = (project / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertEqual(set(re.findall(r"`([a-z]+)`", agents)), kinds)
+
+        architecture = (ROOT / "docs/architecture.md").read_text(encoding="utf-8")
+        self.assertNotIn("Default paths use", architecture)
+        self.assertNotIn(
+            "docs/teamwork/<kind>/<YYYY-MM-DD>-<slug>.md",
+            architecture,
+        )
+        self.assertIn(
+            "Reuse the path for the same stable identity",
+            self._folded(architecture),
+        )
+        meanings = architecture.split("The six meanings are:", 1)[1]
+        meanings = meanings.split("\n## ", 1)[0]
+        self.assertEqual(set(re.findall(r"`([a-z]+)/`", meanings)), kinds)
 
     def test_readiness_is_informational(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -1021,7 +1086,7 @@ class CoreFlowTests(unittest.TestCase):
             self.assertEqual(init.returncode, 0, init.stderr)
             agents = (project / "AGENTS.md").read_text(encoding="utf-8")
             self.assertIn(
-                "User-accepted reusable results live under `docs/teamwork/`",
+                "User-accepted reusable results live under `docs/teamwork/<kind>/`",
                 agents,
             )
             self.assertFalse((project / "docs/teamwork").exists())

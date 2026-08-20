@@ -18,7 +18,8 @@ Case lifecycle, JSON index, migration gate, or automatic Update detour.
 
 | Surface | Owns | Does not own |
 | --- | --- | --- |
-| `policy/teamwork-global.md` | universal authorization, checkpoint and write contract, Writer fallback, quote separation | host tool names, per-Skill checkpoints |
+| `policy/teamwork-global.md` | universal authorization, checkpoint and write contract, Writer fallback, quote separation, checkpoint path shape, closed kind set, two-branch fallback | host tool names, per-Skill checkpoints, kind-name vocabulary |
+| project `AGENTS.md` managed block | six document kind names as vocabulary | path shape, closed-set rule, kind meanings |
 | `skills/*/SKILL.md` | method, identity, checkpoints, template path, write timing | generic delegation, Writer contract |
 | `skills/*/references/*.md` | fill slots | teaching prose |
 | `CURSOR.md` / `CLAUDE.md` / `CODEX.md` | host install, roles, accept signals, permission facts | universal write contract |
@@ -60,8 +61,7 @@ retain separate semantic owners and cannot certify changes for one another.
 Writer may clarify placement, deduplicate, and compress only literally.
 
 Each document is plain Markdown under `docs/teamwork/` with a concise current
-synthesis and an append-only chronological history. Default paths use
-`docs/teamwork/<kind>/<YYYY-MM-DD>-<slug>.md` and reuse the path for the same
+synthesis and an append-only chronological history. Reuse the path for the same
 stable identity. The six meanings are:
 
 - Discussion (`discussions/`): options, trade-offs, settled choices, and open

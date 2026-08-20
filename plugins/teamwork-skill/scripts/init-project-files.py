@@ -54,8 +54,9 @@ def managed_block(label: str) -> str:
         "no empty directory, schema, or mandatory stage chain. Native host modes "
         "stay in charge. Follow this project's normal instructions and invoke a "
         "named Skill only when its trigger matches.\n"
-        "- User-accepted reusable results live under `docs/teamwork/`. Chat, host "
-        "plans, and todos are not cross-session memory.\n"
+        "- User-accepted reusable results live under `docs/teamwork/<kind>/` as "
+        "one of `discussions`, `research`, `debug`, `plans`, `reviews`, or "
+        "`reports`. Chat, host plans, and todos are not cross-session memory.\n"
         f"{MANAGED_END}\n"
     )
 

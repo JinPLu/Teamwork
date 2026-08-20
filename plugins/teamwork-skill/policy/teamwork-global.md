@@ -86,4 +86,12 @@ environment cannot write, report the exact expected path and that the
 document was not delivered. Write failure is visible; it does not block the
 primary work, change completion, or become the first todo after an execution
 request. A document may be written in parallel with authorized execution; it
-does not replace the next real action.
+does not replace the next real action. Checkpoint documents are always
+one of the six kinds. The path is
+`docs/teamwork/<kind>/<YYYY-MM-DD>-<slug>.md`; kind directory names stay
+as written. The set is closed: do not invent a new kind, and do not write
+a checkpoint at the `docs/teamwork/` root. Reusable status and results
+that do not already belong to another kind go to `reports/`. Standing
+constraints that must bind later work go to the project's always-read
+instruction surface (`AGENTS.md` or the project's own reference pages),
+never a new checkpoint kind.

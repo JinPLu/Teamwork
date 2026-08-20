@@ -41,5 +41,5 @@ adapters are optional compatibility surfaces and never block Codex work.
 
 - Project label: `Teamwork`.
 - Teamwork adds no required project-local workflow or state. It creates no empty directory, schema, or mandatory stage chain. Native host modes stay in charge. Follow this project's normal instructions and invoke a named Skill only when its trigger matches.
-- User-accepted reusable results live under `docs/teamwork/`. Chat, host plans, and todos are not cross-session memory.
+- User-accepted reusable results live under `docs/teamwork/<kind>/` as one of `discussions`, `research`, `debug`, `plans`, `reviews`, or `reports`. Chat, host plans, and todos are not cross-session memory.
 <!-- TEAMWORK_PROJECT_END -->

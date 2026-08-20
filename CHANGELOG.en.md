@@ -4,6 +4,12 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.9.2 - 2026-08-20
+
+- **Checkpoint documents are a closed set of six kinds.** Paths are `docs/teamwork/<kind>/` plus a dated filename; do not invent a new kind or write a checkpoint at that directory root. Reusable status that does not already belong elsewhere goes to `reports/`; standing constraints that must bind later work go to the project's always-read surface (`AGENTS.md` or the project's own reference pages).
+
+Upgrade action: after updating to 7.9.2, re-run `./install.sh` for the host you use (`$teamwork-update` on Codex) and start a new task. For an existing project that should pick up the six kind names in project instructions, also run `./install.sh init-project`.
+
 ## 7.9.1 - 2026-08-20
 
 - **Each persistence rule now lives in one place.** After you accept a reusable result, Root still writes `docs/teamwork/` in the same turn; behavior matches 7.9.0.
