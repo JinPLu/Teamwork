@@ -4,6 +4,13 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.9.1 - 2026-08-20
+
+- **Each persistence rule now lives in one place.** After you accept a reusable result, Root still writes `docs/teamwork/` in the same turn; behavior matches 7.9.0.
+- **Checkpoint documents are shorter.** Templates keep fill slots and drop teaching prose.
+
+Upgrade action: after updating to 7.9.1, re-run `./install.sh` for the host you use (`$teamwork-update` on Codex) and start a new task.
+
 ## 7.9.0 - 2026-08-20
 
 - **Native Plan, question, and Debug stay host-owned.** Opening those surfaces is not persistence.

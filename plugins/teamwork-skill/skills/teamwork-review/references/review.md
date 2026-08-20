@@ -37,14 +37,12 @@
 
 ## Residual uncertainty and bounded recheck
 
-<unknowns and the smallest additional evidence to collect for this unchanged,
-frozen candidate; changed content, scope, criteria, or protected boundaries
-belong to a successor candidate in a new review document>
+<unknowns and the smallest additional evidence for this unchanged frozen
+candidate>
 
 ## History
 
-<Append only. Never rewrite or remove an existing entry; a correction or
-reversal is a new dated entry.>
+<Append only. Never rewrite or remove; a correction is a new dated entry.>
 
 ### <date/time — semantic change>
 

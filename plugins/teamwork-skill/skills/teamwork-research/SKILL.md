@@ -6,8 +6,7 @@ description: Use when a broad or deep external investigation needs multiple sour
 # Teamwork Research
 
 Keep narrow lookups native. When Research is activated, investigate the complete
-question rather than creating a lightweight ritual around a few searches. Read
-`references/deep-research.md` for the detailed method.
+question rather than creating a lightweight ritual around a few searches.
 
 ## Method
 
@@ -21,7 +20,9 @@ question rather than creating a lightweight ritual around a few searches. Read
 5. Stop when the evidence distinguishes the served direction, the scope is
    answered, or further retrieval is unlikely to change the conclusion; state
    which condition applies. Results feed the matching discussion or plan
-   section; they do not rewrite the whole case.
+   section; they do not rewrite the whole case. Supplied sources are seeds, not
+   automatic proof or a search boundary. Split work only across independent
+   evidence areas and keep one synthesis owner.
 
 Maintain an early provisional conclusion as evidence develops, clearly marked
 as provisional. The research synthesis must preserve the decision use, a
@@ -30,20 +31,13 @@ and stop conditions, and notes for every source that actually participated in
 the reasoning; source notes are embedded in the document rather than delegated
 to a separate index.
 
-A Researcher may own a bounded investigation. Use Explorer when available;
-otherwise use native local search for project facts. Give each subagent the
-objective, owned scope, settled user constraints, sanitized evidence, and
-requested return. Their availability is not a workflow gate; Root may perform
-the method directly with available research tools.
-
 Return the supported conclusion, contradictions, residual uncertainty, coverage
 result, and the explicit stop basis.
 
 ## Persistence
 
-When a listed checkpoint fires, write the document in the same response cycle
-as that result. If separate stable identities each cross a checkpoint, write
-each to its own path.
+When a listed checkpoint fires, write in the same response cycle. If separate
+stable identities each cross a checkpoint, write each to its own path.
 
 Cross-chat memory lives in one Markdown document from `references/research.md`
 at `docs/teamwork/research/<YYYY-MM-DD>-<slug>.md`. Same identity means the same
@@ -52,4 +46,4 @@ subject gets a new path.
 
 Checkpoints: a material claim-to-evidence synthesis is first settled;
 contradictions change confidence or the conclusion; or a stop condition is
-reached. Keep user quotes separate from the working understanding.
+reached.

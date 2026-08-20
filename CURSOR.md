@@ -44,9 +44,7 @@ matching Persistence contract. Batching a stage's questions through AskQuestion
 is the host mapping and still does not complete a checkpoint. CreatePlan is
 not Writer. Writer is the Task
 helper role (`subagent_type: writer`), not a Skill; there is no
-`teamwork-writer` Skill. Root owns document delivery and may write the Skill
-template directly or delegate an already-certified delta to Writer when that
-does not delay the current checkpoint write.
+`teamwork-writer` Skill.
 `.cursor/plans` remains the host editing surface; accepted reusable results
 persist under `docs/teamwork/`. If this User Rule is absent, the project
 `AGENTS.md` block is the minimum shared bridge.
@@ -59,17 +57,3 @@ retrieval scores and Cursor pool prices are directional at one snapshot;
 they are not a Teamwork ranking. `--profile` does not apply to Cursor; it
 affects Codex and Claude agents only, and the Cursor install does not
 rewrite those pins.
-
-## Project documents
-
-After the method's user-facing result exists, Root owns delivery of the
-checkpoint document as plain Markdown under `docs/teamwork/` (for example
-`plans/`, `debug/`, `reviews/`) using `YYYY-MM-DD-<slug>.md` for a new subject
-and reusing the path for the same stable identity. Write in the same response
-cycle as that result. Writer is optional and must not delay the current
-checkpoint write. That is durable project memory, not a Case lifecycle,
-document schema, JSON index, or migration gate. When the current environment
-cannot write, report the exact expected path and that the document was not
-delivered. A write failure is visible and does not undo the completed result.
-Invoking a host plan or question UI is not durable memory; a user-accepted
-reusable result is.

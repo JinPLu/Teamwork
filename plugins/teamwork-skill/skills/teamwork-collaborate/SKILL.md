@@ -31,13 +31,9 @@ change the result, or when unclear intent needs guided clarification.
 4. Resolve discoverable facts directly. Ask the user only for preferences or
    authority that cannot be discovered. Remaining questions that would not
    change the next step are not this stage. Use subagents only for bounded
-   evidence gathering or a genuinely independent challenge. Use Explorer when
-   available; otherwise use native local search. A handoff contains the
-   objective, owned scope, settled user constraints, available evidence, and
-   requested return. Settled user constraints must include recorded rejections
-   and decisions, and the requested return must not change the topic. No fixed
-   role or dispatch count is required, and an unavailable optional subagent
-   does not block the discussion.
+   evidence gathering or a genuinely independent challenge. Settled user
+   constraints must include recorded rejections and decisions, and the
+   requested return must not change the topic.
 5. When this turn involves experiment scheduling, GPU or other scarce compute, or
    a paper / contribution table slot, follow `references/experiment.md`.
    Otherwise skip Experiment.
@@ -55,15 +51,12 @@ change the result, or when unclear intent needs guided clarification.
    When the direction is decided and the user authorizes execution, the
    discussion ends at that real action; do not open a new evidence gate or a
    new planning door. The next turn on the same subject reads the discussion
-   document's current synthesis first when that document exists. Session
-   recall may be used on the next turn only after a write is observed
-   unavailable or failed, and must be marked as not persisted.
+   document's current synthesis first when that document exists.
 
 ## Persistence
 
-When a listed checkpoint fires, write the document in the same response cycle
-as that result. If separate stable identities each cross a checkpoint, write
-each to its own path.
+When a listed checkpoint fires, write in the same response cycle. If separate
+stable identities each cross a checkpoint, write each to its own path.
 
 Cross-chat memory lives in one Markdown document from `references/discussion.md`
 at `docs/teamwork/discussions/<YYYY-MM-DD>-<slug>.md`. Same identity means the
@@ -72,7 +65,6 @@ read. A different subject gets a new path.
 
 Checkpoints: a decision, recommendation, or unresolved question batch that will
 change later work. An ordinary next action by itself does not write a document.
-Keep user quotes separate from the working understanding.
 
 Session recall may be used on the next turn only after a write is observed
 unavailable or failed, and that recall must be marked as not persisted. A

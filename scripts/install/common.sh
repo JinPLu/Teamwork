@@ -280,6 +280,7 @@ teamwork_retired_reference_is_configured() {
   case "$skill/$relative" in
     teamwork-collaborate/references|teamwork-collaborate/references/adversarial-search.md|\
     teamwork-debug/references|teamwork-debug/references/runtime-diagnosis.md|\
+    teamwork-research/references|teamwork-research/references/deep-research.md|\
     teamwork-review/references|teamwork-review/references/strict-review.md)
       return 0
       ;;

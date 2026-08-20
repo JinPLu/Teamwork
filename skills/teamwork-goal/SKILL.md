@@ -27,19 +27,13 @@ Record with the previous result, the new reason to continue or stop, and the
 current stop or budget state. These records live in the working context and,
 when a checkpoint fires, in the report; they are not a workflow database.
 
-Use subagents only when they provide useful independent or parallel work. Pass
-the objective, owned scope, settled user constraints, available evidence, and
-requested return. Missing optional agents, installation freshness, document
-formats, and report writing never block the underlying authorized task.
-
 Tests support the goal but do not replace the real success signal when that
 signal is available.
 
 ## Persistence
 
-When a listed checkpoint fires, write the document in the same response cycle
-as that result. If separate stable identities each cross a checkpoint, write
-each to its own path.
+When a listed checkpoint fires, write in the same response cycle. If separate
+stable identities each cross a checkpoint, write each to its own path.
 
 Cross-chat memory lives in one Markdown document from `references/report.md`
 at `docs/teamwork/reports/<YYYY-MM-DD>-<slug>.md`. Same identity means the same
@@ -48,4 +42,4 @@ different subject gets a new path.
 
 Checkpoints: the success signal is directly observed; a genuine external
 blocker stops progress; or the user interrupts after material progress worth
-reusing. Keep user quotes separate from the working understanding.
+reusing.

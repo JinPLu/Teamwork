@@ -37,16 +37,4 @@ checkpoint fires, write the document in the same response cycle from
 same project-operation identity). Optional triggers: Init completes with an
 observed `AGENTS.md` change worth reusing; Init stops on a real file-ownership
 conflict worth reusing; or a no-op result is reusable or explicitly requested.
-
-Every Writer wake-up supplies the document kind and path, stable
-project-operation identity, authoritative Init owner, owner-certified semantic
-delta, read-only context, and expected base. Writer records requested versus
-observed outcome, decisive evidence, resulting state or changes, remaining
-action or blocker, and dated history; it does not infer completion or change
-authority, next action, or mainline. Existing history is immutable.
-
-Writer is a helper role, not a Skill. There is no `teamwork-writer` Skill.
-Host interaction surfaces, ephemeral host plan files, the conversation body,
-and experiment logs do not satisfy persistence. Root owns document delivery.
-Root may write the same template directly or delegate to Writer only when that
-does not delay the current checkpoint write. Init never blocks on a report.
+Init never blocks on a report.

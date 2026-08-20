@@ -288,9 +288,10 @@ class CoreFlowTests(unittest.TestCase):
             "subagent return must not restate them as a new question.",
             skill,
         )
+        policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
         self.assertIn(
             "Keep user quotes separate from the working understanding.",
-            skill,
+            policy,
         )
         self.assertIn(
             "The next turn on the same subject reads the discussion document's "
@@ -335,7 +336,7 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("## User quotes", template)
         self.assertIn("## Working understanding", template)
         self.assertIn("## Experiment slot", template)
-        self.assertIn("Used only when the Experiment step fired", template)
+        self.assertNotIn("Used only when the Experiment step fired", template)
         self.assertIn(
             "user's original wording, especially recorded rejections and decisions",
             template,
@@ -379,9 +380,6 @@ class CoreFlowTests(unittest.TestCase):
                 persistence = self._folded(self._persistence_section(skill))
                 self.assertIn("Persistence is optional", persistence)
                 self.assertIn("same response cycle", persistence)
-                self.assertIn("Root owns document delivery", persistence)
-                self.assertIn("does not delay the current checkpoint write", persistence)
-                self.assertIn("Root may write the same template", persistence)
                 self.assertNotIn("Prefer Writer", persistence)
                 self.assertNotIn("Root fallback", persistence)
 
@@ -537,8 +535,6 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("keep both in sync", cursor)
         self.assertIn("/name", cursor)
         self.assertIn("$name", cursor)
-        self.assertIn("Root owns document delivery", cursor)
-        self.assertIn("does not delay the current checkpoint write", cursor)
         self.assertNotIn("Prefer Writer", cursor)
         self.assertNotIn("Root fallback", cursor)
         self.assertIn("Privacy Mode (Legacy)", cursor)
@@ -564,8 +560,6 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("minimum shared bridge", cursor)
         self.assertIn("/name", claude)
         self.assertIn("$name", claude)
-        self.assertIn("Root owns document delivery", claude)
-        self.assertIn("does not delay the current checkpoint write", claude)
         self.assertIn("not guaranteed", claude)
         self.assertNotIn("Prefer Writer", claude)
         self.assertNotIn("Root fallback", claude)
@@ -857,7 +851,7 @@ class CoreFlowTests(unittest.TestCase):
         delayed = (
             "write permission returns" in policy
             and "read-only permission boundary" in claude
-            and "temporarily read-only" in architecture
+            and "temporarily read-only" in policy
         )
         not_first_todo = "does not replace the next real action" in policy
         method_has_no_write_gate = (
@@ -1057,10 +1051,10 @@ class CoreFlowTests(unittest.TestCase):
         self.assertNotIn("Root fallback", policy)
 
         architecture = self._folded((ROOT / "docs/architecture.md").read_text(encoding="utf-8"))
-        self.assertIn("does not certify or substitute for that result", architecture)
         self.assertIn("policy/teamwork-global.md` is the sole owner", architecture)
         self.assertIn("Claude Code installs 7 roles", architecture)
         self.assertIn("Cursor installs 6 roles", architecture)
+        self.assertIn("| Surface | Owns | Does not own |", (ROOT / "docs/architecture.md").read_text(encoding="utf-8"))
 
         for name in (
             "teamwork-collaborate",
@@ -1110,10 +1104,44 @@ class CoreFlowTests(unittest.TestCase):
                 self.assertIn("Persistence is optional", persistence)
                 self.assertIn("When that optional checkpoint fires", persistence)
                 self.assertIn("same response cycle", persistence)
-                self.assertIn("Root owns document delivery", persistence)
-                self.assertIn("does not delay the current checkpoint write", persistence)
                 method = self._folded(self._method_section(self._skill_text(name)))
                 self.assertNotIn("same response cycle", method)
+
+    def test_report_template_stays_identical(self) -> None:
+        texts = [
+            (ROOT / "skills" / name / "references/report.md").read_text(encoding="utf-8")
+            for name in ("teamwork-goal", "teamwork-init", "teamwork-update")
+        ]
+        self.assertEqual(texts[0], texts[1])
+        self.assertEqual(texts[0], texts[2])
+
+    def test_rule_ownership_is_single_sourced(self) -> None:
+        policy = ROOT / "policy/teamwork-global.md"
+        adapters = (ROOT / "CURSOR.md", ROOT / "CLAUDE.md", ROOT / "CODEX.md")
+        skills = tuple(sorted((ROOT / "skills").glob("*/SKILL.md")))
+        architecture = ROOT / "docs/architecture.md"
+        others = adapters + skills + (architecture,)
+        owned = (
+            "Root owns document delivery",
+            "does not delay the current checkpoint write",
+            "Keep user quotes separate from the working understanding.",
+            "Root writes the same Skill template",
+            "document was not delivered",
+        )
+        owner_text = self._folded(policy.read_text(encoding="utf-8"))
+        for fragment in owned:
+            self.assertIn(fragment, owner_text, fragment)
+            for path in others:
+                leaked = self._folded(path.read_text(encoding="utf-8"))
+                self.assertNotIn(fragment, leaked, f"{fragment} leaked into {path}")
+        gone = (
+            "Invoking a host plan or question UI is not durable memory",
+            "Used only when the Experiment step fired",
+        )
+        scan = others + (policy,)
+        for fragment in gone:
+            for path in scan:
+                self.assertNotIn(fragment, path.read_text(encoding="utf-8"), path)
 
     def test_collaborate_session_recall_only_after_observed_write_failure(
         self,
@@ -1193,7 +1221,7 @@ class CoreFlowTests(unittest.TestCase):
         )
         self.assertIn("## Current execution plan", plan_template)
         self.assertIn("## Authoritative project records", plan_template)
-        self.assertIn("do not treat the Teamwork plan document itself as an execution todo", plan_template)
+        self.assertNotIn("do not treat the Teamwork plan document itself as an execution todo", plan_template)
         self.assertNotIn("## Impact log", plan_template)
 
         for path in (

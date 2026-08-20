@@ -56,13 +56,14 @@ installation state, versions, and local records do not block native work.
 Host interaction surfaces do not replace Teamwork method contracts, evidence
 standards, or authority boundaries. Using a host plan UI, question UI, mode
 switch, or ephemeral host plan file does not complete a Skill checkpoint.
-Conversation text and experiment logs are not Teamwork persistence.
+Entering a mode or invoking a surface is not acceptance. Conversation text
+and experiment logs are not Teamwork persistence.
 
 When a native interaction produces a user-accepted reusable semantic result,
 apply the matching Skill's Persistence contract even when that Skill was not
 explicitly invoked. Acceptance means the user accepted the reusable plan,
-decision, diagnosis, research conclusion, or verdict. Entering a mode or
-invoking a surface is not acceptance.
+decision, diagnosis, research conclusion, or verdict. Keep user quotes
+separate from the working understanding.
 
 Answers that serve an active result merge into that result. Only an independent
 reusable preference decision gets a separate discussion identity. Ordinary

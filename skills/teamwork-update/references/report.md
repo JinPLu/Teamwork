@@ -31,8 +31,7 @@ completion, release, activation, or real-runtime result that is not supported>
 
 ## History
 
-<Append only. Never rewrite or remove an existing entry; a correction or
-reversal is a new dated entry.>
+<Append only. Never rewrite or remove; a correction is a new dated entry.>
 
 ### <date/time — semantic change>
 

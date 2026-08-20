@@ -31,19 +31,13 @@ discussion artifact.
    Do not open a new plan because of added acceptance checks or parallel
    concerns.
 
-A Planner subagent is optional. Use Explorer when available; otherwise use
-native local search. Its handoff contains the objective, owned scope, settled
-user constraints, available evidence, and requested return. If unavailable,
-Root continues without switching to Update or blocking the plan.
-
 Return unresolved material choices to the user; do not hide them as assumptions.
 Return the executable plan.
 
 ## Persistence
 
-When a listed checkpoint fires, write the document in the same response cycle
-as that result. If separate stable identities each cross a checkpoint, write
-each to its own path.
+When a listed checkpoint fires, write in the same response cycle. If separate
+stable identities each cross a checkpoint, write each to its own path.
 
 Cross-chat memory lives in one Markdown document from `references/plan.md`
 at `docs/teamwork/plans/<YYYY-MM-DD>-<slug>.md`. Same identity means the same
@@ -55,5 +49,4 @@ Checkpoints: the direction and scope are accepted (this settles direction
 only; it does not create a document for an unaccepted draft); the executable
 plan is first settled when that first executable plan is accepted by the
 user; a material replan changes steps, dependencies, verification, or stop
-conditions only after the user accepts that replan. Keep user quotes separate
-from the working understanding.
+conditions only after the user accepts that replan.

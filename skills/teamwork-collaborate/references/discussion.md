@@ -30,8 +30,6 @@ Mermaid>
 
 ## Experiment slot
 
-Used only when the Experiment step fired.
-
 <This experiment feeds which contribution slot: main table / appendix hygiene /
 exploratory probe / unused.>
 
@@ -45,8 +43,7 @@ exploratory probe / unused.>
 
 ## History
 
-<Append only. Never rewrite or remove an existing entry; a correction or
-reversal is a new dated entry.>
+<Append only. Never rewrite or remove; a correction is a new dated entry.>
 
 ### <date/time — semantic change>
 

@@ -23,20 +23,15 @@ semantics.
 6. If evidence reveals a different failure, split it explicitly instead of
    silently changing scope.
 
-A Debugger subagent may help when parallel diagnosis is useful. Use Explorer
-when available; otherwise use native local search. Give it the objective, owned
-scope, settled user constraints, available evidence, and requested return, and
-freeze observe, instrument, and fix permission in that brief. Diagnosis must not
-silently expand repair authority. Availability is not a readiness gate: Root may
-continue the same method with available tools.
+freeze observe, instrument, and fix permission in any diagnosis brief.
+Diagnosis must not silently expand repair authority.
 
 Do not guess a fix or retain temporary diagnostics.
 
 ## Persistence
 
-When a listed checkpoint fires, write the document in the same response cycle
-as that result. If separate stable identities each cross a checkpoint, write
-each to its own path.
+When a listed checkpoint fires, write in the same response cycle. If separate
+stable identities each cross a checkpoint, write each to its own path.
 
 Cross-chat memory lives in one Markdown document from `references/debug.md`
 at `docs/teamwork/debug/<YYYY-MM-DD>-<slug>.md`. Same identity means the same
@@ -45,5 +40,4 @@ subject gets a new path.
 
 Checkpoints: a cause is confirmed; an authorized fix is verified on the same
 path; the case is blocked with a durable next discriminator; or evidence splits
-a new failure with its own identity. Keep user quotes separate from the working
-understanding.
+a new failure with its own identity.

@@ -38,23 +38,20 @@ Preserve the candidate identity, criteria and protected boundaries, direct
 evidence, findings and severity, status of each criterion, verdict, residual
 uncertainty, and evidence-only bounded recheck scope.
 
-A Reviewer handoff contains the objective, owned scope, settled user
-constraints, available evidence, and requested return, naming the frozen
-candidate, requirements, and requested verdict. Reviewer remains read-only
-and never implements the repair.
+A Reviewer handoff names the frozen candidate, requirements, and requested
+verdict. Reviewer remains read-only and never implements the repair.
 
 ## Persistence
 
-When a listed checkpoint fires, write the document in the same response cycle
-as that result. If separate stable identities each cross a checkpoint, write
-each to its own path.
+When a listed checkpoint fires, write in the same response cycle. If separate
+stable identities each cross a checkpoint, write each to its own path.
 
 Cross-chat memory lives in one Markdown document from `references/review.md`
 at `docs/teamwork/reviews/<YYYY-MM-DD>-<slug>.md`. Same identity means the same
 candidate; reuse that path and name the document you read. A different subject
 gets a new path.
 
-Checkpoints: a verdict is returned; a bounded recheck adds evidence for the
-unchanged frozen candidate; or a successor candidate is opened after a
-protected-boundary change. Keep user quotes separate from the working
-understanding.
+Checkpoints: a verdict is returned; a bounded recheck adds evidence only for
+the unchanged frozen candidate; or a successor candidate is opened after a
+protected-boundary change. Changed content, scope, criteria, or protected
+boundaries belong to a successor candidate in a new review document.

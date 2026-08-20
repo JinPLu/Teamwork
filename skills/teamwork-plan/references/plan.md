@@ -16,10 +16,6 @@
 
 - <paper, experiment log, dataset, or benchmark: owner, exact path, when it updates>
 
-Teamwork checkpoint records under `docs/teamwork/` are not project paper,
-experiment, or data documents. List those project records here with owner and
-path; do not treat the Teamwork plan document itself as an execution todo.
-
 ## Dependencies and parallel tracks
 
 <dependency order; only independent non-overlapping parallel work>
@@ -34,8 +30,7 @@ path; do not treat the Teamwork plan document itself as an execution todo.
 
 ## History
 
-<Append only. Never rewrite or remove an existing entry; a correction or
-reversal is a new dated entry.>
+<Append only. Never rewrite or remove; a correction is a new dated entry.>
 
 ### <date/time — plan revision>
 

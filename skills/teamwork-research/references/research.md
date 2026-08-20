@@ -27,11 +27,6 @@
 
 ## Source notes
 
-For every source that actually participated in the reasoning, record its
-identity or citation, date or version, source class, the claims it supports or
-contradicts, and why it was used, rejected, or left unresolved. Source count is
-not a coverage quota.
-
 ### <source citation>
 
 <identity, date or version, class, claim role, and disposition>
@@ -42,8 +37,7 @@ not a coverage quota.
 
 ## History
 
-<Append only. Never rewrite or remove an existing entry; a correction or
-reversal is a new dated entry.>
+<Append only. Never rewrite or remove; a correction is a new dated entry.>
 
 ### <date/time — semantic change>
 
