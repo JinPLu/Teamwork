@@ -511,7 +511,8 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("Cursor installs 6 roles", cursor)
         self.assertIn("does not install the Debug or Goal Skills", cursor)
         self.assertIn("Explorer and Debugger are intentionally omitted", cursor)
-        self.assertIn("reviewer uses xhigh", cursor)
+        self.assertIn("reviewer, planner, challenger, and worker use high", cursor)
+        self.assertNotIn("xhigh", cursor)
         self.assertNotIn("debugger and reviewer", cursor)
         self.assertIn("AskUserQuestion", claude)
         self.assertIn("host Plan", claude)
@@ -531,7 +532,7 @@ class CoreFlowTests(unittest.TestCase):
         expected = {
             "researcher": "model: kimi-k3[effort=high]",
             "planner": "model: grok-4.6[effort=high,fast=true]",
-            "reviewer": "model: grok-4.6[effort=xhigh,fast=true]",
+            "reviewer": "model: grok-4.6[effort=high,fast=true]",
             "challenger": "model: grok-4.6[effort=high,fast=true]",
             "worker": "model: grok-4.6[effort=high,fast=true]",
             "writer": "model: grok-4.6[effort=medium,fast=true]",

@@ -49,12 +49,12 @@ does not delay the current checkpoint write.
 
 Cursor roles pick models by job. Researcher pins `model` to Kimi K3 high for
 coverage and retrieval. The other five roles pin Grok 4.6 Fast for cheap,
-few-turn coding work, with role effort in the model bracket: reviewer uses
-xhigh; planner, challenger, and worker use high; writer uses
-medium. Public retrieval scores and Cursor pool prices are directional at
-one snapshot; they are not a Teamwork ranking. `--profile` does not apply
-to Cursor; it affects Codex and Claude agents only, and the Cursor install
-does not rewrite those pins.
+few-turn coding work, with role effort in the model bracket: reviewer,
+planner, challenger, and worker use high; writer uses medium. Public
+retrieval scores and Cursor pool prices are directional at one snapshot;
+they are not a Teamwork ranking. `--profile` does not apply to Cursor; it
+affects Codex and Claude agents only, and the Cursor install does not
+rewrite those pins.
 
 ## Project documents
 

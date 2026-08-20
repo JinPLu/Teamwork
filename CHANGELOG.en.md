@@ -4,6 +4,12 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.8.5 - 2026-08-20
+
+- **Cursor Grok roles no longer use xhigh.** Review, planning, challenge, and execution use high; recording uses medium.
+
+Upgrade action: after updating to 7.8.5, run `./install.sh cursor` (or `cursor-agents`) and start a new task to load the refreshed role configuration.
+
 ## 7.8.4 - 2026-08-19
 
 - **Cursor no longer installs the Debug or Goal Skills or the Debugger role.** Unknown-cause diagnosis uses host Debug; Explorer was already omitted. A reinstall removes Teamwork-owned leftover copies. Claude and Codex still install all three.

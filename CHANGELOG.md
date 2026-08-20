@@ -4,6 +4,12 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.8.5 - 2026-08-20
+
+- **Cursor 的 Grok 角色不再使用 xhigh。** 评审、计划、挑战和执行用 high；记录用 medium。
+
+升级操作：更新到 7.8.5 后运行 `./install.sh cursor`（或 `cursor-agents`），并从新任务开始加载刷新后的角色配置。
+
 ## 7.8.4 - 2026-08-19
 
 - **Cursor 不再安装 Debug、Goal Skill 和 Debugger 角色。** 未知原因诊断改用宿主 Debug；Explorer 本来就省略。重装会清掉 Teamwork 自己留下的旧副本。Claude 与 Codex 仍安装这三项。

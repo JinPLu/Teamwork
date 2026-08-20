@@ -169,7 +169,7 @@ Reviewer; and Luna/high for Explorer, Worker, Writer, and Challenger.
 Claude Code keeps its existing compatibility/development profile mapping.
 Cursor agents pick models by job: Researcher pins Kimi K3 high for coverage
 and retrieval; the other five roles pin Grok 4.6 Fast for cheap, few-turn
-coding work, with role effort: xhigh for reviewer; high for planner,
+coding work, with role effort: high for reviewer, planner,
 challenger, and worker; medium for writer. `--profile` still does
 not apply to Cursor. Cursor
 skill-root ownership still writes `.teamwork-profile` with the host-neutral
