@@ -101,10 +101,38 @@ pretending otherwise.
 
 ## Sources and installation
 
+Adapters enhance native host modes; they do not replace them. Each adapter maps
+onto host capabilities and fills only gaps the host does not provide. Cursor
+yields to host Debug and Explore. Claude yields to Explore. When a host gains a
+matching native capability, the Teamwork surface is removed instead of kept
+alongside it.
+
+```mermaid
+flowchart TD
+    subgraph core [skills core - single source of truth]
+        Skills[skills/ SKILL.md files]
+        Policy[policy/teamwork-global.md]
+        Topo[config/teamwork-topology.json]
+    end
+    subgraph adapters [thin adapters - enhance, do not replace]
+        CodexA[templates/codex-agents + install.sh codex]
+        CursorA[templates/cursor-agents + install.sh cursor]
+        ClaudeA[templates/claude-agents + install.sh claude]
+    end
+    core --> adapters
+    CodexA -->|copy skills agents policy routing| CodexHome[~/.codex + ~/.agents/skills]
+    CursorA -->|copy host skills and roles| CursorHome[~/.cursor]
+    ClaudeA -->|copy skills roles policy| ClaudeHome[~/.claude]
+    CodexA -.->|write| Pointer[~/.teamwork/install.json]
+    CursorA -.->|write| Pointer
+    ClaudeA -.->|write| Pointer
+    Pointer -.->|Update and Init read root| Skills
+```
+
 - `skills/` owns behavior.
 - `templates/*-agents/` owns optional host agent profiles.
 - `scripts/install/` owns installation mechanics.
-- `plugins/teamwork-skill/` is generated from canonical sources.
+- `~/.teamwork/install.json` records the checkout root used by Update and Init.
 
 The default install and Update path is Codex-only. Cursor and Claude Code remain
 explicit compatibility targets.
@@ -112,6 +140,6 @@ explicit compatibility targets.
 ## Verification
 
 The default validation command checks syntax, Skill metadata, Codex profiles,
-project initialization, bundle synchronization, and VERSION alignment with both
-plugin manifests. Use `--release` only during explicit release preparation.
+project initialization, checkout layout, source-pointer schema, and VERSION
+alignment. Use `--release` only during explicit release preparation.
 Tests and markers never substitute for reading the actual result.

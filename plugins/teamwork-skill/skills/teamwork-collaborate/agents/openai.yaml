@@ -1,4 +1,0 @@
-interface:
-  display_name: "Teamwork Collaborate"
-  short_description: "Clarify intent and shape decisions together"
-  default_prompt: "Use $teamwork-collaborate to discuss this with me, clarify what matters, and help me choose a direction."

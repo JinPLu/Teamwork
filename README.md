@@ -32,17 +32,12 @@
 
 ## 🚀 一分钟开始
 
-使用 Codex Marketplace 安装：
+克隆仓库并安装 Codex 面：
 
 ```bash
-codex plugin marketplace add JinPLu/Teamwork
-codex plugin add teamwork-skill@teamwork
-```
-
-开启一个新的 Codex 任务，然后运行：
-
-```text
-$teamwork-update
+git clone https://github.com/JinPLu/Teamwork.git
+cd Teamwork
+./install.sh codex
 ```
 
 现在直接说你要的结果：
@@ -154,15 +149,20 @@ Writer 是低成本、可跨 Skill 复用的非阻塞记录者：它把方法 ow
 
 ## 🔄 更新与项目设置
 
-刷新 Marketplace 版本：
+刷新本机安装：
 
 ```bash
-codex plugin marketplace remove teamwork
-codex plugin marketplace add JinPLu/Teamwork
-codex plugin add teamwork-skill@teamwork
+./install.sh update
 ```
 
-重启 Codex、开启新任务，再运行 `$teamwork-update`。
+或在新的 Codex 任务中运行 `$teamwork-update`。
+
+若你之前用过 Codex Marketplace 插件，先卸掉插件再改走 checkout 安装：
+
+```bash
+codex plugin remove teamwork-skill
+./install.sh codex
+```
 
 如果只想给一个项目加入轻量 Teamwork 说明：
 

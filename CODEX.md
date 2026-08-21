@@ -1,7 +1,8 @@
 # Codex
 
-Codex is Teamwork's supported runtime. Install from Marketplace, then run
-`$teamwork-update` in a new task when you want to refresh the installation.
+Codex is Teamwork's supported runtime. Clone this repository and run
+`./install.sh codex`. Run `$teamwork-update` in a new task when you want to
+refresh the installation.
 
 Clear work stays native. A Skill is selected only by its trigger. Specialized
 Agents are optional bounded helpers; their availability, installed version, or

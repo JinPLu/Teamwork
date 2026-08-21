@@ -68,7 +68,7 @@ while [[ $# -gt 0 ]]; do
       usage
       exit 2
       ;;
-    codex|cursor|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy)
+    codex|cursor|claude|all|update|init-project|codex-agents|cursor-agents|claude-agents|codex-policy|cursor-policy|cursor-policy-copy|claude-policy)
       if [[ -n "$TARGET" ]]; then
         echo "Specify only one install target." >&2
         usage
@@ -94,15 +94,6 @@ if [[ -n "$CODEX_PROFILE_SOURCE" ]] && teamwork_target_uses_codex_profile "$EFFE
   validate_codex_profile
 fi
 
-case "$EFFECTIVE_TARGET" in
-  plugin-codex-bootstrap|plugin-init-project)
-    if [[ "$INSTALL_MODE" != "copy" ]]; then
-      echo "Marketplace bootstrap targets require --copy so user-level Codex resources remain stable after a plugin cache update." >&2
-      exit 2
-    fi
-    ;;
-esac
-
 case "$NOTIFICATIONS_ACTION" in
   preserve|install|remove)
     ;;
@@ -113,7 +104,7 @@ case "$NOTIFICATIONS_ACTION" in
 esac
 
 case "$EFFECTIVE_TARGET" in
-  all|update|plugin-codex-bootstrap)
+  all|update)
     if [[ "$NOTIFICATIONS_ACTION" == "preserve" ]]; then
       NOTIFICATIONS_ACTION="install"
     fi
@@ -133,7 +124,7 @@ fi
 
 if [[ "$NOTIFICATIONS_ACTION" != "preserve" ]]; then
   case "$EFFECTIVE_TARGET" in
-    codex|claude|all|update|init-project|plugin-codex-bootstrap|plugin-init-project)
+    codex|claude|all|update|init-project)
       ;;
     *)
       echo "Notification flags are supported only with codex, claude, all, or init-project targets." >&2
@@ -159,8 +150,8 @@ if teamwork_target_is_cursor_only "$EFFECTIVE_TARGET" || teamwork_target_is_clau
   fi
 fi
 
-if [[ -n "$PROJECT_ROOT" && "$EFFECTIVE_TARGET" != "init-project" && "$EFFECTIVE_TARGET" != "plugin-init-project" ]]; then
-  echo "--project-root is valid only with init-project or plugin-init-project." >&2
+if [[ -n "$PROJECT_ROOT" && "$EFFECTIVE_TARGET" != "init-project" ]]; then
+  echo "--project-root is valid only with init-project." >&2
   usage
   exit 2
 fi
@@ -187,12 +178,6 @@ case "$EFFECTIVE_TARGET" in
     ;;
   init-project)
     init_project
-    ;;
-  plugin-codex-bootstrap)
-    install_plugin_codex_bootstrap
-    ;;
-  plugin-init-project)
-    init_plugin_project
     ;;
   codex-agents)
     install_codex_agents_home

@@ -86,13 +86,12 @@ Usage:
   ./install.sh [--copy|--link] [--notifications|--no-notifications] \
     [--codex-routing|--no-codex-routing] [--profile performance-first|cost-first] \
     [--project-root PATH] \
-    codex|all|update|init-project|plugin-codex-bootstrap|plugin-init-project|codex-agents|codex-policy
+    codex|all|update|init-project|codex-agents|codex-policy
 
 Targets:
-  codex          Install checkout-based Codex skills/agents and separately
+  codex          Install Codex skills/agents from this checkout and separately
                  activate the managed Codex global policy
-                 (script default target; Marketplace plugin is the default
-                 Codex user install path)
+                 (script default target)
   cursor         Compatibility/development target: install skills/agents and
                  report the separate manual Cursor User Rules activation action
   claude         Compatibility/development target: install skills/agents and
@@ -100,16 +99,9 @@ Targets:
   all            Compatibility/development target: install static surfaces for
                  all hosts, activate observable Codex/Claude policy, and
                  report Cursor policy as partial
-  update         Refresh Teamwork's Codex global surfaces
+  update         Refresh Teamwork's Codex global surfaces from this checkout
   init-project   Add or refresh one concise Teamwork block in a project's
                  AGENTS.md without changing global settings
-  plugin-codex-bootstrap
-                 Marketplace-internal Codex-only activation: install agents,
-                 routing, managed policy, and optional notifications without
-                 copying skills to ~/.agents/skills
-  plugin-init-project
-                 Marketplace-internal project context setup from the bundled
-                 runtime (use --project-root for another repo)
   codex-agents   Install Teamwork Codex custom agents to ~/.codex/agents
                  and configure their user-level routing unless opted out
   cursor-agents  Compatibility/development: install Teamwork Cursor subagents
@@ -125,18 +117,14 @@ Targets:
   claude-policy  Compatibility/development: print the canonical policy in its
                  Claude managed wrapper
 
-Default mode is --copy. For Codex users, install through the Marketplace plugin
-by default. Official support and release qualification are Codex-only. Use
-this checkout installer for local development, manual Codex setups, or retained
-Cursor/Claude Code compatibility-adapter maintenance; use --link for local
+Default mode is --copy. Clone this repository and run ./install.sh <host>.
+Official support and release qualification are Codex-only. Use --link for local
 development when installs should track this checkout.
-`--project-root` is valid with `init-project` or `plugin-init-project`.
+`--project-root` is valid with `init-project`.
 
 The compatibility/development `all` target enables ready/permission sounds for
 user-level Codex and Claude Code by default. Direct platform targets leave
 notifications unchanged unless --notifications or --no-notifications is used.
-Marketplace bootstrap installs Codex notifications by default; use
---no-notifications to opt out.
 Project init targets never change notifications; notification flags are ignored
 there because project context setup has no user-level notification surface.
 Teamwork never installs, configures, or checks external MCP servers or compute
@@ -198,7 +186,7 @@ teamwork_target_is_claude_only() {
 
 teamwork_target_uses_codex_profile() {
   case "${1:-}" in
-    codex|claude|all|update|plugin-codex-bootstrap|codex-agents|claude-agents)
+    codex|claude|all|update|codex-agents|claude-agents)
       return 0
       ;;
   esac
@@ -459,47 +447,40 @@ codex_home_path() {
   printf '%s\n' "${CODEX_HOME:-$HOME/.codex}"
 }
 
-codex_plugin_activation_path() {
+legacy_plugin_activation_path() {
   printf '%s/teamwork/plugin-activation.json\n' "$(codex_home_path)"
 }
 
-teamwork_plugin_runtime_is_valid() {
-  [[ -f "$ROOT/.teamwork-plugin-runtime" ]] \
-    && [[ "$(cat "$ROOT/.teamwork-plugin-runtime")" == "TEAMWORK_CODEX_PLUGIN_RUNTIME=1" ]] \
-    && [[ -f "$ROOT/.codex-plugin/plugin.json" ]] \
-    && grep -q '"name": "teamwork-skill"' "$ROOT/.codex-plugin/plugin.json"
+legacy_plugin_activation_is_present() {
+  local path
+  path="$(legacy_plugin_activation_path)"
+  [[ -e "$path" || -L "$path" ]]
 }
 
-plugin_activation_status() {
-  local output
-  if output="$(python3 "$ROOT/scripts/plugin-activation.py" status \
-    --path "$(codex_plugin_activation_path)" \
-    --version "$PKG_VERSION" 2>/dev/null)"; then
-    printf '%s\n' "$output"
-  else
-    printf '%s\n' "invalid"
+remove_legacy_plugin_activation() {
+  local path
+  path="$(legacy_plugin_activation_path)"
+  if [[ -L "$path" || -f "$path" ]]; then
+    rm -f "$path"
+    echo "Removed leftover Teamwork Codex plugin activation marker: $path"
+    return 0
   fi
-}
-
-plugin_activation_is_present() {
-  [[ -e "$(codex_plugin_activation_path)" || -L "$(codex_plugin_activation_path)" ]]
-}
-
-preflight_plugin_runtime() {
-  if ! teamwork_plugin_runtime_is_valid; then
-    echo "plugin-codex-bootstrap must run from the Teamwork Marketplace runtime." >&2
+  if [[ -e "$path" ]]; then
+    echo "Leftover plugin activation path is not a regular file: $path" >&2
     return 1
   fi
-  if [[ ! -x "$ROOT/scripts/plugin-activation.py" ]]; then
-    echo "Teamwork Marketplace runtime is missing the activation helper." >&2
-    return 1
-  fi
-  if [[ -e "$(codex_plugin_activation_path)" || -L "$(codex_plugin_activation_path)" ]]; then
-    if [[ "$(plugin_activation_status)" == "invalid" ]]; then
-      echo "Teamwork plugin activation marker is invalid or owned by another installation; refusing to overwrite it." >&2
-      return 1
-    fi
-  fi
+}
+
+write_source_pointer() {
+  local path
+  path="$(
+    python3 "$ROOT/scripts/write-source-pointer.py" write \
+      --root "$ROOT" \
+      --version "$PKG_VERSION" \
+      --home "$HOME" \
+      "$@"
+  )"
+  echo "Recorded Teamwork source pointer: $path"
 }
 
 teamwork_skill_entry_is_named() {

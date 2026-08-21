@@ -1,4 +1,0 @@
-interface:
-  display_name: "Teamwork Plan"
-  short_description: "Turn a chosen direction into an executable plan"
-  default_prompt: "Use $teamwork-plan to turn this selected direction into an executable, verifiable plan."

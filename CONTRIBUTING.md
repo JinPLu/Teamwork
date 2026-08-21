@@ -8,8 +8,6 @@ Keep changes small and behavior-led.
 - Repeated public facts live in `config/teamwork-facts.yaml`; after changing
   them, run `python3 scripts/render-teamwork-facts.py`.
 - Preserve unknown user files in installer changes.
-- Regenerate `plugins/teamwork-skill/` with
-  `python3 scripts/build-codex-plugin.py`.
 
 Run the fast local smoke:
 

@@ -109,7 +109,6 @@ jobs:
         with:
           args: >-
             --offline --no-progress
-            --exclude-path plugins
             --exclude-path docs/teamwork
             README.md README.en.md CURSOR.md CLAUDE.md CODEX.md
             CONTRIBUTING.md CHANGELOG.md CHANGELOG.en.md
@@ -127,7 +126,6 @@ jobs:
         with:
           args: >-
             --no-progress --max-concurrency 2
-            --exclude-path plugins
             --exclude-path docs/teamwork
             README.md README.en.md CURSOR.md CLAUDE.md CODEX.md
             CONTRIBUTING.md docs/architecture.md

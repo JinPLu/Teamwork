@@ -123,7 +123,7 @@ preflight_codex_routing() {
   config="$(codex_home_path)/config.toml"
   if [[ "$CODEX_ROUTING_ACTION" == "preserve" ]]; then
     if ! python3 "$ROOT/scripts/configure-codex-routing.py" --check --config "$config" >/dev/null 2>&1; then
-      echo "Codex static routing is not configured; plugin activation cannot preserve a missing or disabled multi_agent feature." >&2
+      echo "Codex static routing is not configured; --no-codex-routing cannot preserve a missing or disabled multi_agent feature." >&2
       return 1
     fi
     return 0
@@ -136,80 +136,11 @@ preflight_codex_routing() {
     --config "$config" >/dev/null
 }
 
-preflight_plugin_codex_bootstrap() {
-  local runtime_requirement="${1:-required}"
-  local code_home legacy_root
-  code_home="$(codex_home_path)"
-  legacy_root="$code_home/skills"
-
-  if [[ "$runtime_requirement" == "required" ]]; then
-    preflight_plugin_runtime
-  elif [[ "$runtime_requirement" == "checkout" ]]; then
-    if [[ "$(plugin_activation_status)" == "invalid" ]]; then
-      echo "Teamwork plugin activation marker is invalid or owned by another installation; refusing to update it." >&2
-      return 1
-    fi
-  else
-    echo "Unknown plugin bootstrap runtime requirement: $runtime_requirement" >&2
-    return 2
-  fi
-  preflight_teamwork_skill_root "$CODEX_USER_SKILLS_ROOT" "Legacy Codex user skill root"
-  preflight_owned_legacy_cleanup "$CODEX_USER_SKILLS_ROOT"
-  if [[ "$legacy_root" != "$CODEX_USER_SKILLS_ROOT" ]]; then
-    preflight_legacy_codex_skills "$legacy_root"
-    preflight_owned_legacy_cleanup "$legacy_root"
-  fi
-  preflight_codex_agent_set "$code_home/agents"
-  preflight_codex_global_policy
-  preflight_codex_routing
-  preflight_codex_notifications
-}
-
-plugin_notification_setting() {
-  case "$NOTIFICATIONS_ACTION" in
-    install)
-      printf '%s\n' "enabled"
-      ;;
-    remove)
-      printf '%s\n' "disabled"
-      ;;
-    *)
-      echo "plugin-codex-bootstrap requires an explicit notification setting." >&2
-      return 1
-      ;;
-  esac
-}
-
-remove_plugin_legacy_skill_copies() {
-  local code_home legacy_root
-  code_home="$(codex_home_path)"
-  legacy_root="$code_home/skills"
-  remove_owned_legacy_codex_skills "$CODEX_USER_SKILLS_ROOT"
-  if [[ "$legacy_root" != "$CODEX_USER_SKILLS_ROOT" ]]; then
-    remove_owned_legacy_codex_skills "$legacy_root"
-    remove_legacy_codex_router_copy "$legacy_root"
-  fi
-}
-
-write_plugin_activation() {
-  local notifications
-  notifications="$(plugin_notification_setting)"
-  python3 "$ROOT/scripts/plugin-activation.py" write \
-    --path "$(codex_plugin_activation_path)" \
-    --version "$PKG_VERSION" \
-    --profile "$CODEX_PROFILE" \
-    --notifications "$notifications" >/dev/null
-  echo "Activated Teamwork Codex plugin: $(codex_plugin_activation_path)"
-}
-
 install_codex() {
   local skill_root="$CODEX_USER_SKILLS_ROOT"
   local agent_root="$(codex_home_path)/agents"
   local main_model main_effort
-  if plugin_activation_is_present; then
-    echo "Teamwork Codex plugin activation is present. Legacy ./install.sh codex will not copy duplicate skills; start a new Codex task and run \$teamwork-update instead." >&2
-    return 1
-  fi
+  remove_legacy_plugin_activation
   preflight_teamwork_skill_root "$CODEX_USER_SKILLS_ROOT" "Codex user skill root"
   preflight_legacy_codex_skills "$(codex_home_path)/skills"
   preflight_owned_legacy_cleanup "$(codex_home_path)/skills"
@@ -230,35 +161,7 @@ install_codex() {
   echo "Codex static skills/agents: installed"
   install_codex_global_policy
   configure_user_notifications codex
-}
-
-install_plugin_codex_bootstrap() {
-  local code_home
-  code_home="$(codex_home_path)"
-  preflight_plugin_codex_bootstrap
-  preflight_legacy_codex_skills "$code_home/skills"
-  configure_codex_routing
-  install_codex_agent_set "$code_home/agents" "plugin"
-  echo "Codex static agents: installed"
-  install_codex_global_policy
-  configure_user_notifications codex
-  remove_plugin_legacy_skill_copies
-  write_plugin_activation
-  echo "Teamwork full Codex setup is ready. Restart Codex; if notifications are enabled, run /hooks and trust only Teamwork Stop and PermissionRequest."
-}
-
-install_checkout_plugin_codex_update() {
-  local code_home
-  code_home="$(codex_home_path)"
-  preflight_plugin_codex_bootstrap checkout
-  preflight_legacy_codex_skills "$code_home/skills"
-  configure_codex_routing
-  install_codex_agent_set "$code_home/agents" "plugin"
-  echo "Codex static agents: installed"
-  install_codex_global_policy
-  configure_user_notifications codex
-  remove_plugin_legacy_skill_copies
-  echo "Teamwork checkout update refreshed Codex plugin-managed global setup without copying duplicate skills or rewriting plugin activation."
+  write_source_pointer --host codex
 }
 
 install_cursor() {
@@ -276,6 +179,7 @@ install_cursor() {
   fi
   echo "Cursor global policy activation: separate; this installer cannot reach Cursor's user-rule store."
   echo "Exact action: run ./install.sh cursor-policy, then have a Cursor Agent add or update that block as one user rule and confirm it with a rule list readback."
+  write_source_pointer --host cursor
 }
 
 install_claude() {
@@ -290,6 +194,7 @@ install_claude() {
   echo "Claude static skills/agents: installed"
   install_claude_global_policy
   configure_user_notifications claude
+  write_source_pointer --host claude
 }
 
 install_all() {
@@ -300,10 +205,7 @@ install_all() {
   local claude_skill_root="$HOME/.claude/skills"
   local claude_agent_root="$HOME/.claude/agents"
   local main_model main_effort
-  if plugin_activation_is_present; then
-    echo "Teamwork Codex plugin activation is present. Legacy ./install.sh all will not copy duplicate skills; start a new Codex task and run \$teamwork-update instead." >&2
-    return 1
-  fi
+  remove_legacy_plugin_activation
   preflight_teamwork_skill_root "$CODEX_USER_SKILLS_ROOT" "Codex user skill root"
   preflight_legacy_codex_skills "$(codex_home_path)/skills"
   preflight_owned_legacy_cleanup "$(codex_home_path)/skills"
@@ -340,17 +242,10 @@ install_all() {
   echo "Claude static skills/agents: installed"
   install_claude_global_policy
   configure_user_notifications claude
+  write_source_pointer --host codex --host cursor --host claude
 }
 
 install_update() {
-  if teamwork_plugin_runtime_is_valid; then
-    install_plugin_codex_bootstrap
-    return 0
-  fi
-  if plugin_activation_is_present; then
-    install_checkout_plugin_codex_update
-    return 0
-  fi
   install_codex
 }
 
@@ -360,15 +255,7 @@ init_project() {
   TEAMWORK_NOTIFICATIONS_ACTION="$NOTIFICATIONS_ACTION" \
   "$ROOT/scripts/init-project.sh" \
     --project-root "$base"
-}
-
-init_plugin_project() {
-  local base="${PROJECT_ROOT:-$PWD}"
-  TEAMWORK_PLUGIN_RUNTIME=1 \
-  TEAMWORK_CODEX_ROUTING="$CODEX_ROUTING_ACTION" \
-  TEAMWORK_NOTIFICATIONS_ACTION="$NOTIFICATIONS_ACTION" \
-  "$ROOT/scripts/init-project.sh" \
-    --project-root "$base"
+  write_source_pointer
 }
 
 install_codex_agents_home() {
@@ -376,16 +263,19 @@ install_codex_agents_home() {
   preflight_codex_agent_set "$agent_root"
   configure_codex_routing
   install_codex_agent_set "$agent_root" "user"
+  write_source_pointer --host codex
 }
 
 install_cursor_agents_home() {
   local agent_root="$HOME/.cursor/agents"
   preflight_agent_destination "$agent_root" md Cursor "${CURSOR_AGENTS[@]}"
   install_cursor_agent_set "$agent_root" "user Cursor"
+  write_source_pointer --host cursor
 }
 
 install_claude_agents_home() {
   local agent_root="$HOME/.claude/agents"
   preflight_agent_destination "$agent_root" md "Claude Code" "${CLAUDE_AGENTS[@]}"
   install_claude_agent_set "$agent_root" "user Claude Code"
+  write_source_pointer --host claude
 }

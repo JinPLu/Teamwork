@@ -4,6 +4,14 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.10.1 - 2026-08-21
+
+- **The Codex Marketplace plugin is gone.** Install by cloning the repository and running `./install.sh <host>`. A successful install records the checkout path so later Update / Init runs can find it.
+- **Old plugin installs can migrate.** Run `codex plugin remove teamwork-skill`, then `./install.sh codex`. A leftover activation marker is deleted during install, and Skills are copied to `~/.agents/skills/`.
+- **Update / Init no longer search the home directory for the repository.** They read the install pointer first, and ask for the repo path if that pointer is missing or invalid.
+
+Upgrade action: after updating to 7.10.1, run `./install.sh update` from the repository root (or `./install.sh cursor` / `./install.sh claude` for those hosts). If the old Marketplace plugin is still installed, run `codex plugin remove teamwork-skill` first.
+
 ## 7.10.0 - 2026-08-20
 
 - **Checkpoint paths are now `docs/teamwork/<kind>/<slug>.md`.** The created date lives in frontmatter; the same identity reuses the same file. Existing historical files are not renamed or deleted; they are marked archived in place.

@@ -32,17 +32,12 @@
 
 ## 🚀 Start in one minute
 
-Install from the Codex Marketplace:
+Clone the repository and install the Codex surfaces:
 
 ```bash
-codex plugin marketplace add JinPLu/Teamwork
-codex plugin add teamwork-skill@teamwork
-```
-
-Start a new Codex task, then run:
-
-```text
-$teamwork-update
+git clone https://github.com/JinPLu/Teamwork.git
+cd Teamwork
+./install.sh codex
 ```
 
 Now ask for the outcome directly:
@@ -154,15 +149,20 @@ Use $teamwork-goal to continue until the named check passes; stop only for a rea
 
 ## 🔄 Update and project setup
 
-Refresh the Marketplace version:
+Refresh the local install:
 
 ```bash
-codex plugin marketplace remove teamwork
-codex plugin marketplace add JinPLu/Teamwork
-codex plugin add teamwork-skill@teamwork
+./install.sh update
 ```
 
-Restart Codex, open a new task, and run `$teamwork-update`.
+Or run `$teamwork-update` in a new Codex task.
+
+If you previously used the Codex Marketplace plugin, remove it and switch to the checkout install:
+
+```bash
+codex plugin remove teamwork-skill
+./install.sh codex
+```
 
 To add only lightweight Teamwork guidance to one project:
 

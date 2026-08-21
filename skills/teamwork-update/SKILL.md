@@ -10,7 +10,10 @@ from another task.
 
 ## Method
 
-1. Resolve a trustworthy Teamwork package source.
+1. Resolve a trustworthy Teamwork package source: read
+   `~/.teamwork/install.json` `root`; use that path if it contains `VERSION`,
+   `skills/`, and `install.sh`. If the pointer is missing or invalid, ask the
+   user for the repository path. Do not search the home directory.
 2. For a check-only request, run `./scripts/check-update.sh --readiness`. Treat
    the output as diagnostic information, not permission to continue other work.
 3. For an authorized refresh, update only the requested host. The default

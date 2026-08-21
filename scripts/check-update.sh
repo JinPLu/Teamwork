@@ -3,12 +3,11 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CODEX_HOME_DIR="${CODEX_HOME:-$HOME/.codex}"
-PLUGIN_MODE=0
 READINESS=0
 
 usage() {
   cat <<'USAGE'
-Usage: ./scripts/check-update.sh [--plugin] [--readiness] [--no-fetch]
+Usage: ./scripts/check-update.sh [--readiness] [--no-fetch]
 
 Report the local Codex Teamwork installation. The command is diagnostic: stale
 or missing optional surfaces are reported as partial state and never become a
@@ -18,7 +17,6 @@ USAGE
 
 while (($#)); do
   case "$1" in
-    --plugin) PLUGIN_MODE=1 ;;
     --readiness) READINESS=1 ;;
     --no-fetch) : ;;
     -h|--help) usage; exit 0 ;;
@@ -26,11 +24,6 @@ while (($#)); do
   esac
   shift
 done
-
-ACTIVATION="$CODEX_HOME_DIR/teamwork/plugin-activation.json"
-if [[ -e "$ACTIVATION" ]]; then
-  PLUGIN_MODE=1
-fi
 
 mapfile_compat() {
   local directory="$1" pattern="$2"
@@ -58,11 +51,11 @@ if python3 "$ROOT/scripts/configure-codex-routing.py" \
 fi
 
 skills=missing
-if ((PLUGIN_MODE)); then
-  skills=plugin
-elif [[ -d "$HOME/.agents/skills/teamwork-collaborate" ]]; then
+if [[ -d "$HOME/.agents/skills/teamwork-collaborate" ]]; then
   skills=user
 fi
+
+source_state="$(python3 "$ROOT/scripts/write-source-pointer.py" status --home "$HOME")"
 
 state=ready
 if ((${#missing_agents[@]})) || [[ "$policy" != present ]] || [[ "$routing" != configured ]] || [[ "$skills" == missing ]]; then
@@ -74,6 +67,7 @@ if ((READINESS)); then
   echo "INSTALL_STATE=$state"
   echo "INSTALL_SCOPE=codex"
   echo "SKILLS=$skills"
+  echo "SOURCE=$source_state"
   echo "AGENTS=$([[ -z "$missing" ]] && echo present || echo partial)"
   echo "MISSING_AGENTS=$missing"
   echo "POLICY=$policy"
@@ -82,6 +76,7 @@ if ((READINESS)); then
 else
   echo "Teamwork Codex install: $state"
   echo "Skills: $skills"
+  echo "Source pointer: $source_state"
   echo "Agents: $([[ -z "$missing" ]] && echo present || echo "missing $missing")"
   echo "Policy: $policy"
   echo "Routing: $routing"

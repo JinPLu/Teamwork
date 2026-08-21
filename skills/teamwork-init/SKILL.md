@@ -10,10 +10,14 @@ document database, schema, case directory, runtime state, or migration path.
 
 ## Method
 
-1. Resolve the authorized project root and read its instruction hierarchy.
+1. Resolve a trustworthy Teamwork package source: read
+   `~/.teamwork/install.json` `root`; use that path if it contains `VERSION`,
+   `skills/`, and `install.sh`. If the pointer is missing or invalid, ask the
+   user for the repository path. Do not search the home directory. Then resolve
+   the authorized project root and read its instruction hierarchy.
 2. Preserve all user-owned content outside the Teamwork managed markers.
-3. Run `./install.sh --project-root <root> init-project` from a trustworthy
-   Teamwork package source.
+3. Run `./install.sh --project-root <root> init-project` from that resolved
+   package source.
 4. Re-read the resulting `AGENTS.md` and report the exact changed surface or
    the observed no-op.
 

@@ -4,6 +4,14 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.10.1 - 2026-08-21
+
+- **不再通过 Codex Marketplace 插件安装。** 统一为克隆仓库后运行 `./install.sh <host>`；本机安装会记下仓库路径，供之后的 Update / Init 直接使用。
+- **旧插件安装可以迁走。** 先执行 `codex plugin remove teamwork-skill`，再运行 `./install.sh codex`。遗留的激活标记会在安装时删除，Skills 改写到 `~/.agents/skills/`。
+- **Update / Init 不再在家目录里全局搜索仓库。** 先读安装指针；指针缺失或失效时直接问你仓库路径。
+
+升级操作：更新到 7.10.1 后，在仓库根运行 `./install.sh update`（或按所用宿主运行 `./install.sh cursor` / `./install.sh claude`）。若本机还装着旧 Marketplace 插件，先 `codex plugin remove teamwork-skill` 再安装。
+
 ## 7.10.0 - 2026-08-20
 
 - **落盘路径改为 `docs/teamwork/<kind>/<slug>.md`。** 创建日期写在 frontmatter；同一身份复用同一文件。已有历史文件不改名、不删除，只补状态并标为 archived。

@@ -6,8 +6,8 @@ adapters are optional compatibility surfaces and never block Codex work.
 
 ## Working Conventions
 
-- Change the owning `SKILL.md` before workflow behavior and regenerate the
-  plugin bundle after canonical changes. Public docs stay outcome-focused.
+- Change the owning `SKILL.md` before workflow behavior. Public docs stay
+  outcome-focused.
 - Shell scripts use Bash with `set -euo pipefail`, quoted variables, and arrays;
   every `SKILL.md` frontmatter has only `name` and `description`, whose value
   starts with `Use when`.
@@ -28,8 +28,7 @@ adapters are optional compatibility surfaces and never block Codex work.
 ## Releases
 
 - Release on `main` unless the user explicitly requests another Git workflow.
-- VERSION and plugin manifest consistency is checked by
-  `./scripts/validate.sh`.
+- VERSION consistency is checked by `./scripts/validate.sh`.
 - A release is complete only after the requested verification, commit, tag, and
   GitHub Release succeed. Cursor/Claude adapters and project-local files are not
   release blockers.

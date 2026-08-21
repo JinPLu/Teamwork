@@ -324,7 +324,20 @@ class CoreFlowTests(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("INSTALL_STATE=partial", result.stdout)
+            self.assertIn("SKILLS=missing", result.stdout)
+            self.assertIn("SOURCE=missing", result.stdout)
+            self.assertNotIn("SKILLS=plugin", result.stdout)
             self.assertIn("BLOCKS_OTHER_WORK=no", result.stdout)
+
+            rejected = subprocess.run(
+                [str(ROOT / "scripts/check-update.sh"), "--plugin"],
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(rejected.returncode, 2, rejected.stderr)
+            self.assertIn("Unknown argument: --plugin", rejected.stderr)
 
     def _skill_text(self, name: str) -> str:
         return (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
@@ -485,6 +498,14 @@ class CoreFlowTests(unittest.TestCase):
         skill = self._skill_text("teamwork-review")
         self.assertIn("missing evidence is `unknown`", skill)
         self.assertIn("protected boundary", skill)
+
+    def test_init_and_update_resolve_source_from_pointer(self) -> None:
+        for name in ("teamwork-init", "teamwork-update"):
+            with self.subTest(skill=name):
+                method = self._folded(self._method_section(self._skill_text(name)))
+                self.assertIn("~/.teamwork/install.json", method)
+                self.assertIn("Do not search the home directory", method)
+                self.assertIn("ask the user for the repository path", method)
 
     def test_init_and_update_report_observed_noop(self) -> None:
         for name in ("teamwork-init", "teamwork-update"):
@@ -769,7 +790,7 @@ class CoreFlowTests(unittest.TestCase):
                 result.stdout,
             )
 
-    def test_plugin_runtime_root_accepts_explorer_without_cursor(self) -> None:
+    def test_checkout_root_accepts_explorer_without_cursor(self) -> None:
         import importlib.util
 
         spec = importlib.util.spec_from_file_location(
@@ -1648,6 +1669,128 @@ class CoreFlowTests(unittest.TestCase):
         print("\nA/B replay vs v7.6.0:\n" + report)
         self.assertGreater(live_scope_hits, base_scope_hits, report)
         self.assertGreater(live_advance_hits, base_advance_hits, report)
+
+    def _load_pointer_module(self):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "write_source_pointer",
+            ROOT / "scripts/write-source-pointer.py",
+        )
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def test_source_pointer_schema_and_host_merge(self) -> None:
+        module = self._load_pointer_module()
+        check = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/write-source-pointer.py"), "check"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(check.returncode, 0, check.stderr)
+
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw)
+            env = os.environ.copy()
+            env["HOME"] = raw
+            env["CODEX_HOME"] = str(home / ".codex")
+            first = subprocess.run(
+                [
+                    str(ROOT / "install.sh"),
+                    "--copy",
+                    "--no-notifications",
+                    "--no-codex-routing",
+                    "codex",
+                ],
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(first.returncode, 0, first.stderr)
+            pointer = home / ".teamwork/install.json"
+            first_value = json.loads(pointer.read_text(encoding="utf-8"))
+            module.validate_pointer_object(first_value)
+            self.assertEqual(first_value["root"], str(ROOT))
+            self.assertEqual(first_value["hosts"], ["codex"])
+            self.assertTrue((home / ".agents/skills/teamwork-collaborate").is_dir())
+
+            second = subprocess.run(
+                [str(ROOT / "install.sh"), "--copy", "cursor"],
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(second.returncode, 0, second.stderr)
+            merged = json.loads(pointer.read_text(encoding="utf-8"))
+            module.validate_pointer_object(merged)
+            self.assertEqual(merged["root"], str(ROOT))
+            self.assertEqual(merged["hosts"], ["codex", "cursor"])
+
+            readiness = subprocess.run(
+                [str(ROOT / "scripts/check-update.sh"), "--readiness"],
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(readiness.returncode, 0, readiness.stderr)
+            self.assertIn("SKILLS=user", readiness.stdout)
+            self.assertIn("SOURCE=valid", readiness.stdout)
+
+    def test_legacy_plugin_activation_migrates_to_user_skills(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            home = Path(raw)
+            marker = home / ".codex/teamwork/plugin-activation.json"
+            marker.parent.mkdir(parents=True)
+            marker.write_text(
+                json.dumps(
+                    {
+                        "plugin": "teamwork-skill",
+                        "marketplace": "teamwork",
+                        "profile": "performance-first",
+                        "notifications": "enabled",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            env = os.environ.copy()
+            env["HOME"] = raw
+            env["CODEX_HOME"] = str(home / ".codex")
+            result = subprocess.run(
+                [
+                    str(ROOT / "install.sh"),
+                    "--copy",
+                    "--no-notifications",
+                    "--no-codex-routing",
+                    "codex",
+                ],
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Removed leftover Teamwork Codex plugin activation marker", result.stdout)
+            self.assertFalse(marker.exists())
+            self.assertTrue((home / ".agents/skills/teamwork-collaborate").is_dir())
+            pointer = json.loads((home / ".teamwork/install.json").read_text(encoding="utf-8"))
+            self.assertEqual(pointer["hosts"], ["codex"])
+            readiness = subprocess.run(
+                [str(ROOT / "scripts/check-update.sh"), "--readiness"],
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(readiness.returncode, 0, readiness.stderr)
+            self.assertIn("SKILLS=user", readiness.stdout)
+            self.assertIn("SOURCE=valid", readiness.stdout)
 
 
 if __name__ == "__main__":

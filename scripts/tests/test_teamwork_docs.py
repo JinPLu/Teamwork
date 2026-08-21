@@ -277,6 +277,73 @@ class DocsMaintenanceTests(unittest.TestCase):
             self.assertIn("ratio (declared / earned): inf", ledger)
             self.assertNotIn("ratio (declared / earned): n/a", ledger)
 
+    def test_public_docs_drop_plugin_install_and_name_source_pointer(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        readme_en = (ROOT / "README.en.md").read_text(encoding="utf-8")
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        architecture = (ROOT / "docs/architecture.md").read_text(encoding="utf-8")
+        contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        self.assertNotIn("codex plugin marketplace add", readme)
+        self.assertNotIn("codex plugin marketplace add", readme_en)
+        self.assertIn("codex plugin remove teamwork-skill", readme)
+        self.assertIn("codex plugin remove teamwork-skill", readme_en)
+        self.assertIn("./install.sh codex", readme)
+        self.assertIn("./install.sh codex", readme_en)
+        self.assertNotIn("regenerate the plugin bundle", agents)
+        self.assertNotIn("plugin manifest", agents)
+        self.assertNotIn("build-codex-plugin.py", contributing)
+        self.assertNotIn("plugins/teamwork-skill", architecture)
+        self.assertIn("enhance native host modes", architecture)
+        self.assertIn("~/.teamwork/install.json", architecture)
+        self.assertIn("yields to host Debug and Explore", architecture)
+        self.assertIn("yields to Explore", architecture)
+
+        check = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/write-source-pointer.py"), "check"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(check.returncode, 0, check.stderr)
+
+        with tempfile.TemporaryDirectory() as raw:
+            written = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts/write-source-pointer.py"),
+                    "write",
+                    "--root",
+                    str(ROOT),
+                    "--version",
+                    "7.10.1",
+                    "--home",
+                    raw,
+                    "--host",
+                    "codex",
+                ],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(written.returncode, 0, written.stderr)
+            status = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts/write-source-pointer.py"),
+                    "status",
+                    "--home",
+                    raw,
+                ],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(status.returncode, 0, status.stderr)
+            self.assertEqual(status.stdout.strip(), "valid")
+
     def test_doctor_reports_only(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             docs = Path(raw) / "docs" / "teamwork"

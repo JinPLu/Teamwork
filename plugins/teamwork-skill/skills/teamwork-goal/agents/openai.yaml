@@ -1,4 +1,0 @@
-interface:
-  display_name: "Teamwork Goal"
-  short_description: "Keep working toward a verifiable result"
-  default_prompt: "Use $teamwork-goal to keep progressing on this task until its real success signal passes."
