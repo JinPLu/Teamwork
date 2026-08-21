@@ -4,6 +4,14 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.11.0 - 2026-08-21
+
+- **常驻全局策略瘦身 28%。** 每次请求都要读的那段策略从 17 段降到 12 段（6519 → 4717 字符），三个宿主同时受益。路由、落盘时机、只读环境下的交付顺序都用回放场景逐条核对过，行为不变。
+- **全局策略与 Skill 之间有了明确的规则归属判据。** 全局只保留"未加载任何 Skill 时就必须成立"和"在 Skill 之间做路由"的规则，其余下沉到拥有它的 `SKILL.md`。同一句话不再在两处重复出现。
+- **Codex 专有措辞不再出现在 Cursor / Claude 的策略里。** `<codex_delegation>` 的说明移到 Codex 自己的尾部。
+
+升级操作：更新到 7.11.0 后，对所用宿主重新运行安装器：Codex 用 `$teamwork-update` 或 `./install.sh`；Cursor 用 `./install.sh cursor`；Claude 用 `./install.sh claude`。
+
 ## 7.10.1 - 2026-08-21
 
 - **不再通过 Codex Marketplace 插件安装。** 统一为克隆仓库后运行 `./install.sh <host>`；本机安装会记下仓库路径，供之后的 Update / Init 直接使用。

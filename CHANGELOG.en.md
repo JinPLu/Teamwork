@@ -4,6 +4,14 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.11.0 - 2026-08-21
+
+- **The standing global policy is 28% smaller.** The block every request reads went from 17 paragraphs to 12 (6519 → 4717 characters), on all three hosts. Routing, checkpoint timing, and delivery order under a read-only environment were checked scenario by scenario against replay; behavior is unchanged.
+- **Global policy and Skills now have an explicit ownership rule.** The global policy keeps only what must hold before any Skill loads and what routes between Skills; everything else moved into the owning `SKILL.md`. The same sentence no longer appears in both places.
+- **Codex-only wording no longer appears in the Cursor / Claude policy.** The `<codex_delegation>` note moved into the Codex tail.
+
+Upgrade action: after updating to 7.11.0, re-run the installer for the host you use: Codex with `$teamwork-update` or `./install.sh`; Cursor with `./install.sh cursor`; Claude with `./install.sh claude`.
+
 ## 7.10.1 - 2026-08-21
 
 - **The Codex Marketplace plugin is gone.** Install by cloning the repository and running `./install.sh <host>`. A successful install records the checkout path so later Update / Init runs can find it.
