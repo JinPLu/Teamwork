@@ -1,0 +1,10 @@
+[files]
+extend-exclude = [
+    "plugins/**",
+    "docs/teamwork/**",
+]
+
+[default.extend-words]
+HARKing = "HARKing"
+Teamwork = "Teamwork"
+llms = "llms"

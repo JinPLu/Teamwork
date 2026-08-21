@@ -4,6 +4,16 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.10.0 - 2026-08-20
+
+- **Checkpoint paths are now `docs/teamwork/<kind>/<slug>.md`.** The created date lives in frontmatter; the same identity reuses the same file. Existing historical files are not renamed or deleted; they are marked archived in place.
+- **The closed set is now seven kinds.** New `experiments/` records freeze a declaration once written. A probe needs only a claim draft, kill criterion, and budget. The full declaration is for main-table or appendix-hygiene eligibility, not a run gate. Declare the contribution slot before occupying scarce compute.
+- **Repeated public facts (host counts, path, kind list) now come from one facts file.** Cursor's six installed Skills are named.
+
+Upgrade action: after updating to 7.10.0, re-run the installer for the host you use: Codex with `$teamwork-update` or `./install.sh`; Cursor with `./install.sh cursor`; Claude with `./install.sh claude`. For an existing project that should pick up the seven kind names in project instructions, also run `./install.sh --project-root <project-path> init-project`.
+
+The 7.2.4 changelog mentioned a README DeepSWE evidence-boundary note. That README copy was later removed; the historical entry describes the README of that time, not the current README.
+
 ## 7.9.2 - 2026-08-20
 
 - **Checkpoint documents are a closed set of six kinds.** Paths are `docs/teamwork/<kind>/` plus a dated filename; do not invent a new kind or write a checkpoint at that directory root. Reusable status that does not already belong elsewhere goes to `reports/`; standing constraints that must bind later work go to the project's always-read surface (`AGENTS.md` or the project's own reference pages).

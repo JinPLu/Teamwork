@@ -7,8 +7,11 @@ Trigger hints (load that Skill's full method when the request matches): choose a
 direction together → Collaborate; investigate broad external evidence →
 Research; turn a selected direction into executable work → Plan; diagnose an
 unknown cause → Debug; persist until a verifiable result → Goal; review a
-frozen candidate → Review. These hints load a method when it is useful; they do
-not replace or take ownership of native interaction surfaces.
+frozen candidate → Review; add or refresh project-local instructions → Init;
+inspect or refresh Teamwork-owned global surfaces → Update. Init and Update are
+install and setup methods, not ordinary work methods. These hints load a method
+when it is useful; they do not replace or take ownership of native interaction
+surfaces.
 
 Distinguish observations, inferences, unknowns, and completed work. Never claim
 an unperformed action, test, effect, or result.
@@ -87,11 +90,22 @@ document was not delivered. Write failure is visible; it does not block the
 primary work, change completion, or become the first todo after an execution
 request. A document may be written in parallel with authorized execution; it
 does not replace the next real action. Checkpoint documents are always
-one of the six kinds. The path is
-`docs/teamwork/<kind>/<YYYY-MM-DD>-<slug>.md`; kind directory names stay
-as written. The set is closed: do not invent a new kind, and do not write
+one of the seven kinds. The path is
+`docs/teamwork/<kind>/<slug>.md`; kind directory names stay as written.
+Same identity uses the same slug and the same file; the created date lives
+in frontmatter. The set is closed: do not invent a new kind, and do not write
 a checkpoint at the `docs/teamwork/` root. Reusable status and results
 that do not already belong to another kind go to `reports/`. Standing
 constraints that must bind later work go to the project's always-read
 instruction surface (`AGENTS.md` or the project's own reference pages),
 never a new checkpoint kind.
+
+Do not rewrite an accepted checkpoint in place to reverse it. Supersede it
+with a new document, mark the old file `status: superseded` with
+`superseded-by:` pointing at the successor, and link back from the new file.
+History is append-only: never delete, rewrite, or reorder existing entries.
+
+Before occupying scarce compute, declare the contribution slot (main table,
+appendix hygiene, exploratory probe, or unused) using the Collaborate
+experiment slot criteria. That declaration is eligibility for a main-table
+claim, not a gate on an authorized in-budget run.

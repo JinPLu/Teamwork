@@ -1,0 +1,154 @@
+name: Docs
+
+on:
+  pull_request:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generated-facts:
+    name: Generated facts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Render facts and fail on drift
+        run: |
+          set -euo pipefail
+          python3 scripts/render-teamwork-facts.py
+          git diff --exit-code README.md README.en.md CURSOR.md CLAUDE.md CODEX.md docs/architecture.md
+
+  bilingual:
+    name: Bilingual pair
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require paired README and CHANGELOG translations
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          mapfile -t changed < <(git diff --name-only "$base"..."$head")
+          has() {
+            local needle="$1"
+            local item
+            for item in "${changed[@]}"; do
+              if [[ "$item" == "$needle" ]]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+          if has README.md && ! has README.en.md; then
+            echo "README.md changed without README.en.md" >&2
+            exit 1
+          fi
+          if has README.en.md && ! has README.md; then
+            echo "README.en.md changed without README.md" >&2
+            exit 1
+          fi
+          if has CHANGELOG.md && ! has CHANGELOG.en.md; then
+            echo "CHANGELOG.md changed without CHANGELOG.en.md" >&2
+            exit 1
+          fi
+          if has CHANGELOG.en.md && ! has CHANGELOG.md; then
+            echo "CHANGELOG.en.md changed without CHANGELOG.md" >&2
+            exit 1
+          fi
+
+  lint:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: markdownlint-cli2
+        uses: DavidAnson/markdownlint-cli2-action@v19
+      - name: typos
+        uses: crate-ci/typos@v1.29.4
+      - name: AutoCorrect Chinese prose
+        uses: huacnlee/autocorrect-action@v2.6.3
+        with:
+          args: --lint README.md CHANGELOG.md
+
+  vale:
+    name: Vale vocabulary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Vale
+        run: |
+          set -euo pipefail
+          version="3.12.0"
+          curl -sSfL "https://github.com/errata-ai/vale/releases/download/v${version}/vale_${version}_Linux_64-bit.tar.gz" | tar -xz vale
+          sudo mv vale /usr/local/bin/vale
+      - name: Check public docs terminology
+        run: |
+          set -euo pipefail
+          vale \
+            README.md README.en.md CHANGELOG.md CHANGELOG.en.md \
+            AGENTS.md CLAUDE.md CURSOR.md CODEX.md CONTRIBUTING.md \
+            docs/architecture.md policy/teamwork-global.md
+
+  lychee-internal:
+    name: Internal links
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: lychee offline
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --offline --no-progress
+            --exclude-path plugins
+            --exclude-path docs/teamwork
+            README.md README.en.md CURSOR.md CLAUDE.md CODEX.md
+            CONTRIBUTING.md CHANGELOG.md CHANGELOG.en.md
+            docs/architecture.md policy/teamwork-global.md
+          fail: true
+
+  lychee-external:
+    name: External links
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress --max-concurrency 2
+            --exclude-path plugins
+            --exclude-path docs/teamwork
+            README.md README.en.md CURSOR.md CLAUDE.md CODEX.md
+            CONTRIBUTING.md docs/architecture.md
+          fail: true
+
+  commits-ahead:
+    name: Commits ahead (advisory)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Report commits ahead of base
+        run: |
+          set -euo pipefail
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          count="$(git rev-list --count "$base".."$head")"
+          echo "commits_ahead=$count"
+          if [[ "$count" -gt 30 ]]; then
+            echo "This branch is $count commits ahead of base; consider splitting." >&2
+          fi

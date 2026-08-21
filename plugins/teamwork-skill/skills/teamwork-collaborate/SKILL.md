@@ -59,7 +59,7 @@ When a listed checkpoint fires, write in the same response cycle. If separate
 stable identities each cross a checkpoint, write each to its own path.
 
 Cross-chat memory lives in one Markdown document from `references/discussion.md`
-at `docs/teamwork/discussions/<YYYY-MM-DD>-<slug>.md`. Same identity means the
+at `docs/teamwork/discussions/<slug>.md`. Same identity means the
 same final goal plus the same subject; reuse that path and name the document you
 read. A different subject gets a new path.
 

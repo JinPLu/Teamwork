@@ -1,3 +1,10 @@
+---
+status: active
+superseded-by:
+created: <YYYY-MM-DD>
+updated: <YYYY-MM-DD>
+---
+
 # Research: <question>
 
 ## Identity and decision use

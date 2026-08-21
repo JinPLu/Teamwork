@@ -28,8 +28,8 @@ adapters are optional compatibility surfaces and never block Codex work.
 ## Releases
 
 - Release on `main` unless the user explicitly requests another Git workflow.
-- VERSION and plugin manifest consistency is checked only by
-  `./scripts/validate.sh --release`.
+- VERSION and plugin manifest consistency is checked by
+  `./scripts/validate.sh`.
 - A release is complete only after the requested verification, commit, tag, and
   GitHub Release succeed. Cursor/Claude adapters and project-local files are not
   release blockers.
@@ -41,5 +41,5 @@ adapters are optional compatibility surfaces and never block Codex work.
 
 - Project label: `Teamwork`.
 - Teamwork adds no required project-local workflow or state. It creates no empty directory, schema, or mandatory stage chain. Native host modes stay in charge. Follow this project's normal instructions and invoke a named Skill only when its trigger matches.
-- User-accepted reusable results live under `docs/teamwork/<kind>/` as one of `discussions`, `research`, `debug`, `plans`, `reviews`, or `reports`. Chat, host plans, and todos are not cross-session memory.
+- User-accepted reusable results live under `docs/teamwork/<kind>/` as one of `discussions`, `research`, `debug`, `plans`, `reviews`, `reports`, or `experiments`. Chat, host plans, and todos are not cross-session memory.
 <!-- TEAMWORK_PROJECT_END -->

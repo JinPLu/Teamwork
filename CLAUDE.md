@@ -13,7 +13,6 @@ without writing it, run `./install.sh claude-policy`. Invoke Skills with
 `/name` in Claude Code (for example `/teamwork-collaborate`); Codex uses
 `$name`.
 
-The adapter exposes the same focused Skills and seven optional helper roles.
 Agent availability and adapter freshness never block ordinary work. It creates
 no project document schema, Case lifecycle, mandatory Writer workflow, or
 migration state.
@@ -29,14 +28,20 @@ AskUserQuestion batches collect input and do not by themselves complete a
 Skill checkpoint. After the user approves exiting Plan, write permission
 returns; deliver the accepted result in that same response cycle. Writer
 is a Task/Agent helper role, not a Skill. Teamwork Skills add purpose-specific
-contracts and checkpoint documents under `docs/teamwork/`. The adapter exposes the same focused Skills
+contracts and checkpoint documents under
+<!-- BEGIN GENERATED: kind-root -->
+`docs/teamwork/<kind>/`
+<!-- END GENERATED: kind-root -->
+. The adapter exposes the same focused Skills
 and seven optional helper roles: Researcher, Debugger, Challenger, Planner,
-Reviewer, Worker, and Writer. Claude installs 7 roles; Teamwork Explorer is
-omitted so it does not sit beside the built-in Explore. Debugger stays because
-Claude has no diagnosis role. Claude still installs Debug, Goal, and Debugger.
-Cursor omits those Skills and the Debugger role; a Cursor install that
-refreshes this Claude skill root still installs the full Claude set. Do not name a custom agent `Explore`; that
-identifier overrides the built-in.
+Reviewer, Worker, and Writer.
+<!-- BEGIN GENERATED: host-counts -->
+Claude Code installs 7 roles and omits Explorer because that host already provides Explore. Cursor installs 6 roles and omits Explorer and Debugger, and does not install the Debug or Goal Skills; unknown-cause diagnosis uses host Debug. Codex retains the Explorer role, plus Debug, Goal, and Debugger.
+<!-- END GENERATED: host-counts -->
+Debugger stays because Claude has no diagnosis role. Claude still installs Debug, Goal, and Debugger.
+A Cursor install that refreshes this Claude skill root still installs the
+full Claude set. Do not name a custom agent `Explore`; that identifier
+overrides the built-in.
 
 When both same-named Teamwork skill copies exist under `~/.cursor/skills/` and
 `~/.claude/skills/`, which copy a dual-host session reads is not guaranteed—

@@ -33,7 +33,7 @@ Persistence is optional. Write a report only when the observed result is reusabl
 across sessions or the user explicitly requests it. When that optional
 checkpoint fires, write the document in the same response cycle from
 `references/report.md` at
-`docs/teamwork/reports/<YYYY-MM-DD>-<slug>.md` (reuse the existing path for the
+`docs/teamwork/reports/<slug>.md` (reuse the existing path for the
 same project-operation identity). Optional triggers: Init completes with an
 observed `AGENTS.md` change worth reusing; Init stops on a real file-ownership
 conflict worth reusing; or a no-op result is reusable or explicitly requested.

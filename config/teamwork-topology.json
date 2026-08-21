@@ -107,6 +107,7 @@
     "skills/teamwork-collaborate/references/experiment.md",
     "skills/teamwork-debug/references/debug.md",
     "skills/teamwork-debug/references/runtime-diagnosis.md",
+    "skills/teamwork-goal/references/experiment-record.md",
     "skills/teamwork-goal/references/report.md",
     "skills/teamwork-init/references/report.md",
     "skills/teamwork-plan/references/plan.md",
@@ -122,6 +123,10 @@
     {
       "name": "discussion",
       "path": "skills/teamwork-collaborate/references/discussion.md"
+    },
+    {
+      "name": "experiment",
+      "path": "skills/teamwork-goal/references/experiment-record.md"
     },
     {
       "name": "plan",

@@ -36,10 +36,22 @@ When a listed checkpoint fires, write in the same response cycle. If separate
 stable identities each cross a checkpoint, write each to its own path.
 
 Cross-chat memory lives in one Markdown document from `references/report.md`
-at `docs/teamwork/reports/<YYYY-MM-DD>-<slug>.md`. Same identity means the same
+at `docs/teamwork/reports/<slug>.md`. Same identity means the same
 continuing objective; reuse that path and name the document you read. A
 different subject gets a new path.
 
+Experiment checkpoints write from `references/experiment-record.md` at
+`docs/teamwork/experiments/<slug>.md`. Same identity means the same
+falsifiable claim; reuse that path and name the document you read. A
+different claim gets a new path. Probe declarations need only a claim draft,
+kill criterion, and budget. The full declaration is for main-table or
+appendix-hygiene eligibility, not a run gate. Slot criteria are in
+`../teamwork-collaborate/references/experiment.md`. Post-run HARKing is the
+diff between the frozen declared claim and a post-hoc claim; Reviewer or
+Challenger is the right role for that adjudication, and it is not a
+mandatory ceremony.
+
 Checkpoints: the success signal is directly observed; a genuine external
 blocker stops progress; or the user interrupts after material progress worth
-reusing.
+reusing. An experiment declaration, adjudication, result, or tombstone is
+also a checkpoint.

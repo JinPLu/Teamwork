@@ -100,7 +100,11 @@ flowchart LR
 
 ## 🤝 8 个可选 Agent 角色
 
-Researcher、Explorer、Debugger、Challenger、Planner、Reviewer、Worker 和 Writer 都是边界化帮助者，不是必须经过的流水线。Claude Code 安装 7 个角色并使用宿主自带 Explore；Cursor 安装 6 个角色（省略 Explorer 与 Debugger），且不安装 Debug / Goal Skill，未知原因诊断使用宿主 Debug；Codex 仍保留 Explorer，以及 Debug、Goal 和 Debugger。Writer 是低成本、可跨 Skill 复用的非阻塞记录者：它把方法 owner 确认的变化写成 `docs/teamwork/` 下的可读 Markdown，不替 owner 改变事实、决定或结论。Root 负责检查点落盘，Writer 只在不耽误写入时帮忙；写不了就报告路径和未交付，但不撤销已经完成的结果。
+Researcher、Explorer、Debugger、Challenger、Planner、Reviewer、Worker 和 Writer 都是边界化帮助者，不是必须经过的流水线。
+<!-- BEGIN GENERATED: host-counts-zh -->
+Claude Code 安装 7 个角色并使用宿主自带 Explore；Cursor 安装 6 个角色（省略 Explorer 与 Debugger），且不安装 Debug / Goal Skill，未知原因诊断使用宿主 Debug；Codex 仍保留 Explorer，以及 Debug、Goal 和 Debugger。
+<!-- END GENERATED: host-counts-zh -->
+Writer 是低成本、可跨 Skill 复用的非阻塞记录者：它把方法 owner 确认的变化写成 `docs/teamwork/<kind>/` 下的可读 Markdown，不替 owner 改变事实、决定或结论。Root 负责检查点落盘，Writer 只在不耽误写入时帮忙；写不了就报告路径和未交付，但不撤销已经完成的结果。
 
 - Root 只在并行调查、独立判断或清楚分工确实有用时分派。
 - handoff 带上目标、负责范围、已确定约束、已有证据和期望返回。
@@ -108,9 +112,10 @@ Researcher、Explorer、Debugger、Challenger、Planner、Reviewer、Worker 和 
 - Teamwork 子任务默认使用 Standard。父任务启用 Fast 不会自动提高所有子任务的费用，除非你明确要求子任务也加速。
 - Cursor 与 Claude 若同时装有同名 Skill 副本，谁被读到未保证；安装时两边同步刷新。
 
-## 🗃️ 六类可读文档
+## 🗃️ 七类可读文档
 
-当原生交互或专项方法到达可复用语义结果、且你已经接受该结果时，Root 在同一响应周期把纯 Markdown 写入 `docs/teamwork/`；进入 mode 或调用宿主界面本身不会落盘，也不必先点名 Skill。Writer 只在不耽误写入时帮忙。每份文档同时保留一份**当前综合**和按时间追加的**历史**，既方便快速阅读，也不会抹掉结论如何变化。默认文件名为 `<YYYY-MM-DD>-<slug>.md`，同一稳定身份复用已有路径。
+<!-- BEGIN GENERATED: persistence-zh -->
+当原生交互或专项方法到达可复用语义结果、且你已经接受该结果时，Root 在同一响应周期把纯 Markdown 写入 `docs/teamwork/<kind>/`；进入 mode 或调用宿主界面本身不会落盘，也不必先点名 Skill。Writer 只在不耽误写入时帮忙。每份文档同时保留一份**当前综合**和按时间追加的**历史**，既方便快速阅读，也不会抹掉结论如何变化。默认路径为 `docs/teamwork/<kind>/<slug>.md`，同一稳定身份复用已有路径。
 
 | 文档 | 它记录什么 |
 | --- | --- |
@@ -120,6 +125,8 @@ Researcher、Explorer、Debugger、Challenger、Planner、Reviewer、Worker 和 
 | 📝 Plan | 已选方向的步骤、owner、依赖、验证与停止条件。 |
 | ✅ Review | 稳定候选、直接证据、发现与 verdict。 |
 | 📌 Report | Goal、Init、Update 或执行工作的状态、结果与阻塞。 |
+| 🧪 Experiment | 冻结声明、贡献格、裁定与结果或墓碑。 |
+<!-- END GENERATED: persistence-zh -->
 
 跨 Skill 复用 Writer 只复用同一个 Agent 生命周期，不让一个 Skill 接管另一个 Skill 的语义。文档不依赖 Case、schema、JSON index、迁移或 readiness；没有可复用变化时，也不必为流程而创建文档。
 

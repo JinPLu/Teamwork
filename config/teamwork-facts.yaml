@@ -1,0 +1,63 @@
+checkpoint_path: docs/teamwork/<kind>/<slug>.md
+kind_root: docs/teamwork/<kind>/
+kinds:
+  - discussions
+  - research
+  - debug
+  - plans
+  - reviews
+  - reports
+  - experiments
+kind_meanings:
+  discussions:
+    label: Discussion
+    emoji: "💬"
+    meaning: options, trade-offs, settled choices, and open decisions
+    meaning_zh: 选项、权衡、已定选择与仍待决定的问题。
+  research:
+    label: Research
+    emoji: "🔎"
+    meaning: external evidence, contradictions, synthesis, confidence, and stop basis
+    meaning_zh: 外部证据、矛盾、综合结论、置信度与停止依据。
+  debug:
+    label: Debug
+    emoji: "🐞"
+    meaning: failure boundary, hypotheses, causal evidence, repair, and same-path verification
+    meaning_zh: 失败边界、假设、根因、修复与同路径验证。
+  plans:
+    label: Plan
+    emoji: "📝"
+    meaning: executable steps, owners, dependencies, verification, and stop conditions for a selected direction
+    meaning_zh: 已选方向的步骤、owner、依赖、验证与停止条件。
+  reviews:
+    label: Review
+    emoji: "✅"
+    meaning: stable candidate, direct evidence, findings, and verdict
+    meaning_zh: 稳定候选、直接证据、发现与 verdict。
+  reports:
+    label: Report
+    emoji: "📌"
+    meaning: reusable status, outcomes, and blockers from persistence, setup, update, or execution work
+    meaning_zh: Goal、Init、Update 或执行工作的状态、结果与阻塞。
+  experiments:
+    label: Experiment
+    emoji: "🧪"
+    meaning: frozen claim, slot, adjudication, and result or tombstone for a scarce-compute trial
+    meaning_zh: 冻结声明、贡献格、裁定与结果或墓碑。
+hosts:
+  claude:
+    skills: 8
+    roles: 7
+  cursor:
+    skills: 6
+    roles: 6
+  codex:
+    skills: 8
+    roles: 8
+cursor_skills:
+  - teamwork-collaborate
+  - teamwork-research
+  - teamwork-plan
+  - teamwork-review
+  - teamwork-init
+  - teamwork-update

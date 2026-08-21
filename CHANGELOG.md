@@ -4,6 +4,16 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.10.0 - 2026-08-20
+
+- **落盘路径改为 `docs/teamwork/<kind>/<slug>.md`。** 创建日期写在 frontmatter；同一身份复用同一文件。已有历史文件不改名、不删除，只补状态并标为 archived。
+- **检查点文档改为七类封闭集。** 新增 `experiments/`：声明段写完即冻结；probe 只需 claim 草稿、kill criterion 和预算。完整声明只为进主表或附录卫生，不是开跑闸门。占用稀缺算力前先声明贡献格。
+- **公开文档里反复出现的宿主数量、路径和种类改从同一份事实表生成。** Cursor 安装的六个 Skill 现已点名。
+
+升级操作：更新到 7.10.0 后，对所用宿主重新运行安装器：Codex 用 `$teamwork-update` 或 `./install.sh`；Cursor 用 `./install.sh cursor`；Claude 用 `./install.sh claude`。已有项目若要更新项目说明里的七类词表，再跑 `./install.sh --project-root <项目路径> init-project`。
+
+7.2.4 曾写 README 用 DeepSWE 说明编码角色的证据边界；那段 README 说明后来已删，该历史条目描述的是当时文档，不是当前 README。
+
 ## 7.9.2 - 2026-08-20
 
 - **落盘文档只有六类，集合封闭。** 路径是 `docs/teamwork/<kind>/` 加日期文件名；不新造类，也不在该目录根下落盘。对不上号的可复用状态写入 `reports/`；必须约束后续工作的常驻结论写到项目常读面（`AGENTS.md` 或项目自己的 reference 页）。

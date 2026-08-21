@@ -100,7 +100,11 @@ There is no Router, mandatory stage chain, or automatic Update detour. Root alwa
 
 ## 🤝 Eight optional Agent roles
 
-Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer are bounded helpers, not a pipeline every task must traverse. Claude Code installs 7 roles and uses the host's built-in Explore. Cursor installs 6 roles (omitting Explorer and Debugger) and does not install the Debug or Goal Skills; unknown-cause diagnosis uses host Debug. Codex keeps Explorer, plus Debug, Goal, and Debugger. Writer is a low-cost, non-blocking recorder reusable across Skills: it turns owner-certified changes into readable Markdown under `docs/teamwork/` and never changes the owner's facts, decisions, or conclusions. Root owns checkpoint delivery; Writer helps only when that does not delay the write. If the environment cannot write, the exact path and non-delivery are reported; the completed result is not undone.
+Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer are bounded helpers, not a pipeline every task must traverse.
+<!-- BEGIN GENERATED: host-counts-en -->
+Claude Code installs 7 roles and uses the host's built-in Explore. Cursor installs 6 roles (omitting Explorer and Debugger) and does not install the Debug or Goal Skills; unknown-cause diagnosis uses host Debug. Codex keeps Explorer, plus Debug, Goal, and Debugger.
+<!-- END GENERATED: host-counts-en -->
+Writer is a low-cost, non-blocking recorder reusable across Skills: it turns owner-certified changes into readable Markdown under `docs/teamwork/<kind>/` and never changes the owner's facts, decisions, or conclusions. Root owns checkpoint delivery; Writer helps only when that does not delay the write. If the environment cannot write, the exact path and non-delivery are reported; the completed result is not undone.
 
 - Root delegates only when parallel investigation, independent judgment, or a clean division of work is useful.
 - A handoff carries the objective, owned scope, settled constraints, available evidence, and requested return.
@@ -108,25 +112,21 @@ Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Write
 - Teamwork children use Standard by default. Fast on the parent does not automatically multiply child cost unless you explicitly accelerate the children too.
 - When Cursor and Claude both have same-named Skill copies, which copy wins is not guaranteed; keep both in sync on install.
 
-## 🗃️ Six readable document types
+## 🗃️ Seven readable document types
 
-When a native interaction or focused method reaches a reusable semantic result
-and you accept that result, Root writes plain Markdown under `docs/teamwork/`
-in the same response cycle. Entering a mode or invoking a host surface is not
-itself a write, and you do not need to name a Skill first. Writer helps only
-when that does not delay the write. Each document carries both a **current
-synthesis** and an append-only **chronological history**, so it is quick to
-read without hiding how the conclusion changed. Default filenames are
-`<YYYY-MM-DD>-<slug>.md`; reuse the path for the same stable identity.
+<!-- BEGIN GENERATED: persistence-en -->
+When a native interaction or focused method reaches a reusable semantic result and you accept that result, Root writes plain Markdown under `docs/teamwork/<kind>/` in the same response cycle. Entering a mode or invoking a host surface is not itself a write, and you do not need to name a Skill first. Writer helps only when that does not delay the write. Each document carries both a **current synthesis** and an append-only **chronological history**, so it is quick to read without hiding how the conclusion changed. Default paths are `docs/teamwork/<kind>/<slug>.md`; reuse the path for the same stable identity.
 
 | Document | What it records |
 | --- | --- |
 | 💬 Discussion | Options, trade-offs, settled choices, and open decisions. |
-| 🔎 Research | External evidence, contradictions, synthesized conclusions, confidence, and stop basis. |
-| 🐞 Debug | Failure boundary, hypotheses, root cause, repair, and same-path verification. |
-| 📝 Plan | Selected-direction steps, owners, dependencies, verification, and stop conditions. |
+| 🔎 Research | External evidence, contradictions, synthesis, confidence, and stop basis. |
+| 🐞 Debug | Failure boundary, hypotheses, causal evidence, repair, and same-path verification. |
+| 📝 Plan | Executable steps, owners, dependencies, verification, and stop conditions for a selected direction. |
 | ✅ Review | Stable candidate, direct evidence, findings, and verdict. |
-| 📌 Report | Status, outcomes, and blockers from Goal, Init, Update, or execution work. |
+| 📌 Report | Reusable status, outcomes, and blockers from persistence, setup, update, or execution work. |
+| 🧪 Experiment | Frozen claim, slot, adjudication, and result or tombstone for a scarce-compute trial. |
+<!-- END GENERATED: persistence-en -->
 
 Reusing Writer across Skills reuses only the Agent lifecycle; it does not let one Skill take ownership of another Skill's meaning. Documents require no Case, schema, JSON index, migration, or readiness gate, and no document is needed when nothing reusable changed.
 

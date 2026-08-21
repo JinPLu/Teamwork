@@ -19,7 +19,7 @@ Case lifecycle, JSON index, migration gate, or automatic Update detour.
 | Surface | Owns | Does not own |
 | --- | --- | --- |
 | `policy/teamwork-global.md` | universal authorization, checkpoint and write contract, Writer fallback, quote separation, checkpoint path shape, closed kind set, two-branch fallback | host tool names, per-Skill checkpoints, kind-name vocabulary |
-| project `AGENTS.md` managed block | six document kind names as vocabulary | path shape, closed-set rule, kind meanings |
+| project `AGENTS.md` managed block | seven document kind names as vocabulary | path shape, closed-set rule, kind meanings |
 | `skills/*/SKILL.md` | method, identity, checkpoints, template path, write timing | generic delegation, Writer contract |
 | `skills/*/references/*.md` | fill slots | teaching prose |
 | `CURSOR.md` / `CLAUDE.md` / `CODEX.md` | host install, roles, accept signals, permission facts | universal write contract |
@@ -56,26 +56,25 @@ local investigation that serves a plan stays in that plan. Init does not
 create `docs/teamwork/`; the first checkpoint creates those paths.
 
 One Writer may serve several Skills during its lifetime. That reuse is only
-Agent-lifecycle reuse: Discussion, Research, Debug, Plan, Review, and Report
-retain separate semantic owners and cannot certify changes for one another.
+Agent-lifecycle reuse: Discussion, Research, Debug, Plan, Review, Report, and
+Experiment retain separate semantic owners and cannot certify changes for one
+another.
 Writer may clarify placement, deduplicate, and compress only literally.
 
 Each document is plain Markdown under `docs/teamwork/` with a concise current
 synthesis and an append-only chronological history. Reuse the path for the same
-stable identity. The six meanings are:
+stable identity.
+<!-- BEGIN GENERATED: kind-meanings -->
+The seven meanings are:
 
-- Discussion (`discussions/`): options, trade-offs, settled choices, and open
-  decisions;
-- Research (`research/`): external evidence, contradictions, synthesis,
-  confidence, and stop basis;
-- Debug (`debug/`): failure boundary, hypotheses, causal evidence, repair, and
-  same-path verification;
-- Plan (`plans/`): executable steps, owners, dependencies, verification, and
-  stop conditions for a selected direction;
-- Review (`reviews/`): stable candidate, direct evidence, findings, and
-  verdict;
-- Report (`reports/`): reusable status, outcomes, and blockers from
-  persistence, setup, update, or execution work.
+- Discussion (`discussions/`): options, trade-offs, settled choices, and open decisions;
+- Research (`research/`): external evidence, contradictions, synthesis, confidence, and stop basis;
+- Debug (`debug/`): failure boundary, hypotheses, causal evidence, repair, and same-path verification;
+- Plan (`plans/`): executable steps, owners, dependencies, verification, and stop conditions for a selected direction;
+- Review (`reviews/`): stable candidate, direct evidence, findings, and verdict;
+- Report (`reports/`): reusable status, outcomes, and blockers from persistence, setup, update, or execution work;
+- Experiment (`experiments/`): frozen claim, slot, adjudication, and result or tombstone for a scarce-compute trial.
+<!-- END GENERATED: kind-meanings -->
 
 A document is created or updated at Skill-defined semantic checkpoints, never
 as a precondition for native work.
@@ -91,11 +90,10 @@ Every handoff uses the same five fields:
 - requested return.
 
 Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and
-Writer are focused helpers. Claude Code installs 7 roles and omits Explorer
-because that host already provides Explore. Cursor installs 6 roles and omits
-Explorer and Debugger, and does not install the Debug or Goal Skills; unknown-cause
-diagnosis uses host Debug. Codex retains the Explorer role, plus Debug, Goal,
-and Debugger.
+Writer are focused helpers.
+<!-- BEGIN GENERATED: host-counts -->
+Claude Code installs 7 roles and omits Explorer because that host already provides Explore. Cursor installs 6 roles and omits Explorer and Debugger, and does not install the Debug or Goal Skills; unknown-cause diagnosis uses host Debug. Codex retains the Explorer role, plus Debug, Goal, and Debugger.
+<!-- END GENERATED: host-counts -->
 Helpers do not own the user dialogue. Missing agents do not block native work.
 When the user specifically requires an independent review and no independent
 context is available, Root labels the review non-independent instead of
@@ -114,6 +112,6 @@ explicit compatibility targets.
 ## Verification
 
 The default validation command checks syntax, Skill metadata, Codex profiles,
-project initialization, and bundle synchronization. Release-only version and
-packaging checks run only with `--release`. Tests and markers never substitute
-for reading the actual result.
+project initialization, bundle synchronization, and VERSION alignment with both
+plugin manifests. Use `--release` only during explicit release preparation.
+Tests and markers never substitute for reading the actual result.

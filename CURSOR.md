@@ -33,9 +33,13 @@ Codex or ordinary project work.
 
 Built-in Explore, AskQuestion, Plan, and Debug handle live interaction.
 Teamwork Skills add purpose-specific contracts and checkpoint documents under
-`docs/teamwork/`. The adapter exposes six focused Skills and six optional
-helper roles: Researcher, Challenger, Planner, Reviewer, Worker, and Writer.
-Cursor installs 6 roles; Explorer and Debugger are intentionally omitted.
+<!-- BEGIN GENERATED: kind-root -->
+`docs/teamwork/<kind>/`
+<!-- END GENERATED: kind-root -->
+.
+<!-- BEGIN GENERATED: cursor-skills -->
+The adapter exposes 6 focused Skills (`teamwork-collaborate`, `teamwork-research`, `teamwork-plan`, `teamwork-review`, `teamwork-init`, `teamwork-update`) and 6 optional helper roles: Researcher, Challenger, Planner, Reviewer, Worker, and Writer. Cursor installs 6 roles; Explorer and Debugger are intentionally omitted.
+<!-- END GENERATED: cursor-skills -->
 Cursor does not install the Debug or Goal Skills. Planner remains an optional
 bounded helper, not a substitute for Cursor's Plan mode. CreatePlan and host
 Plan drafts are editable candidates; they do not complete a Skill checkpoint.
@@ -46,7 +50,7 @@ not Writer. Writer is the Task
 helper role (`subagent_type: writer`), not a Skill; there is no
 `teamwork-writer` Skill.
 `.cursor/plans` remains the host editing surface; accepted reusable results
-persist under `docs/teamwork/`. If this User Rule is absent, the project
+persist under `docs/teamwork/<kind>/`. If this User Rule is absent, the project
 `AGENTS.md` block is the minimum shared bridge.
 
 Cursor roles pick models by job. Researcher pins `model` to Kimi K3 high for

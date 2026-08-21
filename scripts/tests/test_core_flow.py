@@ -36,13 +36,18 @@ class CoreFlowTests(unittest.TestCase):
         documents = {row["name"]: row["path"] for row in topology["document_templates"]}
         self.assertEqual(
             set(documents),
-            {"discussion", "research", "debug", "plan", "review", "report"},
+            {"discussion", "research", "debug", "plan", "review", "report", "experiment"},
         )
         for path in documents.values():
             template = (ROOT / path).read_text(encoding="utf-8")
-            self.assertTrue(template.startswith("# "), path)
+            body = self._body_after_frontmatter(template)
+            self.assertTrue(body.startswith("# "), path)
             self.assertIn("## History", template, path)
             self.assertIn("Append only", template, path)
+            self.assertIn("status: active", template, path)
+            self.assertIn("superseded-by:", template, path)
+            self.assertIn("created:", template, path)
+            self.assertIn("updated:", template, path)
 
     def test_writer_document_resources_resolve_after_copy_install(self) -> None:
         expected = {
@@ -83,6 +88,13 @@ class CoreFlowTests(unittest.TestCase):
             collaborate_root = installed / "teamwork-collaborate"
             self.assertIn("`references/experiment.md`", (collaborate_root / "SKILL.md").read_text(encoding="utf-8"))
             self.assertTrue((collaborate_root / "references/experiment.md").is_file())
+
+            goal_root = installed / "teamwork-goal"
+            self.assertIn(
+                "`references/experiment-record.md`",
+                (goal_root / "SKILL.md").read_text(encoding="utf-8"),
+            )
+            self.assertTrue((goal_root / "references/experiment-record.md").is_file())
 
             report_texts = {
                 (installed / skill / "references/report.md").read_text(encoding="utf-8")
@@ -238,12 +250,13 @@ class CoreFlowTests(unittest.TestCase):
                 "plans",
                 "reviews",
                 "reports",
+                "experiments",
             }
         )
         path_kind = re.compile(r"docs/teamwork/([a-z]+)/")
         policy = (ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8")
         folded_policy = self._folded(policy)
-        self.assertIn("`docs/teamwork/<kind>/<YYYY-MM-DD>-<slug>.md`", folded_policy)
+        self.assertIn("`docs/teamwork/<kind>/<slug>.md`", folded_policy)
         self.assertIn("The set is closed", folded_policy)
         self.assertIn("do not invent a new kind", folded_policy)
         self.assertIn("do not write a checkpoint at the `docs/teamwork/` root", folded_policy)
@@ -285,11 +298,15 @@ class CoreFlowTests(unittest.TestCase):
             "docs/teamwork/<kind>/<YYYY-MM-DD>-<slug>.md",
             architecture,
         )
+        self.assertNotIn(
+            "docs/teamwork/<kind>/<slug>.md",
+            architecture,
+        )
         self.assertIn(
             "Reuse the path for the same stable identity",
             self._folded(architecture),
         )
-        meanings = architecture.split("The six meanings are:", 1)[1]
+        meanings = architecture.split("The seven meanings are:", 1)[1]
         meanings = meanings.split("\n## ", 1)[0]
         self.assertEqual(set(re.findall(r"`([a-z]+)/`", meanings)), kinds)
 
@@ -311,6 +328,15 @@ class CoreFlowTests(unittest.TestCase):
 
     def _skill_text(self, name: str) -> str:
         return (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
+
+    @staticmethod
+    def _body_after_frontmatter(text: str) -> str:
+        if not text.startswith("---\n"):
+            return text
+        end = text.find("\n---\n", 4)
+        if end < 0:
+            return text
+        return text[end + 5 :].lstrip("\n")
 
     @staticmethod
     def _folded(text: str) -> str:
@@ -391,6 +417,8 @@ class CoreFlowTests(unittest.TestCase):
             ROOT / "skills/teamwork-collaborate/references/experiment.md"
         ).read_text(encoding="utf-8")
         self.assertIn("condition-gated", experiment)
+        self.assertNotIn("Collaborate turn", experiment)
+        self.assertIn("current work involves", experiment)
         self.assertIn("Main table", experiment)
         self.assertIn("Appendix hygiene", experiment)
         self.assertIn("Exploratory probe", experiment)
@@ -432,6 +460,27 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("Invariants", skill)
         self.assertIn("Attempt Record", skill)
 
+    def test_goal_owns_experiment_persistence(self) -> None:
+        persistence = self._folded(
+            self._persistence_section(self._skill_text("teamwork-goal"))
+        )
+        self.assertIn("docs/teamwork/experiments/<slug>.md", persistence)
+        self.assertIn("references/experiment-record.md", persistence)
+        self.assertIn("claim draft, kill criterion, and budget", persistence)
+        self.assertIn("not a run gate", persistence)
+        self.assertIn("HARKing", persistence)
+        policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
+        self.assertIn("Before occupying scarce compute", policy)
+        self.assertIn("not a gate on an authorized in-budget run", policy)
+        template = (
+            ROOT / "skills/teamwork-goal/references/experiment-record.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("### Probe (minimum to run)", template)
+        self.assertIn("Registered Reports Stage 2", template)
+        self.assertIn("If this claim were false", template)
+        self.assertIn("## Result / tombstone", template)
+        self.assertIn("Append only", template)
+
     def test_review_marks_missing_evidence_unknown_and_names_protected_boundary(self) -> None:
         skill = self._skill_text("teamwork-review")
         self.assertIn("missing evidence is `unknown`", skill)
@@ -462,7 +511,8 @@ class CoreFlowTests(unittest.TestCase):
                 skill = self._skill_text(name)
                 section = self._folded(self._persistence_section(skill))
                 self.assertIn("docs/teamwork/", section)
-                self.assertIn("<YYYY-MM-DD>-<slug>.md", section)
+                self.assertIn("<slug>.md", section)
+                self.assertNotIn("<YYYY-MM-DD>-<slug>.md", section)
                 self.assertIn("references/", section)
                 self.assertIn("Same identity means", section)
                 self.assertIn("reuse that path", section)
@@ -569,6 +619,8 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("Debug", policy)
         self.assertIn("Goal", policy)
         self.assertIn("Review", policy)
+        self.assertIn("Init and Update are", policy)
+        self.assertIn("install and setup methods", policy)
         self.assertIn(
             "they do not replace or take ownership of native interaction surfaces",
             policy,
@@ -1117,8 +1169,6 @@ class CoreFlowTests(unittest.TestCase):
 
         architecture = self._folded((ROOT / "docs/architecture.md").read_text(encoding="utf-8"))
         self.assertIn("policy/teamwork-global.md` is the sole owner", architecture)
-        self.assertIn("Claude Code installs 7 roles", architecture)
-        self.assertIn("Cursor installs 6 roles", architecture)
         self.assertIn("| Surface | Owns | Does not own |", (ROOT / "docs/architecture.md").read_text(encoding="utf-8"))
 
         for name in (

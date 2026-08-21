@@ -1,8 +1,8 @@
 # Experiment (condition-gated)
 
-Enable this reference only when the current Collaborate turn involves experiment
-scheduling, GPU or other scarce compute reservation, or a paper / contribution
-table slot. Skip it for ordinary preference discussion.
+Enable this reference when the current work involves experiment scheduling,
+GPU or other scarce compute reservation, or a paper / contribution table slot.
+Skip it for ordinary preference discussion.
 
 Before running any experiment or applying for / occupying scarce compute,
 write the intended slot so the user can check it at any time:
