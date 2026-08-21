@@ -103,9 +103,10 @@ pretending otherwise.
 
 Adapters enhance native host modes; they do not replace them. Each adapter maps
 onto host capabilities and fills only gaps the host does not provide. Cursor
-yields to host Debug and Explore. Claude yields to Explore. When a host gains a
-matching native capability, the Teamwork surface is removed instead of kept
-alongside it.
+yields to host Debug and Explore. Claude yields to Explore; its Plan mode and
+auto memory stay host-owned editing surfaces rather than Teamwork persistence.
+When a host gains a matching native capability, the Teamwork surface is removed
+instead of kept alongside it.
 
 ```mermaid
 flowchart TD

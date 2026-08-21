@@ -11,6 +11,7 @@ if [[ -n "${TEAMWORK_CODEX_ROUTING:-}" ]]; then
   CODEX_ROUTING_SOURCE="env"
 fi
 CURSOR_SKILL_PROFILE_TOKEN="inherit"
+CLAUDE_SKILL_PROFILE_TOKEN="inherit"
 CODEX_USER_SKILLS_ROOT="$HOME/.agents/skills"
 PKG_VERSION="unknown"
 if [[ -f "$ROOT/VERSION" ]]; then
@@ -80,7 +81,6 @@ Usage:
     cursor|cursor-agents|cursor-policy|cursor-policy-copy
 
   ./install.sh [--copy|--link] [--notifications|--no-notifications] \
-    [--profile performance-first|cost-first] \
     claude|claude-agents|claude-policy
 
   ./install.sh [--copy|--link] [--notifications|--no-notifications] \
@@ -101,7 +101,9 @@ Targets:
                  report Cursor policy as partial
   update         Refresh Teamwork's Codex global surfaces from this checkout
   init-project   Add or refresh one concise Teamwork block in a project's
-                 AGENTS.md without changing global settings
+                 AGENTS.md, plus the small CLAUDE.md import that lets a host
+                 which reads CLAUDE.md load it, without changing global
+                 settings
   codex-agents   Install Teamwork Codex custom agents to ~/.codex/agents
                  and configure their user-level routing unless opted out
   cursor-agents  Compatibility/development: install Teamwork Cursor subagents
@@ -144,17 +146,22 @@ codex-agents separately when that surface needs refresh.
 Codex-routing flags apply to Codex targets only. Cursor and Claude Code
 targets reject --codex-routing and --no-codex-routing.
 
-Profile flags apply to Codex and Claude Code targets only.
-Cursor targets reject --profile, --performance-first, and --cost-first.
-Profile defaults to performance-first for Codex and Claude Code; choose
-cost-first explicitly when needed.
+Profile flags apply to Codex targets only.
+Cursor and Claude Code targets reject --profile, --performance-first, and
+--cost-first.
+Profile defaults to performance-first for Codex; choose cost-first explicitly
+when needed.
 On Codex, performance-first sets the main thread to Terra/xhigh and
 uses Terra/xhigh for Researcher and Planner; Terra/high for Explorer; Sol/xhigh
 for Debugger and Reviewer; Sol/high for Challenger; Sol/medium for Worker; and
 Luna/high for Writer.
 On Codex, cost-first sets the main thread to Luna/high and uses Luna/xhigh for Researcher, Debugger, Planner, and
 Reviewer; and Luna/high for Explorer, Worker, Writer, and Challenger.
-Claude Code keeps its existing compatibility/development profile mapping.
+Claude Code agents pick models by job and ignore --profile: Reviewer pins Opus
+at max effort; Researcher, Debugger, Challenger, and Planner pin Opus at xhigh;
+Worker pins Sonnet at high; Writer pins Sonnet at medium. Claude Code
+skill-root ownership writes `.teamwork-profile` with the host-neutral token
+`inherit`.
 Cursor agents pick models by job: Researcher pins Kimi K3 high for coverage
 and retrieval; the other five roles pin Grok 4.6 Fast for cheap, few-turn
 coding work, with role effort: high for reviewer, planner,
@@ -186,7 +193,7 @@ teamwork_target_is_claude_only() {
 
 teamwork_target_uses_codex_profile() {
   case "${1:-}" in
-    codex|claude|all|update|codex-agents|claude-agents)
+    codex|all|update|codex-agents)
       return 0
       ;;
   esac

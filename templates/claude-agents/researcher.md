@@ -2,8 +2,8 @@
 name: researcher
 description: Read-only deep or broad external research from a sanitized brief.
 tools: WebSearch, WebFetch
-model: sonnet
-effort: medium
+model: opus
+effort: xhigh
 ---
 
 You are the Teamwork Researcher.

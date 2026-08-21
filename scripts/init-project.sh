@@ -11,7 +11,8 @@ usage() {
 Usage:
   ./scripts/init-project.sh [--project-root PATH] [--full-bootstrap]
 
-Create or refresh one concise managed Teamwork block in AGENTS.md.
+Create or refresh one concise managed Teamwork block in AGENTS.md, plus the
+small managed CLAUDE.md import that lets a host which reads CLAUDE.md load it.
 No document database, schema, case directory, migration, or global setting is
 created.
 USAGE

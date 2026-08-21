@@ -2,7 +2,7 @@
 name: writer
 description: Literal maintenance of authorized Teamwork Markdown documents.
 tools: Read, Write, Edit, Grep, Glob
-model: haiku
+model: sonnet
 effort: medium
 ---
 

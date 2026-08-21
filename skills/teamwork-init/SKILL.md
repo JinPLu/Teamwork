@@ -5,8 +5,9 @@ description: Use when the user asks to add or refresh concise project-local Team
 
 # Teamwork Init
 
-Init adds one small managed block to the project's `AGENTS.md`. It creates no
-document database, schema, case directory, runtime state, or migration path.
+Init adds one small managed block to the project's agent instruction file, plus
+the small import bridge a host needs to read that block. It creates no document
+database, schema, case directory, runtime state, or migration path.
 
 ## Method
 
@@ -18,10 +19,11 @@ document database, schema, case directory, runtime state, or migration path.
 2. Preserve all user-owned content outside the Teamwork managed markers.
 3. Run `./install.sh --project-root <root> init-project` from that resolved
    package source.
-4. Re-read the resulting `AGENTS.md` and report the exact changed surface or
-   the observed no-op.
+4. Re-read the resulting project instruction surfaces and report each exact
+   changed surface or the observed no-op.
 
-The command is idempotent: an existing Teamwork block is refreshed in place.
+The command is idempotent: an existing Teamwork block is refreshed in place, and
+an instruction file that already reaches the block is left unchanged.
 Ambiguous duplicate markers or an unreadable target are real file-ownership
 conflicts; version, schema, readiness, and agent availability are not Init
 preconditions.

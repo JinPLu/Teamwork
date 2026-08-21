@@ -41,9 +41,14 @@ POLICY
   cat <<'POLICY'
 
 Plan mode is a read-only permission boundary. Do not write project files during
-that phase. AskUserQuestion batches collect input and do not by themselves
-create a document. After the user approves exiting Plan, write permission
-returns; deliver the accepted result in that same response cycle.
+that phase; the host plan file under `~/.claude/plans/` is a machine-local
+editing surface, not Teamwork persistence. AskUserQuestion batches collect input
+and do not by themselves create a document. When the user approves exiting Plan
+mode, that approval is acceptance of a reusable plan: write permission returns,
+so apply the matching Persistence contract in that same response cycle, then
+continue execution. Auto memory under `~/.claude/projects/<project>/memory/` is
+machine-local and is not Teamwork persistence. This host has no Debug mode; an
+accepted cause or verified fix reached natively is a Debug checkpoint.
 <!-- TEAMWORK_CLAUDE_GLOBAL_END -->
 POLICY
 }

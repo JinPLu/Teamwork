@@ -134,9 +134,10 @@ if [[ "$NOTIFICATIONS_ACTION" != "preserve" ]]; then
   esac
 fi
 
-if teamwork_target_is_cursor_only "$EFFECTIVE_TARGET"; then
+if teamwork_target_is_cursor_only "$EFFECTIVE_TARGET" \
+  || teamwork_target_is_claude_only "$EFFECTIVE_TARGET"; then
   if [[ "$CODEX_PROFILE_SOURCE" == "cli" ]]; then
-    echo "Profile flags are supported only with Codex or Claude Code targets." >&2
+    echo "Profile flags are supported only with Codex targets." >&2
     usage
     exit 2
   fi

@@ -4,6 +4,15 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.12.0 - 2026-08-21
+
+- **Claude Code 现在真的读得到项目说明块。** 这个宿主只读 `CLAUDE.md`，不读 `AGENTS.md`，所以此前 `init-project` 写进 `AGENTS.md` 的那段项目说明在 Claude 会话里从未生效。`init-project` 现在同时写一小段受管的 `@AGENTS.md` 导入；已有的用户内容、已有的导入，以及指向 `AGENTS.md` 的符号链接都原样保留。
+- **Claude 上批准计划会真的落盘。** 批准退出 Plan mode 现在被明确定义为"接受一份可复用计划"，随即在同一响应周期按对应 Persistence 契约写文件。`~/.claude/plans/` 和自动记忆 `~/.claude/projects/<project>/memory/` 被点名为宿主本地编辑面，不是 Teamwork 落盘；本宿主没有 Debug 模式，原生查清的根因或已验证的修复即为 Debug 检查点。
+- **Claude 的 Worker 不再在临时 worktree 里干活。** 此前它的改动落在从默认分支切出的临时副本里，永远到不了你的工作区。
+- **Claude 角色模型按职责重新校准，`--profile` 不再作用于 Claude 目标。** Reviewer 用 Opus max；Researcher、Debugger、Challenger、Planner 用 Opus xhigh（此前是 high，低于宿主默认档）；Worker 用 Sonnet high；Writer 从 Haiku 换到 Sonnet medium——Haiku 4.5 根本不支持 effort，且上下文只有 200K。和 Cursor 一样，Claude 目标现在拒绝 `--profile`。
+
+升级操作：更新到 7.12.0 后，对所用宿主重新运行安装器：Codex 用 `$teamwork-update` 或 `./install.sh`；Cursor 用 `./install.sh cursor`；Claude 用 `./install.sh claude`。用 Claude Code 的已有项目，再跑一次 `./install.sh --project-root <项目路径> init-project`，补上那段导入。
+
 ## 7.11.0 - 2026-08-21
 
 - **常驻全局策略瘦身 28%。** 每次请求都要读的那段策略从 17 段降到 12 段（6519 → 4717 字符），三个宿主同时受益。路由、落盘时机、只读环境下的交付顺序都用回放场景逐条核对过，行为不变。

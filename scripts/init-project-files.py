@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create or refresh Teamwork's small project-local AGENTS.md block."""
+"""Create or refresh Teamwork's small project-local agent instruction block."""
 
 from __future__ import annotations
 
@@ -13,7 +13,11 @@ from pathlib import Path
 
 MANAGED_START = "<!-- TEAMWORK_PROJECT_START -->"
 MANAGED_END = "<!-- TEAMWORK_PROJECT_END -->"
+BRIDGE_START = "<!-- TEAMWORK_CLAUDE_BRIDGE_START -->"
+BRIDGE_END = "<!-- TEAMWORK_CLAUDE_BRIDGE_END -->"
+AGENTS_IMPORT = "@AGENTS.md"
 CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
+CODE_SPAN_RE = re.compile(r"`[^`]*`")
 
 
 class InitError(RuntimeError):
@@ -62,23 +66,36 @@ def managed_block(label: str) -> str:
     )
 
 
-def replace_block(text: str, block: str) -> str:
-    if text.count(MANAGED_START) != text.count(MANAGED_END) or text.count(MANAGED_START) > 1:
+def bridge_block() -> str:
+    return (
+        f"{BRIDGE_START}\n"
+        "<!-- A host that reads CLAUDE.md instead of AGENTS.md gets the project "
+        "block through this import. -->\n"
+        f"{AGENTS_IMPORT}\n"
+        f"{BRIDGE_END}\n"
+    )
+
+
+def replace_block(
+    text: str,
+    block: str,
+    start: str = MANAGED_START,
+    end: str = MANAGED_END,
+    empty_header: str = "# Repository Guidelines\n\n",
+) -> str:
+    if text.count(start) != text.count(end) or text.count(start) > 1:
         raise InitError("Teamwork managed block markers are ambiguous")
-    if MANAGED_START in text:
-        before, rest = text.split(MANAGED_START, 1)
-        _old, after = rest.split(MANAGED_END, 1)
+    if start in text:
+        before, rest = text.split(start, 1)
+        _old, after = rest.split(end, 1)
         return before + block + after.lstrip("\n")
     if not text:
-        return "# Repository Guidelines\n\n" + block
+        return empty_header + block
     return text + ("\n" if text.endswith("\n") else "\n\n") + block
 
 
-def write_agents(root: Path, label: str) -> None:
-    path = root / "AGENTS.md"
-    before = read_text(path)
-    after = replace_block(before, managed_block(label))
-    if after == before:
+def write_managed_file(path: Path, text: str, after: str) -> None:
+    if after == text:
         return
     temporary = path.with_name(f".{path.name}.teamwork-tmp")
     if temporary.exists() or temporary.is_symlink():
@@ -90,10 +107,71 @@ def write_agents(root: Path, label: str) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def write_agents(root: Path, label: str) -> None:
+    path = root / "AGENTS.md"
+    before = read_text(path)
+    write_managed_file(path, before, replace_block(before, managed_block(label)))
+
+
+def bridge_links_to_agents(root: Path) -> bool:
+    """True when CLAUDE.md is a symlink that already resolves to AGENTS.md."""
+    path = root / "CLAUDE.md"
+    if not path.is_symlink():
+        return False
+    try:
+        target = path.resolve(strict=True)
+    except OSError as exc:
+        raise InitError(f"CLAUDE.md is a broken symlink: {path}") from exc
+    if target != (root / "AGENTS.md").resolve():
+        raise InitError(f"CLAUDE.md is a symlink outside Teamwork ownership: {path}")
+    return True
+
+
+def has_agents_import(text: str) -> bool:
+    """True when an import of AGENTS.md is already active outside code."""
+    fenced = False
+    for line in text.splitlines():
+        if line.strip().startswith("```"):
+            fenced = not fenced
+            continue
+        if fenced:
+            continue
+        if AGENTS_IMPORT in CODE_SPAN_RE.sub("", line):
+            return True
+    return False
+
+
+def bridge_plan(root: Path) -> tuple[Path, str, str] | None:
+    """Return (path, before, after) for the bridge, or None when nothing to do."""
+    if bridge_links_to_agents(root):
+        return None
+    path = root / "CLAUDE.md"
+    before = read_text(path)
+    if BRIDGE_START not in before and has_agents_import(before):
+        return None
+    return path, before, replace_block(
+        before, bridge_block(), BRIDGE_START, BRIDGE_END, ""
+    )
+
+
+def write_claude_bridge(root: Path) -> None:
+    planned = bridge_plan(root)
+    if planned is None:
+        return
+    write_managed_file(*planned)
+
+
 def validate(root: Path) -> None:
     text = read_text(root / "AGENTS.md")
     if text.count(MANAGED_START) != 1 or text.count(MANAGED_END) != 1:
         raise InitError("AGENTS.md Teamwork managed block is missing or ambiguous")
+    if bridge_links_to_agents(root):
+        return
+    bridge = read_text(root / "CLAUDE.md")
+    if bridge.count(BRIDGE_START) != bridge.count(BRIDGE_END) or bridge.count(BRIDGE_START) > 1:
+        raise InitError("CLAUDE.md Teamwork bridge markers are ambiguous")
+    if not has_agents_import(bridge):
+        raise InitError("CLAUDE.md does not import AGENTS.md")
 
 
 def parser() -> argparse.ArgumentParser:
@@ -120,8 +198,10 @@ def main() -> int:
         elif arguments.action == "preflight":
             text = read_text(root / "AGENTS.md")
             replace_block(text, managed_block(project_label(root, None)))
+            bridge_plan(root)
         elif arguments.action in {"initialize", "refresh-context"}:
             write_agents(root, project_label(root, arguments.project_label))
+            write_claude_bridge(root)
             validate(root)
         else:
             validate(root)

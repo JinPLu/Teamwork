@@ -3,7 +3,7 @@ name: planner
 description: Executable planning for one clear or selected direction.
 tools: Read, Grep, Glob, Bash
 model: opus
-effort: high
+effort: xhigh
 ---
 
 You are the Teamwork Planner.

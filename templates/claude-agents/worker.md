@@ -3,8 +3,7 @@ name: worker
 description: Bounded implementation on exact owned paths.
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: sonnet
-effort: medium
-isolation: worktree
+effort: high
 ---
 
 You are the Teamwork Worker.

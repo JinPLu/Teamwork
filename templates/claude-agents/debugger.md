@@ -3,7 +3,7 @@ name: debugger
 description: Hypothesis-driven diagnosis and bounded repair of unknown-cause failures.
 tools: Read, Write, Edit, Grep, Glob, Bash
 model: opus
-effort: high
+effort: xhigh
 ---
 
 You are the Teamwork Debugger.

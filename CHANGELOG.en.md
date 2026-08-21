@@ -4,6 +4,15 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.12.0 - 2026-08-21
+
+- **Claude Code can finally see the project instruction block.** That host reads `CLAUDE.md`, not `AGENTS.md`, so the project block `init-project` wrote into `AGENTS.md` never reached a Claude session. `init-project` now also writes a small managed `@AGENTS.md` import. Existing user content, an existing import, and a `CLAUDE.md` symlinked to `AGENTS.md` are all left alone.
+- **Approving a plan on Claude now produces a record.** Approving exit from Plan mode is stated as acceptance of a reusable plan, which applies the matching Persistence contract in that same response cycle. `~/.claude/plans/` and auto memory under `~/.claude/projects/<project>/memory/` are named as host-local editing surfaces rather than Teamwork persistence; this host has no Debug mode, so a natively reached cause or verified fix is a Debug checkpoint.
+- **The Claude Worker no longer works in a temporary worktree.** Its edits used to land in a throwaway copy branched from the default branch, so they never reached your checkout.
+- **Claude role models re-tuned by job, and `--profile` no longer applies to Claude targets.** Reviewer runs Opus at max; Researcher, Debugger, Challenger, and Planner run Opus at xhigh (previously high, a rung below the host default); Worker runs Sonnet at high; Writer moves from Haiku to Sonnet at medium, because Haiku 4.5 does not support effort at all and caps at 200K context. As on Cursor, Claude targets now reject `--profile`.
+
+Upgrade action: after updating to 7.12.0, re-run the installer for the host you use: Codex with `$teamwork-update` or `./install.sh`; Cursor with `./install.sh cursor`; Claude with `./install.sh claude`. For an existing project you open in Claude Code, also run `./install.sh --project-root <project-path> init-project` to add the import.
+
 ## 7.11.0 - 2026-08-21
 
 - **The standing global policy is 28% smaller.** The block every request reads went from 17 paragraphs to 12 (6519 → 4717 characters), on all three hosts. Routing, checkpoint timing, and delivery order under a read-only environment were checked scenario by scenario against replay; behavior is unchanged.

@@ -63,23 +63,23 @@ codex_agent_profile_values() {
   esac
 }
 
-claude_agent_profile_values() {
+claude_agent_model_values() {
   local agent="$1"
-  case "$CODEX_PROFILE:$agent" in
-    performance-first:researcher|performance-first:worker)
-      printf '%s %s\n' "sonnet" "medium"
-      ;;
-    performance-first:writer|cost-first:researcher|cost-first:worker|cost-first:writer)
-      printf '%s %s\n' "haiku" "medium"
-      ;;
-    performance-first:debugger|performance-first:challenger|performance-first:planner|cost-first:debugger|cost-first:challenger|cost-first:planner)
-      printf '%s %s\n' "opus" "high"
-      ;;
-    performance-first:reviewer|cost-first:reviewer)
+  case "$agent" in
+    reviewer)
       printf '%s %s\n' "opus" "max"
       ;;
+    researcher|debugger|challenger|planner)
+      printf '%s %s\n' "opus" "xhigh"
+      ;;
+    worker)
+      printf '%s %s\n' "sonnet" "high"
+      ;;
+    writer)
+      printf '%s %s\n' "sonnet" "medium"
+      ;;
     *)
-      echo "Unsupported Claude role/profile mapping: $CODEX_PROFILE:$agent" >&2
+      echo "Unsupported Claude role: $agent" >&2
       return 1
       ;;
   esac
@@ -148,38 +148,26 @@ install_claude_agent_file() {
   local source="$1"
   local dest="$2"
   local agent="$3"
-  local model effort tmp
+  local model effort
 
-  read -r model effort < <(claude_agent_profile_values "$agent")
+  read -r model effort < <(claude_agent_model_values "$agent")
   require_single_profile_field "$source" '^name: [a-z-]+$' "Claude name"
   require_single_profile_field "$source" '^tools: .+$' "Claude tools"
   require_single_profile_field "$source" '^model: (haiku|sonnet|opus)$' "Claude model"
-  require_single_profile_field "$source" '^effort: (medium|high|max)$' "Claude effort"
+  require_single_profile_field "$source" '^effort: (low|medium|high|xhigh|max)$' "Claude effort"
   grep -Fqx "name: $agent" "$source" || {
     echo "Claude profile identity does not match $agent: $source" >&2
     return 1
   }
-  rm -f "$dest"
-  mkdir -p "$(dirname "$dest")"
-
-  if [[ "$INSTALL_MODE" == "link" && "$CODEX_PROFILE" == "performance-first" ]]; then
-    grep -Fqx "model: $model" "$source"
-    grep -Fqx "effort: $effort" "$source"
-    ln -sfn "$source" "$dest"
-    return 0
-  fi
-
-  tmp="$(mktemp)"
-  sed \
-    -e "s/^model: .*/model: $model/" \
-    -e "s/^effort: .*/effort: $effort/" \
-    "$source" > "$tmp"
-  if ! grep -Fqx "model: $model" "$tmp" || ! grep -Fqx "effort: $effort" "$tmp"; then
-    rm -f "$tmp"
-    echo "Failed to render Claude role/profile mapping: $CODEX_PROFILE:$agent" >&2
+  grep -Fqx "model: $model" "$source" || {
+    echo "Claude profile model does not match $agent: $source" >&2
     return 1
-  fi
-  mv "$tmp" "$dest"
+  }
+  grep -Fqx "effort: $effort" "$source" || {
+    echo "Claude profile effort does not match $agent: $source" >&2
+    return 1
+  }
+  install_agent_file "$source" "$dest"
 }
 
 cursor_agent_model_value() {
@@ -237,7 +225,7 @@ install_claude_agent_set() {
       "$agent"
   done
 
-  echo "Installed $label Claude agents under: $dest_root ($INSTALL_MODE, $CODEX_PROFILE)"
+  echo "Installed $label Claude agents under: $dest_root ($INSTALL_MODE, pinned role models + effort)"
 }
 
 install_cursor_agent_set() {

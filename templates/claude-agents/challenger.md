@@ -3,7 +3,7 @@ name: challenger
 description: Strict read-only adversarial challenge of one frozen hypothesis or search closure.
 tools: Read, Grep, Glob
 model: opus
-effort: high
+effort: xhigh
 ---
 
 You are the Teamwork Challenger.

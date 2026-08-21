@@ -239,7 +239,65 @@ class CoreFlowTests(unittest.TestCase):
                 "Chat, host plans, and todos are not cross-session memory",
                 agents,
             )
+            bridge = (project / "CLAUDE.md").read_text(encoding="utf-8")
+            self.assertEqual(bridge.count("<!-- TEAMWORK_CLAUDE_BRIDGE_START -->"), 1)
+            self.assertEqual(bridge.count("<!-- TEAMWORK_CLAUDE_BRIDGE_END -->"), 1)
+            self.assertIn("@AGENTS.md", bridge)
             self.assertFalse((project / "docs/teamwork").exists())
+
+    def test_project_init_bridges_agents_into_claude_md(self) -> None:
+        """This host reads CLAUDE.md, so the AGENTS.md block needs an import."""
+        script = str(ROOT / "scripts/init-project-files.py")
+
+        def initialize(project: Path) -> None:
+            subprocess.run(
+                [sys.executable, script, "--project-root", str(project), "initialize"],
+                check=True,
+            )
+
+        with tempfile.TemporaryDirectory() as raw:
+            base = Path(raw)
+
+            keeps = base / "keeps-user-content"
+            keeps.mkdir()
+            (keeps / "CLAUDE.md").write_text("# Mine\n\nUse pnpm.\n", encoding="utf-8")
+            initialize(keeps)
+            bridge = (keeps / "CLAUDE.md").read_text(encoding="utf-8")
+            self.assertIn("# Mine", bridge)
+            self.assertIn("Use pnpm.", bridge)
+            self.assertEqual(bridge.count("@AGENTS.md"), 1)
+
+            existing = base / "already-imports"
+            existing.mkdir()
+            (existing / "CLAUDE.md").write_text("@AGENTS.md\n", encoding="utf-8")
+            initialize(existing)
+            self.assertEqual(
+                (existing / "CLAUDE.md").read_text(encoding="utf-8"), "@AGENTS.md\n"
+            )
+
+            linked = base / "symlinked"
+            linked.mkdir()
+            (linked / "AGENTS.md").write_text("# Shared\n", encoding="utf-8")
+            (linked / "CLAUDE.md").symlink_to("AGENTS.md")
+            initialize(linked)
+            self.assertTrue((linked / "CLAUDE.md").is_symlink())
+            subprocess.run(
+                [sys.executable, script, "--project-root", str(linked), "validate"],
+                check=True,
+            )
+
+            quoted = base / "mentions-only"
+            quoted.mkdir()
+            (quoted / "CLAUDE.md").write_text(
+                "See `@AGENTS.md`.\n\n```\n@AGENTS.md\n```\n", encoding="utf-8"
+            )
+            initialize(quoted)
+            self.assertEqual(
+                (quoted / "CLAUDE.md").read_text(encoding="utf-8").count(
+                    "<!-- TEAMWORK_CLAUDE_BRIDGE_START -->"
+                ),
+                1,
+            )
 
     def test_document_kind_set_is_closed(self) -> None:
         kinds = frozenset(
@@ -676,10 +734,21 @@ class CoreFlowTests(unittest.TestCase):
         self.assertNotIn("debugger and reviewer", cursor)
         self.assertIn("AskUserQuestion", claude)
         self.assertIn("host Plan", claude)
-        self.assertIn("read-only permission boundary", claude)
-        self.assertIn("approves exiting Plan", claude)
-        self.assertIn("write permission returns", claude)
         self.assertIn("Task/Agent helper role", claude)
+        self.assertIn("machine-local rather than Teamwork persistence", claude)
+        self.assertIn("`~/.claude/plans/`", claude)
+        self.assertIn("auto memory", claude)
+        self.assertIn("reads `CLAUDE.md` and not `AGENTS.md`", claude)
+        self.assertIn("@AGENTS.md", claude)
+        self.assertIn("ignore `--profile`", claude)
+        claude_wrapper = self._folded(
+            (ROOT / "scripts/install/policy.sh").read_text(encoding="utf-8")
+        )
+        self.assertIn("read-only permission boundary", claude_wrapper)
+        self.assertIn("acceptance of a reusable plan", claude_wrapper)
+        self.assertIn("apply the matching Persistence contract", claude_wrapper)
+        self.assertIn("not Teamwork persistence", claude_wrapper)
+        self.assertIn("This host has no Debug mode", claude_wrapper)
         self.assertIn("CreatePlan and host Plan drafts are editable candidates", cursor)
         self.assertIn("User confirmation or Build is acceptance", cursor)
         self.assertIn("minimum shared bridge", cursor)
@@ -732,6 +801,61 @@ class CoreFlowTests(unittest.TestCase):
                     if line.startswith("model:")
                 ]
                 self.assertEqual(lines, [model_line], path)
+
+    def test_claude_agents_pin_models_by_role_without_a_profile(self) -> None:
+        expected = {
+            "researcher": ("opus", "xhigh"),
+            "planner": ("opus", "xhigh"),
+            "debugger": ("opus", "xhigh"),
+            "challenger": ("opus", "xhigh"),
+            "reviewer": ("opus", "max"),
+            "worker": ("sonnet", "high"),
+            "writer": ("sonnet", "medium"),
+        }
+        for role in expected:
+            source = (ROOT / f"templates/claude-agents/{role}.md").read_text(
+                encoding="utf-8"
+            )
+            self.assertNotIn("isolation:", source, role)
+        with tempfile.TemporaryDirectory() as raw:
+            env = os.environ.copy()
+            env["HOME"] = raw
+            env.pop("TEAMWORK_CODEX_PROFILE", None)
+            result = subprocess.run(
+                [str(ROOT / "install.sh"), "--copy", "claude-agents"],
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("pinned role models + effort", result.stdout)
+            self.assertNotIn("performance-first", result.stdout)
+            agent_root = Path(raw) / ".claude/agents"
+            self.assertEqual(
+                sorted(path.stem for path in agent_root.glob("*.md")),
+                sorted(expected),
+            )
+            for role, (model, effort) in expected.items():
+                path = agent_root / f"{role}.md"
+                pinned = [
+                    line
+                    for line in path.read_text(encoding="utf-8").splitlines()
+                    if line.startswith(("model:", "effort:", "isolation:"))
+                ]
+                self.assertEqual(pinned, [f"model: {model}", f"effort: {effort}"], path)
+
+            rejected = subprocess.run(
+                [str(ROOT / "install.sh"), "--profile", "cost-first", "claude-agents"],
+                env=env,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertEqual(rejected.returncode, 2, rejected.stdout)
+            self.assertIn(
+                "Profile flags are supported only with Codex targets", rejected.stderr
+            )
 
     def test_install_cursor_refreshes_existing_claude_skill_root(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
@@ -954,7 +1078,7 @@ class CoreFlowTests(unittest.TestCase):
         method = self._folded(texts["plan_method"])
         skill = self._folded(texts["plan_skill"])
         cursor = self._folded(texts["cursor"])
-        claude = self._folded(texts["claude"])
+        claude_wrapper = self._folded(texts["claude_wrapper"])
         architecture = self._folded(texts["architecture"])
 
         invoke_not_checkpoint = "does not complete a Skill checkpoint" in policy
@@ -975,7 +1099,7 @@ class CoreFlowTests(unittest.TestCase):
         independent = "independent reusable preference decision" in policy
         delayed = (
             "write permission returns" in policy
-            and "read-only permission boundary" in claude
+            and "read-only permission boundary" in claude_wrapper
             and "temporarily read-only" in policy
         )
         not_first_todo = "does not replace the next real action" in policy
@@ -986,17 +1110,21 @@ class CoreFlowTests(unittest.TestCase):
         report_fail = "document was not delivered" in policy
         cursor_candidate = "editable candidates" in cursor
         cursor_accept = "User confirmation or Build is acceptance" in cursor
+        claude_accept = (
+            "acceptance of a reusable plan" in claude_wrapper
+            and "apply the matching Persistence contract" in claude_wrapper
+        )
 
         if event in {"plan_draft", "plan_reject"}:
             if invoke_not_checkpoint and draft_skip and cursor_candidate:
                 return "no_write"
             return "write"
         if event == "plan_accept_new":
-            if accepted_applies and user_accept and cursor_accept:
+            if accepted_applies and user_accept and cursor_accept and claude_accept:
                 return "create_plan_record"
             return "no_write"
         if event == "readonly_then_approve":
-            if delayed and accepted_applies:
+            if delayed and accepted_applies and claude_accept:
                 return "deliver_after_permission"
             return "bypass_readonly"
         if event == "material_replan_accept":
@@ -1035,6 +1163,9 @@ class CoreFlowTests(unittest.TestCase):
             "plan_skill": self._skill_text("teamwork-plan"),
             "cursor": (ROOT / "CURSOR.md").read_text(encoding="utf-8"),
             "claude": (ROOT / "CLAUDE.md").read_text(encoding="utf-8"),
+            "claude_wrapper": (
+                ROOT / "scripts/install/policy.sh"
+            ).read_text(encoding="utf-8"),
             "codex": (ROOT / "CODEX.md").read_text(encoding="utf-8"),
             "architecture": (ROOT / "docs/architecture.md").read_text(encoding="utf-8"),
         }
@@ -1080,6 +1211,11 @@ class CoreFlowTests(unittest.TestCase):
                     "read-only permission boundary",
                     "AskUserQuestion batches collect input",
                     "approves exiting Plan",
+                    "acceptance of a reusable plan",
+                    "apply the matching Persistence contract",
+                    "`~/.claude/plans/` is a machine-local",
+                    "not Teamwork persistence",
+                    "no Debug mode",
                     "user-accepted reusable semantic result",
                 ),
                 "codex-policy": (
@@ -1123,6 +1259,7 @@ class CoreFlowTests(unittest.TestCase):
             codex_md = (home / ".codex/AGENTS.md").read_text(encoding="utf-8")
             self.assertIn("read-only permission boundary", claude_md)
             self.assertIn("approves exiting Plan", claude_md)
+            self.assertIn("acceptance of a reusable plan", self._folded(claude_md))
             self.assertIn("candidates until the user approves them", codex_md)
             self.assertIn("`$name`", codex_md)
             self.assertIn("user-accepted reusable semantic result", claude_md)
@@ -1149,6 +1286,9 @@ class CoreFlowTests(unittest.TestCase):
                 "User-accepted reusable results live under `docs/teamwork/<kind>/`",
                 agents,
             )
+            bridge = (project / "CLAUDE.md").read_text(encoding="utf-8")
+            self.assertEqual(bridge.count("<!-- TEAMWORK_CLAUDE_BRIDGE_START -->"), 1)
+            self.assertIn("@AGENTS.md", bridge)
             self.assertFalse((project / "docs/teamwork").exists())
             self.assertFalse((home / "docs/teamwork").exists())
 
