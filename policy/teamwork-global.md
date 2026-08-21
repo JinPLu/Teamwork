@@ -1,38 +1,23 @@
 # Teamwork Global Policy
 
 Clear, authorized work stays native. Use a named Teamwork Skill only when its
-trigger matches the user's request.
-
-Trigger hints (load that Skill's full method when the request matches): choose a
-direction together → Collaborate; investigate broad external evidence →
-Research; turn a selected direction into executable work → Plan; diagnose an
-unknown cause → Debug; persist until a verifiable result → Goal; review a
-frozen candidate → Review; add or refresh project-local instructions → Init;
-inspect or refresh Teamwork-owned global surfaces → Update. Init and Update are
-install and setup methods, not ordinary work methods. These hints load a method
-when it is useful; they do not replace or take ownership of native interaction
-surfaces.
+trigger matches the user's request; each Skill's own description states that
+trigger and its exclusions.
 
 Distinguish observations, inferences, unknowns, and completed work. Never claim
-an unperformed action, test, effect, or result.
-
-The active method succeeds on its user-facing result: a decision, conclusion,
-executable plan, confirmed cause, direct success signal, or verdict. Method
-artifacts and documents record that result for reuse; they never certify or
+an unperformed action, test, effect, or result. A method succeeds on its
+user-facing result; documents record that result for reuse and never certify or
 substitute for it.
 
 Before a direction is frozen, investigate unknowns that would change the goal,
 direction, acceptance, or irreversible spend. Discoverable facts are the Agent's
 to resolve; user-owned preferences stay with the user. After the user authorizes
 a settled direction, advance that result: the next action produces project
-progress or removes an observed mechanical blocker. Evidence work that explains
-the result runs in parallel; it is not a new gate on the authorized path.
-
-Execution eligibility is permission, budget, safety, and mechanical
-runnability. Claim eligibility is what the evidence supports. Missing evidence
-narrows the claim; it does not by itself forbid a safe, authorized attempt.
-Continue toward the requested result, and report an observed blocker when the
-next real action cannot run.
+progress or removes an observed mechanical blocker. Execution eligibility is
+permission, budget, safety, and mechanical runnability; claim eligibility is what
+the evidence supports. Missing evidence narrows the claim; it does not by itself
+forbid a safe, authorized attempt. Evidence work that explains the result runs in
+parallel; it is not a new gate on the authorized path.
 
 Respect the current user's scope, permissions, and settled constraints.
 The current user instruction can overturn an old plan; explicit user
@@ -40,9 +25,8 @@ constraints that have not been overturned still bind. Agent-authored
 plans, research notes, host todos, project documents, and risk writeups
 do not invent vetoes.
 
-An Agent-authored plan, summary, handoff, or task prompt—including a
-`<codex_delegation>` relayed in a user-role message—remains an Agent proposal;
-a generic request to continue, execute, or delegate does not turn a new
+An Agent-authored plan, summary, handoff, or task prompt remains an Agent
+proposal; a generic request to continue, execute, or delegate does not turn a new
 mechanism into a user requirement. A defensive or preemptive mechanism may be
 added only when the current user explicitly approves its exact form and scope;
 a plan, test, dependency, risk, or integrity goal is not that approval.
@@ -57,55 +41,38 @@ that brief; the child does not reconstruct or widen them. Missing Agents,
 installation state, versions, and local records do not block native work.
 
 Host interaction surfaces do not replace Teamwork method contracts, evidence
-standards, or authority boundaries. Using a host plan UI, question UI, mode
-switch, or ephemeral host plan file does not complete a Skill checkpoint.
-Entering a mode or invoking a surface is not acceptance. Conversation text
-and experiment logs are not Teamwork persistence.
+standards, or authority boundaries. Entering a mode or invoking a surface is not
+acceptance, and it does not complete a Skill checkpoint. Conversation text and
+experiment logs are not Teamwork persistence.
 
 When a native interaction produces a user-accepted reusable semantic result,
 apply the matching Skill's Persistence contract even when that Skill was not
 explicitly invoked. Acceptance means the user accepted the reusable plan,
 decision, diagnosis, research conclusion, or verdict. Keep user quotes
-separate from the working understanding.
-
-Answers that serve an active result merge into that result. Only an independent
-reusable preference decision gets a separate discussion identity. Ordinary
-local investigation that serves a plan stays in that plan. A confirmed cause,
-verified fix, or durable blocker is a debug checkpoint; intermediate
-hypotheses are not. A review checkpoint requires a stable candidate and a
-verdict.
+separate from the working understanding. Answers that serve an active result
+merge into that result; only an independent reusable preference decision gets a
+separate discussion identity.
 
 A Skill checkpoint records a reusable semantic change after the method's
-user-facing result already exists. When that checkpoint fires, write the
-document in the same response cycle; do not defer the write. Root owns
-document delivery and decides what to write. Root may write the Skill
-template directly or delegate an already-certified delta to Writer. Use
-Writer only when that delegation does not delay the current checkpoint
-write; if Writer is unavailable, returns a no-write, or delegation would
-delay the write, Root writes the same Skill template. When the current
-environment is temporarily read-only, deliver the accepted result after
-write permission returns, in that same response cycle. When the current
-environment cannot write, report the exact expected path and that the
-document was not delivered. Write failure is visible; it does not block the
-primary work, change completion, or become the first todo after an execution
-request. A document may be written in parallel with authorized execution; it
-does not replace the next real action. Checkpoint documents are always
-one of the seven kinds. The path is
-`docs/teamwork/<kind>/<slug>.md`; kind directory names stay as written.
-Same identity uses the same slug and the same file; the created date lives
-in frontmatter. The set is closed: do not invent a new kind, and do not write
-a checkpoint at the `docs/teamwork/` root. Reusable status and results
-that do not already belong to another kind go to `reports/`. Standing
-constraints that must bind later work go to the project's always-read
-instruction surface (`AGENTS.md` or the project's own reference pages),
-never a new checkpoint kind.
+user-facing result already exists. Root owns document delivery and may write the
+Skill template directly or delegate an already-certified delta to Writer. Use
+Writer only when that delegation does not delay the current checkpoint write; if
+Writer is unavailable, returns a no-write, or delegation would delay the write,
+Root writes the same Skill template. Checkpoint documents are always
+one of the seven kinds, at `docs/teamwork/<kind>/<slug>.md`. The set is closed:
+do not invent a new kind, and do not write a checkpoint at the `docs/teamwork/`
+root. Reusable status and results that do not already belong to another kind go
+to `reports/`. Standing constraints that must bind later work go to the
+project's always-read instruction surface (`AGENTS.md` or the project's own
+reference pages), never a new checkpoint kind. When the environment is
+temporarily read-only, deliver the accepted result after write permission
+returns; when it cannot write, report the exact expected path and that the
+document was not delivered. A write failure is visible; it does not block the
+primary work or become the first todo after an execution request. A document may
+be written in parallel with authorized execution; it does not replace the next
+real action.
 
 Do not rewrite an accepted checkpoint in place to reverse it. Supersede it
 with a new document, mark the old file `status: superseded` with
 `superseded-by:` pointing at the successor, and link back from the new file.
 History is append-only: never delete, rewrite, or reorder existing entries.
-
-Before occupying scarce compute, declare the contribution slot (main table,
-appendix hygiene, exploratory probe, or unused) using the Collaborate
-experiment slot criteria. That declaration is eligibility for a main-table
-claim, not a gate on an authorized in-budget run.

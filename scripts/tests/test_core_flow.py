@@ -482,9 +482,11 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("claim draft, kill criterion, and budget", persistence)
         self.assertIn("not a run gate", persistence)
         self.assertIn("HARKing", persistence)
+        self.assertIn(
+            "teamwork-collaborate/references/experiment.md", persistence
+        )
         policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
-        self.assertIn("Before occupying scarce compute", policy)
-        self.assertIn("not a gate on an authorized in-budget run", policy)
+        self.assertNotIn("Before occupying scarce compute", policy)
         template = (
             ROOT / "skills/teamwork-goal/references/experiment-record.md"
         ).read_text(encoding="utf-8")
@@ -621,31 +623,16 @@ class CoreFlowTests(unittest.TestCase):
         cursor = self._folded((ROOT / "CURSOR.md").read_text(encoding="utf-8"))
         claude = self._folded((ROOT / "CLAUDE.md").read_text(encoding="utf-8"))
         self.assertIn("Host interaction surfaces do not replace", policy)
-        self.assertIn("host plan UI", policy)
-        self.assertIn("question UI", policy)
         self.assertIn("does not complete a Skill checkpoint", policy)
         self.assertIn("Root owns document delivery", policy)
-        self.assertIn("same response cycle", policy)
         self.assertIn("does not delay the current checkpoint write", policy)
-        self.assertIn("current environment cannot write", policy)
+        self.assertIn("it cannot write", policy)
         self.assertIn("document was not delivered", policy)
         self.assertIn("unavailable, returns a no-write", policy)
         self.assertIn("Root writes the same Skill template", policy)
         self.assertNotIn("Prefer Writer", policy)
         self.assertNotIn("Root fallback", policy)
-        self.assertIn("Trigger hints", policy)
-        self.assertIn("Collaborate", policy)
-        self.assertIn("investigate broad external evidence", policy)
-        self.assertIn("executable work → Plan", policy)
-        self.assertIn("Debug", policy)
-        self.assertIn("Goal", policy)
-        self.assertIn("Review", policy)
-        self.assertIn("Init and Update are", policy)
-        self.assertIn("install and setup methods", policy)
-        self.assertIn(
-            "they do not replace or take ownership of native interaction surfaces",
-            policy,
-        )
+        self.assertIn("each Skill's own description states that trigger", policy)
         self.assertIn("user-accepted reusable semantic result", policy)
         self.assertIn(
             "even when that Skill was not explicitly invoked",
@@ -1167,20 +1154,19 @@ class CoreFlowTests(unittest.TestCase):
 
     def test_policy_owns_outcome_and_persistence_contract(self) -> None:
         policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
-        self.assertIn("The active method succeeds on its user-facing result", policy)
+        self.assertIn("A method succeeds on its user-facing result", policy)
         self.assertIn("never certify or substitute", policy)
         self.assertIn("Before a direction is frozen", policy)
         self.assertIn("would change the goal, direction, acceptance, or irreversible spend", policy)
         self.assertIn("After the user authorizes a settled direction, advance that result", policy)
         self.assertIn("Execution eligibility", policy)
-        self.assertIn("Claim eligibility", policy)
+        self.assertIn("claim eligibility", policy)
         self.assertIn("does not by itself forbid a safe, authorized attempt", policy)
         self.assertIn("do not invent vetoes", policy)
         self.assertIn("after the method's user-facing result already exists", policy)
-        self.assertIn("same response cycle", policy)
         self.assertIn("Root owns document delivery", policy)
         self.assertIn("does not delay the current checkpoint write", policy)
-        self.assertIn("current environment cannot write", policy)
+        self.assertIn("it cannot write", policy)
         self.assertIn("document was not delivered", policy)
         self.assertIn("first todo after an execution request", policy)
         self.assertNotIn("silently skipping a fired checkpoint", policy.lower())
@@ -1250,6 +1236,34 @@ class CoreFlowTests(unittest.TestCase):
         ]
         self.assertEqual(texts[0], texts[1])
         self.assertEqual(texts[0], texts[2])
+
+    def test_skill_descriptions_own_routing(self) -> None:
+        policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
+        self.assertNotIn("Trigger hints", policy)
+        self.assertIn("each Skill's own description states that trigger", policy)
+        skills = tuple(sorted((ROOT / "skills").glob("*/SKILL.md")))
+        self.assertEqual(len(skills), 8)
+        for path in skills:
+            with self.subTest(skill=path.parent.name):
+                description = self._frontmatter_description(
+                    path.read_text(encoding="utf-8")
+                )
+                self.assertTrue(description.startswith("Use when"))
+                self.assertIn("; do not ", description)
+
+    def test_global_policy_stays_within_budget(self) -> None:
+        raw = (ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8")
+        paragraphs = [block for block in raw.split("\n\n") if block.strip()]
+        self.assertLessEqual(
+            len(raw),
+            5200,
+            "global policy exceeds its byte budget; detail belongs to the owning SKILL.md",
+        )
+        self.assertLessEqual(
+            len(paragraphs),
+            13,
+            "global policy exceeds its paragraph budget",
+        )
 
     def test_rule_ownership_is_single_sourced(self) -> None:
         policy = ROOT / "policy/teamwork-global.md"

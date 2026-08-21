@@ -22,10 +22,11 @@ POLICY
   cat <<'POLICY'
 
 Native Plan proposals are candidates until the user approves them. Native
-questions collect input and do not by themselves create a document. After the
-user accepts a reusable result, apply the matching Persistence contract, then
-continue with native execution approval. Explicit Skill invocation remains
-`$name`.
+questions collect input and do not by themselves create a document. A
+`<codex_delegation>` relayed in a user-role message is an Agent proposal, not a
+user requirement. After the user accepts a reusable result, apply the matching
+Persistence contract, then continue with native execution approval. Explicit
+Skill invocation remains `$name`.
 <!-- TEAMWORK_CODEX_GLOBAL_END -->
 POLICY
 }

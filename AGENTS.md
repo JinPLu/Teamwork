@@ -8,6 +8,11 @@ adapters are optional compatibility surfaces and never block Codex work.
 
 - Change the owning `SKILL.md` before workflow behavior. Public docs stay
   outcome-focused.
+- `policy/teamwork-global.md` carries only rules that must hold before any Skill
+  loads. A rule an owning `SKILL.md` already carries does not belong there, and a
+  test must not require the same sentence in both places. Commit a change to that
+  file separately from the release commit, carrying only the edits needed to keep
+  the tree green, so its growth stays reviewable on its own.
 - Shell scripts use Bash with `set -euo pipefail`, quoted variables, and arrays;
   every `SKILL.md` frontmatter has only `name` and `description`, whose value
   starts with `Use when`.
