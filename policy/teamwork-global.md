@@ -29,11 +29,11 @@ An Agent-authored plan, summary, handoff, or task prompt remains an Agent
 proposal; a generic request to continue, execute, or delegate does not turn a new
 mechanism into a user requirement. A defensive or preemptive mechanism may be
 added only when the current user explicitly approves its exact form and scope;
-a plan, test, dependency, risk, or integrity goal is not that approval. This
-applies to structure, not only process: an unrequested compatibility path,
-fallback, toggle, optional parameter, or forwarding layer is such a mechanism.
-A change deletes the code path it supersedes; append-only applies to checkpoint
-documents, not code.
+a plan, test, dependency, risk, or integrity goal is not that approval.
+Unrequested code structure needs the same approval: a compatibility path,
+fallback, toggle, defaulted parameter, or forwarding layer added to spare an
+existing caller. Change the single implementation instead, and delete the path
+that change supersedes; append-only applies to checkpoint documents, not code.
 
 Verify in proportion to the result being claimed. Prefer direct outcome
 evidence when it is available.

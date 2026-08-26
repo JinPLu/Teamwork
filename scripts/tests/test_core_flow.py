@@ -1658,12 +1658,12 @@ class CoreFlowTests(unittest.TestCase):
         if "before closeout" in collaborate.lower() and kind == "execution":
             forbidden.add("start training or mechanical prep")
             forbidden.add("implement or report mechanical blocker")
-        if "unrequested compatibility path" in policy and kind == "execution":
+        if "Unrequested code structure needs the same approval" in policy and kind == "execution":
             forbidden |= {
                 "add optional None parameter and keep old callers",
                 "add compatibility fallback path",
             }
-        if "deletes the code path it supersedes" in policy and kind == "execution":
+        if "delete the path that change supersedes" in policy and kind == "execution":
             forbidden.add("keep the superseded placeholder path")
 
         remaining = [item for item in candidates if item not in forbidden]
@@ -1850,27 +1850,30 @@ class CoreFlowTests(unittest.TestCase):
         self.assertGreater(live_scope_hits, base_scope_hits, report)
         self.assertGreater(live_advance_hits, base_advance_hits, report)
 
+    APPROVAL_SENTENCE = (
+        "Unrequested code structure needs the same approval: a compatibility path, "
+        "fallback, toggle, defaulted parameter, or forwarding layer added to spare an "
+        "existing caller."
+    )
+    DELETION_SENTENCE = (
+        "Change the single implementation instead, and delete the path that change "
+        "supersedes; append-only applies to checkpoint documents, not code."
+    )
+
     def test_structure_policy_sentences_are_load_bearing(self) -> None:
         live = self._live_texts()
-        policy = live["policy"]
-        self.assertIn("applies to structure, not only process:", policy)
-        self.assertIn("unrequested compatibility path", policy)
-        self.assertIn("deletes the code path it supersedes", policy)
+        policy = self._folded(live["policy"])
+        self.assertIn(self.APPROVAL_SENTENCE, policy)
+        self.assertIn(self.DELETION_SENTENCE, policy)
 
         without_both = dict(live)
-        without_both["policy"] = self._without_structure_sentences(policy)
+        without_both["policy"] = policy.replace(self.APPROVAL_SENTENCE, "").replace(
+            self.DELETION_SENTENCE, ""
+        )
         without_compat = dict(live)
-        without_compat["policy"] = policy.replace(
-            "an unrequested compatibility path,\n"
-            "fallback, toggle, optional parameter, or forwarding layer is such a mechanism.",
-            "",
-        )
+        without_compat["policy"] = policy.replace(self.APPROVAL_SENTENCE, "")
         without_delete = dict(live)
-        without_delete["policy"] = policy.replace(
-            "A change deletes the code path it supersedes; append-only applies to checkpoint\n"
-            "documents, not code.",
-            "",
-        )
+        without_delete["policy"] = policy.replace(self.DELETION_SENTENCE, "")
 
         corpus = {name: row for name, *row in self._replay_corpus()}
         compat = corpus["code_unrequested_compat"]
@@ -1903,18 +1906,6 @@ class CoreFlowTests(unittest.TestCase):
             self._replay_first_todo(without_compat, delete[1], delete[0]),
             delete[2],
         )
-
-    def _without_structure_sentences(self, policy: str) -> str:
-        start = policy.find("This\napplies to structure, not only process:")
-        if start < 0:
-            start = policy.find("This applies to structure, not only process:")
-        self.assertGreater(start, 0)
-        if start >= 1 and policy[start - 1] == " ":
-            start -= 1
-        end = policy.find("\n\n", start)
-        if end < 0:
-            end = len(policy)
-        return policy[:start] + policy[end:]
 
     def _load_pointer_module(self):
         import importlib.util
