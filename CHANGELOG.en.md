@@ -4,6 +4,12 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.15.0 - 2026-08-26
+
+- **The standing global policy is now eight working rules in four sections.** Authorized work proceeds immediately. Research rebuilds priors and judges increment vs packaging before changing direction. Paper experiments follow the claim–evidence path; after the pipeline runs, repeated smoke is not progress. Code changes trace the affected produce-transform-consume path and keep one clear path. Stage reports are in Chinese; diagrams only explain complex flows. Skill routing, delegation, and persistence stay a minimum bridge and do not replace the next real action.
+
+Upgrade action: after updating to 7.15.0, re-run the installer for the host you use: Codex with `$teamwork-update` or `./install.sh`; Cursor with `./install.sh cursor`; Claude with `./install.sh claude`. If you use the Cursor global policy, also run `./install.sh cursor-policy` and **replace** the existing Teamwork User Rule with the new block.
+
 ## 7.14.0 - 2026-08-26
 
 - **Review now judges standing constraints, not only the requirements supplied with the request.** A violation of a constraint from the project's always-read instructions or the global policy is a finding with severity even when the request does not mention it.
