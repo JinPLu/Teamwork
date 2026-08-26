@@ -14,6 +14,10 @@ of switching workflows or blocking on installation state.
 
 1. Identify the actual candidate, requirements, scope, settled constraints, and
    direct evidence needed for a verdict.
+   Criteria include standing constraints from the project's always-read
+   instruction surface and the global policy, not only the requirements supplied
+   with the request. A violation of a standing constraint is a finding with
+   severity, even when the supplied requirements do not mention it.
 2. Read the candidate and applicable primary evidence. Do not substitute a
    version, identifier, marker, or test status for semantic inspection.
 3. Always judge outcome fit. Judge engineering quality and real-path evidence

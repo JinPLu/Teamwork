@@ -1655,6 +1655,8 @@ class CoreFlowTests(unittest.TestCase):
             forbidden.add("guess a fix")
         if "missing evidence is `unknown`" in review and kind == "review-missing-evidence":
             forbidden.add("ACCEPT")
+        if "standing constraint is a finding" in review and kind == "review-criteria":
+            forbidden.add("judge only the supplied requirements")
         if "before closeout" in collaborate.lower() and kind == "execution":
             forbidden.add("start training or mechanical prep")
             forbidden.add("implement or report mechanical blocker")
@@ -1761,6 +1763,15 @@ class CoreFlowTests(unittest.TestCase):
                 "unknown / not ACCEPT",
             ),
             (
+                "review_standing_constraint",
+                "review-criteria",
+                (
+                    "judge only the supplied requirements",
+                    "check standing constraints as criteria",
+                ),
+                "check standing constraints as criteria",
+            ),
+            (
                 "code_unrequested_compat",
                 "execution",
                 (
@@ -1818,6 +1829,7 @@ class CoreFlowTests(unittest.TestCase):
                 self.assertNotEqual(first, "Write new plan slug")
                 self.assertNotEqual(first, "guess a fix")
                 self.assertNotEqual(first, "ACCEPT")
+                self.assertNotEqual(first, "judge only the supplied requirements")
 
     def test_ab_replay_improves_scope_and_advance_versus_v76(self) -> None:
         live = self._live_texts()
@@ -1905,6 +1917,32 @@ class CoreFlowTests(unittest.TestCase):
         self.assertEqual(
             self._replay_first_todo(without_compat, delete[1], delete[0]),
             delete[2],
+        )
+
+    STANDING_CONSTRAINT_SENTENCE = (
+        "A violation of a standing constraint is a finding with severity, even "
+        "when the supplied requirements do not mention it."
+    )
+
+    def test_review_standing_constraint_sentence_is_load_bearing(self) -> None:
+        live = self._live_texts()
+        review = self._folded(live["review"])
+        self.assertIn(self.STANDING_CONSTRAINT_SENTENCE, review)
+
+        without = dict(live)
+        without["review"] = review.replace(self.STANDING_CONSTRAINT_SENTENCE, "")
+
+        corpus = {name: row for name, *row in self._replay_corpus()}
+        scene = corpus["review_standing_constraint"]
+        kind, candidates, expected = scene
+        self.assertEqual(self._replay_first_todo(live, candidates, kind), expected)
+        self.assertNotEqual(
+            self._replay_first_todo(without, candidates, kind),
+            expected,
+        )
+        self.assertEqual(
+            self._replay_first_todo(without, candidates, kind),
+            "judge only the supplied requirements",
         )
 
     def _load_pointer_module(self):

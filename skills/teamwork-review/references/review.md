@@ -20,7 +20,7 @@ updated: <YYYY-MM-DD>
 
 ## Criteria and protected boundaries
 
-<requirements, criteria, candidate identity, and behavior that must not change>
+<requirements, criteria, standing constraints with their source, candidate identity, and behavior that must not change>
 
 ## Direct evidence
 
