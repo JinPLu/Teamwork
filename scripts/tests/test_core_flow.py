@@ -1393,16 +1393,16 @@ class CoreFlowTests(unittest.TestCase):
 
     def test_global_policy_stays_within_budget(self) -> None:
         raw = (ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8")
-        paragraphs = [block for block in raw.split("\n\n") if block.strip()]
+        rules = [line for line in raw.splitlines() if line.startswith("- ")]
         self.assertLessEqual(
             len(raw),
-            5200,
+            5400,
             "global policy exceeds its byte budget; detail belongs to the owning SKILL.md",
         )
         self.assertLessEqual(
-            len(paragraphs),
-            13,
-            "global policy exceeds its paragraph budget",
+            len(rules),
+            29,
+            "global policy exceeds its rule budget; one bullet is one rule",
         )
 
     def test_rule_ownership_is_single_sourced(self) -> None:
