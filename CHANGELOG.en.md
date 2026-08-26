@@ -4,6 +4,13 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.13.0 - 2026-08-26
+
+- **The standing global policy now covers code structure, not only process.** Without your explicit approval of the exact form, do not add a compatibility path, fallback, toggle, defaulted parameter, or forwarding layer just to spare an existing caller. Change the single implementation instead, and delete the path that change supersedes. Append-only applies to checkpoint documents, not code.
+- **The global policy is now headed rule bullets.** Six sections (Routing / Claims / Authorization / Delegation / Host surfaces / Checkpoints), one rule per bullet, instead of twelve dense paragraphs.
+
+Upgrade action: after updating to 7.13.0, re-run the installer for the host you use: Codex with `$teamwork-update` or `./install.sh`; Cursor with `./install.sh cursor`; Claude with `./install.sh claude`. If you use the Cursor global policy, also run `./install.sh cursor-policy` and update that user rule.
+
 ## 7.12.0 - 2026-08-21
 
 - **Claude Code can finally see the project instruction block.** That host reads `CLAUDE.md`, not `AGENTS.md`, so the project block `init-project` wrote into `AGENTS.md` never reached a Claude session. `init-project` now also writes a small managed `@AGENTS.md` import. Existing user content, an existing import, and a `CLAUDE.md` symlinked to `AGENTS.md` are all left alone.

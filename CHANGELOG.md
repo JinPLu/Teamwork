@@ -4,6 +4,13 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.13.0 - 2026-08-26
+
+- **常驻全局策略现在也管代码结构，不只管流程。** 未经你点名批准，不得为了迁就现有调用方新增兼容路径、回退、开关、带默认值的参数或转发层；改的是那一份实现，被取代的路径一并删掉。文档的 append-only 只约束检查点记录，不约束代码。
+- **全局策略改成标题加要点。** 六个小节（Routing / Claims / Authorization / Delegation / Host surfaces / Checkpoints），一条规则一个 bullet，比原先 12 段散文更容易被宿主读到。
+
+升级操作：更新到 7.13.0 后，对所用宿主重新运行安装器：Codex 用 `$teamwork-update` 或 `./install.sh`；Cursor 用 `./install.sh cursor`；Claude 用 `./install.sh claude`。若使用 Cursor 全局策略，再跑 `./install.sh cursor-policy` 并更新那条 User Rule。
+
 ## 7.12.0 - 2026-08-21
 
 - **Claude Code 现在真的读得到项目说明块。** 这个宿主只读 `CLAUDE.md`，不读 `AGENTS.md`，所以此前 `init-project` 写进 `AGENTS.md` 的那段项目说明在 Claude 会话里从未生效。`init-project` 现在同时写一小段受管的 `@AGENTS.md` 导入；已有的用户内容、已有的导入，以及指向 `AGENTS.md` 的符号链接都原样保留。
