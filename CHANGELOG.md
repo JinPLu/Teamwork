@@ -4,6 +4,12 @@
 
 这里只记录用户能感受到的变化；实现细节见 Git 提交或 Pull Request。
 
+## 7.16.0 - 2026-08-27
+
+- **Cursor 现在也安装 Goal Skill。** 宿主的 goal 只带一个目标和"进行中／已完成"状态：它不定义成功信号，也不落盘，所以把它标成已完成并不等于验证成功。Skill 负责成功信号、预算和检查点写入，两者如何配合已写进 Cursor 全局策略。Debug 保持不装，未知原因诊断仍然使用宿主 Debug 模式。
+
+升级操作：更新到 7.16.0 后，对所用宿主重新运行安装器：Codex 用 `$teamwork-update` 或 `./install.sh`；Cursor 用 `./install.sh cursor`；Claude 用 `./install.sh claude`。若使用 Cursor 全局策略，再跑 `./install.sh cursor-policy` 并**整段替换**现有那条 Teamwork User Rule。
+
 ## 7.15.0 - 2026-08-26
 
 - **常驻全局策略改成四类 8 条工作规则。** 授权后推进；科研先重建先验再 Think–Judge 收口；论文实验从贡献倒推证据面，管线跑通后不再连续用 smoke 冒充进展；改代码追完整受影响链路并只留一条路径；阶段结果用中文，图示只用于复杂解释；Skill/委派/落盘只保留最短桥，不替代真实推进。

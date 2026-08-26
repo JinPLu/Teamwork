@@ -4,6 +4,12 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.16.0 - 2026-08-27
+
+- **Cursor now installs the Goal Skill.** A host goal carries only an objective and its active or complete state: it defines no success signal and writes no checkpoint, so marking it complete is not verified success. The Skill owns the success signal, the budget, and the checkpoint write, and the Cursor global policy now states how the two fit together. Debug stays uninstalled; unknown-cause diagnosis still uses the host Debug mode.
+
+Upgrade action: after updating to 7.16.0, re-run the installer for the host you use: Codex with `$teamwork-update` or `./install.sh`; Cursor with `./install.sh cursor`; Claude with `./install.sh claude`. If you use the Cursor global policy, also run `./install.sh cursor-policy` and **replace** the existing Teamwork User Rule with the new block.
+
 ## 7.15.0 - 2026-08-26
 
 - **The standing global policy is now eight working rules in four sections.** Authorized work proceeds immediately. Research rebuilds priors and judges increment vs packaging before changing direction. Paper experiments follow the claim–evidence path; after the pipeline runs, repeated smoke is not progress. Code changes trace the affected produce-transform-consume path and keep one clear path. Stage reports are in Chinese; diagrams only explain complex flows. Skill routing, delegation, and persistence stay a minimum bridge and do not replace the next real action.
