@@ -97,7 +97,7 @@ flowchart LR
 
 Researcher、Explorer、Debugger、Challenger、Planner、Reviewer、Worker 和 Writer 都是边界化帮助者，不是必须经过的流水线。
 <!-- BEGIN GENERATED: host-counts-zh -->
-Claude Code 安装 7 个角色并使用宿主自带 Explore；Cursor 安装 6 个角色（省略 Explorer 与 Debugger），且不安装 Debug / Goal Skill，未知原因诊断使用宿主 Debug；Codex 仍保留 Explorer，以及 Debug、Goal 和 Debugger。
+Claude Code 安装 7 个角色并使用宿主自带 Explore；Cursor 安装 6 个角色（省略 Explorer 与 Debugger），且不安装 Debug Skill，未知原因诊断使用宿主 Debug；Cursor 安装 Goal Skill，因为宿主 goal 只带运行态，既不定义成功信号也不落盘；Codex 仍保留 Explorer，以及 Debug、Goal 和 Debugger。
 <!-- END GENERATED: host-counts-zh -->
 Writer 是低成本、可跨 Skill 复用的非阻塞记录者：它把方法 owner 确认的变化写成 `docs/teamwork/<kind>/` 下的可读 Markdown，不替 owner 改变事实、决定或结论。Root 负责检查点落盘，Writer 只在不耽误写入时帮忙；写不了就报告路径和未交付，但不撤销已经完成的结果。
 

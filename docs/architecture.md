@@ -113,7 +113,7 @@ Every handoff uses the same five fields:
 Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and
 Writer are focused helpers.
 <!-- BEGIN GENERATED: host-counts -->
-Claude Code installs 7 roles and omits Explorer because that host already provides Explore. Cursor installs 6 roles and omits Explorer and Debugger, and does not install the Debug or Goal Skills; unknown-cause diagnosis uses host Debug. Codex retains the Explorer role, plus Debug, Goal, and Debugger.
+Claude Code installs 7 roles and omits Explorer because that host already provides Explore. Cursor installs 6 roles and omits Explorer and Debugger, and does not install the Debug Skill; unknown-cause diagnosis uses host Debug. Cursor does install Goal, because a host goal carries runtime state without a success signal or a checkpoint. Codex retains the Explorer role, plus Debug, Goal, and Debugger.
 <!-- END GENERATED: host-counts -->
 Helpers do not own the user dialogue. Missing agents do not block native work.
 When the user specifically requires an independent review and no independent
@@ -124,10 +124,12 @@ pretending otherwise.
 
 Adapters enhance native host modes; they do not replace them. Each adapter maps
 onto host capabilities and fills only gaps the host does not provide. Cursor
-yields to host Debug and Explore. Claude yields to Explore; its Plan mode and
-auto memory stay host-owned editing surfaces rather than Teamwork persistence.
-When a host gains a matching native capability, the Teamwork surface is removed
-instead of kept alongside it.
+yields to host Debug and Explore, and keeps Goal because that host's goal
+surface holds runtime state without a success signal or a checkpoint. Claude
+yields to Explore; its Plan mode and auto memory stay host-owned editing
+surfaces rather than Teamwork persistence. When a host gains a native capability
+that covers the contract, the Teamwork surface is removed instead of kept
+alongside it; a native surface that only holds runtime state does not cover one.
 
 ```mermaid
 flowchart TD

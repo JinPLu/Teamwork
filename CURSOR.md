@@ -13,7 +13,9 @@ Cursor (for example `/teamwork-collaborate`); Codex uses `$name`. When both
 same-named Teamwork skill copies exist under `~/.cursor/skills/` and
 `~/.claude/skills/`, which copy Cursor reads is not guaranteed—keep both in
 sync. `./install.sh cursor` refreshes the Claude skill root when that Teamwork
-copy is already present. The global policy is a separate step because Cursor
+copy is already present. `teamwork-debug` stays under the Claude root only, so a
+Cursor session that reads both roots can still list it; that listing is not an
+install for this host. The global policy is a separate step because Cursor
 keeps user rules in its own settings store rather than a file the installer
 owns.
 
@@ -38,11 +40,16 @@ Teamwork Skills add purpose-specific contracts and checkpoint documents under
 <!-- END GENERATED: kind-root -->
 .
 <!-- BEGIN GENERATED: cursor-skills -->
-The adapter exposes 6 focused Skills (`teamwork-collaborate`, `teamwork-research`, `teamwork-plan`, `teamwork-review`, `teamwork-init`, `teamwork-update`) and 6 optional helper roles: Researcher, Challenger, Planner, Reviewer, Worker, and Writer. Cursor installs 6 roles; Explorer and Debugger are intentionally omitted.
+The adapter exposes 7 focused Skills (`teamwork-collaborate`, `teamwork-research`, `teamwork-plan`, `teamwork-review`, `teamwork-goal`, `teamwork-init`, `teamwork-update`) and 6 optional helper roles: Researcher, Challenger, Planner, Reviewer, Worker, and Writer. Cursor installs 6 roles; Explorer and Debugger are intentionally omitted.
 <!-- END GENERATED: cursor-skills -->
-Cursor does not install the Debug or Goal Skills. Planner remains an optional
-bounded helper, not a substitute for Cursor's Plan mode. CreatePlan and host
-Plan drafts are editable candidates; they do not complete a Skill checkpoint.
+Cursor does not install the Debug Skill; unknown-cause diagnosis uses host
+Debug. Cursor does install the Goal Skill, because a host goal carries only an
+objective and its active or complete state: that state is a runtime surface, not
+a checkpoint, and marking it complete is not the success signal. The Skill owns
+the signal, the budget, and the Persistence contract. Planner remains an
+optional bounded helper, not a substitute for Cursor's Plan mode. CreatePlan
+and host Plan drafts are editable candidates; they do not complete a Skill
+checkpoint.
 User confirmation or Build is acceptance of a reusable plan; then apply the
 matching Persistence contract. Batching a stage's questions through AskQuestion
 is the host mapping and still does not complete a checkpoint. CreatePlan is

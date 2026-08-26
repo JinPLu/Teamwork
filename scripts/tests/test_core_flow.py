@@ -718,7 +718,9 @@ class CoreFlowTests(unittest.TestCase):
         self.assertIn("User Rule paste is optional", cursor)
         self.assertIn("Batching a stage's questions through AskQuestion", cursor)
         self.assertIn("Cursor installs 6 roles", cursor)
-        self.assertIn("does not install the Debug or Goal Skills", cursor)
+        self.assertIn("does not install the Debug Skill", cursor)
+        self.assertIn("Cursor does install the Goal Skill", cursor)
+        self.assertIn("marking it complete is not the success signal", cursor)
         self.assertIn("Explorer and Debugger are intentionally omitted", cursor)
         self.assertIn("reviewer, planner, challenger, and worker use high", cursor)
         self.assertNotIn("xhigh", cursor)
@@ -859,13 +861,12 @@ class CoreFlowTests(unittest.TestCase):
             cursor_root.mkdir(parents=True)
             (cursor_root / ".teamwork-version").write_text("0.0.0\n", encoding="utf-8")
             (cursor_root / ".teamwork-profile").write_text("inherit\n", encoding="utf-8")
-            for name in ("teamwork-debug", "teamwork-goal"):
-                leftover = cursor_root / name
-                leftover.mkdir()
-                (leftover / "SKILL.md").write_text(
-                    f"---\nname: {name}\ndescription: leftover\n---\n\nTeamwork leftover.\n",
-                    encoding="utf-8",
-                )
+            leftover = cursor_root / "teamwork-debug"
+            leftover.mkdir()
+            (leftover / "SKILL.md").write_text(
+                "---\nname: teamwork-debug\ndescription: leftover\n---\n\nTeamwork leftover.\n",
+                encoding="utf-8",
+            )
             env = os.environ.copy()
             env["HOME"] = raw
             result = subprocess.run(
@@ -881,8 +882,9 @@ class CoreFlowTests(unittest.TestCase):
             self.assertTrue(cursor_plan.is_file(), cursor_plan)
             self.assertTrue(claude_plan.is_file(), claude_plan)
             self.assertIn("docs/teamwork/plans/", claude_plan.read_text(encoding="utf-8"))
+            self.assertFalse((cursor_root / "teamwork-debug").exists())
+            self.assertTrue((cursor_root / "teamwork-goal/SKILL.md").is_file())
             for name in ("teamwork-debug", "teamwork-goal"):
-                self.assertFalse((cursor_root / name).exists(), name)
                 claude_skill = claude_root / name / "SKILL.md"
                 self.assertTrue(claude_skill.is_file(), claude_skill)
             self.assertFalse((home / ".claude/agents").exists())
@@ -916,10 +918,15 @@ class CoreFlowTests(unittest.TestCase):
             {"codex", "claude"},
         )
         self.assertNotIn("cursor", debugger["templates"])
-        for name in ("teamwork-debug", "teamwork-goal"):
-            skill = next(row for row in topology["public_skills"] if row["name"] == name)
-            self.assertEqual(set(skill["hosts"]), {"codex", "claude"})
-            self.assertNotIn("cursor", skill["hosts"])
+        debug_skill = next(
+            row for row in topology["public_skills"] if row["name"] == "teamwork-debug"
+        )
+        self.assertEqual(set(debug_skill["hosts"]), {"codex", "claude"})
+        self.assertNotIn("cursor", debug_skill["hosts"])
+        goal_skill = next(
+            row for row in topology["public_skills"] if row["name"] == "teamwork-goal"
+        )
+        self.assertNotIn("hosts", goal_skill)
         module.validate_topology_layout(ROOT)
 
         with tempfile.TemporaryDirectory() as raw:
@@ -998,7 +1005,7 @@ class CoreFlowTests(unittest.TestCase):
         self.assertEqual(live.returncode, 0, live.stderr)
         self.assertEqual(live.stdout.strip(), str(ROOT))
 
-    def test_topology_skills_host_filter_omits_cursor_debug_goal(self) -> None:
+    def test_topology_skills_host_filter_omits_cursor_debug_only(self) -> None:
         query = ROOT / "scripts/teamwork_tooling/topology.py"
         all_skills = subprocess.run(
             [sys.executable, str(query), "skills"],
@@ -1020,9 +1027,9 @@ class CoreFlowTests(unittest.TestCase):
         )
         self.assertEqual(cursor.returncode, 0, cursor.stderr)
         cursor_names = cursor.stdout.split()
-        self.assertEqual(len(cursor_names), 6)
+        self.assertEqual(len(cursor_names), 7)
         self.assertNotIn("teamwork-debug", cursor_names)
-        self.assertNotIn("teamwork-goal", cursor_names)
+        self.assertIn("teamwork-goal", cursor_names)
 
         for host in ("claude", "codex"):
             result = subprocess.run(
@@ -1049,7 +1056,7 @@ class CoreFlowTests(unittest.TestCase):
         self.assertNotIn("debugger", role_names)
         self.assertNotIn("explorer", role_names)
 
-    def test_cursor_policy_declares_omit_debug_goal_debugger(self) -> None:
+    def test_cursor_policy_omits_debug_and_maps_host_goal_state(self) -> None:
         result = subprocess.run(
             [str(ROOT / "install.sh"), "cursor-policy"],
             text=True,
@@ -1058,9 +1065,14 @@ class CoreFlowTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         folded = self._folded(result.stdout)
-        self.assertIn("does not install the Debug or Goal Skills or the Debugger role", folded)
+        self.assertIn("does not install the Debug Skill or the Debugger role", folded)
         self.assertIn("Do not load them", folded)
         self.assertIn("use the host Debug mode", folded)
+        self.assertNotIn("Goal Skills or the Debugger role", folded)
+        self.assertIn("A host goal carries an objective and its active or complete state", folded)
+        self.assertIn("a runtime surface, not a checkpoint", folded)
+        self.assertIn("marking it complete is not the success signal", folded)
+        self.assertIn("The Goal Skill owns the signal, the budget", folded)
         self.assertNotIn("CreatePlan", (ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
 
     def _replay_persistence_action(self, event: str, texts: dict[str, str]) -> str:

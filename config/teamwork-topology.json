@@ -11,8 +11,7 @@
     },
     {
       "name": "teamwork-goal",
-      "path": "skills/teamwork-goal/SKILL.md",
-      "hosts": ["codex", "claude"]
+      "path": "skills/teamwork-goal/SKILL.md"
     },
     {
       "name": "teamwork-init",

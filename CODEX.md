@@ -11,7 +11,7 @@ static routing state does not gate native work.
 The eight optional roles are Researcher, Explorer, Debugger, Challenger,
 Planner, Reviewer, Worker, and Writer.
 <!-- BEGIN GENERATED: host-counts -->
-Claude Code installs 7 roles and omits Explorer because that host already provides Explore. Cursor installs 6 roles and omits Explorer and Debugger, and does not install the Debug or Goal Skills; unknown-cause diagnosis uses host Debug. Codex retains the Explorer role, plus Debug, Goal, and Debugger.
+Claude Code installs 7 roles and omits Explorer because that host already provides Explore. Cursor installs 6 roles and omits Explorer and Debugger, and does not install the Debug Skill; unknown-cause diagnosis uses host Debug. Cursor does install Goal, because a host goal carries runtime state without a success signal or a checkpoint. Codex retains the Explorer role, plus Debug, Goal, and Debugger.
 <!-- END GENERATED: host-counts -->
 Root sends a five-part brief: objective,
 scope, settled constraints, evidence, and requested return. Root owns

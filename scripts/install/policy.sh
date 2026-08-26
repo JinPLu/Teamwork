@@ -62,8 +62,14 @@ POLICY
   write_teamwork_global_policy_body
   cat <<'POLICY'
 
-This host does not install the Debug or Goal Skills or the Debugger role.
-Do not load them. For unknown-cause diagnosis, use the host Debug mode.
+This host does not install the Debug Skill or the Debugger role. Do not load
+them. For unknown-cause diagnosis, use the host Debug mode.
+
+A host goal carries an objective and its active or complete state. That state
+is a runtime surface, not a checkpoint, and marking it complete is not the
+success signal. The Goal Skill owns the signal, the budget, and the Persistence
+contract; apply that contract in the same response cycle when its checkpoint
+fires.
 
 CreatePlan and host Plan drafts are editable candidates. User confirmation or
 Build is acceptance of a reusable plan; then apply the matching Persistence

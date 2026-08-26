@@ -97,7 +97,7 @@ There is no Router, mandatory stage chain, or automatic Update detour. Root alwa
 
 Researcher, Explorer, Debugger, Challenger, Planner, Reviewer, Worker, and Writer are bounded helpers, not a pipeline every task must traverse.
 <!-- BEGIN GENERATED: host-counts-en -->
-Claude Code installs 7 roles and uses the host's built-in Explore. Cursor installs 6 roles (omitting Explorer and Debugger) and does not install the Debug or Goal Skills; unknown-cause diagnosis uses host Debug. Codex keeps Explorer, plus Debug, Goal, and Debugger.
+Claude Code installs 7 roles and uses the host's built-in Explore. Cursor installs 6 roles (omitting Explorer and Debugger) and does not install the Debug Skill; unknown-cause diagnosis uses host Debug. Cursor does install Goal, because a host goal carries runtime state without a success signal or a checkpoint. Codex keeps Explorer, plus Debug, Goal, and Debugger.
 <!-- END GENERATED: host-counts-en -->
 Writer is a low-cost, non-blocking recorder reusable across Skills: it turns owner-certified changes into readable Markdown under `docs/teamwork/<kind>/` and never changes the owner's facts, decisions, or conclusions. Root owns checkpoint delivery; Writer helps only when that does not delay the write. If the environment cannot write, the exact path and non-delivery are reported; the completed result is not undone.
 

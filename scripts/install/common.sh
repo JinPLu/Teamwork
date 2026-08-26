@@ -55,7 +55,6 @@ RETIRED_SKILLS=(
 )
 RETIRED_CURSOR_SKILLS=(
   teamwork-debug
-  teamwork-goal
 )
 LEGACY_CODEX_ROUTER_SKILL="teamwork"
 CLAUDE_AGENTS=()

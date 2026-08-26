@@ -29,13 +29,13 @@ class DocsMaintenanceTests(unittest.TestCase):
             ],
         )
         self.assertEqual(facts["checkpoint_path"], "docs/teamwork/<kind>/<slug>.md")
-        self.assertEqual(facts["hosts"]["cursor"]["skills"], 6)
+        self.assertEqual(facts["hosts"]["cursor"]["skills"], 7)
         self.assertEqual(facts["hosts"]["cursor"]["roles"], 6)
         self.assertEqual(facts["hosts"]["claude"]["roles"], 7)
         self.assertEqual(facts["hosts"]["codex"]["roles"], 8)
-        self.assertEqual(len(facts["cursor_skills"]), 6)
+        self.assertEqual(len(facts["cursor_skills"]), 7)
         self.assertNotIn("teamwork-debug", facts["cursor_skills"])
-        self.assertNotIn("teamwork-goal", facts["cursor_skills"])
+        self.assertIn("teamwork-goal", facts["cursor_skills"])
 
     def test_generated_fact_blocks_are_fresh(self) -> None:
         result = subprocess.run(
