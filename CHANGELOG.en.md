@@ -4,6 +4,12 @@
 
 This changelog records user-visible changes; implementation details belong in Git history or pull requests.
 
+## 7.14.0 - 2026-08-26
+
+- **Review now judges standing constraints, not only the requirements supplied with the request.** A violation of a constraint from the project's always-read instructions or the global policy is a finding with severity even when the request does not mention it.
+
+Upgrade action: after updating to 7.14.0, re-run the installer for the host you use: Codex with `$teamwork-update` or `./install.sh`; Cursor with `./install.sh cursor`; Claude with `./install.sh claude`. The global policy text did not change, so an already-pasted Cursor User Rule does not need to be replaced.
+
 ## 7.13.0 - 2026-08-26
 
 - **The standing global policy now covers code structure, not only process.** Without your explicit approval of the exact form, do not add a compatibility path, fallback, toggle, defaulted parameter, or forwarding layer just to spare an existing caller. Change the single implementation instead, and delete the path that change supersedes. Append-only applies to checkpoint documents, not code.
