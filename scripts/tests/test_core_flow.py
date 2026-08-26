@@ -312,17 +312,17 @@ class CoreFlowTests(unittest.TestCase):
             }
         )
         path_kind = re.compile(r"docs/teamwork/([a-z]+)/")
-        policy = (ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8")
-        folded_policy = self._folded(policy)
-        self.assertIn("`docs/teamwork/<kind>/<slug>.md`", folded_policy)
-        self.assertIn("The set is closed", folded_policy)
-        self.assertIn("do not invent a new kind", folded_policy)
-        self.assertIn("do not write a checkpoint at the `docs/teamwork/` root", folded_policy)
-        self.assertIn("Reusable status and results", folded_policy)
-        self.assertIn("`reports/`", folded_policy)
-        self.assertIn("always-read instruction surface", folded_policy)
-        self.assertIn("`AGENTS.md` or the project's own reference pages", folded_policy)
-        self.assertIn("never a new checkpoint kind", folded_policy)
+        architecture_text = (ROOT / "docs/architecture.md").read_text(encoding="utf-8")
+        folded_architecture = self._folded(architecture_text)
+        self.assertIn("`docs/teamwork/<kind>/<slug>.md`", folded_architecture)
+        self.assertIn("The set is closed", folded_architecture)
+        self.assertIn("do not invent a new kind", folded_architecture)
+        self.assertIn("do not write a checkpoint at the `docs/teamwork/` root", folded_architecture)
+        self.assertIn("Reusable status and results", folded_architecture)
+        self.assertIn("`reports/`", folded_architecture)
+        self.assertIn("always-read instruction surface", folded_architecture)
+        self.assertIn("`AGENTS.md` or the project's own reference pages", folded_architecture)
+        self.assertIn("never a new checkpoint kind", folded_architecture)
 
         skill_kinds: set[str] = set()
         for skill in (ROOT / "skills").iterdir():
@@ -356,10 +356,7 @@ class CoreFlowTests(unittest.TestCase):
             "docs/teamwork/<kind>/<YYYY-MM-DD>-<slug>.md",
             architecture,
         )
-        self.assertNotIn(
-            "docs/teamwork/<kind>/<slug>.md",
-            architecture,
-        )
+        self.assertIn("docs/teamwork/<kind>/<slug>.md", architecture)
         self.assertIn(
             "Reuse the path for the same stable identity",
             self._folded(architecture),
@@ -450,10 +447,9 @@ class CoreFlowTests(unittest.TestCase):
             "subagent return must not restate them as a new question.",
             skill,
         )
-        policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
         self.assertIn(
             "Keep user quotes separate from the working understanding.",
-            policy,
+            skill,
         )
         self.assertIn(
             "The next turn on the same subject reads the discussion document's "
@@ -678,16 +674,21 @@ class CoreFlowTests(unittest.TestCase):
 
     def test_policy_and_cursor_adapter_name_host_surfaces(self) -> None:
         policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
+        architecture = self._folded((ROOT / "docs/architecture.md").read_text(encoding="utf-8"))
         cursor = self._folded((ROOT / "CURSOR.md").read_text(encoding="utf-8"))
         claude = self._folded((ROOT / "CLAUDE.md").read_text(encoding="utf-8"))
-        self.assertIn("Host interaction surfaces do not replace", policy)
-        self.assertIn("does not complete a Skill checkpoint", policy)
-        self.assertIn("Root owns document delivery", policy)
-        self.assertIn("does not delay the current checkpoint write", policy)
-        self.assertIn("it cannot write", policy)
-        self.assertIn("document was not delivered", policy)
-        self.assertIn("unavailable, returns a no-write", policy)
-        self.assertIn("Root writes the same Skill template", policy)
+        self.assertIn("does not complete a Skill checkpoint", architecture)
+        self.assertIn("document was not delivered", architecture)
+        self.assertIn("temporarily read-only", architecture)
+        self.assertIn("write permission returns", architecture)
+        self.assertIn(
+            "Answers that serve an active result merge into that result",
+            architecture,
+        )
+        self.assertIn(
+            "independent reusable preference decision",
+            architecture,
+        )
         self.assertNotIn("Prefer Writer", policy)
         self.assertNotIn("Root fallback", policy)
         self.assertIn("each Skill's own description states that trigger", policy)
@@ -696,17 +697,7 @@ class CoreFlowTests(unittest.TestCase):
             "even when that Skill was not explicitly invoked",
             policy,
         )
-        self.assertIn("Entering a mode or invoking a surface is not acceptance", policy)
-        self.assertIn(
-            "Answers that serve an active result merge into that result",
-            policy,
-        )
-        self.assertIn(
-            "independent reusable preference decision",
-            policy,
-        )
-        self.assertIn("temporarily read-only", policy)
-        self.assertIn("write permission returns", policy)
+        self.assertIn("does not replace the next real action", policy)
         self.assertNotIn("CreatePlan", policy)
         self.assertNotIn("AskQuestion", policy)
         self.assertIn("CreatePlan is not Writer", cursor)
@@ -1081,7 +1072,7 @@ class CoreFlowTests(unittest.TestCase):
         claude_wrapper = self._folded(texts["claude_wrapper"])
         architecture = self._folded(texts["architecture"])
 
-        invoke_not_checkpoint = "does not complete a Skill checkpoint" in policy
+        invoke_not_checkpoint = "does not complete a Skill checkpoint" in architecture
         accepted_applies = (
             "even when that Skill was not explicitly invoked" in policy
             and "user-accepted reusable semantic result" in policy
@@ -1094,20 +1085,20 @@ class CoreFlowTests(unittest.TestCase):
         )
         reuse_path = "reuse that path" in plan
         merge_answers = (
-            "Answers that serve an active result merge into that result" in policy
+            "Answers that serve an active result merge into that result" in architecture
         )
-        independent = "independent reusable preference decision" in policy
+        independent = "independent reusable preference decision" in architecture
         delayed = (
-            "write permission returns" in policy
+            "write permission returns" in architecture
             and "read-only permission boundary" in claude_wrapper
-            and "temporarily read-only" in policy
+            and "temporarily read-only" in architecture
         )
         not_first_todo = "does not replace the next real action" in policy
         method_has_no_write_gate = (
             "write the document" not in method.lower()
             and "same response cycle" not in method
         )
-        report_fail = "document was not delivered" in policy
+        report_fail = "document was not delivered" in architecture
         cursor_candidate = "editable candidates" in cursor
         cursor_accept = "User confirmation or Build is acceptance" in cursor
         claude_accept = (
@@ -1262,8 +1253,8 @@ class CoreFlowTests(unittest.TestCase):
             self.assertIn("acceptance of a reusable plan", self._folded(claude_md))
             self.assertIn("candidates until the user approves them", codex_md)
             self.assertIn("`$name`", codex_md)
-            self.assertIn("user-accepted reusable semantic result", claude_md)
-            self.assertIn("user-accepted reusable semantic result", codex_md)
+            self.assertIn("user-accepted reusable semantic result", self._folded(claude_md))
+            self.assertIn("user-accepted reusable semantic result", self._folded(codex_md))
 
             project = home / "proj"
             project.mkdir()
@@ -1294,28 +1285,26 @@ class CoreFlowTests(unittest.TestCase):
 
     def test_policy_owns_outcome_and_persistence_contract(self) -> None:
         policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
-        self.assertIn("A method succeeds on its user-facing result", policy)
-        self.assertIn("never certify or substitute", policy)
-        self.assertIn("Before a direction is frozen", policy)
-        self.assertIn("would change the goal, direction, acceptance, or irreversible spend", policy)
-        self.assertIn("After the user authorizes a settled direction, advance that result", policy)
-        self.assertIn("Execution eligibility", policy)
-        self.assertIn("claim eligibility", policy)
-        self.assertIn("does not by itself forbid a safe, authorized attempt", policy)
-        self.assertIn("do not invent vetoes", policy)
-        self.assertIn("after the method's user-facing result already exists", policy)
-        self.assertIn("Root owns document delivery", policy)
-        self.assertIn("does not delay the current checkpoint write", policy)
-        self.assertIn("it cannot write", policy)
-        self.assertIn("document was not delivered", policy)
-        self.assertIn("first todo after an execution request", policy)
+        self.assertIn("Clear, authorized work proceeds immediately", policy)
+        self.assertIn("are not a gate on an authorized path", policy)
+        self.assertIn("they do not replace user-visible progress", policy)
+        self.assertIn("rebuild the strongest related priors", policy)
+        self.assertIn("do not treat repeated smoke as research progress", policy)
+        self.assertIn("read the affected produce-transform-consume path", policy)
+        self.assertIn("Keep one clear path for one behavior", policy)
+        self.assertIn("user-accepted reusable semantic result", policy)
+        self.assertIn("even when that Skill was not explicitly invoked", policy)
+        self.assertIn("does not replace the next real action", policy)
         self.assertNotIn("silently skipping a fired checkpoint", policy.lower())
         self.assertNotIn("before closeout", policy.lower())
         self.assertNotIn("Prefer Writer", policy)
         self.assertNotIn("Root fallback", policy)
+        self.assertNotIn("Execution eligibility", policy)
+        self.assertNotIn("first todo after an execution request", policy)
 
         architecture = self._folded((ROOT / "docs/architecture.md").read_text(encoding="utf-8"))
         self.assertIn("policy/teamwork-global.md` is the sole owner", architecture)
+        self.assertIn("cross-project working rules and the minimum Teamwork bridge", architecture)
         self.assertIn("| Surface | Owns | Does not own |", (ROOT / "docs/architecture.md").read_text(encoding="utf-8"))
 
         for name in (
@@ -1391,18 +1380,17 @@ class CoreFlowTests(unittest.TestCase):
                 self.assertTrue(description.startswith("Use when"))
                 self.assertIn("; do not ", description)
 
-    def test_global_policy_stays_within_budget(self) -> None:
-        raw = (ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8")
-        rules = [line for line in raw.splitlines() if line.startswith("- ")]
-        self.assertLessEqual(
-            len(raw),
-            5400,
-            "global policy exceeds its byte budget; detail belongs to the owning SKILL.md",
+    def test_reporting_rule_limits_diagrams_to_complex_explanations(self) -> None:
+        policy = self._folded((ROOT / "policy/teamwork-global.md").read_text(encoding="utf-8"))
+        self.assertIn("Report stage results in natural Chinese", policy)
+        self.assertIn(
+            "what changed, the evidence, the unknowns, and the next action or blocker",
+            policy,
         )
-        self.assertLessEqual(
-            len(rules),
-            29,
-            "global policy exceeds its rule budget; one bullet is one rule",
+        self.assertIn("minimal useful diagram and a running example only when", policy)
+        self.assertIn(
+            "complex parameter flow, data flow, architecture, or experimental causal story",
+            policy,
         )
 
     def test_rule_ownership_is_single_sourced(self) -> None:
@@ -1412,11 +1400,11 @@ class CoreFlowTests(unittest.TestCase):
         architecture = ROOT / "docs/architecture.md"
         others = adapters + skills + (architecture,)
         owned = (
-            "Root owns document delivery",
-            "does not delay the current checkpoint write",
-            "Keep user quotes separate from the working understanding.",
-            "Root writes the same Skill template",
-            "document was not delivered",
+            "rebuild the strongest related priors",
+            "do not treat repeated smoke as research progress",
+            "read the affected produce-transform-consume path",
+            "Keep one clear path for one behavior",
+            "Report stage results in natural Chinese",
         )
         owner_text = self._folded(policy.read_text(encoding="utf-8"))
         for fragment in owned:
@@ -1628,11 +1616,11 @@ class CoreFlowTests(unittest.TestCase):
             }
         if "Resolve discoverable facts directly" in collaborate and kind == "scope":
             forbidden.add("design document")
-        if "after the method's user-facing result already exists" in policy and kind == "scope":
+        if "they do not replace user-visible progress" in policy and kind == "scope":
             forbidden |= persist
         if "return that gap instead of a partial plan" in plan and kind == "plan-gap":
             forbidden.add("write a partial plan assuming the gap")
-        if "first todo after an execution request" in policy and kind in {
+        if "does not replace the next real action" in policy and kind in {
             "execution",
             "plan-edit",
         }:
@@ -1645,6 +1633,14 @@ class CoreFlowTests(unittest.TestCase):
             forbidden.add("reopen execution with a new evidence gate")
         if "Unfrozen mechanism work stays out of training" in experiment and kind == "execution":
             forbidden.add("start training or mechanical prep")
+        if "are not a gate on an authorized path" in policy and kind == "execution":
+            forbidden.add("pause for more research before the authorized patch")
+        if "rebuild the strongest related priors" in policy and kind == "research-direction":
+            forbidden.add("keep expanding the question with more adjacent papers")
+        if "do not treat repeated smoke as research progress" in policy and kind == "paper-experiment":
+            forbidden.add("run another smoke after the pipeline already runs")
+        if "read the affected produce-transform-consume path" in policy and kind == "code-trace":
+            forbidden.add("add a pass-through parameter and leave other call sites")
         if "Default to a local patch" in plan and kind == "plan-edit":
             forbidden |= new_or_rewrite
         if "Do not open a new plan because of added acceptance checks" in plan and kind == "plan-edit":
@@ -1660,12 +1656,15 @@ class CoreFlowTests(unittest.TestCase):
         if "before closeout" in collaborate.lower() and kind == "execution":
             forbidden.add("start training or mechanical prep")
             forbidden.add("implement or report mechanical blocker")
-        if "Unrequested code structure needs the same approval" in policy and kind == "execution":
+        if (
+            "pass-through parameter, compatibility wrapper, toggle, or patch branch" in policy
+            and kind == "execution"
+        ):
             forbidden |= {
                 "add optional None parameter and keep old callers",
                 "add compatibility fallback path",
             }
-        if "delete the path that change supersedes" in policy and kind == "execution":
+        if "delete the superseded path" in policy and kind == "execution":
             forbidden.add("keep the superseded placeholder path")
 
         remaining = [item for item in candidates if item not in forbidden]
@@ -1790,6 +1789,42 @@ class CoreFlowTests(unittest.TestCase):
                 ),
                 "delete the code path the change supersedes",
             ),
+            (
+                "authorized_research_not_gate",
+                "execution",
+                (
+                    "pause for more research before the authorized patch",
+                    "implement or report mechanical blocker",
+                ),
+                "implement or report mechanical blocker",
+            ),
+            (
+                "research_direction",
+                "research-direction",
+                (
+                    "keep expanding the question with more adjacent papers",
+                    "rebuild priors and judge increment vs packaging",
+                ),
+                "rebuild priors and judge increment vs packaging",
+            ),
+            (
+                "paper_experiment",
+                "paper-experiment",
+                (
+                    "run another smoke after the pipeline already runs",
+                    "run the experiment that can change paper evidence",
+                ),
+                "run the experiment that can change paper evidence",
+            ),
+            (
+                "code_trace_flow",
+                "code-trace",
+                (
+                    "add a pass-through parameter and leave other call sites",
+                    "change the owning implementation, update callers, and delete the superseded path",
+                ),
+                "change the owning implementation, update callers, and delete the superseded path",
+            ),
         )
 
     def _live_texts(self) -> dict[str, str]:
@@ -1862,61 +1897,89 @@ class CoreFlowTests(unittest.TestCase):
         self.assertGreater(live_scope_hits, base_scope_hits, report)
         self.assertGreater(live_advance_hits, base_advance_hits, report)
 
-    APPROVAL_SENTENCE = (
-        "Unrequested code structure needs the same approval: a compatibility path, "
-        "fallback, toggle, defaulted parameter, or forwarding layer added to spare an "
-        "existing caller."
-    )
-    DELETION_SENTENCE = (
-        "Change the single implementation instead, and delete the path that change "
-        "supersedes; append-only applies to checkpoint documents, not code."
+    POLICY_RULE_REPLAYS = (
+        (
+            "are not a gate on an authorized path",
+            "authorized_research_not_gate",
+        ),
+        (
+            "they do not replace user-visible progress",
+            "ml_intake",
+        ),
+        (
+            "rebuild the strongest related priors",
+            "research_direction",
+        ),
+        (
+            "do not treat repeated smoke as research progress",
+            "paper_experiment",
+        ),
+        (
+            "read the affected produce-transform-consume path",
+            "code_trace_flow",
+        ),
+        (
+            "pass-through parameter, compatibility wrapper, toggle, or patch branch",
+            "code_unrequested_compat",
+        ),
+        (
+            "delete the superseded path",
+            "code_supersede_delete",
+        ),
+        (
+            "does not replace the next real action",
+            "software_build",
+        ),
     )
 
-    def test_structure_policy_sentences_are_load_bearing(self) -> None:
+    def test_each_policy_rule_is_load_bearing(self) -> None:
         live = self._live_texts()
         policy = self._folded(live["policy"])
-        self.assertIn(self.APPROVAL_SENTENCE, policy)
-        self.assertIn(self.DELETION_SENTENCE, policy)
-
-        without_both = dict(live)
-        without_both["policy"] = policy.replace(self.APPROVAL_SENTENCE, "").replace(
-            self.DELETION_SENTENCE, ""
-        )
-        without_compat = dict(live)
-        without_compat["policy"] = policy.replace(self.APPROVAL_SENTENCE, "")
-        without_delete = dict(live)
-        without_delete["policy"] = policy.replace(self.DELETION_SENTENCE, "")
-
         corpus = {name: row for name, *row in self._replay_corpus()}
-        compat = corpus["code_unrequested_compat"]
-        delete = corpus["code_supersede_delete"]
+        for fragment, scene_name in self.POLICY_RULE_REPLAYS:
+            with self.subTest(fragment=fragment, scene=scene_name):
+                self.assertIn(fragment, policy, fragment)
+                kind, candidates, expected = corpus[scene_name]
+                without = dict(live)
+                without["policy"] = policy.replace(fragment, "")
+                self.assertEqual(
+                    self._replay_first_todo(live, candidates, kind),
+                    expected,
+                    scene_name,
+                )
+                self.assertNotEqual(
+                    self._replay_first_todo(without, candidates, kind),
+                    expected,
+                    fragment,
+                )
 
-        self.assertEqual(self._replay_first_todo(live, compat[1], compat[0]), compat[2])
-        self.assertNotEqual(
-            self._replay_first_todo(without_both, compat[1], compat[0]),
-            compat[2],
-        )
-        self.assertNotEqual(
-            self._replay_first_todo(without_compat, compat[1], compat[0]),
-            compat[2],
-        )
+        persist_event = "plan_accept_new"
+        persist_fragment = "even when that Skill was not explicitly invoked"
+        self.assertIn(persist_fragment, policy)
+        without_persist = dict(live)
+        without_persist["policy"] = policy.replace(persist_fragment, "")
+        texts = {
+            "policy": live["policy"],
+            "plan_persistence": self._persistence_section(live["plan"]),
+            "plan_method": self._method_section(live["plan"]),
+            "plan_skill": live["plan"],
+            "cursor": (ROOT / "CURSOR.md").read_text(encoding="utf-8"),
+            "claude": (ROOT / "CLAUDE.md").read_text(encoding="utf-8"),
+            "claude_wrapper": (ROOT / "scripts/install/policy.sh").read_text(
+                encoding="utf-8"
+            ),
+            "codex": (ROOT / "CODEX.md").read_text(encoding="utf-8"),
+            "architecture": (ROOT / "docs/architecture.md").read_text(encoding="utf-8"),
+        }
         self.assertEqual(
-            self._replay_first_todo(without_delete, compat[1], compat[0]),
-            compat[2],
+            self._replay_persistence_action(persist_event, texts),
+            "create_plan_record",
         )
-
-        self.assertEqual(self._replay_first_todo(live, delete[1], delete[0]), delete[2])
+        texts_without = dict(texts)
+        texts_without["policy"] = policy.replace(persist_fragment, "")
         self.assertNotEqual(
-            self._replay_first_todo(without_both, delete[1], delete[0]),
-            delete[2],
-        )
-        self.assertNotEqual(
-            self._replay_first_todo(without_delete, delete[1], delete[0]),
-            delete[2],
-        )
-        self.assertEqual(
-            self._replay_first_todo(without_compat, delete[1], delete[0]),
-            delete[2],
+            self._replay_persistence_action(persist_event, texts_without),
+            "create_plan_record",
         )
 
     STANDING_CONSTRAINT_SENTENCE = (

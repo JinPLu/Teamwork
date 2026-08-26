@@ -65,6 +65,7 @@ read. A different subject gets a new path.
 
 Checkpoints: a decision, recommendation, or unresolved question batch that will
 change later work. An ordinary next action by itself does not write a document.
+Keep user quotes separate from the working understanding.
 
 Session recall may be used on the next turn only after a write is observed
 unavailable or failed, and that recall must be marked as not persisted. A

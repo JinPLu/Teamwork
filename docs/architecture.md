@@ -18,15 +18,16 @@ Case lifecycle, JSON index, migration gate, or automatic Update detour.
 
 | Surface | Owns | Does not own |
 | --- | --- | --- |
-| `policy/teamwork-global.md` | universal authorization, checkpoint and write contract, Writer fallback, quote separation, checkpoint path shape, closed kind set, two-branch fallback | host tool names, per-Skill checkpoints, kind-name vocabulary |
+| `policy/teamwork-global.md` | cross-project working rules and the minimum routing, delegation, and persistence bridge | host tool names, per-Skill checkpoints, kind-name vocabulary, Writer write mechanics |
+| `docs/architecture.md` | closed kind set, path shape, native persistence lifecycle | host tool names, cross-project working rules |
 | project `AGENTS.md` managed block | seven document kind names as vocabulary | path shape, closed-set rule, kind meanings |
-| `skills/*/SKILL.md` | method, identity, checkpoints, template path, write timing | generic delegation, Writer contract |
+| `skills/*/SKILL.md` | method, identity, checkpoints, template path, write timing, quote separation | generic working rules, Writer contract |
 | `skills/*/references/*.md` | fill slots | teaching prose |
-| `CURSOR.md` / `CLAUDE.md` / `CODEX.md` | host install, roles, accept signals, permission facts | universal write contract |
+| `CURSOR.md` / `CLAUDE.md` / `CODEX.md` | host install, roles, accept signals, permission facts | cross-project working rules |
 | `README.md` / `README.en.md` | user-visible outcomes | mechanism restatement |
 
-`policy/teamwork-global.md` is the sole owner of universal authorization and
-mechanism rules.
+`policy/teamwork-global.md` is the sole owner of cross-project working rules
+and the minimum Teamwork bridge.
 
 ## Native interaction and documents
 
@@ -49,6 +50,26 @@ material delta updates the same stable identity and appends History. Added
 acceptance checks or parallel concerns do not open a new plan. When the two
 surfaces diverge, the latest user-accepted semantic delta wins; do not merge
 by file timestamp.
+
+Entering a host surface is not acceptance and does not complete a Skill
+checkpoint. Conversation text and experiment logs are not Teamwork persistence.
+Checkpoint documents are one of the seven kinds, at
+`docs/teamwork/<kind>/<slug>.md`. The set is closed: do not invent a new kind,
+and do not write a checkpoint at the `docs/teamwork/` root. Reusable status and
+results that do not already belong to another kind go to `reports/`. Standing
+constraints that must bind later work go to the project's always-read
+instruction surface (`AGENTS.md` or the project's own reference pages), never a
+new checkpoint kind.
+
+When the environment is temporarily read-only, deliver the accepted result
+after write permission returns; when it cannot write, report the exact expected
+path and that the document was not delivered. Root writes the checkpoint from
+the Skill template; Writer is optional and must not delay that write.
+
+Do not rewrite an accepted checkpoint in place to reverse it. Supersede it with
+a new document, mark the old file `status: superseded` with `superseded-by:`
+pointing at the successor, and link back from the new file. History is
+append-only: never delete, rewrite, or reorder existing entries.
 
 Answers that serve an active result merge into that result. Only an independent
 reusable preference decision gets a separate discussion identity. Ordinary
