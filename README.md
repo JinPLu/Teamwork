@@ -25,6 +25,25 @@
   <a href="https://github.com/JinPLu/Teamwork/issues">反馈</a>
 </p>
 
+> [!IMPORTANT]
+> **本仓库已废弃，不再维护。继任者是 [JinPLu/teamwork-simplify](https://github.com/JinPLu/teamwork-simplify)。**
+>
+> 这里的八个 Skill 和一组可选 Agent 角色，写于模型仍需要外部流程脚手架的时候：研究、调试、
+> 计划、执行、复查各配一套方法，再加角色分工。Astra、Fable 5.1 这一代模型已经把这层脚手架
+> 吸收成原生能力，继续维护只会与宿主重复并互相冲突。
+>
+> 继任仓库因此是一次全面重构，而不是升级：只保留一个 `teamwork-collaborate` Skill（方向讨论
+> 与复杂计划）、一份常驻工作约定和轻量项目上下文；流程、角色分工与执行编排交回宿主。
+>
+> ```bash
+> git clone https://github.com/JinPLu/teamwork-simplify.git
+> cd teamwork-simplify
+> ./install.sh codex   # 或 ./install.sh claude / cursor
+> ```
+>
+> 装过本仓库的，上面的安装会一并移除确认属于 Teamwork 的旧 Skill 与 Agent 角色，你自己的
+> 内容不动。以下正文保留作存档，其中的安装与用法说明不再适用。
+
 ---
 
 > [!TIP]

@@ -25,6 +25,30 @@
   <a href="https://github.com/JinPLu/Teamwork/issues">Feedback</a>
 </p>
 
+> [!IMPORTANT]
+> **This repository is deprecated and no longer maintained. It is superseded by
+> [JinPLu/teamwork-simplify](https://github.com/JinPLu/teamwork-simplify).**
+>
+> The eight Skills and the optional Agent roles here were written when models still needed an
+> external process scaffold: one method each for research, debugging, planning, execution and
+> review, plus a cast of roles. Models of the Astra and Fable 5.1 generation have absorbed that
+> scaffold into native behavior, so keeping a second copy only duplicates and fights the host.
+>
+> The successor is therefore a full rebuild rather than an upgrade: a single
+> `teamwork-collaborate` Skill (direction discussion and complex planning), one standing working
+> agreement, and lightweight project context. Process, role split and execution orchestration go
+> back to the host.
+>
+> ```bash
+> git clone https://github.com/JinPLu/teamwork-simplify.git
+> cd teamwork-simplify
+> ./install.sh codex   # or ./install.sh claude / cursor
+> ```
+>
+> If you installed this repository, that install also removes the old Skills and Agent roles it
+> recognizes as Teamwork's, leaving your own content untouched. Everything below is kept as an
+> archive; its installation and usage instructions no longer apply.
+
 ---
 
 > [!TIP]
